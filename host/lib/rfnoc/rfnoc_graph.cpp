@@ -591,6 +591,12 @@ public:
         return _graph->to_dot();
     }
 
+    chdr_w_t get_chdr_width(const size_t mb_index) const
+    {
+        UHD_ASSERT_THROW(mb_index < _num_mboards);
+        return _device->get_mb_iface(mb_index).get_chdr_w();
+    }
+
 private:
     /**************************************************************************
      * Device Setup

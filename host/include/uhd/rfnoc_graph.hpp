@@ -10,6 +10,7 @@
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -428,6 +429,9 @@ public:
 
     //! Return a reference to the property tree
     virtual uhd::property_tree::sptr get_tree(void) const = 0;
+
+    //! Return the CHDR width for a given device
+    virtual chdr_w_t get_chdr_width(const size_t mb_index = 0) const = 0;
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc
