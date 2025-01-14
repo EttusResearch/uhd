@@ -107,7 +107,7 @@ set(UHD_FPGA_DIR "" CACHE PATH "Path to FPGA source directory")
 message(STATUS "Checking FPGA source directory...")
 if(NOT UHD_FPGA_DIR)
     message(WARNING
-        "Could not find FPGA directory. Skipping all FPGA targets."
+        "Could not find FPGA directory. Skipping all FPGA targets. "
         "Please provide it using -DUHD_FPGA_DIR!")
 endif(NOT UHD_FPGA_DIR)
 if(UHD_FPGA_DIR AND NOT EXISTS ${UHD_FPGA_DIR}/usrp3/top/Makefile.common)
