@@ -176,22 +176,14 @@ void rfnoc_tx_streamer::connect_channel(
     const size_t misalignment = spp % chdr_w_items;
     if (!_stream_args.args.has_key("spp")) {
         // By default, find an spp value that is an integer multiple of the CHDR
-        // width. This can improve streaming performance under some conditions.
+        // width. This has proven useful under some corner conditions, but still
+        // requires a root-cause analysis.
         if (misalignment != 0) {
             RFNOC_LOG_DEBUG("Reducing spp from "
                             << spp << " to " << spp - misalignment
                             << " to align with CHDR width of " << chdr_w_bytes
                             << " bytes (= " << chdr_w_items << " samples).");
             tx_streamer_impl<chdr_tx_data_xport>::set_max_num_samps(spp - misalignment);
-        }
-    } else {
-        // If the user has provided a custom spp value, check if it is a multiple
-        // of the CHDR width. Generate a warning otherwise.
-        if (misalignment != 0) {
-            RFNOC_LOG_WARNING("Samples per packet (spp="
-                              << spp << ") is not a multiple of CHDR width which is "
-                              << chdr_w_bytes << " bytes (= " << chdr_w_items
-                              << " samples). This may cause performance issues.");
         }
     }
 
