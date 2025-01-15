@@ -23,20 +23,42 @@ try:
 except ImportError:
     print("ERROR: Could not import MPM.")
 
+
 DEFAULT_IMAGES_INSTALL_LOCATION = "/usr/share/uhd/images/"
 DEFAULT_REMOTE_MANIFEST_URL = (
     "https://raw.githubusercontent.com/EttusResearch/uhd/{tag}/images/manifest.txt"
 )
 DEFAULT_FS_IMAGE = {
-    "n3xx": "usrp_n3xx_fs.mender",
+    "e310_sg1": "usrp_e310_fs.mender",
+    "e310_sg3": "usrp_e310_fs.mender",
     "e320": "usrp_e320_fs.mender",
+    "n3xx": "usrp_n3xx_fs.mender",
     "x4xx": "usrp_x4xx_fs.mender",
 }
 DEFAULT_MENDER_TARGET = {
-    "n3xx": "n3xx_...._mender_default",
-    "e320": "e320_...._mender_default",
+    "e310_sg1": "e3xx_e310_sg1_mender_default",
+    "e310_sg3": "e3xx_e310_sg3_mender_default",
+    "e320": "e3xx_e320_mender_default",
+    "n3xx": "n3xx_common_mender_default",
     "x4xx": "x4xx_common_mender_default",
 }
+
+
+def e31x_get_device_type():
+    """get the device type (including speed grade) for E31x devices by reading
+    pid from eeprom"""
+    assert MPM_DEVICE == "e31x"
+    from usrp_mpm.e31x_legacy_eeprom import MboardEEPROM, read_eeprom
+
+    eeprom_path = "/sys/devices/soc0/amba/e0004000.i2c/i2c-0/0-0051/0-00510/nvmem"
+    data = read_eeprom(
+        True, eeprom_path, 0, MboardEEPROM.eeprom_header_format, MboardEEPROM.eeprom_header_keys
+    )
+    pid = data[0]["pid"]
+    pids = {0x77D2: "e310_sg1", 0x77D3: "e310_sg3"}  # sg1  # sg3
+    if pid not in pids:
+        raise RuntimeError(f"Unknown E31x product ID: 0x{pid:04X}")
+    return pids[pid]
 
 
 def parse_args():
@@ -75,6 +97,7 @@ def parse_args():
         "--device-type",
         default=MPM_DEVICE,
         required=MPM_DEVICE is None,
+        choices=list(DEFAULT_MENDER_TARGET.keys()),
         help="Specify/overwrite device type " "(DANGER! May brick device if used incorrectly!)",
     )
     parser.add_argument(
@@ -84,7 +107,10 @@ def parse_args():
         "corresponding manifest. Ignored when -m is given. Using this "
         "requires internet access.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.device_type == "e31x":
+        args.device_type = e31x_get_device_type()
+    return args
 
 
 def download_image(device_type, manifest_path=None):
