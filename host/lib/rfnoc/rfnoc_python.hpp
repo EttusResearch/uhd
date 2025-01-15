@@ -274,7 +274,11 @@ void export_rfnoc(py::module& m)
         .def("set_time_source_out", &mb_controller::set_time_source_out)
         .def("get_sensor", &mb_controller::get_sensor)
         .def("get_sensor_names", &mb_controller::get_sensor_names)
-        .def("get_eeprom", &mb_controller::get_eeprom)
+        .def("get_eeprom",
+            [](mb_controller& self) {
+                auto eeprom = self.get_eeprom();
+                return static_cast<std::map<std::string, std::string>>(eeprom);
+            })
         .def("synchronize", &mb_controller::synchronize)
         .def("get_gpio_banks", &mb_controller::get_gpio_banks)
         .def("get_gpio_srcs", &mb_controller::get_gpio_srcs)
