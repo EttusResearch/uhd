@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
 
 ########################################################################
 # First, only utilities which get installed with ENABLE_PYMOD_UTILS.
@@ -12,7 +13,6 @@
 ########################################################################
 if(ENABLE_PYMOD_UTILS)
     ### RFNoC Image Builder
-    set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
     configure_file(
         "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py"
         "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder"
