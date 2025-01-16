@@ -69,6 +69,7 @@ trigger:
   branches:
     include:
     - master
+    - UHD-*
   paths:
     include:
     - fpga/usrp3/lib

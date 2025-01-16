@@ -84,6 +84,7 @@ trigger:
   branches:
     include:
     - master
+    - UHD-*
   paths:
     include:
     - host

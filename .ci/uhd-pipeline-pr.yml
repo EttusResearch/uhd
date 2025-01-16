@@ -96,6 +96,7 @@ pr:
   branches:
     include:
     - master
+    - UHD-*
   paths:
     include:
     - host
