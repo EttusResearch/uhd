@@ -36,6 +36,8 @@ DAUGHTERBOARD1_OFFSET = CtrlportRegs.MB_PL_CPLD + 0x80
 RECONFIG_ENGINE_OFFSET = 0x20
 CPLD_MIN_REVISION      = 0x20052016
 
+ZBX_PID = 0x4002
+
 def check_openocd_files(files, logger=None):
     """
     Check if all file required by OpenOCD exist
@@ -119,6 +121,21 @@ def do_update_cpld(dboard_update_settings):
             return success
 
     return True
+
+def get_db_pid(slot):
+    assert slot in [0,1]
+    cmd = ['eeprom-dump', 'db{}'.format(slot)]
+    output = subprocess.check_output(
+        cmd,
+        stderr=subprocess.STDOUT,
+        ).decode('utf-8')
+    expression = re.compile(r"^usrp_eeprom_board_info \(0x..\) pid: 0x([0-9A-Fa-f]+)")
+    for line in output.splitlines():
+        match = expression.match(line)
+        if match:
+            pid = int(match.group(1), 16)
+            return pid
+    raise AssertionError("Cannot get pid from DB{} eeprom.: `{}'".format(slot, output))
 
 def get_db_rev(slot):
     assert slot in [0,1]
@@ -293,6 +310,14 @@ def main():
             sys.exit(1)
 
         for dboard in dboards:
+            dboard_pid = get_db_pid(int(dboard, 10))
+            if dboard_pid != ZBX_PID:
+                parser.epilog = "\nERROR: Daughterboard in slot {} is not a ZBX  daughterboard " \
+                                "(expected PID 0x{:04x} but found 0x{:04x})".format(
+                    dboard, ZBX_PID, dboard_pid
+                )
+                parser.print_help()
+                sys.exit(1)
             dboard_rev = get_db_rev(int(dboard, 10))
             cpld_update_strategies = get_cpld_update_strategies(dboard_rev)
 
