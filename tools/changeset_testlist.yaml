@@ -16,6 +16,10 @@
 ###############################################################################
 # HOST CHANGES (UHD)
 ###############################################################################
+- re: host/examples/rfnoc-gain|host/tests/test_modtool.py
+  add:
+    - uhd.build.linux
+    - uhd.rfnoc_modtool.all
 # If only a unit test changed, then we need to re-run unit tests, but no HW tests
 - re: ^host/tests/[^/]+(cpp|py)$|^host/tests/CMakeLists.txt
   add:

@@ -1,0 +1,36 @@
+parameters:
+  - name: checkoutSteps
+    type: stepList
+    default:
+    # Checkout the repository under test
+    - checkout: self
+      clean: true
+      fetchDepth: 1
+      persistCredentials: true
+    # Checkout hwtools repo
+    - checkout: hwtools
+      fetchDepth: '1'
+      fetchTags: false
+      path: s/hwtools/head
+      persistCredentials: true
+  - name: demands_default
+    type: object
+    default:
+      pool:
+        name: Drivers-NIBuildFarm-RFMIBUILD
+        demands:
+        - Agent.OS -equals Linux
+      hwhookVersion: 2
+
+steps:
+  - template: build/pipelines/helpers/setup_steps.yml@hwtools
+    parameters:
+      caller: setup_steps.yml
+      pool: Drivers-NIBuildFarm-RFMIBUILD
+      checkoutSteps: ${{ parameters.checkoutSteps }}
+      demands: ${{ parameters.demands_default }}
+      repoBase: $(Build.SourcesDirectory)
+      directory: uhddev
+      name: FPGA build
+
+

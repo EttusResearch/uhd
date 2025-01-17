@@ -1,0 +1,53 @@
+jobs:
+- job: uhd_rfnoc_modtool_test_tb
+  displayName:  rfnoc_modtool test testbenches
+  dependsOn: uhd_rfnoc_modtool_test_sw
+  timeoutInMinutes: 20
+  variables:
+    uhd_artifact_name: uhddev-ubuntu2404-make
+    rfnocOotDirectory: $(Build.BinariesDirectory)/rfnoc_test_oot
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
+  workspace:
+    clean: outputs
+
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 1
+
+  - task: DownloadPipelineArtifact@2
+    inputs:
+      artifact: rfnoc_test_oot
+      targetPath: $(Agent.TempDirectory)
+    displayName: Download rfnoc_test_oot artifact
+
+  - bash: mkdir -p $(rfnocOotDirectory)
+    displayName: Create rfnoc_test_oot directory
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(Agent.TempDirectory)/rfnoc_test_oot.tar.gz
+      destinationFolder: $(rfnocOotDirectory)
+      cleanDestinationFolder: true
+
+  - bash: ls -lR $(rfnocOotDirectory)
+    displayName: List rfnoc_test_oot directory
+
+  # Initialize Vivado toolchain
+  - template: fpga_setup_steps.yml
+
+  - bash: |
+      set -x
+      # Init toolchain
+      source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh $(Build.SourcesDirectory)/uhddev/fpga/usrp3/top/x300
+      pushd $(Build.SourcesDirectory)/uhddev/fpga/usrp3/tools/utils
+      pip3 install -r requirements.txt
+      popd
+      # Now run the test.
+      make -C $(rfnocOotDirectory)/rfnoc-test/fpga/test/rfnoc_block_mytestblock/ \
+        xsim UHD_FPGA_DIR=$(Build.SourcesDirectory)/uhddev/fpga/
+
+    displayName: Run rfnoc_modtool testbenches

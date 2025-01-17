@@ -159,6 +159,22 @@ stages:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
+- stage: build_rfnoc_modtool_stage_linux
+  displayName: Build and Test RFNoC Modtool
+  dependsOn:
+  - build_uhd_stage_linux
+  - analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  condition: >
+    and(succeeded(),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.rfnoc_modtool.')
+    )
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-rfnoc_modtool-test-sw.yml
+  - template: job-rfnoc_modtool-test-testbenches.yml
+
 - stage: build_uhd_stage_mac
   displayName: Build UHD macOS
   dependsOn: analyze_changeset

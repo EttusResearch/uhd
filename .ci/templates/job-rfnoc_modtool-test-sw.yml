@@ -1,0 +1,75 @@
+jobs:
+- job: uhd_rfnoc_modtool_test_sw
+  displayName:  rfnoc_modtool test software
+  dependsOn: get_latest_uhd_docker
+  timeoutInMinutes: 20
+  variables:
+    # Docker vars from job-get-latest-uhd-docker.yml
+    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    uhd_artifact_name: uhddev-ubuntu2404-make
+    uhd_builder_name: uhd-builder-ubuntu2404
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
+    - docker
+  workspace:
+    clean: outputs
+  container:
+    image: $(dockerImagePrefix)$(uhd_builder_name):$(dockerBuildNumber)
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
+
+  steps:
+  - checkout: self
+    clean: true
+    fetchDepth: 1
+
+  - bash: |
+      echo '##vso[task.setvariable variable=uhd_artifact_name]uhddev-ubuntu'`lsb_release -s -r | tr -d .`-make
+    displayName: Set uhddev pipeline artifact information
+
+  - download: current
+    artifact: $(uhd_artifact_name)
+    displayName: Download $(uhd_artifact_name) artifact
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(Agent.BuildDirectory)/$(uhd_artifact_name)/$(uhd_artifact_name).tar.gz
+      destinationFolder: $(Build.BinariesDirectory)
+      cleanDestinationFolder: true
+
+  # Test SW only firsts
+  - bash: |
+      ls -l $(Build.SourcesDirectory)
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
+      export PYTHONPATH=`find $(Build.BinariesDirectory)/uhddev/build-installed/lib -name site-packages`:$PYTHONPATH
+      export UHD_DIR=$(Build.BinariesDirectory)/uhddev/build-installed
+      export UHD_PKG_DATA_PATH=$UHD_DIR/share/uhd
+      mkdir -p $(Agent.TempDirectory)/rfnoc_modtool
+      ls -l $(Build.SourcesDirectory)/host/tests/
+      python3 $(Build.SourcesDirectory)/host/tests/test_modtool.py \
+          --base-dir $(Agent.TempDirectory)/rfnoc_modtool \
+          --rfnoc-oot-name test \
+          --uhd-repo-dir $(Build.SourcesDirectory) \
+          --skip-testbenches
+      ls -lR $(Agent.TempDirectory)/rfnoc_modtool
+    displayName: Run rfnoc_modtool SW test
+
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: $(Agent.TempDirectory)/rfnoc_modtool
+      includeRootFolder: false
+      archiveType: 'tar'
+      tarCompression: 'gz'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/rfnoc_test_oot.tar.gz'
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'rfnoc_test_oot'
+    displayName: Upload rfnoc_test_oot build artifacts
