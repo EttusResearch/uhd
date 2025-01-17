@@ -90,14 +90,13 @@ steps:
     msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild package
 
-- ${{if not(parameters.uhdBuildPythonAPI) }}:
-  - task: CopyFiles@2
-    inputs:
-      sourceFolder: ${{ parameters.uhdBuildDir }}
-      contents: 'uhd_*.exe'
-      targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
-      cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
-    displayName: Copy msbuild installer
+- task: CopyFiles@2
+  inputs:
+    sourceFolder: ${{ parameters.uhdBuildDir }}
+    contents: 'uhd_*.exe'
+    targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+    cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
+  displayName: Copy msbuild installer
 - ${{if parameters.uhdBuildPythonAPI }}:
   - task: CopyFiles@2
     inputs:
