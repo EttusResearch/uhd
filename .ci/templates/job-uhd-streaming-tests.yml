@@ -245,8 +245,8 @@ jobs:
       export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
       # B210, or other usb devices, do not have an address to probe, ignore probe for now as
       # B210 is not currently built by the FPGA pipeline
-      if [ -n "$DUTADDR" ]; then
-        uhd_usrp_probe --args addr=$DUTADDR
+      if [ -n "$(dutAddr)" ]; then
+        uhd_usrp_probe --args addr=$(dutAddr)
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
@@ -285,8 +285,8 @@ jobs:
       export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
       # B210, or other usb devices, do not have an address to probe, ignore probe for now as
       # B210 is not currently built by the FPGA pipeline
-      if [ -n "$DUTADDR" ]; then
-        uhd_usrp_probe --args addr=$DUTADDR
+      if [ -n "$(dutAddr)" ]; then
+        uhd_usrp_probe --args addr=$(dutAddr)
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
