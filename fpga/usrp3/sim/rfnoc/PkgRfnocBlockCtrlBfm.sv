@@ -893,6 +893,33 @@ package PkgRfnocBlockCtrlBfm;
       m_data[port].set_master_stall_prob(stall_prob);
     endfunction
 
+
+    // Get the stall probability for the indicated slave port.
+    //
+    //   port: Port for which to get the probability
+    //
+    function int get_slave_stall_prob(int port);
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].get_slave_stall_prob();
+    endfunction
+
+
+    // Get the stall probability for the indicated master port.
+    //
+    //   port: Port for which to get the probability
+    //
+    function int get_master_stall_prob(int port);
+      assert (port >= 0 && port < m_data.size()) else begin
+        $fatal(1, "Invalid master port number");
+      end
+
+      return m_data[port].get_master_stall_prob();
+    endfunction
+
+
     // Compare data vectors
     static function bit compare_data(
       input chdr_word_t lhs[$],
