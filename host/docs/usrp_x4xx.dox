@@ -1026,7 +1026,18 @@ select set of MCR during testing and design validation. For the X440, these are:
 |307.2 MHz | 2.4576 GHz | 8 | 245.76 MHz | xx_400, \n xx_1600 | Highest PLL VCO Rate |
 |125 MHz | 1.0 GHz | 8 | 100 MHz | xx_200, \n xx_400, \n xx_1600 | Minimum Fc |
 
-\n
+Examples of Supported Sampling Rates
+| Sample Rate(s) per channel | Use case / comment |
+|:--:|--|
+|2.048 GSps|Highest sample rate|
+|125MSps|Lowest sample rate without DSP|
+|2GSps, 1.5GSps, 1GSps, 500MSps, 250MSps | Even multiples of 250MSps |
+|20MSps*, 40MSps*, 80MSps*, 160MSps, 320MSps | IEEE 802.11 (Wi-Fi) rates | 
+|30.72MSps*, 61.44MSps*, 122.88MSps*, 245.76MSps, 491.52MSps| 3GPP Wireless Communications rates| 
+\*= achievable via DDC/DUC in FPGA fabric
+
+Note: See KB article [About Sampling Rates and Master Clock Rates for the USRP X440](https://kb.ettus.com/About_Sampling_Rates_and_Master_Clock_Rates_for_the_USRP_X440) for the full list of supported rates. See [X440 specifications](https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html) for additional information.
+
 For all devices, changing the master clock rate during a running session is not
 supported. Once a UHD session is initialized, the master clock rate is fixed.
 For that reason, uhd::usrp::multi_usrp::get_master_clock_rate_range() will 
