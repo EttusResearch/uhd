@@ -458,21 +458,23 @@ package PkgAxiStreamBfm;
 
     // Get the probability (as a percentage, 0 to 100) of the master interface
     // stalling due to lack of data to send.
-    function int get_master_stall_prob(int stall_probability = DEF_STALL_PROB);
+    function int get_master_stall_prob();
       return master_stall_prob;
     endfunction
 
 
     // Get the probability (as a percentage, 0 to 100) of the slave interface
     // stalling due to lack of buffer space.
-    function int get_slave_stall_prob(int stall_probability = DEF_STALL_PROB);
+    function int get_slave_stall_prob();
       return slave_stall_prob;
     endfunction
+
 
     // Determine if the slave interface is doing a transfer this clock
     function logic slave_idle();
       return !slave.tvalid;
     endfunction
+
 
     // Create separate processes for driving the master and slave interfaces
     task run();
