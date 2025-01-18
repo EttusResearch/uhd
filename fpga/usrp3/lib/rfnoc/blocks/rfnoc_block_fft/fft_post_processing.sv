@@ -280,7 +280,7 @@ module fft_post_processing #(
     assign mag_out_tdata  = '0;
     assign mag_out_tlast  = '0;
     assign mag_out_tvalid = '0;
-    assign s_axis_tready  = '1;
+    assign mag_in_tready  = '1;
   end
 
   //---------------------------------------------------------------------------
