@@ -24,16 +24,19 @@ pybind11_add_module(${PYMODULE_NAME}_python
   MODULE
   pyrfnoc-gain.cpp
 )
+
 target_include_directories(${PYMODULE_NAME}_python
   PUBLIC
   ${CMAKE_SOURCE_DIR}/lib
   ${CMAKE_SOURCE_DIR}/include
+  ${Python3_INCLUDE_DIRS}
+  ${Python3_NumPy_INCLUDE_DIRS}
 )
 target_link_libraries(
   ${PYMODULE_NAME}_python
   PRIVATE
   pybind11::pybind11
-  uhd
+  ${UHD_LIBRARIES}
 )
 
 # Copy pybind bindings library to the staging directory (it will get copied to
