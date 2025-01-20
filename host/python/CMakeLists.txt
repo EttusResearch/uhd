@@ -58,6 +58,10 @@ endif(NOT DEFINED UHD_PYTHON_DIR)
 # If ENABLE_PYTHON_API is OFF, then we can skip most of the work and will just
 # install a bunch of Python files.
 if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/uhd/__init__.py.in-pymod
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd/__init__.py
+        @ONLY)
     # List of Python files that are part of the module but don't get
     # generated during build time and don't require libpyuhd.
     # Note: When adding Python files into uhd/, they don't get added to the
@@ -67,13 +71,14 @@ if(NOT ENABLE_PYTHON_API AND ENABLE_PYMOD_UTILS)
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.py
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.mako
         ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils/*.yml
+        ${CMAKE_CURRENT_BINARY_DIR}/uhd/__init__.py
     )
+
     # This copies the contents of host/python/uhd into the build directory. We will
     # use that as a staging ground for installing the final module to the system.
     # We make sure that we always have an up-to-date copy in here.
     add_custom_command(OUTPUT ${TIMESTAMP_FILE}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/uhd/
-        COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/uhd/__init__.py
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd/rfnoc_utils ${CMAKE_CURRENT_BINARY_DIR}/uhd/rfnoc_utils
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd/dsp ${CMAKE_CURRENT_BINARY_DIR}/uhd/dsp
         COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build

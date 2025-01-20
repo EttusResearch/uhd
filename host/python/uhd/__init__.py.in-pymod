@@ -1,0 +1,38 @@
+#
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""UHD Python API module (Python Module only, no binary)."""
+
+__version__ = "@UHD_VERSION@"
+
+import os
+import sys
+
+
+def get_pkg_path():
+    """Return the system's pkg directory.
+
+    This path is typically identical with the installation prefix, but can be
+    overridden with the UHD_PKG_PATH environment variable.
+    """
+    pkg_path = os.environ.get("UHD_PKG_PATH", "@CMAKE_INSTALL_PREFIX@")
+    if not os.path.isdir(pkg_path):
+        sys.stderr.write(
+            f"Warning: UHD package path is set to a non-existing directory: {pkg_path}\n")
+    return pkg_path
+
+
+def get_pkg_data_path():
+    """Get a string representing the system's package data directory ("share").
+
+    This path is typically identical with get_pkg_path()/share/uhd, but can be
+    overridden with the UHD_PKG_DATA_PATH environment variable.
+    """
+    pkg_data_path = os.environ.get("UHD_PKG_DATA_PATH",
+        os.path.join("@CMAKE_INSTALL_PREFIX@", "@PKG_DATA_DIR@"))
+    if not os.path.isdir(pkg_data_path):
+        sys.stderr.write(
+            f"Warning: UHD package data path is set to a non-existing directory: {pkg_data_path}\n")
+    return pkg_data_path
