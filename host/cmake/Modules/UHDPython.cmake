@@ -317,16 +317,23 @@ endmacro()
 ###############################################################################
 # The libraries must match the RUNTIME_PYTHON_EXECUTABLE's version.
 # - Figure out version
-# - See if Python3_LIBRARIES is already set (or Python2_LIBRARIES)
+# - See if Python3_LIBRARIES is already set
 if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
     message(STATUS "Finding Python Libraries...")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14 AND DEFINED UHD_NUMPY_MIN_VERSION)
+      set(_findpython_numpy_component NumPy)
+    endif()
     find_package(Python3 ${RUNTIME_PYTHON_VERSION}
         ${EXACT_ARGUMENT}
         QUIET
-        COMPONENTS Interpreter Development)
+        COMPONENTS Interpreter Development ${_findpython_numpy_component})
     if(Python3_Development_FOUND)
         set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
-        set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+        if(Python3_NumPy_FOUND)
+            set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} ${Python3_NumPy_INCLUDE_DIRS})
+        else()
+            set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+        endif()
     endif(Python3_Development_FOUND)
     if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
         message(STATUS "Could not find Python Libraries.")

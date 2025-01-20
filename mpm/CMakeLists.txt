@@ -27,7 +27,8 @@ list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 # We don't need to support older versions of Python, since we will always
 # deploy this on devices where we control the Python version.
 # MPM might work with future versions of Python, but we make no guarantees.
-set(PYTHON_MIN_VERSION 3.5)
+set(UHD_PYTHON_MIN_VERSION    "3.7" )
+set(UHD_PYBIND11_MIN_VERSION  "2.7" )
 
 # search the Python interpreter, modules and include directories
 include(UHDPython)
