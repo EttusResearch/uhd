@@ -18,7 +18,7 @@ exclude = [
 ]
 
 [tool.poetry.dependencies]
-python = "~@Python_VERSION_MAJOR@.@Python_VERSION_MINOR@"
+python = ">=3.10,<3.13"
 numpy = "^@UHD_NUMPY_MIN_VERSION@"
 mako = ">=@UHD_PY_MAKO_MIN_VERSION@"
 ruamel-yaml = ">=@UHD_RUAMEL_YAML_MIN_VERSION@"
