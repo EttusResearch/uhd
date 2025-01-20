@@ -25,12 +25,8 @@ if(ENABLE_PYMOD_UTILS)
     )
 
     ### RFNoC modtool. Note this also requires the RFNoC gain OOT.
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_modtool.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_modtool"
-    )
     UHD_INSTALL(PROGRAMS
-        ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_modtool
+        ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_modtool.py
         RENAME rfnoc_modtool
         DESTINATION ${RUNTIME_DIR}
         COMPONENT utilities
@@ -77,6 +73,7 @@ else()
 endif()
 
 
+# This section must only include Python utilities that do not depend on uhd
 if(ENABLE_PYMOD_UTILS OR ENABLE_UTILS)
     ### UHD Images downloader
     # Configure the scripts

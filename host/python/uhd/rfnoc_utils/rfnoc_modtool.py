@@ -12,6 +12,7 @@ import os
 import sys
 
 from ruamel.yaml import YAML
+from uhd import get_pkg_data_path
 
 from .log import init_logging
 from .step_executor import StepExecutor
@@ -103,8 +104,9 @@ def check_valid_oot_dir(oot_dir):
     )
 
 
-def main(pkg_data_dir):
+def main():
     """Run main rfnoc_modtool function."""
+    pkg_data_dir = os.path.normpath(get_pkg_data_path())
     cmds = collect_commands()
     args = parse_args(cmds)
     init_logging(log_level=args.log_level)
