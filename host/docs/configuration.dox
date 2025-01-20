@@ -146,7 +146,19 @@ String | Corresponding C++ type    | Notes
 
 The over-the-wire (OTW) data format is a string that describes the format of
 the sample data as it is carried across the transport to and from the RFNoC
-stream endpoint associated with the stream. The following over-the-wire
+stream endpoint associated with the stream. 
+
+The table below shows which OTW formats are supported by each device.
+String | Supporting Devices                        | 
+-------|-------------------------------------------|
+`fc32` | `B2xx`                                    |
+`sc16` | `B2xx, N2xx, N3xx, E3xx, X3xx, X4xx`      |
+`sc12` | `B2xx`                                    |
+`sc8`  | `B2xx, N2xx`                              |
+
+Note that the in-tree RFNoC blocks that are provided with UHD only support sc16 for complex-valued data.
+
+The following over-the-wire
 formats are supported. In the following, data carried over the wire for each
 format is denoted by the data type (`i8`, `i16`, etc.), which part of the
 sample is represented (`I` for in-phase portion, `Q` for quadrature portion,
@@ -157,14 +169,10 @@ or `R` for a real value), and the sample index in square brackets.
 - `sc8`
 <table><tr><td> `i8 Q[n+1]` </td><td> `i8 I[n+1]` </td><td> `i8 Q[n]` </td><td> `i8 I[n]` </td><td> `i8 Q[n+3]` </td><td> `i8 I[n+3]` </td><td> `i8 Q[n+2]` </td><td> `i8 I[n+2]` </td><td> ... </td></tr></table>
 - `sc12`
-(only supported by some devices)
 - `s16`
 <table><tr><td> `i16 R[n+1]` </td><td> `i16 R[n]` </td><td> `i16 R[n+3]` </td><td> `i16 R[n+2]` </td><td> ... </td></tr></table>
 - `s8`
 <table><tr><td> `i8 R[n+3]` </td><td> `i8 R[n+2]` </td><td> `i8 R[n+1]` </td><td> `i8 R[n]` </td><td> `i8 R[n+7]` </td><td> `i8 R[n+6]` </td><td> ... </td></tr></table>
-
-Note that the in-tree RFNoC blocks that are provided with UHD only support
-`sc16` for complex-valued data.
 
 As UHD will convert samples between the CPU and over-the-wire data formats
 automatically, setting the OTW format should, in theory, be transparent to
