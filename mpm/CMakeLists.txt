@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 project(MPM C CXX) # Also has Python, but CMake can take care of that later
 # Set the default value for CMAKE_INSTALL_PREFIX to /usr
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
