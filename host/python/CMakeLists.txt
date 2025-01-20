@@ -35,6 +35,8 @@ file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 configure_file(${PYPROJECT_TOML_IN} ${PYPROJECT_TOML})
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/uhd_build.py" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY "${CMAKE_SOURCE_DIR}/README.md" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+file(COPY "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
 
 # If we're not in a virtual environment, then we need to figure out where to
 # install the Python module. Do this here so we can use the value for UHD_PYTHON_DIR
