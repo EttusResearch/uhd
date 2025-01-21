@@ -10,6 +10,7 @@
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <boost/format.hpp>
+#include <numeric>
 
 #define VERSION_DEPENDENT_ADDR(addr) ((_fpga_compat.get_major() == 1) ? addr##_V1 : addr)
 
@@ -19,6 +20,8 @@ namespace {
 
 constexpr uint16_t MAJOR_COMPAT = 3;
 constexpr uint16_t MINOR_COMPAT = 0;
+
+constexpr uhd::compat_num32 MIN_COMPAT_MULTI_SPC = uhd::compat_num32{3, 1};
 
 constexpr int DEFAULT_LENGTH               = 256;
 constexpr int DEFAULT_FFT_SCALING          = 0b10101010; // _get_default_scaling(256)
@@ -89,10 +92,12 @@ public:
         _max_cp_length((1 << ((_capabilities >> 8) & 0xFF)) - 1),
         _max_cp_removal_list_length((1 << ((_capabilities >> 16) & 0xFF)) - 1),
         _max_cp_insertion_list_length((1 << ((_capabilities >> 24) & 0xFF)) - 1),
+        _nipc(1 << ((_capabilities2 >> 8) & 0xF)),
         _magnitude_squared_supported((_capabilities2 >> 3) & 0x1),
         _magnitude_supported((_capabilities2 >> 2) & 0x1),
         _fft_shift_supported((_capabilities2 >> 1) & 0x1),
-        _bypass_mode_supported((_capabilities2 >> 0) & 0x1)
+        _bypass_mode_supported((_capabilities2 >> 0) & 0x1),
+        _num_ports(get_num_input_ports())
     {
         if (_fpga_compat.get_major() >= 2) {
             uhd::assert_fpga_compat(MAJOR_COMPAT,
@@ -114,10 +119,32 @@ public:
             RFNOC_LOG_DEBUG(
                 "Max. CP insertion list length: " << _max_cp_insertion_list_length);
         }
+        RFNOC_LOG_DEBUG("NIPC is: " << _nipc);
         RFNOC_LOG_DEBUG("Magnitude squared supported: " << _magnitude_squared_supported);
         RFNOC_LOG_DEBUG("Magnitude supported: " << _magnitude_supported);
         RFNOC_LOG_DEBUG("FFT shift supported: " << _fft_shift_supported);
         RFNOC_LOG_DEBUG("Bypass mode supported: " << _bypass_mode_supported);
+
+        _type_in.reserve(_num_ports);
+        _type_out.reserve(_num_ports);
+        _atomic_item_size_in.reserve(_num_ports);
+        _atomic_item_size_out.reserve(_num_ports);
+        for (size_t port = 0; port < _num_ports; port++) {
+            _type_in.push_back(property_t<std::string>{
+                PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::INPUT_EDGE, port}});
+            _type_out.push_back(property_t<std::string>{
+                PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::OUTPUT_EDGE, port}});
+
+            _atomic_item_size_in.push_back(property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+                (_fpga_compat.get_major() == 1) ? (DEFAULT_LENGTH * BYTES_PER_SAMPLE)
+                                                : _nipc * BYTES_PER_SAMPLE,
+                {res_source_info::INPUT_EDGE, port}));
+            _atomic_item_size_out.push_back(property_t<size_t>(PROP_KEY_ATOMIC_ITEM_SIZE,
+                (_fpga_compat.get_major() == 1) ? (DEFAULT_LENGTH * BYTES_PER_SAMPLE)
+                                                : _nipc * BYTES_PER_SAMPLE,
+                {res_source_info::OUTPUT_EDGE, port}));
+        }
+
         set_prop_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         _reset();
@@ -187,6 +214,11 @@ public:
     bool get_bypass_mode() const override
     {
         return static_cast<bool>(_bypass_mode_property.get());
+    }
+
+    uint32_t get_nipc() const override
+    {
+        return _nipc;
     }
 
     void set_cp_insertion_list(const std::vector<uint32_t> cp_lengths) override
@@ -270,9 +302,10 @@ private:
     {
         // Check that the FFT length is within bounds and is a power of 2
         uint32_t max_length = get_max_length();
-        if (length < MIN_FFT_SIZE || length > max_length) {
+        uint32_t min_length = std::max(MIN_FFT_SIZE, 2 * _nipc);
+        if (length < min_length || length > max_length) {
             throw uhd::value_error("FFT length must be a power of two and within ["
-                                   + std::to_string(MIN_FFT_SIZE) + ", "
+                                   + std::to_string(min_length) + ", "
                                    + std::to_string(max_length) + "]");
         }
         // Find the log2(length) via highest bit set
@@ -310,7 +343,7 @@ private:
     {
         if (mag < static_cast<int>(fft_magnitude::COMPLEX)
             || mag > static_cast<int>(fft_magnitude::MAGNITUDE_SQUARED)) {
-            throw uhd::value_error("Magnitude value must be [0, 2]");
+            throw uhd::value_error("Magnitude value must be in the range [0, 2]");
         } else if ((static_cast<fft_magnitude>(mag) == fft_magnitude::MAGNITUDE)
                    and not _magnitude_supported) {
             throw uhd::value_error("Magnitude value MAGNITUDE(1) is not supported");
@@ -387,13 +420,16 @@ private:
 
     void _set_shift_config(int shift)
     {
-        if (shift < static_cast<int>(fft_shift::NORMAL)
-            || shift > static_cast<int>(fft_shift::NATURAL)) {
-            throw uhd::value_error("Shift value must be [0, 2]");
-        } else if ((static_cast<fft_shift>(shift) != fft_shift::NORMAL)
-                   and not _fft_shift_supported) {
+        if (_fpga_compat.get_major() == 1
+            && (shift < static_cast<int>(fft_shift::NORMAL)
+                || shift > static_cast<int>(fft_shift::NATURAL))) {
+            throw uhd::value_error("Shift value must be in the range [0, 2]");
+        } else if (shift < static_cast<int>(fft_shift::NORMAL)
+                   || shift > static_cast<int>(fft_shift::BIT_REVERSE)) {
+            throw uhd::value_error("Shift value must be in the range [0, 3]");
+        } else if (not _fft_shift_supported) {
             throw uhd::value_error("Shift capability is not present in the FFT block. "
-                                   "Only value NORMAL(0) is supported");
+                                   "The native FFT output order will be used.");
         }
         this->regs().poke32(VERSION_DEPENDENT_ADDR(REG_ORDER_ADDR), uint32_t(shift));
     }
@@ -448,6 +484,10 @@ private:
                                        + " is too "
                                          "large. Must be between 1 and "
                                        + std::to_string(get_max_cp_length()) + ".");
+            } else if (cp_length % _nipc != 0) {
+                throw uhd::value_error("CP insertion length " + std::to_string(cp_length)
+                                       + " is not a multiple of the NIPC value "
+                                       + std::to_string(_nipc) + ".");
             }
         }
 
@@ -483,7 +523,7 @@ private:
     {
         if (_fpga_compat.get_major() == 1) {
             if (cp_lengths.size() > 0) {
-                throw uhd::value_error("Block does not support CP insertion");
+                throw uhd::value_error("Block does not support CP removal");
             }
             return;
         }
@@ -499,6 +539,10 @@ private:
                                        + " is too "
                                          "large. Must be between 1 and "
                                        + std::to_string(get_max_cp_length()) + ".");
+            } else if (cp_length % _nipc != 0) {
+                throw uhd::value_error("CP removal length " + std::to_string(cp_length)
+                                       + " is not a multiple of the NIPC value "
+                                       + std::to_string(_nipc) + ".");
             }
         }
 
@@ -531,49 +575,72 @@ private:
         }
     }
 
-    void _atomic_item_size_check()
+    void _atomic_item_size_check(size_t port)
     {
         if (_fpga_compat.get_major() == 1) {
             // FFT v1 requires atomic item size to be equal to the
             // FFT length (in bytes)
             size_t ais = _length.get() * BYTES_PER_SAMPLE;
-            if (_atomic_item_size_in != ais || _atomic_item_size_out != ais) {
+            if (_atomic_item_size_in.at(port) != ais
+                || _atomic_item_size_out.at(port) != ais) {
                 RFNOC_LOG_WARNING("Atomic item size for FFT v1 needs to match FFT length "
                                   "(in bytes), setting atomic item size to: "
                                   << ais);
-                _atomic_item_size_in  = ais;
-                _atomic_item_size_out = ais;
+                _atomic_item_size_in.at(port)  = ais;
+                _atomic_item_size_out.at(port) = ais;
+            }
+        } else if (_fpga_compat >= MIN_COMPAT_MULTI_SPC) {
+            // As of this compat number, the atomic item size must be a
+            // multiple of the NIPC.
+            if (_atomic_item_size_in.at(port) % _nipc != 0) {
+                // Round up to the nearest multiple of NIPC
+                const size_t bytes_per_clk = _nipc * BYTES_PER_SAMPLE;
+                const size_t ais_in =
+                    std::lcm<size_t>(bytes_per_clk, _atomic_item_size_in.at(port).get());
+                RFNOC_LOG_TRACE("Resolving atomic item size in to " << ais_in);
+                _atomic_item_size_in.at(port) = ais_in;
+            }
+            if (_atomic_item_size_out.at(port) % _nipc != 0) {
+                // Round up to the nearest multiple of NIPC
+                const size_t bytes_per_clk = _nipc * BYTES_PER_SAMPLE;
+                const size_t ais_out =
+                    std::lcm<size_t>(bytes_per_clk, _atomic_item_size_out.at(port).get());
+                RFNOC_LOG_TRACE("Resolving atomic item size out to " << ais_out);
+                _atomic_item_size_out.at(port) = ais_out;
             }
         } else if ((_cp_insertion_list.get().size() > 0)
                    || (_cp_removal_list.get().size() > 0)) {
             // If the cyclic prefix insertion list is not empty,
-            // packages which are generated by the FFT block are of
+            // packets which are generated by the FFT block are of
             // different size (FFT length; CP insertion length)
             // Hence, the atomic item size needs to be set to the
             // greatest common divisor of the possible packet sizes.
             // For simplicity, set it to 1 * bytes per sample
             size_t ais = 1 * BYTES_PER_SAMPLE;
-            if (_atomic_item_size_in != ais || _atomic_item_size_out != ais) {
+            if (_atomic_item_size_in.at(port) != ais
+                || _atomic_item_size_out.at(port) != ais) {
                 RFNOC_LOG_WARNING(
                     "Atomic item size cannot be modified because FFT block is configured "
                     "with CP insertion or CP removal, setting atomic item size to: "
                     << ais);
-                _atomic_item_size_in  = ais;
-                _atomic_item_size_out = ais;
+                _atomic_item_size_in.at(port)  = ais;
+                _atomic_item_size_out.at(port) = ais;
             }
-            _atomic_item_size_in  = 1 * BYTES_PER_SAMPLE;
-            _atomic_item_size_out = 1 * BYTES_PER_SAMPLE;
-        } else if ((_atomic_item_size_in > (_length.get() * BYTES_PER_SAMPLE))
-                   || (_atomic_item_size_out > (_length.get() * BYTES_PER_SAMPLE))) {
+            _atomic_item_size_in.at(port)  = 1 * BYTES_PER_SAMPLE;
+            _atomic_item_size_out.at(port) = 1 * BYTES_PER_SAMPLE;
+        } else if ((_atomic_item_size_in.at(port) > (_length.get() * BYTES_PER_SAMPLE))
+                   || (_atomic_item_size_out.at(port)
+                       > (_length.get() * BYTES_PER_SAMPLE))) {
             // if the atomic item size is greater than the FFT length
             // (in bytes), limit it by the FFT length (in bytes)
             size_t ais = _length.get() * BYTES_PER_SAMPLE;
-            if (_atomic_item_size_in != ais || _atomic_item_size_out != ais) {
+            if (_atomic_item_size_in.at(port) != ais
+                || _atomic_item_size_out.at(port) != ais) {
                 RFNOC_LOG_WARNING("Requested atomic item size exceeded FFT length (in "
                                   "bytes), setting atomic item size to: "
                                   << ais);
-                _atomic_item_size_in  = ais;
-                _atomic_item_size_out = ais;
+                _atomic_item_size_in.at(port)  = ais;
+                _atomic_item_size_out.at(port) = ais;
             }
         }
     }
@@ -584,17 +651,23 @@ private:
     void _register_props()
     {
         register_property(&_length);
-        register_property(&_atomic_item_size_in);
-        register_property(&_atomic_item_size_out);
-        // use add_property_resolver to allow setting coerced length
-        add_property_resolver({&_length},
-            {&_length, &_atomic_item_size_in, &_atomic_item_size_out},
-            [this]() {
-                uint32_t length = static_cast<uint32_t>(this->_length.get());
-                RFNOC_LOG_TRACE("Calling resolver for `length'");
-                _set_length(length);
-                _atomic_item_size_check();
-            });
+
+        for (size_t port = 0; port < _num_ports; port++) {
+            register_property(&_atomic_item_size_in.at(port));
+            register_property(&_atomic_item_size_out.at(port));
+
+            // use add_property_resolver to allow setting coerced length
+            add_property_resolver({&_length},
+                {&_length,
+                    &_atomic_item_size_in.at(port),
+                    &_atomic_item_size_out.at(port)},
+                [this, port]() {
+                    uint32_t length = static_cast<uint32_t>(this->_length.get());
+                    RFNOC_LOG_TRACE("Calling resolver for `length'");
+                    _set_length(length);
+                    _atomic_item_size_check(port);
+                });
+        }
 
         register_property(&_magnitude, [this]() {
             int mag = this->_magnitude.get();
@@ -638,25 +711,37 @@ private:
         });
 
         register_property(&_cp_insertion_list);
-        add_property_resolver({&_cp_insertion_list},
-            {&_cp_insertion_list, &_atomic_item_size_in, &_atomic_item_size_out},
-            [this]() {
-                std::vector<uint32_t> cp_insertion_list = this->_cp_insertion_list.get();
-                RFNOC_LOG_TRACE("Calling resolver for `cp_insertion_list'");
-                _set_cp_insertion_list(cp_insertion_list);
-                _atomic_item_size_check();
-            });
-
         register_property(&_cp_removal_list);
-        add_property_resolver({&_cp_removal_list},
-            {&_cp_removal_list, &_atomic_item_size_in, &_atomic_item_size_out},
-            [this]() {
-                std::vector<uint32_t> cp_removal_list = this->_cp_removal_list.get();
-                RFNOC_LOG_TRACE("Calling resolver for `cp_removal_list'");
-                _set_cp_removal_list(cp_removal_list);
-                _atomic_item_size_check();
-            });
+        for (size_t port = 0; port < _num_ports; port++) {
+            add_property_resolver({&_cp_insertion_list},
+                {&_cp_insertion_list,
+                    &_atomic_item_size_in.at(port),
+                    &_atomic_item_size_out.at(port)},
+                [this, port]() {
+                    std::vector<uint32_t> cp_insertion_list =
+                        this->_cp_insertion_list.get();
+                    RFNOC_LOG_TRACE("Calling resolver for `cp_insertion_list'");
+                    _set_cp_insertion_list(cp_insertion_list);
+                    _atomic_item_size_check(port);
+                });
 
+            add_property_resolver({&_cp_removal_list},
+                {&_cp_removal_list,
+                    &_atomic_item_size_in.at(port),
+                    &_atomic_item_size_out.at(port)},
+                [this, port]() {
+                    std::vector<uint32_t> cp_removal_list = this->_cp_removal_list.get();
+                    RFNOC_LOG_TRACE("Calling resolver for `cp_removal_list'");
+                    _set_cp_removal_list(cp_removal_list);
+                    _atomic_item_size_check(port);
+                });
+        }
+
+        register_property(&_nipc_property);
+        add_property_resolver({&_nipc_property}, {&_nipc_property}, [this]() {
+            RFNOC_LOG_TRACE("Calling resolver for `nipc'");
+            this->_nipc_property.set(this->_nipc);
+        });
         register_property(&_max_length_property);
         add_property_resolver({&_max_length_property}, {&_max_length_property}, [this]() {
             RFNOC_LOG_TRACE("Calling resolver for `max_length'");
@@ -685,34 +770,38 @@ private:
                     this->_max_cp_removal_list_length);
             });
 
-        // register edge properties
-        register_property(&_type_in);
-        register_property(&_type_out);
-        // add resolvers for type (keeps it constant)
-        add_property_resolver({&_type_in}, {&_type_in}, [&type_in = _type_in]() {
-            type_in.set(IO_TYPE_SC16);
-        });
-        add_property_resolver({&_type_out}, {&_type_out}, [&type_out = _type_out]() {
-            type_out.set(IO_TYPE_SC16);
-        });
+        for (size_t port = 0; port < _num_ports; port++) {
+            // register edge properties
+            register_property(&_type_in.at(port));
+            register_property(&_type_out.at(port));
+            // add resolvers for type (keeps it constant)
+            add_property_resolver({&_type_in.at(port)},
+                {&_type_in.at(port)},
+                [&type_in = _type_in.at(port)]() { type_in.set(IO_TYPE_SC16); });
+            add_property_resolver({&_type_out.at(port)},
+                {&_type_out.at(port)},
+                [&type_out = _type_out.at(port)]() { type_out.set(IO_TYPE_SC16); });
 
-        // Add resolvers for atomic item size
-        add_property_resolver({&_atomic_item_size_in},
-            {&_atomic_item_size_in, &_atomic_item_size_out},
-            [this]() {
-                RFNOC_LOG_TRACE("Calling resolver for `atomic_item_size' (triggered from "
-                                "input edge)");
-                _atomic_item_size_out = _atomic_item_size_in.get();
-                _atomic_item_size_check();
-            });
-        add_property_resolver({&_atomic_item_size_out},
-            {&_atomic_item_size_in, &_atomic_item_size_out},
-            [this]() {
-                RFNOC_LOG_TRACE("Calling resolver for `atomic_item_size' (triggered from "
-                                "output edge)");
-                _atomic_item_size_in = _atomic_item_size_out.get();
-                _atomic_item_size_check();
-            });
+            // Add resolvers for atomic item size
+            add_property_resolver({&_atomic_item_size_in.at(port)},
+                {&_atomic_item_size_in.at(port), &_atomic_item_size_out.at(port)},
+                [this, port]() {
+                    RFNOC_LOG_TRACE(
+                        "Calling resolver for `atomic_item_size' (triggered from "
+                        "input edge)");
+                    _atomic_item_size_out.at(port) = _atomic_item_size_in.at(port).get();
+                    _atomic_item_size_check(port);
+                });
+            add_property_resolver({&_atomic_item_size_out.at(port)},
+                {&_atomic_item_size_in.at(port), &_atomic_item_size_out.at(port)},
+                [this, port]() {
+                    RFNOC_LOG_TRACE(
+                        "Calling resolver for `atomic_item_size' (triggered from "
+                        "output edge)");
+                    _atomic_item_size_in.at(port) = _atomic_item_size_out.at(port).get();
+                    _atomic_item_size_check(port);
+                });
+        }
     }
 
     /**************************************************************************
@@ -727,10 +816,12 @@ private:
     const uint32_t _max_cp_length;
     const uint32_t _max_cp_removal_list_length;
     const uint32_t _max_cp_insertion_list_length;
+    const uint32_t _nipc;
     const bool _magnitude_squared_supported;
     const bool _magnitude_supported;
     const bool _fft_shift_supported;
     const bool _bypass_mode_supported;
+    const size_t _num_ports;
 
     property_t<int> _length{PROP_KEY_LENGTH, DEFAULT_LENGTH, {res_source_info::USER}};
     property_t<int> _magnitude = property_t<int>{
@@ -752,6 +843,8 @@ private:
     property_t<std::vector<uint32_t>> _cp_removal_list =
         property_t<std::vector<uint32_t>>{
             PROP_KEY_CP_REMOVAL_LIST, std::vector<uint32_t>(), {res_source_info::USER}};
+    property_t<uint32_t> _nipc_property =
+        property_t<uint32_t>{PROP_KEY_NIPC, _nipc, {res_source_info::USER}};
     property_t<uint32_t> _max_length_property =
         property_t<uint32_t>{PROP_KEY_MAX_LENGTH, _max_length, {res_source_info::USER}};
     property_t<uint32_t> _max_cp_length_property = property_t<uint32_t>{
@@ -765,19 +858,10 @@ private:
             _max_cp_removal_list_length,
             {res_source_info::USER}};
 
-    // clang-format off
-    // (clang-format messes up the asterisks)
-    property_t<size_t> _atomic_item_size_in{PROP_KEY_ATOMIC_ITEM_SIZE,
-        (_fpga_compat.get_major() == 1) ? (DEFAULT_LENGTH * BYTES_PER_SAMPLE) : BYTES_PER_SAMPLE,
-        {res_source_info::INPUT_EDGE}};
-    property_t<size_t> _atomic_item_size_out{PROP_KEY_ATOMIC_ITEM_SIZE,
-        (_fpga_compat.get_major() == 1) ? (DEFAULT_LENGTH * BYTES_PER_SAMPLE) : BYTES_PER_SAMPLE,
-        {res_source_info::OUTPUT_EDGE}};
-    // clang-format on
-    property_t<std::string> _type_in = property_t<std::string>{
-        PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::INPUT_EDGE}};
-    property_t<std::string> _type_out = property_t<std::string>{
-        PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::OUTPUT_EDGE}};
+    std::vector<property_t<size_t>> _atomic_item_size_in;
+    std::vector<property_t<size_t>> _atomic_item_size_out;
+    std::vector<property_t<std::string>> _type_in;
+    std::vector<property_t<std::string>> _type_out;
 };
 
 

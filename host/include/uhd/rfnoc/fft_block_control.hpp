@@ -11,7 +11,7 @@
 
 namespace uhd { namespace rfnoc {
 
-enum class fft_shift { NORMAL, REVERSE, NATURAL };
+enum class fft_shift { NORMAL, REVERSE, NATURAL, BIT_REVERSE };
 enum class fft_direction { REVERSE, FORWARD };
 enum class fft_magnitude { COMPLEX, MAGNITUDE, MAGNITUDE_SQUARED };
 
@@ -25,6 +25,7 @@ static const std::string PROP_KEY_SHIFT_CONFIG       = "shift_config";
 static const std::string PROP_KEY_BYPASS_MODE        = "bypass_mode";
 static const std::string PROP_KEY_CP_INSERTION_LIST  = "cp_insertion_list";
 static const std::string PROP_KEY_CP_REMOVAL_LIST    = "cp_removal_list";
+static const std::string PROP_KEY_NIPC               = "nipc";
 static const std::string PROP_KEY_MAX_LENGTH         = "max_length";
 static const std::string PROP_KEY_MAX_CP_LENGTH      = "max_cp_length";
 static const std::string PROP_KEY_MAX_CP_INSERTION_LIST_LENGTH =
@@ -137,6 +138,12 @@ public:
      *     * Positive frequencies first, then negative frequencies (REVERSE)
      *     * Bypass the shift altogether, leaving the zero frequency bin
      *       returned first (NATURAL).
+     *     * Bit-reversed order (BIT_REVERSE). This is typically the native
+     *       order output by the FFT. In other words, selecting this mode may
+     *       mean that the data from the FFT is not reordered. In this mode,
+     *       the indices of the FFT are bit-reversed. For example, for a size
+     *       16 FFT, instead of outputting bins in the order 0000, 0001, 0010,
+     *       0011, etc., it outputs bins 0000, 1000, 0100, 1100, etc.
      *
      * \param shift Configuration for shifting FFT output data
      */
@@ -235,6 +242,16 @@ public:
      * \returns Current FFT bypass mode
      */
     virtual bool get_bypass_mode() const = 0;
+
+    /*! Get the number of items per clock cycle (NIPC)
+     *
+     * Returns the number of items per clock cycle (NIPC) that this block is
+     * configured to process. Packet sizes and cyclic prefix lengths must a
+     * multiple of this value.
+     *
+     * \returns NIPC
+     */
+    virtual uint32_t get_nipc() const = 0;
 
     /*! Get the maximum supported length of the FFT
      *
