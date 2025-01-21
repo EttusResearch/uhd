@@ -18,7 +18,6 @@
 #include <mpm/exception.hpp>
 #include <mpm/noncopyable.hpp>
 #include <mpm/spi/spi_iface.hpp>
-#include <boost/filesystem.hpp>
 #include <functional>
 #include <map>
 #include <memory>
