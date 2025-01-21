@@ -5,6 +5,7 @@
 #
 install(FILES
     exception.hpp
+    noncopyable.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )
 

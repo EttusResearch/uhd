@@ -16,14 +16,14 @@
 #include "mpm/ad937x/ad937x_ctrl_types.hpp"
 #include "mpm/ad937x/adi_ctrl.hpp"
 #include <mpm/exception.hpp>
+#include <mpm/noncopyable.hpp>
 #include <mpm/spi/spi_iface.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/noncopyable.hpp>
 #include <functional>
 #include <map>
 #include <memory>
 
-class ad937x_device : public boost::noncopyable
+class ad937x_device : public mpm::noncopyable
 {
 public:
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };

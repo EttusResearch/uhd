@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
+#include <mpm/noncopyable.hpp>
 #include <memory>
 #include <mutex>
 
@@ -18,7 +18,7 @@ namespace mpm { namespace types {
  * class is primarily to make it easy to safely expose that mutex into
  * Python.
  */
-class lockable : public boost::noncopyable
+class lockable : public mpm::noncopyable
 {
 public:
     using sptr = std::shared_ptr<lockable>;

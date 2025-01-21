@@ -9,8 +9,8 @@
 
 // Relative to uhd/host/lib/usrp/common/ad9361_driver/
 #include "../../../include/uhdlib/usrp/common/ad9361_ctrl.hpp"
+#include <mpm/noncopyable.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/noncopyable.hpp>
 #include <functional>
 #include <future>
 #include <string>

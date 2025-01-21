@@ -6,14 +6,14 @@
 
 #pragma once
 
+#include <mpm/noncopyable.hpp>
 #include <mpm/types/log_buf.hpp>
-#include <boost/noncopyable.hpp>
 #include <cstdint>
 #include <string>
 
 namespace mpm { namespace types {
 
-class mmap_regs_iface : public boost::noncopyable
+class mmap_regs_iface : public mpm::noncopyable
 {
 public:
     mmap_regs_iface(const std::string& path,

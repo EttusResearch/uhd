@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
+#include <mpm/noncopyable.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,7 +15,7 @@ namespace mpm { namespace i2c {
 
 /*! Implementation of a uhd::i2c_iface that uses Linux's i2c-dev underneath.
  */
-class i2c_iface : public boost::noncopyable
+class i2c_iface : public mpm::noncopyable
 {
 public:
     using sptr = std::shared_ptr<i2c_iface>;
