@@ -13,7 +13,6 @@ extern "C" {
 #include <fcntl.h>
 #include <linux/spi/spidev.h>
 #include <unistd.h>
-#include <boost/format.hpp>
 #include <iostream>
 
 using namespace mpm::spi;
@@ -30,12 +29,12 @@ public:
     {
         if (init_spi(&_fd, device.c_str(), _mode, _speed, _bits, _delay) < 0) {
             throw mpm::runtime_error(
-                str(boost::format("Could not initialize spidev device %s") % device));
+                std::string("Could not initialize spidev device ") + device);
         }
 
         if (_fd < 0) {
             throw mpm::runtime_error(
-                str(boost::format("Could not open spidev device %s") % device));
+                std::string("Could not open spidev device ") + device);
         }
     }
 
@@ -56,7 +55,7 @@ public:
         uint8_t rx[3]; // Buffer length must match tx buffer
 
         if (transfer(_fd, &tx[0], &rx[0], 3, _speed, _bits, _delay) != 0) {
-            throw mpm::runtime_error(str(boost::format("SPI Transaction failed!")));
+            throw mpm::runtime_error("SPI Transaction failed!");
         }
 
         return uint32_t(rx[2]);
@@ -74,7 +73,7 @@ public:
         uint8_t rx[3]; // Buffer length must match tx buffer
 
         if (transfer(_fd, &tx[0], &rx[0], 3, _speed, _bits, _delay) != 0) {
-            throw mpm::runtime_error(str(boost::format("SPI Transaction failed!")));
+            throw mpm::runtime_error("SPI Transaction failed!");
         }
 
         return uint32_t(rx[1] << 8 | rx[2]);
@@ -94,7 +93,7 @@ public:
         uint8_t rx[8]; // Buffer length must match tx buffer
 
         if (transfer(_fd, &tx[0], &rx[0], 8, _speed, _bits, _delay) != 0) {
-            throw mpm::runtime_error(str(boost::format("SPI Transaction failed!")));
+            throw mpm::runtime_error("SPI Transaction failed!");
         }
 
         uint64_t result = rx[3];
