@@ -89,6 +89,7 @@ public:
         _max_cp_length((1 << ((_capabilities >> 8) & 0xFF)) - 1),
         _max_cp_removal_list_length((1 << ((_capabilities >> 16) & 0xFF)) - 1),
         _max_cp_insertion_list_length((1 << ((_capabilities >> 24) & 0xFF)) - 1),
+        _nipc(1 << ((_capabilities2 >> 8) & 0xF)),
         _magnitude_squared_supported((_capabilities2 >> 3) & 0x1),
         _magnitude_supported((_capabilities2 >> 2) & 0x1),
         _fft_shift_supported((_capabilities2 >> 1) & 0x1),
@@ -114,6 +115,7 @@ public:
             RFNOC_LOG_DEBUG(
                 "Max. CP insertion list length: " << _max_cp_insertion_list_length);
         }
+        RFNOC_LOG_DEBUG("NIPC is: " << _nipc);
         RFNOC_LOG_DEBUG("Magnitude squared supported: " << _magnitude_squared_supported);
         RFNOC_LOG_DEBUG("Magnitude supported: " << _magnitude_supported);
         RFNOC_LOG_DEBUG("FFT shift supported: " << _fft_shift_supported);
@@ -187,6 +189,11 @@ public:
     bool get_bypass_mode() const override
     {
         return static_cast<bool>(_bypass_mode_property.get());
+    }
+
+    uint32_t get_nipc() const override
+    {
+        return _nipc;
     }
 
     void set_cp_insertion_list(const std::vector<uint32_t> cp_lengths) override
@@ -270,9 +277,10 @@ private:
     {
         // Check that the FFT length is within bounds and is a power of 2
         uint32_t max_length = get_max_length();
-        if (length < MIN_FFT_SIZE || length > max_length) {
+        uint32_t min_length = std::max(MIN_FFT_SIZE, 2*_nipc);
+        if (length < min_length || length > max_length) {
             throw uhd::value_error("FFT length must be a power of two and within ["
-                                   + std::to_string(MIN_FFT_SIZE) + ", "
+                                   + std::to_string(min_length) + ", "
                                    + std::to_string(max_length) + "]");
         }
         // Find the log2(length) via highest bit set
@@ -387,13 +395,15 @@ private:
 
     void _set_shift_config(int shift)
     {
-        if (shift < static_cast<int>(fft_shift::NORMAL)
-            || shift > static_cast<int>(fft_shift::NATURAL)) {
+        if (_fpga_compat.get_major() == 1 && (shift < static_cast<int>(fft_shift::NORMAL)
+            || shift > static_cast<int>(fft_shift::NATURAL))) {
             throw uhd::value_error("Shift value must be [0, 2]");
-        } else if ((static_cast<fft_shift>(shift) != fft_shift::NORMAL)
-                   and not _fft_shift_supported) {
+        } else if (shift < static_cast<int>(fft_shift::NORMAL)
+            || shift > static_cast<int>(fft_shift::BIT_REVERSE)) {
+            throw uhd::value_error("Shift value must be [0, 3]");
+        } else if (not _fft_shift_supported) {
             throw uhd::value_error("Shift capability is not present in the FFT block. "
-                                   "Only value NORMAL(0) is supported");
+                                   "The native FFT output order will be used.");
         }
         this->regs().poke32(VERSION_DEPENDENT_ADDR(REG_ORDER_ADDR), uint32_t(shift));
     }
@@ -448,6 +458,10 @@ private:
                                        + " is too "
                                          "large. Must be between 1 and "
                                        + std::to_string(get_max_cp_length()) + ".");
+            } else if (cp_length % _nipc != 0) {
+                throw uhd::value_error("CP insertion length " + std::to_string(cp_length)
+                                       + " is not a multiple of the NIPC value "
+                                       + std::to_string(_nipc) + ".");
             }
         }
 
@@ -483,7 +497,7 @@ private:
     {
         if (_fpga_compat.get_major() == 1) {
             if (cp_lengths.size() > 0) {
-                throw uhd::value_error("Block does not support CP insertion");
+                throw uhd::value_error("Block does not support CP removal");
             }
             return;
         }
@@ -499,6 +513,10 @@ private:
                                        + " is too "
                                          "large. Must be between 1 and "
                                        + std::to_string(get_max_cp_length()) + ".");
+            } else if (cp_length % _nipc != 0) {
+                throw uhd::value_error("CP removal length " + std::to_string(cp_length)
+                                       + " is not a multiple of the NIPC value "
+                                       + std::to_string(_nipc) + ".");
             }
         }
 
@@ -544,10 +562,24 @@ private:
                 _atomic_item_size_in  = ais;
                 _atomic_item_size_out = ais;
             }
+        } else if (_fpga_compat >= uhd::compat_num32{3, 1}) {
+            // As of FFT compat 3.1 and later, the atomic item size must be a
+            // multiple of the NIPC.
+            if (_atomic_item_size_in % _nipc != 0 || _atomic_item_size_out % _nipc != 0) {
+                // Round up to the nearest multiple of NIPC
+                const size_t bytes_per_clk = _nipc*BYTES_PER_SAMPLE;
+                const size_t ais = ((_atomic_item_size_in + bytes_per_clk - 1) / bytes_per_clk)
+                                   * bytes_per_clk;
+                RFNOC_LOG_WARNING("Atomic item size for FFT needs to be a multiple "
+                                  "of NIPC, setting atomic item size to: "
+                                  << ais);
+                _atomic_item_size_in  = ais;
+                _atomic_item_size_out = ais;
+            }
         } else if ((_cp_insertion_list.get().size() > 0)
                    || (_cp_removal_list.get().size() > 0)) {
             // If the cyclic prefix insertion list is not empty,
-            // packages which are generated by the FFT block are of
+            // packets which are generated by the FFT block are of
             // different size (FFT length; CP insertion length)
             // Hence, the atomic item size needs to be set to the
             // greatest common divisor of the possible packet sizes.
@@ -657,6 +689,11 @@ private:
                 _atomic_item_size_check();
             });
 
+        register_property(&_nipc_property);
+        add_property_resolver({&_nipc_property}, {&_nipc_property}, [this]() {
+            RFNOC_LOG_TRACE("Calling resolver for `nipc'");
+            this->_nipc_property.set(this->_nipc);
+        });
         register_property(&_max_length_property);
         add_property_resolver({&_max_length_property}, {&_max_length_property}, [this]() {
             RFNOC_LOG_TRACE("Calling resolver for `max_length'");
@@ -727,6 +764,7 @@ private:
     const uint32_t _max_cp_length;
     const uint32_t _max_cp_removal_list_length;
     const uint32_t _max_cp_insertion_list_length;
+    const uint32_t _nipc;
     const bool _magnitude_squared_supported;
     const bool _magnitude_supported;
     const bool _fft_shift_supported;
@@ -752,6 +790,8 @@ private:
     property_t<std::vector<uint32_t>> _cp_removal_list =
         property_t<std::vector<uint32_t>>{
             PROP_KEY_CP_REMOVAL_LIST, std::vector<uint32_t>(), {res_source_info::USER}};
+    property_t<uint32_t> _nipc_property =
+        property_t<uint32_t>{PROP_KEY_NIPC, _nipc, {res_source_info::USER}};
     property_t<uint32_t> _max_length_property =
         property_t<uint32_t>{PROP_KEY_MAX_LENGTH, _max_length, {res_source_info::USER}};
     property_t<uint32_t> _max_cp_length_property = property_t<uint32_t>{

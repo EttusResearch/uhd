@@ -11,7 +11,7 @@
 
 namespace uhd { namespace rfnoc {
 
-enum class fft_shift { NORMAL, REVERSE, NATURAL };
+enum class fft_shift { NORMAL, REVERSE, NATURAL, BIT_REVERSE };
 enum class fft_direction { REVERSE, FORWARD };
 enum class fft_magnitude { COMPLEX, MAGNITUDE, MAGNITUDE_SQUARED };
 
@@ -25,6 +25,7 @@ static const std::string PROP_KEY_SHIFT_CONFIG       = "shift_config";
 static const std::string PROP_KEY_BYPASS_MODE        = "bypass_mode";
 static const std::string PROP_KEY_CP_INSERTION_LIST  = "cp_insertion_list";
 static const std::string PROP_KEY_CP_REMOVAL_LIST    = "cp_removal_list";
+static const std::string PROP_KEY_NIPC               = "nipc";
 static const std::string PROP_KEY_MAX_LENGTH         = "max_length";
 static const std::string PROP_KEY_MAX_CP_LENGTH      = "max_cp_length";
 static const std::string PROP_KEY_MAX_CP_INSERTION_LIST_LENGTH =
@@ -235,6 +236,16 @@ public:
      * \returns Current FFT bypass mode
      */
     virtual bool get_bypass_mode() const = 0;
+
+    /*! Get the number of items per clock cycle (NIPC)
+     *
+     * Returns the number of items per clock cycle (NIPC) that this block is
+     * configured to process. Packet sizes and cyclic prefix lengths must a
+     * multiple of this value.
+     *
+     * \returns NIPC
+     */
+    virtual uint32_t get_nipc() const = 0;
 
     /*! Get the maximum supported length of the FFT
      *
