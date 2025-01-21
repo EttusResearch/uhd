@@ -10,7 +10,6 @@
 #include <mpm/ad9361/ad9361_ctrl.hpp>
 #include <mpm/types/lockable.hpp>
 #include <mpm/types/regs_iface.hpp>
-#include <boost/shared_ptr.hpp>
 #include <memory>
 #include <mutex>
 

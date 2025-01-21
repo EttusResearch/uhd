@@ -10,9 +10,9 @@
 // Relative to uhd/host/lib/usrp/common/ad9361_driver/
 #include "../../../include/uhdlib/usrp/common/ad9361_ctrl.hpp"
 #include <mpm/noncopyable.hpp>
-#include <boost/make_shared.hpp>
 #include <functional>
 #include <future>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -31,7 +31,7 @@ void export_catalina(py::module& top_module)
     using namespace mpm::chips;
     auto m = top_module.def_submodule("ad9361");
 
-    py::class_<ad9361_ctrl, boost::shared_ptr<ad9361_ctrl>>(m, "ad9361_ctrl")
+    py::class_<ad9361_ctrl, std::shared_ptr<ad9361_ctrl>>(m, "ad9361_ctrl")
         .def_static("get_gain_names", &ad9361_ctrl::get_gain_names)
         // Make this "Python private" because the return value can't be serialized
         .def_static("_get_gain_range", &ad9361_ctrl::get_gain_range)
