@@ -20,8 +20,7 @@
 set -e
 
 echo "---- Set environment variables ----"
-export path_hwtools=$BUILD_SOURCESDIRECTORY/hwtools/head/setup
-export PATH=$path_hwtools:$PATH
+export PATH=$HWT_SCRIPTS_DIR:$PATH
 export NETWORK_LIB_BASE_PATH="/mnt/argo/RnD/eda/libraries"
 # Avoid "ERROR: [Common 17-356] Failed to install all user apps."
 export XILINX_LOCAL_USER_DATA=no
@@ -34,7 +33,7 @@ echo "---- Run hwsetup ----"
 # variables based on the agent's configuration so we can find the EDA
 # tools.
 pushd $BUILD_SOURCESDIRECTORY/uhddev/fpga/.ci/hwtools
-source hwsetup.sh
+source hwsetup.sh hwtools=0.1.3
 popd
 
 echo "---- Fetch the FPGA simulation libraries ----"

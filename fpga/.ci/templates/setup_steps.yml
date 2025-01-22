@@ -1,37 +1,36 @@
-steps:
-    # Clean tooling folder
-    #
-    # Without this, container builds and non-container builds running on the same
-    # machine will not get NuGet installed properly in the subsequent steps after
-    # this one. This is likely Microsoft's bug, so this is a workaround.
-    - task: DeleteFiles@1
-      inputs:
-        SourceFolder: $(Agent.ToolsDirectory)
-        Contents: "NuGet*"
-        RemoveDotFiles: true
-      displayName: Clean NuGet Tooling Folder
-
-    # Install NuGet in the path
-    #
-    # This task installs nuget into a folder adjacent to the workspace and then
-    # modifies the PATH pipeline variable to include it (thus ensuring that it ends
-    # up in the path in subsequent steps).
-    - task: NugetToolInstaller@1
-      inputs:
-        versionSpec: "6.1"
-      displayName: Install NuGet
-
+parameters:
+  - name: checkoutSteps
+    type: stepList
+    default:
     # Checkout the repository under test
     - checkout: self
       clean: true
       fetchDepth: 1
-
-    # Checkout the hwtools directory for FPGA related tooling support
-    #
-    # Persistent credentials is required to access the repository during hwsetup
-    # script execution.
+      persistCredentials: true
+    # Checkout hwtools repo
     - checkout: hwtools
-      clean: true
+      fetchDepth: '1'
+      fetchTags: false
       path: s/hwtools/head
       persistCredentials: true
-      fetchDepth: 1
+  - name: demands_default
+    type: object
+    default:
+      pool:
+        name: Drivers-NIBuildFarm-RFMIBUILD
+        demands:
+        - Agent.OS -equals Linux
+      hwhookVersion: 2
+
+steps:
+  - template: build/pipelines/helpers/setup_steps.yml@hwtools
+    parameters:
+      caller: setup_steps.yml
+      pool: Drivers-NIBuildFarm-RFMIBUILD
+      checkoutSteps: ${{ parameters.checkoutSteps }}
+      demands: ${{ parameters.demands_default }}
+      repoBase: $(Build.SourcesDirectory)
+      directory: uhddev
+      name: FPGA build
+
+
