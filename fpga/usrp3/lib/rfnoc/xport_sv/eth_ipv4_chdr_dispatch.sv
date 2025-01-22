@@ -109,15 +109,18 @@ module eth_ipv4_chdr_dispatch #(
   AxiStreamPacketIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
                 .TKEEP(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES))
     in0(eth_rx.clk,eth_rx.rst);
-  // in_reg
+  // in_regs
   //   tUser = {error,trailing bytes};
   AxiStreamPacketIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
                 .TKEEP(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES))
     in1(eth_rx.clk,eth_rx.rst);
+  AxiStreamPacketIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),
+                .TKEEP(0),.MAX_PACKET_BYTES(MAX_PACKET_BYTES))
+    in2(eth_rx.clk,eth_rx.rst);
   // STATEMACHINE
   //   tUser = {error,trailing bytes};
   AxiStreamIf #(.DATA_WIDTH(ENET_W),.USER_WIDTH(ENET_USER_W),.TKEEP(0))
-    in2(eth_rx.clk,eth_rx.rst);
+    in3(eth_rx.clk,eth_rx.rst);
 
   // CPU_BRANCH
   //   tUser = {error,trailing bytes};
@@ -163,13 +166,20 @@ module eth_ipv4_chdr_dispatch #(
   end
 
   //---------------------------------------
-  // Input pipeline stage
+  // Input pipeline stages
   //---------------------------------------
   axi4s_fifo #(
     .SIZE(1)
   ) in_reg_i (
     .clear(1'b0),.space(),.occupied(),
     .i(in0), .o(in1)
+  );
+
+  axi4s_fifo #(
+    .SIZE(1)
+  ) in_reg2_i (
+    .clear(1'b0),.space(),.occupied(),
+    .i(in1), .o(in2)
   );
 
   //---------------------------------------
@@ -245,13 +255,13 @@ module eth_ipv4_chdr_dispatch #(
       udp_dst_port_old  <= udp_dst_port_new;
       eth_type_old      <= eth_type_new;
 
-      if (in0.tvalid && in0.tready) begin
-        eth_dst_is_broadcast <= eth_dst_addr_new == ETH_ADDR_BCAST;
-        eth_dst_is_me        <= eth_dst_addr_new == e_my_mac;
-        udp_dst_is_me        <= udp_dst_port_new == e_my_udp_chdr_port;
-        ipv4_dst_is_me       <= ipv4_dst_addr_new == e_my_ip;
-        ipv4_protocol_is_udp <= ip_protocol_new == IPV4_PROTO_UDP;
-        eth_type_is_ipv4     <= eth_type_new == ETH_TYPE_IPV4;
+      if (in1.tvalid && in1.tready) begin
+        eth_dst_is_broadcast <= eth_dst_addr_old == ETH_ADDR_BCAST;
+        eth_dst_is_me        <= eth_dst_addr_old == e_my_mac;
+        udp_dst_is_me        <= udp_dst_port_old == e_my_udp_chdr_port;
+        ipv4_dst_is_me       <= ipv4_dst_addr_old == e_my_ip;
+        ipv4_protocol_is_udp <= ip_protocol_old == IPV4_PROTO_UDP;
+        eth_type_is_ipv4     <= eth_type_old == ETH_TYPE_IPV4;
       end
     end
   end
@@ -271,19 +281,19 @@ module eth_ipv4_chdr_dispatch #(
     eth_type_new      = in0.get_packet_field16(eth_type_old,      OFFSET+ETH_TYPE_BYTE, .NETWORK_ORDER(1));
   end
 
-  always_comb begin  : reached_bytes
+  always_ff @(posedge eth_rx.clk) begin  : reached_bytes
     reached_min_packet_new = in1.reached_packet_byte(OFFSET+MIN_PACKET_SIZE_BYTE);
     reached_end_of_udp     = in1.reached_packet_byte(OFFSET+DST_PORT_BYTE+3);// we have enough to decide
   end
 
   // calculate error conditions
-  assign mac_error          = in1.tuser[ERROR_BIT] && in1.tvalid;
-  assign cpu_push_error     = (in2.tvalid && !cpu0.tready);
-  assign chdr_push_error    = (in2.tvalid && !chdr0.tready);
+  assign mac_error          = in2.tuser[ERROR_BIT] && in2.tvalid;
+  assign cpu_push_error     = (in3.tvalid && !cpu0.tready);
+  assign chdr_push_error    = (in3.tvalid && !chdr0.tready);
 
   if (DROP_MIN_PACKET) begin
-    assign reached_min_packet = (reached_min_packet_new && in1.tuser[BYTES_MSB:0] ==0) || reached_min_packet_old;
-    assign min_packet_error   = (in1.tlast && !reached_min_packet);
+    assign reached_min_packet = (reached_min_packet_new && in2.tuser[BYTES_MSB:0] ==0) || reached_min_packet_old;
+    assign min_packet_error   = (in2.tlast && !reached_min_packet);
   end else begin
     assign reached_min_packet = 1'b1;
     assign min_packet_error   = 1'b0;
@@ -293,8 +303,8 @@ module eth_ipv4_chdr_dispatch #(
     if (eth_rx.rst) begin
       dispatch_state  <= ST_IDLE_ETH_L0;
     end else begin
-      if (in1.tvalid && in1.tready) begin
-        if (in1.tlast)
+      if (in2.tvalid && in2.tready) begin
+        if (in2.tlast)
           dispatch_state <= ST_IDLE_ETH_L0;
         else
          dispatch_state <= next_dispatch_state;
@@ -305,10 +315,10 @@ module eth_ipv4_chdr_dispatch #(
   always_comb begin : dispatch_sm_next_state
       //defaults
       next_dispatch_state = dispatch_state;
-      `AXI4S_ASSIGN(in2,in1);
+      `AXI4S_ASSIGN(in3,in2);
       cpu_error   = 1'b0;
       chdr_error  = 1'b0;
-      in1.tready  = 1'b1; // never hold off
+      in2.tready  = 1'b1; // never hold off
 
       // Statemachine always returns to ST_IDLE_ETH_L0 when tlast is set
       case (dispatch_state)
@@ -375,8 +385,8 @@ module eth_ipv4_chdr_dispatch #(
         ST_DROP_TERM: begin
           cpu_error   = 1'b1;
           chdr_error  = 1'b1;
-          in2.tlast   = 1'b1;
-          in2.tvalid  = 1'b1;
+          in3.tlast   = 1'b1;
+          in3.tvalid  = 1'b1;
           next_dispatch_state = ST_DROP_WAIT;
         end
 
@@ -384,16 +394,16 @@ module eth_ipv4_chdr_dispatch #(
         ST_DROP_WAIT: begin
           cpu_error   = 1'b0;
           chdr_error  = 1'b0;
-          in2.tlast   = 1'b0;
-          in2.tvalid  = 1'b0;
+          in3.tlast   = 1'b0;
+          in3.tvalid  = 1'b0;
         end
 
         // We should never get here
         default: begin
           cpu_error   = 1'b0;
           chdr_error  = 1'b0;
-          in2.tvalid  = 1'b0;
-          in2.tlast   = 1'b0;
+          in3.tvalid  = 1'b0;
+          in3.tlast   = 1'b0;
           next_dispatch_state = ST_IDLE_ETH_L0;
         end
       endcase
@@ -410,25 +420,25 @@ module eth_ipv4_chdr_dispatch #(
   logic cpu0_error, cpu0_error_old = 1'b0;
 
   always_comb begin : cpu0_assign
-    cpu0_error  = (cpu_error && in2.tvalid) || cpu0_error_old;
-    cpu0_push_error = (cpu_push_error && in2.tvalid)|| cpu0_push_error_old;
-    cpu0.tdata = in2.tdata;
-    cpu0.tuser = in2.tuser;
-    cpu0.tlast = in2.tlast || cpu0_error;
-    cpu0.tvalid = in2.tvalid || cpu0_error;
+    cpu0_error  = (cpu_error && in3.tvalid) || cpu0_error_old;
+    cpu0_push_error = (cpu_push_error && in3.tvalid)|| cpu0_push_error_old;
+    cpu0.tdata = in3.tdata;
+    cpu0.tuser = in3.tuser;
+    cpu0.tlast = in3.tlast || cpu0_error;
+    cpu0.tvalid = in3.tvalid || cpu0_error;
 
-    chdr0_error  = (chdr_error && in2.tvalid) || chdr0_error_old;
-    chdr0_push_error = (chdr_push_error && in2.tvalid) || chdr0_push_error_old;
-    chdr0.tdata = in2.tdata;
-    chdr0.tuser = in2.tuser;
-    chdr0.tlast = in2.tlast || chdr0_error;
-    chdr0.tvalid = in2.tvalid || chdr0_error;
+    chdr0_error  = (chdr_error && in3.tvalid) || chdr0_error_old;
+    chdr0_push_error = (chdr_push_error && in3.tvalid) || chdr0_push_error_old;
+    chdr0.tdata = in3.tdata;
+    chdr0.tuser = in3.tuser;
+    chdr0.tlast = in3.tlast || chdr0_error;
+    chdr0.tvalid = in3.tvalid || chdr0_error;
 
     // If the downstream sections are not ready, then the packet is dropped
     // there isn't really any buffer up stream, so a hold off here would
     // mean pushing back on a mac that doesn't have the capability to slow
     // down, and a data word would be lost.
-    in2.tready = 1'b1;
+    in3.tready = 1'b1;
 
   end
 
@@ -449,9 +459,9 @@ module eth_ipv4_chdr_dispatch #(
       // NOTE: Drop counts don't have to be perfect.  This gets pretty close though.
       //       I.e. Don't sweat this more in the future.
       chdr_dropped <= (chdr0_push_error && chdr0.tlast && chdr0.tvalid && chdr0.tready) ||
-                      (chdr0_push_error && in1.tlast && in1.tvalid);
+                      (chdr0_push_error && in2.tlast && in2.tvalid);
       cpu_dropped  <= (cpu0_push_error && cpu0.tlast && cpu0.tvalid && cpu0.tready) ||
-                      (cpu0_push_error && in1.tlast && in1.tvalid);
+                      (cpu0_push_error && in2.tlast && in2.tvalid);
 
       // don't clear till we discard a packet
       if (cpu0.tlast && cpu0.tvalid && cpu0.tready) begin
