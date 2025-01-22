@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: eth_100g_lbus2axi
+// Module: eth_100g_lbus2axis
 //
 // Description:
 //   Translate from lbus (xilinx segmented ifc) to
@@ -11,20 +11,16 @@
 //
 //   Built using example provided from Xilinx
 //
-// Parameters:
-//  - FIFO_DEPTH - FIFO will be 2** deep
-//  - NUM_SEG    - Number of lbus segments coming in
-//
 //  Notes on timing difficulty
 //   The path back to pop is challenged
-//     -LBUS is popped out of the FIFO (SRL read can be slow)
+//     -LBUS is popped out of the AXI flop
 //     -LBUS is rotated N to 1 Mux (N= number of segments) For 100g N=4
 //     -Find where EOP is (search for the first 1)
 //     -Unrotate the number of words and use that to calculate pop
+//     -pop is used to update the AXI flop registers
 //
 //   Fifo Output
-//     Data starts from the SRL and is indexed by the read pointer
-//     Data_Valid comes from a comparison on fullness
+//     Data starts from the AXI flop
 //     Invalid control is forced to zero (necessary for algorithm)
 //     It's not necessary to force all the data to zero just the control plane.
 //
@@ -35,16 +31,11 @@
 //
 //     eop is specifically inspected in a 4in,4out function to find a pseudo
 //     one hot. this is unrotated along with enable, and combined with
-//     datavalid to determine the next pop, which controls incrementing of the
-//     rd_pointer.
+//     datavalid to determine the next pop.
 //
 
-import PkgEth100gLbus::*;
-
-module eth_100g_lbus2axi #(
-   parameter FIFO_DEPTH = 5,
-   parameter NUM_SEG = 4
-)
+module eth_100g_lbus2axis
+  import PkgEth100gLbus::*;
 (
 
   // AXIS IF
@@ -68,8 +59,6 @@ module eth_100g_lbus2axi #(
   //FIFO Logic
   logic                push;
   logic [NUM_SEG-1:0]  pop;
-
-  logic [NUM_SEG-1:0]  full;
   logic [NUM_SEG-1:0]  empty;
 
   // always push the fifo on all lanes
@@ -77,131 +66,62 @@ module eth_100g_lbus2axi #(
 
   // For each lane of incoming data place it into a separate FIFO
   generate
-  genvar b1,gseg1;
   begin : gen_seg_fifo
-    for(gseg1 = 0; gseg1 < NUM_SEG; gseg1=gseg1+1) begin
+    for(genvar gseg1 = 0; gseg1 < NUM_SEG; gseg1=gseg1+1) begin
 
       //////////////////////////////////////////////////////////////////////////////////
       // INLINE FIFO
       //////////////////////////////////////////////////////////////////////////////////
+      logic input_fifo_i_tready;
+      logic input_fifo_o_tvalid;
+      logic input_fifo_o_tready;
+      logic input_flop_o_tvalid;
+      lbus_t lbus_fifo;
 
       // simulation error if we push a full fifo
+      // synopsys translate_off
       always_comb begin
         if (push) begin
-          assert (!full[gseg1]) else $error("Pushing full fifo!");
+          assert (input_fifo_i_tready) else $error("Pushing full fifo!");
         end
       end
+      // synopsys translate_on
 
-      // limit fanout to improve timing
-      (* max_fanout = 75 *) logic [4:0] a;
-
-      for (b1=0;b1<SEG_DATA_WIDTH;b1=b1+1) begin : gen_srl_data
-        SRLC32E srl_data(
-          .Q(lbus_fout_p[gseg1].data[b1]), .Q31(),
-          .A(a),
-          .CE(push),.CLK(axis.clk),.D(lbus_in[gseg1].data[b1])
-        );
-      end
-      for (b1=0;b1<SEG_MTY_WIDTH;b1=b1+1) begin : gen_srl_mty
-        SRLC32E srl_mty(
-          .Q(lbus_fout_p[gseg1].mty[b1]), .Q31(),
-          .A(a),
-          .CE(push),.CLK(axis.clk),.D(lbus_in[gseg1].mty[b1])
-        );
-      end
-      SRLC32E srl_err(
-        .Q(lbus_fout_p[gseg1].err), .Q31(),
-        .A(a),
-        .CE(push),.CLK(axis.clk),.D(lbus_in[gseg1].err)
+      // input FIFO used for storing data using SRLC32E primitives
+      axi_fifo_short #(
+        .WIDTH($bits(lbus_in[gseg1]))
+      ) input_fifo (
+        .clk(axis.clk),
+        .reset(axis.rst),
+        .clear(1'b0),
+        .i_tdata(lbus_in[gseg1]),
+        .i_tvalid(push),
+        .i_tready(input_fifo_i_tready),
+        .o_tdata(lbus_fifo),
+        .o_tvalid(input_fifo_o_tvalid),
+        .o_tready(input_fifo_o_tready),
+        .space(),
+        .occupied()
       );
 
-      // empty on prebuffer and SRL
-      logic my_empty;
-      always @(posedge axis.clk)
-      begin
-        if(axis.rst) begin
-          a <= 0;
-          my_empty <= 1;
-          full[gseg1] <= 0;
-        end else if(pop[gseg1] & ~push) begin
-          full[gseg1] <= 0;
-          if(a==0) begin
-            my_empty <= 1;
-          end else begin
-            a <= a - 1;
-          end
-        end else if(push & ~pop[gseg1]) begin
-          my_empty <= 0;
-          if(~my_empty) begin
-            a <= a + 1;
-          end
-          if(a == 30) begin
-            full[gseg1] <= 1;
-          end
-        end
-      end
+      // output flop attached to register to break critical timing paths
+      axi_fifo_flop2 #(
+        .WIDTH($bits(lbus_in[gseg1]))
+      ) critical_fifo_flop (
+        .clk(axis.clk),
+        .reset(axis.rst),
+        .clear(1'b0),
+        .i_tdata(lbus_fifo),
+        .i_tvalid(input_fifo_o_tvalid),
+        .i_tready(input_fifo_o_tready),
+        .o_tdata(lbus_fout_p[gseg1]),
+        .o_tvalid(input_flop_o_tvalid),
+        .o_tready(pop[gseg1]),
+        .space(),
+        .occupied()
+      );
 
-      // FIFO for time sensitive control signals. This creates a separate 31 deep fifo from
-      // DFF's on just 3 signals.  The data signals continue to use an SRL to save space.
-      // The design bellow is a FIFO followed by a single DFF regsiter that is automatically
-      // prefilled when the FIFO has data.
-      logic [4:0]  w_ptr,r_ptr,r_ptr_d,fullness;
-      logic [31:0] ena_mem, sop_mem, eop_mem;
-
-      // Final fifo stage after memory to remove address muxing from timing path
-      // this adds one clock of latency to empty flag as it will take 2 clocks to propagate
-      // into fifo.
-
-      //push critical timing signals to final flop. This adds 1 clock of latency on
-      // the final empty flag, but removes muxing of the memory elements
-      logic push_dff;
-
-      //using r_ptr_d to avoid extra latency in fullness change
-      always_comb begin
-        if (pop[gseg1]) begin
-          r_ptr_d = r_ptr+1;
-        end else begin
-          r_ptr_d = r_ptr;
-        end
-        fullness = w_ptr-r_ptr_d;
-        push_dff = (fullness != 0) & (pop[gseg1] | empty[gseg1]);
-      end
-
-      // speedier fifo implementation on these three control signals
-      // THE goal of this complexity is to have the outputs be a direct FF output
-      // instead of a muxed memory output.
-      always @(posedge axis.clk)
-      begin
-        if(axis.rst) begin
-          ena_mem <= '0;
-          sop_mem <= '0;
-          eop_mem <= '0;
-          lbus_fout_p[gseg1].ena <= 1'b0;
-          lbus_fout_p[gseg1].sop <= 1'b0;
-          lbus_fout_p[gseg1].eop <= 1'b0;
-          w_ptr <= 0;
-          r_ptr <= 0;
-          empty[gseg1] <= 1'b1;
-        end else begin
-          if(push) begin
-            ena_mem[w_ptr] <= lbus_in[gseg1].ena;
-            sop_mem[w_ptr] <= lbus_in[gseg1].sop;
-            eop_mem[w_ptr] <= lbus_in[gseg1].eop;
-            w_ptr <= w_ptr+1;
-          end
-
-          r_ptr <= r_ptr_d;
-
-          if (push_dff) begin
-            empty[gseg1] <= 1'b0;
-            lbus_fout_p[gseg1].ena <= ena_mem[r_ptr_d];
-            lbus_fout_p[gseg1].sop <= sop_mem[r_ptr_d];
-            lbus_fout_p[gseg1].eop <= eop_mem[r_ptr_d];
-          end else if (pop[gseg1]) begin
-            empty[gseg1] <= 1'b1;
-          end
-        end
-      end
+      assign empty[gseg1] = ~input_flop_o_tvalid;
 
       // clear the enables if this fifo segment is not valid
       always_comb begin
@@ -289,74 +209,26 @@ module eth_100g_lbus2axi #(
   //////////////////  Calculate Pop                                      ///////////
   //////////////////////////////////////////////////////////////////////////////////
   // After rotation figure out how far till eop
-
-  //==========================================================================
-  // one-hot to thermometer code
-  //  The goal is to find how far down till we reach the first eop
-  //  This represents the bytes we will trasnfer this clock
-  //==========================================================================
-  // Xilinx example
-  // case (in_reqs)
-  //   4'b1000: onehot2thermo = 4'b1111;
-  //
-  //   4'b1100: onehot2thermo = 4'b0111;
-  //   4'b0100: onehot2thermo = 4'b0111;
-  //
-  //   4'b1110: onehot2thermo = 4'b0011;
-  //   4'b0110: onehot2thermo = 4'b0011;
-  //   4'b0010: onehot2thermo = 4'b0011;
-  //
-  //   4'b1111: onehot2thermo = 4'b0001;
-  //   4'b0111: onehot2thermo = 4'b0001;
-  //   4'b0011: onehot2thermo = 4'b0001;
-  //   4'b0001: onehot2thermo = 4'b0001;
-  //
-  //   default: onehot2thermo = 4'b0000;
-  // endcase
   logic [NUM_SEG-1:0] rot_xfer_now;
-  logic [NUM_SEG-1:0] mask  [NUM_SEG-1:0];
-  logic [NUM_SEG-1:0] m1hot [NUM_SEG-1:0];
-  logic [NUM_SEG-1:0] meop  [NUM_SEG-1:0];
-  logic [NUM_SEG-1:0] match;
-
-  always_comb begin
-    rot_xfer_now = '0;
-    foreach (rot_eop[s]) begin
-      // The function
-      // XXX1=>0001
-      // XX10=>0011
-      // X100=>0111
-      // 1000=>1111
-      // MASK
-      // 2**(0+1)-1 = 0001
-      // 2**(1+1)-1 = 0011
-      // 2**(2+1)-1 = 0111
-      // 2**(3+1)-1 = 1111
-      mask[s]  = 2**(s+1)-1; // Constant
-      // MASK
-      // 2**0 = 0001
-      // 2**1 = 0010
-      // 2**2 = 0100
-      // 2**3 = 1000
-      m1hot[s] = 2**s;  // Constant
-      // Mask valid_eop
-      meop[s]  = rot_eop & mask[s];
-      // compare against 1hot
-      match[s] = meop[s] == m1hot[s];
-      if (match[s]) begin
-        rot_xfer_now = mask[s];
-      end
-    end
-  end
 
   // unrotate the values and calculate pop
   logic [NUM_SEG-1:0] xfer_now;
   logic [NUM_SEG-1:0] filler_seg;
 
   always_comb begin
+    rot_xfer_now = '0;
+    if (eop) begin
+      for (int i = 0; i < NUM_SEG; i = i + 1) begin
+        rot_xfer_now[i] = '1;
+        if (rot_eop[i]) begin
+          break;
+        end
+      end
+    end
+
     if (send_idle)
       xfer_now = '0;
-    else if (no_eop | no_sop)
+    else if (no_eop)
       xfer_now = '1;
     else
       // rotate left
