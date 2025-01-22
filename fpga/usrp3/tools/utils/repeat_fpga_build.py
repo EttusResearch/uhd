@@ -196,6 +196,14 @@ def parse_args():
         help="Specifies the FPGA directory to pass to rfnoc_image_builder using the -F argument.",
     )
     parser.add_argument(
+        "--build-dir",
+        "-B",
+        type=str,
+        default=None,
+        required=False,
+        help="Specifies the build directory to pass to rfnoc_image_builder using the -B argument.",
+    )
+    parser.add_argument(
         "--vivado-path",
         "-P",
         help="Path to the base install for Xilinx Vivado if not in default "
@@ -287,6 +295,7 @@ def rfnoc_image_builder_cmd(
     image_core,
     image_core_name,
     fpga_dir,
+    build_dir,
     vivado_path,
     ignore_warnings,
     build_num=None,
@@ -303,6 +312,9 @@ def rfnoc_image_builder_cmd(
     if image_core_name:
         cmd += f"--image-core-name {image_core_name}"
         cmd += " " if build_num == None else f"_{build_num:02} "
+    if build_dir:
+        cmd += f"--build-dir {build_dir}"
+        cmd += " " if build_num == None else f"/{image_core_name}_{build_num:02} "
     if fpga_dir:
         cmd += f"--fpga-dir {fpga_dir} "
     if vivado_path:
@@ -321,6 +333,7 @@ def run_fpga_build(
     image_core,
     image_core_name,
     fpga_dir,
+    build_dir,
     vivado_path,
     ignore_warnings,
     parallel_builds,
@@ -336,6 +349,7 @@ def run_fpga_build(
         image_core: --image-core argument to be passed
         image_core_name: --image-core-name argument to be passed
         fpga_dir: --fpga-dir argument to be passed
+        build_dir: --build-dir argument to be passed
         vivado_path: --vivado-path argument to be passed
         ignore_warnings: --ignore-warnings argument to be passed
         parallel_builds: Indicates if we are doing builds in parallel
@@ -354,6 +368,7 @@ def run_fpga_build(
         image_core,
         image_core_name,
         fpga_dir,
+        build_dir,
         vivado_path,
         ignore_warnings,
         cmd_build_num,
@@ -402,7 +417,14 @@ def run_fpga_build(
 
 
 def run_ip_build(
-    ip_jobs, target, image_core, image_core_name, fpga_dir, vivado_path, ignore_warnings
+    ip_jobs,
+    target,
+    image_core,
+    image_core_name,
+    fpga_dir,
+    build_dir,
+    vivado_path,
+    ignore_warnings,
 ):
     """Performs the IP build.
 
@@ -415,6 +437,7 @@ def run_ip_build(
         image_core: --image-core argument to be passed
         image_core_name: --image-core-name argument to be passed
         fpga_dir: --fpga-dir argument to be passed
+        build_dir: --build-dir argument to be passed
         vivado_path: --vivado-path argument to be passed
         ignore_warnings: --ignore-warnings argument to be passed
 
@@ -428,6 +451,7 @@ def run_ip_build(
         image_core,
         image_core_name,
         fpga_dir,
+        build_dir,
         vivado_path,
         ignore_warnings,
         None,
@@ -497,6 +521,7 @@ def main():
         args.image_core,
         args.image_core_name,
         args.fpga_dir,
+        args.build_dir,
         args.vivado_path,
         args.ignore_warnings,
     )
@@ -525,6 +550,7 @@ def main():
                         args.image_core,
                         args.image_core_name,
                         args.fpga_dir,
+                        args.build_dir,
                         args.vivado_path,
                         args.ignore_warnings,
                         args.fpga_jobs > 1,
