@@ -1,5 +1,5 @@
 #
-# Copyright 2024 Ettus Research, a NI Brand, now part of Emerson
+# Copyright 2024 Ettus Research, an NI Brand, now part of Emerson
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
