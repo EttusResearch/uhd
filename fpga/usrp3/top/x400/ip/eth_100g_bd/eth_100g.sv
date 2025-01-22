@@ -1129,7 +1129,7 @@ module eth_100g #(
   lbus_t lbus_tx [3:0];
   logic lbus_tx_rdyout;
 
-  eth_100g_lbus2axi  #(.NUM_SEG(4)) lbus2axi (
+  eth_100g_lbus2axis lbus2axi (
     .axis(eth100g_rx),
     .lbus_in(lbus_rx)
   );
