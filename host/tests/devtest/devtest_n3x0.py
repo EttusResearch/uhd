@@ -60,7 +60,7 @@ UhdTxWaveformsTest.tests = {
         "chan": "0",
     },
     "chan1": {
-        "chan": "0",
+        "chan": "1",
     },
     "both_chans": {
         "chan": "0,1",
