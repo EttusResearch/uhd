@@ -142,6 +142,7 @@ pr:
     - fpga/usrp3/sim
     - fpga/.ci
     - host/utils/rfnoc_image_builder.py
+    - host/utils/repeat_fpga_build.py
     - host/python/uhd/rfnoc_utils
     - host/include/uhd/rfnoc
 
