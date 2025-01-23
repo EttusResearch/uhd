@@ -82,6 +82,7 @@ uhd (4.8.0.0-0ubuntu1) ubuntu_release; urgency=low
     - MPM
       - Allow images without RF frontend (will only be initialized if FPGA
         reports availability)
+      - Fix usrp_update_fs to work for all embedded devices (and not just X4xx)
     - E320: Ensure consistent sequencing when powering on/off GPSDO
     - N310/N300: Fix LO query API for lowband LO
     - RFNoC
@@ -108,7 +109,7 @@ uhd (4.8.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Windows: 10 21H2, 11 21H2
     - MacOS: Monterey (12.6)
 
- -- Ettus Research <uhd.maintainer@emerson.com>  Thu, 09 Jan 2025 04:20:28 -0800
+ -- Ettus Research <uhd.maintainer@emerson.com>  Thu, 23 Jan 2025 05:54:22 -0800
 
 
 uhd (4.7.0.0-0ubuntu1) ubuntu_release; urgency=low

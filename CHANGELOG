@@ -84,6 +84,7 @@ Change Log for Releases
   - MPM
     - Allow images without RF frontend (will only be initialized if FPGA
       reports availability)
+    - Fix usrp_update_fs to work for all embedded devices (and not just X4xx)
   - E320: Ensure consistent sequencing when powering on/off GPSDO
   - N310/N300: Fix LO query API for lowband LO
   - RFNoC
