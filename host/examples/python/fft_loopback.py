@@ -170,9 +170,17 @@ def parse_args():
         help="The RX gain (default=50)",
     )
     parser.add_argument(
+        "-r",
         "--rate",
         type=float,
         help="The TX/RX rate of host data (default is master clock rate)",
+    )
+    parser.add_argument(
+        "-f",
+        "--freq",
+        type=float,
+        default=1.5e9,
+        help="The TX/RX radio frequency (default is 1.5 GHz)",
     )
     return parser.parse_args()
 
@@ -256,7 +264,7 @@ def connect_graph(graph, graph_connections, channels=[], tx_streamer=None, rx_st
     return (graph, controllers.values())
 
 
-def configure_radio_block(radio, spp, tx_gain=None, rx_gain=None, digital_loopback=False):
+def configure_radio_block(radio, spp, freq=None, tx_gain=None, rx_gain=None, digital_loopback=False):
     """Configure the Radio block."""
     for blk_chan_idx in range(radio.get_num_input_ports()):
         # if the loopback argument was provided, enable the digital loopback
@@ -268,7 +276,10 @@ def configure_radio_block(radio, spp, tx_gain=None, rx_gain=None, digital_loopba
         radio.set_properties("spp=" + str(spp), blk_chan_idx)
 
         if not digital_loopback:
-            # Set TX gain and RX gain
+            # Set TX/RX frequency and gain
+            if freq is not None:
+                radio.set_tx_frequency(freq, blk_chan_idx)
+                radio.set_rx_frequency(freq, blk_chan_idx)
             if tx_gain is not None:
                 radio.set_tx_gain(tx_gain, blk_chan_idx)
             if rx_gain is not None:
@@ -315,6 +326,9 @@ def configure_fft_block(ofdm, fft_length, cp_list=[]):
     # set FFT length
     print(f"Set FFT length to {fft_length}")
     ofdm.set_length(fft_length)
+
+    # set FFT output data order
+    ofdm.set_shift_config(uhd.libpyuhd.rfnoc.fft_shift.NATURAL)
 
     unique_id = ofdm.get_unique_id()
     if unique_id in ["0/FFT#0", "0/FFT#2"]:
@@ -371,15 +385,21 @@ def get_tx_rx_delay(radio, args):
         elif tick_rate in [245.76e6, 250.0e6]:
             # Add 12 cycles for 200 MHz FPGA
             loopback_delay = 12
+        elif tick_rate in [491.52e6, 500.0e6]:
+            # Add 24 cycles for 400 MHz FPGA
+            loopback_delay = 24
         else:
-            raise NotImplementedError("unsupported tick rate: {:.02f} MS/s".format(tick_rate / 1e6))
+            raise NotImplementedError(f"Unsupported tick rate: {tick_rate / 1e6:0.2f} MS/s")
     else:
         # With RF loopback there's a fixed delay between TX and RX
         if tick_rate in [245.76e6, 250.0e6]:
             # Add 188 cycles for 200 MHz FPGA
             loopback_delay = 188
+        elif tick_rate in [491.52e6, 500.0e6]:
+            # Add 356 cycles for 400 MHz FPGA
+            loopback_delay = 356
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"Unsupported tick rate: {tick_rate / 1e6:0.2f} MS/s")
     return loopback_delay / tick_rate
 
 
@@ -578,6 +598,7 @@ def main():
         configure_radio_block(
             radio,
             spp,
+            freq=args.freq,
             rx_gain=args.rx_gain,
             tx_gain=args.tx_gain,
             digital_loopback=args.loopback,
