@@ -59,13 +59,39 @@ noc_blocks:
  fft0:
     block_desc: 'fft.yml'
     parameters:
+      NIPC: 1
       NUM_PORTS: 2
+      NUM_CORES: 1
       MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 1
+      MAX_CP_LIST_LEN_INS_LOG2: 5
+      MAX_CP_LIST_LEN_REM_LOG2: 5
+      CP_INSERTION_REPEAT: 1
+      CP_REMOVAL_REPEAT: 1
+      EN_FFT_BYPASS: 1
+      EN_FFT_ORDER: 1
+      EN_MAGNITUDE: 1
+      EN_MAGNITUDE_SQ: 1
+      USE_APPROX_MAG: 1
  fft1:
     block_desc: 'fft.yml'
     parameters:
+      NIPC: 1
       NUM_PORTS: 2
+      NUM_CORES: 1
       MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 1
+      MAX_CP_LIST_LEN_INS_LOG2: 5
+      MAX_CP_LIST_LEN_REM_LOG2: 5
+      CP_INSERTION_REPEAT: 1
+      CP_REMOVAL_REPEAT: 1
+      EN_FFT_BYPASS: 1
+      EN_FFT_ORDER: 1
+      EN_MAGNITUDE: 1
+      EN_MAGNITUDE_SQ: 1
+      USE_APPROX_MAG: 1
 
 # A list of all static connections in design
 # ------------------------------------------
