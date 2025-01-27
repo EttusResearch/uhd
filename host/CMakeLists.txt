@@ -5,15 +5,31 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-########################################################################
-# Project setup
-########################################################################
 # NOTE! If you change the version in the following line, also change
 # UHD_CMAKE_MIN_VERSION in UHDMinDepVersions. (This won't take a variable).
 cmake_minimum_required(VERSION 3.12)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW) # Suppress Version warnings
 endif(POLICY CMP0048)
+
+########################################################################
+# Select cmake build type
+# Use release build type by default to get optimization flags
+# Do this before project setup to ensure dependend libraries use
+# the correct build type for library search.
+########################################################################
+if(NOT CMAKE_BUILD_TYPE)
+   set(CMAKE_BUILD_TYPE "Release")
+   message(STATUS "Build type not specified: defaulting to release.")
+endif(NOT CMAKE_BUILD_TYPE)
+set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
+
+#force UHD_RELEASE_MODE to be a string for cmake-gui
+set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
+
+########################################################################
+# Project setup
+########################################################################
 project(UHD CXX C)
 enable_testing()
 
@@ -219,16 +235,6 @@ macro(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG flag have)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
     endif(${have})
 endmacro(UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG)
-
-#select the release build type by default to get optimization flags
-if(NOT CMAKE_BUILD_TYPE)
-   set(CMAKE_BUILD_TYPE "Release")
-   message(STATUS "Build type not specified: defaulting to release.")
-endif(NOT CMAKE_BUILD_TYPE)
-set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
-
-#force UHD_RELEASE_MODE to be a string for cmake-gui
-set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
     ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
