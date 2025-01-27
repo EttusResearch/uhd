@@ -212,7 +212,7 @@ private:
     std::vector<uhd::usrp::x300::x300_radio_mbc_iface*> _radio_refs;
 
     //! List of available sensors
-    std::unordered_set<std::string> _sensors{"ref_locked"};
+    std::unordered_set<std::string> _sensors{"ref_locked", "temp_fpga"};
 
     //! Flag to tell us if initialization is complete. Some functions behave
     // differently after initialization.

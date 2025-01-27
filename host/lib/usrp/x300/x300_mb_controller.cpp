@@ -375,8 +375,16 @@ sensor_value_t x300_mb_controller::get_sensor(const std::string& name)
     if (name == "ref_locked") {
         return sensor_value_t("Ref", get_ref_locked(), "locked", "unlocked");
     }
-    // There are only GPS sensors and ref_locked, so we can take a shortcut here
-    // and directly ask the GPS for its sensor value:
+    if (name == "temp_fpga") {
+        // FPGA XADC Code is a 12-bit value
+        uint32_t fpga_temp_adc_code =
+            _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_XADC_VALS)) & 0xFFF;
+        // Formula for conversion taken from AMD UG480 Equation 1-2.
+        double temp_degC = ((fpga_temp_adc_code * 503.975) / 4096.0) - 273.15;
+        return sensor_value_t("FPGA TEMP", temp_degC, "C");
+    }
+    // There are only GPS sensors, temp_fpga, and ref_locked, so we can take a shortcut
+    // here and directly ask the GPS for its sensor value:
     if (_sensors.count(name)) {
         return _gps->get_sensor(name);
     }

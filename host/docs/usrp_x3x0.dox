@@ -854,6 +854,7 @@ The following sensors are available for the USRP-X Series motherboards;
 they can be queried through the API.
 
 - **ref_locked** - clock reference locked (internal/external)
+- **temp_fpga** - temperature of the FPGA, in degrees Celsius
 - Other sensors are added when the GPSDO is enabled
 
 \subsection x3x0_misc_timed_cmds_lockup Multiple Timed Command Advisory
