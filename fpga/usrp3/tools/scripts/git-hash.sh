@@ -43,7 +43,7 @@ if [[ $write -eq 0 ]]; then
         short_hash="$(git rev-parse --verify HEAD --short=7 2>/dev/null)" && git_success=1
         if [[ $git_success -eq 1 ]]; then
             # Check if tree is clean. If yes, the top 4 bits are 0
-            if (git diff --quiet 2>/dev/null); then
+            if [[ -z $(git status --porcelain --untracked-files=no 2>/dev/null) ]]; then
                 ettus_githash32="0$short_hash"
             else
                 ettus_githash32="f$short_hash"
@@ -64,7 +64,7 @@ else
     # Get hash from git
     short_hash="$(git rev-parse --verify HEAD --short=7 2>/dev/null)" || { echo "ERROR: Not a git tree"; exit 2; }
     # Check if tree is clean. If yes, the top 4 bits are 0
-    if (git diff --quiet 2>/dev/null); then
+    if [[ -z $(git status --porcelain --untracked-files=no 2>/dev/null) ]]; then
         ettus_githash32="0$short_hash"
     else
         ettus_githash32="f$short_hash"
