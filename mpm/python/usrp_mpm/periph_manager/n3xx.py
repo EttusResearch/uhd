@@ -519,7 +519,15 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         return self._clock_source
 
     def set_clock_source(self, *args):
-        " Sets a new reference clock source "
+        """Set a new reference clock source (e.g., 10 MHz source).
+
+        This will call set_sync_source() with the requested clock source and the
+        current time source. If the combination is invalid, the time source
+        is coerced to a value that works with the requested clock source, and a
+        warning is issued (e.g., if the requested clock source is 'gpsdo' and
+        the current time source is 'external', the time source will be coerced to
+        'gpsdo').
+        """
         clock_source = args[0]
         time_source = self._time_source
         assert clock_source is not None
@@ -531,10 +539,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 time_source = 'external'
             elif clock_source == 'gpsdo':
                 time_source = 'gpsdo'
-        source = {"clock_source": clock_source,
-                  "time_source": time_source
-                 }
-        self.set_sync_source(source)
+            self.log.warning(
+                f"Time source '{self.get_time_source()}' is an invalid selection with "
+                f"clock source '{clock_source}'. "
+                f"Coercing time source to '{time_source}'")
+        self.set_sync_source({"time_source": time_source, "clock_source": clock_source})
 
     def get_time_sources(self):
         " Returns list of valid time sources "
@@ -547,7 +556,15 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         return self._time_source
 
     def set_time_source(self, time_source):
-        " Set a time source "
+        """Set a time source (PPS source).
+
+        This will call set_sync_source() with the given time_source and the
+        current clock source. If the combination is invalid, the clock source
+        is coerced to a value that works with the requested time source, and a
+        warning is issued (e.g., if the requested time source is 'sfp0' and
+        the current clock source is 'external', the time source will be coerced to
+        'internal').
+        """
         clock_source = self._clock_source
         assert clock_source is not None
         assert time_source is not None
@@ -560,10 +577,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 clock_source = 'external'
             elif time_source == 'gpsdo':
                 clock_source = 'gpsdo'
-        source = {"time_source": time_source,
-                  "clock_source": clock_source
-                 }
-        self.set_sync_source(source)
+            self.log.warning(
+                f"Clock source '{self.get_clock_source()}' is an invalid selection with "
+                f"time source '{time_source}'. Coercing clock source to '{clock_source}'")
+        self.set_sync_source({"time_source": time_source, "clock_source": clock_source})
 
     def get_sync_sources(self):
         """
