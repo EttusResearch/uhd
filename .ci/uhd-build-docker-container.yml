@@ -74,7 +74,7 @@ variables:
 
 - name: macOSBuilders
   value:
-    "{'macOS-12-x64':{'buildOSName':'macOS-12-x64', 'macOSVersionDemand':'12', 'macOSArchDemand': 'X64'}}"
+    "{'macOS-15-x64':{'buildOSName':'macOS-15-x64', 'macOSVersionDemand':'15', 'macOSArchDemand': 'X64'}}"
 
 - name: sourcePackageBuilders
   # Match with one of the Ubuntu images in linuxDockerImages
