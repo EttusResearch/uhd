@@ -75,6 +75,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed,
     bool elevate_priority,
+    const uhd::time_spec_t time_now,
     double adjusted_rx_delay,
     double user_rx_delay,
     bool rx_stream_now)
@@ -110,7 +111,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
         cmd.num_samps   = (rand() % spb) + 1;
     }
 
-    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(adjusted_rx_delay);
+    cmd.time_spec  = time_now + uhd::time_spec_t(adjusted_rx_delay);
     cmd.stream_now = rx_stream_now;
     rx_stream->issue_stream_cmd(cmd);
 
@@ -216,6 +217,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const size_t spb,
     const size_t sample_align,
     bool elevate_priority,
+    const uhd::time_spec_t time_now,
     double tx_delay,
     bool random_nsamps = false)
 {
@@ -238,7 +240,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     // Create the metadata, and populate the time spec at the latest possible moment
     uhd::tx_metadata_t md;
     md.has_time_spec = (tx_delay != 0.0);
-    md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(tx_delay);
+    md.time_spec     = time_now + uhd::time_spec_t(tx_delay);
 
     // Calculate timeout time
     // The timeout time cannot be reduced after the first packet as is done for
@@ -576,6 +578,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (vm.count("rx_spb")) {
             spb = rx_spb;
         }
+        
+        const uhd::time_spec_t time_now = usrp->get_time_now();
         if (vm.count("multi_streamer")) {
             for (size_t count = 0; count < rx_channel_nums.size(); count++) {
                 std::vector<size_t> this_streamer_channels{rx_channel_nums[count]};
@@ -593,6 +597,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         start_time,
                         burst_timer_elapsed,
                         elevate_priority,
+                        time_now,
                         adjusted_rx_delay,
                         rx_delay,
                         rx_stream_now);
@@ -614,6 +619,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     start_time,
                     burst_timer_elapsed,
                     elevate_priority,
+                    time_now,
                     adjusted_rx_delay,
                     rx_delay,
                     rx_stream_now);
@@ -623,6 +629,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // spawn the transmit test thread
+    const uhd::time_spec_t time_now = usrp->get_time_now();
     if (vm.count("tx_rate")) {
         usrp->set_tx_rate(tx_rate);
         // Set an appropriate tx_delay value (if needed) to be used as the time_spec for
@@ -671,6 +678,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         spb,
                         tx_align,
                         elevate_priority,
+                        time_now,
                         adjusted_tx_delay,
                         random_nsamps);
                 });
@@ -715,6 +723,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     spb,
                     tx_align,
                     elevate_priority,
+                    time_now,
                     adjusted_tx_delay,
                     random_nsamps);
             });
