@@ -355,7 +355,9 @@ module radio_tx_core #(
               new_error_code  <= ERR_TX_UNDERRUN;
               new_error_time  <= radio_time;
               new_error_valid <= 1'b1;
-              state           <= ST_POLICY_WAIT;
+              // If we're between packets, go straight to IDLE. Otherwise, drop
+              // the rest of the packet before returning to IDLE.
+              state <= sop ? ST_IDLE : ST_POLICY_WAIT;
             end else if (s_axis_tlast && s_axis_teob) begin
               // We're done with this burst of packets, so acknowledge EOB and
               // go back to idle.
@@ -395,11 +397,6 @@ module radio_tx_core #(
                (reg_policy == TX_ERR_POLICY_BURST  && s_axis_teob)) begin
               state <= ST_IDLE;
             end
-
-          // If we came from ST_TRANSMIT and we happen to already be between
-          // packets (i.e., we underflowed while waiting for the next packet).
-          end else if (!s_axis_tvalid && sop) begin
-            if (reg_policy == TX_ERR_POLICY_PACKET) state <= ST_IDLE;
           end
         end
 
@@ -448,7 +445,7 @@ module radio_tx_core #(
     .reset    (radio_rst),
     .clear    (1'b0),
     .i_tdata  ({new_error_time, new_error_code}),
-    .i_tvalid (new_error_valid & new_error_ready),   // Mask with ready to prevent FIFO corruption
+    .i_tvalid (new_error_valid),
     .i_tready (new_error_ready),
     .o_tdata  ({next_error_time, next_error_code}),
     .o_tvalid (next_error_valid),
