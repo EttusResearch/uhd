@@ -190,11 +190,7 @@ else
 fi
 
 $VIVADO_PATH/settings${BITNESS}.sh
-if [[ -e $VIVADO_PATH/.settings${BITNESS}-Vivado_Lab.sh ]]; then
-    $VIVADO_PATH/.settings${BITNESS}-Vivado_Lab.sh
-else
-    $VIVADO_PATH/.settings${BITNESS}-Vivado.sh
-fi
+$VIVADO_PATH/.settings${BITNESS}-Vivado.sh
 if [[ -e $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh ]]; then
     $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh
 fi
