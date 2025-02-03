@@ -28,5 +28,5 @@ jobs:
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: $(x410_uartSerial)
         pytestDUT: 'x410'
-        pipelineAgent: sdr-test0
+        pipelineAgent: sdr-test0-0
         sfp0ip: '192.168.10.62'
