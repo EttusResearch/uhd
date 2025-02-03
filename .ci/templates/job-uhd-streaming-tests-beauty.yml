@@ -52,7 +52,7 @@ jobs:
         dutNameId: ''
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
-        jtagSerial: '251635138E94'
+        jtagSerial: '$(x310_jtagSerial)'
         sfpInt0: '$(x310_sfpInt0)'
         sfpInt1: '$(x310_sfpInt1)'
       # beauty-X410-0 X4_200:
