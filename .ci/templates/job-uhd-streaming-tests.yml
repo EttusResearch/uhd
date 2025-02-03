@@ -82,6 +82,7 @@ jobs:
       if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
         rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
       fi
+      rm -rf $(Agent.BuildDirectory)/uhd-images
     displayName: Cleanup from prior run
     condition: in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')
 
@@ -90,13 +91,31 @@ jobs:
     displayName: Download $(dutEmbeddedImagesArtifact)
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
+  - script: |
+      if [[ -n "$(dutFPGA)" ]]; then
+        FPGA_NAME=usrp_$(dutType)_fpga_$(dutFPGA)
+        FPGA_ARTIFACT=$(dutType)_$(dutFPGA)
+      else
+        FPGA_NAME=usrp_$(dutType)_fpga
+        FPGA_ARTIFACT=$(dutType)
+      fi
+      echo '##vso[task.setvariable variable=FPGA_NAME]'$FPGA_NAME
+      echo FPGA_NAME=$FPGA_NAME
+      echo '##vso[task.setvariable variable=FPGA_ARTIFACT]'$FPGA_ARTIFACT
+      echo FPGA_ARTIFACT=$FPGA_ARTIFACT
+      if [ "${{ parameters.fpga_imgs_source }}" = "FPGA Pipeline" ] || [ "${{ parameters.fpga_imgs_source }}" = "FPGA Pipeline PR"]; then
+        UHD_IMAGES_DIR=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}/$FPGA_ARTIFACT
+      else
+        UHD_IMAGES_DIR=$(Agent.BuildDirectory)/uhd-images
+      fi
+      echo '##vso[task.setvariable variable=UHD_IMAGES_DIR]'$UHD_IMAGES_DIR
+      echo UHD_IMAGES_DIR=$UHD_IMAGES_DIR
+    displayName: Set variables
+
   - download: ${{ parameters.uhdFpgaArtifactSource }}
-    patterns: |
-      usrp_$(dutType)*.bit
-      usrp_$(dutType)*.dts
-      usrp_$(dutType)*.rpt
+    artifact: $(FPGA_ARTIFACT)
     displayName: Download FPGA artifacts
-    condition: in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')
+    condition: and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), not(in(variables.dutType, 'B210')))
 
   - task: ExtractFiles@1
     inputs:
@@ -117,6 +136,19 @@ jobs:
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
     displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+
+  - script: |
+      mkdir -p $(UHD_IMAGES_DIR)
+      DUTTYPE=$(dutType)
+      # in the following, "${DUTTYPE,,}" is used as lower case version of "$(dutType)"
+      if [ "${DUTTYPE,,}" = "b210" ]; then
+        $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b2xx -t fw
+      fi
+      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t ${DUTTYPE,,} -t fpga
+    env:
+      UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
+    displayName: Download FPGA images
+    condition: not(and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), not(in(variables.dutType, 'B210'))))
 
   - script: |
       cd $(Agent.TempDirectory)
@@ -162,9 +194,9 @@ jobs:
 
   - script: |
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-        scp -o StrictHostKeyChecking=no $(uhd_fpga_artifact_directory)/*/usrp_$(dutType)_* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
-        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).bit.md5"
-        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(dutType)_fpga_$(dutFPGA).dts.md5"
+        scp -o StrictHostKeyChecking=no $UHD_IMAGES_DIR/$FPGA_NAME.* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/$FPGA_NAME.bit > /usr/share/uhd/images/$FPGA_NAME.bit.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/$FPGA_NAME.dts > /usr/share/uhd/images/$FPGA_NAME.dts.md5"
     displayName: Copy FPGA pipeline images to device
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
 
@@ -178,20 +210,7 @@ jobs:
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
-      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
-      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b2xx -t fw
-      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b210 -t fpga
-    displayName: Download B210 images
-    condition: and(succeeded(), eq(variables.dutType, 'B210'))
-
-  - script: |
-      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
-      if [ "${{ parameters.fpga_imgs_source }}" = "FPGA Pipeline" or "${{ parameters.fpga_imgs_source }}" = "FPGA Pipeline PR"]; then
-        cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/
-      else
-        $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t x310
-      fi
-      openFPGALoader -c digilent --ftdi-serial $(jtagSerial) --ftdi-channel 0 $UHD_IMAGES_DIR/usrp_x310_fpga_$(dutFPGA).bit
+      openFPGALoader -c digilent --ftdi-serial $(jtagSerial) --ftdi-channel 0 $UHD_IMAGES_DIR/$FPGA_NAME.bit
       EXITCODE=$?
       echo "Waiting for device to boot"
       sleep 30
@@ -259,7 +278,7 @@ jobs:
       UHD_CONFIG_FILE: $(config_file)
       PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
-      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+      UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
     continueOnError: true
     displayName: Run streaming tests on $(dutName)
     condition: and(succeeded(), not(eq(variables.dutFamily, 'x4xx')))
@@ -298,7 +317,7 @@ jobs:
     env:
       UHD_CONFIG_FILE: $(config_file)
       LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib
-      UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+      UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
     continueOnError: true
     displayName: Run raw udp streaming tests on $(dutName)
     condition: and(succeeded(), or(eq(variables.dutFamily, 'x4xx'), eq(variables.dutType, 'X310')))
@@ -399,7 +418,7 @@ jobs:
         UHD_CONFIG_FILE: $(config_file)
         PYTHONPATH: ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
         LD_LIBRARY_PATH: $(Build.BinariesDirectory)/uhddev/build-installed/lib:$(LD_LIBRARY_PATH_DPDK)
-        UHD_IMAGES_DIR: $(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images
+        UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
       continueOnError: true
       displayName: Run streaming tests with DPDK ${{ dpdkDir }} on $(dutName)
       condition: and(succeeded(), not(eq(variables.dutType, 'B210')))

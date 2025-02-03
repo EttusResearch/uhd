@@ -45,7 +45,7 @@ jobs:
       #   dutNumSendFrames: ''
       beauty-X310-0:
         dutName: 'beauty-X310-0'
-        dutType: 'X310'
+        dutType: 'x310'
         dutAddr: '$(x310_dutAddr)'
         dutSecondAddr: '$(x310_dutSecondAddr)'
         dutFPGA: 'XG'
