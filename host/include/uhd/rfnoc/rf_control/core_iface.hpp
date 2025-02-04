@@ -134,7 +134,7 @@ public:
      */
     virtual double set_rx_frequency(const double freq, const size_t chan) = 0;
 
-    /*! Set the TX tune args, if supported by the hardware.
+    /*! Set the RX tune args, if supported by the hardware.
      */
     virtual void set_rx_tune_args(const uhd::device_addr_t& args, const size_t chan) = 0;
 
