@@ -11,6 +11,7 @@ import logging
 import sys
 
 from . import yaml_utils
+from .connections import get_num_ports_from_data_port
 from .utils import resolve
 
 
@@ -37,9 +38,11 @@ def sanitize_connection(connection, known_modules, device, grc_block_dict):
     """
     con_src = connection[0:2]
     con_dst = connection[2:4]
+    hints = {}
 
-    def sanitize_clkname(clkname):
+    def sanitize_clkname(clkname, hint):
         if clkname.endswith("_clk"):
+            hint.update({"stripped_clk": True})
             return clkname[:-4]
         return clkname
 
@@ -80,7 +83,7 @@ def sanitize_connection(connection, known_modules, device, grc_block_dict):
         if con[0] == device["name"]:
             con[0] = "_device_"
         # Rule 3
-        con[1] = sanitize_clkname(con[1])
+        con[1] = sanitize_clkname(con[1], hints)
     # Rule 4
     con_src = sanitize_dataport_multiplicity(*con_src, "outputs")
     con_dst = sanitize_dataport_multiplicity(*con_dst, "inputs")
@@ -88,7 +91,7 @@ def sanitize_connection(connection, known_modules, device, grc_block_dict):
     for con in (con_src, con_dst):
         if con[0] in grc_block_dict and grc_block_dict[con[0]].get("parameters", {}).get("alias"):
             con[0] = grc_block_dict[con[0]]["parameters"]["alias"]
-    return [con_src[0], con_src[1], con_dst[0], con_dst[1]]
+    return [con_src[0], con_src[1], con_dst[0], con_dst[1], hints]
 
 
 def handle_block_quirks(block_dict, block_type, block):
@@ -162,7 +165,9 @@ def convert_to_image_config(grc, config_path, known_modules):
         logging.error("More than one device found in grc file")
         return None
     device_config = yaml_utils.device_config(config_path, device["parameters"]["device"])
-    # Generate base image configuration
+    # Generate base image configuration. This dictionary shall look like the
+    # dictionary that would be generated the equivalent image core YAML file
+    # to this GRC file.
     result = {
         "schema": "rfnoc_imagebuilder_args",
         "copyright": grc["options"]["parameters"]["copyright"],
@@ -184,7 +189,12 @@ def convert_to_image_config(grc, config_path, known_modules):
         "connections": [],
         "clk_domains": [],
     }
+    # This dictionary lists all clock ports as a list of clock port names for
+    # each block, e.g., {"radio0": ["radio",], "ddc0": ["ce",]}.
     clocks = {"_device_": [clk["name"] for clk in device_config["clocks"]]}
+    # This dictionary lists all IO and data ports as a list of port names for
+    # each block, e.g., {"radio0": ["ctrlport", "in_0", ...], "ddc0": ["in_0", ...]}.
+    ports = {"_device_": list(device_config["io_ports"].keys())}
     ###########################################################################
     # Stream Endpoints
     seps = {item["name"]: item for item in grc["blocks"] if item["parameters"].get("type") == "sep"}
@@ -226,6 +236,8 @@ def convert_to_image_config(grc, config_path, known_modules):
     assert all(type(sep["data"]) is bool for sep in result["stream_endpoints"].values())
     ###########################################################################
     # Blocks (NoC Blocks, Transport Adapters, Modules)
+    # design_blocks is a dictionary of all blocks, transport adapters, and
+    # modules in this current GRC design.
     design_blocks = {}
     for grc_blocktype, blocktype in (
         ("block", "noc_blocks"),
@@ -238,13 +250,14 @@ def convert_to_image_config(grc, config_path, known_modules):
             if item["parameters"].get("type") == grc_blocktype
         }
         for block_name, block in design_blocks[blocktype].items():
+            if "desc" not in block["parameters"]:
+                raise ValueError("Block %s has no 'desc' parameter." % block_name)
             if block["parameters"]["desc"] not in known_modules[blocktype]:
                 logging.error("Block %s not found.", block["parameters"]["desc"])
                 sys.exit(1)
-            clocks[block_name] = [
-                clk["name"]
-                for clk in known_modules[blocktype][block["parameters"]["desc"]].get("clocks", [])
-            ]
+            block_info = known_modules[blocktype][block["parameters"]["desc"]]
+            clocks[block_name] = [clk["name"] for clk in block_info.get("clocks", [])]
+            ports[block_name] = list(block_info.get("io_ports", {}).keys())
     for block_type in ("noc_blocks", "transport_adapters", "modules"):
         for block in design_blocks.get(block_type, {}).values():
             block_dict = {
@@ -264,6 +277,36 @@ def convert_to_image_config(grc, config_path, known_modules):
                 and not param_name.startswith("_")
                 and param_name in block_param_info
             }
+            # Update list of ports with data ports. We can do this now that the
+            # parameters have been resolved. For example, if we have a radio
+            # block called 'radio0', then ports["radio0"] will add all the
+            # data ports of that block ("in_0", "out_0", ...).
+            if block_type == "noc_blocks":  # Only NoC blocks have data ports
+                for direction in ("inputs", "outputs"):
+                    data_ports = (
+                        known_modules[block_type][block_dict["block_desc"]]
+                        .get("data", {})
+                        .get(direction, {})
+                        .items()
+                    )
+                    for port_name, port_info in data_ports:
+                        num_ports = get_num_ports_from_data_port(port_info, block_dict)
+                        if num_ports is None:
+                            logging.error(
+                                "Cannot identify number of ports for data port %s on block %s.",
+                                port_name,
+                                block["name"],
+                            )
+                            sys.exit(1)
+                        # If we have a variable number of ports, then we unroll
+                        # the port names (e.g., in_0, in_1, in_2, ...).
+                        if "num_ports" in port_info:
+                            ports[block["name"]].extend(
+                                [f"{port_name}_{i}" for i in range(num_ports)]
+                            )
+                        # If not, then we just add the port name.
+                        else:
+                            ports[block["name"]].append(port_name)
             # 'priority' is a special parameter that is not part of the block's
             # parameter list, but rather directly a key of the block.
             if "priority" in block["parameters"]:
@@ -273,6 +316,7 @@ def convert_to_image_config(grc, config_path, known_modules):
             if grc_block_dict[block_name]["parameters"].get("alias"):
                 alias = grc_block_dict[block_name]["parameters"]["alias"]
                 clocks[alias] = clocks[block_name]  # Update from old block name to alias
+                ports[alias] = ports[block_name]  # Update from old block name to alias
                 block_name = alias
             if block_name in result[block_type]:
                 logging.error("Block %s already exists.", block_name)
@@ -287,16 +331,46 @@ def convert_to_image_config(grc, config_path, known_modules):
         for connection in grc["connections"]
     ]
     device["name"] = "_device_"
+
     # Now, add connections to the image configuration. We need to determine if
     # a connection is a clock domain connection or a regular connection.
-    for con in grc["connections"]:
-        src_blk = con[0]
-        dst_blk = con[2]
-        con_type = (
-            "clk_domains"
-            if con[1] in clocks[src_blk] and con[3] in clocks[dst_blk]
-            else "connections"
+    def is_clk_con(con):
+        """Check if a connection is a clock domain connection.
+
+        The following rules are checked:
+        - If the names of the ports are in the list of known clocks, but they
+          are not in the list of IO ports of the block, then it is a clock
+          domain connection.
+        - If the names of the ports are both known clock names, but also
+          known IO ports of the block, then we check the connection hints.
+          If we previously stripped _clk from the port names, then it is a
+          clock domain connection.
+        - Otherwise, it's not.
+
+        Reminders:
+        - The connection tuple is (srcblk, srcport, dstblk, dstport, hints).
+        - The clocks dictionary is a dictionary of block names to a list of
+          clock port names.
+        - Same for the ports dictionary, but for IO and data ports.
+        """
+        srcblk, srcport, dstblk, dstport, hints = con
+        return (
+            # Case 1: All ports are clock ports, and are not also regular ports
+            (srcport in clocks[srcblk] and dstport in clocks[dstblk])
+            and not (srcport in ports[srcblk] and dstport in ports[dstblk])
+        ) or (
+            # Case 2: All ports are both clock ports, and are also regular ports,
+            # but we stripped _clk from the port names
+            (srcport in clocks[srcblk] and dstport in clocks[dstblk])
+            and (srcport in ports[srcblk] and dstport in ports[dstblk])
+            and hints.get("stripped_clk")
         )
+
+    # The goal of this loop is to sort all the connections that are in
+    # grc["connections"] into either result["connections"] or
+    # result["clk_domains"].
+    for con in grc["connections"]:
+        con_type = "clk_domains" if is_clk_con(con) else "connections"
         result[con_type].append(
             {
                 "srcblk": con[0],
