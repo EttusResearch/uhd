@@ -156,7 +156,7 @@ public:
 
     void set_scaling_factor(const double factor) override
     {
-        set_property<float>(PROP_KEY_FFT_SCALING_FACTOR, static_cast<double>(factor));
+        set_property<double>(PROP_KEY_FFT_SCALING_FACTOR, static_cast<double>(factor));
     }
 
     void set_scaling(const uint32_t scaling) override
@@ -739,7 +739,7 @@ private:
         PROP_KEY_DIRECTION, static_cast<int>(DEFAULT_DIRECTION), {res_source_info::USER}};
     property_t<int> _scaling = property_t<int>{
         PROP_KEY_FFT_SCALING, DEFAULT_FFT_SCALING, {res_source_info::USER}};
-    property_t<float> _scaling_factor = property_t<float>{
+    property_t<double> _scaling_factor = property_t<double>{
         PROP_KEY_FFT_SCALING_FACTOR, DEFAULT_FFT_SCALING_FACTOR, {res_source_info::USER}};
     property_t<int> _shift = property_t<int>{
         PROP_KEY_SHIFT_CONFIG, static_cast<int>(DEFAULT_SHIFT), {res_source_info::USER}};
