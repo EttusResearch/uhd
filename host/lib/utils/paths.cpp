@@ -524,7 +524,14 @@ std::string uhd::find_image_path(
 
 std::string uhd::find_utility(const std::string& name)
 {
+#ifdef UHD_PLATFORM_WIN32
+    /* python scripts are present under /lib/uhd/utils but the function
+    get_lib_path() return path including /bin/. This is because dll is located under /bin/
+    Correcting this behavior by using get_pkg_path() and appending /lib/. */
+    return (fs::path(uhd::get_pkg_path()) / "lib" / "uhd" / "utils" / name).string();
+#else
     return fs::path(fs::path(uhd::get_lib_path()) / "uhd" / "utils" / name).string();
+#endif
 }
 
 std::string uhd::print_utility_error(const std::string& name, const std::string& args)
