@@ -102,7 +102,7 @@ stages:
   jobs:
   - template: templates/tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
-      testOS: ubuntu1804
+      testOS: ubuntu2404
       uhdArtifactSource: uhd_mono_pipeline
       ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
         uhdFpgaArtifactSource: uhd_fpga_pr_pipeline
@@ -117,7 +117,7 @@ stages:
   jobs:
   - template: templates/tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
-      testOS: ubuntu1804
+      testOS: ubuntu2404
       uhdArtifactSource: uhd_mono_pipeline
       ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
         uhdFpgaArtifactSource: uhd_fpga_pr_pipeline

@@ -2,7 +2,7 @@ parameters:
 - name: testOS
   type: string
   values:
-    - ubuntu1804
+    - ubuntu2404
 - name: uhdArtifactSource
   type: string
   default: current
@@ -23,7 +23,7 @@ jobs:
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    xilinxLocation: /opt/Xilinx/SDK/2019.1
+    xilinxLocation: /opt/Xilinx/Vivado_Lab/2021.1
     dutMatrix:
       sdr-test0-x410-0:
         dutName: 'sdr-test0-x410-0'
