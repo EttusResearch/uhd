@@ -39,7 +39,7 @@ from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
 
-X400_FPGA_COMPAT = (8, 2)
+X400_FPGA_COMPAT = (9, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 # The compat number at which DNA support was added:
@@ -347,10 +347,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         assert_compat_number(
             X400_FPGA_COMPAT, actual_compat, component="FPGA", fail_on_old_minor=False, log=self.log
         )
-        if CompatNumber(actual_compat) >= CompatNumber(X400_REMOTE_STREAMING_COMPAT):
-            self.fpga_features.add("remote_udp_streaming")
-        if CompatNumber(actual_compat) >= CompatNumber(X400_DEVICE_DNA_COMPAT):
-            self.fpga_features.add("device_dna")
+        self.fpga_features.add("remote_udp_streaming")
+        self.fpga_features.add("device_dna")
         self.log.debug(f"FPGA supports the following features: {', '.join(self.fpga_features)}")
 
     def _init_gps_mgr(self):
