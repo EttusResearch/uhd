@@ -7,8 +7,9 @@
 """
 
 import socket
-from multiprocessing import Process
+from multiprocessing import Process, current_process
 
+import setproctitle
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
 from usrp_mpm.mpmutils import to_binary_str
@@ -41,6 +42,7 @@ def _discovery_process(state, discovery_addr):
 
     Is spawned by spawn_discovery_process().
     """
+    setproctitle.setproctitle(current_process().name)
     log = get_main_logger().getChild("discovery")
 
     def create_response_string(state):

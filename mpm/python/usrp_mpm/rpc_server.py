@@ -13,10 +13,11 @@ import sys
 import threading
 import traceback
 from contextlib import contextmanager
-from multiprocessing import Process, RLock
+from multiprocessing import Process, RLock, current_process
 from random import choice
 from string import ascii_letters, digits
 
+import setproctitle
 from gevent import Greenlet, monkey, spawn_later
 from gevent.pool import Pool
 from gevent.server import StreamServer
@@ -616,6 +617,7 @@ def _rpc_server_process(shared_state, port, default_args):
     :param port: The port to run the RPC server on
     :param default_args: The arguments passed by the app
     """
+    setproctitle.setproctitle(current_process().name)
     connections = Pool(1000)
     server = StreamServer(
         ("0.0.0.0", port), handle=MPMServer(shared_state, default_args), spawn=connections
@@ -631,7 +633,7 @@ def _rpc_server_process(shared_state, port, default_args):
         server.stop()
         sys.exit(0)
 
-    threading.Thread(target=stop_worker, daemon=True).start()
+    threading.Thread(target=stop_worker, name="Stop listener", daemon=True).start()
     register_chained_signal_handler(signal.SIGTERM, lambda *args: stop_event.set())
     register_chained_signal_handler(signal.SIGINT, lambda *args: stop_event.set())
     server.serve_forever()
@@ -646,6 +648,7 @@ def spawn_rpc_process(state, udp_port, default_args):
     """
     proc = Process(
         target=_rpc_server_process,
+        name="RPCServer",
         args=[state, udp_port, default_args],
     )
     proc.start()

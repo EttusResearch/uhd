@@ -8,8 +8,9 @@
 
 import re
 import signal
-from multiprocessing import Event, Process, Value
+from multiprocessing import Event, Process, Value, current_process
 
+import setproctitle
 from usrp_mpm.mpmutils import poll_with_timeout, register_chained_signal_handler
 from usrp_mpm.sys_utils.gpio import Gpio
 
@@ -279,10 +280,12 @@ class DioControl:
         }
         self._dio0_fault_monitor = Process(
             target=self._monitor_dio_fault,
+            name="DIO0 fault monitor",
             args=("A", "DIO_INT0", self._tear_down_monitor, self._dio_fault["PORTA"]),
         )
         self._dio1_fault_monitor = Process(
             target=self._monitor_dio_fault,
+            name="DIO1 fault monitor",
             args=("B", "DIO_INT1", self._tear_down_monitor, self._dio_fault["PORTB"]),
         )
         register_chained_signal_handler(signal.SIGINT, self._monitor_int_handler)
@@ -315,6 +318,7 @@ class DioControl:
         If there is a fault, turn off external power.
         """
         self.log.trace("Launching monitor loop...")
+        setproctitle.setproctitle(current_process().name)
         fault_line = Gpio(fault, Gpio.FALLING_EDGE)
         while True:
             try:
