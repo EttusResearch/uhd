@@ -70,12 +70,12 @@ class Gpio:
             gpio.set_value(int(value))
             self._out_value = bool(value)
 
-    def event_wait(self):
+    def event_wait(self, timeout=1):
         """Wait for an event to happen on this line.
 
+        :param timeout: The time to wait for an event in seconds.
+                The timeout has to be passed in full seconds as an int.
         :return: True if an event happened, False if the wait timed out.
         """
         with request_gpio(self._line, self._direction) as gpio:
-            while True:
-                if gpio.event_wait(sec=1):
-                    return True
+            return gpio.event_wait(sec=timeout)
