@@ -8,6 +8,7 @@
 from __future__ import print_function
 
 import copy
+import signal
 import sys
 import threading
 import traceback
@@ -16,12 +17,12 @@ from multiprocessing import Process, RLock
 from random import choice
 from string import ascii_letters, digits
 
-from gevent import Greenlet, monkey, signal, spawn_later
+from gevent import Greenlet, monkey, spawn_later
 from gevent.pool import Pool
 from gevent.server import StreamServer
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
-from usrp_mpm.mpmutils import to_binary_str
+from usrp_mpm.mpmutils import register_chained_signal_handler, to_binary_str
 from usrp_mpm.rpc_utils import get_map_for_rpc
 from usrp_mpm.sys_utils import net, watchdog
 
@@ -631,8 +632,8 @@ def _rpc_server_process(shared_state, port, default_args):
         sys.exit(0)
 
     threading.Thread(target=stop_worker, daemon=True).start()
-    signal.signal(signal.SIGTERM, lambda *args: stop_event.set())
-    signal.signal(signal.SIGINT, lambda *args: stop_event.set())
+    register_chained_signal_handler(signal.SIGTERM, lambda *args: stop_event.set())
+    register_chained_signal_handler(signal.SIGINT, lambda *args: stop_event.set())
     server.serve_forever()
 
 

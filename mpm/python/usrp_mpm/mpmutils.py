@@ -309,6 +309,24 @@ def get_dboard_class_from_pid(pid):
     return None
 
 
+def register_chained_signal_handler(signal, handler):
+    """Register a signal handler that chains to the previous handler.
+
+    :param signal: The signal to handle
+    :param handler: Handler to be added to the chain
+    """
+    import signal as sig
+
+    registered_handler = sig.getsignal(signal)
+
+    def chained_handler(signum, frame):
+        handler(signum, frame)
+        if callable(registered_handler):
+            registered_handler(signum, frame)
+
+    sig.signal(signal, chained_handler)
+
+
 # pylint: disable=too-few-public-methods
 class LogWrapper:
     """This is a class that can be wrapped around any other class.

@@ -10,7 +10,7 @@ import re
 import signal
 from multiprocessing import Event, Process, Value
 
-from usrp_mpm.mpmutils import poll_with_timeout
+from usrp_mpm.mpmutils import poll_with_timeout, register_chained_signal_handler
 from usrp_mpm.sys_utils.gpio import Gpio
 
 
@@ -285,7 +285,8 @@ class DioControl:
             target=self._monitor_dio_fault,
             args=("B", "DIO_INT1", self._tear_down_monitor, self._dio_fault["PORTB"]),
         )
-        signal.signal(signal.SIGINT, self._monitor_int_handler)
+        register_chained_signal_handler(signal.SIGINT, self._monitor_int_handler)
+        register_chained_signal_handler(signal.SIGTERM, self._monitor_int_handler)
         self._dio0_fault_monitor.start()
         self._dio1_fault_monitor.start()
 
