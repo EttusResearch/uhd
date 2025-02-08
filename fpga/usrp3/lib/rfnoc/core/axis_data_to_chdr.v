@@ -178,10 +178,11 @@ module axis_data_to_chdr #(
         if (axis_data_rst) begin
           in_pkt_info_tvalid <= 1'b0;
         end else begin
-          in_pkt_info_tvalid <= 1'b0;
           if (s_axis_tvalid && s_axis_tready && start_of_packet) begin
             packet_length      <= s_axis_tlength + HDR_LEN;
             in_pkt_info_tvalid <= 1'b1;
+          end else if (in_pkt_info_tready) begin
+            in_pkt_info_tvalid <= 1'b0;
           end
         end
       end
@@ -207,7 +208,9 @@ module axis_data_to_chdr #(
           end
 
           // Update the packet length if the word is accepted
-          in_pkt_info_tvalid <= 1'b0;
+          if (in_pkt_info_tready) begin
+            in_pkt_info_tvalid <= 1'b0;
+          end
           if (s_axis_tvalid && s_axis_tready) begin
             if (s_axis_tlast) begin
               length_count       <= HDR_LEN;
