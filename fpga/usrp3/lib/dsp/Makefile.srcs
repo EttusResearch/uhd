@@ -44,4 +44,5 @@ small_hb_int.v \
 srl.v \
 tx_frontend.v \
 variable_delay_line.v \
+axi_fir_multisample_filter.sv \
 ))
