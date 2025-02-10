@@ -146,14 +146,6 @@ pr:
     - host/python/uhd/rfnoc_utils
     - host/include/uhd/rfnoc
 
-schedules:
-- cron: "0 18 * * Sun"
-  displayName: Weekly FPGA PR Build master branch
-  branches:
-    include:
-    - master
-  always: true
-
 extends:
   template: templates/stages-fpga-pipeline.yml
   parameters:
