@@ -101,18 +101,18 @@ module ctrlport_decoder #(
           // Mask WR and RD based on address decoding
           m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & decoder[i];
           m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & decoder[i];
-
-          // Other values pass through to all slaves, but should be ignored
-          // unless the corresponding WR or RD is not asserted.
-          m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
-          m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
-          m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
-          m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
-
-          // Pass through only the relevant slave bits
-          m_ctrlport_req_addr[20*i+:20]           <= 20'b0;
-          m_ctrlport_req_addr[20*i+:SLAVE_ADDR_W] <= s_ctrlport_req_addr[SLAVE_ADDR_W-1:0];
         end
+
+        // Other values pass through to all slaves, but should be ignored
+        // unless the corresponding WR or RD is not asserted.
+        m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
+        m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
+        m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
+        m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
+
+        // Pass through only the relevant slave bits
+        m_ctrlport_req_addr[20*i+:20]           <= 20'b0;
+        m_ctrlport_req_addr[20*i+:SLAVE_ADDR_W] <= s_ctrlport_req_addr[SLAVE_ADDR_W-1:0];
       end
     end
   endgenerate
@@ -144,10 +144,11 @@ module ctrlport_decoder #(
     if (ctrlport_rst) begin
       s_ctrlport_resp_ack  <= 0;
     end else begin
-      s_ctrlport_resp_data   <= data;
-      s_ctrlport_resp_status <= status;
-      s_ctrlport_resp_ack    <= ack;
+      s_ctrlport_resp_ack  <= ack;
     end
+
+    s_ctrlport_resp_data   <= data;
+    s_ctrlport_resp_status <= status;
   end
 
 endmodule

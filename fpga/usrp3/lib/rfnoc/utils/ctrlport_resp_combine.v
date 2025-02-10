@@ -7,14 +7,14 @@
 //
 // Description:
 //
-//   This module combines the control-port responses from multiple slave blocks 
-//   into a single response for the master. This is done by using ack bit to 
-//   mask all bits of the responses then ORing all the results together onto a 
-//   single response bus. This is valid because only one block is allowed to 
+//   This module combines the control-port responses from multiple slave blocks
+//   into a single response for the master. This is done by using ack bit to
+//   mask all bits of the responses then ORing all the results together onto a
+//   single response bus. This is valid because only one block is allowed to
 //   respond to a single request.
 //
-//   Note that no special logic is required to split the requests from the 
-//   master among multiple slaves. A single master request interface can be 
+//   Note that no special logic is required to split the requests from the
+//   master among multiple slaves. A single master request interface can be
 //   directly connected to all the slaves without issue.
 //
 // Parameters:
@@ -40,30 +40,29 @@ module ctrlport_resp_combine #(
   output reg [31:0] s_ctrlport_resp_data
 );
 
-  always @(posedge ctrlport_clk) begin
+  always @(posedge ctrlport_clk) begin : or_reg_resp
+    reg [31:0] data;
+    reg [ 1:0] status;
+    reg        ack;
+    integer    s;
+
+    // Take the responses and mask them with ack then OR them together
+    data   = 0;
+    status = 0;
+    ack    = 0;
+    for (s = 0; s < NUM_SLAVES; s = s+1) begin
+      data   = data   | (m_ctrlport_resp_data  [s*32 +: 32] & {32{m_ctrlport_resp_ack[s]}});
+      status = status | (m_ctrlport_resp_status[s* 2 +:  2] & { 2{m_ctrlport_resp_ack[s]}});
+      ack    = ack    |  m_ctrlport_resp_ack[s];
+    end
+
+    // Register the output to break combinatorial path
+    s_ctrlport_resp_data   <= data;
+    s_ctrlport_resp_status <= status;
+    s_ctrlport_resp_ack    <= ack;
+
     if (ctrlport_rst) begin
-      s_ctrlport_resp_data <= 0;
-      s_ctrlport_resp_ack  <= 0;
-    end else begin : or_reg_resp
-      reg [31:0] data;
-      reg [ 1:0] status;
-      reg        ack;
-      integer    s;
-
-      // Take the responses and mask them with ack then OR them together
-      data   = 0;
-      status = 0;
-      ack    = 0;
-      for (s = 0; s < NUM_SLAVES; s = s+1) begin
-        data   = data   | (m_ctrlport_resp_data  [s*32 +: 32] & {32{m_ctrlport_resp_ack[s]}});
-        status = status | (m_ctrlport_resp_status[s* 2 +:  2] & { 2{m_ctrlport_resp_ack[s]}});
-        ack    = ack    |  m_ctrlport_resp_ack[s];
-      end
-
-      // Register the output to break combinatorial path
-      s_ctrlport_resp_data   <= data;
-      s_ctrlport_resp_status <= status;
-      s_ctrlport_resp_ack    <= ack;
+      s_ctrlport_resp_ack <= 0;
     end
   end
 

@@ -52,27 +52,28 @@ module ctrlport_gate (
   `include "../core/ctrlport.vh"
 
   always @(posedge ctrlport_clk) begin
+    // Forward all signals by default
+    m_ctrlport_req_wr         <= s_ctrlport_req_wr;
+    m_ctrlport_req_rd         <= s_ctrlport_req_rd;
+    m_ctrlport_req_addr       <= s_ctrlport_req_addr;
+    m_ctrlport_req_portid     <= s_ctrlport_req_portid;
+    m_ctrlport_req_rem_epid   <= s_ctrlport_req_rem_epid;
+    m_ctrlport_req_rem_portid <= s_ctrlport_req_rem_portid;
+    m_ctrlport_req_data       <= s_ctrlport_req_data;
+    m_ctrlport_req_byte_en    <= s_ctrlport_req_byte_en;
+    m_ctrlport_req_has_time   <= s_ctrlport_req_has_time;
+    m_ctrlport_req_time       <= s_ctrlport_req_time;
+
+    s_ctrlport_resp_ack    <= m_ctrlport_resp_ack;
+    s_ctrlport_resp_status <= m_ctrlport_resp_status;
+    s_ctrlport_resp_data   <= m_ctrlport_resp_data;
+
+    // Handle reset and disabled case
     if (ctrlport_rst) begin
       m_ctrlport_req_wr   <= 1'b0;
       m_ctrlport_req_rd   <= 1'b0;
       s_ctrlport_resp_ack <= 1'b0;
     end else begin
-      // Forward all signals by default
-      m_ctrlport_req_wr         <= s_ctrlport_req_wr;
-      m_ctrlport_req_rd         <= s_ctrlport_req_rd;
-      m_ctrlport_req_addr       <= s_ctrlport_req_addr;
-      m_ctrlport_req_portid     <= s_ctrlport_req_portid;
-      m_ctrlport_req_rem_epid   <= s_ctrlport_req_rem_epid;
-      m_ctrlport_req_rem_portid <= s_ctrlport_req_rem_portid;
-      m_ctrlport_req_data       <= s_ctrlport_req_data;
-      m_ctrlport_req_byte_en    <= s_ctrlport_req_byte_en;
-      m_ctrlport_req_has_time   <= s_ctrlport_req_has_time;
-      m_ctrlport_req_time       <= s_ctrlport_req_time;
-
-      s_ctrlport_resp_ack    <= m_ctrlport_resp_ack;
-      s_ctrlport_resp_status <= m_ctrlport_resp_status;
-      s_ctrlport_resp_data   <= m_ctrlport_resp_data;
-
       // Overwrite default assignments in case of disabled interface
       if (m_ctrlport_req_rd || m_ctrlport_req_wr) begin
         if (~enable) begin

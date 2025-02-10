@@ -117,12 +117,12 @@ module ctrlport_splitter #(
 
       // Register the output to break combinatorial path
       always @(posedge ctrlport_clk) begin : response_reg
+        s_ctrlport_resp_data   <= data;
+        s_ctrlport_resp_status <= status;
+        s_ctrlport_resp_ack    <= ack;
+
         if (ctrlport_rst) begin
           s_ctrlport_resp_ack  <= 0;
-        end else begin
-          s_ctrlport_resp_data   <= data;
-          s_ctrlport_resp_status <= status;
-          s_ctrlport_resp_ack    <= ack;
         end
       end
     end

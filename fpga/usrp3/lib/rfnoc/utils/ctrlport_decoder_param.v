@@ -7,18 +7,18 @@
 //
 // Description:
 //
-//   This block splits a single control port interface into multiple. It is 
-//   used when you have a single master that needs to access multiple slaves. 
-//   For example, a NoC block where the registers are implemented in multiple 
+//   This block splits a single control port interface into multiple. It is
+//   used when you have a single master that needs to access multiple slaves.
+//   For example, a NoC block where the registers are implemented in multiple
 //   submodules that must be read/written by a single NoC shell.
 //
-//   This version also implements address decoding. The request is passed to a 
-//   slave only if the address falls within that slave's address space. Each 
-//   slave can have a unique base address and address space size. The address 
+//   This version also implements address decoding. The request is passed to a
+//   slave only if the address falls within that slave's address space. Each
+//   slave can have a unique base address and address space size. The address
 //   space is broken up as follows.
 //
 //     PORT_BASE[0*20 +: 20] = Port 0 base address
-//       │           ┐ 
+//       │           ┐
 //       │           ├── 2**PORT_ADDR_W[0*32 +: 32] bytes for slave 0
 //       │           ┘
 //       .
@@ -30,23 +30,23 @@
 //       .
 //       .
 //
-//   When passed to the slave, the base address is stripped from the request 
+//   When passed to the slave, the base address is stripped from the request
 //   address so that only the PORT_ADDR_W-bit address is passed through.
 //
 // Parameters:
 //
 //   NUM_SLAVES  : The number of slaves to connect to a master.
 //
-//   PORT_BASE   : Base addresses to use fore each slave. This is a 
-//                 concatenation of 20-bit addresses, where the right-most 
-//                 (least-significant) 20 bits corresponds to slave 0. Each 
-//                 address must be a multiple of 2**PORT_ADDR_W, where 
-//                 PORT_ADDR_W is the number of address bits allocated to that 
+//   PORT_BASE   : Base addresses to use fore each slave. This is a
+//                 concatenation of 20-bit addresses, where the right-most
+//                 (least-significant) 20 bits corresponds to slave 0. Each
+//                 address must be a multiple of 2**PORT_ADDR_W, where
+//                 PORT_ADDR_W is the number of address bits allocated to that
 //                 slave.
 //
-//   PORT_ADDR_W : Number of address bits to allocate to each slave. This is a 
-//                 concatenation of 32-bit integers, where the right-most 
-//                 (least-significant) 32 bits corresponds to the address space 
+//   PORT_ADDR_W : Number of address bits to allocate to each slave. This is a
+//                 concatenation of 32-bit integers, where the right-most
+//                 (least-significant) 32 bits corresponds to the address space
 //                 for slave 0.
 //
 
@@ -119,18 +119,18 @@ module ctrlport_decoder_param #(
           // Mask WR and RD based on address decoding
           m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & dec_mask[i];
           m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & dec_mask[i];
-
-          // Other values pass through to all slaves, but should be ignored
-          // unless WR or RD is asserted.
-          m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
-          m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
-          m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
-          m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
-
-          // Mask the address bits to that of the slaves address space.
-          m_ctrlport_req_addr[20*i +: 20]     <= 20'b0;
-          m_ctrlport_req_addr[20*i +: ADDR_W] <= s_ctrlport_req_addr[ADDR_W-1 : 0];
         end
+
+        // Other values pass through to all slaves, but should be ignored
+        // unless WR or RD is asserted.
+        m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
+        m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
+        m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
+        m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
+
+        // Mask the address bits to that of the slaves address space.
+        m_ctrlport_req_addr[20*i +: 20]     <= 20'b0;
+        m_ctrlport_req_addr[20*i +: ADDR_W] <= s_ctrlport_req_addr[ADDR_W-1 : 0];
       end
     end
   endgenerate
@@ -161,10 +161,11 @@ module ctrlport_decoder_param #(
     if (ctrlport_rst) begin
       s_ctrlport_resp_ack  <= 0;
     end else begin
-      s_ctrlport_resp_data   <= data;
-      s_ctrlport_resp_status <= status;
-      s_ctrlport_resp_ack    <= ack;
+      s_ctrlport_resp_ack  <= ack;
     end
+
+    s_ctrlport_resp_data   <= data;
+    s_ctrlport_resp_status <= status;
   end
 
 endmodule

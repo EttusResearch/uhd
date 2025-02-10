@@ -109,31 +109,37 @@ module ctrlport_combiner #(
   reg [   NUM_MASTERS-1:0] req_has_time;
   reg [64*NUM_MASTERS-1:0] req_time;
 
-  always @(posedge ctrlport_clk) begin
+  always @(posedge ctrlport_clk) begin : input_buffer_block
+    integer i;
     if (ctrlport_rst) begin
       req_valid <= 0;
     end else begin : input_reg_gen
-      integer i;
       for (i = 0; i < NUM_MASTERS; i = i + 1) begin
         if (s_ctrlport_req_wr[i] | s_ctrlport_req_rd[i]) begin
           // Mark this slave's request valid and save the request information
-          req_valid[i]             <= 1'b1;
-          req_wr[i]                <= s_ctrlport_req_wr[i];
-          req_rd[i]                <= s_ctrlport_req_rd[i];
-          req_addr[20*i+:20]       <= s_ctrlport_req_addr[20*i+:20];
-          req_portid[10*i+:10]     <= s_ctrlport_req_portid[10*i+:10];
-          req_rem_epid[16*i+:16]   <= s_ctrlport_req_rem_epid[16*i+:16];
-          req_rem_portid[10*i+:10] <= s_ctrlport_req_rem_portid[10*i+:10];
-          req_data[32*i+:32]       <= s_ctrlport_req_data[32*i+:32];
-          req_byte_en[4*i+:4]      <= s_ctrlport_req_byte_en[4*i+:4];
-          req_has_time[i]          <= s_ctrlport_req_has_time[i];
-          req_time[64*i+:64]       <= s_ctrlport_req_time[64*i+:64];
+          req_valid[i] <= 1'b1;
         end
       end
 
       // Clear the active request when it gets output
       if (req_load_output) begin
         req_valid[slave_sel] <= 1'b0;
+      end
+    end
+
+    // Buffer request information without reset
+    for (i = 0; i < NUM_MASTERS; i = i + 1) begin
+      if (s_ctrlport_req_wr[i] | s_ctrlport_req_rd[i]) begin
+        req_wr[i]                <= s_ctrlport_req_wr[i];
+        req_rd[i]                <= s_ctrlport_req_rd[i];
+        req_addr[20*i+:20]       <= s_ctrlport_req_addr[20*i+:20];
+        req_portid[10*i+:10]     <= s_ctrlport_req_portid[10*i+:10];
+        req_rem_epid[16*i+:16]   <= s_ctrlport_req_rem_epid[16*i+:16];
+        req_rem_portid[10*i+:10] <= s_ctrlport_req_rem_portid[10*i+:10];
+        req_data[32*i+:32]       <= s_ctrlport_req_data[32*i+:32];
+        req_byte_en[4*i+:4]      <= s_ctrlport_req_byte_en[4*i+:4];
+        req_has_time[i]          <= s_ctrlport_req_has_time[i];
+        req_time[64*i+:64]       <= s_ctrlport_req_time[64*i+:64];
       end
     end
   end
@@ -217,42 +223,46 @@ module ctrlport_combiner #(
   //
   //---------------------------------------------------------------------------
 
-  always @(posedge ctrlport_clk) begin
+  always @(posedge ctrlport_clk) begin : output_reg_gen
+    integer i;
+
+    // ---------- Request --------------
+    // Load the active request
+    if (req_load_output) begin
+      m_ctrlport_req_wr         <= req_wr        [slave_sel];
+      m_ctrlport_req_rd         <= req_rd        [slave_sel];
+      m_ctrlport_req_addr       <= req_addr      [20*slave_sel +: 20];
+      m_ctrlport_req_portid     <= req_portid    [10*slave_sel +: 10];
+      m_ctrlport_req_rem_epid   <= req_rem_epid  [16*slave_sel +: 16];
+      m_ctrlport_req_rem_portid <= req_rem_portid[10*slave_sel +: 10];
+      m_ctrlport_req_data       <= req_data      [32*slave_sel +: 32];
+      m_ctrlport_req_byte_en    <= req_byte_en   [ 4*slave_sel +: 4];
+      m_ctrlport_req_has_time   <= req_has_time  [slave_sel];
+      m_ctrlport_req_time       <= req_time      [64*slave_sel +: 64];
+    end else begin
+      m_ctrlport_req_wr <= 1'b0;
+      m_ctrlport_req_rd <= 1'b0;
+    end
+
     if (ctrlport_rst) begin
       m_ctrlport_req_wr <= 1'b0;
       m_ctrlport_req_rd <= 1'b0;
-    end else begin : output_reg_gen
-      integer i;
+    end
 
-      // Load the active request
-      if (req_load_output) begin
-        m_ctrlport_req_wr         <= req_wr        [slave_sel];
-        m_ctrlport_req_rd         <= req_rd        [slave_sel];
-        m_ctrlport_req_addr       <= req_addr      [20*slave_sel +: 20];
-        m_ctrlport_req_portid     <= req_portid    [10*slave_sel +: 10];
-        m_ctrlport_req_rem_epid   <= req_rem_epid  [16*slave_sel +: 16];
-        m_ctrlport_req_rem_portid <= req_rem_portid[10*slave_sel +: 10];
-        m_ctrlport_req_data       <= req_data      [32*slave_sel +: 32];
-        m_ctrlport_req_byte_en    <= req_byte_en   [ 4*slave_sel +: 4];
-        m_ctrlport_req_has_time   <= req_has_time  [slave_sel];
-        m_ctrlport_req_time       <= req_time      [64*slave_sel +: 64];
+    // ---------- Response --------------
+    // Output any response to the master that made the request
+    for (i = 0; i < NUM_MASTERS; i = i + 1) begin
+      // Give the response data to all the slaves (no demux, to save logic)
+      s_ctrlport_resp_status[2*i +: 2] <= m_ctrlport_resp_status;
+      s_ctrlport_resp_data[32*i +: 32] <= m_ctrlport_resp_data;
+
+      // Give the ack only to the master that made the request (use a demux)
+      if (ctrlport_rst) begin
+        s_ctrlport_resp_ack[i] <= 1'b0;
+      end else if (i == slave_sel && m_ctrlport_resp_ack) begin
+        s_ctrlport_resp_ack[i] <= 1'b1;
       end else begin
-        m_ctrlport_req_wr <= 1'b0;
-        m_ctrlport_req_rd <= 1'b0;
-      end
-
-      // Output any response to the master that made the request
-      for (i = 0; i < NUM_MASTERS; i = i + 1) begin
-        // Give the response data to all the slaves (no demux, to save logic)
-        s_ctrlport_resp_status[2*i +: 2] <= m_ctrlport_resp_status;
-        s_ctrlport_resp_data[32*i +: 32] <= m_ctrlport_resp_data;
-
-        // Give the ack only to the master that made the request (use a demux)
-        if (i == slave_sel && m_ctrlport_resp_ack) begin
-          s_ctrlport_resp_ack[i] <= 1'b1;
-        end else begin
-          s_ctrlport_resp_ack[i] <= 1'b0;
-        end
+        s_ctrlport_resp_ack[i] <= 1'b0;
       end
     end
   end
