@@ -1161,8 +1161,8 @@ module rfnoc_block_radio_tb #(
         "CMD_FIFO_SPACE did not decrement"
       );
 
-      // Fill the command FIFO, going one over
-      for (int i = 0; i < CMD_FIFO_SPACE_MAX; i++) begin
+      // Fill the command FIFO
+      for (int i = 0; i < CMD_FIFO_SPACE_MAX - 1; i++) begin
         start_rx(radio_num, WPP);
       end
       expected = 0;

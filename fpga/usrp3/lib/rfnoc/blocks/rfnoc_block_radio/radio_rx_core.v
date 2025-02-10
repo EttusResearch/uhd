@@ -100,6 +100,7 @@ module radio_rx_core #(
   //---------------------------------------------------------------------------
 
   reg                      reg_cmd_valid        = 0;  // Indicates when the CMD_FIFO has been written
+  wire                     cmd_fifo_ready;
   reg  [   RX_CMD_LEN-1:0] reg_cmd_word         = 0;  // Command to execute
   reg  [NUM_WORDS_LEN-1:0] reg_cmd_num_words    = 0;  // Number of words for the command
   reg  [             63:0] reg_cmd_time         = 0;  // Time for the command
@@ -138,21 +139,31 @@ module radio_rx_core #(
       // Default assignments
       s_ctrlport_resp_ack  <= 0;
       s_ctrlport_resp_data <= 0;
-      reg_cmd_valid        <= 0;
       clear_fifo           <= 0;
 
       // Clear stop register when we enter the STOP state
       if (cmd_stop_ack) cmd_stop <= 1'b0;
 
+      // send acknowledge when data is written into cmd fifo
+      if (reg_cmd_valid && cmd_fifo_ready) begin
+        s_ctrlport_resp_ack <= 1;
+        reg_cmd_valid <= 0;
+      end
+
       // Handle register writes
       if (s_ctrlport_req_wr) begin
         case (s_ctrlport_req_addr)
           REG_RX_CMD: begin
+            reg_cmd_word  <= s_ctrlport_req_data[RX_CMD_LEN-1:0];
+            reg_cmd_timed <= s_ctrlport_req_data[RX_CMD_TIMED_POS];
+
             // All commands go into the command FIFO except STOP
-            reg_cmd_valid       <= (s_ctrlport_req_data[RX_CMD_LEN-1:0] != RX_CMD_STOP);
-            reg_cmd_word        <=  s_ctrlport_req_data[RX_CMD_LEN-1:0];
-            reg_cmd_timed       <=  s_ctrlport_req_data[RX_CMD_TIMED_POS];
-            s_ctrlport_resp_ack <= 1;
+            if (s_ctrlport_req_data[RX_CMD_LEN-1:0] == RX_CMD_STOP) begin
+              s_ctrlport_resp_ack <= 1;
+            end else begin
+              // ack will be sent when the command is written into the FIFO (see code above)
+              reg_cmd_valid <= 1;
+            end
 
             // cmd_stop must remain asserted until it has completed
             if (!cmd_stop || cmd_stop_ack) begin
@@ -280,7 +291,7 @@ module radio_rx_core #(
 
   axi_fifo #(
     .WIDTH (64 + 1 + NUM_WORDS_LEN + 1),
-    .SIZE  (5)      // Ideally, this size will lead to an SRL-based FIFO
+    .SIZE  ($clog2(CMD_FIFO_SPACE_MAX))     // Ideally, this size will lead to an SRL-based FIFO
   ) cmd_fifo (
     .clk      (radio_clk),
     .reset    (radio_rst),
@@ -288,7 +299,7 @@ module radio_rx_core #(
     .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_num_words,
                 (reg_cmd_word == RX_CMD_CONTINUOUS) }),
     .i_tvalid (reg_cmd_valid),
-    .i_tready (),
+    .i_tready (cmd_fifo_ready),
     .o_tdata  ({ cmd_time, cmd_timed, cmd_num_words, cmd_continuous }),
     .o_tvalid (cmd_valid),
     .o_tready (cmd_done),
