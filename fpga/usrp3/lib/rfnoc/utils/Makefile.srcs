@@ -31,4 +31,10 @@ noc_shell_generic_ctrlport_pyld_chdr.v \
 timekeeper.v \
 ctrlport_terminator.v \
 chdr_strip_header.sv \
+ctrlport_if_clk_cross.sv \
+ctrlport_if_combiner.sv \
+ctrlport_if_decoder.sv \
+ctrlport_if_splitter.sv \
+ctrlport_if_terminator.sv \
+ctrlport_if_window.sv \
 ))

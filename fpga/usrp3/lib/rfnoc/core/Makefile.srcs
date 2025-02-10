@@ -1,5 +1,5 @@
 #
-# Copyright 2018 Ettus Research, A National Instruments Company
+# Copyright 2024 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
@@ -15,8 +15,9 @@ ctrlport.vh \
 ))
 
 RFNOC_CORE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/core/, \
-rfnoc_chdr_utils_pkg.sv \
 ctrlport_pkg.sv \
+ctrlport_if.sv \
+rfnoc_chdr_utils_pkg.sv \
 axis_ctrl_endpoint.v \
 axis_ctrl_master.v \
 axis_ctrl_slave.v \
