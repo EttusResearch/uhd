@@ -82,20 +82,24 @@ public:
         % endif
     % endfor
 
-    template<typename T> std::set<T> get_changed_addrs(void){
+    template<typename T> std::set<T> get_changed_addrs(bool include_ro = false) {
         if (_state == NULL) throw uhd::runtime_error("no saved state");
         //check each register for changes
         std::set<T> addrs;
         % for reg in regs:
             % if reg.is_array:
-        for (size_t i = 0; i < ${reg.get_array_len()}; i++) {
-            if(_state->${reg.get_name()}[i] != this->${reg.get_name()}[i]) {
-                addrs.insert(${reg.get_addr()} + i * ${reg.get_addr_step_size()});
+        if (include_ro || !${str(reg.is_readonly()).lower()}) {
+            for (size_t i = 0; i < ${reg.get_array_len()}; i++) {
+                if(_state->${reg.get_name()}[i] != this->${reg.get_name()}[i]) {
+                    addrs.insert(${reg.get_addr()} + i * ${reg.get_addr_step_size()});
+                }
             }
         }
             % else:
-        if(_state->${reg.get_name()} != this->${reg.get_name()}){
-            addrs.insert(${reg.get_addr()});
+        if (include_ro || !${str(reg.is_readonly()).lower()}) {
+            if(_state->${reg.get_name()} != this->${reg.get_name()}) {
+                addrs.insert(${reg.get_addr()});
+            }
         }
             % endif
         % endfor
@@ -188,19 +192,21 @@ class ${name}_t:
 
     %endfor
 
-    def get_changed_addrs(self):
+    def get_changed_addrs(self, include_ro=False):
         if self._state is None:
             raise RuntimeError("No saved state")
-        #check each register for changes
+        # Check each register for changes
         addrs = set()
         % for reg in regs:
         % if reg.is_array:
-        for index, value in enumerate(self.${reg.get_name()}):
-            if self._state.${reg.get_name()}[index] != value:
-                addrs.add(${reg.get_addr()} + index * ${reg.get_addr_step_size()})
+        if include_ro or not ${reg.is_readonly()}:
+            for index, value in enumerate(self.${reg.get_name()}):
+                if self._state.${reg.get_name()}[index] != value:
+                    addrs.add(${reg.get_addr()} + index * ${reg.get_addr_step_size()})
         % else:
-        if self._state.${reg.get_name()} != self.${reg.get_name()}:
-            addrs.add(${reg.get_addr()})
+        if include_ro or not ${reg.is_readonly()}:
+            if self._state.${reg.get_name()} != self.${reg.get_name()}:
+                addrs.add(${reg.get_addr()})
         % endif
         % endfor
         return addrs
