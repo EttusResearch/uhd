@@ -12,6 +12,7 @@
 #include <uhdlib/transport/offload_io_service_client.hpp>
 #include <uhdlib/utils/semaphore.hpp>
 #include <condition_variable>
+#include <cstdint>
 #include <boost/lockfree/queue.hpp>
 #include <atomic>
 #include <chrono>

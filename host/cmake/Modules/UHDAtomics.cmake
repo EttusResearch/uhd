@@ -38,6 +38,7 @@ endfunction(CHECK_WORKING_CXX_ATOMICS64)
 function(CHECK_WORKING_CXX_BOOST_ATOMICS varname)
     set(CMAKE_REQUIRED_INCLUDES ${Boost_INCLUDE_DIRS})
     CHECK_CXX_SOURCE_COMPILES("
+        #include <cstdint>
         #include <boost/lockfree/queue.hpp>
         boost::lockfree::queue<int> queue(1);
         int main() {

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/types/metadata.hpp>
+#include <cstdint>
 #include <boost/lockfree/queue.hpp>
 
 namespace uhd { namespace rfnoc {
