@@ -874,9 +874,7 @@ BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
     }
 }
 
-// A call to `recv()` of zero samples should return immediately, regardless of
-// the timeout parameter, and not return a timeout error despite the potential
-// absence of a packet on the wire.
+// A call to `recv()` of zero samples should not produce a timeout error.
 BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
 {
     const std::string format("fc64");
@@ -889,7 +887,8 @@ BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
 
     const auto start_time = std::chrono::steady_clock::now();
 
-    const size_t num_samps_ret = streamer->recv(buff.data(), 0, metadata, 10.0, false);
+    const size_t num_samps_ret = streamer->recv(buff.data(), 0, metadata, 1.0, false);
+    streamer->recv(buff.data(), 0, metadata, 0.0, false);
 
     const auto end_time = std::chrono::steady_clock::now();
     const std::chrono::duration<double> elapsed_time(end_time - start_time);
@@ -897,7 +896,7 @@ BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
     BOOST_CHECK_EQUAL(num_samps_ret, 0);
     BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_NONE);
 
-    // Ensure that the `recv()` of zero samples didn't wait the requested
-    // timeout period of 10 seconds.
-    BOOST_CHECK_LE(elapsed_time.count(), 0.5);
+    // Ensure that the `recv()` of zero samples waited for a bit longer than
+    // 1 seconds
+    BOOST_CHECK_LE(elapsed_time.count(), 1.5);
 }

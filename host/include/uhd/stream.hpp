@@ -223,7 +223,7 @@ public:
      * code means that the device produced data faster than the application
      * could read, and various buffers filled up leaving no more space for the
      * device to write data to. Note that an overrun on the device will not
-     * immediatiely show up when calling recv(). Depending on the device
+     * immediately show up when calling recv(). Depending on the device
      * implementation, there may be many more valid samples available before the
      * device had to stop writing samples to the FIFO. Only when all valid
      * samples are returned to the call site will the error code be set to
@@ -231,6 +231,53 @@ public:
      * application where recv() was called.
      * If the device is streaming continuously, it will reset itself when the
      * FIFO is cleared, and recv() can be called again to retrieve new, valid data.
+     *
+     * \section stream_rx_timeouts Timeouts
+     *
+     * The recv() call has a timeout parameter. This parameter is used to limit
+     * the time the call will block. If no data is available within the timeout
+     * period, the call will return with an error code of
+     * error_code_t::ERROR_CODE_TIMEOUT. This is not necessarily an error
+     * condition, but can occur naturally, for example if the upstream source
+     * produces data in a bursty fashion.
+     *
+     * An important fact about the timeout parameter is that it is not a total
+     * timeout value, but is applied to every single call within recv() that
+     * uses a timeout. This means that the total time recv() can block can be
+     * significantly larger than the timeout parameter passed to recv().
+     *
+     * When the timeout is set to zero, recv() will attempt to return as fast
+     * as possible, to minimize latency. This is useful when the application
+     * polls for data in a busy loop. However, note that in this case, it is
+     * possible that the call will return with an error code of timeout, even
+     * though a different error condition occurred, but has not been fully
+     * processed. It is therefore not sufficient to call recv() with a timeout
+     * of zero to check for any outstanding error conditions.
+     *
+     * \section stream_rx_nsamps_zero Calling recv() with nsamps_per_buff = 0
+     *
+     * It is not forbidden to call recv() with nsamps_per_buff = 0, and this
+     * can be useful to retrieve metadata only. In this case, the call will
+     * still apply the timeout value internally (which means the recv() call
+     * will wait at least for the timeout value for any incoming data, even
+     * though it won't be processed). However, the call will never return an
+     * error code of ERROR_CODE_TIMEOUT, as no data is expected to be processed.
+     *
+     * The following code snippet demonstrates how to call recv() with a zero
+     * number of samples to retrieve metadata only:
+     * \code{.cpp}
+     * int num_samps_rcvd = rx_streamer->recv(
+     *     buffs, num_samps_expected, metadata, timeout);
+     * if (num_samps_rcvd < num_samps_expected &&
+     *     metadata.error_code != error_code_t::ERROR_CODE_NONE &&
+     *     metadata.error_code != error_code_t::ERROR_CODE_TIMEOUT) {
+     *     // If we reach this point, we know that an error occurred, but we
+     *     // don't know what it was.
+     *     rx_streamer->recv(buffs, 0, metadata, timeout);
+     *     // Now meta_data.error_code will contain the actual error code,
+     *     // if it was received within timeout.
+     * }
+     * \endcode
      *
      * \param buffs a vector of writable memory to fill with samples
      * \param nsamps_per_buff the size of each buffer in number of samples

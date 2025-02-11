@@ -7,6 +7,13 @@ Change Log for Releases
   - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
      headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
      or `boost::math::gcd` and `boost::math::lcm` if not.
+  - When calling `recv()` on an RX streamer connected to an RFNoC device, we
+    no longer artificially inflate the timeout value. The old behaviour was
+    in some cases abused to detect overruns, but this is not a reliable method
+    and is now explicitly declared unsupported.
+* Bug Fixes
+  - Calling `recv()` on an RX streamer connected to an RFNoC device with a
+    zero timeout value now correctly returns immediately.
 
 
 ## 004.008.000.000
