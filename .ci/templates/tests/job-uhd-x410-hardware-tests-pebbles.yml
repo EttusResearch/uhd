@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu1804
 - name: uhdArtifactSource
   type: string
   default: current
@@ -20,7 +16,6 @@ jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
   parameters:
     suiteName: 'ettus_pebbles_x410'
-    testOS: '${{ parameters.testOS }}'
     toolset: 'make'
     runPyTest: true
     runDevTest: false

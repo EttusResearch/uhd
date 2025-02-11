@@ -71,13 +71,11 @@ stages:
   jobs:
   - template: templates/tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
-      testOS: 'ubuntu1804'
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: templates/tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
-      testOS: 'ubuntu1804'
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
@@ -123,14 +121,12 @@ stages:
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: templates/tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
-      testOS: 'ubuntu1804'
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
   - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
-      testOS: 'ubuntu1804'
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
@@ -142,7 +138,6 @@ stages:
   jobs:
   - template: templates/tests/job-uhd-x440-hardware-tests-saison.yml
     parameters:
-      testOS: 'ubuntu2204'
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}

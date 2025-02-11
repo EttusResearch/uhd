@@ -1,13 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu1804
-    - ubuntu2004
-    - ubuntu2204
-    - ubuntu2404
 - name: toolset
   type: string
   values:
@@ -49,6 +42,8 @@ jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
   displayName: x4xx hardware test ${{ parameters.suiteName }}
   timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
+  variables:
+    testOS: ''
   strategy:
     matrix: ${{ parameters.dutMatrix }}
 
@@ -63,6 +58,15 @@ jobs:
     clean: True
   - checkout: ettus-rts
     clean: True
+
+  - script: |
+      LSB_ID=$(lsb_release -i -s) # e.g. "Ubuntu"
+      LSB_RELEASE=$(lsb_release -r -s | tr -d .) # e.g. "2404"
+      # ${LSB_ID,,} is $LSB_ID in lower case
+      testOS=${LSB_ID,,}$LSB_RELEASE # e.g. "ubuntu2404"
+      echo '##vso[task.setvariable variable=testOS]'$testOS
+      echo testOS=$testOS
+    displayName: set testOS variable
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
@@ -82,8 +86,8 @@ jobs:
 
   - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
-      rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-      rm -rf $(uhd_artifact_directory)/gnuradio-${{ parameters.testOS }}-${{ parameters.toolset }}
+      rm -rf $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
+      rm -rf $(uhd_artifact_directory)/gnuradio-$(testOS)-${{ parameters.toolset }}
       if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
         rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
       fi
@@ -110,28 +114,28 @@ jobs:
     displayName: Extract JTAG artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - script: |
       cd $(Agent.TempDirectory)
@@ -244,7 +248,7 @@ jobs:
   # Retain support for using USRP_EMB_TARGET_IP with max. 1Gbps bandwidth.
   # This should be the exception rather than the rule.
   - script: |
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
@@ -273,7 +277,7 @@ jobs:
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
         --devtest-pattern $(devtestPattern) --args $args \
-        --build-dir $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build \
+        --build-dir $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build \
         --build-type Release --python-interp python3 --xml
     displayName: Run devtest
     continueOnError: true
@@ -298,8 +302,8 @@ jobs:
   # For example, the phase test pass/fail requirements are based on declared specs measured after a warm up to 23 deg C
   # https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html#d668e1387
   - script: |
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
-      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
