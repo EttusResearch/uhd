@@ -10,8 +10,10 @@
 #include <mpm/ad937x/ad937x_ctrl.hpp>
 #include <mpm/types/lockable.hpp>
 #include <mpm/types/regs_iface.hpp>
+#include <cstddef>
 #include <memory>
 #include <mutex>
+#include <string>
 
 namespace mpm { namespace dboards {
 class magnesium_manager // : public dboard_periph_manager

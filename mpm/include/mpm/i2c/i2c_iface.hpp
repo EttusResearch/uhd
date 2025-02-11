@@ -7,6 +7,8 @@
 #pragma once
 
 #include <mpm/noncopyable.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>

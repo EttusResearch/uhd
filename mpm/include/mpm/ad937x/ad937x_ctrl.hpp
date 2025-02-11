@@ -13,11 +13,15 @@
 #include <mpm/exception.hpp>
 #include <mpm/noncopyable.hpp>
 #include <mpm/spi/spi_iface.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
+#include <vector>
 
 namespace mpm { namespace chips {
 

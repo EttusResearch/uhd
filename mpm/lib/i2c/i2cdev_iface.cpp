@@ -11,6 +11,7 @@
 #include <linux/i2c.h>
 #include <mpm/exception.hpp>
 #include <mpm/i2c/i2c_iface.hpp>
+#include <unistd.h>
 
 using namespace mpm::i2c;
 

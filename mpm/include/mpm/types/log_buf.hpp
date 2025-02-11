@@ -8,9 +8,11 @@
 
 #include <mpm/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <tuple>
 
 namespace mpm { namespace types {

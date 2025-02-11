@@ -8,6 +8,8 @@
 
 #include <mpm/noncopyable.hpp>
 #include <mpm/types/regs_iface.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 

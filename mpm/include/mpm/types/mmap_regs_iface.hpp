@@ -8,6 +8,7 @@
 
 #include <mpm/noncopyable.hpp>
 #include <mpm/types/log_buf.hpp>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 

@@ -12,6 +12,7 @@ extern "C" {
 }
 #include <fcntl.h>
 #include <linux/spi/spidev.h>
+#include <unistd.h>
 #include <boost/format.hpp>
 #include <iostream>
 
