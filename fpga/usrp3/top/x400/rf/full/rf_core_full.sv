@@ -53,8 +53,8 @@ module rf_core_full # (
 
   // DAC
   output wire [32*RADIO_SPC-1:0]     dac_data_out_tdata [0:NUM_DAC_CHANNELS-1],
-  input  wire [NUM_ADC_CHANNELS-1:0] dac_data_out_tready,
-  output wire [NUM_ADC_CHANNELS-1:0] dac_data_out_tvalid,
+  input  wire [NUM_DAC_CHANNELS-1:0] dac_data_out_tready,
+  output wire [NUM_DAC_CHANNELS-1:0] dac_data_out_tvalid,
 
   //---------------------------------------------------------------------------
   // User Data Interfaces
@@ -68,8 +68,8 @@ module rf_core_full # (
 
   // DAC
   input  wire [32*RADIO_SPC-1:0]     dac_data_in_tdata [0:NUM_DAC_CHANNELS-1],
-  output wire [NUM_ADC_CHANNELS-1:0] dac_data_in_tready,
-  input  wire [NUM_ADC_CHANNELS-1:0] dac_data_in_tvalid,
+  output wire [NUM_DAC_CHANNELS-1:0] dac_data_in_tready,
+  input  wire [NUM_DAC_CHANNELS-1:0] dac_data_in_tvalid,
 
   //---------------------------------------------------------------------------
   // Miscellaneous
@@ -77,7 +77,7 @@ module rf_core_full # (
 
   // Invert I/Q control signals from RFDC to DSP chain.
   input  wire [NUM_ADC_CHANNELS-1:0] invert_adc_iq_rclk,
-  input  wire [NUM_ADC_CHANNELS-1:0] invert_dac_iq_rclk,
+  input  wire [NUM_DAC_CHANNELS-1:0] invert_dac_iq_rclk,
 
   // Control/status vectors from/to RFDC.
   // Notice these are all in the s_axi_config_clk domain.
@@ -145,6 +145,13 @@ module rf_core_full # (
   //---------------------------------------------------------------------------
   // ADC Post-Processing
   //---------------------------------------------------------------------------
+
+  // There is no tready going to the ADC (one has to be always ready for ADC
+  // data), but it is still a component of the axi_status vector as a generic
+  // AXI stream status. Report 1'b1 to the status vector consistent with being
+  // always ready.
+  assign adc_data_in_i_tready = '1;
+  assign adc_data_in_q_tready = '1;
 
   // ADC Data from the RFDC arrives here with separate I and Q
   // streams. It gets combined to a single stream.
