@@ -23,7 +23,7 @@ jobs:
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    xilinxLocation: /opt/Xilinx/Vivado_Lab/2021.1
+    xilinxLocation: $(xilinx_location)
     dutMatrix:
       sdr-test0-x410-0:
         dutName: 'sdr-test0-x410-0'
