@@ -1,0 +1,3 @@
+pyyaml
+unittest-xml-reporting
+numpy<2.0.0

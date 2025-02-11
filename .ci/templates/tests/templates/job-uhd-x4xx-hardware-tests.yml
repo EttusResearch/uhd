@@ -268,7 +268,7 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
-      pip3 install unittest-xml-reporting pyyaml numpy==1.26.4
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
       cd $(Common.TestResultsDirectory)/devtest
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
