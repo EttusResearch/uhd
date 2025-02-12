@@ -17,13 +17,12 @@ from multiprocessing import Process, RLock, current_process
 from random import choice
 from string import ascii_letters, digits
 
-import setproctitle
 from gevent import Greenlet, monkey, spawn_later
 from gevent.pool import Pool
 from gevent.server import StreamServer
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
-from usrp_mpm.mpmutils import register_chained_signal_handler, to_binary_str
+from usrp_mpm.mpmutils import register_chained_signal_handler, to_binary_str, set_proc_title
 from usrp_mpm.rpc_utils import get_map_for_rpc
 from usrp_mpm.sys_utils import net, watchdog
 
@@ -617,7 +616,7 @@ def _rpc_server_process(shared_state, port, default_args):
     :param port: The port to run the RPC server on
     :param default_args: The arguments passed by the app
     """
-    setproctitle.setproctitle(current_process().name)
+    set_proc_title(current_process().name, get_main_logger().getChild("RPCServer"))
     connections = Pool(1000)
     server = StreamServer(
         ("0.0.0.0", port), handle=MPMServer(shared_state, default_args), spawn=connections

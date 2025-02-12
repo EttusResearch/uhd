@@ -10,8 +10,7 @@ import re
 import signal
 from multiprocessing import Event, Process, Value, current_process
 
-import setproctitle
-from usrp_mpm.mpmutils import poll_with_timeout, register_chained_signal_handler
+from usrp_mpm.mpmutils import poll_with_timeout, register_chained_signal_handler, set_proc_title
 from usrp_mpm.sys_utils.gpio import Gpio
 
 
@@ -318,7 +317,7 @@ class DioControl:
         If there is a fault, turn off external power.
         """
         self.log.trace("Launching monitor loop...")
-        setproctitle.setproctitle(current_process().name)
+        set_proc_title(current_process().name, self.log)
         fault_line = Gpio(fault, Gpio.FALLING_EDGE)
         while True:
             try:

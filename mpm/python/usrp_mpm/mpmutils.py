@@ -327,6 +327,25 @@ def register_chained_signal_handler(signal, handler):
     sig.signal(signal, chained_handler)
 
 
+def set_proc_title(title, logger=None):
+    """Set the process title but only if the module is available.
+
+    setproctitle module is not avalible by default on our embedded systems.
+    Therefore, we set the process title only if the module is available.
+
+    :param title: The new process title
+    """
+    try:
+        import setproctitle
+
+        setproctitle.setproctitle(title)
+    except ImportError:
+        if logger is not None:
+            logger.debug(
+                f"setproctitle module not available. Skip setting process title to {title}."
+            )
+
+
 # pylint: disable=too-few-public-methods
 class LogWrapper:
     """This is a class that can be wrapped around any other class.

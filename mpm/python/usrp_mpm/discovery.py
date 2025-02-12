@@ -9,10 +9,9 @@
 import socket
 from multiprocessing import Process, current_process
 
-import setproctitle
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
-from usrp_mpm.mpmutils import to_binary_str
+from usrp_mpm.mpmutils import to_binary_str, set_proc_title
 
 RESPONSE_PREAMBLE = b"USRP-MPM"
 RESPONSE_SEP = b";"
@@ -42,8 +41,8 @@ def _discovery_process(state, discovery_addr):
 
     Is spawned by spawn_discovery_process().
     """
-    setproctitle.setproctitle(current_process().name)
     log = get_main_logger().getChild("discovery")
+    set_proc_title(current_process().name, log)
 
     def create_response_string(state):
         """Generate the string that gets sent back to the requester.
