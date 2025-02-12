@@ -249,6 +249,10 @@
   add:
     - uhd.build.linux
     - hw.rf.x4xx
+- re: .ci/templates/.*rfnoc_modtool.*.yml
+  add:
+    - uhd.build.linux
+    - uhd.rfnoc_modtool.all
 
 ###############################################################################
 # LABEL-BASED RULES
