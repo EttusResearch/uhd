@@ -34,7 +34,7 @@ jobs:
 
   - download: current
     artifact: $(uhd_artifact_name)
-    displayName: Download $(uhd_artifact_name) artifact
+    displayName: Download uhddev artifact
 
   - task: ExtractFiles@1
     inputs:

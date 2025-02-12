@@ -115,7 +115,7 @@ jobs:
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-$(testOS)-${{ parameters.toolset }}
-    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
+    displayName: Download uhddev artifact
 
   - task: ExtractFiles@1
     inputs:
@@ -123,11 +123,11 @@ jobs:
       destinationFolder: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract uhddev-$(testOS)-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
-    displayName: Download gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
+    displayName: Download gnuradio-grettus artifact
 
   - task: ExtractFiles@1
     inputs:
@@ -135,7 +135,7 @@ jobs:
       destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
+    displayName: Extract gnuradio-grettus artifact
 
   - script: |
       cd $(Agent.TempDirectory)
