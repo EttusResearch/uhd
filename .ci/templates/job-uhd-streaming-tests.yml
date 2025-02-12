@@ -270,7 +270,8 @@ jobs:
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
-      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "not dpdk" \
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -m "not dpdk" \
+        --capture=tee-sys -o junit_logging=all \
         --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) \
@@ -310,7 +311,8 @@ jobs:
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
-      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_raw_udp_streaming.py \
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_raw_udp_streaming.py \
+        --capture=tee-sys -o junit_logging=all \
         --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build-installed/lib/uhd --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
         --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) \
@@ -322,6 +324,21 @@ jobs:
     continueOnError: true
     displayName: Run raw udp streaming tests on $(dutName)
     condition: and(succeeded(), or(eq(variables.dutFamily, 'x4xx'), eq(variables.dutType, 'X310')))
+
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-streamingtest-$(dutName)-$(dutFpga)-raw-udp-run$(System.JobAttempt)
+    displayName: Upload Test Logs with raw upd
+    condition: succeededOrFailed()
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '$(Common.TestResultsDirectory)/TEST-*.xml'
+      testRunTitle: $(dutName) streaming tests
+      buildConfiguration: 'Release'
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+    displayName: Upload streaming test results
 
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
@@ -335,16 +352,6 @@ jobs:
       exit $EXITCODE
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
-
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/TEST-*.xml'
-      testRunTitle: $(dutName) streaming tests
-      buildConfiguration: 'Release'
-      mergeTestResults: true
-      failTaskOnFailedTests: false
-    displayName: Upload streaming test results
 
   - ${{ each dpdkDir in parameters.dpdkDirs }}:
     - script: |
@@ -410,7 +417,8 @@ jobs:
         cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
         # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
         # as using sudo below creates them with root priveleges.
-        sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest -s test_streaming.py -m "dpdk" \
+        sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -m "dpdk" \
+          --capture=tee-sys -o junit_logging=all \
           --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
           --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build \
           --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-dpdk-$(DPDK_VERSION_STRING).xml \
@@ -423,6 +431,11 @@ jobs:
       continueOnError: true
       displayName: Run streaming tests with DPDK ${{ dpdkDir }} on $(dutName)
       condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+
+    - publish: $(Common.TestResultsDirectory)
+      artifact: test-logs-streamingtest-$(dutName)-$(dutFpga)-dpdk$(DPDK_VERSION_STRING)-run$(System.JobAttempt)
+      displayName: Upload Test Logs with DPDK ${{ dpdkDir }}
+      condition: succeededOrFailed()
 
     - task: PublishTestResults@2
       inputs:
