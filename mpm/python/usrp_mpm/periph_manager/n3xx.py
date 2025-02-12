@@ -604,7 +604,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         assert time_source in self.get_time_sources(), \
                 "`{}' is not a valid time source, valid choices are: {}".format(
                     clock_source, ",".join(self.get_clock_sources()))
-        if (clock_source == self._clock_source) and (time_source == self._time_source):
+        # Check if clock or time source has changed. If they have not, and no
+        # forced reinitialization was set, do nothing.
+        if (clock_source == self._clock_source) and (time_source == self._time_source) \
+            and not bool(args.get("force_reinit", False)):
             # Nothing changed, no need to do anything
             self.log.trace("New sync source assignment matches"
                            "previous assignment. Ignoring update command.")
