@@ -440,6 +440,10 @@ def build_image(repo_fpga_path, config_path, device, **args):
         args.get("image_core_name"),
         known_modules,
     )
+    # If no target specified on the command line, use the default target from the
+    # yaml configuration file.
+    if args.get("target") is None and target is not None:
+        args["target"] = target
     logging.info("Selected device: %s", device)
     assert image_core_name
     args["image_core_name"] = image_core_name
