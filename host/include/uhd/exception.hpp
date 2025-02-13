@@ -8,7 +8,6 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <boost/preprocessor/stringize.hpp>
 #include <stdexcept>
 #include <string>
 
@@ -304,8 +303,8 @@ struct UHD_API routing_error : rfnoc_error
  */
 #define UHD_THROW_SITE_INFO(what)                                                     \
     std::string(std::string(what) + "\n" + "  in " + std::string(UHD_FUNCTION) + "\n" \
-                + "  at " + std::string(__FILE__) + ":"                               \
-                + BOOST_PP_STRINGIZE(__LINE__) + "\n")
+                + "  at " + std::string(__FILE__) + ":" + std::to_string(__LINE__)    \
+                + "\n")
 
 /*!
  * Throws an invalid code path exception with throw-site information.
