@@ -197,6 +197,7 @@ jobs:
         scp -o StrictHostKeyChecking=no $UHD_IMAGES_DIR/$FPGA_NAME.* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/$FPGA_NAME.bit > /usr/share/uhd/images/$FPGA_NAME.bit.md5"
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/$FPGA_NAME.dts > /usr/share/uhd/images/$FPGA_NAME.dts.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm /lib/firmware/x4*.* && systemctl restart usrp-hwd.service"
     displayName: Copy FPGA pipeline images to device
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
 
