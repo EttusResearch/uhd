@@ -13,7 +13,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/format.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
 #include <chrono>
@@ -72,7 +71,6 @@ private:
         }
         while (1) {
             try {
-
                 // update cache if older than a millisecond
                 if (now - _last_cache_update > milliseconds(1)) {
                     update_cache();
@@ -129,7 +127,20 @@ private:
         return (string_crc == calculated_crc);
     }
 
-    void update_cache()
+    // Read all outstanding messages and put them in the cache
+    //
+    // Outside of the ctor, this is the only function that actually reads
+    // messages from the GPS. It will read all outstanding messages and put them
+    // into the sentences cache, together with a timestamp, so we know how old
+    // the messages are.
+    //
+    // To pull messages out of the cache, use get_sentence().
+    //
+    // \param msg_key_hint If not empty, this will be used as the key for the
+    //                    message in the cache. This is useful when we know that
+    //                    a message is arriving that does not conform to the
+    //                    message patterns for a SERVO or GP* message.
+    void update_cache(const std::string& msg_key_hint = "")
     {
         if (not gps_detected()) {
             return;
@@ -160,8 +171,11 @@ private:
             // Look for SERVO message
             if (std::regex_search(
                     msg, servo_regex, std::regex_constants::match_continuous)) {
+                UHD_LOG_TRACE("GPS", "Received new SERVO message: " << msg);
                 msgs["SERVO"] = msg;
             } else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg)) {
+                UHD_LOG_TRACE(
+                    "GPS", "Received new " << msg.substr(1, 5) << " message: " << msg);
                 msgs[msg.substr(1, 5)] = msg;
             } else {
                 if (!msg_key_hint.empty()) {
@@ -262,9 +276,7 @@ public:
     // return a list of supported sensors
     std::vector<std::string> get_sensors(void) override
     {
-        std::vector<std::string> ret{
-            "gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
-        return ret;
+        return {"gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
     }
 
     uhd::sensor_value_t get_sensor(std::string key) override
@@ -280,10 +292,8 @@ public:
         } else if (key == "gps_locked") {
             return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
         } else if (key == "gps_servo") {
-            return sensor_value_t(boost::to_upper_copy(key),
-                get_sentence(boost::to_upper_copy(key.substr(4, 8)),
-                    GPS_SERVO_FRESHNESS,
-                    GPS_TIMEOUT_DELAY_MS),
+            return sensor_value_t("GPS_SERVO",
+                get_sentence("SERVO", GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS),
                 "");
         } else {
             throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
@@ -321,11 +331,16 @@ private:
         // none of these should issue replies so we don't bother looking for them
         // we have to sleep between commands because the JL device, despite not
         // acking, takes considerable time to process each command.
-        const std::vector<std::string> init_cmds = {"SYST:COMM:SER:ECHO OFF\r\n",
+        const std::vector<std::string> init_cmds = {// Turn off serial echo
+            "SYST:COMM:SER:ECHO OFF\r\n",
             "SYST:COMM:SER:PRO OFF\r\n",
+            // Send NMEA string $GPGGA every 1 second
             "GPS:GPGGA 1\r\n",
+            // Do not send modified $GPGGA string
             "GPS:GGAST 0\r\n",
+            // Send NMEA string $GPRMC every 1 second
             "GPS:GPRMC 1\r\n",
+            // Send SERVO updates every 1 second
             "SERV:TRAC 1\r\n"};
 
         for (const auto& cmd : init_cmds) {
@@ -344,8 +359,7 @@ private:
         toked.assign(tok.begin(), tok.end());
 
         if (toked.size() <= offset) {
-            throw uhd::value_error(
-                str(boost::format("Invalid response \"%s\"") % sentence));
+            throw uhd::value_error(std::string("Invalid response \"") + sentence + "\"");
         }
         return toked[offset];
     }
@@ -365,7 +379,7 @@ private:
 
                 if (datestr.empty() or timestr.empty()) {
                     throw uhd::value_error(
-                        str(boost::format("Invalid response \"%s\"") % reply));
+                        std::string("Invalid response \"") + reply + "\"");
                 }
 
                 struct tm raw_date;
