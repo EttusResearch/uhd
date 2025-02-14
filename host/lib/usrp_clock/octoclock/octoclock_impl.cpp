@@ -13,7 +13,6 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>

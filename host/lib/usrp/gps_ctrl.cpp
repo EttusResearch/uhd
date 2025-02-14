@@ -7,8 +7,8 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>

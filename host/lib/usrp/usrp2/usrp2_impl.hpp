@@ -22,7 +22,6 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
@@ -32,6 +31,7 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_200.hpp>
 #include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_200.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <atomic>
 #include <functional>
 #include <memory>

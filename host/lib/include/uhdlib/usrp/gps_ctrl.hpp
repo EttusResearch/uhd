@@ -15,7 +15,7 @@
 
 namespace uhd {
 
-class UHD_API gps_ctrl : uhd::noncopyable
+class gps_ctrl : uhd::noncopyable
 {
 public:
     typedef std::shared_ptr<gps_ctrl> sptr;

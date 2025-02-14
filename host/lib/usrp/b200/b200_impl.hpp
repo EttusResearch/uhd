@@ -19,7 +19,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -36,6 +35,7 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_map>
 #include <boost/assign.hpp>
 #include <memory>

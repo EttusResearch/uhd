@@ -14,9 +14,9 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <memory>
 #include <mutex>
 

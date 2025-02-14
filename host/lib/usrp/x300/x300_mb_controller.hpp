@@ -14,8 +14,8 @@
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhdlib/features/discoverable_feature_registry.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_set>
 #include <string>
 

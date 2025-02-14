@@ -17,7 +17,6 @@ UHD_INSTALL(FILES
     zbx_tune_map_item.hpp
 
     ### utilities ###
-    gps_ctrl.hpp
     gpio_defs.hpp
     mboard_eeprom.hpp
     subdev_spec.hpp
