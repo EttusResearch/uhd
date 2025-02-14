@@ -49,7 +49,7 @@ pins.</b>
 If a GPSDO is detected at startup, the USRP will have `gpsdo` clock and time
 source options.
 
-Select these by using UHD's
+Select these by using UHD's clock and time source APIs:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     usrp->set_clock_source("gpsdo");
@@ -60,7 +60,7 @@ That will lock the reference clock to the disciplined 10MHz oscillator, and
 will make the USRP listen for time signal pulses coming from the GPSDO.
 
 However, you will still need to explicitly set the device time on such a PPS
-edge, using the `set_time_next_pps` or `set_time_unknown_pps`
+edge, using the `set_time_next_pps()` or `set_time_unknown_pps()`
 calls.
 
 GPS data is obtained through the **mboard_sensors** interface. To
@@ -75,7 +75,7 @@ January 1, 1970. This value is readily converted into human-readable
 format using the **time.h** library in C, **std::chrono** in C++,
 etc.
 
-\subsection Setting Device Time to GPS time
+\subsection gpsdox_setting_gps_time Setting Device Time to GPS time
 
 If you want to set the device time to GPS time, the following procedure makes
 sure you don't encounter timing problems while doing so:
@@ -87,7 +87,8 @@ sure you don't encounter timing problems while doing so:
     }
     usrp->set_time_source("gpsdo");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-2. poll on `usrp->get_time_last_pps()` until a change is seen, and then sleep 200ms to allow new time data coming from the GPSDO to propagate through the system,
+2. poll on `usrp->get_time_last_pps()` until a change is seen, and then sleep 200ms to
+allow new time data coming from the GPSDO to propagate through the system,
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     uhd::time_spec_t last = usrp->get_time_last_pps();
     uhd::time_spec_t next = usrp->get_time_last_pps();
@@ -103,15 +104,42 @@ sure you don't encounter timing problems while doing so:
 usrp->set_time_next_pps(uhd::time_spec_t(usrp->get_mboard_sensor("gps_time").to_int()+1));
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 to set the time,
-4.  poll on `usrp->get_time_last_pps()` until a change is seen and sleep 200ms (allow NMEA string to propagate),
-5.  Verify that `usrp->get_time_last_pps()` and `usrp->get_mboard_sensor("gps_time")` return the same time.
+4.  poll on `usrp->get_time_last_pps()` until a change is seen and sleep 200ms (allow NMEA
+string to propagate),
+5.  Verify that `usrp->get_time_last_pps()` and `usrp->get_mboard_sensor("gps_time")`
+return the same time.
 
-\subsection Further GPS sensors
+\subsection gpsdox_sensors Further GPS sensors
 
 Other information can be fetched as well. You can query the lock status
 with the **gps_locked** sensor, as well as obtain raw NMEA sentences
 using the **gps_gprmc**, and **gps_gpgga** sensors. Location
 information can be parsed out of the **gps_gpgga** sensor by using **gpsd**
 or another NMEA parser.
+
+\subsection gpsdox_custom_cmds Sending custom commands to the GPS module
+
+\b WARNING: This is considered advanced usage, and sending custom commands to
+the GPS module can cause the GPSDO to go into an undefined state, or stop
+functioning correctly. Only use this if you are sure of what you are doing.
+
+The GPS module inside the X3x0 supports many more features than are exposed by
+the regular UHD APIs. To access the full feature set of the GPS module, you
+need to send custom commands to the GPS module. This can be done by accessing
+the **gps_iface** feature, which can be done as follows:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    if (usrp->get_mb_controller(0)->has_feature<uhd::features::gps_iface>()) {
+        auto& gps_iface =
+            usrp->get_mb_controller(0)->get_feature<uhd::features::gps_iface>();
+        std::string response = gps_iface->send_cmd("SYNC:FEE?");
+	std::cout << "Frequency Error Estimate: " << response << std::endl;
+    }
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a full listing of the available commands, consult the Jackson Labs LC_XO
+manual.
+
+
 */
 // vim:ft=doxygen:
