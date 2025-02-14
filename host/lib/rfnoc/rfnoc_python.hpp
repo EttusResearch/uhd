@@ -247,7 +247,8 @@ void export_rfnoc(py::module& m)
 
     py::class_<uhd::features::gps_iface>(m, "gps")
         .def("get_sensor", &uhd::features::gps_iface::get_sensor)
-        .def("get_sensors", &uhd::features::gps_iface::get_sensors);
+        .def("get_sensors", &uhd::features::gps_iface::get_sensors)
+        .def("send_cmd", &uhd::features::gps_iface::send_cmd);
 
     py::class_<detail::filter_node>(m, "filter_node")
         .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)

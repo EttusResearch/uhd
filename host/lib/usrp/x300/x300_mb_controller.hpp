@@ -159,6 +159,11 @@ public:
             return g()->get_sensor(key);
         }
 
+        std::string send_cmd(const std::string& cmd) override
+        {
+            return g()->send_cmd(cmd);
+        }
+
     private:
         std::weak_ptr<uhd::gps_ctrl> _gps;
 

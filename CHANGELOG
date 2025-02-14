@@ -3,6 +3,9 @@ Change Log for Releases
 
 ## 004.next
 
+* New Features
+  - X3x0: Add support for the gps_iface feature. This allows sending arbitrary
+    commands to the GPS module.
 * API Changes
   - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
      headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,

@@ -64,21 +64,21 @@ private:
         boost::posix_time::time_duration age;
 
         if (wait_for_next) {
-            std::lock_guard<std::mutex> lock(cache_mutex);
             update_cache();
+            std::lock_guard<std::mutex> lock(cache_mutex);
             // mark sentence as touched
             if (sentences.find(which) != sentences.end())
                 std::get<2>(sentences[which]) = true;
         }
         while (1) {
             try {
-                std::lock_guard<std::mutex> lock(cache_mutex);
 
                 // update cache if older than a millisecond
                 if (now - _last_cache_update > milliseconds(1)) {
                     update_cache();
                 }
 
+                std::lock_guard<std::mutex> lock(cache_mutex);
                 if (sentences.find(which) == sentences.end()) {
                     age = milliseconds(max_age_ms);
                 } else {
@@ -135,7 +135,6 @@ private:
             return;
         }
 
-        const std::list<std::string> keys{"GPGGA", "GPRMC", "SERVO"};
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
         static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
@@ -165,17 +164,23 @@ private:
             } else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg)) {
                 msgs[msg.substr(1, 5)] = msg;
             } else {
-                UHD_LOGGER_WARNING("GPS")
-                    << UHD_FUNCTION << "(): Malformed GPSDO string: " << msg;
+                if (!msg_key_hint.empty()) {
+                    UHD_LOG_DEBUG(
+                        "GPS", "Received " << msg_key_hint << " message: " << msg);
+                    msgs[msg_key_hint] = msg;
+                } else {
+                    UHD_LOGGER_WARNING("GPS") << "Unexpected GPSDO string: " << msg;
+                }
             }
         }
 
         boost::system_time time = boost::get_system_time();
 
         // Update sentences with newly read data
-        for (std::string key : keys) {
-            if (not msgs[key].empty()) {
-                sentences[key] = std::make_tuple(msgs[key], time, false);
+        for (auto& msg : msgs) {
+            if (!msg.second.empty()) {
+                std::lock_guard<std::mutex> lock(cache_mutex);
+                sentences[msg.first] = std::make_tuple(msg.second, time, false);
             }
         }
 
@@ -283,6 +288,30 @@ public:
         } else {
             throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
         }
+    }
+
+    std::string send_cmd(std::string cmd) override
+    {
+        // Strip any end of line characters, then append them: This way we can
+        // be sure the command is terminated correctly.
+        erase_all(cmd, "\r");
+        erase_all(cmd, "\n");
+        const bool cmd_is_query = cmd.find("?") != std::string::npos;
+        _send(cmd + "\r\n");
+        if (!cmd_is_query) {
+            return "";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(GPSDO_COMMAND_DELAY_MS));
+        update_cache(cmd);
+        try {
+            return get_sentence(cmd, GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS);
+        } catch (const std::exception& ex) {
+            UHD_LOGGER_WARNING("GPS")
+                << UHD_FUNCTION
+                << "(): Caught exception while attempting to parse response to command '"
+                << cmd << "': " << ex.what();
+        }
+        return "";
     }
 
 private:

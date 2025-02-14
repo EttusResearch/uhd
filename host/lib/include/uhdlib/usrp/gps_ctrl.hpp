@@ -43,7 +43,14 @@ public:
      */
     virtual bool gps_detected(void) = 0;
 
-    // TODO: other fun things you can do with a GPS.
+    /*! Send arbitrary command to the GPS device.
+     *
+     * Using this can cause the GPS to enter an unknown state, so use with
+     * caution. It is up to the user to identify correct and valid commands.
+     *
+     * \return The response from the GPS device
+     */
+    virtual std::string send_cmd(std::string cmd) = 0;
 };
 
 } // namespace uhd
