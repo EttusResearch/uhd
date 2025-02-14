@@ -594,6 +594,9 @@ void x300_mb_controller::init_gps()
         if (_gps and _gps->gps_detected()) {
             auto sensors = _gps->get_sensors();
             _sensors.insert(sensors.cbegin(), sensors.cend());
+
+            _gps_iface = std::make_shared<x300_mb_controller::gps_iface>(_gps);
+            register_feature(_gps_iface);
         } else {
             UHD_LOG_TRACE("X300::MB_CTRL",
                 "No GPS found, setting register to save time on next run.");
