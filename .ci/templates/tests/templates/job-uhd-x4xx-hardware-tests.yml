@@ -192,12 +192,24 @@ jobs:
     condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
 
   - script: |
+        set -e
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
-        EXITCODE=$?
+        # clear the usrp-hwd log from before the FPGA update
+        # Reason: the usrp-hwd status test as part of system image embedded subsystems
+        # tests checks for errors and may fail
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "systemctl stop usrp-hwd.service && journalctl --rotate --vacuum-time=1s && systemctl start usrp-hwd.service"
         sleep 60
-        exit $EXITCODE
+    displayName: Flash FPGA $(dutFPGA), clear MPM log
+    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+
+  - script: |
+        set -e
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        sleep 60
     displayName: Flash FPGA $(dutFPGA)
+    condition: and(succeeded(), not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')))
 
   # When MPM reboots, the sfp0 address is reset to default
   # Since rebooting MPM was added for clocking re-config we need
