@@ -11,6 +11,7 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
 #include <boost/optional.hpp>
+#include <chrono>
 #include <deque>
 #include <mutex>
 #include <numeric>

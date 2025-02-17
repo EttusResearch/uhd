@@ -8,6 +8,7 @@
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <atomic>
+#include <chrono>
 #include <numeric>
 #include <thread>
 
