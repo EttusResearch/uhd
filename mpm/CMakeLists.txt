@@ -81,6 +81,11 @@ endmacro(USRP_PERIPHS_ADD_OBJECT)
 # other platforms.
 message(STATUS "")
 message(STATUS "Configuring Boost C++ Libraries...")
+set(BOOST_REQUIRED_COMPONENTS
+    system
+    thread
+    date_time
+)
 # Same as with Python version: MPM might work with other versions of Boost,
 # but we don't make any guarantees.
 set(MPM_BOOST_VERSION "1.66")
@@ -89,9 +94,14 @@ set(MPM_BOOST_VERSION "1.66")
 # takes effect if the build is happening on a system where the FindBoost.cmake
 # file is older than ${MPM_BOOST_VERSION}, which is usually not the case.
 set(Boost_ADDITIONAL_VERSIONS ${MPM_BOOST_VERSION})
-find_package(Boost ${MPM_BOOST_VERSION} COMPONENTS headers)
+find_package(Boost ${MPM_BOOST_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
 include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+
 message(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
+message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 
 ########################################################################
@@ -169,6 +179,7 @@ if(NOT ENABLE_SIM)
     add_library(usrp-periphs SHARED ${usrp_periphs_objects})
     target_link_libraries(usrp-periphs
         udev
+        ${Boost_LIBRARIES}
         ${DEVICE_LIBRARIES}
     )
 
