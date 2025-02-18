@@ -186,10 +186,18 @@ if(${UHD_BOOST_OPTIONAL_COMPONENTS_LEN} GREATER 0)
 endif()
 
 if(${UHD_BOOST_REQUIRED_COMPONENTS_LEN} GREATER 0)
+    # With removal of FindBoost, default to automatically searching
+    # the upstream BoostConfig.cmake.
+    if(POLICY CMP0167)
+        cmake_policy(SET CMP0167 NEW)
+    endif(POLICY CMP0167)
+
     message(STATUS "  Looking for required Boost components...")
     find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
         COMPONENTS ${UHD_BOOST_REQUIRED_COMPONENTS} ${UHD_BOOST_REQUIRED})
 endif()
+
+
 
 # restore BUILD_SHARED_LIBS, if set
 if(BUILD_SHARED_LIBS_SET)

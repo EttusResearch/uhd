@@ -244,6 +244,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         add_property_resolver({&_samp_rate_in.back(), &_samp_rate_out.back()},
             {&_samp_rate_in.back(), &_samp_rate_out.back()},
             [this,
+                chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
                 UHD_LOGGER_TRACE(this->get_unique_id())
