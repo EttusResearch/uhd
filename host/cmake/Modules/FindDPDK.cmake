@@ -19,12 +19,23 @@ include(FindPackageHandleStandardArgs)
 find_package(PkgConfig)
 PKG_CHECK_MODULES(DPDK libdpdk>=18.11)
 
-find_package_handle_standard_args(
-    DPDK
-    DEFAULT_MSG
-    DPDK_INCLUDE_DIRS
-    DPDK_CFLAGS DPDK_LDFLAGS
-    DPDK_LIBRARIES
-    HANDLE_VERSION_RANGE
-)
+if(CMAKE_VERSION VERSION_LESS 3.19)
+    find_package_handle_standard_args(
+        DPDK
+        DEFAULT_MSG
+        DPDK_INCLUDE_DIRS
+        DPDK_CFLAGS DPDK_LDFLAGS
+        DPDK_LIBRARIES
+    )
+else()
+    find_package_handle_standard_args(
+        DPDK
+        DEFAULT_MSG
+        DPDK_INCLUDE_DIRS
+        DPDK_CFLAGS DPDK_LDFLAGS
+        DPDK_LIBRARIES
+        HANDLE_VERSION_RANGE
+    )
+endif()
+
 mark_as_advanced(DPDK_INCLUDE_DIRS DPDK_CFLAGS DPDK_LDFLAGS DPDK_LIBRARIES)
