@@ -14,6 +14,7 @@ jobs:
     suiteName: 'sdr_test0_x410'
     toolset: 'make'
     runPyTest: false
+    runPyTestNonRF: true
     runDevTest: true
     runSystemImageTest: true
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
@@ -27,6 +28,7 @@ jobs:
         dutFPGA: 'X4_200'
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: $(x410_uartSerial)
-        pytestDUT: 'x410'
         pipelineAgent: sdr-test0-0
+        pytestAtsConfig: sdr_test0_ats
+        pytestDUT: 'x410'
         sfp0ip: '192.168.10.62'

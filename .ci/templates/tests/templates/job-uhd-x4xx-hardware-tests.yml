@@ -7,6 +7,10 @@ parameters:
     - make
 - name: runPyTest
   type: boolean
+  default: false
+- name: runPyTestNonRF
+  type: boolean
+  default: false
 - name: runSystemImageTest
   type: boolean
 - name: runDevTest
@@ -327,7 +331,7 @@ jobs:
       export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
-      export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python' + str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
 
       if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
         export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
@@ -342,18 +346,30 @@ jobs:
         export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
         export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
       fi
-
-      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
       if [ ${{ parameters.warmUpAfterBoot }} > 0 ]; then
         echo 'sleeping ${{ parameters.warmUpAfterBoot }} seconds before testing...'
         sleep ${{ parameters.warmUpAfterBoot }}
       fi
       uhd_find_devices --args type=$(dutType)
       uhd_usrp_probe --args addr=$USRP_EMB_TARGET_IP,type=$(dutType)
-      python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --run_vars_overrides 'mgmt_addr=$(USRP_EMB_TARGET_IP)' --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
+
+      # setup venv for pytest
+      source $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/setup_venv.sh
+
+      # to split between tests requiring additional RF hardware or not we use different test directories
+      echo runPyTest: ${{ parameters.runPyTest }}
+      echo runPyTestNonRF: ${{ parameters.runPyTestNonRF }}
+      if [[ "${{ parameters.runPyTest }}" == "True" ]]; then
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
+        python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --run_vars_overrides 'mgmt_addr=$(USRP_EMB_TARGET_IP)' --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
+      fi
+      if [[ "${{ parameters.runPyTestNonRF }}" == "True" ]]; then
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests_non_rf
+        python3 ../automated_main.py --test_selector . --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --run_vars_overrides 'mgmt_addr=$(USRP_EMB_TARGET_IP)' --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
+      fi
     displayName: Run pytest on host
     continueOnError: true
-    condition: and(succeeded(), ${{ parameters.runPyTest }})
+    condition: and(succeeded(), or(${{ parameters.runPyTest }}, ${{ parameters.runPyTestNonRF }}))
 
   - script: |
       dig -x $(sfp0ip) +short

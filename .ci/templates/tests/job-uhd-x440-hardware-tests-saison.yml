@@ -19,6 +19,7 @@ jobs:
     suiteName: 'saison_x440'
     toolset: 'make'
     runPyTest: true
+    runPyTestNonRF: false
     runDevTest: false
     runSystemImageTest: false
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
