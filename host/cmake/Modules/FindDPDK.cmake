@@ -30,10 +30,11 @@ if(CMAKE_VERSION VERSION_LESS 3.19)
 else()
     find_package_handle_standard_args(
         DPDK
-        DEFAULT_MSG
-        DPDK_INCLUDE_DIRS
-        DPDK_CFLAGS DPDK_LDFLAGS
-        DPDK_LIBRARIES
+        REQUIRED_VARS
+            DPDK_INCLUDE_DIRS
+            DPDK_CFLAGS DPDK_LDFLAGS
+            DPDK_LIBRARIES
+        FAIL_MESSAGE "DPDK not found or misconfigured"
         HANDLE_VERSION_RANGE
     )
 endif()
