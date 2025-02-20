@@ -1,6 +1,4 @@
 parameters:
-- name: suiteName
-  type: string
 - name: toolset
   type: string
   values:
@@ -29,8 +27,7 @@ jobs:
     matrix: ${{ parameters.dutMatrix }}
   pool:
     name: 'de-dre-lab'
-    demands:
-    - suiteName -equals ${{ parameters.suiteName }}
+    demands: uhd_ats -equals $(pipelineAgent)
   variables:
   - group: sdr-pipeline-vars
   workspace:
