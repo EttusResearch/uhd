@@ -125,6 +125,12 @@ package PkgMath;
     return b;
   endfunction : fmin
 
+  // Coerce from real to 16-bit signed integer
+  function automatic shortint coerce_to_int16(real num);
+    if (num > SHORT_MAX) return SHORT_MAX;
+    if (num < SHORT_MIN) return SHORT_MIN;
+    return shortint'(num);
+  endfunction : coerce_to_int16
 
   //---------------------------------------------------------------------------
   // Template Functions (For any data type)
