@@ -24,7 +24,7 @@ jobs:
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
-    redisHost: 'ettus-pebbles'
+    redisHost: ''
     extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'n3xx') }}:
