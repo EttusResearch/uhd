@@ -23,7 +23,7 @@ jobs:
     - template: setup_steps.yml
 
     - bash: |
-        source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./top/x300
+        source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh ./top/x300
 
         echo "---- Run testbenches ----"
         pushd ./tools/utils

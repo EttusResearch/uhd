@@ -29,24 +29,21 @@ parameters:
 variables:
   - name: uhd_fpga_artifact_source
     ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
-      value: uhd_fpga_pr_pipeline
+      value: uhd_mono_pipeline_pr
     ${{ else }}:
-      value: uhd_fpga_pipeline
+      value: uhd_mono_pipeline
 
 resources:
   pipelines:
   - pipeline: uhd_mono_pipeline
     source: 'uhddev mono pipeline'
     branch: master
+  - pipeline: uhd_mono_pipeline_pr
+    source: 'uhddev mono pipeline PR'
+    branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: kirkstone
-  - pipeline: uhd_fpga_pipeline
-    source: 'uhddev fpga pipeline'
-    branch: master
-  - pipeline: uhd_fpga_pr_pipeline
-    source: 'uhddev fpga pipeline PR'
-    branch: master
   repositories:
   - repository: meta-ettus
     type: github

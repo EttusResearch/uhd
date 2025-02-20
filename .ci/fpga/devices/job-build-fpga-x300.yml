@@ -104,8 +104,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.x3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x3x0 }}', 'true')
                   )
                 )
@@ -158,8 +158,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.x3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.HdlChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.x3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x3x0 }}', 'true')
                   )
                 )

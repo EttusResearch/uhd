@@ -70,7 +70,7 @@ jobs:
         BUILD_IP_CACHE_HASH=`cat build-ip/.ci/build-hash`
         echo "BUILD_IP_CACHE_HASH=$BUILD_IP_CACHE_HASH"
         git fetch origin $BUILD_IP_CACHE_HASH
-        bash $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/refresh_ip.sh \
+        bash $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/refresh_ip.sh \
           `realpath build-ip/` $BUILD_IP_CACHE_HASH
       workingDirectory: ${{ parameters.directory }}
       # Refresh IP when caching is allowed (clean_build = false) and a cache
@@ -87,7 +87,7 @@ jobs:
       displayName: "Prune IP"
 
     - bash: |
-        source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh ./
+        source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh ./
         make -j ${{ parameters.num_jobs }} ${{ parameters.ip_target }}
         mkdir -p build-ip/.ci/
         git rev-parse --verify HEAD 2>/dev/null 1>build-ip/.ci/build-hash

@@ -37,12 +37,12 @@ jobs:
     displayName: List rfnoc_test_oot directory
 
   # Initialize Vivado toolchain
-  - template: fpga_setup_steps.yml
+  - template: ../fpga/templates/setup_steps.yml
 
   - bash: |
       set -x
       # Init toolchain
-      source $(Build.SourcesDirectory)/uhddev/fpga/.ci/scripts/run_setup.sh $(Build.SourcesDirectory)/uhddev/fpga/usrp3/top/x300
+      source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh $(Build.SourcesDirectory)/uhddev/fpga/usrp3/top/x300
       pushd $(Build.SourcesDirectory)/uhddev/fpga/usrp3/tools/utils
       pip3 install -r requirements.txt
       popd

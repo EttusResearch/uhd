@@ -56,6 +56,123 @@ parameters:
 - name: skip_analyze_changeset
   type: boolean
   default: false
+  # FPGA parameters
+## Optional parameters
+# Run testbenches
+- name: run_testbenches
+  type: boolean
+  default: true
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# Build X3x0 FPGA targets
+- name: build_fpgaimg_x3x0
+  type: boolean
+  displayName: Build X3x0
+  default: false
+# Build N3xx FPGA targets
+- name: build_fpgaimg_n3xx
+  type: boolean
+  displayName: Build N3xx
+  default: false
+# Build E31x FPGA targets
+- name: build_fpgaimg_e31x
+  type: boolean
+  displayName: Build E31x
+  default: false
+# Build E32x FPGA targets
+- name: build_fpgaimg_e32x
+  type: boolean
+  displayName: Build E32x
+  default: false
+# Build X410 FPGA targets
+- name: build_fpgaimg_x410
+  type: boolean
+  default: false
+# Requested X410 targets (if build_x410 is true)
+- name: x410_targets_matrix
+  type: object
+  default:
+    X410_X4_400:
+      image_core: x410_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_400
+      artifact_name: X410_X4_400
+      timeout: 720
+      max_attempts: 2
+    X410_UC_200:
+      image_core: x410_UC_200_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_UC_200
+      artifact_name: X410_UC_200
+      timeout: 720
+      max_attempts: 2
+    X410_X4_200:
+      image_core: x410_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_X4_200
+      artifact_name: X410_X4_200
+      timeout: 720
+      max_attempts: 2
+    X410_CG_400:
+      image_core: x410_CG_400_rfnoc_image_core.yml
+      image_core_name: usrp_x410_fpga_CG_400
+      artifact_name: X410_CG_400
+      timeout: 720
+      max_attempts: 2
+# Build X440 FPGA targets
+- name: build_fpgaimg_x440
+  type: boolean
+  default: false
+# Requested X440 targets
+- name: x440_targets_matrix
+  type: object
+  default:
+    X440_CG_1600:
+      image_core: x440_CG_1600_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_1600
+      artifact_name: X440_CG_1600
+      timeout: 720
+      max_attempts: 2
+    X440_CG_400:
+      image_core: x440_CG_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_400
+      artifact_name: X440_CG_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_1600:
+      image_core: x440_X4_1600_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_1600
+      artifact_name: X440_X4_1600
+      timeout: 720
+      max_attempts: 2
+    X440_X4_400:
+      image_core: x440_X4_400_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_400
+      artifact_name: X440_X4_400
+      timeout: 720
+      max_attempts: 2
+    X440_X4_200:
+      image_core: x440_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_200
+      artifact_name: X440_X4_200
+      timeout: 720
+      max_attempts: 2
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -68,8 +185,11 @@ resources:
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: kirkstone
-  - pipeline: uhd_fpga_pipeline
-    source: 'uhddev fpga pipeline'
+  - pipeline: uhd_mono_pipeline
+    source: 'uhddev mono pipeline'
+    branch: master
+  - pipeline: uhd_mono_pipeline_pr
+    source: 'uhddev mono pipeline PR'
     branch: master
   repositories:
   - repository: meta-ettus
@@ -395,7 +515,7 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'x3xx,b2xx'
 
@@ -420,7 +540,7 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx,e320'
 
@@ -451,11 +571,11 @@ stages:
   jobs:
   - template: tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_uhd_x4xx_pebbles_stage
@@ -485,12 +605,12 @@ stages:
   jobs:
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
   - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
 
@@ -521,7 +641,7 @@ stages:
   jobs:
   - template: tests/job-uhd-x440-hardware-tests-saison.yml
     parameters:
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
       testLength: ${{ parameters.testLength }}
@@ -547,7 +667,7 @@ stages:
   - template: job-uhd-rf-tests-pebbles.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testOS: ubuntu1804
       testDevices: 'n3xx'
@@ -573,7 +693,7 @@ stages:
     parameters:
       testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
 
@@ -598,6 +718,90 @@ stages:
     parameters:
       testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      uhdFpgaArtifactSource: uhd_fpga_pipeline
+      uhdFpgaArtifactSource: uhd_mono_pipeline
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
+
+
+
+####### FPGA Stages ###########################################################
+
+### START: Testbenches stage
+
+- stage: run_testbenches_stage
+  displayName: Run Testbenches
+  dependsOn: analyze_changeset
+  condition: and(succeeded(),
+                 or(
+                   eq('${{ parameters.run_testbenches }}', 'true'),
+                   contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.testbenches')
+                   )
+                )
+  jobs:
+  - template: ../fpga/templates/job-run-testbenches.yml
+
+### END: Testbenches stage
+
+
+### START: X400 stages
+
+- template: ../fpga/devices/job-build-fpga-x400.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_x410: ${{ parameters.build_fpgaimg_x410 }}
+    build_x440: ${{ parameters.build_fpgaimg_x440 }}
+    x410_requests_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_requests_matrix: ${{ parameters.x440_targets_matrix }}
+
+### END: X400 stages
+
+### START: X3x0 stages
+
+- template: ../fpga/devices/job-build-fpga-x300.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
+
+### END: X3x0 stages
+
+### START: N3xx stages
+
+- template: ../fpga/devices/job-build-fpga-n3xx.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
+
+### END: N3xx stages
+
+### START: E31x stages
+
+- template: ../fpga/devices/job-build-fpga-e31x.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_e31x: ${{ parameters.build_fpgaimg_e31x }}
+
+### END: E31x stages
+
+### START: E320 stages
+
+- template: ../fpga/devices/job-build-fpga-e320.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_e320: ${{ parameters.build_fpgaimg_e32x }}
+
+### END: E320 stages

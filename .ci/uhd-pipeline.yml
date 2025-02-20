@@ -78,6 +78,54 @@ parameters:
   - 'FPGA Pipeline'
   displayName: FPGA Images Source
   default: 'FPGA Pipeline'
+## FPGA parameters
+- name: run_testbenches
+  type: boolean
+  displayName: Run Testbenches
+  default: true
+- name: clean_ip_build
+  type: boolean
+  displayName: Clean IP Build
+  default: true
+- name: num_ip_jobs
+  type: number
+  default: 5
+  displayName: Number of parallel IP jobs
+- name: package_and_publish_images
+  type: boolean
+  displayName: Package & Publish Images
+  default: true
+- name: package_access
+  type: string
+  values:
+  - 'Internal'
+  - 'files.ettus.com (Public)'
+  displayName: Published Package Access
+  default: 'Internal'
+- name: build_fpgaimg_x3x0
+  type: boolean
+  displayName: Build X3x0 FPGA Images
+  default: true
+- name: build_fpgaimg_n3xx
+  type: boolean
+  displayName: Build N3xx FPGA Images
+  default: true
+- name: build_fpgaimg_e31x
+  type: boolean
+  displayName: Build E31x FPGA Images
+  default: true
+- name: build_fpgaimg_e32x
+  type: boolean
+  displayName: Build E32x FPGA Images
+  default: true
+- name: build_fpgaimg_x410
+  type: boolean
+  displayName: Build X410 FPGA Images
+  default: true
+- name: build_fpgaimg_x440
+  type: boolean
+  displayName: Build X440 FPGA Images
+  default: true
 
 trigger:
   batch: true
@@ -117,3 +165,17 @@ extends:
     build_x4xx: ${{ parameters.build_x4xx }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     skip_analyze_changeset: true
+    # FPGA parameters
+    run_testbenches: ${{ parameters.run_testbenches }}
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: true
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    build_fpgaimg_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
+    build_fpgaimg_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
+    build_fpgaimg_e31x: ${{ parameters.build_fpgaimg_e31x }}
+    build_fpgaimg_e32x: ${{ parameters.build_fpgaimg_e32x }}
+    build_fpgaimg_x410: ${{ parameters.build_fpgaimg_x410 }}
+    build_fpgaimg_x440: ${{ parameters.build_fpgaimg_x440 }}
+    x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_targets_matrix: ${{ parameters.x440_targets_matrix }}

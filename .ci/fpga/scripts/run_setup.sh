@@ -32,7 +32,7 @@ echo "---- Run hwsetup ----"
 # This script sets the XILINX_VIVADO, MODELSIM, and LIB_BASE_PATH
 # variables based on the agent's configuration so we can find the EDA
 # tools.
-pushd $BUILD_SOURCESDIRECTORY/uhddev/fpga/.ci/hwtools
+pushd $BUILD_SOURCESDIRECTORY/uhddev/.ci/hwtools
 source hwsetup.sh hwtools=0.1.3
 popd
 

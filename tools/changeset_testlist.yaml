@@ -214,6 +214,79 @@
     - devtest.all
 
 ###############################################################################
+# FPGA CHANGES
+###############################################################################
+# build targets:
+# - fpga.usrp3.$PLATFORM: Build FPGA images for given platforms.
+
+- re: fpga/usrp3/
+  add:
+    - fpga.usrp3.testbenches
+  stop: False
+
+# library changes
+- re: fpga/usrp3/lib
+  add:
+    - fpga.usrp3.all
+
+# image builder changes
+- re: host/utils/rfnoc_image_builder.py
+  add:
+    - fpga.usrp3.all
+# only trigger on .py files, exclude modtools_commands and templates
+- re: host/python/uhd/rfnoc_utils/[^/]+py$
+  add:
+    - fpga.usrp3.all
+# RFNoC blocks
+- re: host/include/uhd/rfnoc/blocks/.*\.yml
+  add:
+    - fpga.usrp3.all
+# RFNoC core (the device-specific BSP files are checked below)
+- re: host/include/uhd/rfnoc/core/rfnoc_imagebuilder_args\.json
+  add:
+    - fpga.usrp3.all
+# RFNoC modules
+- re: host/include/uhd/rfnoc/modules/.*\.yml
+  add:
+    - fpga.usrp3.all
+# RFNoC transport adapters (only relevant for x4xx)
+- re: host/include/uhd/rfnoc/transport_adapters/.*\.yml
+  add:
+    - fpga.usrp3.x4xx
+
+# Device-specific changes.
+- re: fpga/usrp3/top/x400
+  add:
+    - fpga.usrp3.x4xx
+- re: host/include/uhd/rfnoc/core/x4.._bsp.yml
+  add:
+    - fpga.usrp3.x4xx
+- re: fpga/usrp3/top/x300
+  add:
+    - fpga.usrp3.x3xx
+- re: host/include/uhd/rfnoc/core/x3.._bsp.yml
+  add:
+    - fpga.usrp3.x3xx
+- re: fpga/usrp3/top/e31x
+  add:
+    - fpga.usrp3.e31x
+- re: host/include/uhd/rfnoc/core/e310_bsp.yml
+  add:
+    - fpga.usrp3.e31x
+- re: fpga/usrp3/top/e320
+  add:
+    - fpga.usrp3.e320
+- re: host/include/uhd/rfnoc/core/e320_bsp.yml
+  add:
+    - fpga.usrp3.e320
+- re: fpga/usrp3/top/n3xx
+  add:
+    - fpga.usrp3.n3xx
+- re: host/include/uhd/rfnoc/core/n3.._bsp.yml
+  add:
+    - fpga.usrp3.n3xx
+
+###############################################################################
 # CI CHANGES
 ###############################################################################
 # Changes to pipeline infrastructure or build jobs -> build and test all
@@ -253,6 +326,27 @@
   add:
     - uhd.build.linux
     - uhd.rfnoc_modtool.all
+
+
+- re: fpga/.ci/templates*
+  add:
+    - fpga.usrp3.all
+# Device-specific pipeline changes.
+- re: .ci/fpga/devices/job-build-x400.yml
+  add:
+    - fpga.usrp3.x4xx
+- re: .ci/fpga/devices/job-build-x300.yml
+  add:
+    - fpga.usrp3.x3xx
+- re: .ci/fpga/devices/job-build-e31x.yml
+  add:
+    - fpga.usrp3.e31x
+- re: .ci/fpga/devices/job-build-e320.yml
+  add:
+    - fpga.usrp3.e320
+- re: .ci/fpga/devices/job-build-n3xx.yml
+  add:
+    - fpga.usrp3.n3xx
 
 ###############################################################################
 # LABEL-BASED RULES
