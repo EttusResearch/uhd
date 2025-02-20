@@ -33,7 +33,7 @@ USRP devices.
 \li Devices: USRP B2X0, USRP E3XX, USRP N3XX, USRP X3XX, USRP X4XX
 \li Tools: Vivado/ISE from Xilinx, GNU make
 \li \subpage md_usrp3_build_instructions "Build Instructions"
-\li \subpage md_usrp3_simulation "Simulation"
+\li \subpage md_usrp3_simulation "Simulation Instructions"
 
 ## Pre-built FPGA Images
 
