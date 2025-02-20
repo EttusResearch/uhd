@@ -60,7 +60,6 @@ endif()
 
 set(_version 2.0.0)
 
-cmake_minimum_required(VERSION 3.3)
 include(CMakeParseArguments)
 
 if(COMMAND cmrc_add_resource_library)
