@@ -31,6 +31,9 @@ from .template import Template
 
 USRP3_LIB_RFNOC_DIR = os.path.join("usrp3", "lib", "rfnoc")
 
+# Path to the system's bash executable
+BASH_EXECUTABLE = "/bin/bash"  # FIXME this should come from somewhere
+
 # Map device names to the corresponding directory under usrp3/top
 DEVICE_DIR_MAP = {
     "x300": "x300",
@@ -83,7 +86,7 @@ def get_vivado_path(fpga_top_dir, args):
         get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=\$VIVADO_PATH"'
         try:
             output = subprocess.check_output(
-                get_viv_path_cmd,
+                f'{BASH_EXECUTABLE} -c "{get_viv_path_cmd}"',
                 shell=True,
                 cwd=fpga_top_dir,
                 text=True,
@@ -287,6 +290,8 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
     logging.info(" * Build Artifacts Directory: %s", build_dir)
     logging.info(" * Build Output Directory: %s", build_output_dir)
     logging.info(" * Build IP Directory: %s", build_ip_dir)
+    # Wrap it into a bash call:
+    make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.info("Executing the following command: %s", make_cmd)
     my_env = os.environ.copy()
     ret_val = subprocess.call(make_cmd, shell=True, env=my_env, cwd=fpga_top_dir)

@@ -374,11 +374,9 @@ def run_fpga_build(
         cmd_build_num,
     )
     logging.info(f"Running FPGA build command: {cmd}")
-    my_env = os.environ.copy()
     with subprocess.Popen(
         cmd,
         shell=True,
-        env=my_env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=1,
@@ -462,7 +460,7 @@ def run_ip_build(
     logging.info(f"Running IP build with command: {cmd}")
     output = ""
     with subprocess.Popen(
-        cmd,
+        f'/bin/bash -c "{cmd}"',
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
