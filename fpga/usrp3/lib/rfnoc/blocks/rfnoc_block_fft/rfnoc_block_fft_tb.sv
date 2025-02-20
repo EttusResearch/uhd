@@ -35,7 +35,8 @@ module rfnoc_block_fft_tb #(
   `include "usrp_utils.svh"
 
   import PkgTestExec::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgRfnocBlockCtrlBfm::*;
   import PkgRfnocItemUtils::*;
 

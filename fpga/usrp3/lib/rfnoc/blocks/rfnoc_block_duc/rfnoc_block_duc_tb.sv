@@ -15,7 +15,8 @@ module rfnoc_block_duc_tb();
   `include "test_exec.svh"
 
   import PkgTestExec::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgRfnocBlockCtrlBfm::*;
 
   `include "rfnoc_block_duc_regs.vh"

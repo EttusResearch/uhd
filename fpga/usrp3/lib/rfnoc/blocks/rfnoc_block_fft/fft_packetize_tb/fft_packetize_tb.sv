@@ -39,14 +39,12 @@ module fft_packetize_tb #(
   `include "test_exec.svh"
   import PkgTestExec::*;
 
+  import rfnoc_chdr_utils_pkg::*;
   import PkgAxiStreamBfm::*;
   import PkgRandom::*;
   import PkgChdrData::*;
 
   `include "usrp_utils.svh"
-
-  `include "rfnoc_chdr_utils.vh"
-  import PkgChdrUtils::*;
 
   import fft_packetize_pkg::*;
 

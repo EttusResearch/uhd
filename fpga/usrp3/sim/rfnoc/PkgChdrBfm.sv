@@ -12,8 +12,19 @@
 
 package PkgChdrBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgAxiStreamBfm::*;
+
+
+  //---------------------------------------------------------------------------
+  // CHDR Management Packet
+  //---------------------------------------------------------------------------
+
+  typedef struct {
+    chdr_mgmt_header_t  header;
+    chdr_mgmt_op_t      ops[$];
+  } chdr_mgmt_t;
 
 
   //---------------------------------------------------------------------------

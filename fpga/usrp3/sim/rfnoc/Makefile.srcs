@@ -27,7 +27,7 @@ PkgAxiStreamBfm.sv \
 PkgAxiLiteBfm.sv \
 PkgEthernet.sv \
 PkgChdrData.sv \
-PkgChdrUtils.sv \
+../../lib/rfnoc/core/rfnoc_chdr_utils_pkg.sv \
 PkgChdrBfm.sv \
 PkgAxisCtrlBfm.sv \
 PkgRfnocItemUtils.sv \

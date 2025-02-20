@@ -61,7 +61,8 @@ module chdr_crossbar_nxn_tb #(
 
   import PkgTestExec::*;
   import PkgChdrBfm::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
 
 
   //---------------------------------------------------------------------------

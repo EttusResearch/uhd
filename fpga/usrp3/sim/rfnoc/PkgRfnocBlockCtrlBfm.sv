@@ -77,7 +77,8 @@ endinterface : RfnocBackendIf
 
 package PkgRfnocBlockCtrlBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgChdrBfm::*;
   import PkgCtrlIfaceBfm::*;
   import PkgChdrIfaceBfm::*;

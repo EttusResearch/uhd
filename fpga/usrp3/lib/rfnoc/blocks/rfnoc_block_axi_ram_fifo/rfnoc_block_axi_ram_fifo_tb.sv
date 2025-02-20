@@ -25,7 +25,8 @@ module rfnoc_block_axi_ram_fifo_tb #(
   `include "test_exec.svh"
 
   import PkgTestExec::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgRfnocBlockCtrlBfm::*;
 
   `include "axi_ram_fifo_regs.vh"

@@ -12,7 +12,7 @@
 
 package PkgCtrlIfaceBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
   import PkgAxisCtrlBfm::*;
 
 
