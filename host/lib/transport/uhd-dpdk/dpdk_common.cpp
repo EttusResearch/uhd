@@ -509,6 +509,31 @@ void dpdk_ctx::init(const device_addr_t& user_args)
             }
         }
 
+        /* Checking if dpdk_lcore values are listed in dpdk_corelist.
+        If not, then throw run time error to avoid application to freeze.
+        Note: The check is encapsulated under 2 nested ifs. This is to
+        make sure that keys "dpdk_corelist and dpdk_lcore are available
+        in uhd config file before checking for invalid condition. */
+        if (dpdk_args.has_key("dpdk_corelist")) {
+            auto dpdk_args_corelists_value = dpdk_args.get("dpdk_corelist");
+            RTE_ETH_FOREACH_DEV(i)
+            {
+                auto& nic = nics.at(i);
+                if (nic.has_key("dpdk_lcore")) {
+                    auto nic_args_lcore_value = nic.get("dpdk_lcore");
+                    if (!uhd::has(uhd::device_addr_t(dpdk_args_corelists_value).keys(),
+                            nic.get("dpdk_lcore"))) {
+                        UHD_LOG_THROW(uhd::runtime_error,
+                            "DPDK",
+                            "CONFIG: NIC(" << i << ") references dpdk_lcore value ["
+                                           << nic_args_lcore_value
+                                           << "] which is not found in dpdk_corelist ["
+                                           << dpdk_args_corelists_value << "] !");
+                    }
+                }
+            }
+        }
+
         std::map<size_t, std::vector<size_t>> lcore_to_port_id_map;
         RTE_ETH_FOREACH_DEV(i)
         {
