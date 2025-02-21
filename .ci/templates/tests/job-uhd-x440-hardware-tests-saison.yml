@@ -2,10 +2,11 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
-- name: uhdFpgaArtifactSource
-  type: string
 - name: fpga_imgs_source
   type: string
+  values:
+    - 'Filesystem'
+    - 'Pipeline'
 - name: extra_rf_test_args
   type: string
   default: ''
@@ -21,7 +22,6 @@ jobs:
     runDevTest: false
     runSystemImageTest: false
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
-    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: /opt/Xilinx/Vivado/2019.1
     extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'

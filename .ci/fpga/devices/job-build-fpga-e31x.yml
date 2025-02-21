@@ -33,6 +33,10 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
 # Build E310 FPGA targets
 - name: build_e31x
   type: boolean
@@ -134,6 +138,14 @@ stages:
         ip_artifact: E310_SG1_IP
         top_dir: uhddev/fpga/usrp3/top/e31x
         publish_int_files: ${{ parameters.publish_int_files }}
+  - job: set_generated_artifact_variable
+    displayName: Set Generated Artifact Variable
+    steps:
+    - checkout: none
+    - script: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+      displayName: Set Generated Artifact Variable
+      name: set_generated_artifact_variable
 
 - stage: create_e31x_sg1_packages_stage
   displayName: Package & Publish E310 SG1 Binaries
@@ -185,6 +197,14 @@ stages:
         ip_artifact: E310_SG3_IP
         top_dir: uhddev/fpga/usrp3/top/e31x
         publish_int_files: ${{ parameters.publish_int_files }}
+  - job: set_generated_artifact_variable
+    displayName: Set Generated Artifact Variable
+    steps:
+    - checkout: none
+    - script: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+      displayName: Set Generated Artifact Variable
+      name: set_generated_artifact_variable
 
 - stage: create_e31x_sg3_packages_stage
   displayName: Package & Publish E310 Binaries
@@ -198,5 +218,51 @@ stages:
       artifacts_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/e31x/build/
       package_access: ${{ parameters.package_access }}
+
+- stage: guarantee_e31x_sg1_artifacts_stage
+  displayName: Guarantee E31x SG1 FPGA Artifacts
+  dependsOn:
+  - analyze_changeset
+  - build_e31x_sg1_targets_stage
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    ArtifactsGenerated: $[iif(eq(stageDependencies.build_e31x_sg1_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
+  # Run if previous stages are succeeded or skipped, but not if they failed or
+  # were canceled. That's because the build stages are conditionally executed.
+  condition: not(or(failed(), canceled()))
+  jobs:
+  - template: ../templates/job-guarantee-artifacts.yml
+    parameters:
+      id: e31x_sg1
+      artifacts_matrix: ${{ parameters.e31x_sg1_full_targets_matrix }}
+      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline
+
+- stage: guarantee_e31x_sg3_artifacts_stage
+  displayName: Guarantee E31x SG3 FPGA Artifacts
+  dependsOn:
+  - analyze_changeset
+  - build_e31x_sg3_targets_stage
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    ArtifactsGenerated: $[iif(eq(stageDependencies.build_e31x_sg3_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
+  # Run if previous stages are succeeded or skipped, but not if they failed or
+  # were canceled. That's because the build stages are conditionally executed.
+  condition: not(or(failed(), canceled()))
+  jobs:
+  - template: ../templates/job-guarantee-artifacts.yml
+    parameters:
+      id: e31x_sg3
+      artifacts_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
+      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline
 
 ### END: E310 stages

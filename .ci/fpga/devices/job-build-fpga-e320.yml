@@ -33,6 +33,10 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
 # Build E320 FPGA targets
 - name: build_e320
   type: boolean
@@ -72,11 +76,17 @@ parameters:
       image_core_name: usrp_e320_fpga_XG
       timeout: 720
       max_attempts: 2
+    E320_1G:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_1G
+      artifact_name: E320_1G
+      image_core_name: usrp_e320_fpga_1G
+      timeout: 720
+      max_attempts: 2
 
 stages:
 
 ### START: E320 stages
-
 - stage: build_e320_ip_stage
   displayName: Build E320 IP
   dependsOn: analyze_changeset
@@ -114,6 +124,14 @@ stages:
         ip_artifact: E320_IP
         top_dir: uhddev/fpga/usrp3/top/e320
         publish_int_files: ${{ parameters.publish_int_files }}
+  - job: set_generated_artifact_variable
+    displayName: Set Generated Artifact Variable
+    steps:
+    - checkout: none
+    - script: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+      displayName: Set Generated Artifact Variable
+      name: set_generated_artifact_variable
 
 - stage: create_e320_packages_stage
   displayName: Package & Publish E320 Binaries
@@ -126,5 +144,32 @@ stages:
       artifacts_matrix: ${{ parameters.e320_full_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/e320/build/
       package_access: ${{ parameters.package_access }}
+
+
+- stage: guarantee_e320_artifacts_stage
+  displayName: Guarantee E320 FPGA Artifacts
+  dependsOn:
+  - analyze_changeset
+  - build_e320_targets_stage
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    ArtifactsGenerated: $[iif(eq(stageDependencies.build_e320_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
+  # Run if previous stages are succeeded or skipped, but not if they failed or
+  # were canceled. That's because the build stages are conditionally executed.
+  condition: not(or(failed(), canceled()))
+  jobs:
+  - template: ../templates/job-guarantee-artifacts.yml
+    parameters:
+      id: e320
+      ${{ if eq(parameters.package_and_publish_images, true) }}:
+        artifacts_matrix: ${{ parameters.e320_full_targets_matrix }}
+      ${{ else }}:
+        artifacts_matrix: ${{ parameters.e320_reduced_targets_matrix }}
+      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline
 
 ### END: E320 stages

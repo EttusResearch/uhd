@@ -16,9 +16,15 @@ parameters:
 - name: releaseBinaries
   type: boolean
   default: false
+  # In this job, we always use uhd_images_downloader to get FPGA images, never
+  # the pipeline. This variable only controls if we use files.ettus.com or our
+  # internal server.
 - name: fpga_imgs_source
   type: string
   default: 'Internal'
+  values:
+  - 'Internal'
+  - 'files.ettus.com (Public)'
 
 jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}

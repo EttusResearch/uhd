@@ -8,10 +8,6 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
-- name: uhdFpgaArtifactSource
-  type: string
-- name: fpga_imgs_source
-  type: string
 - name: testLength
   type: string
 - name: dpdkDirs
@@ -29,8 +25,6 @@ jobs:
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
-    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
-    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
     dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
@@ -136,4 +130,5 @@ jobs:
         dutNameId: 'MyB210'
         dutNumRecvFrames: '256'
         dutNumSendFrames: '256'
+        dutGetFpgaImagesMethod: 'uhd_images_downloader'
 

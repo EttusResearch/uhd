@@ -113,6 +113,14 @@ jobs:
       artifact: '$(artifact_name)'
       displayName: 'Publish FPGA'
 
+    # Create a variable so we know that we generated this artifact
+    - bash: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact_$(artifact_name);isOutput=true]true"
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+        echo "Variable name: GeneratedArtifact_$(artifact_name)"
+      displayName: 'Set GeneratedArtifact variable'
+      name: set_generated_artifact_variable
+
     # extract build artifact directory
     - bash: |
         export BUILD_ARTIFACT_DIR=`ls | grep build-usrp`

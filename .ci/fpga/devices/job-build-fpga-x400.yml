@@ -33,6 +33,10 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
 # Build X410 FPGA targets
 - name: build_x410
   type: boolean
@@ -210,6 +214,14 @@ stages:
         ip_artifact: X410_IP
         top_dir: uhddev/fpga/usrp3/top/x400
         publish_int_files: ${{ parameters.publish_int_files }}
+  - job: set_generated_artifact_variable
+    displayName: Set Generated Artifact Variable
+    steps:
+    - checkout: none
+    - script: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+      displayName: Set Generated Artifact Variable
+      name: set_generated_artifact_variable
 
 - stage: create_x410_packages_stage
   displayName: Package & Publish X410 Binaries
@@ -222,6 +234,32 @@ stages:
       artifacts_matrix: ${{ parameters.x410_full_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/x400/build/
       package_access: ${{ parameters.package_access }}
+
+- stage: guarantee_x410_artifacts_stage
+  displayName: Guarantee X410 FPGA Artifacts
+  dependsOn:
+  - analyze_changeset
+  - build_x410_targets_stage
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    ArtifactsGenerated: $[iif(eq(stageDependencies.build_x410_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
+  # Run if previous stages are succeeded or skipped, but not if they failed or
+  # were canceled. That's because the build stages are conditionally executed.
+  condition: not(or(failed(), canceled()))
+  jobs:
+  - template: ../templates/job-guarantee-artifacts.yml
+    parameters:
+      id: x410
+      ${{ if eq(parameters.package_and_publish_images, false) }}:
+        artifacts_matrix: ${{ parameters.x410_full_targets_matrix }}
+      ${{ else }}:
+        artifacts_matrix: ${{ parameters.x410_reduced_targets_matrix }}
+      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline
 
 ### END: X410 stages
 
@@ -273,6 +311,14 @@ stages:
         ip_artifact: X440_IP
         top_dir: uhddev/fpga/usrp3/top/x400
         publish_int_files: ${{ parameters.publish_int_files }}
+  - job: set_generated_artifact_variable
+    displayName: Set Generated Artifact Variable
+    steps:
+    - checkout: none
+    - script: |
+        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
+      displayName: Set Generated Artifact Variable
+      name: set_generated_artifact_variable
 
 - stage: create_x440_packages_stage
   displayName: Package & Publish X440 Binaries
@@ -285,5 +331,31 @@ stages:
       artifacts_matrix: ${{ parameters.x440_full_targets_matrix }}
       build_directory: uhddev/fpga/usrp3/top/x400/build/
       package_access: ${{ parameters.package_access }}
+
+- stage: guarantee_x440_artifacts_stage
+  displayName: Guarantee X440 FPGA Artifacts
+  dependsOn:
+  - analyze_changeset
+  - build_x440_targets_stage
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    ArtifactsGenerated: $[iif(eq(stageDependencies.build_x440_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
+  # Run if previous stages are succeeded or skipped, but not if they failed or
+  # were canceled. That's because the build stages are conditionally executed.
+  condition: not(or(failed(), canceled()))
+  jobs:
+  - template: ../templates/job-guarantee-artifacts.yml
+    parameters:
+      id: x440
+      ${{ if eq(parameters.package_and_publish_images, false) }}:
+        artifacts_matrix: ${{ parameters.x440_full_targets_matrix }}
+      ${{ else }}:
+        artifacts_matrix: ${{ parameters.x440_reduced_targets_matrix }}
+      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+        uhdFpgaArtifactSource: uhd_fpga_pipeline
+      ${{ else }}:
+        uhdFpgaArtifactSource: uhd_mono_pipeline
 
 ### END: X440 stages

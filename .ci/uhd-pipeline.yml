@@ -70,14 +70,17 @@ parameters:
   type: boolean
   displayName: Build x4xx image
   default: true
+  # This is the source of FPGA images only if they're not being built in this
+  # pipeline. If they are being built, the source is the pipeline itself.
 - name: fpga_imgs_source
   type: string
   values:
   - 'files.ettus.com (Public)'
   - 'Internal Repo'
-  - 'FPGA Pipeline'
+  - 'Mono Pipeline'
+  - 'Mono Pipeline PR'
   displayName: FPGA Images Source
-  default: 'FPGA Pipeline'
+  default: 'Mono Pipeline'
 ## FPGA parameters
 - name: run_testbenches
   type: boolean

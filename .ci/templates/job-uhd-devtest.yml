@@ -15,8 +15,6 @@ parameters:
   type: string
 - name: uhdArtifactSource
   type: string
-- name: uhdFpgaArtifactSource
-  type: string
 - name: fpga_imgs_source
   type: string
 - name: redisHost
@@ -63,20 +61,15 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
-      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
-        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
-      else
-        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
+      echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+      echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
     displayName: Set uhddev FPGA pipeline artifact location
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
-  - script: |
-      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
-        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
-    displayName: Cleanup from prior run
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200'))
+  #- script: |
+      #rm -rf $(uhd_fpga_artifact_directory)
+    #displayName: Cleanup from prior run
+    #condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200'))
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
@@ -108,19 +101,24 @@ jobs:
     displayName: Download $(devType)-images artifact
     condition: and(succeeded(), eq(variables.devModel, 'e320'))
 
-  - download: ${{ parameters.uhdFpgaArtifactSource }}
+  # We always download FPGA bitfiles from the current pipeline. Other steps
+  # upstream have to make sure they exist.
+  - download: current
     patterns: |
       usrp_$(devModel)*.bit
       usrp_$(devModel)*.dts
-      usrp_$(devModel)*.rpt
     displayName: Download FPGA artifacts
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
   - script: |
       mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images/
-      cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      cd $(uhd_fpga_artifact_directory)
+      echo "Moving files: "
+      find . -maxdepth 2 -name "*.bit" -o -name "*.dts"
+      mv `find . -maxdepth 2 -name "*.bit" -o -name "*.dts"` $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      ls -lR $(Build.BinariesDirectory)/uhddev/build/fpga_images/
     displayName: Copy FPGA images to expected directory
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
@@ -132,8 +130,8 @@ jobs:
         python3 utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
           -b $(sdr-fileserver)
       fi
-    displayName: Download FPGA Images
-    condition: and(succeeded(), or(not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')), eq(variables.devType, 'b200')))
+    displayName: Download FPGA Images (uhd_images_downloader)
+    condition: and(succeeded(), or(not(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline')), eq(variables.devType, 'b200')))
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/devtest

@@ -2,10 +2,11 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
-- name: uhdFpgaArtifactSource
-  type: string
 - name: fpga_imgs_source
   type: string
+  values:
+    - 'Filesystem'
+    - 'Pipeline'
 
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
@@ -16,7 +17,6 @@ jobs:
     runDevTest: true
     runSystemImageTest: true
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
-    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: $(xilinx_location)
     dutMatrix:

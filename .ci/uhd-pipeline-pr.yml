@@ -86,9 +86,11 @@ parameters:
   values:
   - 'files.ettus.com (Public)'
   - 'Internal Repo'
+  - 'Mono Pipeline'
+  - 'Mono Pipeline PR'
   - 'FPGA Pipeline'
   displayName: FPGA Images Source
-  default: 'FPGA Pipeline'
+  default: 'Mono Pipeline'
   # FPGA Parameters
 - name: run_testbenches
   type: boolean
@@ -106,6 +108,8 @@ parameters:
   type: boolean
   displayName: Package & Publish Images
   default: false
+  # Package access: This controls from where we download the FPGA images, if we
+  # are not building them.
 - name: package_access
   type: string
   values:
@@ -113,10 +117,11 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
-- name: skip_analyze_changeset
-  type: boolean
-  displayName: Skip Analyze Changeset
-  default: false
+  # Which FPGA images to build? Note that this pipeline also does a changeset
+  # analysis. If we changed, e.g., files for X3x0 bitfiles, then this pipeline
+  # will always build the X3x0 bitfiles (same is true for other devices). If
+  # we set build_fpgaimg_x3x0 to true, that simply overrides the changeset
+  # analysis and forces a build of the X3x0 bitfiles.
 - name: build_fpgaimg_x3x0
   type: boolean
   displayName: Build X3x0 FPGA Images

@@ -13,11 +13,12 @@ parameters:
 - name: fpga_imgs_source
   type: string
   values:
-  - 'Filesytem/Images Downloader'
+  - 'Filesystem/Images Downloader'
+  - 'Mono Pipeline'
   - 'FPGA Pipeline'
-  - 'FPGA Pipeline PR'
+  - 'Mono Pipeline PR'
   displayName: FPGA Images Source
-  default: 'FPGA Pipeline'
+  default: 'Mono Pipeline'
 - name: testLength
   type: string
   values:
@@ -28,7 +29,7 @@ parameters:
 
 variables:
   - name: uhd_fpga_artifact_source
-    ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline PR') }}:
+    ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
       value: uhd_mono_pipeline_pr
     ${{ else }}:
       value: uhd_mono_pipeline
@@ -44,6 +45,11 @@ resources:
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: kirkstone
+  # Keep this for now, but it should be removed once the mono pipeline is
+  # fully populated.
+  - pipeline: uhd_fpga_pipeline
+    source: 'uhddev fpga pipeline'
+    branch: master
   repositories:
   - repository: meta-ettus
     type: github

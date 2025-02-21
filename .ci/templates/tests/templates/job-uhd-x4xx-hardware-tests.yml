@@ -19,10 +19,13 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
-- name: uhdFpgaArtifactSource
-  type: string
+  # For embedded devices, this controls whether we use default FPGA images
+  # (built into the filesystem), or if we download them from the pipeline.
 - name: fpga_imgs_source
   type: string
+  values:
+    - 'Filesystem'
+    - 'Pipeline'
 - name: xilinxLocation
   type: string
 - name: extra_rf_test_args
@@ -77,33 +80,29 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
-      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
-        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
-      else
-        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
+      echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+      echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
     displayName: Set uhddev FPGA pipeline artifact location
 
   - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
       rm -rf $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       rm -rf $(uhd_artifact_directory)/gnuradio-$(testOS)-${{ parameters.toolset }}
-      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
-        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
     displayName: Cleanup from prior run
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(dutEmbeddedImagesArtifact)
     displayName: Download $(dutEmbeddedImagesArtifact)
 
-  - download: ${{ parameters.uhdFpgaArtifactSource }}
+  # We always download FPGA bitfiles from the current pipeline. Other steps
+  # upstream have to make sure they exist.
+  - download: current
     patterns: |
       usrp_$(pytestDUT)_fpga_$(dutFPGA).bit
       usrp_$(pytestDUT)_fpga_$(dutFPGA).dts
       usrp_$(pytestDUT)_fpga_$(dutFPGA).rpt
     displayName: Download FPGA pipeline artifacts
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - task: ExtractFiles@1
     inputs:
@@ -190,7 +189,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts.md5"
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm /lib/firmware/x4*.* && systemctl restart usrp-hwd.service"
     displayName: Copy FPGA pipeline images to device
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - script: |
         set -e
@@ -202,7 +201,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "systemctl stop usrp-hwd.service && journalctl --rotate --vacuum-time=1s && systemctl start usrp-hwd.service"
         sleep 60
     displayName: Flash FPGA $(dutFPGA), clear MPM log
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - script: |
         set -e
@@ -210,7 +209,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
         sleep 60
     displayName: Flash FPGA $(dutFPGA)
-    condition: and(succeeded(), not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   # When MPM reboots, the sfp0 address is reset to default
   # Since rebooting MPM was added for clocking re-config we need
