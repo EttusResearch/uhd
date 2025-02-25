@@ -206,267 +206,83 @@ parameters:
 
 stages:
 
-### START: N300 stages
-
-- stage: build_n300_ip_stage
-  displayName: Build N300 IP
+- stage: provide_n300_fpga_images_stage
+  displayName: Provide N300 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/n3xx
-      ip_target: N300_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
-
-- stage: build_n300_targets_stage
-  displayName: Build N300 FPGA Targets
-  dependsOn: build_n300_ip_stage
-  condition: succeeded('build_n300_ip_stage')
-  jobs:
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n300_full_targets_matrix }}
-        ip_artifact: N300_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - ${{ if eq(parameters.package_and_publish_images, false) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n300_reduced_targets_matrix }}
-        ip_artifact: N300_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_n300_packages_stage
-  displayName: Package & Publish N300 Binaries
-  dependsOn: build_n300_targets_stage
-  condition: and(succeeded('build_n300_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: n3xx_n300_fpga_default
-      artifacts_matrix: ${{ parameters.n300_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
-      package_access: ${{ parameters.package_access }}
-
-- stage: guarantee_n300_artifacts_stage
-  displayName: Guarantee N300 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_n300_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_n300_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: n300
-      ${{ if eq(parameters.package_and_publish_images, false) }}:
-        artifacts_matrix: ${{ parameters.n300_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.n300_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
+      device_name: N300
+      ip_target: N300_IP
+      package_name: n3xx_n300_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/n3xx
+      target_full_matrix: ${{ parameters.n300_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.n300_reduced_targets_matrix }}
 
-### END: N300 stages
-
-### START: N310 stages
-
-- stage: build_n310_ip_stage
-  displayName: Build N310 IP
+- stage: provide_n310_fpga_images_stage
+  displayName: Provide N310 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/n3xx
-      ip_target: N310_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
-
-- stage: build_n310_targets_stage
-  displayName: Build N310 FPGA Targets
-  dependsOn: build_n310_ip_stage
-  condition: succeeded('build_n310_ip_stage')
-  jobs:
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n310_full_targets_matrix }}
-        ip_artifact: N310_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - ${{ if eq(parameters.package_and_publish_images, false) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n310_reduced_targets_matrix }}
-        ip_artifact: N310_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_n310_packages_stage
-  displayName: Package & Publish N310 Binaries
-  dependsOn: build_n310_targets_stage
-  condition: and(succeeded('build_n310_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: n3xx_n310_fpga_default
-      artifacts_matrix: ${{ parameters.n310_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
-      package_access: ${{ parameters.package_access }}
-
-- stage: guarantee_n310_artifacts_stage
-  displayName: Guarantee N310 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_n310_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_n310_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: n310
-      ${{ if eq(parameters.package_and_publish_images, false) }}:
-        artifacts_matrix: ${{ parameters.n310_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.n310_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
+      device_name: N310
+      ip_target: N310_IP
+      package_name: n3xx_n310_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/n3xx
+      target_full_matrix: ${{ parameters.n310_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.n310_reduced_targets_matrix }}
 
-### END: N310 stages
-
-### START: N320 stages
-
-- stage: build_n320_ip_stage
-  displayName: Build N320 IP
+- stage: provide_n320_fpga_images_stage
+  displayName: Provide N320 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/n3xx
-      ip_target: N320_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
-
-- stage: build_n320_targets_stage
-  displayName: Build N320 FPGA Targets
-  dependsOn: build_n320_ip_stage
-  condition: succeeded('build_n320_ip_stage')
-  jobs:
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n320_full_targets_matrix }}
-        ip_artifact: N320_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - ${{ if eq(parameters.package_and_publish_images, false) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.n320_reduced_targets_matrix }}
-        ip_artifact: N320_IP
-        top_dir: uhddev/fpga/usrp3/top/n3xx
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_n320_packages_stage
-  displayName: Package & Publish N320 Binaries
-  dependsOn: build_n320_targets_stage
-  condition: and(succeeded('build_n320_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: n3xx_n320_fpga_default
-      artifacts_matrix: ${{ parameters.n320_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/n3xx/build/
-      package_access: ${{ parameters.package_access }}
-
-- stage: guarantee_n320_artifacts_stage
-  displayName: Guarantee N320 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_n320_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_n320_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: n320
-      ${{ if eq(parameters.package_and_publish_images, false) }}:
-        artifacts_matrix: ${{ parameters.n320_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.n320_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
-
-### END: N320 stages
-
+      device_name: N320
+      ip_target: N320_IP
+      package_name: n3xx_n320_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/n3xx
+      target_full_matrix: ${{ parameters.n320_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.n320_reduced_targets_matrix }}

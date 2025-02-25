@@ -167,195 +167,59 @@ stages:
 
 ### START: X410 stages
 
-- stage: build_x410_ip_stage
-  displayName: Build X410 IP
+- stage: provide_x410_fpga_images_stage
+  displayName: Provide X410 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x410 }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/x400
-      ip_target: X410_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
-
-- stage: build_x410_targets_stage
-  displayName: Build X410 FPGA Targets
-  dependsOn: build_x410_ip_stage
-  condition: succeeded('build_x410_ip_stage')
-  jobs:
-  # trigger full list of targets if packaging is enabled
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x410_full_targets_matrix }}
-        ip_artifact: X410_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  # trigger reduced list of targets if packaging is disabled, and no specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, false)) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x410_reduced_targets_matrix }}
-        ip_artifact: X410_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  # trigger specific targets if packaging is disabled, and specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, false), eq(parameters.build_x410, true)) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x410_requests_matrix }}
-        ip_artifact: X410_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_x410_packages_stage
-  displayName: Package & Publish X410 Binaries
-  dependsOn: build_x410_targets_stage
-  condition: and(succeeded('build_x410_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: x4xx_x410_fpga_default
-      artifacts_matrix: ${{ parameters.x410_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/x400/build/
-      package_access: ${{ parameters.package_access }}
-
-- stage: guarantee_x410_artifacts_stage
-  displayName: Guarantee X410 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_x410_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_x410_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: x410
-      ${{ if eq(parameters.package_and_publish_images, false) }}:
-        artifacts_matrix: ${{ parameters.x410_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.x410_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
+      device_name: X410
+      ip_target: X410_IP
+      package_name: x4xx_x410_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/x4xx
+      target_full_matrix: ${{ parameters.x410_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.x410_reduced_targets_matrix }}
 
-### END: X410 stages
-
-### START: X440 stages
-
-- stage: build_x440_ip_stage
-  displayName: Build X440 IP
+- stage: provide_x440_fpga_images_stage
+  displayName: Provide X440 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x440 }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/x400
-      ip_target: X440_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-
-- stage: build_x440_targets_stage
-  displayName: Build X440 FPGA Targets
-  dependsOn: build_x440_ip_stage
-  condition: succeeded('build_x440_ip_stage')
-  jobs:
-  # trigger full list of targets if packaging is enabled
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x440_full_targets_matrix }}
-        ip_artifact: X440_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  # trigger reduced list of targets if packaging is disabled, and no specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, false),eq(parameters.build_x440, false)) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x440_reduced_targets_matrix }}
-        ip_artifact: X440_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  # trigger specific targets if packaging is disabled, and specific targets are requested
-  - ${{ if and(eq(parameters.package_and_publish_images, false),eq(parameters.build_x440, true)) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.x440_requests_matrix }}
-        ip_artifact: X440_IP
-        top_dir: uhddev/fpga/usrp3/top/x400
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_x440_packages_stage
-  displayName: Package & Publish X440 Binaries
-  dependsOn: build_x440_targets_stage
-  condition: and(succeeded('build_x440_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: x4xx_x440_fpga_default
-      artifacts_matrix: ${{ parameters.x440_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/x400/build/
-      package_access: ${{ parameters.package_access }}
-
-- stage: guarantee_x440_artifacts_stage
-  displayName: Guarantee X440 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_x440_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_x440_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: x440
-      ${{ if eq(parameters.package_and_publish_images, false) }}:
-        artifacts_matrix: ${{ parameters.x440_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.x440_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
+      device_name: X440
+      ip_target: X440_IP
+      package_name: x4xx_x440_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/x4xx
+      target_full_matrix: ${{ parameters.x440_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.x440_reduced_targets_matrix }}
+
 
 ### END: X440 stages

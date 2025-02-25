@@ -31,6 +31,8 @@ parameters:
 # packaging utility will be run)
 - name: build_directory
   type: string
+- name: package_and_publish_images
+  type: boolean
 ### Optional parameters
 # Package access in the SDR server ('Internal' or 'Public')
 - name: package_access
@@ -40,8 +42,10 @@ parameters:
 
 jobs:
 - job: ${{ parameters.package_name }}
-  displayName: 'Create ${{ parameters.package_name }}'
+  displayName: 'Package & Publish ${{ parameters.package_name }}'
   timeoutInMinutes: 10
+  dependsOn: build_fpga
+  condition: and(succeeded(), eq(variables.BuildRequired, true), eq('${{ parameters.package_and_publish_images }}', 'true'))
   pool:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:

@@ -617,12 +617,12 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - guarantee_x300_artifacts_stage
-  - guarantee_x310_artifacts_stage
+  - provide_x300_fpga_images_stage
+  - provide_x310_fpga_images_stage
   condition: >
     and(
-      not(or(canceled(), failed())),
       not(${{ parameters.skip_all_hw_tests }}),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
@@ -644,14 +644,14 @@ stages:
   - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
-  - guarantee_n300_artifacts_stage
-  - guarantee_n310_artifacts_stage
-  - guarantee_n320_artifacts_stage
-  - guarantee_e320_artifacts_stage
+  - provide_n300_fpga_images_stage
+  - provide_n310_fpga_images_stage
+  - provide_n320_fpga_images_stage
+  - provide_e320_fpga_images_stage
   condition: >
     and(
-      not(or(canceled(), failed())),
       not(${{ parameters.skip_all_hw_tests }}),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
@@ -674,16 +674,16 @@ stages:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
-  - guarantee_x410_artifacts_stage
-  - guarantee_x440_artifacts_stage
+  - provide_x410_fpga_images_stage
+  - provide_x440_fpga_images_stage
   # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
   # condition.
   variables:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
   condition: >
     and(
-      not(or(canceled(), failed())),
       not(${{ parameters.skip_all_hw_tests }}),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -715,8 +715,8 @@ stages:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
-  - guarantee_x410_artifacts_stage
-  - guarantee_x440_artifacts_stage
+  - provide_x410_fpga_images_stage
+  - provide_x440_fpga_images_stage
   # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
   # condition.
   variables:
@@ -724,7 +724,7 @@ stages:
   condition: >
     and(
       not(${{ parameters.skip_all_hw_tests }}),
-      not(or(canceled(), failed())),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -758,16 +758,16 @@ stages:
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
   - analyze_changeset
-  - guarantee_x410_artifacts_stage
-  - guarantee_x440_artifacts_stage
+  - provide_x410_fpga_images_stage
+  - provide_x440_fpga_images_stage
   # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
   # condition.
   variables:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
   condition: >
     and(
-      not(or(canceled(), failed())),
       not(${{ parameters.skip_all_hw_tests }}),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -795,13 +795,13 @@ stages:
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
   - build_gnuradio_stage_linux
-  - guarantee_n300_artifacts_stage
-  - guarantee_n310_artifacts_stage
-  - guarantee_n320_artifacts_stage
+  - provide_n300_fpga_images_stage
+  - provide_n310_fpga_images_stage
+  - provide_n320_fpga_images_stage
   condition: >
     and(
-      not(or(canceled(), failed())),
       not(${{ parameters.skip_all_hw_tests }}),
+      succeeded(),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -823,12 +823,12 @@ stages:
   - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
-  - guarantee_x300_artifacts_stage
-  - guarantee_x310_artifacts_stage
-  - guarantee_x410_artifacts_stage
+  - provide_x300_fpga_images_stage
+  - provide_x310_fpga_images_stage
+  - provide_x410_fpga_images_stage
   condition: >
     and(
-      not(or(canceled(), failed())),
+      succeeded(),
       ${{ parameters.run_streaming_tests }},
       not(${{ parameters.skip_all_hw_tests }}),
       or(
@@ -849,10 +849,10 @@ stages:
   - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
-  - guarantee_x440_artifacts_stage
+  - provide_x440_fpga_images_stage
   condition: >
     and(
-      not(or(canceled(), failed())),
+      succeeded(),
       ${{ parameters.run_streaming_tests }},
       not(${{ parameters.skip_all_hw_tests }}),
       or(

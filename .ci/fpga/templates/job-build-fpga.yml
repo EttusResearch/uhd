@@ -54,6 +54,8 @@ jobs:
   strategy:
     matrix:
       ${{ parameters.targets_matrix }}
+  dependsOn: ${{ parameters.ip_artifact }}
+  condition: eq(variables.BuildRequired, true)
   steps:
     - template: setup_steps.yml
 

@@ -29,6 +29,8 @@ jobs:
 - job: check_artifact_availability_${{ parameters.id }}
   variables:
     - group: sdr-pipeline-vars
+  dependsOn: build_fpga
+  condition: ne(variables.BuildRequired, true)
   displayName: 'Check FPGA artifacts availability for ${{ parameters.id }}'
 
   steps:
@@ -37,7 +39,6 @@ jobs:
       - download: ${{ parameters.uhdFpgaArtifactSource }}
         artifact: ${{ artifact.key }}
         displayName: 'Download ${{ artifact.value.artifact_name }}'
-        condition: eq(variables['ArtifactsGenerated'], 'NotGenerated')
         name: download_${{ artifact.key }}
 
       - task: PublishPipelineArtifact@1
@@ -45,7 +46,6 @@ jobs:
           targetPath: $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}/${{ artifact.key }}
           artifact: ${{ artifact.key }}
         displayName: 'Publish ${{ artifact.key }}'
-        condition: and(succeeded(), eq(variables['ArtifactsGenerated'], 'NotGenerated'))
         # We continue on error, because the error means that the artifact already
         # exists and we did something wrong elsewhere.
         continueOnError: true

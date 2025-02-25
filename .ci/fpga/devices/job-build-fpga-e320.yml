@@ -85,91 +85,29 @@ parameters:
       max_attempts: 2
 
 stages:
-
-### START: E320 stages
-- stage: build_e320_ip_stage
-  displayName: Build E320 IP
+- stage: provide_e320_fpga_images_stage
+  displayName: Provide E320 FPGA Images
   dependsOn: analyze_changeset
-  condition: and( succeeded(),
-                  or(
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.e320'),
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_e320 }}', 'true')
-                  )
-                )
+                  )]
   jobs:
-  - template: ../templates/job-build-ip.yml
-    parameters:
-      directory: uhddev/fpga/usrp3/top/e320
-      ip_target: E320_IP
-      clean_build: ${{ parameters.clean_ip_build }}
-      num_jobs: ${{ parameters.num_ip_jobs }}
-
-- stage: build_e320_targets_stage
-  displayName: Build E320 FPGA Targets
-  dependsOn: build_e320_ip_stage
-  condition: succeeded('build_e320_ip_stage')
-  jobs:
-  - ${{ if eq(parameters.package_and_publish_images, true) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.e320_full_targets_matrix }}
-        ip_artifact: E320_IP
-        top_dir: uhddev/fpga/usrp3/top/e320
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - ${{ if eq(parameters.package_and_publish_images, false) }}:
-    - template: ../templates/job-build-fpga.yml
-      parameters:
-        targets_matrix: ${{ parameters.e320_reduced_targets_matrix }}
-        ip_artifact: E320_IP
-        top_dir: uhddev/fpga/usrp3/top/e320
-        publish_int_files: ${{ parameters.publish_int_files }}
-  - job: set_generated_artifact_variable
-    displayName: Set Generated Artifact Variable
-    steps:
-    - checkout: none
-    - script: |
-        echo "##vso[task.setvariable variable=GeneratedArtifact;isOutput=true]true"
-      displayName: Set Generated Artifact Variable
-      name: set_generated_artifact_variable
-
-- stage: create_e320_packages_stage
-  displayName: Package & Publish E320 Binaries
-  dependsOn: build_e320_targets_stage
-  condition: and(succeeded('build_e320_targets_stage'), eq('${{ parameters.package_and_publish_images }}', 'true'))
-  jobs:
-  - template: ../templates/job-package-images.yml
-    parameters:
-      package_name: e3xx_e320_fpga_default
-      artifacts_matrix: ${{ parameters.e320_full_targets_matrix }}
-      build_directory: uhddev/fpga/usrp3/top/e320/build/
-      package_access: ${{ parameters.package_access }}
-
-
-- stage: guarantee_e320_artifacts_stage
-  displayName: Guarantee E320 FPGA Artifacts
-  dependsOn:
-  - analyze_changeset
-  - build_e320_targets_stage
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-    ArtifactsGenerated: $[iif(eq(stageDependencies.build_e320_targets_stage.set_generated_artifact_variable.outputs['set_generated_artifact_variable.GeneratedArtifact'], 'true'), 'Generated', 'NotGenerated')]
-  # Run if previous stages are succeeded or skipped, but not if they failed or
-  # were canceled. That's because the build stages are conditionally executed.
-  condition: not(or(failed(), canceled()))
-  jobs:
-  - template: ../templates/job-guarantee-artifacts.yml
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
     parameters:
       id: e320
-      ${{ if eq(parameters.package_and_publish_images, true) }}:
-        artifacts_matrix: ${{ parameters.e320_full_targets_matrix }}
-      ${{ else }}:
-        artifacts_matrix: ${{ parameters.e320_reduced_targets_matrix }}
-      ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline_pr
-      ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-        uhdFpgaArtifactSource: uhd_fpga_pipeline
-      ${{ else }}:
-        uhdFpgaArtifactSource: uhd_mono_pipeline
-
-### END: E320 stages
+      device_name: E320
+      ip_target: E320_IP
+      package_name: e3xx_e320_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/e320
+      target_full_matrix: ${{ parameters.e320_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.e320_reduced_targets_matrix }}

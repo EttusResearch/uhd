@@ -22,6 +22,7 @@ parameters:
 - name: ip_target
   type: string
 
+
 ### Optional parameters
 # Option to ignore cached artifacts (when available) and perform
 # a clean IP build.
@@ -44,6 +45,7 @@ jobs:
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars
+  condition: eq(variables.BuildRequired, true)
   steps:
     - template: setup_steps.yml
 
