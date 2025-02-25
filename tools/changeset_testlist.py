@@ -251,7 +251,11 @@ def get_labels(api_endpoint, token):
     else:
         headers = {}
     data = requests.get(api_endpoint, headers=headers).json()
-    labels = [label["name"] for label in data]
+    try:
+        labels = [label["name"] for label in data]
+    except (KeyError, TypeError):
+        print("WARNING: Could not get labels from API. Return data: ", data)
+        return []
     print("Labels:", ", ".join(labels))
     return labels
 
