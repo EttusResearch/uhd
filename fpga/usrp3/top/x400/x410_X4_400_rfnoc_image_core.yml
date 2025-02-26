@@ -1,15 +1,15 @@
 # General parameters
 # -----------------------------------------
-schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
-copyright: >-                           # Copyright information used in file headers
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
   Copyright 2023 Ettus Research, a National Instruments Brand
-license: >-                             # License information used in file headers
+license: >-                              # License information used in file headers
   SPDX-License-Identifier: LGPL-3.0-or-later
-version: '1.0'                          # File version
-chdr_width: 128                         # Bit width of the CHDR bus for this image
-device: 'x410'                          # USRP type
-image_core_name: 'usrp_x410_fpga_X4_400'# Name to use for the RFNoC Image Core files
-default_target: 'X410'                  # Default make target
+version: '1.0'                           # File version
+chdr_width: 128                          # Bit width of the CHDR bus for this image
+device: 'x410'                           # USRP type
+image_core_name: 'usrp_x410_fpga_X4_400' # Name to use for the RFNoC Image Core files
+default_target: 'X410'                   # Default make target
 inherit:
   - 'yaml_include/x410_radio_base.yml'
   - 'yaml_include/x4xx_x4_base.yml'
@@ -17,7 +17,7 @@ inherit:
 parameters:
   RF_BW: 400
   ENABLE_DRAM: True
-  NUM_DRAM_BANKS: 1
+  NUM_DRAM_BANKS: 2
   NUM_DRAM_CHANS: 4
   DRAM_WIDTH: 128
 
