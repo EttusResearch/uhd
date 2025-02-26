@@ -84,6 +84,7 @@ public:
      */
     static sptr make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         const uint32_t instance,
+        std::function<void(uint32_t)>&& release_cb,
         const link_params_t& params,
         const uhd::device_addr_t& hints,
         size_t& recv_buff_size,
@@ -133,6 +134,7 @@ private:
 
     nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         uint32_t instance,
+        std::function<void(uint32_t)>&& release_cb,
         const link_params_t& params);
 
     /**************************************************************************
@@ -212,6 +214,7 @@ private:
     niusrprio::niusrprio_session::sptr _fpga_session;
     //! DMA channel index
     const uint32_t _fifo_instance;
+    std::function<void(uint32_t)> _release_cb;
     //! Recv and send FIFO objects
     uhd::niusrprio::nirio_fifo<fifo_data_t>::sptr _recv_fifo, _send_fifo;
 

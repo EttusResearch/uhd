@@ -50,11 +50,13 @@ const size_t page_size = get_page_size();
  *****************************************************************************/
 nirio_link::nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
     uint32_t instance,
+    std::function<void(uint32_t)>&& release_cb,
     const link_params_t& params)
     : recv_link_base_t(params.num_recv_frames, params.recv_frame_size)
     , send_link_base_t(params.num_send_frames, params.send_frame_size)
     , _fpga_session(fpga_session)
     , _fifo_instance(instance)
+    , _release_cb(std::move(release_cb))
     , _link_params(params)
 {
     UHD_LOG_TRACE("NIRIO", "Creating PCIe transport for channel " << instance);
@@ -154,6 +156,9 @@ nirio_link::nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
 
 nirio_link::~nirio_link()
 {
+    if (_release_cb) {
+        UHD_SAFE_CALL(_release_cb(_fifo_instance););
+    }
     PROXY->get_rio_quirks().remove_tx_fifo(_fifo_instance);
 
     // Disable DMA streams (cleanup, so don't status chain)
@@ -170,6 +175,7 @@ nirio_link::~nirio_link()
 
 nirio_link::sptr nirio_link::make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
     const uint32_t instance,
+    std::function<void(uint32_t)>&& release_cb,
     const uhd::transport::link_params_t& default_params,
     const uhd::device_addr_t& hints,
     size_t& recv_buff_size,
@@ -298,7 +304,8 @@ nirio_link::sptr nirio_link::make(uhd::niusrprio::niusrprio_session::sptr fpga_s
     recv_buff_size = link_params.num_recv_frames * link_params.recv_frame_size;
     send_buff_size = link_params.num_send_frames * link_params.send_frame_size;
 
-    return nirio_link::sptr(new nirio_link(fpga_session, instance, link_params));
+    return nirio_link::sptr(
+        new nirio_link(fpga_session, instance, std::move(release_cb), link_params));
 }
 
 
