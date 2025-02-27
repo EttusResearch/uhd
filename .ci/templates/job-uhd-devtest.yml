@@ -134,6 +134,11 @@ jobs:
     condition: and(succeeded(), or(not(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline')), eq(variables.devType, 'b200')))
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
@@ -155,6 +160,11 @@ jobs:
     displayName: Run n3xx devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
@@ -176,6 +186,11 @@ jobs:
     displayName: Run e320 devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
@@ -195,6 +210,11 @@ jobs:
     displayName: Run b2xx devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
