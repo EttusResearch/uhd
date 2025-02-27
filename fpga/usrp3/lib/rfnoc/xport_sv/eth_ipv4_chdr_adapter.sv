@@ -385,6 +385,11 @@ module eth_ipv4_chdr_adapter #(
   end else begin : gen_c2e_width_match
     always_comb begin : c2e1_assign
       `AXI4S_ASSIGN(c2e1,c2eD)
+      // c2e1 uses trailing bytes in tuser instead of tkeep, so do the
+      // conversion here, if necessary.
+      if (!c2eD.TUSER) begin
+        c2e1.tuser = c2eD.keep2trailing(c2eD.tkeep);
+      end
     end
   end
 
