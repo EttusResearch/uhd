@@ -180,5 +180,3 @@ extends:
     build_fpgaimg_e32x: ${{ parameters.build_fpgaimg_e32x }}
     build_fpgaimg_x410: ${{ parameters.build_fpgaimg_x410 }}
     build_fpgaimg_x440: ${{ parameters.build_fpgaimg_x440 }}
-    x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
-    x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
