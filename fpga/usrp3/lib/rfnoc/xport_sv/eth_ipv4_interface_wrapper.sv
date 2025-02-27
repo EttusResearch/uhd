@@ -147,9 +147,9 @@ module eth_ipv4_interface_wrapper #(
   AxiStreamIf #(.DATA_WIDTH(CHDR_W), .USER_WIDTH(CHDR_USER_W), .TKEEP(0), .TUSER(0))
     e2v (bus_clk, bus_rst);
 
-  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(0))
+  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TKEEP(0))
     c2e (cpu_clk, cpu_rst);
-  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(0))
+  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TKEEP(0))
     e2c (cpu_clk, cpu_rst);
 
 
