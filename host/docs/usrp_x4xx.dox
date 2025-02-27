@@ -378,6 +378,69 @@ No Link            | Off                  |
 Link / No Activity | Green (solid)        |
 Link / Activity    | Amber (blinking)     |
 
+\subsubsection x4xx_network_troubleshooting_tips Network Troubleshooting Tips
+
+If you are not familiar with the X4xx and its network interface, please 
+refer to \ref page_usrp_x4xx. Most of the network related problems are
+similar among different embedded or MPM based USRPs. You might notice
+differences in error messages or interface configurations. Please go through
+some common issues listed in the application note
+[Troubleshooting N310/N320 Device Discovery Issues]
+(https://kb.ettus.com/Troubleshooting_N310/N320_Device_Discovery_Issues).
+It is also advisable to read through the KB application note
+[USRP Host Performance Tuning Tips and Tricks]
+(https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks)
+to get best network performance with host and USRP.
+
+Below are listed some more network issues and troubleshooting tips.
+
+<b>Issue 1:</b> uhd_usrp_probe --args addr=<x4xx_DHCP_IP> gives timeout waiting
+for ACK error.
+
+The setup includes a host PC connected to a x4xx with both 10Gb Ethernet 
+QSFP28 cables. Both remote PC and x4xx are connected to a network switch 
+and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when 
+you try to execute it on a remote host, it throws below error:
+<blockquote>[ERROR] [RFNOC::GRAPH] Caught exception while initializing graph:
+RfnocError: OpTimeout: Control operation timed out waiting for ACK</blockquote>
+
+Solution: Ensure both switch ports show LED blinking green and Ethernet cables
+are fine.
+ - If the LEDs on the switch ports are not green, connect with different 
+ Ethernet ports on the switch. LED should blink green. If not try with 
+ another network switch. Try running udh_usrp_probe again.
+ - If you still get errors, make sure that the Ethernet cables connecting host
+ and x4xx to the network switch are not damaged. Replace the Ethernet cables 
+ and check again by running uhd_usrp_probe.
+ - If you are still unable to probe your x4xx without errors, contact
+ Ettus support.
+
+<b>Issue 2:</b> uhd_usrp_probe --args addr=<x4xx_DHCP_IP> gives timeout recv
+buff error.
+
+The setup includes a host PC connected to a x4xx with both 10Gb Ethernet
+QSFP28 cables. Both the remote PC and x4xx are connected to a network switch
+and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when
+you try to execute it on the remote host, it throws below error:
+<blockquote>[ERROR] [RFNOC::GRAPH] IO Error during GSM initialization. 
+EnvironmentError: IOError: Timed out getting recv buff for management 
+transaction</blockquote> 
+
+Solution: Such errors are noticed when the SFP cables are swapped between
+the SFP ports of the device and host Ethernet ports. 
+ - Verify the FPGA image flavor loaded in x4xx. Refer section
+ \ref x4xx_updating_fpga_types. 
+ - Verify that the host is configured with the correct IP addresses to 
+ communicate with the loaded FPGA image. 
+ Refer \ref x4xx_getting_started_network_connectivity_ifcs.
+ - Check and ensure that the SFP cables connect the ports between the 
+ x4xx and the host with the corresponding ip addresses.
+ - Verify single 10/100GbE network connections by pinging the USRP 
+ network ports separately.
+ - Try to run uhd_usrp_probe, this should return results without errors.
+ - If you are still unable to probe your x4xx without errors, contact 
+ Ettus support.
+
 \subsection x4xx_getting_started_security Security-related Settings
 
 The X4x0 ships without a root password set. It is possible to ssh into the
