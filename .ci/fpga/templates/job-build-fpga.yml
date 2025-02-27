@@ -48,6 +48,7 @@ jobs:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
     - Agent.OS -equals Linux
+    - HIGH_CPU_PER_THREAD
   variables:
   - group: sdr-pipeline-vars
   strategy:
