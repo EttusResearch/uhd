@@ -528,7 +528,7 @@ stages:
   condition: and(succeeded(),
                  or(
                    eq('${{ parameters.run_testbenches }}', 'true'),
-                   contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.testbenches')
+                   contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.testbenches')
                    )
                 )
   jobs:

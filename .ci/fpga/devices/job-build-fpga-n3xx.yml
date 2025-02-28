@@ -213,8 +213,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.n3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
                   )
                 )
@@ -301,8 +301,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.n3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
                   )
                 )
@@ -389,8 +389,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.n3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.n3xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_n3xx }}', 'true')
                   )
                 )

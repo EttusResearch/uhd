@@ -172,8 +172,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x410 }}', 'true')
                   )
                 )
@@ -270,8 +270,8 @@ stages:
   dependsOn: analyze_changeset
   condition: and( succeeded(),
                   or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_build_list.UhdChangeList'], 'fpga.usrp3.all'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
                     eq('${{ parameters.build_x440 }}', 'true')
                   )
                 )
