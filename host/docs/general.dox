@@ -115,6 +115,28 @@ second).
     usrp->issue_stream_command(...);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+\subsection general_tuning_multiplechannels Tuning multiple channels using a shared LO
+For devices like N300/N310 which share only one LO per daughter board (DB), per TX/RX, 
+respectively, which supports two channels it is recommended to use the LO offset parameter 
+of the uhd::tune_request_t object. <br>
+Subsequent example shows a configuration of two Tx channels where channel 0 is set to a 
+frequency of 806 MHz and channel 1 to a frequency of 796 MHz. For channel 0 the LO is 
+shifted by an offset of -5 MHz and for channel 1 the LO is shifted by an offset of +5 MHz, 
+which leads to a common LO frequency of 801 MHz. This allows the signal chain to process 
+the two streams at different frequencies using the same LO frequency. 
+(Depending on the device type, same can be done also for the Rx path)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+// Channel 0 configuration
+uhd::tune_request_t tune_request_ch0(806e6, -5e6);
+usrp->set_tx_freq(tune_request_ch0, 0);
+// Channel 1 configuration
+uhd::tune_request_t tune_request_ch1(796e6, 5e6);
+usrp->set_tx_freq(tune_request_ch1, 1);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Note: If not specifying the LO offset in this particular scenario the Tx frequency of 
+channel 0 will be re-tuned to the same Tx frequency of channel 1. This can be verified by using
+the uhd::usrp::multi_usrp::get_tx_freq() Multi USRP API call.
+
 \section general_sampleratenotes Sample rate notes
 
 Sample rates as delivered to the host computer for USRP devices are constrained to follow several important rules.
