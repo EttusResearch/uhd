@@ -28,6 +28,9 @@ parameters:
 - name: run_streaming_tests
   type: string
   default: Auto-detect
+- name: skip_all_hw_tests
+  type: boolean
+  default: false
 - name: build_sdk
   type: boolean
   default: false
@@ -253,6 +256,7 @@ stages:
   - template: job-analyze-changeset.yml
     parameters:
       skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
+      skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
 
 
 ###############################################################################

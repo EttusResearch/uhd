@@ -10,6 +10,9 @@ parameters:
 - name: target_branch
   type: string
   default: "origin/master"
+- name: skip_all_hw_tests
+  type: boolean
+  default: false
 
 jobs:
   - job: analyze
@@ -37,6 +40,9 @@ jobs:
         if [ "$BUILD_REASON" == "PullRequest" ]; then
           EXTRA_ARGS="--github-label-api-endpoint https://oauth2:$OAUTH_TOKEN@api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels"
         fi
+        if [ "$SKIP_HW_TESTS" == "true" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --remove-test hw devtest"
+        fi
         $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
                 --target-branch $TARGET_BRANCH \
                 --set-azdo-var UhdTestList \
@@ -46,6 +52,7 @@ jobs:
       env:
         TARGET_BRANCH: ${{ parameters.target_branch }}
         OAUTH_TOKEN: $(github_uhddev_token)
+        SKIP_HW_TESTS: ${{ parameters.skip_all_hw_tests }}
     - bash: |
         if [[ $AGENT_OS == "Windows_NT" ]]; then
             VENV_BIN_DIR="Scripts"

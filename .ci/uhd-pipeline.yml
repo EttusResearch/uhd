@@ -42,6 +42,10 @@ parameters:
   type: boolean
   displayName: Run Streaming Tests
   default: true
+- name: skip_all_hw_tests
+  type: boolean
+  displayName: Skip all hardware tests
+  default: false
 - name: build_sdk
   type: boolean
   displayName: Build embedded image SDKs
@@ -159,6 +163,7 @@ extends:
     release_binaries: ${{ parameters.release_binaries }}
     testLength: ${{ parameters.testLength }}
     run_streaming_tests: ${{ parameters.run_streaming_tests }}
+    skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
     build_sdk: ${{ parameters.build_sdk }}
     cache_sstate: ${{ parameters.cache_sstate }}
     build_e310_sg1: ${{ parameters.build_e310_sg1 }}
