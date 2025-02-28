@@ -622,6 +622,7 @@ stages:
   condition: >
     and(
       not(or(canceled(), failed())),
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
@@ -650,6 +651,7 @@ stages:
   condition: >
     and(
       not(or(canceled(), failed())),
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
@@ -681,6 +683,7 @@ stages:
   condition: >
     and(
       not(or(canceled(), failed())),
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -720,6 +723,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
   condition: >
     and(
+      not(${{ parameters.skip_all_hw_tests }}),
       not(or(canceled(), failed())),
       or(
         ${{ parameters.skip_analyze_changeset }},
@@ -763,6 +767,7 @@ stages:
   condition: >
     and(
       not(or(canceled(), failed())),
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -796,6 +801,7 @@ stages:
   condition: >
     and(
       not(or(canceled(), failed())),
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
@@ -824,6 +830,7 @@ stages:
     and(
       not(or(canceled(), failed())),
       ${{ parameters.run_streaming_tests }},
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
@@ -847,6 +854,7 @@ stages:
     and(
       not(or(canceled(), failed())),
       ${{ parameters.run_streaming_tests }},
+      not(${{ parameters.skip_all_hw_tests }}),
       or(
         ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
