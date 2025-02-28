@@ -306,16 +306,25 @@ void magnesium_radio_control_impl::_update_freq(
     const double rf_freq     = _is_low_band[dir] ? ad9371_freq - _adf4351_freq[dir]
                                                  : ad9371_freq;
 
-    RFNOC_LOG_TRACE("RF freq = " << rf_freq);
     UHD_ASSERT_THROW(freq_compare_epsilon(rf_freq) >= 0);
     UHD_ASSERT_THROW(freq_compare_epsilon(std::abs(rf_freq - _desired_rf_freq[dir]))
                      <= _master_clock_rate / 2);
-    if (dir == RX_DIRECTION) {
-        radio_control_impl::set_rx_frequency(rf_freq, chan);
-    } else if (dir == TX_DIRECTION) {
-        radio_control_impl::set_tx_frequency(rf_freq, chan);
-    } else {
-        UHD_THROW_INVALID_CODE_PATH();
+
+    // We need to update the frequencies on both channels, because they share one LO.
+    // This way, we ensure that both center frequencies get updated in case LO freq
+    // was updated explicitly or implicitly by a set_tx_freq() Multi-USRP API call for
+    // a single channel.
+    UHD_ASSERT_THROW(chan < MAGNESIUM_NUM_CHANS);
+    for (size_t chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; ++chan_idx) {
+        RFNOC_LOG_TRACE("RF freq = " << rf_freq << ", Requested chan = " << chan
+                                     << ", Updated chan = " << chan_idx);
+        if (dir == RX_DIRECTION) {
+            radio_control_impl::set_rx_frequency(rf_freq, chan_idx);
+        } else if (dir == TX_DIRECTION) {
+            radio_control_impl::set_tx_frequency(rf_freq, chan_idx);
+        } else {
+            UHD_THROW_INVALID_CODE_PATH();
+        }
     }
 }
 
