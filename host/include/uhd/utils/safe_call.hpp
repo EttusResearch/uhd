@@ -19,12 +19,12 @@
 /*!
  * A safe-call catches all exceptions thrown by code,
  * and creates a verbose warning about the exception.
- * Usage: UHD_SAFE_CALL(some_code_to_call();)
+ * Usage: UHD_SAFE_CALL(some_code_to_call());
  * \param code the block of code to call safely
  */
 #define UHD_SAFE_CALL(code)                                \
     try {                                                  \
-        code                                               \
+        code;                                              \
     } catch (const std::exception& e) {                    \
         _UHD_SAFE_CALL_WARNING(code, e.what());            \
     } catch (...) {                                        \

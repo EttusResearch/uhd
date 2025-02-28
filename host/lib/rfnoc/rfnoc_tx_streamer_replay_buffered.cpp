@@ -35,7 +35,7 @@ rfnoc_tx_streamer_replay_buffered::~rfnoc_tx_streamer_replay_buffered()
 {
     // Stop all playback
     for (auto chan : _replay_chans) {
-        UHD_SAFE_CALL(chan.config.ctrl->stop(chan.config.port);)
+        UHD_SAFE_CALL(chan.config.ctrl->stop(chan.config.port));
     }
 }
 

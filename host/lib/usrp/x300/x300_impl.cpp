@@ -469,7 +469,7 @@ x300_impl::~x300_impl(void)
             }
         }
     } catch (...) {
-        UHD_SAFE_CALL(throw;)
+        UHD_SAFE_CALL(throw)
     }
 }
 

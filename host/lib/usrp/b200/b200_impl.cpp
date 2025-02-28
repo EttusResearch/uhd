@@ -849,7 +849,7 @@ b200_impl::b200_impl(
 
 b200_impl::~b200_impl(void)
 {
-    UHD_SAFE_CALL(_async_task.reset();)
+    UHD_SAFE_CALL(_async_task.reset());
 }
 
 /***********************************************************************

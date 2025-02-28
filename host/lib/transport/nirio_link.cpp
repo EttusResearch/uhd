@@ -157,7 +157,7 @@ nirio_link::nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
 nirio_link::~nirio_link()
 {
     if (_release_cb) {
-        UHD_SAFE_CALL(_release_cb(_fifo_instance););
+        UHD_SAFE_CALL(_release_cb(_fifo_instance));
     }
     PROXY->get_rio_quirks().remove_tx_fifo(_fifo_instance);
 
@@ -165,7 +165,7 @@ nirio_link::~nirio_link()
     PROXY->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
     PROXY->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), DMA_CTRL_DISABLED);
 
-    UHD_SAFE_CALL(_flush_rx_buff();)
+    UHD_SAFE_CALL(_flush_rx_buff());
 
     // Stop DMA channels. Stop is called in the fifo dtor but
     // it doesn't hurt to do it here.

@@ -83,9 +83,8 @@ public:
 
     ~rx_dsp_core_200_impl(void) override
     {
-        UHD_SAFE_CALL(
-            // shutdown any possible streaming
-            this->clear();)
+        // shutdown any possible streaming
+        UHD_SAFE_CALL(this->clear());
     }
 
     void clear(void) override

@@ -709,7 +709,7 @@ max287x<max287x_regs_t>::max287x(write_fn write)
 template <typename max287x_regs_t>
 max287x<max287x_regs_t>::~max287x()
 {
-    UHD_SAFE_CALL(shutdown();)
+    UHD_SAFE_CALL(shutdown());
 }
 
 template <typename max287x_regs_t>

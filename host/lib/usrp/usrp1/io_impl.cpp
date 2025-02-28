@@ -152,7 +152,7 @@ struct usrp1_impl::io_impl
     ~io_impl(void)
     {
         vandal_loop_exit = true;
-        UHD_SAFE_CALL(flush_send_buff();)
+        UHD_SAFE_CALL(flush_send_buff());
     }
 
     zero_copy_if::sptr data_transport;

@@ -322,7 +322,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args)
 
 xcvr2450::~xcvr2450(void)
 {
-    UHD_SAFE_CALL(spi_reset();)
+    UHD_SAFE_CALL(spi_reset());
 }
 
 void xcvr2450::spi_reset(void)

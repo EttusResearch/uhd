@@ -47,8 +47,7 @@ public:
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
         UHD_SAFE_CALL(
-            this->peek32(0); // dummy peek with the purpose of ack'ing all packets
-        )
+            this->peek32(0)); // dummy peek with the purpose of ack'ing all packets
     }
 
     /*******************************************************************

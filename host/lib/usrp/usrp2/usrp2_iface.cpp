@@ -80,7 +80,7 @@ public:
 
     ~usrp2_iface_impl(void) override
     {
-        UHD_SAFE_CALL(this->lock_device(false);)
+        UHD_SAFE_CALL(this->lock_device(false));
     }
 
     /***********************************************************************

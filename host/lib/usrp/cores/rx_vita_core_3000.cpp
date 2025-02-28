@@ -43,7 +43,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
 
     ~rx_vita_core_3000_impl(void) override
     {
-        UHD_SAFE_CALL(this->clear();)
+        UHD_SAFE_CALL(this->clear());
     }
 
     void configure_flow_control(const size_t window_size) override

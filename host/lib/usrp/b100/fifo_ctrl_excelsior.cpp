@@ -61,9 +61,8 @@ public:
     ~fifo_ctrl_excelsior_impl(void) override
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
-        UHD_SAFE_CALL(
-            this->peek32(0); // dummy peek with the purpose of ack'ing all packets
-        )
+        // dummy peek with the purpose of ack'ing all packets
+        UHD_SAFE_CALL(this->peek32(0));
     }
 
     bool pop_async_msg(async_metadata_t& async_metadata, double timeout) override
