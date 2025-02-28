@@ -51,6 +51,7 @@ def parse_args():
         help="Endpoint to use for GitHub API requests read back labels.",
     )
     parser.add_argument("--github-token", help="GitHub token to use for API requests.")
+    parser.add_argument("--remove-test", nargs="*", help="Remove a test from the list of tests.")
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
 
@@ -241,6 +242,18 @@ class RuleApplier:
             return False
         return True
 
+    def remove_tests(self, test_patterns, verbose=False):
+        """Remove tests from the test list."""
+        if verbose:
+            sys.stderr.write(f"Removing tests based on patterns: {test_patterns}\n")
+            sys.stderr.write(f"Before: {self.test_list}\n")
+        for test_pattern in test_patterns:
+            self.test_list = set(
+                [test for test in self.test_list if not re.search(test_pattern, test)]
+            )
+        if verbose:
+            sys.stderr.write(f"After: {self.test_list}\n")
+
 
 def get_labels(api_endpoint, token):
     """Get a list of labels from the GitHub API."""
@@ -285,6 +298,8 @@ def main():
     for filename in file_list:
         rule_applier.apply(filename, args.verbose)
     rule_applier.apply_labels()
+    if args.remove_test:
+        rule_applier.remove_tests(args.remove_test, args.verbose)
     if args.set_azdo_var:
         print(
             f"##vso[task.setvariable variable={args.set_azdo_var};isoutput=true]"
