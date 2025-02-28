@@ -56,7 +56,7 @@ def parse_args():
 
 
 def check_changeset_content(file, **kwargs):
-    """Check changeset content for code and/or comments changes
+    """Check changeset content for code and/or comments changes.
 
     For example, if a .cpp file only has a comment change, we can use this to
     remove it from the "changed files" list. This is useful when we only want to
@@ -130,7 +130,9 @@ def check_changeset_content(file, **kwargs):
     diff_lines = (
         subprocess.check_output(get_diff_args + [file], encoding="utf-8").strip().split("\n")[4:]
     )
-    line_matches = [comment_identifer[ext](line[1:])^invert for line in diff_lines if line[0] in ("-", "+")]
+    line_matches = [
+        comment_identifer[ext](line[1:]) ^ invert for line in diff_lines if line[0] in ("-", "+")
+    ]
     if include_content.endswith("-only"):
         return all(line_matches)
     else:
@@ -224,9 +226,7 @@ class RuleApplier:
         if "label" in rule and verbose:
             sys.stderr.write(f"Label {rule['label']} found\n")
         include_content = rule.get("include_content", "code")
-        if not check_changeset_content(
-            filename, **self.args, include_content=include_content
-        ):
+        if not check_changeset_content(filename, **self.args, include_content=include_content):
             if verbose:
                 sys.stderr.write(
                     f"Skipping {filename} based on content rule: include_content='{include_content}'\n"
