@@ -45,10 +45,10 @@ function print_color {
 
 SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# Setting -onfinish to "stop" prevents the simulator from immediately trying to
-# exit when finish() is called. This is annoying in the GUI and important for
-# error detection in batch mode.
-MSIM_DEFAULT="-quiet -L unisims_ver -onfinish stop"
+# Setting -onfinish to "final" ensures final blocks run and prevents the
+# simulator from trying to exit immediately when $finish() is called, which is
+# not desirable in the GUI.
+MSIM_DEFAULT="-quiet -L unisims_ver -onfinish final"
 
 # Use specified modelsim.ini, if set
 if [[ -z $MSIM_MODELSIM_INI ]]; then
