@@ -15,8 +15,8 @@ parameters:
   values:
   - 'Filesystem/Images Downloader'
   - 'Mono Pipeline'
-  - 'FPGA Pipeline'
   - 'Mono Pipeline PR'
+  - 'FPGA Pipeline'
   displayName: FPGA Images Source
   default: 'Mono Pipeline'
 - name: testLength
@@ -26,13 +26,6 @@ parameters:
   - 'full'
   - 'stress'
   default: 'smoke'
-
-variables:
-  - name: uhd_fpga_artifact_source
-    ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-      value: uhd_mono_pipeline_pr
-    ${{ else }}:
-      value: uhd_mono_pipeline
 
 resources:
   pipelines:
@@ -66,83 +59,121 @@ resources:
     endpoint: EttusResearch
     name: EttusResearch/ettus-rts
     ref: master
+  - repository: hwtools
+    type: git
+    ref: refs/tags/pip/hwsetup/0.1/0.1.3
+    name: DevCentral/hwtools
 
 stages:
+
+- stage: analyze_changeset
+  displayName: Analyze Changeset
+  jobs:
+  - job: analyze_changeset
+    steps:
+      - bash: echo "Dummy Changeset Analysis"
+
+- template: fpga/templates/job-build-fpga-all.yml
+  parameters:
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    build_x3x0: false
+    build_n3xx: false
+    build_e31x: false
+    build_e32x: false
+    build_x410: false
+    build_x440: false
+
 - stage: test_uhd_devtest_stage
   displayName: Test UHD Devtest
-  dependsOn: []
+  dependsOn:
+  - provide_x410_fpga_images_stage
   jobs:
   - template: templates/tests/job-uhd-x410-hardware-tests-sdr-test0.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
   - template: templates/tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
   - template: templates/job-uhd-devtest-rhombus.yml
     parameters:
       testOS: 'ubuntu2004'
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
 
 - stage: test_streaming_stage
   displayName: Test UHD Streaming
-  dependsOn: []
+  dependsOn:
+  - provide_x300_fpga_images_stage
+  - provide_x310_fpga_images_stage
+  - provide_x410_fpga_images_stage
   jobs:
   - template: templates/job-uhd-streaming-tests-beauty.yml
     parameters:
       testOS: 'ubuntu2004'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
   - template: templates/job-uhd-streaming-tests-x440.yml
     parameters:
       testOS: 'ubuntu2204'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testLength: ${{ parameters.testLength }}
 
 - stage: test_rf_tests_stage
   displayName: Test UHD RF Tests
-  dependsOn: []
+  dependsOn:
+  - provide_n310_fpga_images_stage
   jobs:
   - template: templates/job-uhd-rf-tests-pebbles.yml
     parameters:
       testOS: 'ubuntu1804'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
   - template: templates/tests/job-uhd-x410-hardware-tests-pebbles.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
   - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_phase_tests
   displayName: Test UHD Phase Tests
-  dependsOn: []
+  dependsOn:
+  - provide_x440_fpga_images_stage
   jobs:
   - template: templates/tests/job-uhd-x440-hardware-tests-saison.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
-      uhdFpgaArtifactSource: ${{ variables.uhd_fpga_artifact_source }}
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
       extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
