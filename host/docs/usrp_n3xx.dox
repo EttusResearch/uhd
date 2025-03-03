@@ -189,6 +189,8 @@ that version of UHD (3.11.0.1 or later) on a host system with Internet access an
    `<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`,
    where `<UHD_INSTALL_DIR>` is the UHD installation directory.
 
+\paragraph n3xx_fs_update_linux On Linux
+
 To load an image onto the micro SD card, connect the card to the host and run:
 
     $ sudo dd if=<YOUR_IMAGE> of=/dev/<YOUR_SD_CARD> bs=1M
@@ -199,6 +201,23 @@ To load an image onto the micro SD card, connect the card to the host and run:
    The `<YOUR_SD_CARD>` device node depends on your operating system and which
    other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
    CAUTION:  Operating on the wrong device can cause damage to that device.
+
+\paragraph n3xx_fs_update_windows On Windows
+
+Manual loading a file system image on to micro SD card is straight forward
+on Windows with the use of 3rd party utilities available online.
+One is the open source, cross-platform utility
+[Etcher](https://etcher.balena.io/), that is also available for macOS and
+X86 Linux. Follow the steps to load image on the micro SD card:
+
+- Download and install Etcher on your Windows PC
+(https://etcher.balena.io/).
+- Insert the micro SD card into your PC.
+- Run the Etcher tool and follow the steps:
+	1. Click the "Flash from file" button and choose the downloaded file
+  usrp_n3xx_fs.sdimg.
+	2. Click the "Select target" and choose the drive having the micro SD card mounted.
+	3. Click the "Flash" button and wait for loading to complete.
 
 The micro SD card used can be the original SD card shipped with the device or
 another one that is at least 16 GB in size.
