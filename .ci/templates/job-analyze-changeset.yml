@@ -47,6 +47,8 @@ jobs:
                 --target-branch $TARGET_BRANCH \
                 --set-azdo-var UhdTestList \
                 --list-tests --verbose $EXTRA_ARGS
+        echo " Current commit ID: $(Build.SourceVersion)"
+        echo $(Build.SourceVersion) > $(Agent.BuildDirectory)/commit_id.txt
       name: gen_testlist
       displayName: Generate Test-List
       env:
@@ -72,4 +74,9 @@ jobs:
       artifact: clang-format patch file
       displayName: Publish clang-format patch file
       condition: failed()
-
+    - task: PublishPipelineArtifact@1
+      displayName: 'Publish commit ID'
+      inputs:
+        targetPath: '$(Agent.BuildDirectory)/commit_id.txt'
+        artifact: 'commit_id'
+        publishLocation: 'pipeline'
