@@ -91,6 +91,11 @@ jobs:
       echo UHD_IMAGES_DIR=$UHD_IMAGES_DIR
     displayName: Set FPGA variables
 
+  - script: |
+      rm -rf $(UHD_IMAGES_DIR)
+      mkdir -p $(UHD_IMAGES_DIR)
+    displayName: Create empty UHD images directory
+
   - download: current
     artifact: $(FPGA_ARTIFACT)
     displayName: Download FPGA images (from artifacts)
@@ -115,11 +120,6 @@ jobs:
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
     displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
-
-  - script: |
-      rm -rf $(UHD_IMAGES_DIR)
-      mkdir -p $(UHD_IMAGES_DIR)
-    displayName: Create empty UHD images directory
 
   - script: |
       DUTTYPE=$(dutType)
