@@ -23,14 +23,13 @@ jobs:
     - checkout: self
       clean: true
     - bash: |
-        if [[ $AGENT_OS == "Windows_NT" ]]; then
-            VENV_BIN_DIR="Scripts"
-        else
-            VENV_BIN_DIR="bin"
-        fi
         python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install --upgrade pip
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
+        source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
+        pip install --upgrade pip
+        pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
+      displayName: setup venv
+    - bash: |
+        source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
         git branch
         set -o xtrace
         if [ "$BUILD_REASON" == "PullRequest" ]; then
@@ -39,7 +38,7 @@ jobs:
         if [ "$SKIP_HW_TESTS" == "true" ]; then
           EXTRA_ARGS="$EXTRA_ARGS --remove-test hw devtest"
         fi
-        $AGENT_TEMPDIRECTORY/ac_venv/$VENV_BIN_DIR/python3 tools/changeset_testlist.py \
+        python3 tools/changeset_testlist.py \
                 --target-branch $TARGET_BRANCH \
                 --set-azdo-var UhdTestList \
                 --list-tests --verbose $EXTRA_ARGS
