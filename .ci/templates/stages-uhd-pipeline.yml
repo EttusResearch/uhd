@@ -253,7 +253,7 @@ stages:
   - template: job-analyze-changeset.yml
     parameters:
       skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
-
+      reference_pipeline_name: uhd_mono_pipeline
 
 ###############################################################################
 # SW Building & Testing Stages. No FPGA, no hardware involved.
