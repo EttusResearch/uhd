@@ -4,9 +4,6 @@
 # stage.
 
 parameters:
-- name: skip_analyze_changeset
-  type: boolean
-  default: false
 - name: target_branch
   type: string
   default: "origin/master"
@@ -22,7 +19,6 @@ jobs:
     pool:
       name: Drivers-NIBuildFarm-RFMIBUILD
       demands: sh
-    condition: not(${{ parameters.skip_analyze_changeset }})
     steps:
     - checkout: self
       clean: true

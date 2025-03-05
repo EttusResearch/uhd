@@ -61,9 +61,6 @@ parameters:
   - 'Internal Repo'
   - 'Mono Pipeline'
   - 'FPGA Pipeline'
-- name: skip_analyze_changeset
-  type: boolean
-  default: false
 ### FPGA parameters
 ## Optional parameters
 # Run testbenches
@@ -255,7 +252,6 @@ stages:
   jobs:
   - template: job-analyze-changeset.yml
     parameters:
-      skip_analyze_changeset: ${{ parameters.skip_analyze_changeset }}
       skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
 
 
@@ -341,43 +337,33 @@ stages:
 - stage: build_uhd_embedded_system_images
   displayName: Build UHD Embedded System Images
   dependsOn: analyze_changeset
-  # If skip_analyze_changeset is true (e.g., during a regular mono pipeline)
-  # then we build depending on the checkboxes (e.g., build_x4xx). If
-  # skip_analyze_changeset is false (e.g., during a PR mono pipeline) we AND
-  # the checkboxes with their respective conditions. This can be improved: Right
-  # now, if any embedded condition is true, then all embedded targets with a
-  # checkbox will be built.
+  # This can be improved:
+  # Right now, if any embedded condition is true, then all embedded targets
+  # with a checkbox will be built.
   condition: >
     and(
       succeeded(),
       or(
-        and(
-          ${{ parameters.skip_analyze_changeset }},
-          or(
-            ${{ parameters.build_e310_sg1 }},
-            ${{ parameters.build_e310_sg3 }},
-            ${{ parameters.build_e320 }},
-            ${{ parameters.build_n3xx }},
-            ${{ parameters.build_x4xx }}
-          )
-        ),
-        or(
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x4'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x4')
-        )
+        ${{ parameters.build_e310_sg1 }},
+        ${{ parameters.build_e310_sg3 }},
+        ${{ parameters.build_e320 }},
+        ${{ parameters.build_n3xx }},
+        ${{ parameters.build_x4xx }},
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x4'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x4')
       )
     )
   variables:
@@ -624,7 +610,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.b2'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x3')
@@ -653,7 +638,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e320')
@@ -685,7 +669,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
@@ -726,7 +709,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
@@ -769,7 +751,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
@@ -803,7 +784,6 @@ stages:
       not(${{ parameters.skip_all_hw_tests }}),
       succeeded(),
       or(
-        ${{ parameters.skip_analyze_changeset }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n320'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n310'),
@@ -831,10 +811,7 @@ stages:
       succeeded(),
       ${{ parameters.run_streaming_tests }},
       not(${{ parameters.skip_all_hw_tests }}),
-      or(
-        ${{ parameters.skip_analyze_changeset }},
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
-      )
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
     )
   jobs:
   - template: job-uhd-streaming-tests-beauty.yml
@@ -855,10 +832,7 @@ stages:
       succeeded(),
       ${{ parameters.run_streaming_tests }},
       not(${{ parameters.skip_all_hw_tests }}),
-      or(
-        ${{ parameters.skip_analyze_changeset }},
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
-      )
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
     )
   jobs:
   - template: job-uhd-streaming-tests-x440.yml

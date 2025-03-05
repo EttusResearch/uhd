@@ -172,7 +172,6 @@ extends:
     build_n3xx: ${{ parameters.build_n3xx }}
     build_x4xx: ${{ parameters.build_x4xx }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    skip_analyze_changeset: true
     # FPGA parameters
     run_testbenches: ${{ parameters.run_testbenches }}
     clean_ip_build: ${{ parameters.clean_ip_build }}
