@@ -190,7 +190,7 @@ stages:
       package_and_publish_images: ${{ parameters.package_and_publish_images }}
       package_access: ${{ parameters.package_access }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-      top_dir: uhddev/fpga/usrp3/top/x4xx
+      top_dir: uhddev/fpga/usrp3/top/x400
       target_full_matrix: ${{ parameters.x410_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x410_reduced_targets_matrix }}
 
@@ -217,7 +217,7 @@ stages:
       package_and_publish_images: ${{ parameters.package_and_publish_images }}
       package_access: ${{ parameters.package_access }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-      top_dir: uhddev/fpga/usrp3/top/x4xx
+      top_dir: uhddev/fpga/usrp3/top/x400
       target_full_matrix: ${{ parameters.x440_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x440_reduced_targets_matrix }}
 
