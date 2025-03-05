@@ -31,6 +31,10 @@ jobs:
     - group: sdr-pipeline-vars
   dependsOn: build_fpga
   condition: ne(variables.BuildRequired, true)
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
   displayName: 'Check FPGA artifacts availability for ${{ parameters.id }}'
 
   steps:
