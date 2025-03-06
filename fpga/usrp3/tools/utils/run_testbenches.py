@@ -434,31 +434,35 @@ def do_cleanup(args):
 
 def do_report_csv(args, results):
     """Generate report file (.csv)"""
-    keys = [
-        "module",
-        "status",
-        "retcode",
-        "start_time",
-        "wall_time",
-        "sim_time_ns",
-        "tc_expected",
-        "tc_run",
-        "tc_passed",
-    ]
+    template = {
+        "module": "<unknown>",
+        "status": "NOT_RUN",
+        "retcode": "<unknown>",
+        "start_time": "<unknown>",
+        "wall_time": "<unknown>",
+        "sim_time_ns": 0,
+        "tc_expected": 0,
+        "tc_run": 0,
+        "tc_passed": 0,
+    }
     with open(args.report, "w") as repfile:
-        repfile.write((",".join([x.upper() for x in keys])) + "\n")
+        repfile.write((",".join([x.upper() for x in template.keys()])) + "\n")
         for name in sorted(results):
-            r = results[name]
-            if r["retcode"] != RETCODE_SUCCESS:
-                results["retcode"] = retcode_to_str(r["retcode"])
-                results["status"] = "ERROR"
-                results["start_time"] = r["start_time"]
+            line = template.copy()
+            result = results[name]
+            if result["retcode"] != RETCODE_SUCCESS:
+                line["module"] = str(name)
+                line["retcode"] = retcode_to_str(result["retcode"])
+                line["status"] = "ERROR"
+                line["start_time"] = result["start_time"]
             else:
-                results = r
-                results["module"] = name
-                results["status"] = "PASSED" if r["passed"] else "FAILED"
-                results["retcode"] = retcode_to_str(r["retcode"])
-            repfile.write((",".join([str(results[x]) for x in keys])) + "\n")
+                line = result
+                line["module"] = name
+                line["status"] = "PASSED" if result["passed"] else "FAILED"
+                line["retcode"] = retcode_to_str(result["retcode"])
+            repfile.write(
+                (",".join([str(line[x]).replace(",", " ") for x in template.keys()])) + "\n"
+            )
     _LOG.info("Testbench report (CSV format) written to " + args.report)
     return 0
 
@@ -486,7 +490,7 @@ def do_report_junit(args, results):
     return 0
 
 
-def do_report(args, results):
+def do_report(args, results=None):
     """Generate report file (either .csv or .xml)"""
 
     def _load_results(args):
