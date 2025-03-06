@@ -71,7 +71,7 @@ stages:
   jobs:
   - job: analyze_changeset
     steps:
-      - bash: echo "Dummy Changeset Analysis"
+    - script: echo "Dummy Changeset Analysis"
 
 - template: fpga/templates/job-build-fpga-all.yml
   parameters:
