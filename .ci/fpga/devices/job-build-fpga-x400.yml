@@ -164,8 +164,8 @@ stages:
   dependsOn: analyze_changeset
   variables:
     BuildRequired: $[or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
@@ -189,8 +189,8 @@ stages:
   dependsOn: analyze_changeset
   variables:
     BuildRequired: $[or(
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
