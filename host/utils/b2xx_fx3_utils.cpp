@@ -9,7 +9,9 @@
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/scope_exit.hpp>
 #include <b200_iface.hpp>
 #include <libusb.h>
 #include <stdint.h>
@@ -61,10 +63,15 @@ uhd::byte_vector_t construct_eeprom_init_value_vector(uint16_t vid, uint16_t pid
     return init_values;
 }
 
+constexpr size_t EEPROM_SIZE = 0x8000; // 32kB
+
 constexpr uint8_t EEPROM_DATA_ADDR_HIGH_BYTE = 0x7F;
 constexpr uint8_t EEPROM_DATA_HEADER_ADDR    = 0x00;
 constexpr uint8_t EEPROM_DATA_VID_PID_ADDR   = 0x06;
 constexpr uint8_t EEPROM_DATA_OLD_DATA_ADDR  = 0x0A;
+
+constexpr uint8_t EEPROM_SERIAL_OFFSET = 0x1B;
+constexpr size_t EEPROM_SERIAL_LENGTH  = 9;
 
 const uhd::byte_vector_t EEPROM_DATA_HEADER = {
     0x00,
@@ -303,11 +310,80 @@ int write_and_verify_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t& da
 
 int erase_eeprom(b200_iface::sptr& b200)
 {
-    uhd::byte_vector_t bytes(8);
+    uhd::byte_vector_t bytes(8, 0xFF);
+    return write_and_verify_eeprom(b200, bytes);
+}
 
-    memset(&bytes[0], 0xFF, 8);
-    if (write_and_verify_eeprom(b200, bytes))
+std::tuple<uint16_t, uint16_t, size_t> get_eeprom_hdr_address(b200_iface::sptr& b200)
+{
+    // Check eeprom revision
+    const auto signature = b200->read_eeprom(0x0, 0x0, 4);
+    if (signature == NEW_EEPROM_SIGNATURE) {
+        UHD_LOGGER_DEBUG("B2XX_FX3") << "Found NEW EEPROM layout (w/ bootloader)";
+        return {EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_OLD_DATA_ADDR, 36};
+    } else {
+        UHD_LOGGER_DEBUG("B2XX_FX3") << "Found OLD EEPROM layout (w/o bootloader)";
+        return {0x04, 0xDC, 36};
+    }
+}
+
+uhd::byte_vector_t dump_eeprom(
+    b200_iface::sptr& b200, uint16_t addr, uint16_t offset, size_t num_bytes)
+{
+    // Dump current eeprom data
+    const uint16_t eeprom_addr = offset | (uint16_t(addr) << 8);
+    UHD_LOGGER_DEBUG("B2XX_FX3")
+        << "Reading EEPROM at address " << boost::format("0x%X") % (int)eeprom_addr
+        << " with " << (int)num_bytes << " bytes";
+    try {
+        return b200->read_eeprom(addr, offset, num_bytes);
+    } catch (std::exception& e) {
+        std::cerr << "Exception while reading EEPROM: " << e.what() << std::endl;
+        return {};
+    }
+}
+
+int blank_eeprom(b200_iface::sptr& b200, uint16_t addr, uint16_t offset, size_t num_bytes)
+{
+    //! Erases any section of the EEPROM by overwriting with 0xFF
+    //
+    // This can be used to erase/blank the entire EEPROM, or any sectors of it.
+    // Cf. erase_eeprom(), which only erases selected areas of the EEPROM.
+
+    // copied from erase_eeprom(b200_iface::sptr& b200), but using variable size/length
+    const uint16_t eeprom_addr = offset | (uint16_t(addr) << 8);
+    uhd::byte_vector_t bytes(num_bytes, 0xFF);
+    UHD_LOGGER_DEBUG("B2XX_FX3")
+        << "Blanking EEPROM at address " << boost::format("0x%X") % (int)eeprom_addr
+        << " with " << (int)num_bytes << " bytes";
+    try {
+        b200->write_eeprom(addr, offset, bytes);
+    } catch (std::exception& e) {
+        std::cerr << "Exception while writing EEPROM: " << e.what() << std::endl;
         return -1;
+    }
+
+    return 0;
+}
+
+int write_to_eeprom(b200_iface::sptr& b200,
+    const uhd::byte_vector_t& data,
+    uint16_t addr,
+    uint16_t offset)
+{
+    // Write to eeprom
+    // copied from write_eeprom(b200_iface::sptr& b200, const uhd::byte_vector_t&data)
+    // Note: write_eeprom() uses hardcode address and offset (0x0, 0x0)
+    const uint16_t eeprom_addr = offset | (uint16_t(addr) << 8);
+    UHD_LOGGER_DEBUG("B2XX_FX3")
+        << "Writing EEPROM at address " << boost::format("0x%X") % (int)eeprom_addr
+        << " with " << (int)data.size() << " bytes";
+    try {
+        b200->write_eeprom(addr, offset, data);
+    } catch (std::exception& e) {
+        std::cerr << "Exception while writing EEPROM: " << e.what() << std::endl;
+        return -1;
+    }
 
     return 0;
 }
@@ -315,7 +391,8 @@ int erase_eeprom(b200_iface::sptr& b200)
 int32_t main(int32_t argc, char* argv[])
 {
     uint16_t vid, pid;
-    std::string pid_str, vid_str, fw_file, fpga_file, bl_file, writevid_str, writepid_str;
+    std::string pid_str, vid_str, fw_file, fpga_file, bl_file, eeprom_file, writevid_str,
+        writepid_str, serial_str;
     bool user_supplied_vid_pid = false;
 
     // clang-format off
@@ -344,6 +421,9 @@ int32_t main(int32_t argc, char* argv[])
         "uninit-device", "Uninitialize a B2xx device.")(
         "read-eeprom,R", "Read first 8 bytes of EEPROM")(
         "erase-eeprom,E", "Erase first 8 bytes of EEPROM")(
+        "dump-eeprom", po::value<std::string>(&eeprom_file), "Dump complete eeprom content into file")(
+        "blank-eeprom", "Erase all bytes of EEPROM, incl. first 8 bytes")(
+        "write-serial", po::value<std::string>(&serial_str), "Write serial number into EEPROM during init")(
         "write-vid", po::value<std::string>(&writevid_str), "Write VID field of EEPROM")(
         "write-pid", po::value<std::string>(&writepid_str), "Write PID field of EEPROM");
     // clang-format on
@@ -496,6 +576,64 @@ int32_t main(int32_t argc, char* argv[])
     }
 
     // Added for testing purposes - not exposed
+    if (vm.count("dump-eeprom")) {
+        if (eeprom_file.empty()) {
+            std::cerr << "EEPROM dump saves the EEPROM content to file, but no file path "
+                         "was provided."
+                      << std::endl;
+            return -1;
+        }
+        std::ofstream eeprom_file_stream(eeprom_file, std::ios::out | std::ios::binary);
+        if (eeprom_file_stream.is_open()) {
+            std::cout << "Reading EEPROM and dumping content to file: " << eeprom_file
+                      << std::endl;
+            // read full eeprom in 256 byte increments
+            const uint16_t EEPROM_ADDR_HIGH_BYTE = (EEPROM_SIZE >> 8) & 0xFF;
+            for (uint16_t i = 0x00; i < EEPROM_ADDR_HIGH_BYTE; i++) {
+                auto data = dump_eeprom(b200, i, 0x00, 0x100);
+                eeprom_file_stream.write(
+                    reinterpret_cast<const char*>(data.data()), data.size());
+            }
+            eeprom_file_stream.close();
+        } else {
+            std::cerr << "Failed to open file for writing: " << eeprom_file << std::endl;
+            return -1;
+        }
+
+        std::cout << "EEPROM dump successful!" << std::endl;
+    }
+
+    // Added for testing purposes - not exposed
+    if (vm.count("blank-eeprom")) {
+        std::cout << "Blanking EEPROM..." << std::endl;
+
+        // write full eeprom in 64 byte increments
+        // EERROM_WRITE_PAGE_SIZE needs to be an even divisor of 0x100 (256 bytes)
+        const size_t EERROM_WRITE_PAGE_SIZE =
+            0x40; // EEPROM page write buffer size according to data sheet
+        const uint16_t EEPROM_ADDR_HIGH_BYTE = (EEPROM_SIZE >> 8) & 0xFF;
+        for (uint16_t i = 0x00; i < EEPROM_ADDR_HIGH_BYTE; i++) {
+            for (size_t j = 0; j < 0x100; j += EERROM_WRITE_PAGE_SIZE) {
+                blank_eeprom(b200, i, j, EERROM_WRITE_PAGE_SIZE);
+            }
+        }
+
+        std::cout << "Blanking EEPROM completed, resetting device..." << std::endl;
+
+        /* Reset the device! */
+        try {
+            b200->reset_fx3();
+        } catch (const std::exception& e) {
+            std::cerr << "Exception while resetting device: " << e.what() << std::endl;
+            return -1;
+        }
+
+        std::cout << "Blanking EEPROM Process Complete." << std::endl << std::endl;
+
+        return 0;
+    }
+
+    // Added for testing purposes - not exposed
     if (vm.count("uninit-device")) {
         // erase EEPROM
         erase_eeprom(b200);
@@ -522,6 +660,23 @@ int32_t main(int32_t argc, char* argv[])
         uint16_t writevid = B200_VENDOR_ID;
         uint16_t writepid = B200_PRODUCT_ID;
 
+        /* Register function that will ensure FX3 reset is called.
+           Function will be called even if an error during a parameter check occurred
+           and ensures FW is unloaded and device falls back to previous state without
+           needing to be power cycled. */
+        auto scope_exit = uhd::utils::scope_exit::make([&b200]() {
+            /* Reset the device! */
+            try {
+                std::cout << "Resetting device..." << std::endl << std::endl;
+                b200->reset_fx3();
+                return 0;
+            } catch (const std::exception& e) {
+                std::cerr << "Exception while resetting device: " << e.what()
+                          << std::endl;
+                return -1;
+            }
+        });
+
         /* Now, initialize the device. */
         // Added for testing purposes - not exposed
         if (vm.count("write-vid") && vm.count("write-pid")) {
@@ -535,27 +690,57 @@ int32_t main(int32_t argc, char* argv[])
             }
         }
 
+        /* Make serial number a required argument, and check length requirements,
+           error if serial number is too long, or not defined */
+        // Added for testing purposes - not exposed
+        if (!vm.count("write-serial")) {
+            std::cerr << "Serial number is required for initialization" << std::endl;
+            return -1;
+        } else {
+            size_t EEPROM_SERIAL_DATA_LENGTH =
+                EEPROM_SERIAL_LENGTH - 1; // Length of serial number data in EEPROM
+            if (serial_str.size() == 0
+                || serial_str.size() >= EEPROM_SERIAL_DATA_LENGTH) {
+                std::cerr << "Serial number needs to be between 1 and "
+                          << EEPROM_SERIAL_DATA_LENGTH << "chars long." << std::endl;
+                return -1;
+            }
+        }
+
         std::cout << "Writing VID and PID to EEPROM..." << std::endl << std::endl;
         if (write_and_verify_eeprom(
                 b200, construct_eeprom_init_value_vector(writevid, writepid)))
             return -1;
 
-        std::cout << "EEPROM initialized, resetting device..." << std::endl << std::endl;
+        if (vm.count("write-serial")) {
+            std::cout << "Writing serial number to EEPROM..." << std::endl << std::endl;
 
-        /* Reset the device! */
-        try {
-            b200->reset_fx3();
-        } catch (const std::exception& e) {
-            std::cerr << "Exception while resetting device: " << e.what() << std::endl;
-            return -1;
+            uint16_t eeprom_address, eeprom_offset;
+            size_t eeprom_length;
+            std::tie(eeprom_address, eeprom_offset, eeprom_length) =
+                get_eeprom_hdr_address(b200);
+
+            // convert serial_str to byte vector
+            uhd::byte_vector_t serial_data;
+            std::copy(
+                serial_str.begin(), serial_str.end(), std::back_inserter(serial_data));
+            // append null terminator
+            serial_data.push_back(0x00);
+            if (write_to_eeprom(b200,
+                    serial_data,
+                    eeprom_address,
+                    eeprom_offset + EEPROM_SERIAL_OFFSET))
+                return -1;
         }
+
+        std::cout << "EEPROM initialized..." << std::endl << std::endl;
+
+        /* Need to reset device to utilize modified EEPROM.
+           Action is performed during scope exit. */
 
         std::cout << "Initialization Process Complete." << std::endl << std::endl;
         return 0;
     }
-
-    uint8_t data_buffer[16];
-    memset(data_buffer, 0x0, sizeof(data_buffer));
 
     if (vm.count("speed")) {
         uint8_t speed;
