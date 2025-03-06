@@ -52,6 +52,9 @@ def parse_args():
     )
     parser.add_argument("--github-token", help="GitHub token to use for API requests.")
     parser.add_argument("--remove-test", nargs="*", help="Remove a test from the list of tests.")
+    parser.add_argument(
+        "--add-test", action="append", help="Add a test to the list of tests.", default=[]
+    )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
 
@@ -173,17 +176,18 @@ def load_rules(rule_file):
 class RuleApplier:
     """Helper class to update an internal test list based on a set of rules."""
 
-    def __init__(self, rules, labels, **kwargs):
+    def __init__(self, rules, labels, initial_list=[], **kwargs):
         """Initialize.
 
         Arguments:
         rules: List of rules to apply.
         labels: List of labels relevant to the current changeset.
+        initial_list: Initial list of tests to apply rules against.
         """
         self.rules = rules
         self.labels = labels
         self.args = kwargs
-        self.test_list = set()
+        self.test_list = set(initial_list)
 
     def apply(self, filename, verbose=False):
         """Apply rules against a file."""
@@ -289,6 +293,7 @@ def main():
     rule_applier = RuleApplier(
         load_rules(rule_file),
         labels,
+        initial_list=args.add_test,
         repo_path=args.repo_path,
         target_branch=args.target_branch,
         source_branch=args.source_branch,
