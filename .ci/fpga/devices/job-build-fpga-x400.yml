@@ -37,10 +37,6 @@ parameters:
 - name: fpga_imgs_source
   type: string
   default: 'Mono Pipeline'
-# Build X410 FPGA targets
-- name: build_x410
-  type: boolean
-  default: true
 # X410 FPGA targets to build(if triggered by changeset, packaging enabled)
 - name: x410_full_targets_matrix
   type: object
@@ -91,10 +87,6 @@ parameters:
       artifact_name: X410_X4_400
       timeout: 720
       max_attempts: 2
-# Build X440 FPGA targets
-- name: build_x440
-  type: boolean
-  default: true
 # X440 FPGA targets to build(if triggered by changeset, packaging enabled)
 - name: x440_full_targets_matrix
   type: object
@@ -152,12 +144,12 @@ parameters:
       artifact_name: X440_X4_400
       timeout: 720
       max_attempts: 2
-# Requested X410 targets(used if build_x410 is true)
+# Requested X410 targets
 - name: x410_requests_matrix
   type: object
   displayName: X410 Targets
   default: []
-# Requested X440 target(used if build_x440 is true)
+# Requested X440 target
 - name: x440_requests_matrix
   type: object
   displayName: X440 Targets
@@ -171,11 +163,9 @@ stages:
   displayName: Provide X410 FPGA Images
   dependsOn: analyze_changeset
   variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_x410 }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
@@ -198,11 +188,9 @@ stages:
   displayName: Provide X440 FPGA Images
   dependsOn: analyze_changeset
   variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_x440 }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml

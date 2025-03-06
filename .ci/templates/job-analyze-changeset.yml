@@ -9,6 +9,24 @@ parameters:
 - name: skip_all_hw_tests
   type: boolean
   default: false
+- name: build_fpgaimg_x3x0
+  type: boolean
+  default: false
+- name: build_fpgaimg_n3xx
+  type: boolean
+  default: false
+- name: build_fpgaimg_e31x
+  type: boolean
+  default: false
+- name: build_fpgaimg_e32x
+  type: boolean
+  default: false
+- name: build_fpgaimg_x410
+  type: boolean
+  default: false
+- name: build_fpgaimg_x440
+  type: boolean
+  default: false
 
 jobs:
   - job: analyze
@@ -38,6 +56,24 @@ jobs:
         if [ "$SKIP_HW_TESTS" == "true" ]; then
           EXTRA_ARGS="$EXTRA_ARGS --remove-test hw devtest"
         fi
+        if [ "${{ parameters.build_fpgaimg_x3x0 }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.x3xx"
+        fi
+        if [ "${{ parameters.build_fpgaimg_n3xx }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.n3xx"
+        fi
+        if [ "${{ parameters.build_fpgaimg_e31x }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.e31x"
+        fi
+        if [ "${{ parameters.build_fpgaimg_e32x }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.e320"
+        fi
+        if [ "${{ parameters.build_fpgaimg_x410 }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.x410"
+        fi
+        if [ "${{ parameters.build_fpgaimg_x440 }}" == "True" ]; then
+          EXTRA_ARGS="$EXTRA_ARGS --add-test fpga.usrp3.x440"
+        fi
         echo "Using pipeline $PIPELINE_PIPELINE_NAME / $PIPELINE_RUN_NAME as reference (branch $PIPELINE_SOURCE_BRANCH, commit $PIPELINE_SOURCE_COMMIT)"
         python3 tools/changeset_testlist.py \
                 --target-branch $PIPELINE_SOURCE_COMMIT \
@@ -52,6 +88,7 @@ jobs:
         PIPELINE_SOURCE_COMMIT: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceCommit)
         PIPELINE_PIPELINE_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.pipelineName)
         PIPELINE_RUN_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.runName)
+
     - bash: |
         if [[ $AGENT_OS == "Windows_NT" ]]; then
             VENV_BIN_DIR="Scripts"

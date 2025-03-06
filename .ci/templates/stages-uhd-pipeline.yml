@@ -254,6 +254,12 @@ stages:
     parameters:
       skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
       reference_pipeline_name: uhd_mono_pipeline
+      build_fpgaimg_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
+      build_fpgaimg_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
+      build_fpgaimg_e31x: ${{ parameters.build_fpgaimg_e31x }}
+      build_fpgaimg_e32x: ${{ parameters.build_fpgaimg_e32x }}
+      build_fpgaimg_x410: ${{ parameters.build_fpgaimg_x410 }}
+      build_fpgaimg_x440: ${{ parameters.build_fpgaimg_x440 }}
 
 ###############################################################################
 # SW Building & Testing Stages. No FPGA, no hardware involved.
@@ -533,12 +539,6 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    build_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
-    build_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
-    build_e31x: ${{ parameters.build_fpgaimg_e31x }}
-    build_e32x: ${{ parameters.build_fpgaimg_e32x }}
-    build_x410: ${{ parameters.build_fpgaimg_x410 }}
-    build_x440: ${{ parameters.build_fpgaimg_x440 }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
 

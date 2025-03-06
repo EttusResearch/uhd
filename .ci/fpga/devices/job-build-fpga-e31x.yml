@@ -37,11 +37,7 @@ parameters:
 - name: fpga_imgs_source
   type: string
   default: 'Mono Pipeline'
-# Build E310 FPGA targets
-- name: build_e31x
-  type: boolean
-  default: true
-# E310 FPGA targets to build (if build_e31x is true)
+# E310 FPGA targets to build
 - name: e31x_sg1_full_targets_matrix
   type: object
   default:
@@ -109,8 +105,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.e31x'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_e31x }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
@@ -136,8 +131,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.e31x'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_e31x }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml

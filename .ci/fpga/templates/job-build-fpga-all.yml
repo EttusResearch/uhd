@@ -36,24 +36,6 @@ parameters:
   type: string
   default: 'Mono Pipeline'
 ## Device-specific parameters
-- name: build_x3x0
-  type: boolean
-  default: true
-- name: build_n3xx
-  type: boolean
-  default: true
-- name: build_e31x
-  type: boolean
-  default: true
-- name: build_e32x
-  type: boolean
-  default: true
-- name: build_x410
-  type: boolean
-  default: true
-- name: build_x440
-  type: boolean
-  default: true
 - name: x410_targets_matrix
   type: object
   default: {}
@@ -71,8 +53,6 @@ stages:
     publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_x410: ${{ parameters.build_x410 }}
-    build_x440: ${{ parameters.build_x440 }}
     x410_requests_matrix: ${{ parameters.x410_targets_matrix }}
     x440_requests_matrix: ${{ parameters.x440_targets_matrix }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
@@ -87,7 +67,6 @@ stages:
     publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_x3x0: ${{ parameters.build_x3x0 }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 ### END: X3x0 stages
@@ -100,7 +79,6 @@ stages:
     publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_n3xx: ${{ parameters.build_n3xx }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 ### END: N3xx stages
@@ -113,7 +91,6 @@ stages:
     publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_e31x: ${{ parameters.build_e31x }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 ### END: E31x stages
@@ -126,7 +103,6 @@ stages:
     publish_int_files:  ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_e320: ${{ parameters.build_e32x }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 ### END: E320 stages

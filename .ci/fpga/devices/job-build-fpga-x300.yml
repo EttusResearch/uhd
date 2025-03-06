@@ -37,11 +37,7 @@ parameters:
 - name: fpga_imgs_source
   type: string
   default: 'Mono Pipeline'
-# Build X300 FPGA targets
-- name: build_x3x0
-  type: boolean
-  default: true
-# X300 FPGA targets to build (if build_x300 is true)
+# X300 FPGA targets to build
 - name: x300_full_targets_matrix
   type: object
   default:
@@ -76,7 +72,7 @@ parameters:
       artifact_name: X300_XG
       timeout: 720
       max_attempts: 2
-# X310 FPGA targets to build (if build_x310 is true)
+# X310 FPGA targets to build
 - name: x310_full_targets_matrix
   type: object
   default:
@@ -124,8 +120,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_x3x0 }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
@@ -151,8 +146,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x3xx'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_x3x0 }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml

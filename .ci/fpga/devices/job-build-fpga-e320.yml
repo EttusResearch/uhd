@@ -37,11 +37,7 @@ parameters:
 - name: fpga_imgs_source
   type: string
   default: 'Mono Pipeline'
-# Build E320 FPGA targets
-- name: build_e320
-  type: boolean
-  default: true
-# E320 FPGA targets to build (if build_e320 is true)
+# E320 FPGA targets to build
 - name: e320_full_targets_matrix
   type: object
   default:
@@ -92,8 +88,7 @@ stages:
     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
     BuildRequired: $[or(
                     contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.e320'),
-                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
-                    eq('${{ parameters.build_e320 }}', 'true')
+                    contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
   jobs:
   - template: ../templates/jobs-provide-fpga-artifacts.yml
