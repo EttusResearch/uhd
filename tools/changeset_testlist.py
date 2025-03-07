@@ -59,6 +59,16 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_git_commit_range(target_branch, source_branch=None, include_target=False):
+    """Return the commit range arguments for git diff."""
+    assert target_branch, "target_branch must be specified"
+    separator = ".." if include_target else "..."
+    if source_branch:
+        return f"{target_branch}{separator}{source_branch}"
+    else:
+        return f"{target_branch}{separator}"
+
+
 def check_changeset_content(file, **kwargs):
     """Check changeset content for code and/or comments changes.
 
@@ -113,9 +123,11 @@ def check_changeset_content(file, **kwargs):
     else:
         raise ValueError(f"Unsupported argument: include_content={include_content}")
 
-    target_branch = kwargs["target_branch"]
-    if kwargs.get("include_target"):
-        target_branch += "..."
+    git_commit_range = get_git_commit_range(
+        kwargs["target_branch"],
+        kwargs.get("source_branch", None),
+        kwargs.get("include_target", False)
+    )
     get_diff_args = [
         shutil.which("git"),
         "-C",
@@ -123,7 +135,7 @@ def check_changeset_content(file, **kwargs):
         "diff",
         "--no-color",
         "--unified=0",
-        target_branch,
+        git_commit_range,
         "--",
     ]
 
@@ -152,16 +164,9 @@ def get_changed_files(repo_path, target_branch, source_branch, include_target):
     source_branch: Branch to compare from. Defaults to the current branch.
     include_target: Include changes that originate from the target branch.
     """
-    assert target_branch
-    # If include_target is false, then current (unstaged/uncommited) changes are
-    # not included. If we want to change this, then couple this with
-    # git diff --name-only (no further arguments)
-    if not include_target:
-        target_branch += "..."
+    git_commit_range = get_git_commit_range(target_branch, source_branch, include_target)
     git_cmd = shutil.which("git")
-    get_diff_args = [git_cmd, "diff", "--name-only", target_branch]
-    if source_branch:
-        get_diff_args.append(source_branch)
+    get_diff_args = [git_cmd, "diff", "--name-only", git_commit_range]
     files = subprocess.check_output(get_diff_args, cwd=repo_path, encoding="utf-8")
     return files.strip().split("\n")
 
