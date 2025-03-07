@@ -11,10 +11,7 @@ parameters:
   type: boolean
   displayName: Run X440 Embedded Tests
   default: false
-- name: run_streaming_tests
   type: boolean
-  displayName: Run Streaming Tests
-  default: false
 - name: run_x440_streaming_tests
   type: boolean
   displayName: Run X440 Streaming Tests
@@ -160,12 +157,6 @@ stages:
 - template: fpga/templates/job-build-fpga-all.yml
   parameters:
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    build_x3x0: false
-    build_n3xx: false
-    build_e31x: false
-    build_e32x: false
-    build_x410: false
-    build_x440: false
 
 - stage: test_uhd_x410_embedded_stage
   displayName: Test X410 Embedded UHD
@@ -199,7 +190,6 @@ stages:
   - provide_x300_fpga_images_stage
   - provide_x310_fpga_images_stage
   - provide_x410_fpga_images_stage
-  condition: ${{ parameters.run_streaming_tests }}
   jobs:
   - template: templates/job-uhd-streaming-tests-beauty.yml
     parameters:

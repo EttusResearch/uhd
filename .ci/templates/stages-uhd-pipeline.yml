@@ -5,15 +5,12 @@
 #
 
 parameters:
-- name: build_linux
+- name: add_tests
   type: string
-  default: Auto-detect
-- name: build_mac
+  default: "none"
+- name: remove_tests
   type: string
-  default: Auto-detect
-- name: build_win
-  type: string
-  default: Auto-detect
+  default: "none"
 - name: custom_boost_version
   type: boolean
   default: false
@@ -25,12 +22,6 @@ parameters:
   default: false
 - name: testLength
   type: string
-- name: run_streaming_tests
-  type: string
-  default: Auto-detect
-- name: skip_all_hw_tests
-  type: boolean
-  default: false
 - name: build_sdk
   type: boolean
   default: false
@@ -88,30 +79,6 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
-# Build X3x0 FPGA targets
-- name: build_fpgaimg_x3x0
-  type: boolean
-  displayName: Build X3x0
-  default: false
-# Build N3xx FPGA targets
-- name: build_fpgaimg_n3xx
-  type: boolean
-  displayName: Build N3xx
-  default: false
-# Build E31x FPGA targets
-- name: build_fpgaimg_e31x
-  type: boolean
-  displayName: Build E31x
-  default: false
-# Build E32x FPGA targets
-- name: build_fpgaimg_e32x
-  type: boolean
-  displayName: Build E32x
-  default: false
-# Build X410 FPGA targets
-- name: build_fpgaimg_x410
-  type: boolean
-  default: false
 # Requested X410 targets (if build_x410 is true)
 - name: x410_targets_matrix
   type: object
@@ -140,10 +107,6 @@ parameters:
       artifact_name: X410_CG_400
       timeout: 720
       max_attempts: 2
-# Build X440 FPGA targets
-- name: build_fpgaimg_x440
-  type: boolean
-  default: false
 # Requested X440 targets
 - name: x440_targets_matrix
   type: object
@@ -252,14 +215,9 @@ stages:
   jobs:
   - template: job-analyze-changeset.yml
     parameters:
-      skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
       reference_pipeline_name: uhd_mono_pipeline
-      build_fpgaimg_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
-      build_fpgaimg_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
-      build_fpgaimg_e31x: ${{ parameters.build_fpgaimg_e31x }}
-      build_fpgaimg_e32x: ${{ parameters.build_fpgaimg_e32x }}
-      build_fpgaimg_x410: ${{ parameters.build_fpgaimg_x410 }}
-      build_fpgaimg_x440: ${{ parameters.build_fpgaimg_x440 }}
+      add_tests: ${{ parameters.add_tests }}
+      remove_tests: ${{ parameters.remove_tests }}
 
 ###############################################################################
 # SW Building & Testing Stages. No FPGA, no hardware involved.
@@ -276,16 +234,11 @@ stages:
   # - build_linux is set to auto, and the UhdTestList contains UHD Linux builds
   condition: >
     and(succeeded(),
-    or(
-      eq('${{ parameters.build_linux }}', 'Force-yes'),
-      and(
-        eq('${{ parameters.build_linux }}', 'Auto-detect'),
-        or(
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
-        )
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
       )
-    ))
+    )
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-build-src.yml
@@ -324,16 +277,11 @@ stages:
   dependsOn: analyze_changeset
   condition: >
     and(succeeded(),
-    or(
-      eq('${{ parameters.build_mac }}', 'Force-yes'),
-      and(
-        eq('${{ parameters.build_mac }}', 'Auto-detect'),
         or(
           contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.mac'),
           contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
         )
-      )
-    ))
+    )
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-uhd-build-src.yml
@@ -350,11 +298,6 @@ stages:
     and(
       succeeded(),
       or(
-        ${{ parameters.build_e310_sg1 }},
-        ${{ parameters.build_e310_sg3 }},
-        ${{ parameters.build_e320 }},
-        ${{ parameters.build_n3xx }},
-        ${{ parameters.build_x4xx }},
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
@@ -443,16 +386,11 @@ stages:
   # Anytime we build UHD, we also rebuild GNU Radio to see if we broke compat.
   condition: >
     and(succeeded(),
-    or(
-      eq('${{ parameters.build_linux }}', 'Force-yes'),
-      and(
-        eq('${{ parameters.build_linux }}', 'Auto-detect'),
         or(
           contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
           contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
         )
-      )
-    ))
+    )
   jobs:
   - template: job-get-latest-uhd-docker.yml
   - template: job-gnuradio-grettus-build-src.yml
@@ -485,16 +423,11 @@ stages:
   dependsOn: analyze_changeset
   condition: >
     and(succeeded(),
-    or(
-      eq('${{ parameters.build_win }}', 'Force-yes'),
-      and(
-        eq('${{ parameters.build_win }}', 'Auto-detect'),
-        or(
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.windows'),
-          contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
-        )
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.windows'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all')
       )
-    ))
+    )
   jobs:
     - template: job-get-latest-uhd-docker.yml
     - template: job-uhd-build-installer.yml
@@ -521,12 +454,10 @@ stages:
 - stage: run_testbenches_stage
   displayName: Run Testbenches
   dependsOn: analyze_changeset
-  condition: and(succeeded(),
-                 or(
-                   eq('${{ parameters.run_testbenches }}', 'true'),
-                   contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.testbenches')
-                   )
-                )
+  condition: >
+    and(succeeded(),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.testbenches')
+    )
   jobs:
   - template: ../fpga/templates/job-run-testbenches.yml
 
@@ -700,7 +631,8 @@ stages:
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
-    ))
+      )
+    )
   jobs:
   - template: tests/job-uhd-x440-hardware-tests-saison.yml
     parameters:
@@ -729,7 +661,8 @@ stages:
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n320'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n310'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3xx')
-    ))
+      )
+    )
   jobs:
   - template: job-uhd-rf-tests-pebbles.yml
     parameters:
@@ -750,7 +683,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      ${{ parameters.run_streaming_tests }},
       contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
     )
   jobs:
@@ -770,7 +702,6 @@ stages:
   condition: >
     and(
       succeeded(),
-      ${{ parameters.run_streaming_tests }},
       contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
     )
   jobs:

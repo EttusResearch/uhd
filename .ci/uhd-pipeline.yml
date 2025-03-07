@@ -5,27 +5,40 @@
 #
 
 parameters:
-- name: build_linux
-  displayName: Build Linux
+  # Force enable/disable modules, examples:
+  #
+  # Force-enable/disable UHD builds...
+  # ... for all OS:  uhd.build.all
+  # ... for Linux:   uhd.build.linux
+  # ... for Windows: uhd.build.windows
+  # ... for macOS:   uhd.build.mac
+  #
+  # Force-enable/disable MPM builds...
+  # ... for all devs: mpm.build.all
+  #
+  # Force-enable/disable FPGA images builds...
+  # ... all FPGAs:   fpga.usrp3.all
+  # ... E31X FPGAs:  fpga.usrp3.e31x
+  # ... E320 FPGAs:  fpga.usrp3.e320
+  # ... N3XX FPGAs:  fpga.usrp3.n3xx
+  # ... X4XX FPGAs:  fpga.usrp3.x4xx
+  # ... X410 FPGAs:  fpga.usrp3.x410
+  # ... X440 FPGAs:  fpga.usrp3.x440
+  #
+  # Force-enable/disable tests...
+  # ... Devtests: devtest.all
+  # ... Streaming tests: hw.streaming.all
+  # ... RF tests: hw.rf.all
+  #
+  # For more examples, see tools/changeset_testlist.yaml
+- name: add_tests
+  displayName: Force-enable modules
   type: string
-  default: Force-yes
-  values:
-  - Force-yes
-  - No
-- name: build_mac
-  displayName: Build macOS
+  default: "none"
+- name: remove_tests
+  displayName: Force-disable modules
   type: string
-  default: Force-yes
-  values:
-  - Force-yes
-  - No
-- name: build_win
-  displayName: Build Windows
-  type: string
-  default: Force-yes
-  values:
-  - Force-yes
-  - No
+  default: "none"
 - name: release_binaries
   type: boolean
   displayName: Set release mode for installers
@@ -38,14 +51,6 @@ parameters:
   - 'stress'
   displayName: Test Length
   default: 'smoke'
-- name: run_streaming_tests
-  type: boolean
-  displayName: Run Streaming Tests
-  default: true
-- name: skip_all_hw_tests
-  type: boolean
-  displayName: Skip all hardware tests
-  default: false
 - name: build_sdk
   type: boolean
   displayName: Build embedded image SDKs
@@ -86,10 +91,6 @@ parameters:
   displayName: FPGA Images Source
   default: 'Mono Pipeline'
 ## FPGA parameters
-- name: run_testbenches
-  type: boolean
-  displayName: Run Testbenches
-  default: true
 - name: clean_ip_build
   type: boolean
   displayName: Clean IP Build
@@ -109,30 +110,6 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
-- name: build_fpgaimg_x3x0
-  type: boolean
-  displayName: Build X3x0 FPGA Images
-  default: true
-- name: build_fpgaimg_n3xx
-  type: boolean
-  displayName: Build N3xx FPGA Images
-  default: true
-- name: build_fpgaimg_e31x
-  type: boolean
-  displayName: Build E31x FPGA Images
-  default: true
-- name: build_fpgaimg_e32x
-  type: boolean
-  displayName: Build E32x FPGA Images
-  default: true
-- name: build_fpgaimg_x410
-  type: boolean
-  displayName: Build X410 FPGA Images
-  default: true
-- name: build_fpgaimg_x440
-  type: boolean
-  displayName: Build X440 FPGA Images
-  default: true
 
 trigger:
   batch: true
@@ -157,13 +134,10 @@ pr: none
 extends:
   template: templates/stages-uhd-pipeline.yml
   parameters:
-    build_linux: ${{ parameters.build_linux }}
-    build_mac: ${{ parameters.build_mac }}
-    build_win: ${{ parameters.build_win }}
+    add_tests: ${{ parameters.add_tests }}
+    remove_tests: ${{ parameters.remove_tests }}
     release_binaries: ${{ parameters.release_binaries }}
     testLength: ${{ parameters.testLength }}
-    run_streaming_tests: ${{ parameters.run_streaming_tests }}
-    skip_all_hw_tests: ${{ parameters.skip_all_hw_tests }}
     build_sdk: ${{ parameters.build_sdk }}
     cache_sstate: ${{ parameters.cache_sstate }}
     build_e310_sg1: ${{ parameters.build_e310_sg1 }}
@@ -173,14 +147,7 @@ extends:
     build_x4xx: ${{ parameters.build_x4xx }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     # FPGA parameters
-    run_testbenches: ${{ parameters.run_testbenches }}
     clean_ip_build: ${{ parameters.clean_ip_build }}
     publish_int_files: true
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    build_fpgaimg_x3x0: ${{ parameters.build_fpgaimg_x3x0 }}
-    build_fpgaimg_n3xx: ${{ parameters.build_fpgaimg_n3xx }}
-    build_fpgaimg_e31x: ${{ parameters.build_fpgaimg_e31x }}
-    build_fpgaimg_e32x: ${{ parameters.build_fpgaimg_e32x }}
-    build_fpgaimg_x410: ${{ parameters.build_fpgaimg_x410 }}
-    build_fpgaimg_x440: ${{ parameters.build_fpgaimg_x440 }}
