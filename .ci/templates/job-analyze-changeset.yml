@@ -52,6 +52,7 @@ jobs:
         set -o xtrace
         if [ "$BUILD_REASON" == "PullRequest" ]; then
           EXTRA_ARGS="--github-label-api-endpoint https://oauth2:$OAUTH_TOKEN@api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels"
+          EXTRA_ARGS="$EXTRA_ARGS --source-branch $SYSTEM_PULLREQUEST_SOURCECOMMITID"
         fi
         if [ "$SKIP_HW_TESTS" == "True" ]; then
           EXTRA_ARGS="$EXTRA_ARGS --remove-test hw devtest"
