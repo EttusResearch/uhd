@@ -164,6 +164,7 @@ stages:
   dependsOn: analyze_changeset
   variables:
     BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x410'),
                     contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
                     contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
@@ -189,6 +190,7 @@ stages:
   dependsOn: analyze_changeset
   variables:
     BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x440'),
                     contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
                     contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
                   )]
