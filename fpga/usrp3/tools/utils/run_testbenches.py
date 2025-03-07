@@ -5,6 +5,14 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
+"""Batch testbench execution script
+
+This script searches the locations that you specify for testbenches and then
+executes them using the desired simulator. Work is automatically grouped into
+jobs for parallel execution and the results are printed to the console.
+Testbenches are identified by the presence of the viv_sim_preamble in the
+Makefile."""
+
 import argparse
 import os
 import sys
@@ -97,6 +105,10 @@ def find_sims_on_fs(basedir, excludes):
     """
     sims = {}
     for root, _, files in os.walk(basedir):
+        if "/build-ip/" in root:
+            # Exclude any testbenches in the IP build outputs, since these are
+            # duplicates.
+            continue
         name = os.path.relpath(root, basedir)
         if "Makefile" in files:
             with open(os.path.join(root, "Makefile"), "r") as mfile:
@@ -158,25 +170,30 @@ def parse_output(simout):
         tfm = re.match(rb"# End time:.*, Elapsed time: (.+)", line)
         if tfm is not None:
             results["wall_time"] = str(tfm.group(1), "ascii")
+
     # Parse testbench results
+    #
     # We have two possible formats to parse because we have two simulation
     # test executors.
+    #
+    # ModelSim and Questa print "# " at the start of each line. In some cases,
+    # Questa Base will print an extra line with "# " between the actual lines.
     tb_match_fmt0 = [
         b".*TESTBENCH FINISHED: (.+)\n",
-        b"(?:# )? - Time elapsed:   (.+) ns.*\n",
-        b"(?:# )? - Tests Expected: (.+)\n",
-        b"(?:# )? - Tests Run:      (.+)\n",
-        b"(?:# )? - Tests Passed:   (.+)\n",
-        b"(?:# )?Result: (PASSED|FAILED).*",
+        b"(?:# \n)?(?:# )? - Time elapsed:   (\\d+) ns.*\n",
+        b"(?:# \n)?(?:# )? - Tests Expected: (\\d+)\n",
+        b"(?:# \n)?(?:# )? - Tests Run:      (\\d+)\n",
+        b"(?:# \n)?(?:# )? - Tests Passed:   (\\d+)\n",
+        b"(?:# \n)?(?:# )?Result: (PASSED|FAILED).*",
     ]
     m_fmt0 = re.match(b"".join(tb_match_fmt0), simout, re.DOTALL)
     tb_match_fmt1 = [
         b".*TESTBENCH FINISHED: (.*)\n",
-        b"(?:# )? - Time elapsed:  (.+) ns.*\n",
-        b"(?:# )? - Tests Run:     (.+)\n",
-        b"(?:# )? - Tests Passed:  (.+)\n",
-        b"(?:# )? - Tests Failed:  (.+)\n",
-        b"(?:# )?Result: (PASSED|FAILED).*",
+        b"(?:# \n)?(?:# )? - Time elapsed:  (\\d+) ns.*\n",
+        b"(?:# \n)?(?:# )? - Tests Run:     (\\d+)\n",
+        b"(?:# \n)?(?:# )? - Tests Passed:  (\\d+)\n",
+        b"(?:# \n)?(?:# )? - Tests Failed:  (\\d+)\n",
+        b"(?:# \n)?(?:# )?Result: (PASSED|FAILED).*",
     ]
     m_fmt1 = re.match(b"".join(tb_match_fmt1), simout, re.DOTALL)
 
@@ -193,7 +210,7 @@ def parse_output(simout):
     ]
     m_error = re.search("".join(tb_match_error), plain_simout)
 
-    # Figure out the returncode
+    # Figure out the return code
     retcode = RETCODE_UNKNOWN_ERR
     if m_fmt0 is not None or m_fmt1 is not None:
         retcode = RETCODE_SUCCESS
@@ -427,8 +444,10 @@ def do_cleanup(args):
     excludes = read_excludes_file(args.excludes)
     for (name, path) in gather_target_sims(args.basedir, args.target, excludes):
         _LOG.info("Cleaning up %s", name)
-        os.chdir(os.path.join(args.basedir, path))
+        old_path = os.getcwd()
+        os.chdir(path)
         subprocess.Popen("{setupenv} make cleanall".format(setupenv=setupenv), shell=True).wait()
+        os.chdir(old_path)
     return 0
 
 
@@ -454,7 +473,8 @@ def do_report_csv(args, results):
                 line["module"] = str(name)
                 line["retcode"] = retcode_to_str(result["retcode"])
                 line["status"] = "ERROR"
-                line["start_time"] = result["start_time"]
+                if "start_time" in result:
+                    line["start_time"] = result["start_time"]
             else:
                 line = result
                 line["module"] = name
@@ -517,7 +537,9 @@ def do_report(args, results=None):
 
 # Parse command line options
 def get_options():
-    parser = argparse.ArgumentParser(description="Batch testbench execution script")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
     parser.add_argument(
         "-d",
         "--basedir",
@@ -527,9 +549,8 @@ def get_options():
     parser.add_argument(
         "-s",
         "--simulator",
-        choices=["xsim", "vsim", "modelsim"],
         default="xsim",
-        help="Simulator name",
+        help="Simulator make target (e.g., xsim, vsim, etc.)",
     )
     parser.add_argument(
         "-e",
@@ -555,17 +576,34 @@ def get_options():
         help="Output is logged, so don't show per-second timer",
     )
     parser.add_argument(
-        "action", choices=["run", "cleanup", "list", "report"], default="list", help="What to do?"
+        "action",
+        choices=["run", "cleanup", "list", "report"],
+        default="list",
+        help=(
+            "Action to perform, which may be one of:\n"
+            "  run:     Run the testbenches\n"
+            "  cleanup: Run 'make cleanall' for each testbench\n"
+            "  list:    List all the testbenches found\n"
+            "  report:  Generate a report from the last run"
+        ),
     )
     parser.add_argument(
-        "target", nargs="*", default=".*", help="Space separated simulation target regexes"
+        "target",
+        nargs="*",
+        default=".*",
+        help="Space-separated list of regular expressions for the testbenches to run",
     )
     return parser.parse_args()
 
 
 def main():
     args = get_options()
-    actions = {"list": do_list, "run": do_run, "cleanup": do_cleanup, "report": do_report}
+    actions = {
+        "list": do_list,
+        "run": do_run,
+        "cleanup": do_cleanup,
+        "report": do_report,
+    }
     return actions[args.action](args)
 
 
