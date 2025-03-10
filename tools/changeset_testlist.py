@@ -51,9 +51,11 @@ def parse_args():
         help="Endpoint to use for GitHub API requests read back labels.",
     )
     parser.add_argument("--github-token", help="GitHub token to use for API requests.")
-    parser.add_argument("--remove-test", nargs="*", help="Remove a test from the list of tests.")
     parser.add_argument(
-        "--add-test", action="append", help="Add a test to the list of tests.", default=[]
+        "--remove-test", nargs="*", help="Remove a test from the list of tests.", default=[]
+    )
+    parser.add_argument(
+        "--add-test", nargs="*", help="Add a test to the list of tests.", default=[]
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     return parser.parse_args()
