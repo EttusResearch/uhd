@@ -72,7 +72,8 @@ jobs:
           devSerial: 'F49FDF'
           devBus: 'ip'
           devAddr: '192.168.40.6'
-          devFpga: 'HG,XG'
+          # TODO: revert back to "HG,XG" once work item #3028634 is resolved
+          devFpga: 'HG'
           devtestPattern: 'x3x0'
           jtagSerial: '251635F49FDF'
           jtagServer: 'nitest@sdr-rhombus'
