@@ -11,7 +11,6 @@ parameters:
   type: boolean
   displayName: Run X440 Embedded Tests
   default: false
-  type: boolean
 - name: run_x440_streaming_tests
   type: boolean
   displayName: Run X440 Streaming Tests
