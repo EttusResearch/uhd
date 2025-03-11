@@ -11,20 +11,30 @@ x410_ps_rfdc_bd.tcl \
 )
 
 IP_X4XX_PS_RFDC_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/common/, \
+rfdc_info_pkg.sv \
+) \
+$(addprefix $(BASE_DIR)/x400/rf/x410/, \
+x410_rf_reset_controller.vhd \
+x410_clock_gates.vhd \
+x410_rfdc_memory_content_pkg.sv \
+) \
+$(addprefix $(BASE_DIR)/x400/rf/common/, \
 capture_sysref.v \
 rf_nco_reset.vhd \
 rf_reset.vhd \
 sync_wrapper.v \
 axis_mux.vhd \
 gpio_to_axis_mux.vhd \
-) \
-$(addprefix $(BASE_DIR)/x400/rf/x410/, \
-x410_rf_reset_controller.vhd \
-x410_clock_gates.vhd \
+rfdc_info_memory.sv \
+axi_rfdc_info_memory.v \
 ) \
 $(addprefix $(BASE_DIR)/../lib/control/, \
 synchronizer.v \
 synchronizer_impl.v \
+reset_sync.v \
+) \
+$(addprefix $(BASE_DIR)/../lib/rfnoc/core/, \
+ctrlport.vh \
 ) \
 $(addprefix $(BASE_DIR)/x400/regmap/x410/, PkgRFDC_REGS_REGMAP.vhd )
 

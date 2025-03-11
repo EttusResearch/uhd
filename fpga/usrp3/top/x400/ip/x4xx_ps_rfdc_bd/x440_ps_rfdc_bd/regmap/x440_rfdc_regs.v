@@ -253,8 +253,7 @@
 //    </register>
 //
 //    <register name="FABRIC_DSP_REG" offset="0x13008" typename="FABRIC_DSP_REGTYPE"/>
-//    <register name="ADC_TILEMAP_REG" offset="0x17000" typename="ADC_TILEMAP_REGTYPE"/>
-//    <register name="DAC_TILEMAP_REG" offset="0x17008" typename="DAC_TILEMAP_REGTYPE"/>
+//    <register name="RFDC_INFO_MEM" offset="0x17000" count="16" step="4" typename="RFDC_INFO_MEMTYPE"/>
 //    <register name="RFDC_INFO_REG" offset="0x18000" typename="RFDC_INFO_REGTYPE"/>
 //
 //  </group>
