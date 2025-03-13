@@ -39,7 +39,7 @@ from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
 
-X400_FPGA_COMPAT = (9, 0)
+X400_FPGA_COMPAT = (10, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 # The compat number at which DNA support was added:
