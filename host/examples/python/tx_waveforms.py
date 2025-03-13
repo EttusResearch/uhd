@@ -1,10 +1,34 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 #
-# Copyright 2017-2018 Ettus Research, a National Instruments Company
+# Copyright 2025 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
-#
-"""Generate and TX samples using a set of waveforms, and waveform characteristics.
+"""Example to transmit waveforms using UHD python API.
+
+This example transmits samples of dynamically generated, common waveforms,
+supporting sine, square, constant and ramp pattern. It's intended for use with
+a single device and supports transmitting the same waveform on multiple
+channels. The example implements two main operation modes that may not be
+supported by all USRPs devices and FPGA bitfile flavors.
+
+1. Host based: This mode uses the MultiUSRP API
+<https://files.ettus.com/manual/page_coding.html#coding_api_hilevel> to stream
+a continuous tone waveform to the USRP and transmit it on the fly. This mode
+is supported by all USRPs and subjects the host's ability (which depends on CPU
+speed, network interface speed, CPU thread interruptions) to stream samples as
+fast as the USRP is transmitting them.
+
+2. RFNoC Replay: This mode uses advanced API functions to buffer a waveform
+in the USRP's onboard DRAM before transmitting it. It utilizes capabilities of
+RFNoC (RF Network-on-Chip) <https://www.ettus.com/sdr-software/rfnoc/> together
+to create a dynamic RFNoC graph connecting multiple RFNoC blocks stream a
+waveform pattern from the host to DRAM and transmit the buffered waveform
+pattern from DRAM. This mode requires FPGA bitfiles that contain the RFNoC
+Replay Block and is not supported on all USRPs.
+
+Example usage:
+tx_waveforms.py [--args addr=192.168.10.2] --freq 2.4e9 [--rate 1e6 --duration 10
+                --channels 0 --wave-freq 1e4 --wave-ampl 0.3] [--dram]
 """
 
 import argparse
@@ -16,36 +40,105 @@ from uhd.usrp import dram_utils
 
 
 def parse_args():
-    """Parse the command line arguments."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--args", default="", type=str)
-    parser.add_argument(
-        "-w", "--waveform", default="sine", choices=["sine", "square", "const", "ramp"], type=str
+    """Parses the command line arguments.
+
+    Configuring the transmission, such as frequency, rate, duration,
+    gain, waveform type, and whether to use DRAM for streaming.
+    """
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
     )
-    parser.add_argument("-f", "--freq", type=float, required=True)
-    parser.add_argument("-r", "--rate", default=1e6, type=float)
-    parser.add_argument("-d", "--duration", default=5.0, type=float)
-    parser.add_argument("-c", "--channels", default=0, nargs="+", type=int)
-    parser.add_argument("-g", "--gain", type=int, default=10)
-    parser.add_argument("--wave-freq", default=1e4, type=float)
-    parser.add_argument("--wave-ampl", default=0.3, type=float)
+    parser.add_argument(
+        "-a",
+        "--args",
+        type=str,
+        default="",
+        help='specifies the uhd device arguments, which holds multiple key value pairs separated by commas (e.g., addr=192.168.40.2,type=x300) [Default = ""]',
+    )
+    parser.add_argument(
+        "-w",
+        "--waveform",
+        choices=["sine", "square", "const", "ramp"],
+        type=str,
+        default="sine",
+        help="specifies the waveform type [Default = sine]",
+    )
+    parser.add_argument(
+        "-f",
+        "--freq",
+        type=float,
+        required=True,
+        help="specifies the RF center frequency in Hz (input is required)",
+    )
+    parser.add_argument(
+        "-r",
+        "--rate",
+        type=float,
+        default=1e6,
+        help="specifies the sample rate in samples/seconds of the waveform generated at the host [Default = 1e6]",
+    )
+    parser.add_argument(
+        "-d",
+        "--duration",
+        type=float,
+        default=5.0,
+        help="""specifies the transmit duration in seconds.
+        If duration = -1 and --dram argument is used, the waveform pattern is repeated continuously until stopped.
+        If duration > 0, the transmission stops after the configured duration.
+        [Default = 0.5]""",
+    )
+    parser.add_argument(
+        "-c",
+        "--channels",
+        nargs="+",
+        type=int,
+        default=0,
+        help='specifies the channels to use (e.g., "0", "1", "0 1", etc) [Default = 0]',
+    )
+    parser.add_argument(
+        "-g",
+        "--gain",
+        type=int,
+        default=10,
+        help="specifies the gain for the RF chain in dB scale [Default = 10]",
+    )
+    parser.add_argument(
+        "--wave-freq",
+        type=float,
+        default=1e4,
+        help="specifies the waveform frequency in Hz [Default = 1e4]",
+    )
+    parser.add_argument(
+        "--wave-ampl",
+        type=float,
+        default=0.3,
+        help="specifies the waveform amplitude in the range [0 to 0.7] [Default = 0.3]",
+    )
     parser.add_argument(
         "--tx-delay",
-        default=0.5,
         type=float,
-        help="Delay before simultaneously starting transmission on all channels",
+        default=0.5,
+        help="specifies the delay in seconds (relative to when the command is executed) before simultaneously starting transmission on all channels [Default = 0.5]",
     )
     parser.add_argument(
-        "--dram", action="store_true", help="If given, will attempt to stream via DRAM"
+        "--dram",
+        action="store_true",
+        help="specifies the operation mode (Host based or RFNoC Replay). If argument --dram is specified, the program will attempt to use RFNoC Replay mode, else Host Based",
     )
     return parser.parse_args()
 
 
 def multi_usrp_tx(args):
-    """multi_usrp based TX example."""
+    """multi_usrp based TX example.
+
+    The function sets up and transmits a waveform using
+    the uhd.usrp.MultiUSRP class. It configures the USRP device, generates a
+    continuous tone waveform, streams it to the USRP and transmits it.
+    """
     usrp = uhd.usrp.MultiUSRP(args.args)
     if args.wave_freq == 0.0:
-        desired_size = 1e6  # Just pick a value
+        desired_size = 1e6  # Default size of the transmission buffer (or burst)
     else:
         desired_size = 10 * np.floor(args.rate / args.wave_freq)
 
@@ -57,12 +150,12 @@ def multi_usrp_tx(args):
                 "which is not supported on X410. Ignoring tx_delay."
             )
         else:
-            # Delay transmission start. This will will allow SW to apply all
+            # Delay transmission start. This will allow SW to apply all
             # configurations and start transmission on all channels simultaneously.
-            # If tx_delay is to small, tx_start_time may be in the past by the time
+            # If tx_delay is too small, tx_start_time may be in the past by the time
             # all configurations are applied and late command errors being reported.
             tx_start_time = usrp.get_time_now() + args.tx_delay
-
+    print("Generating waveform...")
     data = uhd.dsp.signals.get_continuous_tone(
         args.rate,
         args.wave_freq,
@@ -71,13 +164,23 @@ def multi_usrp_tx(args):
         max_size=(args.duration * args.rate),
         waveform=args.waveform,
     )
+    print(
+        f"Starting to stream waveform at the rate of {args.rate} samples/sec for the duration of {args.duration} seconds..."
+    )
     usrp.send_waveform(
         data, args.duration, args.freq, args.rate, args.channels, args.gain, tx_start_time
     )
+    print("Transmission complete.")
 
 
 def rfnoc_dram_tx(args):
-    """rfnoc_graph + replay-block based TX example."""
+    """rfnoc_graph + replay-block based TX example.
+
+    Refer Replay Block usage here <https://kb.ettus.com/Using_the_RFNoC_Replay_Block>.
+    The function uses the RFNoC (RF Network-on-Chip) framework to transmit waveforms
+    via DRAM. It initializes a graph, configures radio channels, sets rates and
+    frequencies, uploads waveform data to DRAM, and starts streaming.
+    """
     # Init graph
     graph = uhd.rfnoc.RfnocGraph(args.args)
     if graph.get_num_mboards() > 1:
@@ -106,8 +209,9 @@ def rfnoc_dram_tx(args):
 
     is_x410 = graph.get_mb_controller().get_mboard_name() == "x410"
     if not is_x410 and len(dram.radio_chan_pairs) > 1:
-        # Use timed tuning for more than one channel on all devices except X410
-        # X410 does not support timed tuning correct yet.
+        # Use timed tuning for more than one channel to produce consistent
+        # phase offsets between channels. This is supported on all devices
+        # except X410, which does not support timed tuning correctly yet.
         cmd_time_offset = 0.1
         cmd_time = dram.radio_chan_pairs[0][0].get_time_now() + cmd_time_offset
         for radio, radio_chan in dram.radio_chan_pairs:
@@ -139,8 +243,8 @@ def rfnoc_dram_tx(args):
         and dram.replay_blocks[0].get_mem_size() / 4 < args.duration * args.rate
     ):
         if len(data) < args.duration * args.rate:
-            # If we are using this API, we need to upload the entire waveform,
-            # we can't make use of looping over the same memory region over and
+            # If we are using this API, then we need to upload the entire waveform.
+            # We can't make use of looping over the same memory region over and
             # over again.
             data = np.tile(data, int(args.duration * args.rate // len(data)) + 1)
             data = data[: args.duration * args.rate]
@@ -149,7 +253,7 @@ def rfnoc_dram_tx(args):
         # DramTransmitter class.
         print(
             f"Uploading waveform data ({data.nbytes/(1024**2):.2f} MiB) "
-            f"and starting streaming..."
+            f"Starting to stream waveform at the rate of {args.rate} samples/sec for the duration of {args.duration} seconds..."
         )
         tx_md = uhd.types.TXMetadata()
         # do not use time spec if tx_delay is 0 or if we are using an X410
@@ -183,7 +287,9 @@ def rfnoc_dram_tx(args):
         else:
             stream_cmd.stream_now = False
             stream_cmd.time_spec = dram.radio_chan_pairs[0][0].get_time_now() + args.tx_delay
-        print("Starting streaming...")
+        print(
+            f"Starting to stream waveform at the rate of {args.rate} samples/sec for the duration of {args.duration} seconds..."
+        )
         dram.issue_stream_cmd(stream_cmd)
     if args.duration > 0:
         print("Waiting for transmission to complete...")
@@ -200,6 +306,7 @@ def rfnoc_dram_tx(args):
                 async_md = None
         if not async_md:
             print("ERROR: Unable to receive ACK after burst!")
+        print("Transmission complete.")
     else:
         print("Transmitting (Hit Ctrl-C to stop)...")
         try:
@@ -214,7 +321,7 @@ def rfnoc_dram_tx(args):
 
 
 def main():
-    """TX samples based on input arguments."""
+    """Transmit samples based on the input arguments."""
     args = parse_args()
     if not isinstance(args.channels, list):
         args.channels = [args.channels]
