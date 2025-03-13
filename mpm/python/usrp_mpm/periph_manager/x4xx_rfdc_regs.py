@@ -13,6 +13,9 @@ from usrp_mpm.chips.ic_reg_maps.x4xx_rfdc_regmap import x4xx_rfdc_regmap_t
 from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.periph_manager.x4xx_clock_lookup import MMCM_LOCKGROUP_LOOKUP, MMCM_FILTERGROUP_LOOKUP
 
+# Number of ADCs and DACs in the RFDC.
+NUM_CONVERTERS = 16
+
 class RfdcRegsControl:
     """
     Control the FPGA RFDC registers external to the XRFdc API
@@ -44,8 +47,8 @@ class RfdcRegsControl:
         self._update_reg('CAL_ENABLE_DB0_CHAN0')
         self._update_reg('FABRIC_DSP_INFO_BW')
         self._update_reg('RFDC_INFO_DB0_XTRA_RESAMP')
-        self._update_reg('ADC_TILEMAP_DB0_CHAN0_TILE')
-        self._update_reg('DAC_TILEMAP_DB0_CHAN0_TILE')
+        for conv in range(NUM_CONVERTERS):
+            self._update_reg("RFDC_INFO_BLOCK_MODE", conv)
         self._regs.save_state()
         # From now on, we can use _commit() to write registers instead of going
         # through peek/poke.
@@ -95,23 +98,31 @@ class RfdcRegsControl:
         This means there are 2 dboards. On the first dboard, we have 2 channels,
         and channel 0 uses tile 0, block 1.
         """
+        # define helper function to extract content from device memory
+        def get_tuple(db, channel, is_adc):
+            for i in range(NUM_CONVERTERS):
+                if (
+                    (
+                        self._regs.RFDC_INFO_BLOCK_MODE[i]
+                        == self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_ENABLED
+                    )
+                    and (self._regs.RFDC_INFO_DB[i] == db)
+                    and (self._regs.RFDC_INFO_CHANNEL[i] == channel)
+                    and (self._regs.RFDC_INFO_IS_ADC[i] == is_adc)
+                ):
+                    return tuple((self._regs.RFDC_INFO_TILE[i], self._regs.RFDC_INFO_BLOCK[i]))
+            else:
+                raise ValueError(f"Could not find mapping for {db}, {channel}, {is_adc}")
+
         adc_mapping = tuple(
             tuple(
-                tuple((
-                    getattr(self._regs, f'ADC_TILEMAP_DB{db}_CHAN{chan}_TILE'),
-                    getattr(self._regs, f'ADC_TILEMAP_DB{db}_CHAN{chan}_BLOCK'),
-                ))
-                for chan in range(num_channels)
+                get_tuple(db, chan, True) for chan in range(num_channels)
             )
             for db, num_channels in enumerate(self.get_num_rx_channels())
         )
         dac_mapping = tuple(
             tuple(
-                tuple((
-                    getattr(self._regs, f'DAC_TILEMAP_DB{db}_CHAN{chan}_TILE'),
-                    getattr(self._regs, f'DAC_TILEMAP_DB{db}_CHAN{chan}_BLOCK'),
-                ))
-                for chan in range(num_channels)
+                get_tuple(db, chan, False) for chan in range(num_channels)
             )
             for db, num_channels in enumerate(self.get_num_tx_channels())
         )
@@ -212,7 +223,7 @@ class RfdcRegsControl:
         self._poke(
             self._regs.get_addr("MMCM_LOAD_SEN"),
             self._regs.get_reg(self._regs.get_addr("MMCM_LOAD_SEN")))
-            
+
         self.log.trace('MMCM Configuration applied, now waiting for MMCM to lock...')
         self.wait_for_mmcm_drp_done()
         self.clear_data_clk_unlocked()
@@ -597,10 +608,10 @@ class RfdcRegsControl:
             self._poke(addr, self._regs.get_reg(addr))
         self._regs.save_state()
 
-    def _update_reg(self, reg_name):
+    def _update_reg(self, reg_name, idx=0):
         """
         Update the saved state of a register from the hardware
         """
         addr = self._regs.get_addr(reg_name)
-        reg_val = self._peek(addr)
-        self._regs.set_reg(addr, reg_val)
+        reg_val = self._peek(addr + 4 * idx)
+        self._regs.set_reg(addr + 4 * idx, reg_val)

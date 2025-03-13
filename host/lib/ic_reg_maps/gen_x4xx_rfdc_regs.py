@@ -196,44 +196,21 @@ RF_PLL_ENABLE_RF1_CLK          0x16000[20]          0           enable, disable
 RF_PLL_ENABLE_RF1_CLK_x2       0x16000[24]          0           enable, disable
 CLEAR_DATA_CLK_UNLOCKED        0x16000[16]          0           enable, disable
 MMCM_LOCKED                    0x16008[20]          ro
-ADC_TILEMAP_DB0_CHAN0_TILE     0x17000[0:1]         ro
-ADC_TILEMAP_DB0_CHAN0_BLOCK    0x17000[2:3]         ro
-ADC_TILEMAP_DB0_CHAN1_TILE     0x17000[4:5]         ro
-ADC_TILEMAP_DB0_CHAN1_BLOCK    0x17000[6:7]         ro
-ADC_TILEMAP_DB0_CHAN2_TILE     0x17000[8:9]         ro
-ADC_TILEMAP_DB0_CHAN2_BLOCK    0x17000[10:11]       ro
-ADC_TILEMAP_DB0_CHAN3_TILE     0x17000[12:13]       ro
-ADC_TILEMAP_DB0_CHAN3_BLOCK    0x17000[14:15]       ro
-ADC_TILEMAP_DB1_CHAN0_TILE     0x17000[16:17]       ro
-ADC_TILEMAP_DB1_CHAN0_BLOCK    0x17000[18:19]       ro
-ADC_TILEMAP_DB1_CHAN1_TILE     0x17000[20:21]       ro
-ADC_TILEMAP_DB1_CHAN1_BLOCK    0x17000[22:23]       ro
-ADC_TILEMAP_DB1_CHAN2_TILE     0x17000[24:25]       ro
-ADC_TILEMAP_DB1_CHAN2_BLOCK    0x17000[26:27]       ro
-ADC_TILEMAP_DB1_CHAN3_TILE     0x17000[28:29]       ro
-ADC_TILEMAP_DB1_CHAN3_BLOCK    0x17000[30:31]       ro
-DAC_TILEMAP_DB0_CHAN0_TILE     0x17008[0:1]         ro
-DAC_TILEMAP_DB0_CHAN0_BLOCK    0x17008[2:3]         ro
-DAC_TILEMAP_DB0_CHAN1_TILE     0x17008[4:5]         ro
-DAC_TILEMAP_DB0_CHAN1_BLOCK    0x17008[6:7]         ro
-DAC_TILEMAP_DB0_CHAN2_TILE     0x17008[8:9]         ro
-DAC_TILEMAP_DB0_CHAN2_BLOCK    0x17008[10:11]       ro
-DAC_TILEMAP_DB0_CHAN3_TILE     0x17008[12:13]       ro
-DAC_TILEMAP_DB0_CHAN3_BLOCK    0x17008[14:15]       ro
-DAC_TILEMAP_DB1_CHAN0_TILE     0x17008[16:17]       ro
-DAC_TILEMAP_DB1_CHAN0_BLOCK    0x17008[18:19]       ro
-DAC_TILEMAP_DB1_CHAN1_TILE     0x17008[20:21]       ro
-DAC_TILEMAP_DB1_CHAN1_BLOCK    0x17008[22:23]       ro
-DAC_TILEMAP_DB1_CHAN2_TILE     0x17008[24:25]       ro
-DAC_TILEMAP_DB1_CHAN2_BLOCK    0x17008[26:27]       ro
-DAC_TILEMAP_DB1_CHAN3_TILE     0x17008[28:29]       ro
-DAC_TILEMAP_DB1_CHAN3_BLOCK    0x17008[30:31]       ro
 RFDC_INFO_DB0_XTRA_RESAMP      0x18000[0:3]         ro
 RFDC_INFO_DB0_SPC_RX           0x18000[4:6]         ro
 RFDC_INFO_DB0_SPC_TX           0x18000[7:9]         ro
 RFDC_INFO_DB1_XTRA_RESAMP      0x18000[16:19]       ro
 RFDC_INFO_DB1_SPC_RX           0x18000[20:22]       ro
 RFDC_INFO_DB1_SPC_TX           0x18000[23:25]       ro
+########################################################################
+## RFDC information
+########################################################################
+RFDC_INFO_BLOCK_MODE[16]       0x17000[0:1]         0   ENABLED, RESERVED1, RESERVED2, DISABLED
+RFDC_INFO_BLOCK[16]            0x17000[2:3]         0
+RFDC_INFO_TILE[16]             0x17000[4:5]         0
+RFDC_INFO_CHANNEL[16]          0x17000[8:9]         0
+RFDC_INFO_DB[16]               0x17000[10]          0
+RFDC_INFO_IS_ADC[16]           0x17000[11]          0
 """
 
 ########################################################################
@@ -281,7 +258,7 @@ def set_reg(self, addr, reg):
     # Now the arrays
     % for addr in sorted(set([r.get_addr() for r in regs if r.is_array])):
     <% if_state = 'if' if loop.index == 0 else 'elif' %> \
-    <% reglist = [r for r in regs if r.get_addr() == addr] %> 
+    <% reglist = [r for r in regs if r.get_addr() == addr] %>
     ${if_state} ${addr} <= addr < ${addr} + ${reglist[0].get_array_len()} * 4:
         index = (addr - ${addr}) // 4
         % for reg in reglist:
