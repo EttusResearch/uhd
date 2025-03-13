@@ -8,6 +8,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/features/discoverable_feature.hpp>
+#include <cstdint>
 #include <memory>
 
 namespace uhd { namespace features {
