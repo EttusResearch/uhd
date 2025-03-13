@@ -71,6 +71,9 @@
 //  </group>
 //</regmap>
 //<regmap name="PL_DMA_MASTER_REGMAP" readablestrobes="false" generatevhdl="true" generateverilog="false" ettusguidelines="true">
+//  <conflicts>
+//    <conflict>AXI_HPC0_WINDOW AXI_HPC1_WINDOW</conflict>
+//  </conflicts>
 //  <info>
 //    This is a regmap to document the different ports that have access to the PS system memory.
 //    Each port may have different restrictions on system memory. See the corresponding window
