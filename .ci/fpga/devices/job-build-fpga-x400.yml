@@ -144,16 +144,6 @@ parameters:
       artifact_name: X440_X4_400
       timeout: 720
       max_attempts: 2
-# Requested X410 targets
-- name: x410_requests_matrix
-  type: object
-  displayName: X410 Targets
-  default: []
-# Requested X440 target
-- name: x440_requests_matrix
-  type: object
-  displayName: X440 Targets
-  default: []
 
 stages:
 

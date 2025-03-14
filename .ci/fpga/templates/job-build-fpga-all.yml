@@ -53,8 +53,10 @@ stages:
     publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    x410_requests_matrix: ${{ parameters.x410_targets_matrix }}
-    x440_requests_matrix: ${{ parameters.x440_targets_matrix }}
+    x410_full_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x410_reduced_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_full_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    x440_reduced_targets_matrix: ${{ parameters.x440_targets_matrix }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 ### END: X400 stages
