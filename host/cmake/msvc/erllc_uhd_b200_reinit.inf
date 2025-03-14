@@ -1,39 +1,34 @@
 ; USRP_B200.inf
 ; Copyright (c) 2010 libusb (GNU LGPL)
 [Strings]
-DeviceName = "USRP B200 - Reinitialization"
 VendorName = "Cypress Semiconductor Corp."
 SourceName = "USRP B200 Install Disk"
+ProviderName = "Ettus Research"
 VendorID   = "VID_04B4"
-ProductID  = "PID_00F0"
+dev0_DeviceName = "USRP B200 - Reinitialization"
+dev1_DeviceName = "Cypress FX3"
+dev0_DeviceID  = "PID_00F0"
+dev1_DeviceID  = "PID_00F3"
 DeviceGUID = "{2E9CF8FE-046C-4318-B05A-928F69AFBD32}"
 
 [Version]
 Signature   = "$Windows NT$"
-Class       = %ClassName%
+Class       = "USBDevice"
 ClassGuid   = {88bae032-5a81-49f0-bc3d-a4ff138216d6}
 Provider    = %ProviderName%
 CatalogFile = erllc_uhd.cat
-DriverVer   = 07/13/2009, 6.1.7600.16385
-
-[ClassInstall32]
-Addreg = WinUSBDeviceClassReg
-
-[WinUSBDeviceClassReg]
-HKR,,,0,"Universal Serial Bus devices"
-HKR,,Icon,,-20
+DriverVer   = 03/31/2025, 6.1.7600.16385
 
 [Manufacturer]
-%VendorName% = libusbDevice_WinUSB,NTx86,NTamd64,NTia64
+%VendorName% = libusbDevice_WinUSB,NTx86,NTamd64
 
 [libusbDevice_WinUSB.NTx86]
-%DeviceName% = USB_Install, USB\%DeviceID%
+%dev0_DeviceName% = USB_Install, USB\%VendorID%&%dev0_DeviceID%
+%dev1_DeviceName% = USB_Install, USB\%VendorID%&%dev1_DeviceID%
 
 [libusbDevice_WinUSB.NTamd64]
-%DeviceName% = USB_Install, USB\%DeviceID%
-
-[libusbDevice_WinUSB.NTia64]
-%DeviceName% = USB_Install, USB\%DeviceID%
+%dev0_DeviceName% = USB_Install, USB\%VendorID%&%dev0_DeviceID%
+%dev1_DeviceName% = USB_Install, USB\%VendorID%&%dev1_DeviceID%
 
 [USB_Install]
 Include = winusb.inf
@@ -41,14 +36,7 @@ Needs   = WINUSB.NT
 
 [USB_Install.Services]
 Include    = winusb.inf
-AddService = WinUSB,0x00000002,WinUSB_ServiceInstall
-
-[WinUSB_ServiceInstall]
-DisplayName   = "WinUSB - Kernel Driver 07/13/2009 6.1.7600.16385"
-ServiceType   = 1
-StartType     = 3
-ErrorControl  = 1
-ServiceBinary = %12%\WinUSB.sys
+Needs=WINUSB.NT.Services
 
 [USB_Install.Wdf]
 KmdfService = WINUSB, WinUsb_Install
@@ -64,33 +52,3 @@ AddReg = AddDeviceInterfaceGUID
 
 [AddDeviceInterfaceGUID]
 HKR,,DeviceInterfaceGUIDs,0x10000,%DeviceGUID%
-
-[USB_Install.CoInstallers]
-AddReg    = CoInstallers_AddReg
-CopyFiles = CoInstallers_CopyFiles
-
-[CoInstallers_AddReg]
-HKR,,CoInstallers32,0x00010000,"WdfCoInstaller01009.dll,WdfCoInstaller","WinUSBCoInstaller2.dll"
-
-[CoInstallers_CopyFiles]
-WinUSBCoInstaller2.dll
-WdfCoInstaller01009.dll
-
-[DestinationDirs]
-CoInstallers_CopyFiles = 11
-
-[SourceDisksNames]
-1 = %SourceName%
-
-[SourceDisksFiles.x86]
-WinUSBCoInstaller2.dll  = 1,x86
-WdfCoInstaller01009.dll = 1,x86
-
-[SourceDisksFiles.amd64]
-WinUSBCoInstaller2.dll  = 1,amd64
-WdfCoInstaller01009.dll = 1,amd64
-
-[SourceDisksFiles.ia64]
-WinUSBCoInstaller2.dll  = 1,ia64
-WdfCoInstaller01009.dll = 1,ia64
-

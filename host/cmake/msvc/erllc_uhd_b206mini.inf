@@ -32,11 +32,10 @@
 ; ========= START USER CONFIGURABLE SECTION ===========
 ; =====================================================
 
-DeviceName = "Ettus Research LLC B200mini"
-; Make sure "VID_" and "PID_" are always part of the strings below
+DeviceName = "Ettus Research B206mini"
 VendorID = "VID_2500"
-ProductID = "PID_0021"
-DeviceGUID = "{6960fcb7-8440-4271-a4e3-fef0cb9d01f7}"
+ProductID = "PID_0023"
+DeviceGUID = "{34ef3f9c-1d8e-4b08-9767-833220981ac2}"
 DeviceClassGUID = "{69B50283-8B4F-40BF-AE63-0F2609E68DE1}"
 ; Date MUST be in MM/DD/YYYY format
 Date = "04/08/2025"
