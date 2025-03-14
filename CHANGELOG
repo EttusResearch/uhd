@@ -17,6 +17,10 @@ Change Log for Releases
 * Bug Fixes
   - Calling `recv()` on an RX streamer connected to an RFNoC device with a
     zero timeout value now correctly returns immediately.
+* Removals / Deprecations
+  - Removed tools/uhd_dump. This tool is obsolete, the USRP X3x0 is not even
+    compatible with it any more. Dumps can be recorded and analyzed with wireshark
+    and the UHD dissectors in here.
 
 
 ## 004.008.000.000
