@@ -11,6 +11,8 @@
 #
 
 quietly set BreakOnAssertion 2
+quietly set StdArithNoWarnings 1
+quietly set NumericStdNoWarnings 1
 quietly set SIM_ERROR 0
 onbreak {
     quietly set FINISH [lindex [runStatus -full] 2]
