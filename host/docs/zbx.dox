@@ -142,10 +142,12 @@ sensors. Unlike the (analog) synthesizers on the daughterboard, the NCO "unlock"
 is not used to signify a loss of reference lock, but to signal that the NCO is
 still in reset.
 
-Additionally, the ZBX has a temperature sensor: `temperature`. While the UHD
-API allows addressing a sensor based on direction (RX/TX) and channel (0/1),
-there is only one physical temperature sensor, and it will return the same value
-regardless of which channel or direction is selected.
+Additionally, the ZBX has a temperature sensor: `temperature` which returns 
+the mean value of the top and bottom temperature sensor. Top and bottom sensors
+can be accessed with `temperature_top` and `temperature_bottom`. While the UHD 
+API allows addressing a sensor based on direction (RX/TX) and channel (0/1), 
+the returned value will be the same regardless of which channel or direction
+is selected.
 
 The following API calls can be used to enumerate available sensors, and query
 their values:

@@ -30,11 +30,15 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     #########################################################################
     pids = [0x4002]
     rx_sensor_callback_map = {
-        'temperature': 'get_rf_temp_sensor',
+        'temperature': 'get_rf_temp_sensor_average',
+        'temperature_top': 'get_rf_temp_sensor_top',
+        'temperature_bottom': 'get_rf_temp_sensor_bottom',
         'rfdc_rate': 'get_rfdc_rate_sensor',
     }
     tx_sensor_callback_map = {
-        'temperature': 'get_rf_temp_sensor',
+        'temperature': 'get_rf_temp_sensor_average',
+        'temperature_top': 'get_rf_temp_sensor_top',
+        'temperature_bottom': 'get_rf_temp_sensor_bottom',
         'rfdc_rate': 'get_rfdc_rate_sensor',
     }
     has_db_flash = True
@@ -395,11 +399,31 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     ###########################################################################
     # Sensors
     ###########################################################################
-    def get_rf_temp_sensor(self, _):
+    def get_rf_temp_sensor_top(self, _):
         """
-        Return the RF temperature sensor value
+        Return the RF temperature sensor value of the top side of the PCB
         """
-        self.log.trace("Reading RF daughterboard temperature.")
+        self.log.trace("Reading RF daughterboard top temperature.")
+        sensor_names = [
+            f"TMP112 DB{self.slot_idx} Top",
+        ]
+        return get_temp_sensor(sensor_names, log=self.log)
+
+    def get_rf_temp_sensor_bottom(self, _):
+        """
+        Return the RF temperature sensor value of the bottom side of the PCB
+        """
+        self.log.trace("Reading RF daughterboard bottom temperature.")
+        sensor_names = [
+            f"TMP112 DB{self.slot_idx} Bottom",
+        ]
+        return get_temp_sensor(sensor_names, log=self.log)
+    
+    def get_rf_temp_sensor_average(self, _):
+        """
+        Return the RF temperature sensor value of the average of the top and bottom side of the PCB
+        """
+        self.log.trace("Reading RF daughterboard average temperature.")
         sensor_names = [
             f"TMP112 DB{self.slot_idx} Top",
             f"TMP112 DB{self.slot_idx} Bottom",
