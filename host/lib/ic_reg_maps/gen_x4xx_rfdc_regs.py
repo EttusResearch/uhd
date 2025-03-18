@@ -133,7 +133,9 @@ IQ_SWAP_DAC_DB1_CHAN3       0x10800[11]             0           disable, enable
 ## MMCM reset is active low
 MMCM_RESET                  0x11000[0]              0           enable, disable
 RFDC_DB0_ADC_RESET          0x12000[4]              0           disable, enable
+RFDC_ADC_GEARBOX_RESET      0x12000[6]              0
 RFDC_DB0_DAC_RESET          0x12000[8]              0           disable, enable
+RFDC_DAC_GEARBOX_RESET      0x12000[10]              0
 RFDC_DB0_ADC_RESET_DONE     0x12008[7]              ro
 RFDC_DB0_DAC_RESET_DONE     0x12008[11]             ro
 RFDC_DB1_ADC_RESET          0x12800[4]              0           disable, enable

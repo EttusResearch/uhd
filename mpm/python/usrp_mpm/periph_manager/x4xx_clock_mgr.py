@@ -726,7 +726,7 @@ class X4xxClockManager:
         # Configure PPS forwarding to timekeepers. The requirement is that this
         # be called after sync_spll_clocks() was called.
         for tk_idx, mcr in enumerate(master_clock_rates):
-            self.clk_ctrl.configure_pps_forwarding(tk_idx, True, 
+            self.clk_ctrl.configure_pps_forwarding(tk_idx, True,
                                                    self.clk_policy.get_radio_clock_rate(mcr))
 
     @no_rpc
@@ -1170,6 +1170,8 @@ class X4xxClockManager:
             return determine_sync_settings()
         if not finalize_sync_settings(sync_args):
             self.log.error("Failed to apply synchronization settings!")
+        # align the ADC and DAC chains to have a static latency after synchronization
+        self.rfdc.reset_gearboxes()
         return {}
 
     def aggregate_sync_data(self, collated_sync_data):

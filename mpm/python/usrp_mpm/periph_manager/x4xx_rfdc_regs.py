@@ -593,6 +593,15 @@ class RfdcRegsControl:
         # pylint: enable=f-string-without-interpolation
         # pylint: enable=invalid-name
 
+    def reset_gearboxes(self):
+        """ Resets the ADC and DAC gearboxes. """
+        self._regs.RFDC_ADC_GEARBOX_RESET = 1
+        self._regs.RFDC_DAC_GEARBOX_RESET = 1
+        self._commit()
+        self._regs.RFDC_ADC_GEARBOX_RESET = 0
+        self._regs.RFDC_DAC_GEARBOX_RESET = 0
+        self._commit()
+
     ###########################################################################
     # Internal helpers
     ###########################################################################
