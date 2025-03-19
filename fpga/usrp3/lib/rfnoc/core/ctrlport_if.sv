@@ -12,7 +12,7 @@
 
 interface ctrlport_if (
   input logic clk,
-  input logic rst = 1'b0
+  input logic rst
 );
 
   import ctrlport_pkg::*;
