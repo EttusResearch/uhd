@@ -280,15 +280,10 @@ jobs:
       fi
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
-      if [ -z "$(sfp0ip)" ]; then
-        addr=$USRP_EMB_TARGET_IP
-      else
-        addr=$(sfp0ip)
-      fi
       if [ -z "$(master_clock_rate)" ]; then
-        args="addr=$addr,type=$(dutType)"
+        args="addr=$(sfp0ip),type=$(dutType)"
       else
-        args="addr=$addr,type=$(dutType),master_clock_rate=$(master_clock_rate)"
+        args="addr=$(sfp0ip),type=$(dutType),master_clock_rate=$(master_clock_rate)"
       fi
       echo $args
       uhd_usrp_probe --args $args

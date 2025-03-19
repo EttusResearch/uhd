@@ -32,4 +32,4 @@ jobs:
         pipelineAgent: sdr-test0-1
         pytestAtsConfig: sdr_test0_ats
         pytestDUT: 'x440'
-        sfp0ip: ''
+        sfp0ip: $(x440_dutAddr)

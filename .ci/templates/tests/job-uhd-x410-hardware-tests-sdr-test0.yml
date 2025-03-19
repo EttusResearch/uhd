@@ -31,4 +31,4 @@ jobs:
         pipelineAgent: sdr-test0-0
         pytestAtsConfig: sdr_test0_ats
         pytestDUT: 'x410'
-        sfp0ip: '192.168.10.62'
+        sfp0ip: $(x410_dutAddr)
