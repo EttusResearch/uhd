@@ -41,27 +41,47 @@ variables:
   type: block
   type_d: blocks
   blockname: "${ args.blockname }"
-  descriptor: "${ args.yaml_descriptor if args.yaml_descriptor else 'rfnoc/' + type_d + '/' + args.blockname + '.yml' }"
+  descriptor: "${ args.yaml_descriptor }"
   blockname_full: "${ f'rfnoc_{type}_{blockname}' }"
   copyright_holder: "${ args.copyright_holder }"
   license: "${ args.license }"
   skip_testbench: "${ args.skip_testbench }"
 
 
-# Steps:
-# - Create controller C++
-# - Create Python bindings
-
-
 # This tells us that templates come from the blocktool/ subdirectory
 template_namespace: blocktool
 
 steps:
+  - find_file:
+      dst_var: descriptor
+      glob: "${ '' if descriptor else os.path.join('rfnoc', type_d, blockname + '.y*l') }"
+      file: "${ descriptor }"
+  - run_if:
+      condition: "${ bool(descriptor) }"
+      steps:
+      - log:
+          msg: "Using block descriptor file: ${ descriptor }"
+  - run_if:
+      condition: "${ not bool(descriptor) }"
+      steps:
+      - exit:
+          msg: "Aborting: No descriptor file found."
+  - log:
+      msg: "Parsing block descriptor file ${ descriptor }..."
+      symbol: ⚙️
   - parse_descriptor:
       source: "${ descriptor }"
-  # RFNoC block gateware
   - log:
-      msg: "Adding gateware templates to fpga/${ MODULE_NAME }/${ blockname_full }..."
+      msg: "Parsed block descriptor file ${ descriptor }."
+  # RFNoC block gateware
+  - run_if:
+      condition: "${ os.path.exists(os.path.join('fpga', MODULE_NAME, blockname_full)) }"
+      steps:
+      - log:
+          level: error
+          msg: "Block ${ blockname } already exists in module ${ MODULE_NAME }."
+      - exit:
+          msg: "Aborting."
   - write_template:
       template: noc_shell_template.sv.mako
       dest: "fpga/${ MODULE_NAME }/${ blockname_full }/noc_shell_${ blockname }.sv"
@@ -77,27 +97,27 @@ steps:
   - append:
       file: "fpga/${ MODULE_NAME }/CMakeLists.txt"
       text: "add_subdirectory(${ blockname_full })\n"
+  - log:
+      msg: "Added gateware templates to fpga/${ MODULE_NAME }/${ blockname_full }."
   # RFNoC block testbench
   - run_if:
       condition: "${ not args.skip_testbench }"
       steps:
-      - log:
-          msg: "Adding testbench templates..."
       - write_template:
           template: rfnoc_block_template_tb.sv.mako
           dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }_tb.sv"
       - write_template:
           template: Makefile.mako
           dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile"
+      - log:
+          msg: "Added testbench templates."
   - run_if:
       condition: "${ args.skip_testbench }"
       steps:
       - log:
           msg: "Skipping testbench templates as requested."
-          symbol: "❎"
+          symbol: ❎
   # RFNoC block C++ controller
-  - log:
-      msg: "Adding C++ block controller templates..."
   - write_template:
       template: template_block_control.hpp.mako
       dest: "include/rfnoc/${ MODULE_NAME }/${ blockname }_block_control.hpp"
@@ -112,9 +132,9 @@ steps:
       file: "lib/CMakeLists.txt"
       pattern: "APPEND *rfnoc_${ MODULE_NAME }_sources"
       text: "\n    ${ blockname }_block_control.cpp"
-  # RFNoC block Python bindings
   - log:
-      msg: "Adding Python binding templates..."
+      msg: "Added C++ block controller templates."
+  # RFNoC block Python bindings
   - write_template:
       template: template_block_control_python.hpp.mako
       dest: "python/${ blockname }_block_control_python.hpp"
@@ -126,5 +146,7 @@ steps:
       file: "python/pyrfnoc-${ MODULE_NAME }.cpp"
       pattern: "\nPYBIND11_MODULE"
       text: '#include "${ blockname }_block_control_python.hpp"\n'
+  - log:
+      msg: "Added Python binding templates."
   - log:
       msg: "Done: Added block ${ blockname } to module ${ MODULE_NAME }."
