@@ -626,7 +626,7 @@ class PeriphManagerBase:
         """
         if override_dboard_pids:
             self.log.warning("Overriding daughterboard PIDs with: {}"
-                             .format(",".join(override_dboard_pids)))
+                             .format(",".join(str(x) for x in override_dboard_pids)))
         assert len(dboard_infos) <= self.max_num_dboards
         if override_dboard_pids and \
                 len(override_dboard_pids) < len(dboard_infos):
