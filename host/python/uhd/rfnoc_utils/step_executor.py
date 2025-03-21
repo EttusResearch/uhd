@@ -35,7 +35,7 @@ def get_file_list(**kwargs):
     - If "file" is present, use it as a single filename.
     """
     file_list = []
-    if "glob" in kwargs:
+    if "glob" in kwargs and kwargs["glob"]:
         glob_pattern = kwargs["glob"]
         # FIXME: Maybe the user wants to glob somewhere else
         glob_pattern = os.path.join(os.getcwd(), glob_pattern)
@@ -45,13 +45,17 @@ def get_file_list(**kwargs):
             if Path(f).is_file()
         ]
     file_list += kwargs.get("files", [])
-    if "file" in kwargs:
+    if "file" in kwargs and kwargs["file"]:
         file_list.append(kwargs["file"])
-    return file_list
+    # Only return unique files that exist
+    return [f for f in set(file_list) if os.path.exists(f) and os.path.isfile(f)]
 
 
 class StepExecutor:
     """Main engine for executing steps in a command script."""
+
+    class StepError(Exception):
+        """Exception raised when a step fails."""
 
     def __init__(self, global_vars, args, cmd):
         """Initialize the executor."""
@@ -63,13 +67,38 @@ class StepExecutor:
 
     def _resolve(self, value):
         """Shorthand for resolving a value."""
-        return resolve(value, args=self.args, **self.global_vars, **self.cmd.get("variables", {}))
+        return resolve(
+            value, args=self.args, **self.global_vars, **self.cmd.get("variables", {}), os=os
+        )
 
     def run(self, steps):
         """Run all the steps in the command."""
         for step in steps:
             for step_type, step_args in step.items():
-                getattr(self, step_type)(**{k: self._resolve(v) for k, v in step_args.items()})
+                args_resolved = {}
+                for k, v in step_args.items():
+                    try:
+                        args_resolved[k] = self._resolve(v)
+                    except Exception as e:
+                        raise StepExecutor.StepError(
+                            f"Error resolving argument {k}={v} for step {step_type}: {str(e)}"
+                        )
+                args_resolved_visual = args_resolved.copy()
+                if "steps" in args_resolved_visual:
+                    args_resolved_visual["steps"] = str(len(args_resolved_visual["steps"]))
+                self._log.debug(
+                    "Executing step %s(%s)",
+                    step_type,
+                    ", ".join([f"{k}={v}" for k, v in args_resolved_visual.items()]),
+                )
+                try:
+                    getattr(self, step_type)(**{k: self._resolve(v) for k, v in step_args.items()})
+                except StepExecutor.StepError as e:
+                    self._log.error(str(e))
+                    sys.exit(1)
+                except Exception as e:
+                    self._log.error("Unexpected error running step %s: %s", step_type, str(e))
+                    sys.exit(1)
 
     def run_if(self, condition, steps):
         """Run a block of steps if a condition is true."""
@@ -147,10 +176,17 @@ class StepExecutor:
 
     def parse_descriptor(self, source, var="config", **kwargs):
         """Load a block descriptor file."""
+        if not source:
+            raise StepExecutor.StepError("Cannot parse: No descriptor file specified.")
         yaml = YAML(typ="safe", pure=True)
         self._log.debug("Loading descriptor file %s into variable %s", source, var)
-        with open(source, "r", encoding="utf-8") as f:
-            self.global_vars[var] = yaml.load(f)
+        try:
+            with open(source, "r", encoding="utf-8") as f:
+                self.global_vars[var] = yaml.load(f)
+        except FileNotFoundError:
+            raise StepExecutor.StepError(f"Descriptor file {source} not found.")
+        except Exception as e:
+            raise StepExecutor.StepError(f"Error loading descriptor file {source}: {str(e)}")
 
     def write_template(self, template, dest, **kwargs):
         """Write a template file."""
@@ -169,11 +205,13 @@ class StepExecutor:
         else:
             vars["year"] = datetime.datetime.now().year
         self._log.debug("Writing template %s to %s", template, dest)
+        if os.path.exists(dest):
+            self._log.warning("Overwriting existing file %s", dest)
         with open(dest, "w", encoding="utf-8") as f:
             f.write(tpl.render(**self.global_vars, **vars))
 
-    def insert_after(self, pattern, text, **kwargs):
-        """Insert text after a pattern in a file."""
+    def _insert_text(self, pattern, text, repl, **kwargs):
+        """Insert text into a file based on a regex."""
         file_list = get_file_list(**kwargs)
         for file in file_list:
             self._log.debug("Editing file %s (inserting `%s')", file, text.strip())
@@ -181,28 +219,20 @@ class StepExecutor:
                 contents = f.read()
             count = kwargs.get("count", 1)
             contents, sub_count = re.subn(
-                pattern, r"\g<0>" + text, contents, count=count, flags=re.MULTILINE | re.DOTALL
+                pattern, repl, contents, count=count, flags=re.MULTILINE | re.DOTALL
             )
             if sub_count == 0:
                 self._log.warning("Pattern not found in file %s", file)
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
+    def insert_after(self, pattern, text, **kwargs):
+        """Insert text after a pattern in a file."""
+        self._insert_text(pattern, text, r"\g<0>" + text, **kwargs)
+
     def insert_before(self, pattern, text, **kwargs):
         """Insert text after a pattern in a file."""
-        file_list = get_file_list(**kwargs)
-        for file in file_list:
-            self._log.debug("Editing file %s (inserting `%s')", file, text.strip())
-            with open(file, "r", encoding="utf-8") as f:
-                contents = f.read()
-            count = kwargs.get("count", 1)
-            contents, sub_count = re.subn(
-                pattern, text + r"\g<0>", contents, count=count, flags=re.MULTILINE | re.DOTALL
-            )
-            if sub_count == 0:
-                self._log.warning("Pattern not found in file %s", file)
-            with open(file, "w", encoding="utf-8") as f:
-                f.write(contents)
+        self._insert_text(pattern, text, text + r"\g<0>", **kwargs)
 
     def append(self, text, **kwargs):
         """Append text to a file."""
@@ -245,5 +275,21 @@ class StepExecutor:
         message = kwargs.get("msg", "")
         symbol = kwargs.get("symbol", "✅")
         if level == "info":
-            message = f"{symbol} -- {message}"
+            message = f"{symbol}   {message}"
         getattr(self._log, level)(message)
+
+    def find_file(self, **kwargs):
+        """Find files matching a pattern and store them in a variable."""
+        file_list = get_file_list(**kwargs)
+        if len(file_list) > 1:
+            raise StepExecutor.StepError(f"More than one file found matching pattern.")
+        if len(file_list) == 0:
+            self.cmd["variables"][kwargs["dst_var"]] = None
+        else:
+            self.cmd["variables"][kwargs["dst_var"]] = file_list[0]
+
+    def exit(self, **kwargs):
+        """Exit the script."""
+        if "msg" in kwargs:
+            self._log.info(kwargs["msg"])
+        sys.exit(kwargs.get("code", 1))
