@@ -59,7 +59,7 @@ class StepExecutor:
         self.args = args
         self.global_vars = global_vars
         self.template_base = os.path.join(os.path.dirname(__file__), "templates")
-        self.log = logging.getLogger(__name__)
+        self._log = logging.getLogger(__name__)
 
     def _resolve(self, value):
         """Shorthand for resolving a value."""
@@ -78,7 +78,7 @@ class StepExecutor:
 
     def copy_dir(self, src, dst, **kwargs):
         """Copy a directory from src to dest, recursively."""
-        self.log.debug("Copying directory %s to %s", src, dst)
+        self._log.debug("Copying directory %s to %s", src, dst)
         ignore = None
         if "ignore_globs" in kwargs:
 
@@ -103,7 +103,7 @@ class StepExecutor:
         """Search and replace text in a file."""
         file_list = get_file_list(**kwargs)
         for file in file_list:
-            self.log.debug(
+            self._log.debug(
                 "Editing file %s (replacing `%s' with `%s')",
                 file,
                 kwargs["pattern"],
@@ -120,7 +120,7 @@ class StepExecutor:
                 flags=re.MULTILINE | re.DOTALL,
             )
             if sub_count == 0 and not kwargs.get("quiet", False):
-                self.log.warning("Pattern not found in file %s", os.path.abspath(file))
+                self._log.warning("Pattern not found in file %s", os.path.abspath(file))
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
@@ -128,7 +128,7 @@ class StepExecutor:
         """Change the working directory."""
         os.chdir(os.path.normpath(dir))
         self.global_vars["CWD"] = os.getcwd()
-        self.log.debug("Changed working directory to %s", os.getcwd())
+        self._log.debug("Changed working directory to %s", os.getcwd())
 
     def multi_rename(self, pattern, repl, **kwargs):
         """Rename multiple files with a regex pattern."""
@@ -142,13 +142,13 @@ class StepExecutor:
             head, tail = os.path.split(path)
             new_path = os.path.join(head, re.sub(pattern, repl, tail))
             if new_path != path:
-                self.log.debug("Renaming %s to %s", path, new_path)
+                self._log.debug("Renaming %s to %s", path, new_path)
                 shutil.move(path, new_path)
 
     def parse_descriptor(self, source, var="config", **kwargs):
         """Load a block descriptor file."""
         yaml = YAML(typ="safe", pure=True)
-        self.log.debug("Loading descriptor file %s into variable %s", source, var)
+        self._log.debug("Loading descriptor file %s into variable %s", source, var)
         with open(source, "r", encoding="utf-8") as f:
             self.global_vars[var] = yaml.load(f)
 
@@ -168,7 +168,7 @@ class StepExecutor:
             pass
         else:
             vars["year"] = datetime.datetime.now().year
-        self.log.debug("Writing template %s to %s", template, dest)
+        self._log.debug("Writing template %s to %s", template, dest)
         with open(dest, "w", encoding="utf-8") as f:
             f.write(tpl.render(**self.global_vars, **vars))
 
@@ -176,7 +176,7 @@ class StepExecutor:
         """Insert text after a pattern in a file."""
         file_list = get_file_list(**kwargs)
         for file in file_list:
-            self.log.debug("Editing file %s (inserting `%s')", file, text.strip())
+            self._log.debug("Editing file %s (inserting `%s')", file, text.strip())
             with open(file, "r", encoding="utf-8") as f:
                 contents = f.read()
             count = kwargs.get("count", 1)
@@ -184,7 +184,7 @@ class StepExecutor:
                 pattern, r"\g<0>" + text, contents, count=count, flags=re.MULTILINE | re.DOTALL
             )
             if sub_count == 0:
-                self.log.warning("Pattern not found in file %s", file)
+                self._log.warning("Pattern not found in file %s", file)
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
@@ -192,7 +192,7 @@ class StepExecutor:
         """Insert text after a pattern in a file."""
         file_list = get_file_list(**kwargs)
         for file in file_list:
-            self.log.debug("Editing file %s (inserting `%s')", file, text.strip())
+            self._log.debug("Editing file %s (inserting `%s')", file, text.strip())
             with open(file, "r", encoding="utf-8") as f:
                 contents = f.read()
             count = kwargs.get("count", 1)
@@ -200,7 +200,7 @@ class StepExecutor:
                 pattern, text + r"\g<0>", contents, count=count, flags=re.MULTILINE | re.DOTALL
             )
             if sub_count == 0:
-                self.log.warning("Pattern not found in file %s", file)
+                self._log.warning("Pattern not found in file %s", file)
             with open(file, "w", encoding="utf-8") as f:
                 f.write(contents)
 
@@ -208,7 +208,7 @@ class StepExecutor:
         """Append text to a file."""
         file_list = get_file_list(**kwargs)
         for file in file_list:
-            self.log.debug("Appending to file %s", file)
+            self._log.debug("Appending to file %s", file)
             with open(file, "a", encoding="utf-8") as f:
                 f.write(text)
 
@@ -221,7 +221,7 @@ class StepExecutor:
         line_range = kwargs.get("range", [1, -1])
         file_list = get_file_list(**kwargs)
         for file in file_list:
-            self.log.debug("Commenting out lines in %s", file)
+            self._log.debug("Commenting out lines in %s", file)
             with open(file, "r", encoding="utf-8") as f:
                 contents = f.readlines()
             for line_no_minus_one, line in enumerate(contents):
@@ -235,6 +235,15 @@ class StepExecutor:
     def rmtree(self, **kwargs):
         """Remove a directory tree."""
         dir_to_remove = kwargs["dir"]
-        self.log.debug("Removing directory %s", dir_to_remove)
+        self._log.debug("Removing directory %s", dir_to_remove)
         if os.path.exists(dir_to_remove) and os.path.isdir(dir_to_remove):
             shutil.rmtree(dir_to_remove)
+
+    def log(self, **kwargs):
+        """Print a message to the log."""
+        level = kwargs.get("level", "info")
+        message = kwargs.get("msg", "")
+        symbol = kwargs.get("symbol", "✅")
+        if level == "info":
+            message = f"{symbol} -- {message}"
+        getattr(self._log, level)(message)
