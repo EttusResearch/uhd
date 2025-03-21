@@ -1,12 +1,12 @@
 # -------------------------------------------------------------------------- #
 #
 # Copyright (C) 2018  Intel Corporation. All rights reserved.
-# Your use of Intel Corporation's design tools, logic functions 
-# and other software and tools, and its AMPP partner logic 
-# functions, and any output files from any of the foregoing 
-# (including device programming or simulation files), and any 
-# associated documentation or information are expressly subject 
-# to the terms and conditions of the Intel Program License 
+# Your use of Intel Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Intel Program License
 # Subscription Agreement, the Intel Quartus Prime License Agreement,
 # the Intel FPGA IP License Agreement, or other applicable license
 # agreement, including, without limitation, that your use is for
@@ -70,6 +70,8 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 
 set_global_assignment -name NUM_PARALLEL_PROCESSORS 2
+
+set_global_assignment -name HYBRID_FLOW_NEW_EXTRACTOR ON
 
 #--------------------------------------------------------------------------
 # Pin constraints
@@ -398,7 +400,7 @@ set_global_assignment -name QSYS_FILE ../ip/on_chip_flash/on_chip_flash.qsys
 set_global_assignment -name SDC_FILE ../common/common.sdc
 set_global_assignment -name SDC_FILE ../x410/db_spi_shared_constants.sdc
 set_global_assignment -name SDC_FILE ../x410/mb_cpld.sdc
-set_global_assignment -name VERILOG_FILE ../x410/mb_cpld.v
+set_global_assignment -name VERILOG_FILE ../x410/mb_cpld.v -new_extractor
 set_global_assignment -name VERILOG_FILE ../x410/ctrlport_to_jtag.v
 set_global_assignment -name VERILOG_FILE ../common/reconfig_engine.v
 set_global_assignment -name VERILOG_FILE ../common/ctrlport_to_spi.v
@@ -412,8 +414,12 @@ set_global_assignment -name VERILOG_FILE ../common/spi_slave.v
 set_global_assignment -name QIP_FILE ../ip/pll/pll.qip
 set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer_impl.v
 set_global_assignment -name VERILOG_FILE ../../../../lib/control/synchronizer.v
-set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_splitter.v
-set_global_assignment -name VERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_terminator.v
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/core/ctrlport_if.sv -new_extractor
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/core/ctrlport_pkg.sv -new_extractor
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_if_splitter.sv -new_extractor
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_if_terminator.sv -new_extractor
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_splitter.sv -new_extractor
+set_global_assignment -name SYSTEMVERILOG_FILE ../../../../lib/rfnoc/utils/ctrlport_terminator.sv -new_extractor
 set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_top.v
 set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_shift.v
 set_global_assignment -name VERILOG_FILE ../../../../lib/wb_spi/rtl/verilog/spi_defines.v
