@@ -28,6 +28,8 @@ steps:
   - copy_dir:
       src: "${ RFNOC_PKG_DIR }/rfnoc-newmod"
       dst: "${ CWD }/${ module_name_full }"
+  - log:
+      msg: "Created new module template at location ${ CWD }/${ module_name_full }..."
   - chdir:
       dir: "${ CWD }/${ module_name_full }"
   - search_and_replace:
@@ -43,3 +45,5 @@ steps:
       glob: "**/*newmod*"
       pattern: 'newmod'
       repl: "${ module_name }"
+  - log:
+      msg: "Renamed symbols to match module name ('${ module_name }'). Module creation complete."

@@ -60,6 +60,8 @@ steps:
   - parse_descriptor:
       source: "${ descriptor }"
   # RFNoC block gateware
+  - log:
+      msg: "Adding gateware templates to fpga/${ MODULE_NAME }/${ blockname_full }..."
   - write_template:
       template: noc_shell_template.sv.mako
       dest: "fpga/${ MODULE_NAME }/${ blockname_full }/noc_shell_${ blockname }.sv"
@@ -79,13 +81,23 @@ steps:
   - run_if:
       condition: "${ not args.skip_testbench }"
       steps:
+      - log:
+          msg: "Adding testbench templates..."
       - write_template:
           template: rfnoc_block_template_tb.sv.mako
           dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }_tb.sv"
       - write_template:
           template: Makefile.mako
           dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile"
+  - run_if:
+      condition: "${ args.skip_testbench }"
+      steps:
+      - log:
+          msg: "Skipping testbench templates as requested."
+          symbol: "❎"
   # RFNoC block C++ controller
+  - log:
+      msg: "Adding C++ block controller templates..."
   - write_template:
       template: template_block_control.hpp.mako
       dest: "include/rfnoc/${ MODULE_NAME }/${ blockname }_block_control.hpp"
@@ -101,6 +113,8 @@ steps:
       pattern: "APPEND *rfnoc_${ MODULE_NAME }_sources"
       text: "\n    ${ blockname }_block_control.cpp"
   # RFNoC block Python bindings
+  - log:
+      msg: "Adding Python binding templates..."
   - write_template:
       template: template_block_control_python.hpp.mako
       dest: "python/${ blockname }_block_control_python.hpp"
@@ -112,3 +126,5 @@ steps:
       file: "python/pyrfnoc-${ MODULE_NAME }.cpp"
       pattern: "\nPYBIND11_MODULE"
       text: '#include "${ blockname }_block_control_python.hpp"\n'
+  - log:
+      msg: "Done: Added block ${ blockname } to module ${ MODULE_NAME }."
