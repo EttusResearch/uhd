@@ -268,20 +268,29 @@ public:
 
             // Peek at the request queue to check the expected sequence number
             std::unique_lock<std::mutex> lock(_mutex);
-            int8_t seq_num_diff = int8_t(rx_ctrl.seq_num - _req_queue.front().seq_num);
-            if (seq_num_diff == 0) { // No sequence error
-                process_correct_response();
-            } else if (seq_num_diff > 0) { // Packet(s) dropped
-                // Tag all dropped packets
-                for (int8_t i = 0; i < seq_num_diff; i++) {
-                    process_incorrect_response();
+            if (!_req_queue.empty()) {
+                int8_t seq_num_diff =
+                    int8_t(rx_ctrl.seq_num - _req_queue.front().seq_num);
+                if (seq_num_diff == 0) { // No sequence error
+                    process_correct_response();
+                } else if (seq_num_diff > 0) { // Packet(s) dropped
+                    // Tag all dropped packets
+                    for (int8_t i = 0; i < seq_num_diff; i++) {
+                        process_incorrect_response();
+                    }
+                    // Process correct response
+                    process_correct_response();
+                } else { // Reordered packet(s)
+                    // Requests are processed in order. If seq_num_diff is negative then
+                    // we have either already seen this response or we have dropped >128
+                    // responses. Either way ignore this packet.
                 }
-                // Process correct response
-                process_correct_response();
-            } else { // Reordered packet(s)
-                // Requests are processed in order. If seq_num_diff is negative then we
-                // have either already seen this response or we have dropped >128
-                // responses. Either way ignore this packet.
+            } else {
+                // received a response without any request in queue
+                // ignore the message an report a warning
+                UHD_LOG_WARNING("CTRLEP",
+                    "Received respones with sequence number "
+                        << rx_ctrl.seq_num << " but request queue is empty.");
             }
         } else {
             // Handle asynchronous message callback
