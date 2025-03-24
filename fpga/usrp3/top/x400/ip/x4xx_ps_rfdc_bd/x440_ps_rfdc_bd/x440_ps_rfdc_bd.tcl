@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# axi_rfdc_info_memory, capture_sysref, x440_clock_gates, rf_nco_reset, x440_rf_reset_controller, x440_rf_reset_controller, gpio_to_axis_mux
+# axi_rfdc_info_memory, capture_sysref, x440_clock_gates, rf_nco_reset, x440_rf_reset_controller, x440_rf_reset_controller, gpio_to_axis_mux, x440_rfdc_tx_control_remap
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -186,6 +186,7 @@ rf_nco_reset\
 x440_rf_reset_controller\
 x440_rf_reset_controller\
 gpio_to_axis_mux\
+x440_rfdc_tx_control_remap\
 "
 
    set list_mods_missing ""
@@ -313,6 +314,17 @@ proc create_hier_cell_calibration_muxes { parentCell nameHier } {
    CONFIG.kGpioWidth {32} \
  ] $gpio_to_axis_mux_0
 
+  # Create instance: x440_rfdc_tx_control_0, and set properties
+  set block_name x440_rfdc_tx_control_remap
+  set block_cell_name x440_rfdc_tx_control_0
+  if { [catch {set x440_rfdc_tx_control_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $x440_rfdc_tx_control_0 eq "" } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
   # Create interface connections
   connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins m_axis_0_0] [get_bd_intf_pins gpio_to_axis_mux_0/m_axis_0]
   connect_bd_intf_net -intf_net Conn2 [get_bd_intf_pins m_axis_1_0] [get_bd_intf_pins gpio_to_axis_mux_0/m_axis_1]
@@ -336,9 +348,10 @@ proc create_hier_cell_calibration_muxes { parentCell nameHier } {
   connect_bd_net -net Net [get_bd_pins s_axi_config_clk] [get_bd_pins axi_gpio_data/s_axi_aclk]
   connect_bd_net -net Net1 [get_bd_pins s_axi_config_aresetn] [get_bd_pins axi_gpio_data/s_axi_aresetn]
   connect_bd_net -net axi_gpio_0_gpio_io_o [get_bd_pins axi_gpio_data/gpio_io_o] [get_bd_pins gpio_to_axis_mux_0/gpio]
-  connect_bd_net -net axi_gpio_data_gpio2_io_o [get_bd_pins axi_gpio_data/gpio2_io_o] [get_bd_pins gpio_to_axis_mux_0/mux_select]
+  connect_bd_net -net axi_gpio_data_gpio2_io_o [get_bd_pins axi_gpio_data/gpio2_io_o] [get_bd_pins x440_rfdc_tx_control_0/input_controls]
   connect_bd_net -net s_axi_aclk_0_1 [get_bd_pins s_axi_aclk_0] [get_bd_pins gpio_to_axis_mux_0/m_axis_0_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_1_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_2_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_3_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_0_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_1_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_2_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_3_aclk]
   connect_bd_net -net s_axi_aclk_1_1 [get_bd_pins s_axi_aclk_1] [get_bd_pins gpio_to_axis_mux_0/m_axis_4_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_5_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_6_aclk] [get_bd_pins gpio_to_axis_mux_0/m_axis_7_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_4_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_5_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_6_aclk] [get_bd_pins gpio_to_axis_mux_0/s_axis_7_aclk]
+  connect_bd_net -net x440_rfdc_tx_control_0_output_controls [get_bd_pins gpio_to_axis_mux_0/mux_select] [get_bd_pins x440_rfdc_tx_control_0/output_controls]
 
   # Restore current instance
   current_bd_instance $oldCurInst

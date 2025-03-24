@@ -17,6 +17,7 @@ $(addprefix $(BASE_DIR)/x400/rf/x440/, \
 x440_clock_gates.vhd \
 x440_rf_reset_controller.vhd \
 x440_rfdc_memory_content_pkg.sv \
+x440_rfdc_tx_control_remap.v \
 ) \
 $(addprefix $(BASE_DIR)/x400/rf/common/, \
 capture_sysref.v \
@@ -37,6 +38,7 @@ ctrlport.vh \
 ) \
 $(addprefix $(BASE_DIR)/x400/regmap/x440/, \
 PkgRFDC_REGS_REGMAP.vhd \
+rfdc_mapping_regmap_utils.vh \
 )
 
 IP_X4XX_PS_RFDC_BDTCL_SRCS = $(addprefix $(IP_BUILD_DIR)/x440_ps_rfdc_bd/, \

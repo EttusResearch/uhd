@@ -8,6 +8,7 @@ read_verilog        -library work $script_dir/../../../../../lib/control/synchro
 read_verilog        -library work $script_dir/../../../../../lib/control/synchronizer_impl.v
 read_verilog        -library work $script_dir/../../../../../lib/rfnoc/core/ctrlport.vh
 read_vhdl           -library work $script_dir/../../../regmap/x440/PkgRFDC_REGS_REGMAP.vhd
+read_verilog        -library work $script_dir/../../../regmap/x440/rfdc_mapping_regmap_utils.vh
 read_verilog        -library work $script_dir/../../../rf/common/axi_rfdc_info_memory.v
 read_vhdl           -library work $script_dir/../../../rf/common/axis_mux.vhd
 read_verilog        -library work $script_dir/../../../rf/common/capture_sysref.v
@@ -20,3 +21,4 @@ read_verilog        -library work $script_dir/../../../rf/common/sync_wrapper.v
 read_vhdl           -library work $script_dir/../../../rf/x440/x440_clock_gates.vhd
 read_vhdl           -library work $script_dir/../../../rf/x440/x440_rf_reset_controller.vhd
 read_verilog -sv    -library work $script_dir/../../../rf/x440/x440_rfdc_memory_content_pkg.sv
+read_verilog        -library work $script_dir/../../../rf/x440/x440_rfdc_tx_control_remap.v
