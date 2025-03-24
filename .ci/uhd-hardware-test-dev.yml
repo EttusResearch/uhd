@@ -11,6 +11,10 @@ parameters:
   type: boolean
   displayName: Run X440 Embedded Tests
   default: false
+- name: run_streaming_tests
+  type: boolean
+  displayName: Run Streaming Tests
+  default: false
 - name: run_x440_streaming_tests
   type: boolean
   displayName: Run X440 Streaming Tests
@@ -189,6 +193,7 @@ stages:
   - provide_x300_fpga_images_stage
   - provide_x310_fpga_images_stage
   - provide_x410_fpga_images_stage
+  condition: ${{ parameters.run_streaming_tests }}
   jobs:
   - template: templates/job-uhd-streaming-tests-beauty.yml
     parameters:
