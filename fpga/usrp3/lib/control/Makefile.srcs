@@ -63,6 +63,7 @@ map/kv_map.v \
 map/axis_muxed_kv_map.v \
 axil_ctrlport_master.v\
 handshake.v\
+handshake_latch.sv\
 ctrlport_to_regport.v \
 glitch_free_mux.v \
 regport_if.sv \
