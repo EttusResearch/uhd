@@ -55,6 +55,7 @@ parameters:
   - 'files.ettus.com (Public)'
   - 'Internal Repo'
   - 'Mono Pipeline'
+  - 'Mono Pipeline PR'
   - 'FPGA Pipeline'
 ### FPGA parameters
 ## Optional parameters
@@ -225,7 +226,12 @@ stages:
   jobs:
   - template: job-analyze-changeset.yml
     parameters:
-      reference_pipeline_name: uhd_mono_pipeline
+      ${{ if eq(parameters.fpga_imgs_source, 'Mono Pipeline PR') }}:
+        reference_pipeline_name: uhd_mono_pipeline_pr
+      ${{ elseif eq(parameters.fpga_imgs_source, 'FPGA Pipeline') }}:
+        reference_pipeline_name: uhd_fpga_pipeline
+      ${{ else }}:
+        reference_pipeline_name: uhd_mono_pipeline
       add_tests: ${{ parameters.add_tests }}
       remove_tests: ${{ parameters.remove_tests }}
       skip_rule_checking: ${{ parameters.skip_rule_checking }}
