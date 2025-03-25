@@ -354,7 +354,8 @@ static void tx_thread(std::atomic_flag* transmit,
     uhd::usrp::multi_usrp::sptr usrp,
     uhd::tx_streamer::sptr tx_stream,
     const double tx_wave_freq,
-    const double tx_wave_ampl)
+    const double tx_wave_ampl,
+    std::atomic<bool>& transmit_started)
 {
     // increase thread priority for TX to prevent underruns
     uhd::set_thread_priority_safe();
@@ -398,6 +399,7 @@ static void tx_thread(std::atomic_flag* transmit,
     while (transmit->test_and_set()) {
         // send calls are aligned to the frame size for optimal performance
         tx_stream->send(&buff[index], frame_size, md);
+        transmit_started.store(true);
 
         // increment index
         index += frame_size;

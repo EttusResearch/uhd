@@ -109,9 +109,26 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create a transmitter thread
     std::atomic_flag transmit = ATOMIC_FLAG_INIT;
+    std::atomic<bool> transmit_started(false);
     transmit.test_and_set();
-    auto transmitter = std::thread(
-        std::bind(&tx_thread, &transmit, usrp, tx_stream, tx_wave_freq, tx_wave_ampl));
+    auto transmitter = std::thread(std::bind(&tx_thread,
+        &transmit,
+        usrp,
+        tx_stream,
+        tx_wave_freq,
+        tx_wave_ampl,
+        std::ref(transmit_started)));
+
+    // Wait for tx_thread to start transmitting
+    size_t iter = 0;
+    while (!transmit_started.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (++iter > 100) {
+            std::cerr << "TX thread did not start transmitting within 10 seconds."
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
 
     // re-usable buffer for samples
     std::vector<samp_type> buff;
