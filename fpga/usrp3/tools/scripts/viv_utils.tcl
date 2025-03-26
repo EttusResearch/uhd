@@ -150,7 +150,7 @@ proc ::vivado_utils::synthesize_design {args} {
         set incdir_args "-include_dirs $g_include_dirs"
     }
 
-    set synth_cmd "synth_design -top $g_top_module -part $g_part_name"
+    set synth_cmd "synth_design -top $g_top_module -part $g_part_name -assert"
     set synth_cmd [concat $synth_cmd $vdef_args]
     set synth_cmd [concat $synth_cmd $incdir_args]
     set synth_cmd [concat $synth_cmd $args]
@@ -268,7 +268,7 @@ proc ::vivado_utils::check_design {args} {
         set incdir_args "-include_dirs $g_include_dirs"
     }
 
-    set synth_cmd "synth_design -top $g_top_module -part $g_part_name -rtl -rtl_skip_ip -rtl_skip_constraints"
+    set synth_cmd "synth_design -top $g_top_module -part $g_part_name -rtl -rtl_skip_ip -rtl_skip_constraints -assert"
     set synth_cmd [concat $synth_cmd $vdef_args]
     set synth_cmd [concat $synth_cmd $incdir_args]
     set synth_cmd [concat $synth_cmd $args]
