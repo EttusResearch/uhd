@@ -38,6 +38,10 @@ parameters:
 - name: publish_int_files
   type: boolean
   default: false
+- name: max_parallel
+  type: number
+  default: 20
+  displayName: 'Max parallel jobs'
 
 
 jobs:
@@ -54,6 +58,7 @@ jobs:
   strategy:
     matrix:
       ${{ parameters.targets_matrix }}
+    maxParallel: ${{ parameters.max_parallel }}
   dependsOn: ${{ parameters.ip_artifact }}
   condition: and(succeeded(), eq(variables.BuildRequired, true))
   steps:
@@ -101,11 +106,15 @@ jobs:
             echo "##vso[task.logissue type=error]image_core_name must be set for proper functioning of pipeline!"
             exit 1
         fi
+        if [[ -z "$BUILD_SEED" ]]
+        then
+          export BUILD_SEED=$(($(System.JobAttempt)-1))
+        fi
         python3 ../../tools/utils/repeat_fpga_build.py \
             --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG \
             --image-core-name $IMAGE_CORE_NAME \
             --vivado-path $(dirname $XILINX_VIVADO) \
-            --num $(max_attempts) --seed $(($(System.JobAttempt)-1)) --persistent
+            --num $(max_attempts) --seed $BUILD_SEED --persistent
         pip3 uninstall -y uhd
       workingDirectory: ${{ parameters.top_dir }}
       displayName: 'Build Target'
