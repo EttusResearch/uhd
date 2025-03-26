@@ -11,6 +11,9 @@ parameters:
 - name: remove_tests
   type: string
   default: "none"
+- name: skip_rule_checking
+  type: boolean
+  default: False
 - name: custom_boost_version
   type: boolean
   default: false
@@ -218,6 +221,7 @@ stages:
       reference_pipeline_name: uhd_mono_pipeline
       add_tests: ${{ parameters.add_tests }}
       remove_tests: ${{ parameters.remove_tests }}
+      skip_rule_checking: ${{ parameters.skip_rule_checking }}
 
 ###############################################################################
 # SW Building & Testing Stages. No FPGA, no hardware involved.

@@ -39,6 +39,10 @@ parameters:
   displayName: Force-disable modules
   type: string
   default: "none"
+- name: skip_rule_checking
+  displayName: Skip rule checking (execute "Force-enable modules" only)
+  type: boolean
+  default: False
 - name: custom_boost_version
   type: boolean
   displayName: Use custom boost version
@@ -212,6 +216,7 @@ extends:
   parameters:
     add_tests: ${{ parameters.add_tests }}
     remove_tests: ${{ parameters.remove_tests }}
+    skip_rule_checking: ${{ parameters.skip_rule_checking }}
     custom_boost_version: ${{ parameters.custom_boost_version }}
     custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
     release_binaries: ${{ parameters.release_binaries }}

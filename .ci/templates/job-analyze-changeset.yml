@@ -12,54 +12,68 @@ parameters:
 - name: remove_tests
   type: string
   default: "none"
+- name: skip_rule_checking
+  type: boolean
+  default: False
 
 jobs:
   - job: analyze
     displayName: Analyze Changeset
     variables:
-      - group: github-ettusresearch-uhddev
+      - ${{ if not(parameters.skip_rule_checking) }}:
+        - group: github-ettusresearch-uhddev
     pool:
       name: Drivers-NIBuildFarm-RFMIBUILD
       demands: sh
     steps:
-    - checkout: self
-      clean: true
-    - bash: |
-        python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
-        source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
-        pip install --upgrade pip
-        pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
-      displayName: setup venv
-    - bash: |
-        source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
-        git branch
-        set -e
-        set -o xtrace
-        if [ "$BUILD_REASON" == "PullRequest" ]; then
-          EXTRA_ARGS="--github-label-api-endpoint https://oauth2:$OAUTH_TOKEN@api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels"
-          EXTRA_ARGS="$EXTRA_ARGS --source-branch $SYSTEM_PULLREQUEST_SOURCECOMMITID"
-        fi
-        if [ -n "$ADD_TESTS" ] && [ "$ADD_TESTS" != "none" ]; then
-          EXTRA_ARGS="$EXTRA_ARGS --add-test $ADD_TESTS"
-        fi
-        if [ -n "$REMOVE_TESTS" ] && [ "$REMOVE_TESTS" != "none" ]; then
-          EXTRA_ARGS="$EXTRA_ARGS --remove-test $REMOVE_TESTS"
-        fi
-        echo "Using pipeline $PIPELINE_PIPELINE_NAME / $PIPELINE_RUN_NAME as reference (branch $PIPELINE_SOURCE_BRANCH, commit $PIPELINE_SOURCE_COMMIT)"
-        python3 tools/changeset_testlist.py \
-                --target-branch $PIPELINE_SOURCE_COMMIT \
-                --set-azdo-var UhdTestList \
-                --list-tests --verbose $EXTRA_ARGS
-      name: gen_testlist
-      displayName: Generate Test-List
-      env:
-        OAUTH_TOKEN: $(github_uhddev_token)
-        PIPELINE_SOURCE_BRANCH: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceBranch)
-        PIPELINE_SOURCE_COMMIT: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceCommit)
-        PIPELINE_PIPELINE_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.pipelineName)
-        PIPELINE_RUN_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.runName)
-        ADD_TESTS: ${{ parameters.add_tests }}
-        REMOVE_TESTS: ${{ parameters.remove_tests }}
+    - ${{ if parameters.skip_rule_checking }}:
+      - checkout: none
+      - bash : |
+          echo "Task List = $ADD_TESTS"
+          echo "##vso[task.setvariable variable=UhdTestList;isoutput=true]$ADD_TESTS"
+        name: gen_testlist
+        displayName: Set Test-List Variable
+        env:
+          ADD_TESTS: ${{ parameters.add_tests }}
+    - ${{ else }}:
+      - checkout: self
+        clean: true
+      - bash: |
+          python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
+          source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
+          pip install --upgrade pip
+          pip install ruamel.yaml clang-format==14.0.6 ni-python-styleguide requests
+        displayName: setup venv
+      - bash: |
+          source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
+          git branch
+          set -e
+          set -o xtrace
+          if [ "$BUILD_REASON" == "PullRequest" ]; then
+            EXTRA_ARGS="--github-label-api-endpoint https://oauth2:$OAUTH_TOKEN@api.github.com/repos/$BUILD_REPOSITORY_ID/issues/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER/labels"
+            EXTRA_ARGS="$EXTRA_ARGS --source-branch $SYSTEM_PULLREQUEST_SOURCECOMMITID"
+          fi
+          if [ -n "$ADD_TESTS" ] && [ "$ADD_TESTS" != "none" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS --add-test $ADD_TESTS"
+          fi
+          if [ -n "$REMOVE_TESTS" ] && [ "$REMOVE_TESTS" != "none" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS --remove-test $REMOVE_TESTS"
+          fi
+          echo "Using pipeline $PIPELINE_PIPELINE_NAME / $PIPELINE_RUN_NAME as reference (branch $PIPELINE_SOURCE_BRANCH, commit $PIPELINE_SOURCE_COMMIT)"
+          python3 tools/changeset_testlist.py \
+                  --target-branch $PIPELINE_SOURCE_COMMIT \
+                  --set-azdo-var UhdTestList \
+                  --list-tests --verbose $EXTRA_ARGS
+        name: gen_testlist
+        displayName: Generate Test-List
+        env:
+          OAUTH_TOKEN: $(github_uhddev_token)
+          PIPELINE_SOURCE_BRANCH: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceBranch)
+          PIPELINE_SOURCE_COMMIT: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceCommit)
+          PIPELINE_PIPELINE_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.pipelineName)
+          PIPELINE_RUN_NAME: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.runName)
+          ADD_TESTS: ${{ parameters.add_tests }}
+          REMOVE_TESTS: ${{ parameters.remove_tests }}
 
     - bash: |
         if [[ $AGENT_OS == "Windows_NT" ]]; then
