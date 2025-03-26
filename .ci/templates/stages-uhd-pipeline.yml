@@ -25,6 +25,7 @@ parameters:
   default: false
 - name: testLength
   type: string
+  default: 'smoke'
 - name: build_sdk
   type: boolean
   default: false
