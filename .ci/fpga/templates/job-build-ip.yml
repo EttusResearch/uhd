@@ -45,7 +45,7 @@ jobs:
   timeoutInMinutes: 240
   variables:
   - group: sdr-pipeline-vars
-  condition: eq(variables.BuildRequired, true)
+  condition: and(succeeded(), eq(variables.BuildRequired, true))
   steps:
     - template: setup_steps.yml
 
