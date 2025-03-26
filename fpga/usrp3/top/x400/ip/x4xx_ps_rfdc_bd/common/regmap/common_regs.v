@@ -144,6 +144,12 @@
 //          db0_adc_seq_done is asserted.
 //        </info>
 //      </bitfield>
+//      <bitfield name="ADC_GEARBOX_RESET" range="6">
+//        <info>
+//          Write a '1' to this bit to trigger a reset for the ADC gearboxes.
+//          There is no done signal for this reset.
+//        </info>
+//      </bitfield>
 //      <bitfield name="DAC_RESET" range="8">
 //        <info>
 //          Write a '1' to this bit to trigger a reset for the
@@ -156,6 +162,12 @@
 //          Write a '1' to this bit to trigger the enable sequence for
 //          the daughterboard 0 DAC chain. Write a '0' once
 //          db0_dac_seq_done is asserted.
+//        </info>
+//      </bitfield>
+//      <bitfield name="DAC_GEARBOX_RESET" range="10">
+//        <info>
+//          Write a '1' to this bit to trigger a reset for the DAC gearboxes.
+//          There is no done signal for this reset.
 //        </info>
 //      </bitfield>
 //    </regtype>

@@ -221,24 +221,30 @@ package PkgRFDC_REGS_REGMAP is
   constant kUSER_ADC_TREADY_DB1Msb        : integer := 31;  --RF_AXI_STATUS_REGTYPE:USER_ADC_TREADY_DB1
   constant kUSER_ADC_TREADY_DB1           : integer := 30;  --RF_AXI_STATUS_REGTYPE:USER_ADC_TREADY_DB1
 
-  -- RF_RESET_CONTROL_REGTYPE Type (from common_regs.v)
-  constant kRF_RESET_CONTROL_REGTYPESize: integer := 32;
-  constant kRF_RESET_CONTROL_REGTYPEMask : std_logic_vector(31 downto 0) := X"00000331";
-  constant kFSM_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
-  constant kFSM_RESETMsb        : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
-  constant kFSM_RESET           : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
-  constant kADC_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
-  constant kADC_RESETMsb        : integer := 4;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
-  constant kADC_RESET           : integer := 4;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
-  constant kADC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
-  constant kADC_ENABLEMsb        : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
-  constant kADC_ENABLE           : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
-  constant kDAC_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
-  constant kDAC_RESETMsb        : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
-  constant kDAC_RESET           : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
-  constant kDAC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
-  constant kDAC_ENABLEMsb        : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
-  constant kDAC_ENABLE           : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
+-- RF_RESET_CONTROL_REGTYPE Type (from common_regs.v)
+constant kRF_RESET_CONTROL_REGTYPESize: integer := 32;
+constant kRF_RESET_CONTROL_REGTYPEMask : std_logic_vector(31 downto 0) := X"00000771";
+constant kFSM_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
+constant kFSM_RESETMsb        : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
+constant kFSM_RESET           : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
+constant kADC_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
+constant kADC_RESETMsb        : integer := 4;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
+constant kADC_RESET           : integer := 4;  --RF_RESET_CONTROL_REGTYPE:ADC_RESET
+constant kADC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
+constant kADC_ENABLEMsb        : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
+constant kADC_ENABLE           : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
+constant kADC_GEARBOX_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
+constant kADC_GEARBOX_RESETMsb        : integer := 6;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
+constant kADC_GEARBOX_RESET           : integer := 6;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
+constant kDAC_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
+constant kDAC_RESETMsb        : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
+constant kDAC_RESET           : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
+constant kDAC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
+constant kDAC_ENABLEMsb        : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
+constant kDAC_ENABLE           : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
+constant kDAC_GEARBOX_RESETSize       : integer :=  1;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
+constant kDAC_GEARBOX_RESETMsb        : integer := 10;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
+constant kDAC_GEARBOX_RESET           : integer := 10;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
 
   -- RF_RESET_STATUS_REGTYPE Type (from common_regs.v)
   constant kRF_RESET_STATUS_REGTYPESize: integer := 32;
