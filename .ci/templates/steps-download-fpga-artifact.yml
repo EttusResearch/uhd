@@ -1,0 +1,51 @@
+parameters:
+- name: dutType
+  type: string
+- name: dutFPGA
+  type: string
+- name: fpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+  values:
+    - 'Filesystem'
+    - 'Pipeline'
+
+steps:
+- script: |
+    ARTIFACT_SOURCE="${{ parameters.fpgaArtifactSource }}"
+    if [ "$ARTIFACT_SOURCE" = "current" ]; then
+      ARTIFACT_BASE=$(Agent.BuildDirectory)
+    else
+      ARTIFACT_BASE=$(Agent.BuildDirectory)/$ARTIFACT_SOURCE
+    fi
+    if [[ -n "${{ parameters.dutFPGA }}" ]]; then
+      BITFILE_NAME=usrp_${{ parameters.dutType }}_fpga_${{ parameters.dutFPGA }}
+      ARTIFACT_NAME=${{ parameters.dutType }}_${{ parameters.dutFPGA }}
+    else
+      BITFILE_NAME=usrp_${{ parameters.dutType }}_fpga
+      ARTIFACT_NAME=${{ parameters.dutType }}
+    fi
+    ARTIFACT_DIR=$ARTIFACT_BASE/$ARTIFACT_NAME
+    echo '##vso[task.setvariable variable=FPGA_ARTIFACT_SOURCE]'$ARTIFACT_SOURCE
+    echo FPGA_ARTIFACT_SOURCE=$ARTIFACT_SOURCE
+    echo '##vso[task.setvariable variable=FPGA_ARTIFACT_BASE]'$ARTIFACT_BASE
+    echo FPGA_ARTIFACT_BASE=$ARTIFACT_BASE
+    echo '##vso[task.setvariable variable=FPGA_ARTIFACT_NAME]'$ARTIFACT_NAME
+    echo FPGA_ARTIFACT_NAME=$ARTIFACT_NAME
+    echo '##vso[task.setvariable variable=FPGA_ARTIFACT_DIR]'$ARTIFACT_DIR
+    echo FPGA_ARTIFACT_DIR=$ARTIFACT_DIR
+    echo '##vso[task.setvariable variable=FPGA_BITFILE_NAME]'$BITFILE_NAME
+    echo FPGA_BITFILE_NAME=$BITFILE_NAME
+  name: fpga_artifact
+  displayName: "FPGA artifact: Set variables"
+
+- script: |
+    rm -rfv "$FPGA_ARTIFACT_DIR"
+  displayName: "FPGA artifact: Cleanup"
+
+- download: ${{ parameters.fpgaArtifactSource }}
+  artifact: $(FPGA_ARTIFACT_NAME)
+  displayName: "FPGA artifact: Download"
+  condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))

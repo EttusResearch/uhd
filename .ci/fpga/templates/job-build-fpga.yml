@@ -138,6 +138,7 @@ jobs:
         export BUILD_ARTIFACT_DIR=`ls | grep build-usrp`
         echo "Build artifact dir: $BUILD_ARTIFACT_DIR"
         echo "##vso[task.setvariable variable=BuildArtifactDir;isOutput=true]$BUILD_ARTIFACT_DIR"
+        echo "##vso[task.setvariable variable=image_core_basename;isOutput=true]`basename $(image_core)`"
       workingDirectory: ${{ parameters.top_dir }}
       displayName: 'Find Build Artifact Directory'
       name: find_build_artifact_dir
@@ -145,7 +146,7 @@ jobs:
 
     # Publish intermediate files.
     - publish: ${{ parameters.top_dir }}/$(find_build_artifact_dir.BuildArtifactDir)
-      artifact: 'Build artifacts for $(image_core) (Target $(target_name), Image core name $(image_core_name),  Attempt $(System.JobAttempt))'
+      artifact: 'Build artifacts for $(find_build_artifact_dir.image_core_basename) (Target $(target_name), Image core name $(image_core_name),  Attempt $(System.JobAttempt))'
       condition: and(always(), eq('${{ parameters.publish_int_files }}', true))
       displayName: 'Publish Build Directory'
 

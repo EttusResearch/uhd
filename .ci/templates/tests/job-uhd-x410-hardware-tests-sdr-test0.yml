@@ -17,6 +17,7 @@ jobs:
     runPyTestNonRF: true
     runDevTest: true
     runSystemImageTest: true
+    runRfnocBlockTest: true
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: $(xilinx_location)
