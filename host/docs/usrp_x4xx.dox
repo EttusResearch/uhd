@@ -820,7 +820,8 @@ Otherwise, let the boot continue as normal.
 \subsection x4xx_updating_cpld Updating the Motherboard CPLD
 
 <b>Caution! Updating the motherboard CPLD has the potential to brick your
-device if done improperly.</b>
+device if done improperly. Bricked devices will need to be sent back for repair, 
+visit [support](https://www.ettus.com/support/) for more details.</b>
 
 After updating the filesystem, you may have to update your motherboard CPLD. If
 you forget to update the CPLD, MPM will fail to fully initialize and emit a
@@ -830,7 +831,7 @@ following these same steps, but the device will not be usable until then.
 You can update the motherboard (MB) CPLD by running the following command on
 the X410:
 
-    x4xx_update_cpld --file=<path to cpld-x410.rpd>
+    x4xx_update_cpld
 
 Note: Old filesystems may not contain this command. If you are performing a
 mender update, simply run these commands after the update.
@@ -842,7 +843,7 @@ order to access the new firmware:
 
     mkdir /mnt/other
     mount /dev/mmcblk0p3 /mnt/other
-    cp /mnt/other/lib/firmware/ni/cpld-x410.rpd ~
+    cp /mnt/other/lib/firmware/ni/<rpd file matching your device> ~
     umount /mnt/other
 
 Note that the other filesystem may be either `/dev/mmcblk0p2` or `/dev/mmcblk0p3`.
