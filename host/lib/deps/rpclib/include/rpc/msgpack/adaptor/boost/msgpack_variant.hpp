@@ -269,8 +269,6 @@ typedef basic_variant<
 
 namespace adaptor {
 
-#if !defined (MSGPACK_USE_CPP03)
-
 template <typename STR, typename BIN, typename EXT>
 struct as<clmdep_msgpack::type::basic_variant<STR, BIN, EXT> > {
     clmdep_msgpack::type::basic_variant<STR, BIN, EXT> operator()(clmdep_msgpack::object const& o) const {
@@ -301,8 +299,6 @@ struct as<clmdep_msgpack::type::basic_variant<STR, BIN, EXT> > {
         return clmdep_msgpack::type::basic_variant<STR, BIN, EXT>();
     }
 };
-
-#endif // !defined (MSGPACK_USE_CPP03)
 
 
 template <typename STR, typename BIN, typename EXT>

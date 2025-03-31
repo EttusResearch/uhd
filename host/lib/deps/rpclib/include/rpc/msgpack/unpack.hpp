@@ -27,10 +27,7 @@
 
 #include <memory>
 #include <stdexcept>
-
-#if !defined(MSGPACK_USE_CPP03)
 #include <atomic>
-#endif
 
 
 #if defined(_MSC_VER)
@@ -73,91 +70,71 @@ typedef bool (*unpack_reference_func)(clmdep_msgpack::type::object_type, std::si
 struct unpack_error : public std::runtime_error {
     explicit unpack_error(const std::string& msg)
         :std::runtime_error(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     explicit unpack_error(const char* msg):
         std::runtime_error(msg) {}
-#endif // !defined(MSGPACK_USE_CPP03)
 };
 
 struct parse_error : public unpack_error {
     explicit parse_error(const std::string& msg)
         :unpack_error(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     explicit parse_error(const char* msg)
         :unpack_error(msg) {}
-#endif // !defined(MSGPACK_USE_CPP03)
 };
 
 struct insufficient_bytes : public unpack_error {
     explicit insufficient_bytes(const std::string& msg)
         :unpack_error(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     explicit insufficient_bytes(const char* msg)
         :unpack_error(msg) {}
-#endif // !defined(MSGPACK_USE_CPP03)
 };
 
 struct size_overflow : public unpack_error {
     explicit size_overflow(const std::string& msg)
         :unpack_error(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     explicit size_overflow(const char* msg)
         :unpack_error(msg) {}
-#endif
 };
 
 struct array_size_overflow : public size_overflow {
     array_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     array_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 struct map_size_overflow : public size_overflow {
     map_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     map_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 struct str_size_overflow : public size_overflow {
     str_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     str_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 struct bin_size_overflow : public size_overflow {
     bin_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     bin_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 struct ext_size_overflow : public size_overflow {
     ext_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     ext_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 struct depth_size_overflow : public size_overflow {
     depth_size_overflow(const std::string& msg)
         :size_overflow(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     depth_size_overflow(const char* msg)
         :size_overflow(msg) {}
-#endif
 };
 
 class unpack_limit {
@@ -369,46 +346,25 @@ private:
 
 inline void init_count(void* buffer)
 {
-#if defined(MSGPACK_USE_CPP03)
-    *reinterpret_cast<volatile _msgpack_atomic_counter_t*>(buffer) = 1;
-#else  // defined(MSGPACK_USE_CPP03)
     new (buffer) std::atomic<unsigned int>(1);
-#endif // defined(MSGPACK_USE_CPP03)
 }
 
 inline void decr_count(void* buffer)
 {
-#if defined(MSGPACK_USE_CPP03)
-    if(_msgpack_sync_decr_and_fetch(reinterpret_cast<volatile _msgpack_atomic_counter_t*>(buffer)) == 0) {
-        free(buffer);
-    }
-#else  // defined(MSGPACK_USE_CPP03)
     if (--*reinterpret_cast<std::atomic<unsigned int>*>(buffer) == 0) {
         free(buffer);
     }
-#endif // defined(MSGPACK_USE_CPP03)
 }
 
 inline void incr_count(void* buffer)
 {
-#if defined(MSGPACK_USE_CPP03)
-    _msgpack_sync_incr_and_fetch(reinterpret_cast<volatile _msgpack_atomic_counter_t*>(buffer));
-#else  // defined(MSGPACK_USE_CPP03)
     ++*reinterpret_cast<std::atomic<unsigned int>*>(buffer);
-#endif // defined(MSGPACK_USE_CPP03)
 }
 
-#if defined(MSGPACK_USE_CPP03)
-inline _msgpack_atomic_counter_t get_count(void* buffer)
-{
-    return *reinterpret_cast<volatile _msgpack_atomic_counter_t*>(buffer);
-}
-#else  // defined(MSGPACK_USE_CPP03)
 inline std::atomic<unsigned int> const& get_count(void* buffer)
 {
     return *reinterpret_cast<std::atomic<unsigned int>*>(buffer);
 }
-#endif // defined(MSGPACK_USE_CPP03)
 
 struct fix_tag {
     char f1[65]; // FIXME unique size is required. or use is_same meta function.
@@ -1000,10 +956,8 @@ public:
              std::size_t init_buffer_size = MSGPACK_UNPACKER_INIT_BUFFER_SIZE,
              unpack_limit const& limit = unpack_limit());
 
-#if !defined(MSGPACK_USE_CPP03)
     unpacker(unpacker&& other);
     unpacker& operator=(unpacker&& other);
-#endif // !defined(MSGPACK_USE_CPP03)
 
     ~unpacker();
 
@@ -1110,14 +1064,8 @@ private:
     std::size_t m_initial_buffer_size;
     detail::context m_ctx;
 
-#if defined(MSGPACK_USE_CPP03)
-private:
-    unpacker(const unpacker&);
-    unpacker& operator=(const unpacker&);
-#else  // defined(MSGPACK_USE_CPP03)
     unpacker(const unpacker&) = delete;
     unpacker& operator=(const unpacker&) = delete;
-#endif // defined(MSGPACK_USE_CPP03)
 };
 
 unpacked unpack(
@@ -1222,7 +1170,6 @@ inline unpacker::unpacker(unpack_reference_func f,
     m_ctx.user().set_referenced(false);
 }
 
-#if !defined(MSGPACK_USE_CPP03)
 // Move constructor and move assignment operator
 
 inline unpacker::unpacker(unpacker&& other)
@@ -1242,8 +1189,6 @@ inline unpacker& unpacker::operator=(unpacker&& other) {
     new (this) unpacker(std::move(other));
     return *this;
 }
-
-#endif // !defined(MSGPACK_USE_CPP03)
 
 
 inline unpacker::~unpacker()

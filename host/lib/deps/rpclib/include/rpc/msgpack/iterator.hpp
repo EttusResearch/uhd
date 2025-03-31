@@ -18,8 +18,6 @@
 
 #ifndef MSGPACK_ITERATOR_HPP
 #define MSGPACK_ITERATOR_HPP
-#if !defined(MSGPACK_USE_CPP03)
-
 #include <rpc/msgpack/object_fwd.hpp>
 
 namespace clmdep_msgpack
@@ -42,5 +40,4 @@ namespace clmdep_msgpack
     /// @endcond
 }
 
-#endif // !defined(MSGPACK_USE_CPP03)
 #endif // MSGPACK_ITERATOR_HPP

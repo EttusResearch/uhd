@@ -22,10 +22,7 @@
 #include "rpc/msgpack/adaptor/adaptor_base.hpp"
 #include "rpc/msgpack/adaptor/check_container_size.hpp"
 #include "rpc/msgpack/meta.hpp"
-
-#if !defined (MSGPACK_USE_CPP03)
 #include "rpc/msgpack/adaptor/cpp11/tuple.hpp"
-#endif // #if !defined (MSGPACK_USE_CPP03)
 
 #include <boost/fusion/support/is_sequence.hpp>
 #include <boost/fusion/sequence/intrinsic/size.hpp>
@@ -41,8 +38,6 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 /// @endcond
 
 namespace adaptor {
-
-#if !defined (MSGPACK_USE_CPP03)
 
 template <typename T>
 struct as<
@@ -86,8 +81,6 @@ struct as<
         return T(std::get<Is>(u)...);
     }
 };
-
-#endif // !defined (MSGPACK_USE_CPP03)
 
 template <typename T>
 struct convert<T, typename clmdep_msgpack::enable_if<boost::fusion::traits::is_sequence<T>::value>::type > {

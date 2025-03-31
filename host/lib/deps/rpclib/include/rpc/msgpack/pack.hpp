@@ -122,17 +122,10 @@ private:
 private:
     Stream& m_stream;
 
-#if defined(MSGPACK_USE_CPP03)
-private:
-    packer(const packer&);
-    packer& operator=(const packer&);
-    packer();
-#else  // defined(MSGPACK_USE_CPP03)
 public:
     packer(const packer&) = delete;
     packer& operator=(const packer&) = delete;
     packer() = delete;
-#endif // defined(MSGPACK_USE_CPP03)
 };
 
 

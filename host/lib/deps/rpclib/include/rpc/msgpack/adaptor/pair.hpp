@@ -32,8 +32,6 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 
 namespace adaptor {
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename T1, typename T2>
 struct as<std::pair<T1, T2>,
           typename std::enable_if<clmdep_msgpack::all_of<clmdep_msgpack::has_as, T1, T2>::value>::type> {
@@ -43,8 +41,6 @@ struct as<std::pair<T1, T2>,
         return std::make_pair(o.via.array.ptr[0].as<T1>(), o.via.array.ptr[1].as<T2>());
     }
 };
-
-#endif // !defined(MSGPACK_USE_CPP03)
 
 template <typename T1, typename T2>
 struct convert<std::pair<T1, T2> > {

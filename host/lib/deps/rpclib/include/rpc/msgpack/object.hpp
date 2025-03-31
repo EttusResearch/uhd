@@ -71,39 +71,6 @@ public:
     const std::unique_ptr<clmdep_msgpack::zone>& zone() const
         { return m_zone; }
 
-#if defined(MSGPACK_USE_CPP03)
-    struct object_handle_ref {
-        object_handle_ref(object_handle* oh):m_oh(oh) {}
-        object_handle* m_oh;
-    };
-
-    object_handle(object_handle& other):
-        m_obj(other.m_obj),
-        m_zone(std::move(other.m_zone)) {
-    }
-
-    object_handle(object_handle_ref ref):
-        m_obj(ref.m_oh->m_obj),
-        m_zone(std::move(ref.m_oh->m_zone)) {
-    }
-
-    object_handle& operator=(object_handle& other) {
-        m_obj = other.m_obj;
-        m_zone = std::move(other.m_zone);
-        return *this;
-    }
-
-    object_handle& operator=(object_handle_ref ref) {
-        m_obj = ref.m_oh->m_obj;
-        m_zone = std::move(ref.m_oh->m_zone);
-        return *this;
-    }
-
-    operator object_handle_ref() {
-        return object_handle_ref(this);
-    }
-#endif // defined(MSGPACK_USE_CPP03)
-
     object_handle& assign(object_handle&& other) {
         m_obj = other.m_obj;
         m_zone = std::move(other.m_zone);
@@ -541,18 +508,6 @@ inline bool object::convert_if_not_nil(T& v) const
     return true;
 }
 
-#if defined(MSGPACK_USE_CPP03)
-
-template <typename T>
-inline T object::as() const
-{
-    T v;
-    convert(v);
-    return v;
-}
-
-#else  // defined(MSGPACK_USE_CPP03)
-
 template <typename T>
 inline typename std::enable_if<clmdep_msgpack::has_as<T>::value, T>::type object::as() const {
     return clmdep_msgpack::adaptor::as<T>()(*this);
@@ -564,8 +519,6 @@ inline typename std::enable_if<!clmdep_msgpack::has_as<T>::value, T>::type objec
     convert(v);
     return v;
 }
-
-#endif // defined(MSGPACK_USE_CPP03)
 
 inline object::object()
 {

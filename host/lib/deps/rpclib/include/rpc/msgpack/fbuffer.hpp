@@ -46,14 +46,8 @@ public:
         return m_file;
     }
 
-#if defined(MSGPACK_USE_CPP03)
-private:
-    fbuffer(const fbuffer&);
-    fbuffer& operator=(const fbuffer&);
-#else  // defined(MSGPACK_USE_CPP03)
     fbuffer(const fbuffer&) = delete;
     fbuffer& operator=(const fbuffer&) = delete;
-#endif // defined(MSGPACK_USE_CPP03)
 
 private:
     FILE* m_file;

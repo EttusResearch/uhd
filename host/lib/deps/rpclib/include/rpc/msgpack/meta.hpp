@@ -19,8 +19,6 @@
 #ifndef MSGPACK_META_HPP
 #define MSGPACK_META_HPP
 
-#if !defined(MSGPACK_USE_CPP03)
-
 #include <type_traits>
 
 namespace clmdep_msgpack {
@@ -53,7 +51,5 @@ struct gen_seq<0, Is...> : seq<Is...> {};
 /// @endcond
 
 } // namespace clmdep_msgpack
-
-#endif // !defined(MSGPACK_USE_CPP03)
 
 #endif // MSGPACK_META_HPP

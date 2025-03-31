@@ -19,11 +19,6 @@
 #define MSGPACK_ZONE_HPP
 
 #include "rpc/msgpack/cpp_config.hpp"
-
-#if defined(MSGPACK_USE_CPP03)
-#include "detail/cpp03_zone.hpp"
-#else  // MSGPACK_USE_CPP03
 #include "detail/cpp11_zone.hpp"
-#endif // MSGPACK_USE_CPP03
 
 #endif // MSGPACK_ZONE_HPP

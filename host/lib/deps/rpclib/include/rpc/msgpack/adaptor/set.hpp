@@ -32,8 +32,6 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 
 namespace adaptor {
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename T, typename Compare, typename Alloc>
 struct as<std::set<T, Compare, Alloc>, typename std::enable_if<clmdep_msgpack::has_as<T>::value>::type> {
     std::set<T, Compare, Alloc> operator()(clmdep_msgpack::object const& o) const {
@@ -49,8 +47,6 @@ struct as<std::set<T, Compare, Alloc>, typename std::enable_if<clmdep_msgpack::h
     }
 };
 
-#endif // !defined(MSGPACK_USE_CPP03)
-
 template <typename T, typename Compare, typename Alloc>
 struct convert<std::set<T, Compare, Alloc> > {
     clmdep_msgpack::object const& operator()(clmdep_msgpack::object const& o, std::set<T, Compare, Alloc>& v) const {
@@ -62,11 +58,7 @@ struct convert<std::set<T, Compare, Alloc> > {
             --p;
             tmp.insert(p->as<T>());
         }
-#if __cplusplus >= 201103L
         v = std::move(tmp);
-#else
-        tmp.swap(v);
-#endif
         return o;
     }
 };
@@ -109,8 +101,6 @@ struct object_with_zone<std::set<T, Compare, Alloc> > {
     }
 };
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename T, typename Compare, typename Alloc>
 struct as<std::multiset<T, Compare, Alloc>, typename std::enable_if<clmdep_msgpack::has_as<T>::value>::type> {
     std::multiset<T, Compare, Alloc> operator()(clmdep_msgpack::object const& o) const {
@@ -126,8 +116,6 @@ struct as<std::multiset<T, Compare, Alloc>, typename std::enable_if<clmdep_msgpa
     }
 };
 
-#endif // !defined(MSGPACK_USE_CPP03)
-
 template <typename T, typename Compare, typename Alloc>
 struct convert<std::multiset<T, Compare, Alloc> > {
     clmdep_msgpack::object const& operator()(clmdep_msgpack::object const& o, std::multiset<T, Compare, Alloc>& v) const {
@@ -139,11 +127,7 @@ struct convert<std::multiset<T, Compare, Alloc> > {
             --p;
             tmp.insert(p->as<T>());
         }
-#if __cplusplus >= 201103L
         v = std::move(tmp);
-#else
-        tmp.swap(v);
-#endif
         return o;
     }
 };
