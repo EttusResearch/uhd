@@ -15,7 +15,15 @@
 #include <boost/program_options.hpp>
 #ifdef __linux__
 #    include <boost/filesystem.hpp>
-#    include <boost/process.hpp>
+#    include <boost/version.hpp>
+#    if BOOST_VERSION >= 108800
+#        define BOOST_PROCESS_VERSION 1
+#        include <boost/process/v1/child.hpp>
+#        include <boost/process/v1/io.hpp>
+#        include <boost/process/v1/pipe.hpp>
+#    else
+#        include <boost/process.hpp>
+#    endif
 #endif
 #include <chrono>
 #include <complex>
