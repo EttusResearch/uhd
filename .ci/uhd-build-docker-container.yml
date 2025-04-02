@@ -43,8 +43,7 @@ variables:
 - ${{ if parameters.build_linux }}:
   - name: linuxDockerImages
     value:
-      "{'Fedora-39-builder':{'buildOSName':'fedora39','dockerImageName':'uhd-builder-fedora39'},
-      'Fedora-40-builder':{'buildOSName':'fedora40','dockerImageName':'uhd-builder-fedora40'},
+      "{'Fedora-40-builder':{'buildOSName':'fedora40','dockerImageName':'uhd-builder-fedora40'},
       'Fedora-41-builder':{'buildOSName':'fedora41','dockerImageName':'uhd-builder-fedora41'},
       'Fedora-42-builder':{'buildOSName':'fedora42','dockerImageName':'uhd-builder-fedora42'},
       'Ubuntu-1804-builder':{'buildOSName':'ubuntu1804','dockerImageName':'uhd-builder-ubuntu1804'},
@@ -85,8 +84,7 @@ variables:
 - name: fedoraRpmDockerImages
   # Match with Fedora images in linuxDockerImages
   value:
-    "{'Fedora-39-builder':{'buildOSName':'fedora39','dockerImageName':'uhd-builder-fedora39','fedoraReleaseName':'39'},
-    'Fedora-40-builder':{'buildOSName':'fedora40','dockerImageName':'uhd-builder-fedora40','fedoraReleaseName':'40'},
+    "{'Fedora-40-builder':{'buildOSName':'fedora40','dockerImageName':'uhd-builder-fedora40','fedoraReleaseName':'40'},
     'Fedora-41-builder':{'buildOSName':'fedora41','dockerImageName':'uhd-builder-fedora41','fedoraReleaseName':'41'},
     'Fedora-42-builder':{'buildOSName':'fedora42','dockerImageName':'uhd-builder-fedora42','fedoraReleaseName':'42'}}"
 
