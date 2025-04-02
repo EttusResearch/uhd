@@ -52,7 +52,7 @@ def parse_args():
 
 def get_top_level_match_str(tag_text):
     """Get the regex string to match a top-level tag."""
-    return r"(.*\<" + tag_text + "\>)(.+)(\</" + tag_text + r"\>)"
+    return r"(.*\<" + tag_text + r"\>)(.+)(\</" + tag_text + r"\>)"
 
 
 def get_match_str(item):

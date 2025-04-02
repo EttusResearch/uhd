@@ -15,6 +15,7 @@ import os
 import re
 import sys
 
+
 # Parse command line options
 def get_options():
     """Parse script arguments."""
@@ -55,16 +56,18 @@ def get_options():
 def get_match_str(item):
     """Produce the string to an XML parameter with a value."""
     return (
-        '(.*\<spirit:configurableElementValue spirit:referenceId=".*\.'
+        r'(.*\<spirit:configurableElementValue spirit:referenceId=".*\.'
         + item
-        + '"\>)(.+)(\</spirit:configurableElementValue\>)'
+        + r'"\>)(.+)(\</spirit:configurableElementValue\>)'
     )
 
 
 def get_empty_match_str(item):
     """Produce the string to an XML parameter without a value."""
     return (
-        '(.*\<spirit:configurableElementValue spirit:referenceId=".*\.' + item + '")/\>'
+        r'(.*\<spirit:configurableElementValue spirit:referenceId=".*\.'
+        + item
+        + r'")/\>'
     )
 
 
