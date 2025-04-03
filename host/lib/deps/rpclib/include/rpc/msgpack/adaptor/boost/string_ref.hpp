@@ -18,9 +18,6 @@
 #ifndef MSGPACK_TYPE_BOOST_STRING_REF_HPP
 #define MSGPACK_TYPE_BOOST_STRING_REF_HPP
 
-#include <boost/version.hpp>
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
-
 #include "rpc/msgpack/versioning.hpp"
 #include "rpc/msgpack/adaptor/adaptor_base.hpp"
 #include "rpc/msgpack/adaptor/check_container_size.hpp"
@@ -89,7 +86,5 @@ struct object_with_zone<boost::string_ref> {
 /// @endcond
 
 } // namespace clmdep_msgpack
-
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
 
 #endif // MSGPACK_TYPE_BOOST_STRING_REF_HPP

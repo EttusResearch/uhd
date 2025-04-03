@@ -57,9 +57,7 @@ struct basic_variant :
         uint64_t,          // POSITIVE_INTEGER
         double,            // FLOAT
         std::string,       // STR
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
         boost::string_ref, // STR
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
         std::vector<char>, // BIN
         clmdep_msgpack::type::raw_ref, // BIN
         ext,               // EXT
@@ -76,9 +74,7 @@ struct basic_variant :
         uint64_t,          // POSITIVE_INTEGER
         double,            // FLOAT
         std::string,       // STR
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
         boost::string_ref, // STR
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
         std::vector<char>, // BIN
         clmdep_msgpack::type::raw_ref, // BIN
         ext,               // EXT
@@ -129,11 +125,9 @@ struct basic_variant :
     bool is_string() const {
         return boost::get<std::string>(this);
     }
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
     bool is_boost_string_ref() const {
         return boost::get<boost::string_ref>(this);
     }
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
     bool is_vector_char() const {
         return boost::get<std::vector<char> >(this);
     }
@@ -186,14 +180,12 @@ struct basic_variant :
     std::string& as_string() {
         return boost::get<std::string>(*this);
     }
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
     boost::string_ref const& as_boost_string_ref() const {
         return boost::get<boost::string_ref>(*this);
     }
     boost::string_ref& as_boost_string_ref() {
         return boost::get<boost::string_ref>(*this);
     }
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
     std::vector<char> const& as_vector_char() const {
         return boost::get<std::vector<char> >(*this);
     }
@@ -257,13 +249,7 @@ inline bool operator==(basic_variant<STR, BIN, EXT> const& lhs, basic_variant<ST
 }
 
 typedef basic_variant<std::string, std::vector<char>, ext> variant;
-typedef basic_variant<
-#if (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
-    boost::string_ref,
-#else  // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
-    std::string,
-#endif // (BOOST_VERSION / 100000) >= 1 && ((BOOST_VERSION / 100) % 1000) >= 53
-    raw_ref, ext_ref> variant_ref;
+typedef basic_variant<boost::string_ref, raw_ref, ext_ref> variant_ref;
 
 } // namespace type
 
