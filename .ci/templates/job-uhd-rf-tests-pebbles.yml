@@ -8,6 +8,9 @@ parameters:
 - name: uhdArtifactSource
   default: current
   type: string
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
 - name: fpga_imgs_source
   type: string
 - name: testDevices
@@ -25,6 +28,7 @@ jobs:
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
     redisHost: 'ettus-pebbles'
     extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'

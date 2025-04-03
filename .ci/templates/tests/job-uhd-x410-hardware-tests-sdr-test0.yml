@@ -2,6 +2,9 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
 - name: fpga_imgs_source
   type: string
   values:
@@ -19,6 +22,7 @@ jobs:
     runSystemImageTest: true
     runRfnocBlockTest: true
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     xilinxLocation: $(xilinx_location)
     dutMatrix:

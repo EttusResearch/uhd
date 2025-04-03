@@ -15,6 +15,8 @@ parameters:
   type: string
 - name: uhdArtifactSource
   type: string
+- name: uhdFpgaArtifactSource
+  type: string
 - name: fpga_imgs_source
   type: string
 - name: redisHost
@@ -61,8 +63,13 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
-      echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
-      echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
+      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
+      else
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}"
+      fi
     displayName: Set uhddev FPGA pipeline artifact location
     condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
@@ -101,9 +108,7 @@ jobs:
     displayName: Download $(devType)-images artifact
     condition: and(succeeded(), eq(variables.devModel, 'e320'))
 
-  # We always download FPGA bitfiles from the current pipeline. Other steps
-  # upstream have to make sure they exist.
-  - download: current
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
     patterns: |
       usrp_$(devModel)*.bit
       usrp_$(devModel)*.dts

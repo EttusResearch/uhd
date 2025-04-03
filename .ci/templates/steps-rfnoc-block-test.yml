@@ -3,6 +3,9 @@ parameters:
   type: string
 - name: dutType
   type: string
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
 - name: fpga_imgs_source
   type: string
   default: Pipeline
@@ -25,6 +28,7 @@ steps:
     parameters:
       dutType: ${{ parameters.dutType }}
       dutFPGA: fft_block_test
+      fpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
   - script: |

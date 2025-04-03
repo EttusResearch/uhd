@@ -26,6 +26,9 @@ parameters:
 - name: uhdArtifactSource
   type: string
   default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
   # For embedded devices, this controls whether we use default FPGA images
   # (built into the filesystem), or if we download them from the pipeline.
 - name: fpga_imgs_source
@@ -87,8 +90,13 @@ jobs:
     displayName: Set uhddev pipeline artifact location
 
   - script: |
-      echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
-      echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
+      if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
+      else
+        echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}"
+      fi
     displayName: Set uhddev FPGA pipeline artifact location
 
   - script: |
@@ -101,9 +109,7 @@ jobs:
     artifact: $(dutEmbeddedImagesArtifact)
     displayName: Download $(dutEmbeddedImagesArtifact)
 
-  # We always download FPGA bitfiles from the current pipeline. Other steps
-  # upstream have to make sure they exist.
-  - download: current
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
     patterns: |
       usrp_$(pytestDUT)_fpga_$(dutFPGA).bit
       usrp_$(pytestDUT)_fpga_$(dutFPGA).dts
@@ -461,6 +467,8 @@ jobs:
       parameters:
         dutType: $(pytestDUT)
         uhdInstallPath: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
   - script: |
       echo "A previous step failed. See steps with warnings."
