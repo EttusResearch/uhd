@@ -14,6 +14,30 @@ import sys
 from uhd.rfnoc_utils import image_builder, log as rfnoc_log
 
 
+def get_valid_targets():
+    """Get valid targets (--target parameter)"""
+    target_fpga_map = {
+        "E310_SG1": ["", "IDLE"],
+        "E310_SG3": ["", "IDLE"],
+        "E320": ["1G", "XG", "AA"],
+        "N310": ["WX", "HG", "XG", "HA", "XA", "AA"],
+        "N300": ["WX", "HG", "XG", "HA", "XA", "AA"],
+        "N320": ["WX", "HG", "XG", "XQ", "AQ", "AA"],
+        "X310": ["1G", "HG", "XG", "HA", "XA"],
+        "X300": ["1G", "HG", "XG", "HA", "XA"],
+        "X410": [""],
+        "X440": [""],
+    }
+    targets = []
+    for target, fpgas in target_fpga_map.items():
+        for fpga in fpgas:
+            if fpga:
+                targets.append(f"{target}_{fpga}")
+            else:
+                targets.append(target)
+    return targets
+
+
 def setup_parser():
     """Create argument parser."""
     parser = argparse.ArgumentParser(
@@ -132,6 +156,7 @@ def setup_parser():
         "--target",
         help="Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified "
         "either here, on the configuration file.",
+        choices=get_valid_targets(),
         default=None,
     )
     parser.add_argument(
