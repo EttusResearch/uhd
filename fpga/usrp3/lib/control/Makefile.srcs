@@ -44,6 +44,7 @@ simple_spi_core.v \
 simple_spi_core_64bit.v \
 synchronizer_impl.v \
 synchronizer.v \
+synchronizer_sync_in.sv \
 pulse_synchronizer.v \
 user_settings.v \
 axil_regport_master.v \
