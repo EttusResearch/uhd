@@ -121,6 +121,7 @@ trigger:
     include:
     - host
     - mpm
+    - fpga
     - .ci
     - images/manifest.txt
     exclude:
