@@ -56,8 +56,10 @@ module axi_fifo #(
       assign o_tdata  = i_tdata;
       assign o_tvalid = i_tvalid;
       assign i_tready = o_tready;
+      assign space    = 16'h0;
+      assign occupied = 16'h0;
      end
-     if (SIZE == 0) begin : gen_fifo_flop
+     else if (SIZE == 0) begin : gen_fifo_flop
         axi_fifo_flop #(
           .WIDTH(WIDTH)
         ) fifo_flop (
