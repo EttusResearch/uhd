@@ -64,8 +64,28 @@ steps:
   - run_if:
       condition: "${ not bool(descriptor) }"
       steps:
-      - exit:
-          msg: "Aborting: No descriptor file found."
+      - input:
+          dst_var: run_wizard
+          prompt: "Block descriptor file ${ descriptor } does not exist. Would you like to run the YAML creation wizard? (y/n)"
+          type: bool
+      - run_if:
+          condition: "${ run_wizard }"
+          steps:
+          - fork:
+              command: make-yaml
+              args:
+                blockname: "${ blockname }"
+                yaml_descriptor: null
+                copyright_holder: null
+                license: null
+          - exit:
+              msg: "⚠    Skipping block generation -- re-run 'rfnoc_modtool add' after editing the block descriptor file."
+              code: 0
+      - run_if:
+          condition: "${ not run_wizard }"
+          steps:
+            - exit:
+                msg: "Block descriptor file ${ descriptor } does not exist. Aborting."
   - log:
       msg: "Parsing block descriptor file ${ descriptor }..."
       symbol: ⚙️
