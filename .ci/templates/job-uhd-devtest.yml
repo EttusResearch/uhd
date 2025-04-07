@@ -35,7 +35,7 @@ jobs:
     demands:
     - suiteName -equals ${{ parameters.suiteName }}
     - testOS -equals ${{ parameters.testOS }}
-    - device -equals $(devAgent)
+    - device -equals $(devName)
   variables:
   - group: sdr-pipeline-vars
   strategy:

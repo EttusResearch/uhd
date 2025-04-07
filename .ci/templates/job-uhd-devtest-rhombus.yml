@@ -33,7 +33,6 @@ jobs:
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x3xx') }}:
         rhombus-x300-UBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x300'
           devName: 'rhombus-x300-UBX-0'
@@ -45,7 +44,6 @@ jobs:
           jtagSerial: '2516350A6019'
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-UBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-UBX-0'
@@ -57,7 +55,6 @@ jobs:
           jtagSerial: '251635138E98'
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-WBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-WBX-0'
@@ -69,7 +66,6 @@ jobs:
           jtagSerial: '2516350C5BFF'
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-TWINRX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: rhombus-x310-TWINRX-0
@@ -82,7 +78,6 @@ jobs:
           jtagSerial: '251635F49FDF'
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x300-SBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x300'
           devName: rhombus-x300-SBX-0
@@ -96,7 +91,6 @@ jobs:
 
       ${{ if contains(parameters.testDevices, 'b2xx') }}:
         rhombus-b210-0:
-          devAgent: x3xxb2xx
           devType: 'b200'
           devModel: 'b210'
           devName: rhombus-b210-0
@@ -106,7 +100,6 @@ jobs:
 
       ${{ if contains(parameters.testDevices, 'n3xx') }}:
         rhombus-n310-0:
-          devAgent: rhombus-n310-0
           devType: 'n3xx'
           devModel: 'n310'
           devName: rhombus-n310-0
@@ -120,7 +113,6 @@ jobs:
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
           devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n310-0.yml
         rhombus-n321-0:
-          devAgent: rhombus-n321-0
           devType: 'n3xx'
           devModel: 'n320'
           devName: rhombus-n321-0
@@ -136,7 +128,6 @@ jobs:
 
       ${{ if contains(parameters.testDevices, 'e320') }}:
         rhombus-e320-0:
-          devAgent: rhombus-e320-0
           devType: 'e3xx'
           devModel: 'e320'
           devName: rhombus-e320-0
