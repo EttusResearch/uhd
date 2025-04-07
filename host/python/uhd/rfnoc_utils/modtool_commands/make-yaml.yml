@@ -1,0 +1,106 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+help: |
+  YAML Creation Wizard -- Generate an RFNoC block YAML descriptor file based on
+  user input.
+
+  Note: Must be called from within a valid RFNoC OOT module directory. Use -C to
+  specify the module directory if necessary.
+
+# These get turned into command line arguments for this command. May not contain
+# variable references (they get evaluated later).
+args:
+  blockname:
+    name_or_flags: blockname
+    type: str
+    help: Name of the new block to add to the OOT module
+  yaml_descriptor:
+    name_or_flags: ["-y", "--yaml-descriptor"]
+    type: str
+    metavar: YAML_FILE
+    help: >
+      Path to the YAML descriptor file for the new block. Defaults to rfnoc/blocks/<blockname>.yml.
+      If this file already exists, the command will fail with an error.
+  copyright_holder:
+    name_or_flags: "--copyright-holder"
+    default: "<author>"
+  license:
+    name_or_flags: "--license"
+    default: "SPDX-License-Identifier: GPL-3.0-or-later"
+
+# Note: Variables get resolved in order, that means later vars can reference earlier ones
+variables:
+  # Type is block or transport_adapter (latter not yet implemented)
+  type: block
+  type_d: blocks
+  blockname: "${ args.blockname }"
+  descriptor: "${ args.yaml_descriptor }"
+  blockname_full: "${ f'rfnoc_{type}_{blockname}' }"
+  copyright_holder: "${ args.copyright_holder }"
+  license: "${ args.license }"
+
+
+# This tells us that templates come from the blocktool/ subdirectory
+template_namespace: blocktool
+
+steps:
+  - find_file:
+      dst_var: descriptor
+      file: "${ descriptor }"
+  - run_if:
+      condition: "${ bool(descriptor) }"
+      steps:
+      - exit:
+          msg: "Descriptor file ${ descriptor } already exists! Aborting."
+  - input:
+      dst_var: noc_id
+      prompt: "Choose NoC-ID (e.g., 0x1234ABCD):"
+      type: int
+      check: "noc_id >= 0x00000000 and noc_id <= 0xFFFFFFFF"
+      check_msg: "Invalid NoC-ID! Must be between 0x00000000 and 0xFFFFFFFF."
+  - input:
+      dst_var: clocks
+      prompt: "Provide comma-separated list of additional clocks (e.g., 'ce', leave blank for none):"
+  - input:
+      dst_var: ctrl_fifo_depth
+      prompt: "Specify control FIFO depth:"
+      default: 32
+      type: int
+  - input:
+      dst_var: ctrl_clk_domain
+      prompt: "Specify clock domain for control interface (leave blank for default):"
+      default: rfnoc_chdr
+  - input:
+      dst_var: data_iface_type
+      prompt: "Specify data interface type (axis_chdr, axis_pyld_ctxt, axis_data, none):"
+      default: axis_data
+      check: "data_iface_type in ['axis_chdr', 'axis_pyld_ctxt', 'axis_data', 'none']"
+  - input:
+      dst_var: data_clk_domain
+      prompt: "Specify clock domain for data interface (leave blank for default):"
+      default: rfnoc_chdr
+  - input:
+      dst_var: num_inputs
+      prompt: "Specify number of input ports:"
+      default: 1
+  - input:
+      dst_var: num_outputs
+      prompt: "Specify number of output ports:"
+      default: 1
+  - input:
+      dst_var: in_type
+      prompt: "Specify input data type:"
+      default: sc16
+  - input:
+      dst_var: out_type
+      prompt: "Specify output data type:"
+      default: sc16
+  - write_template:
+      template: descriptor.yml.mako
+      dest: "rfnoc/${ type_d }/${ blockname }.yml"
+  - log:
+      msg: "Generated rfnoc/${ type_d }/${ blockname }.yml. Open the file and make any necessary changes before proceeding!"
