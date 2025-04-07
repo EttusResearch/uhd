@@ -17,6 +17,8 @@ import os
 import re
 import shutil
 import sys
+import traceback
+from argparse import Namespace
 from pathlib import Path
 
 import mako.lookup
@@ -48,7 +50,7 @@ def get_file_list(**kwargs):
     if "file" in kwargs and kwargs["file"]:
         file_list.append(kwargs["file"])
     # Only return unique files that exist
-    return [f for f in set(file_list) if os.path.exists(f) and os.path.isfile(f)]
+    return [f for f in set(file_list) if os.path.isfile(f)]
 
 
 class StepExecutor:
@@ -59,16 +61,26 @@ class StepExecutor:
 
     def __init__(self, global_vars, args, cmd):
         """Initialize the executor."""
+        assert isinstance(cmd, dict), "Command must be a dictionary"
         self.cmd = cmd
         self.args = args
         self.global_vars = global_vars
         self.template_base = os.path.join(os.path.dirname(__file__), "templates")
         self._log = logging.getLogger(__name__)
 
-    def _resolve(self, value):
+    def _setv(self, name, val):
+        """Set variable name to val."""
+        self.cmd["variables"][name] = val
+
+    def _resolve(self, value, **extra_kwargs):
         """Shorthand for resolving a value."""
         return resolve(
-            value, args=self.args, **self.global_vars, **self.cmd.get("variables", {}), os=os
+            value,
+            args=self.args,
+            **self.global_vars,
+            **self.cmd.get("variables", {}),
+            os=os,
+            **extra_kwargs,
         )
 
     def run(self, steps):
@@ -92,12 +104,13 @@ class StepExecutor:
                     ", ".join([f"{k}={v}" for k, v in args_resolved_visual.items()]),
                 )
                 try:
-                    getattr(self, step_type)(**{k: self._resolve(v) for k, v in step_args.items()})
+                    getattr(self, step_type)(**args_resolved)
                 except StepExecutor.StepError as e:
                     self._log.error(str(e))
                     sys.exit(1)
                 except Exception as e:
                     self._log.error("Unexpected error running step %s: %s", step_type, str(e))
+                    self._log.debug(traceback.format_exc())
                     sys.exit(1)
 
     def run_if(self, condition, steps):
@@ -231,7 +244,7 @@ class StepExecutor:
         self._insert_text(pattern, text, r"\g<0>" + text, **kwargs)
 
     def insert_before(self, pattern, text, **kwargs):
-        """Insert text after a pattern in a file."""
+        """Insert text before a pattern in a file."""
         self._insert_text(pattern, text, text + r"\g<0>", **kwargs)
 
     def append(self, text, **kwargs):
@@ -293,3 +306,92 @@ class StepExecutor:
         if "msg" in kwargs:
             self._log.info(kwargs["msg"])
         sys.exit(kwargs.get("code", 1))
+
+    def input(self, dst_var, prompt, **kwargs):
+        """Request input from the user.
+
+        The input is captured by calling input(). Then, the following rules apply:
+        - If nothing was entered, and a default value is provided, the default
+          is used and this function returns.
+        - If a type is provided, the input is converted to that type. This may
+          fail, in which case the user is prompted again.
+        - Next, if a check is provided, the input is checked against the
+          predicate. If the check fails, the user is prompted again.
+        - When the user is prompted to re-enter the input, we use the string
+          from "check_msg" to provide additional information.
+        """
+        default = kwargs.get("default")
+        prompt = prompt.strip()
+        if default:
+            prompt += f" [{default}]"
+        prompt += " "
+        val = input(prompt)
+
+        def _filter_bool(s):
+            """A 'smart' conversion from string to Boolean."""
+            if isinstance(s, str) and s.lower() in ["y", "yes", "1", "true", "on"]:
+                return True
+            else:
+                return False
+
+        filters = {"bool": _filter_bool, "int": lambda s: int(s, 0), "float": float}
+        if val == "" and "default" in kwargs:
+            self._setv(dst_var, kwargs["default"])
+            return
+        elif "type" in kwargs:
+            if kwargs["type"] in filters:
+                try:
+                    val = filters[kwargs["type"]](val.strip())
+                except:
+                    val = None
+            else:
+                raise StepExecutor.StepError(f"Unknown input type {kwargs['type']}")
+        else:
+            val = val.strip()
+
+        def _check_input(val):
+            """Check if the input is valid."""
+            if val is None:
+                return False
+            if "check" not in kwargs:
+                return True
+            try:
+                check_val = self._resolve("${ " + kwargs["check"] + "}", **{dst_var: val})
+                if check_val:
+                    return True
+            except:
+                pass
+            return False
+
+        if not _check_input(val):
+            check_msg = kwargs.get("check_msg", "Invalid input!")
+            print(check_msg)
+            # Try again
+            return self.input(dst_var, prompt, **kwargs)
+
+        self._setv(dst_var, val)
+
+    def fork(self, command, args, **kwargs):
+        """Fork a command and wait for it to finish.
+
+        The commands that can be forked are other rfnoc_modtool subcommands.
+        """
+        from .rfnoc_modtool import collect_commands, resolve_vars
+
+        if not isinstance(args, Namespace):
+            args = Namespace(**{k: self._resolve(v) for k, v in args.items()})
+        cmds = collect_commands()
+        if command not in cmds:
+            raise StepExecutor.StepError(f"Unknown command {command}")
+        cmd = cmds[command]
+        assert not cmd.get(
+            "skip_identify_module", False
+        ), "Cannot fork a command that skips module identification"
+        cmd = resolve_vars(cmd, self.global_vars, args)
+        sub_executor = StepExecutor(self.global_vars.copy(), args, cmd)
+        self._log.debug(
+            "Forking command %s(%s)",
+            command,
+            ", ".join([f"{k}={v}" for k, v in args.__dict__.items()]),
+        )
+        sub_executor.run(cmds[command]["steps"])
