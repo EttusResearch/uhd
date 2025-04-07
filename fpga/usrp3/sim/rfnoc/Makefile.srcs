@@ -29,6 +29,7 @@ PkgEthernet.sv \
 PkgChdrData.sv \
 ../../lib/rfnoc/core/rfnoc_chdr_utils_pkg.sv \
 PkgChdrBfm.sv \
+PkgChdrUtils.sv \
 PkgAxisCtrlBfm.sv \
 PkgRfnocItemUtils.sv \
 PkgCtrlIfaceBfm.sv \
