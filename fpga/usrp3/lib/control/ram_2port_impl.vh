@@ -8,11 +8,13 @@
 // Requires `RAM_MOD_NAME and `RAM_DIRECTIVE to be defined
 
 module `RAM_MOD_NAME #(
-  parameter DWIDTH    = 32,           // Width of the memory block
-  parameter AWIDTH    = 9,            // log2 of the depth of the memory block
-  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
-  parameter OUT_REG   = 0,            // Instantiate an output register? (+1 cycle of read latency)
-  parameter INIT_FILE = ""            // Optionally initialize memory with this file
+  parameter DWIDTH    = 32,             // Width of the memory block
+  parameter AWIDTH    = 9,              // log2 of the depth of the memory block
+  parameter RW_MODE   = "READ-FIRST",   // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
+  parameter OUT_REG   = 0,              // Instantiate an output register? (+1 cycle of read latency)
+  parameter INIT_FILE = "",             // Optionally initialize memory with this file
+  parameter INIT_VAL  = {DWIDTH{1'b0}}  // Optionally initialize output registers with this value and
+                                        // memory will be filled with this value if INIT_FILE is empty
 ) (
   input  wire              clka,
   input  wire              ena,
@@ -40,15 +42,15 @@ module `RAM_MOD_NAME #(
     integer i;
     initial begin
       for (i = 0; i < (1<<AWIDTH); i = i + 1) begin
-        ram[i] = {DWIDTH{1'b0}};
+        ram[i] = INIT_VAL;
       end
     end
   end endgenerate
 
-  reg [DWIDTH-1:0] doa_r = 'h0, dob_r = 'h0;
+  reg [DWIDTH-1:0] doa_r = INIT_VAL, dob_r = INIT_VAL;
   generate if (OUT_REG == 1) begin
     // A 2 clock cycle read latency with improve clock-to-out timing
-    reg [DWIDTH-1:0] doa_rr = 'h0, dob_rr = 'h0;
+    reg [DWIDTH-1:0] doa_rr = INIT_VAL, dob_rr = INIT_VAL;
 
     always @(posedge clka)
       if (ena) begin
