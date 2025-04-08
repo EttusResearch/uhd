@@ -10,6 +10,8 @@
 FROM mcr.microsoft.com/windows/servercore:1809
 LABEL maintainer="Ettus Research"
 
+ARG PIP_INDEX_HOST
+ARG PIP_INDEX_URL
 ENV VCPKG_DISABLE_METRICS=1
 
 RUN setx chocolateyVersion 1.4.0 /m
@@ -24,6 +26,15 @@ RUN choco install -y git
 RUN choco install -y NSIS --version=3.06.1
 RUN choco install -y vim
 RUN choco install -y python3 --version=3.10.11
+
+# Optionally use cached index.
+RUN if defined PIP_INDEX_URL ( \
+    pip config --global set global.index-url %PIP_INDEX_URL% && \
+    pip config --global set global.trusted-host %PIP_INDEX_HOST% \
+    )
+
+RUN pip config list
+RUN python -m pip install --upgrade pip
 RUN pip install mako requests numpy ruamel.yaml
 
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command \

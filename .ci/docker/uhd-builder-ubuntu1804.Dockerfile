@@ -4,6 +4,8 @@
 FROM ubuntu:18.04
 LABEL maintainer="Ettus Research"
 
+ARG PIP_INDEX_HOST
+ARG PIP_INDEX_URL
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -63,10 +65,17 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
+# Optionally use cached index.
+RUN if [[ -n "$PIP_INDEX_URL" ]]; then \
+        python3 -m pip config --global set global.index-url $PIP_INDEX_URL && \
+        python3 -m pip config --global set global.trusted-host $PIP_INDEX_HOST; \
+    fi
+
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 5 && \
     update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 10 && \
     python3 -m pip install --upgrade pip
 
+RUN python3 -m pip config list
 RUN python3 -m pip install \
     # Install UHD python dependencies
         docutils \

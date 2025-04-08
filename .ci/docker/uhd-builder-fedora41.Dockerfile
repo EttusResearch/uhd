@@ -4,6 +4,9 @@
 FROM fedora:41
 LABEL maintainer="Ettus Research"
 
+ARG PIP_INDEX_HOST
+ARG PIP_INDEX_URL
+
 RUN dnf install -y \
         boost-devel \
         ccache \
@@ -60,4 +63,12 @@ RUN dnf install -y \
         && \
     dnf clean all
 
+# Optionally use cached index.
+RUN if [[ -n "$PIP_INDEX_URL" ]]; then \
+        python3 -m pip config --global set global.index-url $PIP_INDEX_URL && \
+        python3 -m pip config --global set global.trusted-host $PIP_INDEX_HOST; \
+    fi
+
+RUN python3 -m pip config list
+RUN python3 -m pip install --upgrade pip
 RUN pip install pygccxml pyyaml

@@ -111,6 +111,16 @@ jobs:
   - checkout: self
     clean: true
   - script: |
+        echo pip_index_url: $PIP_INDEX_URL
+        echo pip_index_host: $PIP_INDEX_HOST
+        if [[ -z "$PIP_INDEX_URL" || -z "$PIP_INDEX_HOST" ]]
+        then
+          echo "Error: One of the variables pip_index_url or pip_index_host is not set"
+          echo "They must be set as variables in the pipeline UI and point to the correct PyPI server"
+          exit 1
+        fi
+    displayName: Check if UI variables are set
+  - script: |
       cd $(Build.SourcesDirectory)
       uhd_version_major=$(sed -nE "s/^set\(UHD_VERSION_MAJOR\s+([0-9]+)\)/\1/p" host/cmake/Modules/UHDVersion.cmake)
       uhd_version_api=$(sed -nE "s/^set\(UHD_VERSION_API\s+([0-9]+)\)/\1/p" host/cmake/Modules/UHDVersion.cmake)
@@ -125,6 +135,7 @@ jobs:
       echo "Using UHD version string: $uhd_docker_image_version"
       echo "##vso[task.setvariable variable=uhdDockerImageVersion;isOutput=true;]$uhd_docker_image_version"
     name: set_uhd_version
+    condition: succeeded()
 
 - job: build_image_linux
   dependsOn: set_uhd_docker_image_version
@@ -153,7 +164,7 @@ jobs:
         containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(uhdDockerImageVersion)
-      arguments: --no-cache --pull
+      arguments: --no-cache --pull --build-arg PIP_INDEX_HOST=$(pip_index_host) --build-arg PIP_INDEX_URL=$(pip_index_url)
   - task: Docker@2
     displayName: Push Image
     inputs:
@@ -206,7 +217,7 @@ jobs:
 - job: build_image_win
   dependsOn: set_uhd_docker_image_version
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 120
+  timeoutInMinutes: 150
   variables:
     uhdDockerImageVersion: $[ dependencies.set_uhd_docker_image_version.outputs['set_uhd_version.uhdDockerImageVersion'] ]
   pool:
@@ -232,7 +243,7 @@ jobs:
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(uhdDockerImageVersion)
       buildContext: $(Build.SourcesDirectory)
-      arguments: --no-cache --pull
+      arguments: --no-cache --pull --build-arg PIP_INDEX_HOST=$(pip_index_host) --build-arg PIP_INDEX_URL=$(pip_index_url)
   - task: Docker@2
     displayName: Push Image
     inputs:
