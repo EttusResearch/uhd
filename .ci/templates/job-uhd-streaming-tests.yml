@@ -252,6 +252,7 @@ jobs:
       sleep 5
       exit $EXITCODE
     displayName: setup interfaces for use without DPDK
+    timeoutInMinutes: 5
 
   - script: |
       echo "##[group]Printing Environment"
@@ -291,6 +292,7 @@ jobs:
       fi
       sleep 5
     displayName: setup interfaces for use raw udp streaming
+    timeoutInMinutes: 5
 
   - script: |
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
@@ -349,6 +351,7 @@ jobs:
       exit $EXITCODE
     displayName: setup interfaces for use with DPDK
     condition: and(succeeded(), not(eq(variables.dutType, 'B210')))
+    timeoutInMinutes: 5
 
   - ${{ each dpdkDir in parameters.dpdkDirs }}:
     - script: |
