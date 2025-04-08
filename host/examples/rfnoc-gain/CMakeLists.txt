@@ -215,7 +215,6 @@ endif(NOT CMAKE_MODULES_DIR)
 ########################################################################
 if(UHD_FPGA_DIR)
     add_subdirectory(rfnoc)
-    add_subdirectory(fpga/gain)
     add_subdirectory(icores)
 endif()
 if(UHD_FOUND)

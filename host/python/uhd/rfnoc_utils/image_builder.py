@@ -25,6 +25,7 @@ from mako import exceptions
 from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
 from .template import Template
+from .utils import check_include_paths_backward_compat
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -337,8 +338,7 @@ def load_module_yamls(include_paths):
     def load_module_descs(module_type):
         """Load separate block/module defs."""
         paths = [
-            os.path.abspath(os.path.normpath(os.path.join(x, "rfnoc", module_type)))
-            for x in include_paths
+            os.path.abspath(os.path.normpath(os.path.join(x, module_type))) for x in include_paths
         ]
         logging.debug("Looking for %s descriptors in:", module_type[:-1])
         for path in paths:
@@ -423,9 +423,9 @@ def build_image(repo_fpga_path, config_path, device, **args):
     """
     # We start by loading some core/standard files that are always needed.
     core_config_path = yaml_utils.get_core_config_path(config_path)
-
-    # TODO does this work for both block yamls and HDL sources?
-    include_paths = args.get("include_paths", []) + [config_path]
+    include_paths = check_include_paths_backward_compat(args.get("include_paths", [])) + [
+        os.path.join(config_path, "rfnoc")
+    ]
     logging.debug("Include paths: %s", ";".join(include_paths))
     # A list of all known module descriptors
     known_modules = load_module_yamls(include_paths)

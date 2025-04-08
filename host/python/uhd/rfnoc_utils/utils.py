@@ -163,3 +163,41 @@ def find_include_file(filename, include_paths):
             return os.path.realpath(candidate)
 
     raise FileNotFoundError(f"File {filename} not found in include paths: {include_paths}")
+
+
+def check_include_paths_backward_compat(include_paths):
+    """Check if the include paths are plausible or maybe following an old style.
+
+    In an older version of the image builder, the include paths for OOT builds
+    pointed to the OOT modules itself (e.g., `-I ./rfnoc-gain`). However, the
+    correct path should be the `rfnoc` subdir (e.g., `-I ./rfnoc-gain/rfnoc`).
+
+    To make people's lives not unnecessarily hard, we allow the old behavior.
+    This requires a heuristic to figure out if the user actually meant to use
+    include_path + 'rfnoc' or not. This is done by checking if the include path
+    contains expected subdirs (e.g., `blocks`, `fpga`) or if the path contains
+    subdirs that are not expected (e.g., `cmake`, `rfnoc`).
+    """
+
+    def path_is_probably_old_style(path):
+        """Return True if a path is missing an 'rfnoc' subdir."""
+        expected_subdirs_new_style = ["blocks", "fpga", "transport_adapters", "modules"]
+        expected_subdirs_old_style = ["cmake", "rfnoc"]
+        if any(os.path.isdir(os.path.join(path, p)) for p in expected_subdirs_new_style):
+            return False
+        if all(os.path.isdir(os.path.join(path, p)) for p in expected_subdirs_old_style):
+            return True
+        return False
+
+    def check_and_fix(path):
+        if path_is_probably_old_style(path):
+            new_path = os.path.join(path, "rfnoc")
+            logging.info(
+                "Include path %s is likely missing an 'rfnoc' subdir. Changing to: %s",
+                path,
+                new_path,
+            )
+            return os.path.join(path, "rfnoc")
+        return path
+
+    return [check_and_fix(path) for path in include_paths]

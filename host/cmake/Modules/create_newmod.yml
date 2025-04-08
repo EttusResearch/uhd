@@ -11,8 +11,8 @@ steps:
     - "apps/*.cpp"
     - "build"
     - "examples/*.py"
-    - "fpga/gain/ip"
-    - "fpga/gain/rfnoc_block_gain"
+    - "rfnoc/fpga/gain/ip"
+    - "rfnoc/fpga/gain/rfnoc_block_gain"
     - "icores/*.yml"
     - "lib/*.cpp"
     - "gr-*"
@@ -39,14 +39,14 @@ steps:
     pattern: "^    .+py$"
     repl: "    # Insert your example sources here if you want them to be installed"
 - comment_out:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     range: [9, 13]
 - search_and_replace:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     pattern: "add_subdirectory\\(([a-z0-9_]+)\\)"
     repl: "#add_subdirectory(rfnoc_block_myblock)"
 - insert_before:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     pattern: "# IP gets"
     text: "# Uncomment the following lines to add your own IP:\n"
 - search_and_replace:

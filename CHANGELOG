@@ -17,6 +17,9 @@ Change Log for Releases
 * Bug Fixes
   - Calling `recv()` on an RX streamer connected to an RFNoC device with a
     zero timeout value now correctly returns immediately.
+  - rfnoc-gain: Moved the fpga/ subdirectory under rfnoc/. This way, the
+    directory structure inside the OOT module is identical to the directory
+    structure after installation.
 * Removals / Deprecations
   - Removed tools/uhd_dump. This tool is obsolete, the USRP X3x0 is not even
     compatible with it any more. Dumps can be recorded and analyzed with wireshark
