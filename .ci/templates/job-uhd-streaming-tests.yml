@@ -244,9 +244,9 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       if [ "${{ parameters.nicType }}" = "100gbe" ]; then
-        sudo ./setup100gbe.sh --auto
+        sudo ./setup100gbe.sh --auto -v
       else
-        sudo ./setup10gbe.sh --auto
+        sudo ./setup10gbe.sh --auto -v
       fi
       EXITCODE=$?
       sleep 5
@@ -286,9 +286,9 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       if [ "${{ parameters.nicType }}" = "100gbe" ]; then
-        sudo ./setup100gbe.sh --ramdisk
+        sudo ./setup100gbe.sh --ramdisk -v
       else
-        sudo ./setup10gbe.sh --ramdisk
+        sudo ./setup10gbe.sh --ramdisk -v
       fi
       sleep 5
     displayName: setup interfaces for use raw udp streaming
@@ -342,9 +342,9 @@ jobs:
   - script: |
       cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
       if [ "${{ parameters.nicType }}" = "100gbe" ]; then
-        sudo ./setup100gbe.sh --auto --dpdk
+        sudo ./setup100gbe.sh --auto --dpdk -v
       else
-        sudo ./setup10gbe.sh --auto --dpdk
+        sudo ./setup10gbe.sh --auto --dpdk -v
       fi
       EXITCODE=$?
       sleep 5
