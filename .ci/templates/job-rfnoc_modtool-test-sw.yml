@@ -60,6 +60,23 @@ jobs:
       ls -lR $(Agent.TempDirectory)/rfnoc_modtool
     displayName: Run rfnoc_modtool SW test
 
+  # Test rfnoc-gain icore builds
+  - bash: |
+      set -e
+      ls -l $(Build.SourcesDirectory)
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export PATH=$(Build.BinariesDirectory)/uhddev/build-installed/bin:$PATH
+      export PYTHONPATH=`find $(Build.BinariesDirectory)/uhddev/build-installed/lib -name site-packages`:$PYTHONPATH
+      export UHD_DIR=$(Build.BinariesDirectory)/uhddev/build-installed
+      export UHD_PKG_DATA_PATH=$UHD_DIR/share/uhd
+      mkdir -p $(Build.SourcesDirectory)/host/examples/rfnoc-gain/build
+      cd $(Build.SourcesDirectory)/host/examples/rfnoc-gain/build
+      rfnoc_image_builder -F $(Build.SourcesDirectory)/fpga -I ../rfnoc -HDG -y ../icores/x310_rfnoc_image_core.yml
+      rfnoc_image_builder -F $(Build.SourcesDirectory)/fpga -I ../rfnoc -HDG -y ../icores/x410_XG_200_rfnoc_image_core.yml
+      ls -lR .
+      rm -rf $(Build.SourcesDirectory)/host/examples/rfnoc-gain/build
+    displayName: Run rfnoc_image_builder on rfnoc-gain image cores
+
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: $(Agent.TempDirectory)/rfnoc_modtool
