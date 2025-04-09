@@ -228,6 +228,7 @@
 - re: fpga/usrp3/lib
   add:
     - fpga.usrp3.all
+    - uhd.rfnoc_modtool.all
 
 # image builder changes
 - re: host/utils/rfnoc_image_builder.py
