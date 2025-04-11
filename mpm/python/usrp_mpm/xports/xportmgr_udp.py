@@ -258,42 +258,55 @@ class XportMgrUDP:
             return
 
         int_iface = internal_ifaces[0]
+        iface_ip_addr = self._chdr_ifaces[iface]['ip_addr']
         internal_ip_addr = self.get_fpga_internal_ip_address(int_iface)
         prerouting_arguments = [
             'PREROUTING',
             '-t', 'nat',
             '-i', iface,
             '-p', 'udp',
+            '-d', iface_ip_addr,
             '--dport', str(self.chdr_port),
             '-j', 'DNAT',
             '--to-destination', internal_ip_addr]
+        postrouting_arguments = [
+            'POSTROUTING',
+            '-t', 'nat',
+            '-o', iface,
+            '-p', 'udp',
+            '-s', internal_ip_addr,
+            '--sport', str(self.chdr_port),
+            '-j', 'SNAT',
+            '--to-source', iface_ip_addr
+        ]
         forward_arguments = [
             'FORWARD',
+            '-t', 'filter',
             '-p', 'udp',
             '-d', internal_ip_addr,
             '--dport', str(self.chdr_port),
             '-j', 'ACCEPT']
         try:
-            result = subprocess.run(
-                ['iptables', '-C'] + prerouting_arguments,
-                capture_output=True,
-                timeout=2)
-            if result.returncode != 0:
-                self.log.debug('Adding iptables prerouting rule')
-                subprocess.run(
-                    ['iptables', '-A'] + prerouting_arguments,
-                    timeout=2,
-                    check=True)
-            result = subprocess.run(
-                ['iptables', '-C'] + forward_arguments,
-                capture_output=True,
-                timeout=2)
-            if result.returncode != 0:
-                self.log.debug('Adding iptables forward rule')
-                subprocess.run(
-                    ['iptables', '-A'] + forward_arguments,
-                    timeout=2,
-                    check=True)
+            arguments_map = {
+                'prerouting': prerouting_arguments,
+                'postrouting': postrouting_arguments,
+                'forward': forward_arguments
+            }
+            for rule_name, arguments in arguments_map.items():
+                result = subprocess.run(
+                    ['iptables', '-C'] + arguments,
+                    capture_output=True,
+                    timeout=2)
+                if result.returncode != 0:
+                    self.log.debug(f'Adding iptables {rule_name} rule')
+                    subprocess.run(
+                        ['iptables', '-F'] + arguments[0:3],
+                        timeout=2,
+                        check=True)
+                    subprocess.run(
+                        ['iptables', '-A'] + arguments,
+                        timeout=2,
+                        check=True)
         except subprocess.SubprocessError:
             self.log.warning('Unable to configure CHDR forwarding')
 
