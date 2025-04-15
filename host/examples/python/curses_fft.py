@@ -1,35 +1,102 @@
 #!/usr/bin/env python3
 #
-# Copyright 2017-2018 Ettus Research, a National Instruments Company
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Curses FFT example using Python API
+"""Curses FFT example using Python API.
+
+This example demonstrates how to use the UHD Python API to create a simple
+FFT (Fast Fourier Transform) display using the curses library. The script
+receives samples from a USRP device and displays the instantaneous estimate of
+the power spectral density of the received signal on the terminal window. The
+display is updated in real-time as new samples are received. The user can
+adjust parameters such as frequency, gain, and sample rate through command-line
+arguments. This example is useful for visualizing the frequency spectrum of
+signals received by the USRP device, allowing users to monitor and analyze the
+signal characteristics in a user-friendly manner.
+
+Example Usage:
+curses_fft.py --args addr=192.168.10.2 --freq 2.4e9 --rate 1e6 --gain 10
+              --nsamps 100000 --dyn 60
 """
 
 import argparse
 import curses as cs
+
 import numpy as np
 import uhd
 
 
 def parse_args():
-    """Parse the command line arguments"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--args", default="", type=str)
-    parser.add_argument("-f", "--freq", type=float, required=True)
-    parser.add_argument("-r", "--rate", default=1e6, type=float)
-    parser.add_argument("-g", "--gain", type=int, default=10)
-    parser.add_argument("-c", "--channel", type=int, default=0)
-    parser.add_argument("-n", "--nsamps", type=int, default=100000)
-    parser.add_argument("--dyn", type=int, default=60)
-    parser.add_argument("--ref", type=int, default=0)
+    """Parse the command line arguments."""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__,
+    )
+    parser.add_argument(
+        "-a",
+        "--args",
+        default="",
+        type=str,
+        help="""specifies the USRP device arguments, which holds
+        multiple key value pairs separated by commas
+        (e.g., addr=192.168.40.2,type=x300) [default = ""].""",
+    )
+    parser.add_argument(
+        "-f",
+        "--freq",
+        type=float,
+        required=True,
+        help="specifies the center frequency in Hz [default = 1e4].",
+    )
+    parser.add_argument(
+        "-r",
+        "--rate",
+        default=1e6,
+        type=float,
+        help="specifies the sample rate in samples/sec [default = 1e6].",
+    )
+    parser.add_argument(
+        "-g", "--gain", type=int, default=10, help="specifies the gain in dB [default = 10]."
+    )
+    parser.add_argument(
+        "-c",
+        "--channel",
+        type=int,
+        default=0,
+        help='specifies the channels to use (e.g., "0", "1", "0 1", etc) [Default = 0]',
+    )
+    parser.add_argument(
+        "-n",
+        "--nsamps",
+        type=int,
+        default=100000,
+        help="specifies the total number of samples to be received for FFT calculation "
+        "and display on the screen before refereshing [default = 100000].",
+    )
+    parser.add_argument(
+        "--dyn",
+        type=int,
+        default=60,
+        help="specifies the dynamic range in dB. This "
+        "defines the range of power levels relative to the reference level. Adjusting "
+        "dynamic range influences the resolution displayed on y-axis of the plot [default = 60].",
+    )
+    parser.add_argument(
+        "--ref",
+        type=int,
+        default=0,
+        help="specifies the reference level in dB. "
+        "This represent the maximum power level displayed on the plot. All power levels "
+        " are relative to reference level Adjusting the reference level allows to "
+        "focus on specific power ranges in the signal [default = 0].",
+    )
     return parser.parse_args()
 
 
 def psd(nfft, samples):
-    """Return the power spectral density of `samples`"""
+    """Return the power spectral density of `samples`."""
     window = np.hamming(nfft)
     result = np.multiply(window, samples)
     result = np.fft.fftshift(np.fft.fft(result, nfft))
@@ -40,12 +107,12 @@ def psd(nfft, samples):
 
 
 def clip(minval, maxval, value):
-    """Clip the value between a and b"""
+    """Clip the value between a and b."""
     return min(minval, max(maxval, value))
 
 
 def main():
-    """Create Curses display of FFT"""
+    """Create Curses display of FFT."""
     args = parse_args()
     usrp = uhd.usrp.MultiUSRP(args.args)
 
@@ -120,17 +187,17 @@ def main():
                     print(metadata.strerror())
                 if samps:
                     real_samps = min(num_samps - recv_samps, samps)
-                    samples[:, recv_samps:recv_samps + real_samps] = recv_buffer[:, 0:real_samps]
+                    samples[:, recv_samps : recv_samps + real_samps] = recv_buffer[:, 0:real_samps]
                     recv_samps += real_samps
 
             # Get the power in each bin
             bins = psd(width, samples[args.channel][0:width])
 
             for i in range(y_axis_width, width):
-                vertical_slot = clip(height, 0, np.int(bins[i] / db_step))
+                vertical_slot = clip(height, 0, np.int32(bins[i] / db_step))
                 try:
                     for j in range(vertical_slot, height):
-                        screen.addch(j, i, '*')
+                        screen.addch(j, i, "*")
                 except cs.error:
                     pass
             screen.refresh()

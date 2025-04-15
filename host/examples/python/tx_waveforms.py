@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 #
-# Copyright 2025 Ettus Research, a National Instruments Company
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Example to transmit waveforms using UHD python API.
@@ -27,8 +27,8 @@ pattern from DRAM. This mode requires FPGA bitfiles that contain the RFNoC
 Replay Block and is not supported on all USRPs.
 
 Example usage:
-tx_waveforms.py [--args addr=192.168.10.2] --freq 2.4e9 [--rate 1e6 --duration 10
-                --channels 0 --wave-freq 1e4 --wave-ampl 0.3] [--dram]
+tx_waveforms.py --args addr=192.168.10.2 --freq 2.4e9 --rate 1e6 --duration 10
+                --channels 0 --wave-freq 1e4 --wave-ampl 0.3 --dram
 """
 
 import argparse
@@ -54,7 +54,9 @@ def parse_args():
         "--args",
         type=str,
         default="",
-        help='specifies the uhd device arguments, which holds multiple key value pairs separated by commas (e.g., addr=192.168.40.2,type=x300) [Default = ""]',
+        help="""specifies the USRP device arguments, which holds
+        multiple key value pairs separated by commas
+        (e.g., addr=192.168.40.2,type=x300) [default = ""].""",
     )
     parser.add_argument(
         "-w",

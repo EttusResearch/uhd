@@ -1,11 +1,52 @@
 #!/usr/bin/env python3
 #
-# Copyright 2018 Ettus Research, a National Instruments Company
-# Copyright 2019 Ettus Research, a National Instruments Brand
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""Benchmark rate using Python API."""
+"""Benchmark rate using Python API.
+
+This script benchmarks the receive and transmit rates of a USRP device using
+the UHD Python API. It allows users to specify the device address, sample rate,
+subdevice specifications, reference clock source, and other parameters for
+the benchmarking process. The script can perform receive-only, transmit-only,
+or full-duplex tests, and it provides detailed statistics on the number of
+samples received, transmitted, dropped, and any errors encountered during
+the process. The results are printed in a formatted summary at the end of
+the test.
+
+This script is useful for evaluating I/O performance between host PC and USRP
+device. It is helpful for troubleshooting and optimizing network performance.
+It can be used in research, development, and testing scenarios where accurate
+measurement of data rates and error rates is critical.
+
+Example Usage:
+    # Receive-only test at 10 Msps for 5 seconds
+    python3 benchmark_rate.py --rx_rate 10e6 --duration 5
+
+    # Transmit-only test at 5 Msps for 10 seconds
+    python3 benchmark_rate.py --tx_rate 5e6 --duration 10
+
+    # Full-duplex test with RX at 10 Msps and TX at 5 Msps
+    python3 benchmark_rate.py --rx_rate 10e6 --tx_rate 5e6 --duration 15
+
+    # Specify device arguments and subdevice
+    python3 benchmark_rate.py -a addr=192.168.10.2 --rx_subdev "A:0" --tx_subdev "A:0"
+
+    # Use external clock reference and PPS
+    python3 benchmark_rate.py --ref external --pps external --rx_rate 10e6 --tx_rate 5e6
+
+Note 1: Refer https://files.ettus.com/manual/structuhd_1_1stream__args__t.html
+to see the list of available over-the-wire (--rx_otw, --tx_otw) and CPU
+(--rx_cpu, --tx_cpu) sample modes.
+
+Note 2: --tx_channels and --rx_channels are used to specify the TX and RX channels
+respectively. Or one can also use argument --channels to specify both TX and RX
+channels together. Note that if both --rx_channels/--tx_channels and --channels
+are specified than preference is always given to --rx_channels/--tx_channels.
+The argument--channels is only used as a fallback if --rx_channels/--tx_channels
+are not mentioned.
+"""
 
 import argparse
 import logging
@@ -22,47 +63,99 @@ INIT_DELAY = 0.05  # 50mS initial delay before transmit
 
 
 def parse_args():
-    """Parse the command line arguments."""
-    description = """UHD Benchmark Rate (Python API)
+    """Parse the command line arguments.
 
-        Utility to stress test a USRP device.
+    UHD Benchmark Rate (Python API).
+    Utility to benchmark the rates at which the USRP and the host (external
+    CPU, embedded ARM) can receive and transmit without loosing any data.
 
-        Specify --rx_rate for a receive-only test.
-        Specify --tx_rate for a transmit-only test.
-        Specify both options for a full-duplex test.
-        """
+    Specify --rx_rate for a receive-only test.
+    Specify --tx_rate for a transmit-only test.
+    Specify both options for a full-duplex test.
+    """
     parser = argparse.ArgumentParser(
-        formatter_class=argparse.RawTextHelpFormatter, description=description
-    )
-    parser.add_argument("-a", "--args", default="", type=str, help="single uhd device address args")
-    parser.add_argument(
-        "-d", "--duration", default=10.0, type=float, help="duration for the test in seconds"
-    )
-    parser.add_argument("--rx_subdev", type=str, help="specify the device subdev for RX")
-    parser.add_argument("--tx_subdev", type=str, help="specify the device subdev for TX")
-    parser.add_argument("--rx_rate", type=float, help="specify to perform a RX rate test (sps)")
-    parser.add_argument("--tx_rate", type=float, help="specify to perform a TX rate test (sps)")
-    parser.add_argument(
-        "--rx_otw", type=str, default="sc16", help="specify the over-the-wire sample mode for RX"
+        formatter_class=argparse.RawDescriptionHelpFormatter, description=__doc__
     )
     parser.add_argument(
-        "--tx_otw", type=str, default="sc16", help="specify the over-the-wire sample mode for TX"
+        "-a",
+        "--args",
+        default="",
+        type=str,
+        help="""specifies the USRP device arguments, which holds
+        multiple key value pairs separated by commas
+        (e.g., addr=192.168.40.2,type=x300) [default = ""].""",
     )
     parser.add_argument(
-        "--rx_cpu", type=str, default="fc32", help="specify the host/cpu sample mode for RX"
+        "-d",
+        "--duration",
+        default=10.0,
+        type=float,
+        help="specify the duration for the test in seconds [default = 10.0].",
     )
     parser.add_argument(
-        "--tx_cpu", type=str, default="fc32", help="specify the host/cpu sample mode for TX"
+        "--rx_subdev", type=str, help="specify the subdevice for RX [default = None]."
     )
-    parser.add_argument("--rx_stream_args", help="stream args for RX streamer", default="")
-    parser.add_argument("--tx_stream_args", help="stream args for TX streamer", default="")
-    parser.add_argument("--ref", type=str, help="clock reference (internal, external, mimo, gpsdo)")
-    parser.add_argument("--pps", type=str, help="PPS source (internal, external, mimo, gpsdo)")
+    parser.add_argument(
+        "--tx_subdev", type=str, help="specify the subdevice for TX [default = None]."
+    )
+    parser.add_argument(
+        "--rx_rate", type=float, help="specify to perform a RX rate test (samples/sec)."
+    )
+    parser.add_argument(
+        "--tx_rate", type=float, help="specify to perform a TX rate test (samples/sec)."
+    )
+    parser.add_argument(
+        "--rx_otw",
+        type=str,
+        default="sc16",
+        help="specify the over-the-wire sample mode for RX [default= sc16].",
+    )
+    parser.add_argument(
+        "--tx_otw",
+        type=str,
+        default="sc16",
+        help="specify the over-the-wire sample mode for TX [default = sc16].",
+    )
+    parser.add_argument(
+        "--rx_cpu",
+        type=str,
+        default="fc32",
+        help="specify the host/cpu sample mode for RX [default = fc32].",
+    )
+    parser.add_argument(
+        "--tx_cpu",
+        type=str,
+        default="fc32",
+        help="specify the host/cpu sample mode for TX [default =fc32].",
+    )
+    parser.add_argument(
+        "--rx_stream_args",
+        default="",
+        help="specify the additional stream arguments for the RX streamer "
+        "(e.g., samples per packet).",
+    )
+    parser.add_argument(
+        "--tx_stream_args",
+        default="",
+        help="specify the additional stream arguments for the TX streamer "
+        "(e.g., samples per packet).",
+    )
+    parser.add_argument(
+        "--ref",
+        type=str,
+        help="specify the reference clock source (internal, external, mimo, gpsdo).",
+    )
+    parser.add_argument(
+        "--pps", type=str, help="specify the PPS source (internal, external, mimo, gpsdo)."
+    )
     parser.add_argument(
         "--random",
         action="store_true",
         default=False,
-        help="Run with random values of samples in send() and recv() to stress-test" " the I/O.",
+        help="specify whether to run the test with random packet size. If set to true, "
+        "a random number of samples ranging from 1 to maximum samples per packet is "
+        "used per send() and recv(). If set to false, the number of samples will be "
+        "set to maximum samples per packet.",
     )
     parser.add_argument(
         "-c",
@@ -70,19 +163,20 @@ def parse_args():
         default=[0],
         nargs="+",
         type=int,
-        help='which channel(s) to use (specify "0", "1", "0 1", etc)',
+        help='specify the channel(s) to use as both RX and TX (e.g., "0", "1", "0 1", etc) '
+        "Refer Note 2 above on how --channels related to --rx_channel/--tx_channels [default = 0].",
     )
     parser.add_argument(
         "--rx_channels",
         nargs="+",
         type=int,
-        help='which RX channel(s) to use (specify "0", "1", "0 1", etc)',
+        help='specify the RX channel(s) to use (e.g., "0", "1", "0 1", etc) [default = None].',
     )
     parser.add_argument(
         "--tx_channels",
         nargs="+",
         type=int,
-        help='which TX channel(s) to use (specify "0", "1", "0 1", etc)',
+        help='specify the TX channel(s) to use (e.g., "0", "1", "0 1", etc) [default = None].',
     )
     return parser.parse_args()
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright 2024 Ettus Research, a National Instruments Brand
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -20,9 +20,10 @@ The data flow is as follows:
     │
     └─> Radio Rx ─> DDC ─> OFDM Rx ─> Host Rx Streamer
 
-It assumes the RFNoC topology like the one shown below. The configuration of the
-SFPs may be 10 GbE (1 to 4 ports) or 100 GbE. The number of channels per radio
-and DDC/DUC pair can be 1 or 2, with the DDC/DUC being optional. The following
+It assumes the RFNoC topology shown below. Make sure that the bitfile used has
+an FFT block instantiated as shown below. The configuration of the SFPs may
+be 10 GbE (1 to 4 ports) or 100 GbE. The number of channels per radio and
+DDC/DUC pair can be 1 or 2, with the DDC/DUC being optional. The following
 diagram shows one channel per radio for simplicity.
 
                      ┌────────────┐        Ch0   ┌─────────┐     ┌─────────┐     ┌─────────┐
@@ -51,14 +52,18 @@ diagram shows one channel per radio for simplicity.
                      │            │<─────────────┤         │<────┤         │<────┤         │
                      └────────────┘              └─────────┘     └─────────┘     └─────────┘
 
+Example usage:
+fft_loopback.py --args addr=192.168.10.2 --fft-length 1024 --num-symbols 10
+                --freq 915e6 --amplitude 0.6 --cp-list 352 288 --channels 0,1
+                --tx-gain 25 --rx-gain 45 --rate 10e6 --delay 5
 """
 
 import argparse
+import math
 
 import matplotlib.pyplot as plt
 import numpy as np
 import uhd
-import math
 from matplotlib.widgets import Slider
 
 graph_connections = {
@@ -105,28 +110,30 @@ def parse_args():
         "--args",
         type=str,
         default="",
-        help="Device args (e.g., addr=192.168.10.2)",
+        help="""specifies the USRP device arguments, which holds
+        multiple key value pairs separated by commas
+        (e.g., addr=192.168.40.2,type=x300) [default = ""].""",
     )
     parser.add_argument(
         "-s",
         "--fft-length",
         type=int,
         default=4096,
-        help="FFT length (default = 4096)",
+        help="specifies the FFT length [default = 4096].",
     )
     parser.add_argument(
         "-n",
         "--num-symbols",
         type=int,
         default=14,
-        help="Number of symbols to transmit/receive (default=14)",
+        help="specifies the number of symbols to transmit/receive [default = 14].",
     )
     parser.add_argument(
         "-y",
         "--amplitude",
         type=float,
         default=0.5,
-        help="Amplitude of the tone",
+        help="specifies the amplitude of the tone that is being transmitted [default = 0.5].",
     )
     parser.add_argument(
         "-p",
@@ -134,7 +141,7 @@ def parse_args():
         type=int,
         nargs="+",
         default=[],
-        help="List of cyclic prefix lengths to use (default=[])",
+        help="specifies the list of cyclic prefix lengths to use [default = []].",
     )
     parser.add_argument(
         "-c",
@@ -142,45 +149,45 @@ def parse_args():
         type=str,
         choices=["0", "1", "2", "3", "0,1", "2,3", "0,1,2,3"],
         default="0,1",
-        help="The channels to use (default=0,1)",
+        help="specifies the channels to use [default = 0,1].",
     )
     parser.add_argument(
         "-l",
         "--loopback",
         action="store_true",
-        help="Use internal loopback",
+        help="specifies to loop the transmit signal back to FPGA internally within the radio block.",
     )
     parser.add_argument(
         "-d",
         "--delay",
         type=int,
         default=None,
-        help="The number of cycles to delay RX vs. TX when streaming",
+        help="specifies the number of FPGA clock cycles to delay RX vs. TX when streaming [default = None].",
     )
     parser.add_argument(
         "--tx-gain",
         type=int,
         default=15,
-        help="The TX gain (default=15)",
+        help="specifies the TX gain in dB [default = 15].",
     )
     parser.add_argument(
         "--rx-gain",
         type=int,
         default=50,
-        help="The RX gain (default=50)",
+        help="specifies the RX gain in dB [default = 50].",
     )
     parser.add_argument(
         "-r",
         "--rate",
         type=float,
-        help="The TX/RX rate of host data (default is master clock rate)",
+        help="specifies the TX/RX sample rate in samples/sec of host data [default = master clock rate].",
     )
     parser.add_argument(
         "-f",
         "--freq",
         type=float,
         default=1.5e9,
-        help="The TX/RX radio frequency (default is 1.5 GHz)",
+        help="specifies the TX/RX radio center frequency in Hz [default = 1.5 GHz]",
     )
     return parser.parse_args()
 
@@ -297,7 +304,7 @@ def print_fft_block_info(ofdm):
 
 
 def default_scaling(fft_length):
-    """Return the scaling value for the default 1/N scaling"""
+    """Return the scaling value for the default 1/N scaling."""
     # 1/N scaling should be 1010...10 if fft_length is a power of 4 and 0110...10
     # if fft_length is not a power of 4.
     #
