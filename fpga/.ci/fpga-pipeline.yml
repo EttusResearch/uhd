@@ -45,6 +45,17 @@ parameters:
   type: boolean
   displayName: Build X440
   default: false
+- name: package_and_publish_images
+  type: boolean
+  displayName: Package & Publish Images
+  default: false
+- name: package_access
+  type: string
+  values:
+  - 'Internal'
+  - 'files.ettus.com (Public)'
+  displayName: Published Package Access
+  default: 'Internal'
 # Requested X410 targets
 - name: x410_targets_matrix
   displayName: X410 Targets
@@ -136,9 +147,11 @@ extends:
           iif(parameters.build_x440,'fpga.usrp3.x440','')
         )
       }}
-    skip_rule_checking: True
+    skip_rule_checking: true
     # FPGA parameters
     clean_ip_build: ${{ parameters.clean_ip_build }}
-    publish_int_files: false
+    publish_int_files: true
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
