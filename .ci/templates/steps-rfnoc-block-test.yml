@@ -6,6 +6,8 @@ parameters:
 - name: uhdFpgaArtifactSource
   type: string
   default: current
+- name: uhdArgs
+  type: string
 - name: fpga_imgs_source
   type: string
   default: Pipeline
@@ -32,14 +34,14 @@ steps:
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
   - script: |
-      uhd_image_loader --args type=$(dutType),addr=$(USRP_EMB_TARGET_IP) --fpga=$FPGA_ARTIFACT_DIR/$FPGA_BITFILE_NAME.bit
+      uhd_image_loader --args ${{ parameters.uhdArgs }} --fpga=$FPGA_ARTIFACT_DIR/$FPGA_BITFILE_NAME.bit
     displayName: "rfnoc block test: Load FPGA on USRP"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)
       LD_LIBRARY_PATH: $(UHDDEV_LIB_DIR)
 
   - script: |
-      uhd_usrp_probe --args type=$(dutType),addr=$(USRP_EMB_TARGET_IP)
+      uhd_usrp_probe --args ${{ parameters.uhdArgs }}
     displayName: "rfnoc block test: Probe USRP"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)
@@ -50,7 +52,7 @@ steps:
       source rfnoc-block-test-venv/bin/activate
       TEST_DIR=$(Build.SourcesDirectory)/uhddev/host/tests/rfnoc_block_tests_on_target
       pip install -r $TEST_DIR/requirements.txt
-      pytest --args addr=$(USRP_EMB_TARGET_IP) $TEST_DIR -vv --junitxml=$(Common.TestResultsDirectory)/rfnoc-block-test.xml
+      pytest --args ${{ parameters.uhdArgs }} $TEST_DIR -vv --junitxml=$(Common.TestResultsDirectory)/rfnoc-block-test.xml
     displayName: "rfnoc block test: Run test"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)

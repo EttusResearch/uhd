@@ -393,6 +393,15 @@ jobs:
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})
 
+  - ${{ if parameters.runRfnocBlockTest }}:
+    - template: ../../steps-rfnoc-block-test.yml
+      parameters:
+        dutType: $(pytestDUT)
+        uhdInstallPath: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+        uhdArgs: type=$(dutType),addr=$(USRP_EMB_TARGET_IP)
+
   # Run the mender tests last because they
   # modify the flashed image on the device
   - script: |
@@ -461,14 +470,6 @@ jobs:
     artifact: test-logs-x4xx-hardware-$(dutName)-run$(System.JobAttempt)
     displayName: Upload Test Logs
     condition: always()
-
-  - ${{ if parameters.runRfnocBlockTest }}:
-    - template: ../../steps-rfnoc-block-test.yml
-      parameters:
-        dutType: $(pytestDUT)
-        uhdInstallPath: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
-        uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
-        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
   - script: |
       echo "A previous step failed. See steps with warnings."
