@@ -1258,6 +1258,9 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
 
   # Create instance: xlconstant_0, and set properties
   set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
+  set_property -dict [ list \
+   CONFIG.CONST_VAL {0} \
+ ] $xlconstant_0
 
   # Create interface connections
   connect_bd_intf_net -intf_net S_AXI_1_1 [get_bd_intf_pins axi_interconnect_rf/M06_AXI] [get_bd_intf_pins calibration_muxes/S_AXI_1]
