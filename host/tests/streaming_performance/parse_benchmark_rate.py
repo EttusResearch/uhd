@@ -7,27 +7,31 @@ Helper script that parses the results of benchmark_rate and extracts numeric
 values printed at the end of execution.
 """
 
-import collections
-import re
 import csv
+import re
 
-Results = collections.namedtuple(
+from  collections import namedtuple
+
+
+Results = namedtuple(
     'Results',
     """
-    num_rx_channels
-    num_tx_channels
-    rx_rate
-    tx_rate
+    iteration
+    single_pass
     received_samps
     dropped_samps
     overruns
+    rx_seq_errs
+    rx_timeouts
     transmitted_samps
     tx_seq_errs
-    rx_seq_errs
     underruns
-    late_cmds
     tx_timeouts
-    rx_timeouts
+    late_commands
+    rx_rate
+    num_rx_channels
+    tx_rate
+    num_tx_channels
     """
 )
 
@@ -113,9 +117,11 @@ def parse(result_str):
             tx_seq_errs       = int(re_match.group(5)),
             rx_seq_errs       = int(re_match.group(6)),
             underruns         = int(re_match.group(7)),
-            late_cmds         = int(re_match.group(8)),
+            late_commands     = int(re_match.group(8)),
             tx_timeouts       = int(re_match.group(9)),
-            rx_timeouts       = int(re_match.group(10))
+            rx_timeouts       = int(re_match.group(10)),
+            iteration         = 0,
+            single_pass       = False,
         )
     return None
 

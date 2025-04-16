@@ -1,15 +1,24 @@
-import re
-from pathlib import Path
-
 import pytest
-import test_length_utils
-import test_nic_utils
-from test_length_utils import Test_Length_Full, Test_Length_Smoke, Test_Length_Stress
-from test_nic_utils import get_nic_statistics
+import re
+import util_test_length
+
+from pathlib import Path
+from util_test_nic import get_nic_statistics
+from util_test_length import Test_Length_Full, Test_Length_Smoke, Test_Length_Stress
 
 # fmt: off
 
-ARGNAMES_DUAL_SFP = ["dual_SFP", "rate", "rx_rate", "rx_channels", "dest_addr", "dest_port", "adapter", "host_interface", "keep_hdr"]
+ARGNAMES_DUAL_SFP = [
+    "dual_SFP",
+    "rate",
+    "rx_rate",
+    "rx_channels",
+    "dest_addr",
+    "dest_port",
+    "adapter",
+    "host_interface",
+    "keep_hdr",
+]
 
 def parametrize_test_length(metafunc, test_length, fast_params, stress_params):
     argnames = ["iterations", "duration"]
@@ -45,11 +54,11 @@ def generate_x410_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, de
         [{},                                      pytest.param(False,     245.76e6, 122.88e6, "3",   dest_addr1,    1234,      "sfp0_1",   sfp_int1,    False,   id="SFP0_1_RAW_PAYLOAD_1x10GbE-1xRX@122.88e6")],
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=2, duration=10)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=2, duration=10)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
@@ -77,11 +86,11 @@ def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
             [{},                                      pytest.param(False,    250e6, 250e6,   "3",        dest_addr1, 1234,      "sfp1",  sfp_int1,       False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@250e6")],
         ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=5, duration=2)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=5, duration=2)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
@@ -117,11 +126,11 @@ def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "1",        dest_addr1, 1234,      "sfp1",  sfp_int1,       False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@1000e6")],
         ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=5, duration=0.5)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=5, duration=0.5)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 def generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
@@ -134,11 +143,11 @@ def generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, de
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "1",      dest_addr1,     1234,      "sfp1",     sfp_int1,        False,   id="SFP1_RAW_PAYLOAD_1x10GbE-1xRX@200e6")],
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=5, duration=5)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=5, duration=5)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 def pytest_generate_tests(metafunc):

@@ -1,5 +1,5 @@
 #
-# Copyright 2023 Ettus Research, a National Instruments Brand
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -10,8 +10,9 @@ from pathlib import Path
 
 import batch_run_benchmark_rate
 import pytest
-import test_length_utils
-from test_length_utils import Test_Length_Full, Test_Length_Smoke, Test_Length_Stress
+import time
+import util_test_length
+from util_test_length import Test_Length_Full, Test_Length_Smoke, Test_Length_Stress
 
 ARGNAMES_DUAL_SFP = [
     "dual_sfp",
@@ -68,11 +69,11 @@ def _generate_n310_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -90,11 +91,11 @@ def _generate_n320_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -112,11 +113,11 @@ def _generate_b210_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -134,11 +135,11 @@ def _generate_e320_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -159,11 +160,11 @@ def _generate_x310_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=60)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=60)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -178,11 +179,11 @@ def _generate_x310_twinrx_test_cases(metafunc, test_length):
         # fmt: on
     ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -220,11 +221,11 @@ def _generate_x410_test_cases(metafunc, test_length, dut_fpga):
             # fmt: on
         ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -254,11 +255,11 @@ def _generate_x440_test_cases(metafunc, test_length, dut_fpga):
             # fmt: on
         ]
 
-    argvalues = test_length_utils.select_test_cases_by_length(test_length, test_cases)
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
     metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
 
-    fast_params = test_length_utils.test_length_params(iterations=10, duration=30)
-    stress_params = test_length_utils.test_length_params(iterations=2, duration=600)
+    fast_params = util_test_length.test_length_params(iterations=10, duration=30)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
@@ -308,6 +309,8 @@ def pytest_generate_tests(metafunc):
 
 
 def test_streaming(
+    iterate_benchmark,
+    threshold,
     pytestconfig,
     dut_type,
     use_dpdk,
@@ -366,8 +369,6 @@ def test_streaming(
     except Exception:
         pass
 
-    print("Constructed device_args: " + device_args)
-
     # construct benchmark_rate params dictionary
     benchmark_rate_params = {
         "args": device_args,
@@ -404,47 +405,50 @@ def test_streaming(
             benchmark_rate_params["rx_delay"] = 2
 
     # run benchmark rate
-    print()
-    results = batch_run_benchmark_rate.run(benchmark_rate_path, iterations, benchmark_rate_params)
-    stats = batch_run_benchmark_rate.calculate_stats(results)
-    print(batch_run_benchmark_rate.get_summary_string(stats, iterations, benchmark_rate_params))
-
-    # compare results against thresholds
-    # TODO: Have non adhoc better thresholds.
-    dropped_samps_threshold = 50
-    overruns_threshold = 50
-    rx_timeouts_threshold = 50
-    rx_seq_err_threshold = 50
-
-    underruns_threshold = 50
-    tx_timeouts_threshold = 50
-    tx_seq_err_threshold = 50
-
-    late_cmds_threshold = 50
+    print("\n" + "*" * 50)
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting benchmark rate test")
+    print("*" * 50)
+    print("Constructed device_args: " + device_args)
+    trials = iterations // 2
+    results = iterate_benchmark(benchmark_rate_path, iterations, trials, benchmark_rate_params)
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Benchmark rate results:")
+    print('|'.join([f'{key:<20}' for key in results[0]._asdict().keys()]))
+    for result in results:
+        print('|'.join([f'{val:<20}' for val in result._asdict().values()]))
+    good_results = [res for res in results if res.single_pass]
+    stats = batch_run_benchmark_rate.calculate_stats(good_results)
+    print(batch_run_benchmark_rate.get_summary_string(stats, len(good_results), benchmark_rate_params))
+    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}]")
 
     # TODO: define custom failed assertion explanations to avoid extra output
     # https://docs.pytest.org/en/6.2.x/assert.html#defining-your-own-explanation-for-failed-assertions
 
+    assert (len(good_results) == iterations), f"""Number of good results is not equal to iterations.
+            Actual test iterations: {len(results)}   (including additional trials)
+            Expected good results:  {iterations}   (requested iterations)
+            Actual good results:    {len(good_results)}"""
+
+    # Thresholds are defined in the respective fixture in conftest.py
     if rx_channels:
         assert (
-            stats.avg_vals.dropped_samps <= dropped_samps_threshold
+            stats.avg_vals.dropped_samps <= threshold['average'].dropped_samps
         ), f"""Number of dropped samples exceeded threshold.
-                Expected dropped samples: <= {dropped_samps_threshold}
+                Expected dropped samples: <= {threshold['average'].dropped_samps}
                 Actual dropped samples:      {stats.avg_vals.dropped_samps}"""
         assert (
-            stats.avg_vals.rx_timeouts <= rx_timeouts_threshold
+            stats.avg_vals.rx_timeouts <= threshold['average'].rx_timeouts
         ), f"""Number of rx timeouts exceeded threshold.
-                Expected rx timeouts: <= {rx_timeouts_threshold}
+                Expected rx timeouts: <= {threshold['average'].rx_timeouts}
                 Actual rx timeouts:      {stats.avg_vals.rx_timeouts}"""
         assert (
-            stats.avg_vals.rx_seq_errs <= rx_seq_err_threshold
+            stats.avg_vals.rx_seq_errs <= threshold['average'].rx_seq_errs
         ), f"""Number of rx sequence errors exceeded threshold.
-                Expected rx sequence errors: <= {rx_seq_err_threshold}
+                Expected rx sequence errors: <= {threshold['average'].rx_seq_errs}
                 Actual rx sequence errors:      {stats.avg_vals.rx_seq_errs}"""
-        if not stats.avg_vals.overruns <= overruns_threshold:
+        if not stats.avg_vals.overruns <= threshold['average'].overruns:
             overrun_error_text = (
                 f"Number of overruns exceeded threshold.\n"
-                f"Expected overruns: <= {overruns_threshold}\n"
+                f"Expected overruns: <= {threshold['average'].overruns}\n"
                 f"Actual overruns:      {stats.avg_vals.overruns}\n"
             )
             if not use_dpdk:
@@ -454,19 +458,19 @@ def test_streaming(
 
     if tx_channels:
         assert (
-            stats.avg_vals.tx_timeouts <= tx_timeouts_threshold
+            stats.avg_vals.tx_timeouts <= threshold['average'].tx_timeouts
         ), f"""Number of tx timeouts exceeded threshold.
-                Expected tx timeouts: <= {tx_timeouts_threshold}
+                Expected tx timeouts: <= {threshold['average'].tx_timeouts}
                 Actual tx timeouts:      {stats.avg_vals.tx_timeouts}"""
         assert (
-            stats.avg_vals.tx_seq_errs <= tx_seq_err_threshold
+            stats.avg_vals.tx_seq_errs <= threshold['average'].tx_seq_errs
         ), f"""Number of tx sequence errors exceeded threshold.
-                Expected tx sequence errors: <= {tx_seq_err_threshold}
+                Expected tx sequence errors: <= {threshold['average'].tx_seq_errs}
                 Actual tx sequence errors:      {stats.avg_vals.tx_seq_errs}"""
-        if not stats.avg_vals.underruns <= underruns_threshold:
+        if not stats.avg_vals.underruns <= threshold['average'].underruns:
             underrun_error_text = (
                 f"Number of underruns exceeded threshold.\n"
-                f"Expected underruns: <= {underruns_threshold}\n"
+                f"Expected underruns: <= {threshold['average'].underruns}\n"
                 f"Actual underruns:      {stats.avg_vals.underruns}\n"
             )
             if not use_dpdk:
@@ -475,7 +479,7 @@ def test_streaming(
                 assert False, underrun_error_text
 
     assert (
-        stats.avg_vals.late_cmds <= late_cmds_threshold
+        stats.avg_vals.late_commands <= threshold['average'].late_commands
     ), f"""Number of late commands exceeded threshold.
-            Expected late commands: <= {late_cmds_threshold}
-            Actual late commands:      {stats.avg_vals.late_cmds}"""
+            Expected late commands: <= {threshold['average'].late_commands}
+            Actual late commands:      {stats.avg_vals.late_commands}"""

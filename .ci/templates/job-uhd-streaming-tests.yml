@@ -268,7 +268,7 @@ jobs:
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
-      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -m "not dpdk" \
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -v -m "not dpdk" \
         --capture=tee-sys -o junit_logging=all \
         --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
@@ -310,7 +310,7 @@ jobs:
       fi
       # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
       # as using sudo below creates them with root priveleges.
-      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_raw_udp_streaming.py \
+      sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_raw_udp_streaming.py -v \
         --capture=tee-sys -o junit_logging=all \
         --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
         --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build-installed/lib/uhd --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName).xml \
@@ -417,7 +417,7 @@ jobs:
         cd ${{ parameters.uhdSrcDir }}/host/tests/pytests
         # Disable creation of __pycache__ files using -B to avoid errors on clean up during next run
         # as using sudo below creates them with root priveleges.
-        sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -m "dpdk" \
+        sudo -E LD_LIBRARY_PATH=$LD_LIBRARY_PATH PYTHONPATH=$PYTHONPATH python3 -B -m pytest test_streaming.py -v -m "dpdk" \
           --capture=tee-sys -o junit_logging=all \
           --dut_type $(dutType) --dut_fpga $(dutFPGA) --test_length ${{ parameters.testLength }} \
           --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build \
