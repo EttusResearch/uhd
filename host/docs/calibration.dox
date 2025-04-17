@@ -137,7 +137,7 @@ Using tx_waveforms as an example, the user can apply this argument as follows:
 The calibrations for IQ imbalance and DC offset compensation rely on frontend
 correction logic that is located in the FPGA.
 
-Note that USRP E310, E320, N320, and B200-Series use a dedicated RFIC which does
+Note that USRP E310, E320, N300, N310 and B200-Series use a dedicated RFIC which does
 its own calibration. For those, any calibrations are very device-specific and
 are not covered in this section.
 
