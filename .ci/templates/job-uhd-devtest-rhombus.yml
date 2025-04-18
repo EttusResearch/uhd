@@ -36,57 +36,57 @@ jobs:
           devType: 'x300'
           devModel: 'x300'
           devName: 'rhombus-x300-UBX-0'
-          devSerial: '30A6019'
+          devSerial: $(x300_UBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.2'
+          devAddr: $(x300_UBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516350A6019'
+          jtagSerial: $(x300_UBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-UBX-0:
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-UBX-0'
-          devSerial: '3138EF5'
+          devSerial: $(x310_UBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.3'
+          devAddr: $(x310_UBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '251635138E98'
+          jtagSerial: $(x310_UBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-WBX-0:
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-WBX-0'
-          devSerial: '30C5BFF'
+          devSerial: $(x310_WBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.5'
+          devAddr: $(x310_WBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516350C5BFF'
+          jtagSerial: $(x310_WBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-TWINRX-0:
           devType: 'x300'
           devModel: 'x310'
           devName: rhombus-x310-TWINRX-0
-          devSerial: 'F49FDF'
+          devSerial: $(x310_TWINRX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.6'
+          devAddr: $(x310_TWINRX_devAddr)
           # TODO: revert back to "HG,XG" once work item #3028634 is resolved
           devFpga: 'HG'
           devtestPattern: 'x3x0'
-          jtagSerial: '251635F49FDF'
+          jtagSerial: $(x310_TWINRX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x300-SBX-0:
           devType: 'x300'
           devModel: 'x300'
           devName: rhombus-x300-SBX-0
-          devSerial: '32244AD'
+          devSerial: $(x300_SBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.7'
+          devAddr: $(x300_SBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516352244AD'
+          jtagSerial: $(x300_SBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
 
       ${{ if contains(parameters.testDevices, 'b2xx') }}:
@@ -94,7 +94,7 @@ jobs:
           devType: 'b200'
           devModel: 'b210'
           devName: rhombus-b210-0
-          devSerial: '3218D0E'
+          devSerial: $(b200_devSerial)
           devBus: 'usb'
           devtestPattern: 'b2xx'
 
