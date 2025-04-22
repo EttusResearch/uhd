@@ -2,7 +2,7 @@
 
 \tableofcontents
 
-\section b200_features Comparative features list - B200/B210/B200mini
+\section b200_features Comparative features list - B200/B210/B200mini/B205mini/B206mini
 
 - Hardware Capabilities:
     -   Integrated RF frontend (70 MHz - 6 GHz)
@@ -11,8 +11,8 @@
     -   Configurable clock rate
     -   Variable analog bandwidth (200 kHz - 56 MHz)
     -   GPIO header
+    -   JTAG Connector (except B200)
     -   [B200/B210] Internal GPSDO option (see \subpage page_gpsdo_b2x0 for details)
-    -   [B210/B200mini] JTAG Connector
     -   [B210] MICTOR Debug Connector
 - FPGA Capabilities:
     -   Timed commands in FPGA
@@ -20,13 +20,14 @@
 
 \section b200_power Power
 
-In most cases, USB 3.0 bus power will be sufficient to power the device.
-If using USB 2.0 or a GPSDO, an external power supply or a cable designed
-to pull power from 2 USB ports (USB 3.0 dual A to micro-B or B) must be used.
+The B2xx devices draw power from the USB bus, which provides enough power when
+a USB 3.0 port is used. If a GPSDO (optional on B210) is used or when using
+USB 2.0, an external power supply (B200/210 only) or a cable designed to
+pull power from 2 USB ports (USB 2.0 dual A to micro-B or B) must be used.
 
 \section b200_imgs Specifying a Non-standard Image
 
-UHD software will automatically select the USRP B2X0 images from the
+UHD software will automatically select the USRP B2XX images from the
 installed images package. The image selection can be overridden with the
 `fpga` and `fw` device address parameters.
 
@@ -141,10 +142,11 @@ The B200 features an integrated RF frontend.
 \subsection b200_fe_tuning Frontend tuning
 
 The RF frontend has individually tunable receive and transmit chains. On
-the B200 and B200 mini, there is one transmit and one receive RF frontend. On the
-B210, both transmit and receive can be used in a MIMO configuration. For
-the MIMO case, both receive frontends share the RX LO, and both transmit
-frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
+the B200, B200mini, B205mini and B206mini, there is one transmit and one
+receive RF frontend. On the B210, both transmit and receive can be used
+in a MIMO configuration. For the MIMO case, both receive frontends share
+the RX LO, and both transmit frontends share the TX LO. Each LO is tunable
+between 50 MHz and 6 GHz.
 
 \subsection b200_fe_gain Frontend gain
 
@@ -222,7 +224,7 @@ Below is a table of the B200/B210 LED indicators and their meanings:
   </tr>
 </table>
 
-Below is a table of the B200mini LED indicators and their meanings:
+Below is a table of the B200/205/206mini LED indicators and their meanings:
 
 <table>
   <tr>
@@ -299,7 +301,7 @@ Below is a table showing the B200/B210 external connections and respective power
 </tr>
 </table>
 
-Below is a table showing the B200mini external connections and respective power information:
+Below is a table showing the B200/205/206mini external connections and respective power information:
 
 <table>
 <tr>
@@ -339,7 +341,7 @@ Component ID            |  Description               | Details
 
 <sup>3</sup> Only since rev. 6 (green board). Default voltage is 1.8V. GPIO pinout is 1=GPIO_8, 2=GND, 3=GPIO_9. When compiling a bitfile to support a UART on this header, pinout is 1=TX, 2=GND, 3=RX.
 
-Below is a table showing the B200mini on-board connectors and switches:
+Below is a table showing the B200/205/206mini on-board connectors and switches:
 
 Component ID            |  Description               | Details
 ------------------------|----------------------------|---------------------------------------------------

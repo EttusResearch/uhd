@@ -79,6 +79,7 @@ tbd
 | DEVTEST-B205m-v1    | USRP B205mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-N310-v1     | USRP N310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-E320-v1     | USRP E320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B206m-v1    | USRP B206mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 
 The devtests are hardware tests built in to the UHD make system. They can be run
 directly from the build directory and require no configuration.
@@ -116,7 +117,7 @@ library.
 
 ### B2xx procedure
 
-Note: The test codes with an 'm' suffix refer to B200mini and B205mini,
+Note: The test codes with an 'm' suffix refer to B200mini, B205mini and B206mini,
 respectively.
 
 1. Make sure no peripherals are connected to the device (no GPSDO if applicable,
