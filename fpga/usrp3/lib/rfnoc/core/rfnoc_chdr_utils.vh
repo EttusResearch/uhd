@@ -69,6 +69,13 @@ localparam CHDR_LENGTH_W    = 16;
 localparam CHDR_DST_EPID_W  = 16;
 localparam CHDR_TIMESTAMP_W = 64;
 
+// Maximum values for various fields
+localparam CHDR_MAX_VC        = 2**CHDR_VC_W - 1;
+localparam CHDR_MAX_NUM_MDATA = 2**CHDR_NUM_MDATA_W - 1;
+localparam CHDR_MAX_SEQ_NUM   = 2**CHDR_SEQ_NUM_W - 1;
+localparam CHDR_MAX_LENGTH    = 2**CHDR_LENGTH_W - 1;
+localparam CHDR_MAX_DST_EPID  = 2**CHDR_DST_EPID_W - 1;
+
 // CHDR Getter Functions
 //
 function [5:0] chdr_get_vc(input [63:0] header);
