@@ -11,7 +11,7 @@ import copy
 import re
 import sys
 
-from .common import DEVICE_NAME, NONE_PORT
+from .common import NONE_PORT
 
 
 def con2str(con):
@@ -108,12 +108,47 @@ def check_and_sanitize(config):
         con[f"{s_d}port"], con[f"{s_d}slice"] = port_match.groups()
         return con
 
+    def check_port_is_valid(blk_key, blk, port, s_d):
+        """Return true if the port is valid for the block."""
+        io_ports = getattr(blk, "io_ports", {})
+        valid_io_port_drives = ("master", "broadcaster") if s_d == "src" else ("slave", "listener")
+        return (
+            ((blk_key, port, "output" if s_d == "src" else "input") in config.block_ports)
+            or (io_ports.get(port, {}).get("drive") in valid_io_port_drives)
+            or (port == NONE_PORT)
+        )
+
+    def get_ports(blk_key, blk, s_d):
+        """Return list of all valid ports for a block."""
+        data_ports = [
+            p[1]
+            for p in config.block_ports
+            if p[0] == blk_key and p[2] == ("output" if s_d == "src" else "input")
+        ]
+        valid_io_port_drives = ("master", "broadcaster") if s_d == "src" else ("slave", "listener")
+        io_ports = [
+            k for k, v in getattr(blk, "io_ports", {}).items() if v["drive"] in valid_io_port_drives
+        ]
+        return ", ".join(data_ports + io_ports)
+
     ## Phase 1: We go through the list of connections and provide annotations
     for conn_idx, con in enumerate(config.connections):
         for s_d in ("src", "dst"):
             con = sanitize_port(con, s_d, failure)
         src_blk = config.get_module(con["srcblk"])
+        if src_blk is None:
+            failure += f"Source block '{con['srcblk']}' not found\n"
+            continue
         dst_blk = config.get_module(con["dstblk"])
+        if dst_blk is None:
+            failure += f"Destination block '{con['dstblk']}' not found\n"
+            continue
+        if not check_port_is_valid(con["srcblk"], src_blk, con["srcport"], "src"):
+            failure += f"Source port '{con['srcblk']}.{con['srcport']}' not found. Available ports on '{con['srcblk']}': {get_ports(con['srcblk'], src_blk, 'src')}\n"
+            continue
+        if not check_port_is_valid(con["dstblk"], dst_blk, con["dstport"], "dst"):
+            failure += f"Destination port '{con['dstblk']}.{con['dstport']}' not found. Available ports on '{con['dstblk']}': {get_ports(con['dstblk'], dst_blk, 'dst')}\n"
+            continue
         try:
             # If dummy connection, we just skip this.
             if con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
@@ -143,13 +178,30 @@ def check_and_sanitize(config):
                 con["src_iosig"] = copy.deepcopy(src_blk.io_ports[con["srcport"]])
                 con["dst_iosig"] = copy.deepcopy(dst_blk.io_ports[con["dstport"]])
                 _check_io_port_compatibility(con, config.log)
-            elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
-                pass
+            # If we have IO ports, but the previous clause didn't take, then
+            # the connection endpoints are not compatible.
+            elif (con["srcport"] in src_blk.io_ports) and (con["dstport"] in dst_blk.io_ports):
+                con["srctype"] = src_blk.io_ports[con["srcport"]]["drive"]
+                con["dsttype"] = dst_blk.io_ports[con["dstport"]]["drive"]
+                failure += (
+                    f"IO port {con['srcblk']}.{con['srcport']} "
+                    f"({src_blk.io_ports[con['srcport']]['drive']}) "
+                    f"cannot connect to {con['dstblk']}.{con['dstport']} "
+                    f"({dst_blk.io_ports[con['dstport']]['drive']})\n"
+                    f"Make sure io ports are connected master      (src) to slave    (dst)\n"
+                    f"                              or broadcaster (src) to listener (dst)\n"
+                )
             else:
                 failure += "Unresolved connection: " + con2str(con) + "\n"
             config.connections[conn_idx] = con
         except AttributeError as ex:
-            config.log.error("Error parsing connection: %s. No io_ports attribute on source or dest:\n%s\n%s", con, src_blk, dst_blk)
+            config.log.error(
+                "Error parsing connection: %s. No io_ports attribute on source or dest:\n%s\n%s (%s)",
+                con,
+                src_blk,
+                dst_blk,
+                str(ex),
+            )
             raise
 
     # Go through all the modules and check IO ports are connected
@@ -235,20 +287,8 @@ def check_and_sanitize(config):
         config.log.error(
             "There are errors in the image core file's connection settings:\n" + failure
         )
-        config.log.info("    Make sure block ports are connected output (src) to input (dst)")
-        config.log.info("    Available block ports for connections:")
-        for block in config.block_ports:
-            config.log.info("        %s", (block,))
-        config.log.info("    Make sure io ports are connected master      (src) to slave    (dst)")
-        config.log.info("                                  or broadcaster (src) to listener (dst)")
-        config.log.info("    Available IO ports for connections:")
-        for mod_list in (config.noc_blocks, config.modules):
-            for module_name, module in mod_list.items():
-                for io_name, io_port in module.io_ports.items():
-                    config.log.info("        %s.%s (%s)", module_name, io_name, io_port["type"])
-        for io_name, io_port in config.device.io_ports.items():
-            config.log.info("        %s.%s (%s)", DEVICE_NAME, io_name, io_port["type"])
         sys.exit(1)
+
 
 def get_num_ports_from_data_port(port_info, block):
     """Resolve number of ports from data port info.
@@ -294,5 +334,5 @@ def get_num_ports_from_data_port(port_info, block):
     # is caught will inform the user.
     try:
         return eval(num_ports, {}, {})
-    except: # noqa: E722
+    except:  # noqa: E722
         return None
