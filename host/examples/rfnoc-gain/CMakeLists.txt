@@ -18,11 +18,10 @@ set(VERSION_ABI   0)
 ########################################################################
 # Setup install directories
 ########################################################################
-set(RFNOC_DATA_DIR     share
-    CACHE PATH "Base location for data")
-set(UHD_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/
+include(GNUInstallDirs)
+set(UHD_PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd/
     CACHE PATH "Path to install UHD-related package data")
-set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/rfnoc/
+set(RFNOC_PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd/rfnoc/
     CACHE PATH "Path to install RFNoC package data")
 set(GATEWARE_PKG_DATA_DIR ${RFNOC_PKG_DATA_DIR}/fpga/gain
     CACHE PATH "Path to install RFNoC package data")
@@ -30,13 +29,6 @@ set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/gain/
     CACHE PATH "Path for this project's package data")
 set(MODULES_D_DIR   ${UHD_PKG_DATA_DIR}/modules.d/
     CACHE PATH "Path for the UHD modules.d/ directory")
-
-if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
-    set(LIB_SUFFIX 64)
-endif()
-if(CMAKE_INSTALL_LIBDIR MATCHES lib64)
-    set(LIB_SUFFIX 64)
-endif()
 
 ########################################################################
 # Find bash (for executing make and sourcing the Vivado env)
@@ -202,7 +194,7 @@ add_custom_target(uninstall
 # Install cmake search helper for this library
 ########################################################################
 if(NOT CMAKE_MODULES_DIR)
-    set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
+    set(CMAKE_MODULES_DIR ${CMAKE_INSTALL_LIBDIR}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
 #TODO
