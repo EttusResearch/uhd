@@ -6,5 +6,5 @@
 
 install(FILES
   regs_iface.hpp
-  DESTINATION ${INCLUDE_DIR}/mpm/types
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/types
 )

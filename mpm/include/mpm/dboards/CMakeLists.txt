@@ -6,16 +6,16 @@
 if(ENABLE_MAGNESIUM)
     install(FILES
         magnesium_manager.hpp
-        DESTINATION ${INCLUDE_DIR}/mpm/dboards
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/dboards
     )
 elseif(ENABLE_E320)
     install(FILES
         neon_manager.hpp
-        DESTINATION ${INCLUDE_DIR}/mpm/dboards
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/dboards
     )
 elseif(ENABLE_E300)
     install(FILES
         e31x_db_manager.hpp
-        DESTINATION ${INCLUDE_DIR}/mpm/dboards
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/dboards
     )
 endif(ENABLE_MAGNESIUM)

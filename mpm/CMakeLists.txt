@@ -107,16 +107,7 @@ message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 # Install Dirs
 ########################################################################
-set(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
-set(RUNTIME_DIR bin)
-set(LIBRARY_DIR lib${LIB_SUFFIX})
-set(INCLUDE_DIR include)
-set(PKG_DATA_DIR share/mpm)
-if(NOT DEFINED PKG_LIB_DIR)
-    set(PKG_LIB_DIR ${LIBRARY_DIR}/mpm)
-endif()
-set(PKG_DOC_DIR share/doc/mpm)
-set(PKG_MAN_DIR share/man/man1)
+include(GNUInstallDirs)
 
 ########################################################################
 # Setup library configuration
@@ -183,7 +174,7 @@ if(NOT ENABLE_SIM)
         ${DEVICE_LIBRARIES}
     )
 
-    install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
+    install(TARGETS usrp-periphs LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries)
 
     # TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
     # though... we're the only ones linking against that.

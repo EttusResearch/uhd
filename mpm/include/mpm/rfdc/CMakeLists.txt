@@ -9,5 +9,5 @@ install(FILES
     xrfdc_hw.h
     xrfdc_mts.h
     xrfdc.h
-    DESTINATION ${INCLUDE_DIR}/mpm/rfdc
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/rfdc
 )

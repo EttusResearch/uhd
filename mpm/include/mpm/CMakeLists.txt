@@ -6,7 +6,7 @@
 install(FILES
     exception.hpp
     noncopyable.hpp
-    DESTINATION ${INCLUDE_DIR}/mpm
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm
 )
 
 if(ENABLE_MYKONOS)

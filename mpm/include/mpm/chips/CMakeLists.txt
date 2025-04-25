@@ -4,5 +4,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-    #DESTINATION ${INCLUDE_DIR}/mpm/lmk04828
+    #DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/lmk04828
 #)
