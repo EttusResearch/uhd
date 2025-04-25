@@ -1,3 +1,12 @@
+---
+name: Issue Template
+about: Issue tracker template for bugs, feature requests, and other issues
+title: ''
+labels: ''
+assignees: ''
+
+---
+
 <!---
 
 Please use the issue tracker to report bugs, request features, or to report
