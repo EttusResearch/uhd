@@ -8,14 +8,13 @@ import argparse
 import hashlib
 import logging
 import os
-import re
 import sys
 
 from uhd.rfnoc_utils import image_builder, log as rfnoc_log
 
 
 def get_valid_targets():
-    """Get valid targets (--target parameter)"""
+    """Get valid targets (--target parameter)."""
     target_fpga_map = {
         "E310_SG1": ["", "IDLE"],
         "E310_SG3": ["", "IDLE"],
@@ -66,7 +65,7 @@ def setup_parser():
         "-B",
         "--build-dir",
         help="Path to directory where the image core and and build artifacts will be generated. "
-        "Defaults to \"build-<image-core-name>\" in the base directory.",
+        'Defaults to "build-<image-core-name>" in the base directory.',
         required=False,
         default=None,
     )
@@ -74,7 +73,7 @@ def setup_parser():
         "-O",
         "--build-output-dir",
         help="Path to directory for final FPGA build outputs. "
-        "Defaults to \"build\" in the base directory.",
+        'Defaults to "build" in the base directory.',
         required=False,
         default=None,
     )
@@ -82,7 +81,7 @@ def setup_parser():
         "-E",
         "--build-ip-dir",
         help="Path to directory for IP build artifacts. "
-        "Defaults to \"build-ip\" in the base directory.",
+        'Defaults to "build-ip" in the base directory.',
         required=False,
         default=None,
     )
@@ -219,16 +218,6 @@ def setup_parser():
     return parser
 
 
-def resolve_path(path, local):
-    """Replace path by local if path is enclosed with "@" (placeholder markers).
-
-    :param path: the path to check
-    :param local: new path content if path is placeholder
-    :return: path if path is not a placeholder else local
-    """
-    return re.sub("^@.*@$", local, path)
-
-
 def get_fpga_path(args):
     """Return FPGA path.
 
@@ -265,24 +254,6 @@ def get_fpga_path(args):
     # No valid path found
     logging.error("FPGA path not found. Specify with --fpga-dir argument.")
     sys.exit(1)
-
-
-def get_config_path():
-    """Return path that contains configurations files.
-
-    This is the main UHD installation path for package data (e.g., /usr/share/uhd).
-
-    Will return the directory path where the YAML configuration files are stored
-    (yml descriptions for block, IO signatures and device bsp, not the image
-    core files).
-
-    :return: Configuration path
-    """
-    return os.path.normpath(
-        resolve_path(
-            "@CONFIG_PATH@", os.path.join(os.path.dirname(__file__), "..", "include", "uhd")
-        )
-    )
 
 
 def main():
@@ -333,12 +304,11 @@ def main():
         image_core_name=args.image_core_name,
         target=args.target,
         # Provide all the paths
-        base_dir = args.base_dir,
+        base_dir=args.base_dir,
         build_dir=args.build_dir,
         build_output_dir=args.build_output_dir,
         build_ip_dir=args.build_ip_dir,
         repo_fpga_path=get_fpga_path(args),
-        config_path=get_config_path(),
         yaml_path=args.yaml_config if args.yaml_config else args.grc_config,
         include_paths=args.include_dir,
         vivado_path=args.vivado_path,

@@ -26,6 +26,7 @@ from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
 from .template import Template
 from .utils import check_include_paths_backward_compat
+from .. import get_pkg_data_path
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -254,7 +255,6 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
     """
     ret_val = 0
     build_dir = os.path.abspath(build_dir)
-    cwd = os.getcwd()
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
@@ -399,11 +399,9 @@ def load_image_core_source(
     return config, device, get_image_core_name(config), target
 
 
-def build_image(repo_fpga_path, config_path, device, **args):
+def build_image(repo_fpga_path, device, **args):
     """Generate image dependent Verilog code and run FPGA toolchain, if requested.
 
-    :param config: A dictionary containing the image configuration options.
-                   This must obey the rfnoc_image_builder_args schema.
     :param repo_fpga_path: A path that holds the FPGA sources (/path/to/uhd/fpga).
                            Under this path, there should be a usrp3/top/
                            directory.
@@ -421,6 +419,7 @@ def build_image(repo_fpga_path, config_path, device, **args):
                                     (e.g., usrp_x410_fpga_CG_400)
     :return: Exit result of build process or 0 if generate-only is given.
     """
+    config_path = get_pkg_data_path()
     # We start by loading some core/standard files that are always needed.
     core_config_path = yaml_utils.get_core_config_path(config_path)
     include_paths = check_include_paths_backward_compat(args.get("include_paths", [])) + [

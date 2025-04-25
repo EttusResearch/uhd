@@ -13,12 +13,8 @@ set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
 ########################################################################
 if(ENABLE_PYMOD_UTILS)
     ### RFNoC Image Builder
-    configure_file(
-        "${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder"
-    )
     UHD_INSTALL(PROGRAMS
-        ${CMAKE_CURRENT_BINARY_DIR}/rfnoc_image_builder
+        ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_image_builder.py
         RENAME rfnoc_image_builder
         DESTINATION ${RUNTIME_DIR}
         COMPONENT utilities
