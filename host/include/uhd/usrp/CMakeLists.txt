@@ -24,7 +24,7 @@ UHD_INSTALL(FILES
     ### interfaces ###
     multi_usrp.hpp
 
-    DESTINATION ${INCLUDE_DIR}/uhd/usrp
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/usrp
     COMPONENT headers
 )
 
@@ -34,7 +34,7 @@ if(ENABLE_C_API)
         mboard_eeprom.h
         subdev_spec.h
         usrp.h
-        DESTINATION ${INCLUDE_DIR}/uhd/usrp
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/usrp
         COMPONENT headers
     )
 endif(ENABLE_C_API)

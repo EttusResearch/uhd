@@ -13,6 +13,6 @@ UHD_INSTALL(FILES
     spi_getter_iface.hpp
     trig_io_mode_iface.hpp
     internal_sync_iface.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/features
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/features
     COMPONENT headers
 )

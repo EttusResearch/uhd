@@ -210,7 +210,6 @@ Additionally, configuration variables can be passed into CMake via the command l
 The following common-use configuration variables are listed below:
 
 - For a custom install prefix: `-DCMAKE_INSTALL_PREFIX=<install-path>`
-- To install libs into lib64: `cmake -DLIB_SUFFIX=64`
 
 Example usage:
 

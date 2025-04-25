@@ -56,7 +56,7 @@ UHD_INSTALL(FILES
     rfnoc_types.hpp
     traffic_counter.hpp
 
-    DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/rfnoc
     COMPONENT headers
 )
 

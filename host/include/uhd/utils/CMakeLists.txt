@@ -37,7 +37,7 @@ UHD_INSTALL(FILES
     tasks.hpp
     thread_priority.hpp
     thread.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/utils
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/utils
     COMPONENT headers
 )
 
@@ -45,7 +45,7 @@ if(ENABLE_C_API)
     UHD_INSTALL(FILES
         thread_priority.h
         log.h
-        DESTINATION ${INCLUDE_DIR}/uhd/utils
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/utils
         COMPONENT headers
     )
 endif(ENABLE_C_API)

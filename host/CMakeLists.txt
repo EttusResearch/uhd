@@ -133,26 +133,18 @@ include(UHDPackage)   #setup cpack
 ########################################################################
 # Install Dirs
 ########################################################################
-# Whether the library suffix should be 64 (applies to redhat linux family)
-if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
-    set(LIB_SUFFIX 64)
-endif()
-if(CMAKE_INSTALL_LIBDIR MATCHES lib64)
-    set(LIB_SUFFIX 64)
-endif()
+include(GNUInstallDirs)
 
-set(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
-set(RUNTIME_DIR bin)
-set(LIBRARY_DIR lib${LIB_SUFFIX})
-set(INCLUDE_DIR include)
-set(PKG_DATA_DIR share/uhd)
+set(PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd)
 if(NOT DEFINED PKG_LIB_DIR)
-    set(PKG_LIB_DIR ${LIBRARY_DIR}/uhd)
+    set(PKG_LIB_DIR ${CMAKE_INSTALL_LIBDIR}/uhd)
 endif()
 if(NOT DEFINED PKG_DOC_DIR)
-    set(PKG_DOC_DIR share/doc/uhd)
+    # Note: CMAKE_INSTALL_DOCDIR would go to share/doc/UHD (capitalized) because
+    # that's what the project name is, but we want to keep it lowercase.
+    string(TOLOWER "${CMAKE_INSTALL_DOCDIR}" PKG_DOC_DIR)
 endif()
-set(PKG_MAN_DIR share/man/man1)
+set(PKG_MAN_DIR ${CMAKE_INSTALL_MANDIR}/man1)
 
 
 ########################################################################
@@ -220,13 +212,11 @@ endif(ENABLE_STATIC_LIBS)
 ########################################################################
 if(APPLE)
     if(NOT CMAKE_INSTALL_NAME_DIR)
-        set(CMAKE_INSTALL_NAME_DIR
-            ${CMAKE_INSTALL_PREFIX}/${LIBRARY_DIR} CACHE
+        set(CMAKE_INSTALL_NAME_DIR ${CMAKE_INSTALL_FULL_LIBDIR} CACHE
             PATH "Library Install Name Destination Directory" FORCE)
     endif(NOT CMAKE_INSTALL_NAME_DIR)
     if(NOT CMAKE_INSTALL_RPATH)
-        set(CMAKE_INSTALL_RPATH
-            ${CMAKE_INSTALL_PREFIX}/${LIBRARY_DIR} CACHE
+        set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR} CACHE
             PATH "Library Install RPath" FORCE)
     endif(NOT CMAKE_INSTALL_RPATH)
     if(NOT CMAKE_BUILD_WITH_INSTALL_RPATH)
@@ -560,7 +550,7 @@ configure_file(
 
 UHD_INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
-    DESTINATION ${LIBRARY_DIR}/pkgconfig
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
     COMPONENT "devel"
 )
 
@@ -568,7 +558,7 @@ UHD_INSTALL(
 # Create and Install UHD cmake files
 ########################################################################
 if(NOT CMAKE_MODULES_DIR)
-   set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
+    set(CMAKE_MODULES_DIR ${CMAKE_INSTALL_LIBDIR}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
 # UHDConfig.cmake needs UHD_LINK_LIST_STATIC set:

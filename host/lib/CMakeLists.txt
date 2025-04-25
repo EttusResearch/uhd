@@ -230,9 +230,9 @@ endif(ENABLE_SIM)
 
 if(NOT UHDHOST_PKG) # Syntax makes it unusable by UHD_INSTALL
     install(TARGETS uhd
-        LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .so file
-        ARCHIVE DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .lib file
-        RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT libraries # .dll file
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .so file
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib file
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries # .dll file
     )
 endif(NOT UHDHOST_PKG)
 
@@ -244,8 +244,7 @@ if(ENABLE_STATIC_LIBS)
     set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
     set_target_properties(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
     target_link_libraries(uhd_static uhd_rc)
-    install(TARGETS uhd_static
-        ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
+    install(TARGETS uhd_static ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} # .lib or .a file
     )
 endif(ENABLE_STATIC_LIBS)
 
@@ -254,13 +253,13 @@ if(ENABLE_EXTEND_WIN_PACKAGING)
         include(UHDLIBUSB)
 
         if(DEFINED UHD_LIBUSBDLLPATH)
-            # UHD_INSTALL(FILES 
-            #     ${UHD_LIBUSBDLLPATH} 
-            #     DESTINATION ${RUNTIME_DIR}
+            # UHD_INSTALL(FILES
+            #     ${UHD_LIBUSBDLLPATH}
+            #     DESTINATION ${CMAKE_INSTALL_BINDIR}
             #     COMPONENT winlibusb)
-        install(FILES 
-                ${UHD_LIBUSBDLLPATH} 
-                DESTINATION ${RUNTIME_DIR}
+        install(FILES
+                ${UHD_LIBUSBDLLPATH}
+                DESTINATION ${CMAKE_INSTALL_BINDIR}
                 COMPONENT libraries)
         else()
             message(WARNING "Unable to locate libusb dynamic link library from LIBUSB_LIBRARIES: ${LIBUSB_LIBRARIES}")
@@ -269,8 +268,8 @@ if(ENABLE_EXTEND_WIN_PACKAGING)
         # Variable LIBUSB_LICENSE_FILE is defined in top level CMakeLists.txt,
         # and the files gets generated in the UHDLIBUSB module.
         if(EXISTS ${UHD_LIBUSB_LICENSEFILE})
-            UHD_INSTALL(FILES 
-                ${UHD_LIBUSB_LICENSEFILE} 
+            UHD_INSTALL(FILES
+                ${UHD_LIBUSB_LICENSEFILE}
                 DESTINATION ${PKG_DOC_DIR}
                 COMPONENT readme
             )

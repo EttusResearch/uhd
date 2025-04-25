@@ -27,7 +27,7 @@ UHD_INSTALL(FILES
     tune_result.hpp
     wb_iface.hpp
     filters.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/types
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/types
     COMPONENT headers
 )
 
@@ -40,7 +40,7 @@ if(ENABLE_C_API)
         tune_request.h
         tune_result.h
         usrp_info.h
-        DESTINATION ${INCLUDE_DIR}/uhd/types
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/types
         COMPONENT headers
     )
 endif(ENABLE_C_API)
