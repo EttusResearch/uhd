@@ -13,6 +13,7 @@ chdr_pad_packet.v \
 chdr_resize.v \
 chdr_convert_up.v \
 chdr_convert_down.v \
+chdr_monitor.sv \
 context_handler_sync.v \
 context_builder.v \
 context_parser.v \
