@@ -795,10 +795,10 @@ package PkgRfnocBlockCtrlBfm;
     endtask : put_chdr
 
 
-    // Receive a raw CHDR packet.
+    // Receive a raw CHDR packet. This task blocks until a packet is received.
     //
     //   port:    Port number on which to receive the packet
-    //   packet:  Data structure to store received packet
+    //   packet:  Object handle for the received packet
     //
     task get_chdr(
       input  int                  port,
@@ -815,10 +815,31 @@ package PkgRfnocBlockCtrlBfm;
     endtask : get_chdr
 
 
+    // Get the next packet if there's one available and return 1. Return 0 if
+    // there's no packet available.
+    //
+    //   port:    Port number on which to get the packet
+    //   packet:  Object handle for the received packet
+    //
+    function bit try_get_chdr(
+      input  int                  port,
+      output ChdrPacket #(CHDR_W) packet
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call try_get_chdr until RfnocBlockCtrlBfm is running");
+      end
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].try_get_chdr(packet);
+    endfunction : try_get_chdr
+
+
     // Receive a raw CHDR packet, but don't remove it from the receive queue.
     //
     //   port:    Port number on which to peek
-    //   packet:  Data structure to store received packet
+    //   packet:  Object handle for the received packet
     //
     task peek_chdr(
       input  int                  port,
@@ -833,6 +854,28 @@ package PkgRfnocBlockCtrlBfm;
 
       s_data[port].peek_chdr(packet);
     endtask : peek_chdr
+
+
+    // Get the next packet if there's one available and return 1, but don't
+    // remove it from the receive queue. Return 0 if there's no packet
+    // available.
+    //
+    //   port:    Port number on which to peek
+    //   packet:  Object handle for the received packet
+    //
+    function bit try_peek_chdr(
+      input  int                  port,
+      output ChdrPacket #(CHDR_W) packet
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call try_peek_chdr until RfnocBlockCtrlBfm is running");
+      end
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].try_peek_chdr(packet);
+    endfunction : try_peek_chdr
 
 
     // Return the number of packets available in the receive queue for the
