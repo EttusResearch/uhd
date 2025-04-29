@@ -8,6 +8,7 @@
 #include "mpmd_link_if_ctrl_udp.hpp"
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_mgr.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -73,12 +74,33 @@ mpmd_link_if_ctrl_udp::udp_link_info_map get_udp_info_from_xport_info(
             throw uhd::runtime_error(
                 "Invalid response from get_chdr_link_options()! No `port' key!");
         }
-        const std::string udp_port  = link_info.at("port");
-        const size_t link_rate      = link_info.count("link_rate")
-                                          ? std::stoul(link_info.at("link_rate"))
-                                          : MAX_RATE_1GIGE;
+        const std::string udp_port = link_info.at("port");
+        const size_t link_rate     = [&link_info]() {
+            if (!link_info.count("link_rate")) {
+                return MAX_RATE_1GIGE;
+            }
+            try {
+                return uhd::cast::from_str<size_t>(link_info.at("link_rate"));
+            } catch (const uhd::runtime_error&) {
+                UHD_LOG_THROW(uhd::runtime_error,
+                    "MPMD::XPORT::UDP",
+                    "Invalid response from get_chdr_link_options()! "
+                        "Invalid `link_rate' key: `"
+                        << link_info.at("link_rate") << "'");
+            }
+        }();
         const std::string link_type = link_info.at("type");
-        const size_t if_mtu         = std::stoul(link_info.at("mtu"));
+        const size_t if_mtu         = [&link_info]() {
+            try {
+                return uhd::cast::from_str<size_t>(link_info.at("mtu"));
+            } catch (const uhd::runtime_error&) {
+                UHD_LOG_THROW(uhd::runtime_error,
+                    "MPMD::XPORT::UDP",
+                    "Invalid response from get_chdr_link_options()! "
+                            "Invalid `mtu' key: `"
+                        << link_info.at("mtu") << "'");
+            }
+        }();
         result.emplace(link_info.at("ipv4"),
             mpmd_link_if_ctrl_udp::udp_link_info_t{
                 udp_port, link_rate, link_type, if_mtu});

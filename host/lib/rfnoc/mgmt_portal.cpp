@@ -875,7 +875,7 @@ private: // Functions
                     return uhd::cast::from_str<double>(ratio_s) / 100.0;
                 }
                 return uhd::cast::from_str<double>(ratio_s);
-            } catch (const std::invalid_argument&) {
+            } catch (const uhd::runtime_error&) {
                 UHD_LOG_WARNING(LOG_ID,
                     "Invalid throttle argument provided: `"
                         << throttle_ratio_s << "', setting throttle to 1.0.");

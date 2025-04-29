@@ -5,11 +5,13 @@
 //
 
 #include <uhd/config.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/transport/adapter.hpp>
 #include <uhdlib/transport/dpdk/udp.hpp>
 #include <uhdlib/transport/udp_dpdk_link.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <arpa/inet.h>
 #include <memory>
 
@@ -43,14 +45,25 @@ udp_dpdk_link::udp_dpdk_link(dpdk::port_id_t port_id,
         throw uhd::runtime_error(
             std::string("DPDK: Invalid destination address ") + remote_addr);
     }
-    _remote_port = rte_cpu_to_be_16(std::stoul(remote_port));
+
+    auto convert_port = [](const std::string& port, const std::string& port_type) {
+        try {
+            return rte_cpu_to_be_16(
+                uhd::narrow<uint16_t>(uhd::cast::from_str<size_t>(port)));
+        } catch (const uhd::runtime_error&) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                "DPDK",
+                std::string("Invalid ") + port_type + " port number " + port);
+        }
+    };
+
+    _remote_port = convert_port(remote_port, "destination");
 
     // Grab the port with a route to the remote host
     _port = _ctx->get_port(port_id);
 
-    uint16_t local_port_num = rte_cpu_to_be_16(std::stoul(local_port));
     // Get an unused UDP port for listening
-    _local_port = _port->alloc_udp_port(local_port_num);
+    _local_port = _port->alloc_udp_port(convert_port(local_port, "local"));
 
     // Validate params
     const size_t max_frame_size = _port->get_mtu() - dpdk::HDR_SIZE_UDP_IPV4;

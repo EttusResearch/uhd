@@ -7,6 +7,7 @@
 
 #include <uhd/convert.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/algorithm/string.hpp>
@@ -508,11 +509,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = std::stoul(channel_strings[ch]);
+            const size_t chan = [&]() {
+                try {
+                    return uhd::cast::from_str<size_t>(channel_strings[ch]);
+                } catch (const uhd::runtime_error&) {
+                    throw uhd::runtime_error(
+                        "Unable to parse channel number(s) specified: "
+                        + rx_channel_list);
+                }
+            }();
             if (chan >= usrp->get_rx_num_channels()) {
-                throw std::runtime_error("Invalid channel(s) specified.");
+                throw uhd::runtime_error("Invalid channel(s) specified.");
             } else {
-                rx_channel_nums.push_back(std::stoul(channel_strings[ch]));
+                rx_channel_nums.push_back(chan);
             }
         }
     }
@@ -525,11 +534,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = std::stoul(channel_strings[ch]);
+            const size_t chan = [&]() {
+                try {
+                    return uhd::cast::from_str<size_t>(channel_strings[ch]);
+                } catch (const uhd::runtime_error&) {
+                    throw uhd::runtime_error(
+                        "Unable to parse channel number(s) specified: "
+                        + tx_channel_list);
+                }
+            }();
             if (chan >= usrp->get_tx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                tx_channel_nums.push_back(std::stoul(channel_strings[ch]));
+                tx_channel_nums.push_back(chan);
             }
         }
     }
