@@ -56,6 +56,18 @@ int cast::from_str(const std::string& val)
 }
 
 template <>
+size_t cast::from_str(const std::string& val)
+{
+    try {
+        return static_cast<size_t>(std::stoul(val));
+    } catch (std::invalid_argument&) {
+        throw uhd::runtime_error(std::string("Cannot convert `") + val + "' to size_t!");
+    } catch (std::out_of_range&) {
+        throw uhd::runtime_error(std::string("Cannot convert `") + val + "' to size_t!");
+    }
+}
+
+template <>
 std::string cast::from_str(const std::string& val)
 {
     return val;
