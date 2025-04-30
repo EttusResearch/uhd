@@ -248,10 +248,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
               << std::endl;
 
-    // use timed tuning for more that one channel on all devices except X410
-    // X410 does not yet support timed tuning
-    const bool timed_tuning = usrp->get_mboard_name() != "x410"
-                              and channel_nums.size() > 1;
+    // use timed tuning for more than one channel
+    const bool timed_tuning     = channel_nums.size() > 1;
     const float cmd_time_offset = 0.1;
 
     if (timed_tuning) {

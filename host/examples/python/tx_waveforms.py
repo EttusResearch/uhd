@@ -145,18 +145,11 @@ def multi_usrp_tx(args):
         desired_size = 10 * np.floor(args.rate / args.wave_freq)
 
     tx_start_time = None  # Start transmission immediately
-    if args.tx_delay != 0:
-        if usrp.get_mboard_name() == "x410":
-            print(
-                "WARNING: Delayed transmission implies timed tuning "
-                "which is not supported on X410. Ignoring tx_delay."
-            )
-        else:
-            # Delay transmission start. This will allow SW to apply all
-            # configurations and start transmission on all channels simultaneously.
-            # If tx_delay is too small, tx_start_time may be in the past by the time
-            # all configurations are applied and late command errors being reported.
-            tx_start_time = usrp.get_time_now() + args.tx_delay
+    # Delay transmission start. This will allow SW to apply all
+    # configurations and start transmission on all channels simultaneously.
+    # If tx_delay is too small, tx_start_time may be in the past by the time
+    # all configurations are applied and late command errors being reported.
+    tx_start_time = usrp.get_time_now() + args.tx_delay
     print("Generating waveform...")
     data = uhd.dsp.signals.get_continuous_tone(
         args.rate,
@@ -209,11 +202,9 @@ def rfnoc_dram_tx(args):
         else:
             radio.set_rate(args.rate)
 
-    is_x410 = graph.get_mb_controller().get_mboard_name() == "x410"
-    if not is_x410 and len(dram.radio_chan_pairs) > 1:
+    if len(dram.radio_chan_pairs) > 1:
         # Use timed tuning for more than one channel to produce consistent
-        # phase offsets between channels. This is supported on all devices
-        # except X410, which does not support timed tuning correctly yet.
+        # phase offsets between channels.
         cmd_time_offset = 0.1
         cmd_time = dram.radio_chan_pairs[0][0].get_time_now() + cmd_time_offset
         for radio, radio_chan in dram.radio_chan_pairs:
@@ -258,9 +249,8 @@ def rfnoc_dram_tx(args):
             f"Starting to stream waveform at the rate of {args.rate} samples/sec for the duration of {args.duration} seconds..."
         )
         tx_md = uhd.types.TXMetadata()
-        # do not use time spec if tx_delay is 0 or if we are using an X410
-        # X410 might run into tile sync error on timed commands
-        if args.tx_delay == 0 or is_x410:
+        # do not use time spec if tx_delay is 0
+        if args.tx_delay == 0:
             tx_md.has_time_spec = False
         else:
             # In this case the tx_start_time needs to be sufficiently in the future
