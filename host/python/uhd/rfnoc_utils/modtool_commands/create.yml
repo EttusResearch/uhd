@@ -38,6 +38,11 @@ steps:
       repl: "${ module_name }"
       quiet: true
   - search_and_replace:
+      glob: "**"
+      pattern: 'NEWMOD'
+      repl: "${ module_name.upper() }"
+      quiet: true
+  - search_and_replace:
       glob: README.md
       pattern: "${ module_name } example that ships with"
       repl: "gain example that ships with"

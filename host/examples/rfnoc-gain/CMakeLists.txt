@@ -197,10 +197,9 @@ if(NOT CMAKE_MODULES_DIR)
     set(CMAKE_MODULES_DIR ${CMAKE_INSTALL_LIBDIR}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
-#TODO
-#install(FILES cmake/Modules/RfnocExampleConfig.cmake
-#    DESTINATION ${CMAKE_MODULES_DIR}/rfnoc
-#)
+install(FILES cmake/Modules/rfnoc-gainConfig.cmake
+    DESTINATION ${CMAKE_MODULES_DIR}/rfnoc-gain
+)
 
 ########################################################################
 # Subdirectories
