@@ -41,7 +41,7 @@ target_link_libraries(rfnoc-gain
     ${Boost_LIBRARIES}
 )
 set_target_properties(rfnoc-gain
-    PROPERTIES DEFINE_SYMBOL "rfnoc_gain_EXPORTS")
+    PROPERTIES DEFINE_SYMBOL "RFNOC_GAIN_EXPORTS")
 
 file(GENERATE OUTPUT ${CMAKE_BINARY_DIR}/lib/rfnoc-gain CONTENT "$<TARGET_FILE_NAME:rfnoc-gain>\n")
 

@@ -7,7 +7,7 @@ steps:
     src: "${ SOURCE_DIR }"
     dst: "${ DEST_DIR }"
     ignore_globs:
-    - "*.hpp"
+    - "*block*.hpp"
     - "apps/*.cpp"
     - "build"
     - "examples/*.py"
@@ -101,6 +101,7 @@ steps:
     files:
     - CMakeLists.txt
     - include/rfnoc/newmod/CMakeLists.txt
+    - include/rfnoc/newmod/config.hpp
     - lib/CMakeLists.txt
     - python/pyrfnoc-newmod.cpp
     - python/setup.py.in
@@ -108,3 +109,9 @@ steps:
     - rfnoc/CMakeLists.txt
     pattern: "gain"
     repl: "newmod"
+- search_and_replace:
+    files:
+    - lib/CMakeLists.txt
+    - include/rfnoc/newmod/config.hpp
+    pattern: "GAIN"
+    repl: "NEWMOD"

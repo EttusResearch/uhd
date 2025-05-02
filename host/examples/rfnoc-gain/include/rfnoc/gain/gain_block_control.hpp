@@ -4,20 +4,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_RFNOC_GAIN_GAIN_BLOCK_CONTROL_HPP
-#define INCLUDED_RFNOC_GAIN_GAIN_BLOCK_CONTROL_HPP
+#pragma once
 
-#include <uhd/config.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <rfnoc/gain/config.hpp>
+
 
 namespace rfnoc { namespace gain {
 
 /*! Block controller for the gain block: Multiply amplitude of signal
  *
  * This block multiplies the signal input with a fixed gain value.
+ *
+ * Note that this block implements an integer multiplication, i.e., the output
+ * of this block is y = g * x, where g is the gain value and x is the input
+ * signal, and all values are integers.
+ *
+ * The gain value g can be set by calling the set_gain_value() method, or by
+ * setting the "gain" property.
  */
-class UHD_API gain_block_control : public uhd::rfnoc::noc_block_base
+class RFNOC_GAIN_API gain_block_control : public uhd::rfnoc::noc_block_base
 {
 public:
     RFNOC_DECLARE_BLOCK(gain_block_control)
@@ -37,5 +44,3 @@ public:
 };
 
 }} // namespace rfnoc::gain
-
-#endif /* INCLUDED_RFNOC_GAIN_GAIN_BLOCK_CONTROL_HPP */
