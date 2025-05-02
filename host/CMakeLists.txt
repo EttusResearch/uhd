@@ -572,7 +572,6 @@ endforeach(Boost_Comp)
 if(ENABLE_USB)
     list(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
 endif(ENABLE_USB)
-set(UHD_RFNOC_FOUND "TRUE")
 
 configure_file(
     ${UHD_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in
