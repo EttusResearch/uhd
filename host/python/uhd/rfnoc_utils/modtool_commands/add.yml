@@ -104,18 +104,18 @@ steps:
           msg: "Aborting."
   - write_template:
       template: noc_shell_template.sv.mako
-      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/noc_shell_${ blockname }.sv"
+      dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/noc_shell_${ blockname }.sv"
   - write_template:
       template: rfnoc_block_template.sv.mako
-      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }.sv"
+      dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }.sv"
   - write_template:
       template: Makefile.srcs.mako
-      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile.srcs"
+      dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/Makefile.srcs"
   - write_template:
       template: CMakeLists.txt.mako
-      dest: "fpga/${ MODULE_NAME }/${ blockname_full }/CMakeLists.txt"
+      dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/CMakeLists.txt"
   - append:
-      file: "fpga/${ MODULE_NAME }/CMakeLists.txt"
+      file: "rfnoc/fpga/${ MODULE_NAME }/CMakeLists.txt"
       text: "add_subdirectory(${ blockname_full })\n"
   - log:
       msg: "Added gateware templates to fpga/${ MODULE_NAME }/${ blockname_full }."
@@ -125,10 +125,10 @@ steps:
       steps:
       - write_template:
           template: rfnoc_block_template_tb.sv.mako
-          dest: "fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }_tb.sv"
+          dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/${ blockname_full }_tb.sv"
       - write_template:
           template: Makefile.mako
-          dest: "fpga/${ MODULE_NAME }/${ blockname_full }/Makefile"
+          dest: "rfnoc/fpga/${ MODULE_NAME }/${ blockname_full }/Makefile"
       - log:
           msg: "Added testbench templates."
   - run_if:
