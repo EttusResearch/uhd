@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import shutil
+import subprocess
 import sys
 import traceback
 from argparse import Namespace
@@ -118,6 +119,27 @@ class StepExecutor:
         if self._resolve(condition):
             self.run(steps)
 
+    def run_subprocess(self, cmd, **kwargs):
+        """Run a command as a subprocess.
+
+        Arguments:
+        - cmd: The command to run as a list of arguments.
+        """
+        cmd = [self._resolve(arg) for arg in cmd]
+        try:
+            self._log.debug("Running command: %s", cmd)
+            subprocess.run(
+                cmd,
+                check=True,
+                env=os.environ.copy(),
+            )
+        except subprocess.CalledProcessError as e:
+            if "error_msg" in kwargs:
+                self._log.error(kwargs["error_msg"])
+            else:
+                self._log.error("Command failed with return code %s", e.returncode)
+            raise StepExecutor.StepError(f"Command failed: {e}")
+
     def copy_dir(self, src, dst, **kwargs):
         """Copy a directory from src to dest, recursively."""
         self._log.debug("Copying directory %s to %s", src, dst)
@@ -142,7 +164,12 @@ class StepExecutor:
         shutil.copytree(src, dst, **copytree_kwargs)
 
     def search_and_replace(self, **kwargs):
-        """Search and replace text in a file."""
+        """Search and replace text in a file.
+
+        pattern: The pattern to search for
+        repl: Replacement string
+        count: Max number of replacements (default: 0, all)
+        """
         file_list = get_file_list(**kwargs)
         for file in file_list:
             self._log.debug(
@@ -300,6 +327,26 @@ class StepExecutor:
             self.cmd["variables"][kwargs["dst_var"]] = None
         else:
             self.cmd["variables"][kwargs["dst_var"]] = file_list[0]
+
+    def find_executable(self, dst_var, name, **kwargs):
+        """Find an executable in the PATH and store it in a variable.
+
+        Parameters:
+        - dst_var: The name of the variable to store the executable in.
+        - name: The name of the executable to find.
+
+        Optional:
+        - error_msg: The message to display if the executable is not found.
+        """
+        if "error_msg" in kwargs:
+            error_msg = kwargs["error_msg"]
+        else:
+            error_msg = f"Executable {name} not found in PATH."
+        path = shutil.which(name)
+        if path is None:
+            raise StepExecutor.StepError(error_msg)
+        self._log.debug("Found executable %s at %s", name, path)
+        self._setv(dst_var, os.path.abspath(path))
 
     def exit(self, **kwargs):
         """Exit the script."""

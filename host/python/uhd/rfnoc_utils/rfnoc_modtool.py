@@ -114,7 +114,6 @@ def main():
         os.chdir(args.directory)
     cmd = cmds[args.command]
     global_vars = get_global_vars(pkg_data_dir)
-    cmd = resolve_vars(cmd, global_vars, args)
     if not cmd.get("skip_identify_module", False):
         if not check_valid_oot_dir(os.getcwd()):
             print("Error: Not a valid OOT module directory")
@@ -123,6 +122,7 @@ def main():
         module_name = oot_dir_name.replace("rfnoc-", "")
         global_vars["MODULE_NAME"] = module_name
         global_vars["MODULE_NAME_FULL"] = oot_dir_name
+    cmd = resolve_vars(cmd, global_vars, args)
     executor = StepExecutor(global_vars, args, cmd)
     executor.run(cmd["steps"])
     return 0
