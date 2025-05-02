@@ -23,11 +23,19 @@ if(NOT rfnoc_gain_sources)
 endif(NOT rfnoc_gain_sources)
 
 add_library(gnuradio-rfnoc_gain SHARED ${rfnoc_gain_sources})
-target_link_libraries(gnuradio-rfnoc_gain gnuradio::gnuradio-runtime gnuradio::gnuradio-uhd)
+target_link_libraries(gnuradio-rfnoc_gain
+    gnuradio::gnuradio-runtime
+    gnuradio::gnuradio-uhd
+    ${UHD_LIBRARIES}
+    ${RFNOC_GAIN_LIBRARIES}
+    )
 target_include_directories(
     gnuradio-rfnoc_gain
     PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
-    PUBLIC $<INSTALL_INTERFACE:include>)
+    PUBLIC $<INSTALL_INTERFACE:include>
+    PRIVATE ${UHD_INCLUDE_DIRS}
+    PRIVATE ${RFNOC_GAIN_INCLUDE_DIRS}
+)
 set_target_properties(gnuradio-rfnoc_gain PROPERTIES DEFINE_SYMBOL "gnuradio_rfnoc_gain_EXPORTS")
 
 if(APPLE)
