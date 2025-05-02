@@ -47,7 +47,7 @@ jobs:
       pip3 install -r requirements.txt
       popd
       # Now run the test.
-      make -C $(rfnocOotDirectory)/rfnoc-test/fpga/test/rfnoc_block_mytestblock/ \
+      make -C $(rfnocOotDirectory)/rfnoc-test/rfnoc/fpga/test/rfnoc_block_mytestblock/ \
         xsim UHD_FPGA_DIR=$(Build.SourcesDirectory)/uhddev/fpga/
 
     displayName: Run rfnoc_modtool testbenches
