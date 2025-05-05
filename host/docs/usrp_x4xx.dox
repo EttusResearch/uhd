@@ -394,7 +394,7 @@ to get best network performance with host and USRP.
 
 Below are listed some more network issues and troubleshooting tips.
 
-<b>Issue 1:</b> uhd_usrp_probe --args addr=<x4xx_DHCP_IP> gives timeout waiting
+<b>Issue 1:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout waiting
 for ACK error.
 
 The setup includes a host PC connected to a x4xx with both 10Gb Ethernet 
@@ -415,7 +415,7 @@ are fine.
  - If you are still unable to probe your x4xx without errors, contact
  Ettus support.
 
-<b>Issue 2:</b> uhd_usrp_probe --args addr=<x4xx_DHCP_IP> gives timeout recv
+<b>Issue 2:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout recv
 buff error.
 
 The setup includes a host PC connected to a x4xx with both 10Gb Ethernet

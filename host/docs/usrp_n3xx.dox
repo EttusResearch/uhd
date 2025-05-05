@@ -189,7 +189,7 @@ that version of UHD (3.11.0.1 or later) on a host system with Internet access an
    `<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`,
    where `<UHD_INSTALL_DIR>` is the UHD installation directory.
 
-\paragraph n3xx_fs_update_linux On Linux
+\subsubsection n3xx_fs_update_linux On Linux
 
 To load an image onto the micro SD card, connect the card to the host and run:
 
@@ -202,7 +202,7 @@ To load an image onto the micro SD card, connect the card to the host and run:
    other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
    CAUTION:  Operating on the wrong device can cause damage to that device.
 
-\paragraph n3xx_fs_update_windows On Windows
+\subsubsection n3xx_fs_update_windows On Windows
 
 Manual loading a file system image on to micro SD card is straight forward
 on Windows with the use of 3rd party utilities available online.
