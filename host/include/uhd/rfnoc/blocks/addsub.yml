@@ -40,14 +40,12 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     in_b:
       item_width: 32
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
   outputs:
     add:
       item_width: 32
@@ -55,11 +53,9 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     sub:
       item_width: 32
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~

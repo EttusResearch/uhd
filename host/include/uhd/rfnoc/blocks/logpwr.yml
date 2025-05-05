@@ -39,7 +39,6 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 32
       format: sc16
-      mdata_sig: ~
   outputs:
     out:
       num_ports: NUM_PORTS
@@ -48,4 +47,3 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 32
       format: s16
-      mdata_sig: ~
