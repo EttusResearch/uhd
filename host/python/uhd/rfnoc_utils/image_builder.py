@@ -85,7 +85,7 @@ def get_vivado_path(fpga_top_dir, args):
     if args.get("vivado_path"):
         viv_path = args["vivado_path"]
     else:
-        get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=\$VIVADO_PATH"'
+        get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=$VIVADO_PATH"'
         try:
             output = subprocess.check_output(
                 f'{BASH_EXECUTABLE} -c "{get_viv_path_cmd}"',
