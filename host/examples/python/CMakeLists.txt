@@ -12,6 +12,7 @@ set(python_examples
     benchmark_rate.py
     usrp_power_meter.py
     remote_rx.py
+    rfnoc_rx_to_file.py
     x440_L_band_capture.py
     fft_loopback.py
 )
