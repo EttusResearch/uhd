@@ -199,6 +199,14 @@ stages:
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       testLength: ${{ parameters.testLength }}
       dpdkDirs: '${{ parameters.dpdkDirs }}'
+  - template: templates/job-uhd-streaming-tests-s175.yml
+    parameters:
+      testOS: ubuntu2404
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      testLength: ${{ parameters.testLength }}
+      dpdkDirs: '${{ parameters.dpdkDirs }}'
 
 - stage: test_x440_streaming_stage
   displayName: Test X440 Streaming
@@ -222,6 +230,13 @@ stages:
   - template: templates/job-uhd-devtest-rhombus.yml
     parameters:
       testOS: ubuntu2004
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+  - template: templates/job-uhd-devtest-s175.yml
+    parameters:
+      testOS: ubuntu2404
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}

@@ -127,6 +127,7 @@ jobs:
       #   sfpInt1: 'ens4f1'
       beauty-B210-0:
         dutName: 'beauty-B210-0'
+        dutFamily: 'b2xx'
         dutType: 'B210'
         dutAddr: ''
         dutSecondAddr: ''

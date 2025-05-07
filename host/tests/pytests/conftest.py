@@ -10,6 +10,7 @@ from collections import namedtuple
 dut_type_list = [
    "N310",
    "N320",
+   "B206",
    "B210",
    "E320",
    "X310",

@@ -5,6 +5,7 @@ parameters:
   type: string
   values:
     - ubuntu2004
+    - ubuntu2404
 - name: knownHost
   type: string
 - name: toolset
@@ -53,6 +54,7 @@ jobs:
       knownHostsEntry: '${{ parameters.knownHost }}'
       sshPublicKey: '$(ettus_ssh_pubkey)'
       sshKeySecureFile: 'id_rsa.ettus'
+    condition: and(succeeded(), ne('${{ parameters.knownHost }}', ''))
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
