@@ -51,7 +51,8 @@ package ctrlport_bfm_pkg;
       ctrlport_response_t expected_response,
       bit skip_data_check = '0
     );
-      assert (request.rd || request.wr) else $error(1, "Transaction must be read or write");
+      assert (request.rd || request.wr) else
+        $error("Transaction must be read or write");
       transactions.put('{request, expected_response, skip_data_check});
     endtask
 
@@ -168,7 +169,7 @@ package ctrlport_bfm_pkg;
       request_idle = 'x;
       request_idle.wr = '0;
       request_idle.rd = '0;
-      iface.req = request_idle;
+      iface.req <= request_idle;
 
       // ignore first clock cycle to let response settle
       @(posedge iface.clk);
@@ -183,14 +184,14 @@ package ctrlport_bfm_pkg;
           end
 
           // send request
-          iface.req = transfer.req;
+          iface.req <= transfer.req;
           // check minimum time for response on interface
           @(negedge iface.clk);
           check_no_response();
 
           // reset request interface
           @(posedge iface.clk);
-          iface.req = request_idle;
+          iface.req <= request_idle;
 
           // wait for response
           while(!iface.resp.ack) begin
@@ -198,13 +199,17 @@ package ctrlport_bfm_pkg;
           end
 
           // status is always expected to match
-          assert (iface.resp.status == transfer.resp.status) else
-            $error(1, "Unexpected status received on interface. Expected: %2b Received: %2b", transfer.resp.status, iface.resp.status);
+          assert (iface.resp.status == transfer.resp.status) else begin
+            $error("Unexpected status received on interface. Expected: 0b%2b Received: 0b%2b",
+              transfer.resp.status, iface.resp.status);
+          end
 
           // check data if read and data check is not skipped
           if (transfer.req.rd && !transfer.skip_data_check) begin
-            assert (iface.resp.data == transfer.resp.data) else
-              $error(1, "Unexpected data received on interface. Expected: %h Received: %h", transfer.resp.data, iface.resp.data);
+            assert (iface.resp.data == transfer.resp.data) else begin
+              $error("Unexpected data received on interface. Expected: 0x%h Received: 0x%h",
+                transfer.resp.data, iface.resp.data);
+            end
           end
 
           // save data for read operations
@@ -223,7 +228,9 @@ package ctrlport_bfm_pkg;
 
     // Check for no response in this clock cycle
     local task check_no_response();
-      assert (iface.resp.ack == '0) else $error(1, "Unexpected response received on interface: %p", iface.resp);
+      if (iface.resp.ack != '0) begin
+        $error("Unexpected response received on interface: %p", iface.resp);
+      end
     endtask
 
   endclass
