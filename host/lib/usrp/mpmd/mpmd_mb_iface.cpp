@@ -380,9 +380,9 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     auto cfg_io_srv = get_io_srv_mgr()->connect_links(
         recv_link, send_link, transport::link_type_t::CTRL);
 
-    auto pkt_factory         = _link_if_mgr->get_packet_factory(link_idx);
-    auto io_srv_mgr          = this->get_io_srv_mgr();
-    const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
+    auto pkt_factory                  = _link_if_mgr->get_packet_factory(link_idx);
+    auto io_srv_mgr                   = this->get_io_srv_mgr();
+    const auto [fc_params, strc_pyld] = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         pkt_factory,
@@ -390,6 +390,7 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         epids,
         pyld_buff_fmt,
         mdata_buff_fmt,
+        xport_args,
         fc_freq_ratio,
         fc_headroom_ratio,
         [io_srv_mgr, recv_link, send_link]() {
@@ -413,7 +414,8 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        buff_capacity,
+        fc_params,
+        strc_pyld,
         [io_srv_mgr, recv_link, send_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

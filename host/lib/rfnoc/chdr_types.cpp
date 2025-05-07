@@ -218,7 +218,7 @@ size_t strs_payload::serialize(uint64_t* buff,
     buff[3] = conv_byte_order(
         ((static_cast<uint64_t>(buff_info) & mask_u64(BUFF_INFO_WIDTH))
             << BUFF_INFO_OFFSET)
-        | ((static_cast<uint64_t>(status_info) & mask_u64(STATUS_INFO_WIDTH))
+        | ((static_cast<uint64_t>(status_info.info) & mask_u64(STATUS_INFO_WIDTH))
             << STATUS_INFO_OFFSET));
 
     // Return bytes written
@@ -251,7 +251,8 @@ void strs_payload::deserialize(const uint64_t* buff,
     // Read fourth word
     uint64_t word3 = conv_byte_order(buff[3]);
     buff_info      = get_field_u64<uint16_t>(word3, BUFF_INFO_OFFSET, BUFF_INFO_WIDTH);
-    status_info = get_field_u64<uint64_t>(word3, STATUS_INFO_OFFSET, STATUS_INFO_WIDTH);
+    status_info.info =
+        get_field_u64<uint64_t>(word3, STATUS_INFO_OFFSET, STATUS_INFO_WIDTH);
 }
 
 size_t strs_payload::get_length() const
@@ -266,7 +267,7 @@ bool strs_payload::operator==(const strs_payload& rhs) const
            && (capacity_pkts == rhs.capacity_pkts)
            && (xfer_count_pkts == rhs.xfer_count_pkts)
            && (xfer_count_bytes == rhs.xfer_count_bytes) && (buff_info == rhs.buff_info)
-           && (status_info == rhs.status_info);
+           && (status_info.info == rhs.status_info.info);
 }
 
 std::string strs_payload::to_string() const
@@ -276,7 +277,7 @@ std::string strs_payload::to_string() const
                              "xfer_count_pkts:%lu, xfer_count_bytes:%lu, "
                              "buff_info:0x%x, status_info:0x%x}\n")
                % src_epid % int(status) % capacity_bytes % capacity_pkts % xfer_count_pkts
-               % xfer_count_bytes % buff_info % status_info);
+               % xfer_count_bytes % buff_info % status_info.info);
 }
 
 //----------------------------------------------------

@@ -8,6 +8,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/chdr_types.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
@@ -139,7 +140,8 @@ public:
      * \param disconnect Callback function to disconnect the links
      * \return Parameters for xport flow control
      */
-    static fc_params_t configure_sep(uhd::transport::io_service::sptr io_srv,
+    static std::pair<chdr_tx_data_xport::fc_params_t, chdr::strc_payload> configure_sep(
+        uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
         uhd::transport::send_link_if::sptr send_link,
         const chdr::chdr_packet_factory& pkt_factory,
@@ -147,6 +149,7 @@ public:
         const uhd::rfnoc::sep_id_pair_t& epids,
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
+        const uhd::device_addr_t& xport_args,
         const double fc_freq_ratio,
         const double fc_headroom_ratio,
         disconnect_callback_t disconnect);
@@ -169,6 +172,7 @@ public:
         const uhd::rfnoc::sep_id_pair_t& epids,
         const size_t num_send_frames,
         const fc_params_t fc_params,
+        const chdr::strc_payload& strc_pyld,
         disconnect_callback_t disconnect);
 
     /*! Destructor
@@ -247,6 +251,29 @@ public:
         _send_io->release_send_buff(std::move(buff));
     }
 
+    void resend_init()
+    {
+        UHD_LOG_DEBUG("CHDR TX", "Reinitializing TX Streamer");
+        buff_t::uptr buff = _send_io->get_send_buff(0);
+        if (!buff) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                "XPORT::TX_DATA_XPORT",
+                "Cannot get send buffer to reinitialize TX Streamer");
+        }
+        chdr::chdr_header header;
+        _data_seq_num = 0;
+        _fc_state.reset();
+        header.set_seq_num(_data_seq_num);
+        header.set_dst_epid(_send_header.get_dst_epid());
+
+        _strc_packet->refresh(buff->data(), header, _strc_pyld);
+        const size_t size = header.get_length();
+
+        buff->set_packet_size(size);
+        _send_io->release_send_buff(std::move(buff));
+        _send_io->wait_for_dest_ready(UINT_MAX, 0);
+    }
+
     /*!
      * Writes header into frame buffer and returns payload pointer
      *
@@ -306,34 +333,36 @@ private:
             strs.deserialize(_recv_packet->get_payload_const_ptr_as<uint64_t>(),
                 _recv_packet->get_payload_size() / sizeof(uint64_t),
                 _recv_packet->conv_to_host<uint64_t>());
-
             _fc_state.update_dest_recv_count(
                 {strs.xfer_count_bytes, static_cast<uint32_t>(strs.xfer_count_pkts)});
 
-            if (strs.status != chdr::STRS_OKAY) {
-                switch (strs.status) {
-                    case chdr::STRS_SEQERR:
-                        UHD_LOG_FASTPATH("S");
-                        if (_enqueue_async_msg) {
-                            _enqueue_async_msg(
-                                async_metadata_t::EVENT_CODE_SEQ_ERROR, false, 0);
-                        }
-                        break;
-                    case chdr::STRS_DATAERR:
-                        UHD_LOG_WARNING(
-                            "XPORT::TX_DATA_XPORT", "Received data error in tx stream!");
-                        break;
-                    case chdr::STRS_RTERR:
-                        UHD_LOG_WARNING("XPORT::TX_DATA_XPORT",
-                            "Received routing error in tx stream!");
-                        break;
-                    case chdr::STRS_CMDERR:
-                        UHD_LOG_WARNING("XPORT::TX_DATA_XPORT",
-                            "Received command error in tx stream!");
-                        break;
-                    default:
-                        break;
-                }
+            switch (strs.status) {
+                case chdr::STRS_OKAY:
+                    if (_enqueue_async_msg && (strs.xfer_count_bytes == 0)) {
+                        _enqueue_async_msg(async_metadata_t::EVENT_CODE_OK, false, 0);
+                    }
+                    break;
+                case chdr::STRS_SEQERR:
+                    UHD_LOG_FASTPATH("S");
+                    if (_enqueue_async_msg) {
+                        _enqueue_async_msg(
+                            async_metadata_t::EVENT_CODE_SEQ_ERROR, false, 0);
+                    }
+                    break;
+                case chdr::STRS_DATAERR:
+                    UHD_LOG_WARNING(
+                        "XPORT::TX_DATA_XPORT", "Received data error in tx stream!");
+                    break;
+                case chdr::STRS_RTERR:
+                    UHD_LOG_WARNING(
+                        "XPORT::TX_DATA_XPORT", "Received routing error in tx stream!");
+                    break;
+                case chdr::STRS_CMDERR:
+                    UHD_LOG_WARNING(
+                        "XPORT::TX_DATA_XPORT", "Received command error in tx stream!");
+                    break;
+                default:
+                    break;
             }
 
             // Packet belongs to this transport, release buff and return true
@@ -409,15 +438,20 @@ private:
 
     // Sequence number for data packets
     uint16_t _data_seq_num = 0;
-
     // Header to write into send packets
     chdr::chdr_header _send_header;
 
     // Packet for send data
     chdr::chdr_packet_writer::uptr _send_packet;
 
+    // Packet for Stream Command Control
+    chdr::chdr_strc_packet::uptr _strc_packet;
+
     // Packet to receive strs messages
     chdr::chdr_packet_writer::uptr _recv_packet;
+
+    // Payload for Stream Command Control
+    chdr::strc_payload _strc_pyld;
 
     // Handles sending of strc flow control ack packets
     detail::tx_flow_ctrl_sender _fc_sender;

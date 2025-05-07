@@ -73,6 +73,12 @@ public:
         return _xfer_counts;
     }
 
+    void reset()
+    {
+        _xfer_counts = {0, 0};
+        _recv_counts = {0, 0};
+    }
+
 private:
     // Counts for data sent
     stream_buff_params_t _xfer_counts{0, 0};

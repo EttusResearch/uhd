@@ -35,6 +35,8 @@ public:
 
     mock_tx_data_xport(mock_send_link::sptr send_link) : _send_link(send_link) {}
 
+    void resend_init() {}
+
     buff_t::uptr get_send_buff(const int32_t timeout_ms)
     {
         return _send_link->get_send_buff(timeout_ms);

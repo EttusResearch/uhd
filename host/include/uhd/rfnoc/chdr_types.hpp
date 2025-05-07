@@ -415,7 +415,36 @@ public: // Members
     //! Buffer info (16 bits)
     uint16_t buff_info = 0;
     //! Extended status info (48 bits)
-    uint64_t status_info = 0;
+    union {
+        uint64_t info = 0;
+        struct
+        {
+            uint16_t last_control_seq_num  : 16;
+            uint16_t expected_seq_num      : 16;
+            uint16_t reserved_1            : 12;
+            bool stop_on_seq_error_enabled : 1;
+            bool seq_error_occoured        : 1;
+            bool reserved_2                : 1;
+            bool flow_control_due          : 1;
+        } status;
+        struct
+        {
+            uint16_t current_seq_num       : 16;
+            uint16_t expected_seq_num      : 16;
+            uint8_t chdr_packet_type       : 3;
+            uint16_t reserved_1            : 9;
+            bool stop_on_seq_error_enabled : 1;
+            bool seq_error_occoured        : 1;
+            bool reserved_2                : 1;
+            bool reserved_3                : 1;
+        } sequence_error;
+        struct
+        {
+            uint16_t dest_epid  : 16;
+            uint16_t this_epid  : 16;
+            uint32_t reserved_1 : 32;
+        } routing_error;
+    } status_info;
 
 public: // Functions
     strs_payload()                        = default;

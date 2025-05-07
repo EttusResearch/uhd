@@ -214,6 +214,8 @@ struct UHD_API async_metadata_t
      * The type of event for a receive async message call.
      */
     enum event_code_t {
+        //! Status report without error code.
+        EVENT_CODE_OK = 0,
         //! A burst was successfully transmitted.
         EVENT_CODE_BURST_ACK = 0x1,
         //! An internal send buffer has emptied.

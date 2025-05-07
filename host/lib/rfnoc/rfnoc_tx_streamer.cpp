@@ -163,8 +163,20 @@ void rfnoc_tx_streamer::connect_channel(
             if (has_tsf) {
                 md.time_spec = time_spec_t::from_ticks(tsf, get_tick_rate());
             }
-
             this->_async_msg_queue->enqueue(md);
+            if (_stream_args.args.cast<std::string>("transmit_policy", "default")
+                == "stop_on_seq_error") {
+                if ((event_code == async_metadata_t::EVENT_CODE_SEQ_ERROR)
+                    && !this->_sequence_error.load()) {
+                    RFNOC_LOG_DEBUG("Set sequence error on channel " << channel);
+                    this->_sequence_error = true;
+                }
+                if ((event_code == async_metadata_t::EVENT_CODE_OK)
+                    && this->_sequence_error.load()) {
+                    RFNOC_LOG_DEBUG("Clear sequence error.");
+                    this->_sequence_error = false;
+                }
+            }
         });
 
     tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));

@@ -325,7 +325,7 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
 
     auto io_srv_mgr = this->get_io_srv_mgr();
 
-    const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
+    const auto [fc_params, strc_pyld] = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         _pkt_factory,
@@ -333,6 +333,7 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         epids,
         pyld_buff_fmt,
         mdata_buff_fmt,
+        xport_args,
         fc_freq_ratio,
         fc_headroom_ratio,
         [io_srv_mgr, recv_link, send_link]() {
@@ -356,7 +357,8 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         _pkt_factory,
         epids,
         send_link->get_num_send_frames(),
-        buff_capacity,
+        fc_params,
+        strc_pyld,
         [io_srv_mgr, recv_link, send_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

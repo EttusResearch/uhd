@@ -232,7 +232,17 @@ The following parameters are supported:
   example, use `100%` or `1.0` for maximum rate, and `50%` or `0.5` for half
   the maximum rate. Note that other factors may affect the actual rate, such
   as the rate of the source or the speed supported by the transport.
-
+- `transmit_policy` Specify transmit policy of TX streamer (RFNoC devices
+  only). When set to `stop_on_seq_error` the TX streamer requires an FPGA
+  image that supports this mode. If supported, the FPGA will be instructed
+  to stop processing sample if a sequence error is detected. The send call
+  of the TX streamer will exit ASAP an return the so far transmitted samples.
+  This might be more then the downstream blocks have processed. Before restart
+  the transmission it is up to the user logic to decide which samples might
+  need to be resend. The TX streamer send call will automatically reset
+  the FPGA state to reenable transmission. Note this mode is only useful
+  for non time critical transmission (e.g. sending samples to the replay
+  block).
 \subsubsection config_stream_args_transport Transport-related Stream Arguments
 
 The following arguments that alter the behavior of the underlying transport

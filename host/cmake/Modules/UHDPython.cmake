@@ -268,7 +268,7 @@ macro(UHD_PYTHON_INSTALL_MODULE)
             STATUS
             "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
             # In virtualenvs, let setuptools do its thing
-            install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip.\")")
+            install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip in '${CMAKE_CURRENT_BINARY_DIR}'.\")")
             install(CODE
                 "execute_process(COMMAND pip3 install . --force-reinstall WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
         else()
