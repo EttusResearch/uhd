@@ -32,13 +32,17 @@ class AcquiredPlace:
         (...)
     """
 
-    def __init__(self, config):
+    def __init__(self, config, force_release=False):
         self.config = config
+        self.force_release = force_release
         self.env = labgrid.environment.Environment(self.config)
 
     def __enter__(self):
         """Acquire the place and return the target"""
         proc = subprocess.run(["labgrid-client", "-c", self.config, "acquire"])
+        if (proc.returncode != 0) and self.force_release:
+            proc = subprocess.run(["labgrid-client", "-c", self.config, "release", "--kick"])
+            proc = subprocess.run(["labgrid-client", "-c", self.config, "acquire"])
         if proc.returncode != 0:
             sys.exit(proc.returncode)
         return self.env.get_target()
@@ -101,7 +105,9 @@ def set_sfp_addrs(mgmt_addr, sfp_addrs):
     time.sleep(30)
 
 
-def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs):
+def flash_sdimage_sdmux(
+    dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs, force_release=False
+):
     """Flash image using sdmux.
 
     This method uses an sdmux (https://linux-automation.com/en/products/usb-sd-mux.html)
@@ -110,7 +116,7 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
     if dev_model not in ["n300", "n310", "n320", "n321"]:
         raise RuntimeError(f"{dev_model} not supported with sdimage_sdmux")
 
-    with AcquiredPlace(labgrid_device_yaml) as target:
+    with AcquiredPlace(labgrid_device_yaml, force_release) as target:
 
         cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
         cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
@@ -156,7 +162,9 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
             set_sfp_addrs(mgmt_addr, sfp_addrs)
 
 
-def flash_sdimage_tftp(dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs):
+def flash_sdimage_tftp(
+    dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, force_release=False
+):
     """Flash image using tftp.
 
     This method uses tftp to boot the device into a small Linux envionment to
@@ -170,7 +178,7 @@ def flash_sdimage_tftp(dev_model, sdimage_path, initramfs_path, labgrid_device_y
         dev_ram_address = "0x20000000"
         dev_bootm_config = "conf@zynq-ni-${mboard}.dtb"
 
-    with AcquiredPlace(labgrid_device_yaml) as target:
+    with AcquiredPlace(labgrid_device_yaml, force_release) as target:
 
         cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
         cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
@@ -284,7 +292,14 @@ def main(args):
             sfp_addrs = args.sfp_addrs.split(",")
         else:
             sfp_addrs = None
-        flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
+        flash_sdimage_sdmux(
+            dev_model,
+            sdimage_path,
+            labgrid_device_yaml,
+            mgmt_addr,
+            sfp_addrs,
+            force_release=args.force_release,
+        )
 
     if args.sdimage_tftp:
         dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = (
@@ -300,6 +315,7 @@ def main(args):
             initramfs_path,
             labgrid_device_yaml,
             sfp_addrs,
+            force_release=args.force_release,
         )
 
     if args.fpgas:
@@ -389,6 +405,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--working_dir", type=str, help="Change working directory for commands to be run"
     )
+    parser.add_argument(
+        "--no-force-release",
+        action="store_true",
+        help="Don't force-release labgrid place if it was acquired before",
+    )
     parser.add_argument("redis_server", type=str, help="Redis server for mutex")
     parser.add_argument("dut_name", type=str, help="Unique identifier for device under test")
     # test_commands allows for any number of shell commands
@@ -396,6 +417,7 @@ if __name__ == "__main__":
     # number of commands in string format as the last positional arguments.
     parser.add_argument("test_commands", type=str, nargs="+", help="Commands to run")
     args = parser.parse_args()
+    args.force_release = not args.no_force_release
     if args.redis_server:
         main_mutexed(args)
     else:
