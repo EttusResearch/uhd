@@ -63,6 +63,10 @@ parameters:
   - 'stress'
   displayName: Test Length
   default: 'smoke'
+- name: create_sbom
+  type: boolean
+  displayName: Create SBOM for filesystem images
+  default: false
 - name: build_sdk
   type: boolean
   displayName: Build embedded image SDKs
@@ -228,6 +232,7 @@ extends:
     custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
     release_binaries: ${{ parameters.release_binaries }}
     testLength: ${{ parameters.testLength }}
+    create_sbom: ${{ parameters.create_sbom }}
     build_sdk: ${{ parameters.build_sdk }}
     cache_sstate: ${{ parameters.cache_sstate }}
     build_e310_sg1: ${{ parameters.build_e310_sg1 }}

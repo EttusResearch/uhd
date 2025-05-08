@@ -26,6 +26,10 @@ parameters:
 - name: testLength
   type: string
   default: 'smoke'
+- name: create_sbom
+  type: boolean
+  displayName: Create SBOM for filesystem images
+  default: true
 - name: build_sdk
   type: boolean
   default: false
@@ -337,6 +341,7 @@ stages:
   jobs:
     - template: .ci/templates/job_build_filesystem.yml@meta-ettus
       parameters:
+        create_sbom: ${{ parameters.create_sbom }}
         build_sdk: ${{ parameters.build_sdk }}
         cache_sstate: ${{ parameters.cache_sstate }}
         cache_downloads: False
