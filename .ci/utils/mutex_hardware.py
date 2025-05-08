@@ -156,9 +156,7 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
             set_sfp_addrs(mgmt_addr, sfp_addrs)
 
 
-def flash_sdimage_tftp(
-    dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, redis_server
-):
+def flash_sdimage_tftp(dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs):
     """Flash image using tftp.
 
     This method uses tftp to boot the device into a small Linux envionment to
@@ -256,104 +254,113 @@ def flash_sdimage_tftp(
         return mgmt_addr
 
 
-def main(args):
+def get_redis_server(args):
+    """Return the Redis object from the given URL (args.redis_server) or None if no URL was provided."""
+    if args.redis_server:
+        return {Redis.from_url("redis://{}:6379/0".format(args.redis_server))}
+    else:
+        return None
+
+
+def main_mutexed(args):
     """Main entry point for mutex_hardware."""
-    redis_server = {Redis.from_url("redis://{}:6379/0".format(args.redis_server))}
     print("Waiting to acquire mutex for {}".format(args.dut_name), flush=True)
     with Redlock(
-        key=args.dut_name, masters=redis_server, auto_release_time=1000 * 60 * args.dut_timeout
+        key=args.dut_name,
+        masters=get_redis_server(args),
+        auto_release_time=1000 * 60 * args.dut_timeout,
     ):
         print("Got mutex for {}".format(args.dut_name), flush=True)
+        main(args)
 
-        if args.sdimage_sdmux:
-            dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = (
-                args.sdimage_sdmux.split(",")
-            )
-            if args.sfp_addrs:
-                sfp_addrs = args.sfp_addrs.split(",")
-            else:
-                sfp_addrs = None
-            flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
 
-        if args.sdimage_tftp:
-            dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = (
-                args.sdimage_tftp.split(",")
-            )
-            if args.sfp_addrs:
-                sfp_addrs = args.sfp_addrs.split(",")
-            else:
-                sfp_addrs = None
-            mgmt_addr = flash_sdimage_tftp(
-                dev_model,
-                sdimage_path,
-                initramfs_path,
-                labgrid_device_yaml,
-                sfp_addrs,
-                redis_server,
-            )
-
-        if args.fpgas:
-            working_dir = os.getcwd()
-            return_code = 0
-            for fpga in args.fpgas.split(","):
-                os.mkdir(os.path.join(working_dir, fpga))
-                os.chdir(os.path.join(working_dir, fpga))
-
-                if args.jtag_x3xx:
-                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = (
-                        args.jtag_x3xx.split(",")
-                    )
-                    jtag_x3xx(
-                        dev_type,
-                        dev_model,
-                        jtag_server,
-                        jtag_serial,
-                        fpga_folder,
-                        fpga,
-                        redis_server,
-                        vivado_dir,
-                    )
-
-                if dev_type and dev_type in ["n3xx", "e3xx"]:
-                    subprocess.run(
-                        shlex.split(
-                            f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"
-                        )
-                    )
-                    if sfp_addrs:
-                        set_sfp_addrs(mgmt_addr, sfp_addrs)
-
-                for command in args.test_commands:
-                    if args.working_dir:
-                        result = subprocess.run(
-                            shlex.split(command.format(fpga=fpga)), cwd=args.working_dir
-                        )
-                    else:
-                        result = subprocess.run(shlex.split(command.format(fpga=fpga)))
-                    if result.returncode != 0:
-                        print(
-                            "Command exited with return code {}".format(result.returncode),
-                            flush=True,
-                        )
-                        print("Aborting execution (fpga={})".format(fpga), flush=True)
-                        return_code = result.returncode
-                        break
-            sys.exit(return_code)
+def main(args):
+    """Main entry point for mutex_hardware with aquired mutex."""
+    if args.sdimage_sdmux:
+        dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = (
+            args.sdimage_sdmux.split(",")
+        )
+        if args.sfp_addrs:
+            sfp_addrs = args.sfp_addrs.split(",")
         else:
-            return_code = 0
+            sfp_addrs = None
+        flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
+
+    if args.sdimage_tftp:
+        dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = (
+            args.sdimage_tftp.split(",")
+        )
+        if args.sfp_addrs:
+            sfp_addrs = args.sfp_addrs.split(",")
+        else:
+            sfp_addrs = None
+        mgmt_addr = flash_sdimage_tftp(
+            dev_model,
+            sdimage_path,
+            initramfs_path,
+            labgrid_device_yaml,
+            sfp_addrs,
+        )
+
+    if args.fpgas:
+        working_dir = os.getcwd()
+        return_code = 0
+        for fpga in args.fpgas.split(","):
+            os.mkdir(os.path.join(working_dir, fpga))
+            os.chdir(os.path.join(working_dir, fpga))
+
+            if args.jtag_x3xx:
+                dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = (
+                    args.jtag_x3xx.split(",")
+                )
+                jtag_x3xx(
+                    dev_type,
+                    dev_model,
+                    jtag_server,
+                    jtag_serial,
+                    fpga_folder,
+                    fpga,
+                    get_redis_server(args),
+                    vivado_dir,
+                )
+
+            if dev_type and dev_type in ["n3xx", "e3xx"]:
+                subprocess.run(
+                    shlex.split(
+                        f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"
+                    )
+                )
+                if sfp_addrs:
+                    set_sfp_addrs(mgmt_addr, sfp_addrs)
+
             for command in args.test_commands:
                 if args.working_dir:
-                    result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+                    result = subprocess.run(
+                        shlex.split(command.format(fpga=fpga)), cwd=args.working_dir
+                    )
                 else:
-                    result = subprocess.run(shlex.split(command))
+                    result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                 if result.returncode != 0:
                     print(
                         "Command exited with return code {}".format(result.returncode), flush=True
                     )
-                    print("Aborting execution", flush=True)
+                    print("Aborting execution (fpga={})".format(fpga), flush=True)
                     return_code = result.returncode
                     break
-            sys.exit(return_code)
+        sys.exit(return_code)
+    else:
+        return_code = 0
+        for command in args.test_commands:
+            if args.working_dir:
+                result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+            else:
+                result = subprocess.run(shlex.split(command))
+            if result.returncode != 0:
+                print("Command exited with return code {}".format(result.returncode), flush=True)
+                print("Aborting execution", flush=True)
+                return_code = result.returncode
+                break
+        sys.exit(return_code)
 
 
 if __name__ == "__main__":
@@ -389,4 +396,7 @@ if __name__ == "__main__":
     # number of commands in string format as the last positional arguments.
     parser.add_argument("test_commands", type=str, nargs="+", help="Commands to run")
     args = parser.parse_args()
-    main(args)
+    if args.redis_server:
+        main_mutexed(args)
+    else:
+        main(args)

@@ -153,7 +153,7 @@ jobs:
         --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
           --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
@@ -179,7 +179,7 @@ jobs:
         --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
           --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
@@ -202,7 +202,7 @@ jobs:
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args serial=$(devSerial)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_image_loader --args serial=$(devSerial),type=$(devType)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
@@ -227,7 +227,7 @@ jobs:
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
         --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
         --fpgas $(devFpga) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
           --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \

@@ -170,7 +170,7 @@ jobs:
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
         --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "uhd_usrp_probe --args addr=$(devAddr)" \
         "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
           --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
