@@ -22,28 +22,30 @@ from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
-class AcquiredPlace():
+
+class AcquiredPlace:
     """This class provides the default target from a given yaml configuration file.
     A context manager is used to automatically acquire and release the associated
     place. Instantiate the class using the 'with' statement as follows:
-    
+
     with AcquiredPlace(config) as target:
         (...)
     """
+
     def __init__(self, config):
         self.config = config
         self.env = labgrid.environment.Environment(self.config)
 
     def __enter__(self):
         """Acquire the place and return the target"""
-        proc = subprocess.run(['labgrid-client', '-c', self.config, 'acquire'])
+        proc = subprocess.run(["labgrid-client", "-c", self.config, "acquire"])
         if proc.returncode != 0:
             sys.exit(proc.returncode)
         return self.env.get_target()
 
     def __exit__(self, *args):
         """Release the place"""
-        subprocess.run(['labgrid-client', '-c', self.config, 'release'])
+        subprocess.run(["labgrid-client", "-c", self.config, "release"])
 
 
 def jtag_x3xx(
@@ -107,7 +109,7 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
     """
     if dev_model not in ["n300", "n310", "n320", "n321"]:
         raise RuntimeError(f"{dev_model} not supported with sdimage_sdmux")
-    
+
     with AcquiredPlace(labgrid_device_yaml) as target:
 
         cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
@@ -329,7 +331,10 @@ def main(args):
                     else:
                         result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                     if result.returncode != 0:
-                        print("Command exited with return code {}".format(result.returncode), flush=True)
+                        print(
+                            "Command exited with return code {}".format(result.returncode),
+                            flush=True,
+                        )
                         print("Aborting execution (fpga={})".format(fpga), flush=True)
                         return_code = result.returncode
                         break
@@ -342,7 +347,9 @@ def main(args):
                 else:
                     result = subprocess.run(shlex.split(command))
                 if result.returncode != 0:
-                    print("Command exited with return code {}".format(result.returncode), flush=True)
+                    print(
+                        "Command exited with return code {}".format(result.returncode), flush=True
+                    )
                     print("Aborting execution", flush=True)
                     return_code = result.returncode
                     break
