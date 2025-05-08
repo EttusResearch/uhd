@@ -426,10 +426,9 @@ def test_streaming(
             benchmark_rate_params["rx_delay"] = 2
 
     # run benchmark rate
-    print("\n" + "*" * 50)
+    print("\n\n" + "*" * 50)
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting benchmark rate test")
-    print("*" * 50)
-    print("Constructed device_args: " + device_args)
+    print("*" * 50 + "\n")
     trials = iterations // 2
     results = iterate_benchmark(benchmark_rate_path, iterations, trials, benchmark_rate_params)
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Benchmark rate results:")
