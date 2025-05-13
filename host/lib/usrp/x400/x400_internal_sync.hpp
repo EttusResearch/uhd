@@ -7,7 +7,6 @@
 #pragma once
 
 #include <uhd/features/internal_sync_iface.hpp>
-#include <uhdlib/usrp/dboard/fbx/fbx_ctrl.hpp>
 
 
 namespace uhd { namespace features {
@@ -20,7 +19,7 @@ namespace uhd { namespace features {
 class internal_sync : public internal_sync_iface
 {
 public:
-    internal_sync(uhd::usrp::fbx::fbx_ctrl::sptr fbx_ctrl);
+    internal_sync(uhd::usrp::internal_sync_actor::sptr db_ctrl);
 
     /*
      * Enables the sync clock for this daughterboard.
@@ -34,7 +33,6 @@ public:
     void disable_sync_clk() override;
 
 private:
-    uhd::usrp::fbx::fbx_ctrl::sptr _fbx_ctrl;
+    uhd::usrp::internal_sync_actor::sptr _db_ctrl;
 };
-
 }} // namespace uhd::features

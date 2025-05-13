@@ -6,6 +6,7 @@
 #pragma once
 
 #include "fbx_constants.hpp"
+#include <uhd/features/internal_sync_iface.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
@@ -25,7 +26,7 @@ namespace uhd { namespace usrp { namespace fbx {
  * the FPGA via GPIO lines towards the daughterboard where switches and LEDs are
  * controlled (hence the naming).
  */
-class fbx_ctrl
+class fbx_ctrl : public internal_sync_actor
 {
 public:
     using sptr = std::shared_ptr<fbx_ctrl>;
@@ -113,7 +114,7 @@ public:
      *
      * \param enable
      */
-    void set_internal_sync_clk(const bool enable);
+    void set_internal_sync_clk(const bool enable) override;
 
 
 private:

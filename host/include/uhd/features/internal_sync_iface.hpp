@@ -42,3 +42,23 @@ public:
     virtual void disable_sync_clk() = 0;
 };
 }} // namespace uhd::features
+
+
+namespace uhd { namespace usrp {
+/*!
+ * A class that provides access to the internal sync clock of a USRP. The implementation
+ * of the set_internal_sync_clk() method will be called by the enable and disable methods
+ * of the internal sync class.
+ */
+class internal_sync_actor
+{
+public:
+    using sptr = std::shared_ptr<internal_sync_actor>;
+
+    virtual ~internal_sync_actor() = default;
+    /*!
+     * Enable or disable the sync clock for this daughterboard.
+     */
+    virtual void set_internal_sync_clk(const bool enable) = 0;
+};
+}} // namespace uhd::usrp

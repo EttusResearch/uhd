@@ -9,19 +9,19 @@
 
 namespace uhd { namespace features {
 
-internal_sync::internal_sync(uhd::usrp::fbx::fbx_ctrl::sptr fbx_ctrl)
-    : _fbx_ctrl(fbx_ctrl)
+internal_sync::internal_sync(uhd::usrp::internal_sync_actor::sptr db_ctrl)
+    : _db_ctrl(db_ctrl)
 {
 }
 
 void internal_sync::enable_sync_clk()
 {
-    _fbx_ctrl->set_internal_sync_clk(true);
+    _db_ctrl->set_internal_sync_clk(true);
 }
 
 void internal_sync::disable_sync_clk()
 {
-    _fbx_ctrl->set_internal_sync_clk(false);
+    _db_ctrl->set_internal_sync_clk(false);
 }
 
 }} // namespace uhd::features
