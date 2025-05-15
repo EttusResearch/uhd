@@ -55,8 +55,6 @@ jobs:
 - job: x4xx_hardware_test_${{ parameters.suiteName }}
   displayName: x4xx hardware test ${{ parameters.suiteName }}
   timeoutInMinutes: ${{ parameters.timeoutInMinutes }}
-  variables:
-    testOS: ''
   strategy:
     matrix: ${{ parameters.dutMatrix }}
 
@@ -71,15 +69,6 @@ jobs:
     clean: True
   - checkout: ettus-rts
     clean: True
-
-  - script: |
-      LSB_ID=$(lsb_release -i -s) # e.g. "Ubuntu"
-      LSB_RELEASE=$(lsb_release -r -s | tr -d .) # e.g. "2404"
-      # ${LSB_ID,,} is $LSB_ID in lower case
-      testOS=${LSB_ID,,}$LSB_RELEASE # e.g. "ubuntu2404"
-      echo '##vso[task.setvariable variable=testOS]'$testOS
-      echo testOS=$testOS
-    displayName: set testOS variable
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then

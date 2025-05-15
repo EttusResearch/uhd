@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -21,7 +17,6 @@ jobs:
 - template: job-uhd-devtest.yml
   parameters:
     suiteName: 'rhombus'
-    testOS: '${{ parameters.testOS }}'
     knownHost: '|1|3et3xtaVaAtV98+6U+Tiu2wAX8I=|eEWBqjtPkxWfNR7hV/oQ+4QISlE= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKKCqeRQXnWgl+KZu54dJGjw90R07wHCLXzvnfR9PRZ8+yBFwaNhWQCKZVwhN0G9r3bJ5RSsX+CQespwpRMptds='
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'

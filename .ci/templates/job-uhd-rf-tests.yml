@@ -1,10 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu1804
 - name: toolset
   type: string
   values:
@@ -35,7 +31,6 @@ jobs:
     name: 'de-dre-lab'
     demands:
     - suiteName -equals ${{ parameters.suiteName }}
-    - testOS -equals ${{ parameters.testOS }}
   variables:
   - group: sdr-pipeline-vars
   workspace:
@@ -73,28 +68,28 @@ jobs:
     #condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(devType)-images
@@ -125,10 +120,10 @@ jobs:
       mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images
       cd $(Build.BinariesDirectory)/uhddev/build
       rm -rf fpga_images/*
-      python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build/utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+      python3 $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build/utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
         -b $(sdr-fileserver)
       if [ "$(devType)" = "b200" ]; then
-        python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
+        python3 $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
           -b $(sdr-fileserver)
       fi
     displayName: Download FPGA Images
@@ -139,9 +134,9 @@ jobs:
       mkdir -p $(Common.TestResultsDirectory)/pytest
       cd $(Common.TestResultsDirectory)/pytest
 
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
-      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
-      export GNURADIO_GRETTUS_VOLK_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/volk/build-installed
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio/build-installed
+      export GNURADIO_GRETTUS_VOLK_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/volk/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")

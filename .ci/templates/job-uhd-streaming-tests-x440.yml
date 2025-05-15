@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2204
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -23,7 +19,6 @@ jobs:
 - template: job-uhd-streaming-tests.yml
   parameters:
     suiteName: 'streamingx440'
-    testOS: '${{ parameters.testOS }}'
     testLength: '${{ parameters.testLength }}'
     toolset: 'make'
     nicType: '100gbe'

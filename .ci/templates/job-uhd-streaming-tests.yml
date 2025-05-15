@@ -1,12 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
-    - ubuntu2204
-    - ubuntu2404
 - name: toolset
   type: string
   values:
@@ -76,7 +70,7 @@ jobs:
 
   - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
-      rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      rm -rf $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
     displayName: Cleanup from prior run
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
@@ -126,15 +120,15 @@ jobs:
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
-    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - script: |
       DUTTYPE=$(dutType)

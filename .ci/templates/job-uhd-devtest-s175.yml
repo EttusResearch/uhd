@@ -1,9 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004  
-    - ubuntu2404
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -22,7 +17,6 @@ jobs:
 - template: job-uhd-devtest.yml
   parameters:
     suiteName: 'sdr_s175_tests'
-    testOS: '${{ parameters.testOS }}'
     knownHost: ''
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'

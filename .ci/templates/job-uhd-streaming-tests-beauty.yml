@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -23,7 +19,6 @@ jobs:
 - template: job-uhd-streaming-tests.yml
   parameters:
     suiteName: 'beauty'
-    testOS: '${{ parameters.testOS }}'
     testLength: '${{ parameters.testLength }}'
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'

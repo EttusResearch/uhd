@@ -28,18 +28,18 @@ parameters:
   default: 'smoke'
 
 variables:
-  - name: uhdFpgaArtifactSource
-    ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
-      value: uhd_fpga_pipeline
-    ${{ elseif eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
-      value: uhd_mono_pipeline_pr
-    ${{ else }}:
-      value: uhd_mono_pipeline
-  - name: fpga_imgs_source
-    ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
-      value: 'Pipeline'
-    ${{ else }}:
-      value: 'Filesystem'
+- name: uhdFpgaArtifactSource
+  ${{ if eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+    value: uhd_fpga_pipeline
+  ${{ elseif eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+    value: uhd_mono_pipeline_pr
+  ${{ else }}:
+    value: uhd_mono_pipeline
+- name: fpga_imgs_source
+  ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+    value: 'Pipeline'
+  ${{ else }}:
+    value: 'Filesystem'
 
 resources:
   pipelines:
@@ -95,7 +95,6 @@ stages:
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
   - template: templates/job-uhd-devtest-rhombus.yml
     parameters:
-      testOS: 'ubuntu2004'
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
@@ -107,14 +106,12 @@ stages:
   jobs:
   - template: templates/job-uhd-streaming-tests-beauty.yml
     parameters:
-      testOS: 'ubuntu2004'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       testLength: ${{ parameters.testLength }}
   - template: templates/job-uhd-streaming-tests-x440.yml
     parameters:
-      testOS: 'ubuntu2204'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
@@ -126,7 +123,6 @@ stages:
   jobs:
   - template: templates/job-uhd-rf-tests-pebbles.yml
     parameters:
-      testOS: 'ubuntu1804'
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}

@@ -517,13 +517,11 @@ stages:
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
-      testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'x3xx,b2xx'
   - template: job-uhd-devtest-s175.yml
     parameters:
-      testOS: ubuntu2404
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'b2xx'
@@ -550,7 +548,6 @@ stages:
   jobs:
   - template: job-uhd-devtest-rhombus.yml
     parameters:
-      testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx,e320'
@@ -696,7 +693,6 @@ stages:
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-      testOS: ubuntu1804
       testDevices: 'n3xx'
 
 - stage: test_streaming_beauty_stage
@@ -716,12 +712,10 @@ stages:
   jobs:
   - template: job-uhd-streaming-tests-beauty.yml
     parameters:
-      testOS: ubuntu2004
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
   - template: job-uhd-streaming-tests-s175.yml
     parameters:
-      testOS: ubuntu2404
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
 
@@ -740,6 +734,5 @@ stages:
   jobs:
   - template: job-uhd-streaming-tests-x440.yml
     parameters:
-      testOS: ubuntu2204
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}

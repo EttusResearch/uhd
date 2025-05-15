@@ -1,11 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
-    - ubuntu2404
 - name: knownHost
   type: string
 - name: toolset
@@ -28,14 +23,13 @@ parameters:
   type: string
 
 jobs:
-- job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
-  displayName:  uhd devtest ${{ parameters.suiteName }} ${{ parameters.testOS }}
+- job: uhd_devtest_${{ parameters.suiteName }}
+  displayName:  uhd devtest ${{ parameters.suiteName }}
   timeoutInMinutes: 90
   pool:
     name: de-dre-lab
     demands:
     - suiteName -equals ${{ parameters.suiteName }}
-    - testOS -equals ${{ parameters.testOS }}
     - device -equals $(devName)
   variables:
   - group: sdr-pipeline-vars
@@ -81,12 +75,12 @@ jobs:
     #condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200'))
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
 
