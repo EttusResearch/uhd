@@ -48,7 +48,7 @@ std::string uhd::path_expandvars(const std::string& path)
         return_value = std::string(p.we_wordv[0]);
         wordfree(&p);
     } else {
-        if (err == WRDE_NOSPACE)
+        if (err == 0 || err == WRDE_NOSPACE)
             wordfree(&p);
         return_value = path;
     }
