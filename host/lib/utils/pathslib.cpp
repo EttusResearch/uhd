@@ -43,12 +43,15 @@ std::string uhd::path_expandvars(const std::string& path)
 #else
     wordexp_t p;
     std::string return_value;
-    if (wordexp(path.c_str(), &p, 0) == 0 && p.we_wordc > 0) {
+    int err = wordexp(path.c_str(), &p, 0);
+    if (err == 0 && p.we_wordc > 0) {
         return_value = std::string(p.we_wordv[0]);
+        wordfree(&p);
     } else {
+        if (err == WRDE_NOSPACE)
+            wordfree(&p);
         return_value = path;
     }
-    wordfree(&p);
     return return_value;
 #endif
 }
