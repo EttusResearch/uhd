@@ -13,20 +13,24 @@ if os.name == "nt":
     uhd_dll_name = "uhd.dll"
     uhd_dll_dir = None
     if hasattr(os, "add_dll_directory"):
-        # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer,
-        # use this path to find the uhd.dll and add it to the DLL search.
-        uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
-        if uhd_pkg_dir is not None and os.path.exists(
-            os.path.join(uhd_pkg_dir, "bin", uhd_dll_name)
-        ):
-            uhd_dll_dir = os.path.join(uhd_pkg_dir, "bin")
-        else:
-            # If UHD_PKG_PATH is not set, the UHD may have been built and installed from source.
-            # CMake will generate the UHD_INSTALL_PATH variable in the config_vars.py file using the
-            # CMAKE_INSTALL_PREFIX, try to find the uhd.dll with this path.
-            UHD_INSTALL_PATH = "@UHD_INSTALL_PATH@"
-            if os.path.exists(os.path.join(UHD_INSTALL_PATH, "bin", uhd_dll_name)):
-                uhd_dll_dir = os.path.join(UHD_INSTALL_PATH, "bin")
+        # First, check for a user defined path to the UHD libraries.
+        # This might be the case for files built from source but not installed yet.
+        uhd_dll_dir = os.os.environ.get("UHD_LIBRARY_PATH")
+        if not os.path.exists(os.path.join(uhd_dll_dir, uhd_dll_name)):
+            # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer,
+            # use this path to find the uhd.dll and add it to the DLL search.
+            uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
+            if uhd_pkg_dir is not None and os.path.exists(
+                os.path.join(uhd_pkg_dir, "bin", uhd_dll_name)
+            ):
+                uhd_dll_dir = os.path.join(uhd_pkg_dir, "bin")
+            else:
+                # If UHD_PKG_PATH is not set, the UHD may have been built and installed from source.
+                # CMake will generate the UHD_INSTALL_PATH variable in the config_vars.py file using the
+                # CMAKE_INSTALL_PREFIX, try to find the uhd.dll with this path.
+                UHD_INSTALL_PATH = "@UHD_INSTALL_PATH@"
+                if os.path.exists(os.path.join(UHD_INSTALL_PATH, "bin", uhd_dll_name)):
+                    uhd_dll_dir = os.path.join(UHD_INSTALL_PATH, "bin")
         # perform version check if uhd.dll path was found
         if uhd_dll_dir:
             # compare version of uhd.dll against the version used for the cmake build process
