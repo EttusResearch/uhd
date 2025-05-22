@@ -916,7 +916,10 @@ EXCLUDE_PATTERNS       = */*_generated.h
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        = std::* \
+                         boost::* \
+                         conf conf::* \
+                         pybind11 pybind11::*
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
