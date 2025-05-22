@@ -9,7 +9,7 @@ from util_test_length import Test_Length_Full, Test_Length_Smoke, Test_Length_St
 # fmt: off
 
 ARGNAMES_DUAL_SFP = [
-    "dual_SFP",
+    "dual_sfp",
     "rate",
     "rx_rate",
     "rx_channels",
@@ -42,7 +42,7 @@ def parametrize_test_length(metafunc, test_length, fast_params, stress_params):
 
 def generate_x410_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
     test_cases = [
-        # Test Lengths                                         dual_SFP  rate     rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
+        # Test Lengths                                         dual_sfp  rate     rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
         # --------------------------------------------------------------------------------------------------------------------------------------------------------
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,     245.76e6, 122.88e6, "0",   dest_addr0,    1234,      "sfp0",     sfp_int0,    True,    id="SFP0_FULL_PACKET_1x10GbE-1xRX@122.88e6")],
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,     245.76e6, 122.88e6, "1",   dest_addr0,    1234,      "sfp0",     sfp_int0,    False,   id="SFP0_RAW_PAYLOAD_1x10GbE-1xRX@122.88e6")],
@@ -64,7 +64,7 @@ def generate_x410_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, de
 def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
     if dut_fpga.upper() == 'CG_400':
         test_cases = [
-            # Test Lengths                                         dual_SFP  rate      rx_rate   rx_channels dest_addr        dest_port adapter host_interface keep_hdr test case ID
+            # Test Lengths                                         dual_sfp  rate      rx_rate   rx_channels dest_addr        dest_port adapter host_interface keep_hdr test case ID
             # --------------------------------------------------------------------------------------------------------------------------------------------------------
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    491.52e6, 491.52e6, "0",        dest_addr0, 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@491.52e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    491.52e6, 491.52e6, "1",        dest_addr0, 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@491.52e6")],
@@ -78,7 +78,7 @@ def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
 
     if dut_fpga.upper() == 'UC_200':
         test_cases = [
-            # Test Lengths                                         dual_SFP  rate   rx_rate  rx_channels dest_addr        dest_port  adapter  host_interface  keep_hdr test case ID
+            # Test Lengths                                         dual_sfp  rate   rx_rate  rx_channels dest_addr        dest_port  adapter  host_interface  keep_hdr test case ID
             # --------------------------------------------------------------------------------------------------------------------------------------------------------
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    250e6, 250e6,   "0",        dest_addr1, 1234,      "sfp1",  sfp_int1,       True,    id="SFP1_FULL_PACKET_1x100GbE-1xRX@250e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    250e6, 250e6,   "1",        dest_addr1, 1234,      "sfp1",  sfp_int1,       False,   id="SFP1_RAW_PAYLOAD_1x100GbE-1xRX@250e6")],
@@ -96,7 +96,7 @@ def generate_x410_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
 def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
     if dut_fpga.upper() == 'CG_400':
         test_cases = [
-            # Test Lengths                                         dual_SFP  rate    rx_rate  rx_channels dest_addr        dest_port adapter host_interface keep_hdr test case ID
+            # Test Lengths                                         dual_sfp  rate    rx_rate  rx_channels dest_addr        dest_port adapter host_interface keep_hdr test case ID
             # --------------------------------------------------------------------------------------------------------------------------------------------------------
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "0",        dest_addr0, 1234,     "sfp0", sfp_int0,      True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@500e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    500e6,  500e6,   "1",        dest_addr0, 1234,     "sfp0", sfp_int0,      False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@500e6")],
@@ -118,7 +118,7 @@ def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
 
     if dut_fpga.upper() == 'CG_1600':
         test_cases = [
-            # Test Lengths                                         dual_SFP  rate   rx_rate  rx_channels dest_addr        dest_port  adapter  host_interface  keep_hdr test case ID
+            # Test Lengths                                         dual_sfp  rate   rx_rate  rx_channels dest_addr        dest_port  adapter  host_interface  keep_hdr test case ID
             # --------------------------------------------------------------------------------------------------------------------------------------------------------
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "0",        dest_addr0, 1234,      "sfp0",  sfp_int0,       True,    id="SFP0_FULL_PACKET_1x100GbE-1xRX@1000e6")],
             [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    1000e6, 1000e6,   "1",        dest_addr0, 1234,      "sfp0",  sfp_int0,       False,   id="SFP0_RAW_PAYLOAD_1x100GbE-1xRX@1000e6")],
@@ -135,7 +135,7 @@ def generate_x440_100GbE_test_cases(metafunc, test_length, dut_fpga, sfp_int0, s
 
 def generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, dest_addr0, dest_addr1):
     test_cases = [
-        # Test Lengths                                        dual_SFP  rate  rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
+        # Test Lengths                                        dual_sfp  rate  rx_rate  rx_channels dest_addr        dest_port   adapter  host_interface   keep_hdr test case ID
         # --------------------------------------------------------------------------------------------------------------------------------------------------------
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "0",      dest_addr0,     1234,      "sfp0",     sfp_int0,        True,    id="SFP0_FULL_PACKET_1x10GbE-1xRX@200e6")],
         [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,   200e6, 200e6, "1",      dest_addr0,     1234,      "sfp0",     sfp_int0,        False,   id="SFP0_RAW_PAYLOAD_1x10GbE-1xRX@200e6")],
@@ -170,7 +170,7 @@ def pytest_generate_tests(metafunc):
     if dut_type.lower() == 'x310' and dut_fpga.upper() == 'XG':
         generate_X310_10GbE_test_cases(metafunc, test_length, sfp_int0, sfp_int1, dest_addr0, dest_addr1)
 
-def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_channels,
+def test_raw_udp_streaming(iterate_remote_rx, pytestconfig, dut_type, dual_sfp, rate, rx_rate, rx_channels,
                     dest_addr, dest_port, adapter, host_interface, keep_hdr, iterations, duration):
 
     remote_rx_path = Path(pytestconfig.getoption('uhd_build_dir')) / 'examples/python/remote_rx.py'
@@ -185,19 +185,9 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
     if dut_type.lower() == 'x440':
         device_args += f"skip_mpm_reboot=1,"
 
-    addr = pytestconfig.getoption('addr')
-    second_addr = pytestconfig.getoption('second_addr')
-    if addr:
-        device_args += f"addr={addr},"
-
-    if second_addr:
-        device_args += f"second_addr={second_addr},"
-
-    mgmt_addr = pytestconfig.getoption('mgmt_addr')
-    if mgmt_addr:
-        device_args += f"mgmt_addr={mgmt_addr},"
-
-    print("Constructed device_args: " + device_args)
+    for item in ["addr", "second_addr", "mgmt_addr"]:
+        if pytestconfig.getoption(item):
+            device_args += f"{item}={pytestconfig.getoption(item)},"
 
     # construct remote_rx params dictionary
     remote_rx_params = {
@@ -215,8 +205,12 @@ def test_raw_udp_streaming(pytestconfig, dut_type, dual_SFP, rate, rx_rate, rx_c
         remote_rx_params["keep-hdr"] = ""
 
     # run remote streaming
-    stats = run_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, True)
-
+    stats = iterate_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, True)
+    print("Stats after run:")
+    print("=" * 20)
+    for stat in stats:
+        print(stats)
+        
     dut_fpga = pytestconfig.getoption('dut_fpga')
     chdr_hdr_size = 64 #100GBE default
     if dut_fpga:
@@ -289,120 +283,3 @@ def analyze_stats(stats, remote_rx_params, chdr_hdr_size):
         assert(capture_file_size_deviation < ALLOWED_CAPTURE_LOSS)
 
 # fmt: on
-
-
-def run_remote_rx(remote_rx_params, remote_rx_path, iterations, host_interface, stop_on_error=True):
-    """
-    Runs remote_rx multiple times
-    """
-    import os
-    import shlex
-    import subprocess
-    import time
-
-    stats = []
-
-    print("Running remote_rx {} times with the following arguments: ".format(iterations))
-    proc_params = [remote_rx_path]
-    for key, val in remote_rx_params.items():
-        proc_params.append("--" + str(key))
-        if str(key) != "keep-hdr":
-            proc_params.append(str(val))
-
-    print(proc_params)
-
-    # tcpdump can be either at /usr/bin/tcpdump or /usr/sbin/tcpdump
-    # use "which" to determine the actual path
-    proc = subprocess.run(["which", "tcpdump"], capture_output=True)
-    assert proc.returncode == 0, "tcpdump is not available"
-    packet_capture_utility_path = proc.stdout.decode()[:-1]
-
-    capture_file_dir = "/mnt/ramdisk/"
-    capture_file_name = "tcpdump.pcap"
-    # sudo tcpdump -i ens6f0 udp -nn -# -N -B 1048576 -t -q -Q in -p -w /tmp/tcpdump.pcap dst port 1234
-    pkt_capture_proc_cmd = packet_capture_utility_path
-    pkt_capture_proc_cmd += (
-        " -i {} udp -nn -# -N -B 1048576 -t -q -Q in -p -w {} dst port {}".format(
-            host_interface,
-            os.path.join(capture_file_dir, capture_file_name),
-            remote_rx_params["dest-port"],
-        )
-    )
-    pkt_capture_proc_params = shlex.split(pkt_capture_proc_cmd)
-
-    print("Running packet capture tool tcpdump with following arguments: ")
-    print(pkt_capture_proc_params)
-
-    def clean_packet_capture_dir(capture_file_dir):
-        import os
-
-        files_in_directory = os.listdir(capture_file_dir)
-        for file in files_in_directory:
-            if file.endswith(".pcap"):
-                path_to_file = os.path.join(capture_file_dir, file)
-                os.remove(path_to_file)
-
-    iteration = 0
-    while iteration < iterations:
-        stats_before_run = get_nic_statistics(host_interface)
-        # Start packet capture process before running remote streaming.
-        clean_packet_capture_dir(capture_file_dir)
-        pkt_capture_proc = subprocess.Popen(
-            pkt_capture_proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-        proc = subprocess.run(proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Send stop signal (CTRL + C) after remote streaming process has ended
-        poll = pkt_capture_proc.poll()
-        if poll is None:
-            # packet capture subprocess is alive
-            # wait for arbitrary time for the packet capture process to finish writing to file.
-            time.sleep(2)
-            pkt_capture_proc.terminate()
-            # TODO:  Check if the pkt_capture_proc terminated?
-        else:
-            # packet capture subprocess terminated prematurely.
-            msg = "Exception occurred while running tcpdump\n"
-            msg += "tcpdump arguments:\n"
-            msg += str(pkt_capture_proc.args) + "\n"
-            msg += "Stderr capture:\n"
-            msg += pkt_capture_proc.stderr.read().decode("ASCII")
-            msg += "Stdout capture:\n"
-            msg += pkt_capture_proc.stdout.read().decode("ASCII")
-            raise RuntimeError(msg)
-
-        match = re.search("Streaming complete. Exiting.", proc.stdout.decode("ASCII"))
-        if match is None:
-            if stop_on_error:
-                msg = "Exception occurred while running remote_rx\n"
-                msg += "remote_rx arguments:\n"
-                msg += str(proc.args) + "\n"
-                msg += "Stderr capture:\n"
-                msg += proc.stderr.decode("ASCII")
-                msg += "Stdout capture:\n"
-                msg += proc.stdout.decode("ASCII")
-                raise RuntimeError(msg)
-
-        # TODO Figure out why tcpdump output is going to stderr instead of stdout.
-        pkt_capture_err_print = pkt_capture_proc.stderr.read().decode("ASCII")
-        match = re.search("tcpdump: listening on {}".format(host_interface), pkt_capture_err_print)
-        if match is None:
-            if stop_on_error:
-                msg = "Exception occurred while running tcpdump\n"
-                msg += "tcpdump arguments:\n"
-                msg += str(pkt_capture_proc.args) + "\n"
-                msg += "Stderr capture:\n"
-                msg += pkt_capture_proc.stderr.read().decode("ASCII")
-                msg += "Stdout capture:\n"
-                msg += pkt_capture_proc.stdout.read().decode("ASCII")
-                raise RuntimeError(msg)
-
-        capture_file_path = os.path.join(capture_file_dir, capture_file_name)
-        capture_file_size = 0
-        if os.path.isfile(capture_file_path):
-            capture_file_size = os.path.getsize(capture_file_path)  # bytes
-
-        stats_after_run = get_nic_statistics(host_interface)
-        stats.append([stats_before_run, stats_after_run, capture_file_size])
-        iteration += 1
-
-    return stats

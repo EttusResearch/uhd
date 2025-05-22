@@ -256,6 +256,11 @@ jobs:
     timeoutInMinutes: 5
 
   - script: |
+      rm -fv TEST-*
+    workingDirectory: $(Common.TestResultsDirectory)
+    displayName: remove old test results no dpdk
+
+  - script: |
       echo "##[group]Printing Environment"
       printenv
       echo "##[endgroup]"
@@ -295,6 +300,11 @@ jobs:
       sleep 5
     displayName: setup interfaces for use raw udp streaming
     timeoutInMinutes: 5
+
+  - script: |
+      rm -fv TEST-*
+    workingDirectory: $(Common.TestResultsDirectory)
+    displayName: remove old test results raw udp
 
   - script: |
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")

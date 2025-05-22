@@ -1,8 +1,14 @@
+import os
+import psutil
+import re
+import shlex
+import subprocess
 import time
-import pytest
-import util_test_length
-import run_benchmark_rate
+
 import parse_benchmark_rate
+import pytest
+import run_benchmark_rate
+import util_test_length
 
 from collections import namedtuple
 
@@ -28,6 +34,164 @@ test_length_list = [
 
 def pytest_sessionstart(session):
     print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] Starting pytest session")
+
+
+@pytest.fixture(scope="function")
+def run_remote_rx():
+    # This fixture creates a function that runs the raw_udp streaming
+    # This function is being called when using the fixture
+    def _run_remote_rx(
+        host_interface,
+        capture_file_dir,
+        capture_file_name,
+        pkt_capture_proc_params,
+        proc_params,
+        stop_on_error=True,
+    ):
+        stats_before_run = psutil.net_io_counters(pernic=True)[host_interface]
+
+        # cleanup the capture file directory
+        for file in os.listdir(capture_file_dir):
+            if file.endswith(".pcap"):
+                path_to_file = os.path.join(capture_file_dir, file)
+                os.remove(path_to_file)
+
+        # Start packet capture process before running remote streaming.
+        pkt_capture_proc = subprocess.Popen(
+            pkt_capture_proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        proc = subprocess.run(
+            proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        # Send stop signal (CTRL + C) after remote streaming process has ended
+        poll = pkt_capture_proc.poll()
+        if poll is None:
+            # packet capture subprocess is alive
+            # wait for arbitrary time for the packet capture process to finish writing to file.
+            time.sleep(2)
+            pkt_capture_proc.terminate()
+            # TODO:  Check if the pkt_capture_proc terminated?
+        else:
+            # packet capture subprocess terminated prematurely.
+            msg = "Exception occurred while running tcpdump\n"
+            msg += "tcpdump arguments:\n"
+            msg += str(pkt_capture_proc.args) + "\n"
+            msg += "Stderr capture:\n"
+            msg += pkt_capture_proc.stderr.read().decode("ASCII")
+            msg += "Stdout capture:\n"
+            msg += pkt_capture_proc.stdout.read().decode("ASCII")
+            raise RuntimeError(msg)
+
+        match = re.search("Streaming complete. Exiting.", proc.stdout.decode("ASCII"))
+        if match is None:
+            if stop_on_error:
+                msg = "Exception occurred while running remote_rx\n"
+                msg += "remote_rx arguments:\n"
+                msg += str(proc.args) + "\n"
+                msg += "Stderr capture:\n"
+                msg += proc.stderr.decode("ASCII")
+                msg += "Stdout capture:\n"
+                msg += proc.stdout.decode("ASCII")
+                raise RuntimeError(msg)
+
+        # Note: Status messages of tcpdump are written to stderr
+        pkt_capture_err_print = pkt_capture_proc.stderr.read().decode("ASCII")
+        match = re.search(
+            f"tcpdump: listening on {host_interface}", pkt_capture_err_print
+        )
+        if match is None:
+            if stop_on_error:
+                msg = "Exception occurred while running tcpdump\n"
+                msg += "tcpdump arguments:\n"
+                msg += str(pkt_capture_proc.args) + "\n"
+                msg += "Stderr capture:\n"
+                msg += pkt_capture_proc.stderr.read().decode("ASCII")
+                msg += "Stdout capture:\n"
+                msg += pkt_capture_proc.stdout.read().decode("ASCII")
+                raise RuntimeError(msg)
+
+        capture_file_path = os.path.join(capture_file_dir, capture_file_name)
+        capture_file_size = 0
+        if os.path.isfile(capture_file_path):
+            capture_file_size = os.path.getsize(capture_file_path)  # bytes
+
+        stats_after_run = psutil.net_io_counters(pernic=True)[host_interface]
+
+        return [stats_before_run, stats_after_run, capture_file_size]
+
+    return _run_remote_rx
+
+
+@pytest.fixture(scope="function")
+def iterate_remote_rx(run_remote_rx, collect_system_info):
+    # This fixture creates a function that runs the raw_udp streaming
+    # This function is being called when using the fixture
+    def _iterate_remote_rx(
+        remote_rx_params, remote_rx_path, iterations, host_interface, stop_on_error=True
+    ):
+        print()
+        print(f"Running remote_rx {iterations} times with the following arguments: ")
+        proc_params = [remote_rx_path]
+        for key, val in remote_rx_params.items():
+            print(f"--{str(key)} {str(val)}")
+            proc_params.append("--" + str(key))
+            if str(key) != "keep-hdr":
+                proc_params.append(str(val))
+
+        # tcpdump can be either at /usr/bin/tcpdump or /usr/sbin/tcpdump
+        # use "which" to determine the actual path
+        proc = subprocess.run(["which", "tcpdump"], capture_output=True)
+        assert proc.returncode == 0, "tcpdump is not available"
+        packet_capture_utility_path = proc.stdout.decode()[:-1]
+
+        capture_file_dir = "/mnt/ramdisk/"
+        capture_file_name = "tcpdump.pcap"
+        pkt_capture_proc_cmd = packet_capture_utility_path + (
+            " -i {} udp -nn -# -N -B 1048576 -t -q -Q in -p -w {} dst port {}".format(
+                host_interface,
+                os.path.join(capture_file_dir, capture_file_name),
+                remote_rx_params["dest-port"],
+            )
+        )
+        pkt_capture_proc_params = shlex.split(pkt_capture_proc_cmd)
+
+        print("Running packet capture tool tcpdump with following arguments: ")
+        print(pkt_capture_proc_params)
+
+        stats = []
+        for iteration in range(iterations):
+            stat = run_remote_rx(
+                host_interface,
+                capture_file_dir,
+                capture_file_name,
+                pkt_capture_proc_params,
+                proc_params,
+                True,
+            )
+            stats.append(stat)
+            result = {"iteration": iteration + 1, "capture_file_size ": stat[2]}
+            result["bytes_sent_before"] = stat[0].bytes_sent
+            result["bytes_recv_before"] = stat[0].bytes_recv
+            result["packets_sent_before"] = stat[0].packets_sent
+            result["packets_recv_before"] = stat[0].packets_recv
+            result["errin_before"] = stat[0].errin
+            result["errout_before"] = stat[0].errout
+            result["dropin_before"] = stat[0].dropin
+            result["dropout_before"] = stat[0].dropout
+            result["bytes_sent_after"] = stat[1].bytes_sent
+            result["bytes_recv_after"] = stat[1].bytes_recv
+            result["packets_sent_after"] = stat[1].packets_sent
+            result["packets_recv_after"] = stat[1].packets_recv
+            result["errin_after"] = stat[1].errin
+            result["errout_after"] = stat[1].errout
+            result["dropin_after"] = stat[1].dropin
+            result["dropout_after"] = stat[1].dropout
+
+            collect_system_info(test_results=result, test_params=remote_rx_params)
+
+        return stats
+
+    return _iterate_remote_rx
 
 
 @pytest.fixture(scope="function")
@@ -146,7 +310,10 @@ def collect_system_info(request):
         # Set test id as first column
         test_results_dict = {"test_id": request.node.name}
         # Add test results to the dictionary
-        test_results_dict.update(test_results._asdict())
+        if not isinstance(test_results, dict):
+            test_results_dict.update(test_results._asdict())
+        else:
+            test_results_dict.update(test_results)
         if "args" in params:
             # Extract the args item and parse into dictionary
             args_dict = dict(
@@ -177,7 +344,6 @@ def collect_system_info(request):
                     print(f"Could not import collect_state_info from {state_info_path}")
                 try:
                     if hasattr(state_info_module, "collect_state_info"):
-                        print(f"Collecting state info from {state_info_path}")
                         state_info = state_info_module.collect_state_info()
                     test_results_dict.update(state_info)
                 except Exception as e:
