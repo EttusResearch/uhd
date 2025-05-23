@@ -54,7 +54,7 @@ def parse_args(cmds):
     arg_parser.add_argument(
         "-l", "--log-level", default="INFO", help="Set the log level (default: INFO)"
     )
-    subparsers = arg_parser.add_subparsers(dest="command")
+    subparsers = arg_parser.add_subparsers(dest="command", required=True)
     parser_list = []
     for cmd in cmds:
         new_parser = subparsers.add_parser(cmd, help=cmds[cmd]["help"])
