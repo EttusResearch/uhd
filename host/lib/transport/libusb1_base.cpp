@@ -99,8 +99,8 @@ libusb::session::sptr libusb::session::get_global_session(void)
     std::lock_guard<std::mutex> lock(global_session_mutex);
 
     // not expired -> get existing session
-    if (not global_session.expired())
-        return global_session.lock();
+    if (libusb::session::sptr p = global_session.lock())
+        return p;
 
     // create a new global session
     sptr new_global_session(new libusb_session_impl());
@@ -357,8 +357,9 @@ libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::spt
     std::lock_guard<std::mutex> lock(mutex);
 
     // not expired -> get existing handle
-    if (handles.has_key(dev->get()) and not handles[dev->get()].expired()) {
-        return handles[dev->get()].lock();
+    if (handles.has_key(dev->get())) {
+        if (libusb::device_handle::sptr p = handles[dev->get()].lock())
+            return p;
     }
 
     // create a new cached handle

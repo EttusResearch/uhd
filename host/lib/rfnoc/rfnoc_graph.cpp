@@ -1101,10 +1101,9 @@ rfnoc_graph::sptr make_rfnoc_graph(
 
     // Check if a graph was already created for this device
     std::lock_guard<std::mutex> lock(_map_mutex);
-    if (dev_to_graph.count(dev) and not dev_to_graph[dev].expired()) {
-        graph = dev_to_graph[dev].lock();
-        if (graph != nullptr) {
-            return graph;
+    if (dev_to_graph.count(dev)) {
+        if (rfnoc_graph::sptr p = dev_to_graph[dev].lock()) {
+            return p;
         }
     }
 

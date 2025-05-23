@@ -172,16 +172,17 @@ device::sptr device::make(const device_addr_t& hint, device_filter_t filter, siz
     static uhd::dict<size_t, std::weak_ptr<device>> hash_to_device;
 
     // try to find an existing device
-    if (hash_to_device.has_key(dev_hash) and not hash_to_device[dev_hash].expired()) {
-        return hash_to_device[dev_hash].lock();
-    } else {
-        // Add keys from the config files (note: the user-defined keys will
-        // always be applied, see also get_usrp_args()
-        // Then, create and register a new device.
-        device::sptr dev         = maker(prefs::get_usrp_args(dev_addr));
-        hash_to_device[dev_hash] = dev;
-        return dev;
+    if (hash_to_device.has_key(dev_hash)) {
+        if (device::sptr p = hash_to_device[dev_hash].lock())
+            return p;
     }
+
+    // Add keys from the config files (note: the user-defined keys will
+    // always be applied, see also get_usrp_args()
+    // Then, create and register a new device.
+    device::sptr dev         = maker(prefs::get_usrp_args(dev_addr));
+    hash_to_device[dev_hash] = dev;
+    return dev;
 }
 
 uhd::property_tree::sptr device::get_tree(void) const

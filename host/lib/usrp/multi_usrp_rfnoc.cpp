@@ -2878,11 +2878,9 @@ multi_usrp::sptr make_rfnoc_device(
 
     // Check if a multi_usrp was already created for this device
     std::lock_guard<std::mutex> lock(_map_mutex);
-    if (graph_to_musrp.count(graph) and not graph_to_musrp[graph].expired()) {
-        musrp = graph_to_musrp[graph].lock();
-        if (musrp) {
-            return musrp;
-        }
+    if (graph_to_musrp.count(graph)) {
+        if (multi_usrp::sptr p = graph_to_musrp[graph].lock())
+            return p;
     }
 
     // Create a new musrp

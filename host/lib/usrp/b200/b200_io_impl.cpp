@@ -36,19 +36,19 @@ size_t b200_impl::max_chan_count(const std::string& direction /* = "" */)
 {
     size_t max_count = 0;
     for (radio_perifs_t& perif : _radio_perifs) {
-        if ((direction == "RX" or direction.empty())
-            and not perif.rx_streamer.expired()) {
-            std::shared_ptr<sph::recv_packet_streamer> rx_streamer =
-                std::dynamic_pointer_cast<sph::recv_packet_streamer>(
-                    perif.rx_streamer.lock());
-            max_count = std::max(max_count, rx_streamer->get_num_channels());
+        if (direction == "RX" or direction.empty()) {
+            if (auto p = perif.rx_streamer.lock()) {
+                std::shared_ptr<sph::recv_packet_streamer> rx_streamer =
+                    std::dynamic_pointer_cast<sph::recv_packet_streamer>(p);
+                max_count = std::max(max_count, rx_streamer->get_num_channels());
+            }
         }
-        if ((direction == "TX" or direction.empty())
-            and not perif.tx_streamer.expired()) {
-            std::shared_ptr<sph::send_packet_streamer> tx_streamer =
-                std::dynamic_pointer_cast<sph::send_packet_streamer>(
-                    perif.tx_streamer.lock());
-            max_count = std::max(max_count, tx_streamer->get_num_channels());
+        if (direction == "TX" or direction.empty()) {
+            if (auto p = perif.tx_streamer.lock()) {
+                std::shared_ptr<sph::send_packet_streamer> tx_streamer =
+                    std::dynamic_pointer_cast<sph::send_packet_streamer>(p);
+                max_count = std::max(max_count, tx_streamer->get_num_channels());
+            }
         }
     }
     return max_count;
