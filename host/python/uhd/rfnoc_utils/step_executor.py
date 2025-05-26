@@ -431,6 +431,12 @@ class StepExecutor:
         if command not in cmds:
             raise StepExecutor.StepError(f"Unknown command {command}")
         cmd = cmds[command]
+        for arg_name, arg_info in cmd.get("args", {}).items():
+            if arg_name not in args:
+                if "default" in arg_info:
+                    setattr(args, arg_name, arg_info["default"])
+                else:
+                    raise StepExecutor.StepError(f"Missing required argument {arg_name}")
         assert not cmd.get(
             "skip_identify_module", False
         ), "Cannot fork a command that skips module identification"
