@@ -18,6 +18,10 @@ args:
     name_or_flags: module_name
     type: str
     help: Name of the new RFNoC OOT module, without the leading "rfnoc-"
+  add_gr_oot:
+    name_or_flags: ["-g", "--add-gr-oot"]
+    action: store_true
+    help: Add a GNU Radio OOT module to the new RFNoC module.
 
 # These variables may be used in the steps below
 variables:
@@ -25,6 +29,10 @@ variables:
   module_name_full: "${ args.module_name if args.module_name.startswith('rfnoc-') else 'rfnoc-' + args.module_name }"
 
 steps:
+  - set:
+      name: "MODULE_NAME"
+      value: "${ module_name }"
+      is_global: true
   - copy_dir:
       src: "${ RFNOC_PKG_DIR }/rfnoc-newmod"
       dst: "${ CWD }/${ module_name_full }"
@@ -52,3 +60,11 @@ steps:
       repl: "${ module_name }"
   - log:
       msg: "Renamed symbols to match module name ('${ module_name }'). Module creation complete."
+  - run_if:
+      condition: "${ args.add_gr_oot }"
+      steps:
+        - log:
+            msg: "Adding GNU Radio OOT module to the new RFNoC module..."
+        - fork:
+            command: add-groot
+            args: {}

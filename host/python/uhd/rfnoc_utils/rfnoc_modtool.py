@@ -122,6 +122,7 @@ def main():
         module_name = oot_dir_name.replace("rfnoc-", "")
         global_vars["MODULE_NAME"] = module_name
         global_vars["MODULE_NAME_FULL"] = oot_dir_name
+        global_vars["MODULE_DIR"] = os.getcwd()
     cmd = resolve_vars(cmd, global_vars, args)
     executor = StepExecutor(global_vars, args, cmd)
     executor.run(cmd["steps"])
