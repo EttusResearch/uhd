@@ -442,3 +442,11 @@ class StepExecutor:
             ", ".join([f"{k}={v}" for k, v in args.__dict__.items()]),
         )
         sub_executor.run(cmds[command]["steps"])
+
+    def set(self, name, value, is_global=False, **kwargs):
+        """Set a variable in the command script."""
+        self._log.debug("Setting variable %s to %s", name, value)
+        if is_global:
+            self.global_vars[name] = self._resolve(value)
+        else:
+            self._setv(name, self._resolve(value))
