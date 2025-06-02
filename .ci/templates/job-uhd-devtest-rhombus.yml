@@ -67,8 +67,7 @@ jobs:
           devSerial: $(x310_TWINRX_devSerial)
           devBus: 'ip'
           devAddr: $(x310_TWINRX_devAddr)
-          # TODO: revert back to "HG,XG" once work item #3028634 is resolved
-          devFpga: 'HG'
+          devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
           jtagSerial: $(x310_TWINRX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
