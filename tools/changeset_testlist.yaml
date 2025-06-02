@@ -352,15 +352,16 @@
 ###############################################################################
 # LABEL-BASED RULES
 ###############################################################################
-- label: ci:skip_hw_tests
-  remove_re:
-    - "^hw"
-    - "^devtest"
-
 - label: ci:skip_devtests
   remove_re:
     - "^devtest"
-
+# Need to escape the dot for the regex by using a backslash: \.
+# Have to use double backslashes in order to make the yaml parser happy
 - label: ci:skip_rf_tests
   remove_re:
-    - "^hw.rf"
+    - "^hw\\.rf"
+
+- label: ci:skip_streaming_tests
+  remove_re:
+    - "^hw\\.streaming"
+

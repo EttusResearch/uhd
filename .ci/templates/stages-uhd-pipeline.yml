@@ -611,10 +611,7 @@ stages:
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440')
     ))
   jobs:
   - template: tests/job-uhd-x410-hardware-tests-pebbles.yml
@@ -652,10 +649,7 @@ stages:
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440')
       )
     )
   jobs:
