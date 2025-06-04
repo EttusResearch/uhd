@@ -773,6 +773,14 @@ BOOST_FIXTURE_TEST_CASE(zbx_phase_sync_test, x400_radio_fixture)
     constexpr uint32_t nco_sync_addr = 0x88000;
     constexpr uint32_t gearbox_addr  = 0x88004;
     auto& regs                       = reg_iface->read_memory;
+    // Set reset complete bit
+    regs[nco_sync_addr] = 1 << 1;
+    constexpr uint32_t nco_sync_val =
+        (11 & 0xFF) << uhd::rfnoc::x400::rfdc_control::regmap::SYSREF_WAIT_LSB
+        | 1 << uhd::rfnoc::x400::rfdc_control::regmap::WRITE_SYSREF_WAIT
+        | 1 << uhd::rfnoc::x400::rfdc_control::regmap::NCO_RESET_DONE_MSB
+        | 1 << uhd::rfnoc::x400::rfdc_control::regmap::NCO_RESET_START_MSB;
+
     UHD_LOG_INFO("TEST", "Setting 1 GHz defaults...");
     // Confirm default
     test_radio->set_rx_frequency(1e9, 0);
@@ -787,11 +795,11 @@ BOOST_FIXTURE_TEST_CASE(zbx_phase_sync_test, x400_radio_fixture)
     test_radio->set_rx_frequency(2.3e9, 0);
     // Check we synced RX LOs chan 0 and RX NCO chan 0, and ADC gearboxes
     BOOST_CHECK_EQUAL(regs[lo_sync_addr], 0b11 << 4);
-    BOOST_CHECK_EQUAL(regs[nco_sync_addr], 1);
+    BOOST_CHECK_EQUAL(regs[nco_sync_addr], nco_sync_val);
     BOOST_CHECK_EQUAL(regs[gearbox_addr], 1);
     // Reset strobes
     regs[lo_sync_addr]  = 0;
-    regs[nco_sync_addr] = 0;
+    regs[nco_sync_addr] = 1 << 1; // Set reset complete bit
     regs[gearbox_addr]  = 0;
     UHD_LOG_INFO("TEST", "Enabling time stamp chan 1...");
     test_radio->set_command_time(uhd::time_spec_t(2.0), 1);
@@ -800,28 +808,28 @@ BOOST_FIXTURE_TEST_CASE(zbx_phase_sync_test, x400_radio_fixture)
     // Check we synced RX LOs chan 1 and RX NCO chan 1. ADC gearbox only gets
     // reset once, and should be left untouched.
     BOOST_CHECK_EQUAL(regs[lo_sync_addr], 0b11 << 6);
-    BOOST_CHECK_EQUAL(regs[nco_sync_addr], 1);
+    BOOST_CHECK_EQUAL(regs[nco_sync_addr], nco_sync_val);
     BOOST_CHECK_EQUAL(regs[gearbox_addr], 0);
     // Reset strobes
     regs[lo_sync_addr]  = 0;
-    regs[nco_sync_addr] = 0;
+    regs[nco_sync_addr] = 1 << 1; // Set reset complete bit
     regs[gearbox_addr]  = 0;
     UHD_LOG_INFO("TEST", "Setting TX chan 0 to 2.3 GHz...");
     test_radio->set_tx_frequency(2.3e9, 0);
     // Check we synced TX LOs chan 0 and TX NCO chan 0, and DAC gearboxes
     BOOST_CHECK_EQUAL(regs[lo_sync_addr], 0x3 << 0);
-    BOOST_CHECK_EQUAL(regs[nco_sync_addr], 1);
+    BOOST_CHECK_EQUAL(regs[nco_sync_addr], nco_sync_val);
     BOOST_CHECK_EQUAL(regs[gearbox_addr], 1 << 1);
     // Reset strobe
     regs[lo_sync_addr]  = 0;
-    regs[nco_sync_addr] = 0;
+    regs[nco_sync_addr] = 1 << 1; // Set reset complete bit
     regs[gearbox_addr]  = 0;
     UHD_LOG_INFO("TEST", "Setting TX chan 1 to 2.3 GHz...");
     test_radio->set_tx_frequency(2.3e9, 1);
     // Check we synced TX LOs chan 1 and TX NCO chan 1. DAC gearbox only gets
     // reset once, and should be left untouched.
     BOOST_CHECK_EQUAL(regs[lo_sync_addr], 0xC << 0);
-    BOOST_CHECK_EQUAL(regs[nco_sync_addr], 1);
+    BOOST_CHECK_EQUAL(regs[nco_sync_addr], nco_sync_val);
     BOOST_CHECK_EQUAL(regs[gearbox_addr], 0);
     // Reset strobe
     regs[lo_sync_addr]  = 0;
