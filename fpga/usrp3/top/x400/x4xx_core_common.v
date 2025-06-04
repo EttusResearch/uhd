@@ -145,6 +145,9 @@ module x4xx_core_common #(
   // RF Reset Control
   output wire                       start_nco_reset,
   input  wire                       nco_reset_done,
+  input  wire                       noc_reset_sync_failed,
+  output wire  [7:0]                sysref_wait_cycles,
+
   output wire [NUM_TIMEKEEPERS-1:0] adc_reset_pulse,
   output wire [NUM_TIMEKEEPERS-1:0] dac_reset_pulse,
 
@@ -690,6 +693,8 @@ module x4xx_core_common #(
     .s_ctrlport_resp_data             (rf_ctrlport_resp_data),
     .start_nco_reset                  (start_nco_reset),
     .nco_reset_done                   (nco_reset_done),
+    .noc_reset_sync_failed            (noc_reset_sync_failed),
+    .sysref_wait_cycles               (sysref_wait_cycles),
     .adc_reset_pulse                  (adc_reset_pulse),
     .dac_reset_pulse                  (dac_reset_pulse)
   );

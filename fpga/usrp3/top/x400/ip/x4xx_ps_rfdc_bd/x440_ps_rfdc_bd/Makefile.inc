@@ -21,7 +21,8 @@ x440_rfdc_tx_control_remap.v \
 ) \
 $(addprefix $(BASE_DIR)/x400/rf/common/, \
 capture_sysref.v \
-rf_nco_reset.vhd \
+rf_nco_reset_wrapper.v \
+rf_nco_reset_controller.sv \
 rf_reset.vhd \
 sync_wrapper.v \
 axis_mux.vhd \

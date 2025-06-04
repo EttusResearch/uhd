@@ -255,7 +255,6 @@ set_false_path -from $gpio_regs -to $mux_regs
 # Double synchronizer false paths.
 set_false_path -to [get_pins -hierarchical -filter {NAME =~ */synchronizer_false_path/stages[0].value_reg[0][*]/D}]
 set_false_path -to [get_pins -hierarchical -filter {NAME =~ */rf_reset_controller*/*_ms_reg/D}]
-set_false_path -to [get_pins -hierarchical -filter {NAME =~ */rfdc/rf_nco_reset_0/*_ms*/D}]
 
 # GTY_RCV_CLK_* is driven by a OBUFDS_GTE4 buffer, which has an asynchronous
 # clock-enable pin.

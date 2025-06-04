@@ -28826,7 +28826,7 @@ When clear the activity LED set on any TX or RX traffic to the mgt</p></div></p>
                             Initial Value not specified
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file rfdc_timing_control.v.
+                            This register is defined in HDL source file rfdc_timing_control.sv.
                     </p>
             </div>
         </div>
@@ -28839,26 +28839,43 @@ When clear the activity LED set on any TX or RX traffic to the mgt</p></div></p>
                 
                     
                     <tr class="" valign="top">
-                        <td class="bits">31..24</td>
+                        <td class="bits">31..25</td>
                         <td>
                             <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p></p>
+                        </td>
+                    </tr>
+                    
+                    <tr class="" valign="top">
+                        <td class="bits">24w</td>
+                        <td>
+                            <p><span class="name"><a name="RFDC_TIMING_REGMAP|NCO_RESET_REG|WRITE_SYSREF_WAIT"></a>WRITE_SYSREF_WAIT</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
+                            <p>Enables writing to the SYSREF_WAIT bitfield</p>
                         </td>
                     </tr>
                     
                     <tr class="byte" valign="top">
                         <td class="bits">23..16</td>
                         <td>
+                            <p><span class="name"><a name="RFDC_TIMING_REGMAP|NCO_RESET_REG|SYSREF_WAIT"></a>SYSREF_WAIT</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
+                            <p>Sets the number of sysref cycles to wait before resuming NCO operation after reset.
+              DB0 will take priority if more than one db is setting this value.</p>
+                        </td>
+                    </tr>
+                    
+                    <tr class="byte" valign="top">
+                        <td class="bits">15..9</td>
+                        <td>
                             <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p></p>
                         </td>
                     </tr>
                     
-                    <tr class="byte" valign="top">
-                        <td class="bits">15..8</td>
+                    <tr class="" valign="top">
+                        <td class="bits">8r</td>
                         <td>
-                            <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p></p>
+                            <p><span class="name"><a name="RFDC_TIMING_REGMAP|NCO_RESET_REG|NCO_SYNC_FAILED"></a>NCO_SYNC_FAILED</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
+                            <p>When 1, indicates that the NCO reset failed to complete in the expected time.</p>
                         </td>
                     </tr>
                     
@@ -28882,7 +28899,7 @@ When clear the activity LED set on any TX or RX traffic to the mgt</p></div></p>
                         <td class="bits">0w</td>
                         <td>
                             <p><span class="name"><a name="RFDC_TIMING_REGMAP|NCO_RESET_REG|NCO_RESET_START"></a>NCO_RESET_START</span><span class="attr">&nbsp;&nbsp;&nbsp;(Strobe)</span></p>
-                            <p>Write a 1 to this bit to start a reset the RFDC's NCO.</p>
+                            <p>Write a 1 to this bit to start the RFDC's NCO reset state machine.</p>
                         </td>
                     </tr>
             </table>
@@ -28959,7 +28976,7 @@ When clear the activity LED set on any TX or RX traffic to the mgt</p></div></p>
                             Initial Value not specified
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file rfdc_timing_control.v.
+                            This register is defined in HDL source file rfdc_timing_control.sv.
                     </p>
             </div>
         </div>

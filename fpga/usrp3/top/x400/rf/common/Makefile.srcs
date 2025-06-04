@@ -10,10 +10,11 @@ adc_iq_repacker.v \
 axis_mux.vhd \
 capture_sysref.v \
 gpio_to_axis_mux.vhd \
-rf_nco_reset.vhd \
 rf_reset.vhd \
 scale_2x.vhd \
 sync_wrapper.v \
+rf_nco_reset_wrapper.v \
+rf_nco_reset_controller.sv \
 ))
 
 RF_X410_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/x410/, \

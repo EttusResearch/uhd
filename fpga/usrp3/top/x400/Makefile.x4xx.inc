@@ -68,7 +68,7 @@ ctrlport_spi_master.v \
 cpld_interface.v \
 cpld_interface_regs.v \
 qsfp_led_controller.v \
-rfdc_timing_control.v \
+rfdc_timing_control.sv \
 x4xx_pps_sync.v \
 ../../lib/timing/pps_generator.v \
 dboards/ctrlport_byte_serializer.v \
