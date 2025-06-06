@@ -198,7 +198,7 @@ void export_rfnoc(py::module& m)
             py::arg("streamer"),
             py::arg("strm_port"),
             py::arg("dst_blk"),
-            py::arg("dst_blk"),
+            py::arg("dst_port"),
             py::arg("adapter_id") = uhd::transport::NULL_ADAPTER_ID)
         .def("connect",
             py::overload_cast<const block_id_t&,
@@ -207,7 +207,7 @@ void export_rfnoc(py::module& m)
                 size_t,
                 uhd::transport::adapter_id_t>(&rfnoc_graph::connect),
             py::arg("src_blk"),
-            py::arg("src_blk"),
+            py::arg("src_port"),
             py::arg("streamer"),
             py::arg("strm_port"),
             py::arg("adapter_id") = uhd::transport::NULL_ADAPTER_ID)
