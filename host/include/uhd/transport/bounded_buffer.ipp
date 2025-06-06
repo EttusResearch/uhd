@@ -110,6 +110,18 @@ public:
         return true;
     }
 
+    UHD_INLINE std::vector<elem_type> pop_all()
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        std::vector<elem_type> retval(_buffer.size());
+        for (size_t i = 0; i < retval.size(); ++i) {
+            // pop_back will assign the back element to empty and pop it
+            this->pop_back(retval[i]);
+        }
+        _full_cond.notify_all();
+        return retval;
+    }
+
 private:
     std::mutex _mutex;
     boost::condition _empty_cond, _full_cond;

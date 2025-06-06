@@ -109,6 +109,16 @@ public:
         return _detail.pop_with_timed_wait(elem, timeout);
     }
 
+    /*!
+     * Pop all elements from the bounded_buffer.
+     * \param elem the element reference pop to
+     * \return The vector of the popped elements
+     */
+    UHD_INLINE std::vector<elem_type> pop_all()
+    {
+        return _detail.pop_all();
+    }
+
 private:
     bounded_buffer_detail<elem_type> _detail;
 };

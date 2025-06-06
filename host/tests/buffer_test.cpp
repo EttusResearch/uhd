@@ -52,3 +52,17 @@ BOOST_AUTO_TEST_CASE(test_bounded_buffer_with_pop_on_full)
     BOOST_CHECK(bb.pop_with_timed_wait(val, timeout));
     BOOST_CHECK_EQUAL(val, 3);
 }
+
+BOOST_AUTO_TEST_CASE(test_bounded_buffer_pop_all)
+{
+    bounded_buffer<int> bb(3);
+
+    // push elements, check for timeout
+    BOOST_CHECK(bb.push_with_pop_on_full(23));
+    BOOST_CHECK(bb.push_with_pop_on_full(42));
+
+    std::vector<int> vals = bb.pop_all();
+    BOOST_CHECK_EQUAL(vals.size(), 2);
+    BOOST_CHECK_EQUAL(vals[0], 23);
+    BOOST_CHECK_EQUAL(vals[1], 42);
+}
