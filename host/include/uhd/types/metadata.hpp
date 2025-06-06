@@ -234,6 +234,20 @@ struct UHD_API async_metadata_t
      * A special payload populated by custom FPGA fabric.
      */
     uint32_t user_payload[4];
+
+    /*!
+     * Convert a async_metadata_t into a pretty print string.
+     *
+     * \param compact Set to false for a more verbose output.
+     * \return a printable string representing the metadata.
+     */
+    std::string to_pp_string(bool compact = true) const;
+
+    /*!
+     * Similar to C's strerror() function, creates a std::string describing the event
+     * code. \return a printable string representing the event.
+     */
+    std::string strevent(void) const;
 };
 
 } // namespace uhd

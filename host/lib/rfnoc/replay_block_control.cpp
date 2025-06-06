@@ -751,8 +751,7 @@ private:
                 uhd::time_spec_t::from_ticks(tx_event_action->tsf, get_tick_rate());
         }
         RFNOC_LOG_DEBUG("Received TX error code on channel "
-                        << src.instance << ", error code "
-                        << static_cast<int>(md.event_code));
+                        << src.instance << ", error code " << md.strevent());
         _playback_msg_queue.push_with_pop_on_full(md);
     }
 
