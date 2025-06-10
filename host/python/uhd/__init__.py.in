@@ -15,8 +15,8 @@ if os.name == "nt":
     if hasattr(os, "add_dll_directory"):
         # First, check for a user defined path to the UHD libraries.
         # This might be the case for files built from source but not installed yet.
-        uhd_dll_dir = os.os.environ.get("UHD_LIBRARY_PATH")
-        if not os.path.exists(os.path.join(uhd_dll_dir, uhd_dll_name)):
+        uhd_dll_dir = os.environ.get("UHD_LIBRARY_PATH")
+        if not uhd_dll_dir or not os.path.exists(os.path.join(uhd_dll_dir, uhd_dll_name)):
             # The UHD_PKG_PATH will be set if UHD was installed with a UHD NSIS installer,
             # use this path to find the uhd.dll and add it to the DLL search.
             uhd_pkg_dir = os.environ.get("UHD_PKG_PATH")
