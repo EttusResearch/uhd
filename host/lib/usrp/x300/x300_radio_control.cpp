@@ -130,6 +130,7 @@ public:
             std::dynamic_pointer_cast<x300_mb_controller>(get_mb_controller());
         UHD_ASSERT_THROW(_x300_mb_control);
         _x300_mb_control->register_radio(this);
+        _mb_args = _x300_mb_control->get_mb_args();
         // MCR is locked for this session
         _master_clock_rate = _x300_mb_control->get_clock_ctrl()->get_master_clock_rate();
         UHD_ASSERT_THROW(get_tick_rate() == _master_clock_rate);
@@ -224,6 +225,7 @@ public:
             _tx_fe_map[i].core->populate_subtree(
                 get_tree()->subtree(FE_PATH / "tx_fe_corrections" / i));
         }
+        _ignore_cal_file = _mb_args.get_ignore_cal_file();
 
         // Dboards
         _init_dboards();
@@ -2017,6 +2019,8 @@ private:
     std::unique_ptr<radio_regmap_t> _regs;
     //! Reference to the MB controller, typecast
     std::shared_ptr<x300_mb_controller> _x300_mb_control;
+    //! Copy of the device args
+    uhd::usrp::x300::x300_device_args_t _mb_args;
 
     //! Reference to the DBoard SPI core (also controls ADC/DAC)
     spi_core_3000::sptr _spi;
