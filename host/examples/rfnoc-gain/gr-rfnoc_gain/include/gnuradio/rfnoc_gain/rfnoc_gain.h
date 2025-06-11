@@ -31,7 +31,7 @@ namespace rfnoc_gain {
  * \ingroup rfnoc_gain
  *
  */
-class RFNOC_GAIN_API rfnoc_gain : virtual public uhd::rfnoc_block
+class RFNOC_GAIN_API rfnoc_gain : virtual public gr::uhd::rfnoc_block
 {
 public:
     typedef std::shared_ptr<rfnoc_gain> sptr;
