@@ -149,6 +149,8 @@ target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
     ${UHD_SOURCE_DIR}/lib
     ${pybind11_INCLUDE_DIR}
+    # Directory will exist as the Python API build depends on LibUHD being enabled
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
 )
 
 if(WIN32)

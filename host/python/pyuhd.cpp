@@ -16,6 +16,7 @@ namespace py = pybind11;
 
 #include "cal/cal_python.hpp"
 #include "device_python.hpp"
+#include "include/uhdlib/usrp/common/max287x_python.hpp"
 #include "property_tree_python.hpp"
 #include "rfnoc/ddc_block_control_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
@@ -93,6 +94,10 @@ PYBIND11_MODULE(libpyuhd, m)
     export_dboard_iface(usrp_module);
     export_fe_connection(usrp_module);
     export_stream(usrp_module);
+    auto chips_submodule = usrp_module.def_submodule("chips", "Chips");
+    auto max287x_submodule =
+        chips_submodule.def_submodule("max287x", "MAX287x Interface");
+    export_max287x_iface(max287x_submodule);
 
     // Register usrp clock submodule
     auto usrp_clock_module = m.def_submodule("usrp_clock", "USRP Clock Objects");
