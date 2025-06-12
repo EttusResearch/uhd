@@ -18,6 +18,8 @@ Create a new RFNoC OOT module.
 Add a new block to an existing RFNoC OOT module.
 .IP "add-gr-oot"
 Add GNU Radio OOT Module.
+.IP "add-gr-block"
+Add GNU Radio block to an existing GNU Radio OOT module.
 .IP "add-grc"
 Add GNU Radio GRC bindings for an existing block in this RFNoC OOT module.
 .IP "make-yaml"
@@ -43,21 +45,44 @@ The user can create this file manually, or use the YAML Creation Wizard by runni
 rfnoc_modtool make-yaml. The wizard will prompt the user for the necessary information
 to create a valid YAML file.
 
-Once blocks have been created, the user can add GNU Radio GRC bindings for the blocks
-by running 'rfnoc_modtool add-grc'.
+Once blocks have been created, the user can add native GNU Radio blocks to enable
+more precise control over RFNoC blocks from GNU Radio by running 'rfnoc_modtool add-gr-block'.
+
+To add GNU Radio GRC bindings for the blocks, call 'rfnoc_modtool add-grc'.
 
 
 .SH EXAMPLES
 
 .SS Create a new RFNoC OOT module called "filter"
-.sp
+.EX
 rfnoc_modtool create filter
-.ft
+cd rfnoc-filter
+.EE
 
-.SS Add a block called "fir" to the "filter" module (this requires having create a fir.yml block descriptor file)
-.sp
-rfnoc_modtool -C ./rfnoc-filter add fir -y rfnoc-foo/rfnoc/blocks/fir.yml
-.ft
+.SS Use the YAML Creation Wizard to create a block descriptor file
+.EX
+rfnoc_modtool make-yaml
+.EE
+
+.SS After editing the fir.yml file to describe the FIR filter block, add a block called "fir" to the "filter" module
+.EX
+rfnoc_modtool add fir
+.EE
+
+.SS Now add a GNU Radio OOT module
+.EX
+rfnoc_modtool add-gr-oot
+.EE
+
+.SS Add a GNU Radio block to the "filter" module to control the FIR RFNoC block (e.g., for better integration into the GNU Radio filter design tool)
+.EX
+rfnoc_modtool add-gr-block --gr-blockname rfnoc_fir fir
+.EE
+
+.SS Expose this new block into GRC
+.EX
+rfnoc_modtool add-grc --binding-type native fir
+.EE
 
 .fi
 
