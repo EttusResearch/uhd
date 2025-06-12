@@ -124,14 +124,18 @@ class StepExecutor:
 
         Arguments:
         - cmd: The command to run as a list of arguments.
+        - dst_var: If provided, the output will be stored in this variable.
         """
         cmd = [self._resolve(arg) for arg in cmd]
+        cmd = [arg for arg in cmd if arg]
+        dst_var = kwargs.get("dst_var")
         try:
             self._log.debug("Running command: %s", cmd)
-            subprocess.run(
+            proc_result = subprocess.run(
                 cmd,
                 check=True,
                 env=os.environ.copy(),
+                capture_output=dst_var is not None,
             )
         except subprocess.CalledProcessError as e:
             if "error_msg" in kwargs:
@@ -139,6 +143,11 @@ class StepExecutor:
             else:
                 self._log.error("Command failed with return code %s", e.returncode)
             raise StepExecutor.StepError(f"Command failed: {e}")
+        if dst_var:
+            if proc_result.stdout:
+                self._setv(dst_var, proc_result.stdout.decode("utf-8").strip())
+            else:
+                self._setv(dst_var, "")
 
     def copy_dir(self, src, dst, **kwargs):
         """Copy a directory from src to dest, recursively."""
@@ -318,15 +327,28 @@ class StepExecutor:
             message = f"{symbol}   {message}"
         getattr(self._log, level)(message)
 
-    def find_file(self, **kwargs):
-        """Find files matching a pattern and store them in a variable."""
+    def find_file(self, dst_var, required=False, **kwargs):
+        """Find a file matching a pattern and store its path in a variable.
+
+        Arguments:
+        - glob/file/files: The pattern to match files against. See get_file_list for details.
+        - dst_var: The name of the variable to store the path in.
+        - required: If true, then an error is raised if no file is found. If
+                    false, the variable is set to None if no file is found. This
+                    is the default.
+        - error_msg: The message to display if no file is found and required is true.
+        """
         file_list = get_file_list(**kwargs)
         if len(file_list) > 1:
             raise StepExecutor.StepError(f"More than one file found matching pattern.")
         if len(file_list) == 0:
-            self.cmd["variables"][kwargs["dst_var"]] = None
+            if required:
+                raise StepExecutor.StepError(
+                    kwargs.get("error_msg", "No file found matching pattern.")
+                )
+            self.cmd["variables"][dst_var] = None
         else:
-            self.cmd["variables"][kwargs["dst_var"]] = file_list[0]
+            self.cmd["variables"][dst_var] = file_list[0]
 
     def find_executable(self, dst_var, name, **kwargs):
         """Find an executable in the PATH and store it in a variable.
