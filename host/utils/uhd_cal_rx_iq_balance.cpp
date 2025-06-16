@@ -58,7 +58,7 @@ static double tune_rx_and_tx(
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     std::string args, subdev, serial;
-    double tx_wave_ampl, tx_offset;
+    double tx_wave_ampl, tx_offset, tx_gain;
     double freq_start, freq_stop, freq_step;
     size_t nsamps;
     double precision;
@@ -72,6 +72,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("subdev", po::value<std::string>(&subdev), "Subdevice specification (default: first subdevice, often 'A')")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude")
         ("tx_offset", po::value<double>(&tx_offset)->default_value(.9344e6), "TX LO offset from the RX LO in Hz")
+        ("tx_gain", po::value<double>(&tx_gain), "Tx gain in dB (do not specify for default)")
         ("freq_start", po::value<double>(&freq_start), "Frequency start in Hz (do not specify for default)")
         ("freq_stop", po::value<double>(&freq_stop), "Frequency stop in Hz (do not specify for default)")
         ("freq_step", po::value<double>(&freq_step)->default_value(default_freq_step), "Step size for LO sweep in Hz")
@@ -120,6 +121,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         tx_stream,
         0.0,
         tx_wave_ampl,
+        vm.count("tx_gain") ? std::optional<double>(tx_gain) : std::optional<double>(),
         std::ref(transmit_started)));
 
     // Wait for tx_thread to start transmitting

@@ -355,13 +355,23 @@ static void tx_thread(std::atomic_flag* transmit,
     uhd::tx_streamer::sptr tx_stream,
     const double tx_wave_freq,
     const double tx_wave_ampl,
+    const std::optional<double> tx_gain,
     std::atomic<bool>& transmit_started)
 {
     // increase thread priority for TX to prevent underruns
     uhd::set_thread_priority_safe();
 
-    // set max TX gain
-    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
+    constexpr size_t chan = 0;
+    const auto tx_info    = usrp->get_usrp_tx_info(chan);
+
+    if (tx_gain.has_value()) {
+        usrp->set_tx_gain(tx_gain.value());
+    } else if (tx_info.has_key("tx_default_cal_gain")) {
+        usrp->set_tx_gain(std::stod(tx_info["tx_default_cal_gain"]));
+    } else {
+        // set max TX gain
+        usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
+    }
 
     // setup variables
     uhd::tx_metadata_t md;

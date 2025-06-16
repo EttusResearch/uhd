@@ -603,6 +603,19 @@ public:
             usrp_info["tx_extension"] = tx_chain.extension->get_name();
         }
 
+        if (tx_chain.radio->get_tree()->exists("dboard/tx_frontends"
+                                               / tx_chain.radio->get_dboard_fe_from_chan(
+                                                   tx_chain.block_chan, uhd::TX_DIRECTION)
+                                               / "default_cal_gain")) {
+            usrp_info["tx_default_cal_gain"] = std::to_string(
+                tx_chain.radio->get_tree()
+                    ->access<double>("dboard/tx_frontends"
+                                     / tx_chain.radio->get_dboard_fe_from_chan(
+                                         tx_chain.block_chan, uhd::TX_DIRECTION)
+                                     / "default_cal_gain")
+                    .get());
+        }
+
         return usrp_info;
     }
 
