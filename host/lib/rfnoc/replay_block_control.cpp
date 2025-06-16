@@ -13,7 +13,7 @@
 #include <uhd/rfnoc/replay_block_control.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhdlib/utils/compat_check.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <numeric>
 #include <string>

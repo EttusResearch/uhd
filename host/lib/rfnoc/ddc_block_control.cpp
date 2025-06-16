@@ -11,10 +11,10 @@
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/math.hpp>
 #include <cmath>
 #include <set>

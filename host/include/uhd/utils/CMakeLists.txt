@@ -14,6 +14,7 @@ UHD_INSTALL(FILES
     byteswap.hpp
     byteswap.ipp
     cast.hpp
+    compat_check.hpp
     csv.hpp
     dirty_tracked.hpp
     fp_compare_delta.ipp

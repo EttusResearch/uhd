@@ -9,9 +9,9 @@
 #include "mpmd_link_if_mgr.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 
 using namespace uhd::rfnoc;
 using namespace uhd::mpmd;

@@ -30,6 +30,7 @@ set(test_sources
     cal_data_gain_pwr_test.cpp
     chdr_parse_test.cpp
     cal_data_dsa_test.cpp
+    compat_test.cpp
     constrained_device_args_test.cpp
     convert_test.cpp
     dict_test.cpp
@@ -418,7 +419,6 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
-            ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
@@ -453,7 +453,6 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_expert.cpp
-            ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
@@ -515,12 +514,6 @@ UHD_ADD_NONAPI_TEST(
     TARGET "rf_control_gain_profile_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
-)
-
-UHD_ADD_NONAPI_TEST(
-    TARGET "compat_test.cpp"
-    EXTRA_SOURCES
-    ${UHD_SOURCE_DIR}/lib/utils/compat_check.cpp
 )
 
 UHD_ADD_NONAPI_TEST(

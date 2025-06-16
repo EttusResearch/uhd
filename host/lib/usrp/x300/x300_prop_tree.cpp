@@ -7,8 +7,8 @@
 #include "x300_defaults.hpp"
 #include "x300_mb_controller.hpp"
 #include <uhd/property_tree.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;

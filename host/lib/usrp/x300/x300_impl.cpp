@@ -18,12 +18,12 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <boost/format.hpp>
 #include <chrono>

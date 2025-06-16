@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/utils/compat_check.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <boost/test/unit_test.hpp>
 
 using namespace uhd;

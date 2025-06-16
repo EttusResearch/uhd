@@ -7,8 +7,8 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/fft_block_control.hpp>
 #include <uhd/rfnoc/registry.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <boost/format.hpp>
 #include <numeric>
 

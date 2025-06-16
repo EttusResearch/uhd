@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -14,7 +15,7 @@ namespace uhd {
 
 //! Compat number representation class
 template <typename major_type, typename minor_type>
-class compat_num
+class UHD_API_HEADER compat_num
 {
 public:
     constexpr compat_num(major_type major, minor_type minor)
@@ -74,7 +75,7 @@ protected:
 };
 
 //! Specialization of the compat_num class for 16-bit compat numbers
-class compat_num16 : public compat_num<uint8_t, uint8_t>
+class UHD_API_HEADER compat_num16 : public compat_num<uint8_t, uint8_t>
 {
 public:
     compat_num16(const uint16_t compat_val)
@@ -94,7 +95,7 @@ public:
 };
 
 //! Specialization of the compat_num class for 32-bit compat numbers
-class compat_num32 : public compat_num<uint16_t, uint16_t>
+class UHD_API_HEADER compat_num32 : public compat_num<uint16_t, uint16_t>
 {
 public:
     constexpr compat_num32(const uint32_t compat_val)
@@ -117,7 +118,7 @@ public:
  *
  * \throws uhd::runtime_error on mismatch.
  */
-void assert_fpga_compat(const size_t uhd_major,
+void UHD_API assert_fpga_compat(const size_t uhd_major,
     const size_t uhd_minor,
     const uint64_t fpga_compat,
     const std::string& fpga_component,
@@ -128,7 +129,7 @@ void assert_fpga_compat(const size_t uhd_major,
  *
  * \throws uhd::runtime_error on mismatch.
  */
-void assert_fpga_compat(const size_t uhd_major,
+void UHD_API assert_fpga_compat(const size_t uhd_major,
     const size_t uhd_minor,
     const uint32_t fpga_compat,
     const std::string& fpga_component,

@@ -8,9 +8,9 @@
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <map>
 #include <numeric>
 #include <tuple>
