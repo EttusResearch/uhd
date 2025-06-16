@@ -590,6 +590,7 @@ set(uhd_cmake_scripts
     ${UHD_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
     ${UHD_SOURCE_DIR}/cmake/Modules/UHDPython.cmake
     ${UHD_SOURCE_DIR}/cmake/Modules/UHDMinDepVersions.cmake
+    ${UHD_SOURCE_DIR}/cmake/Modules/UHDUnitTest.cmake
 )
 
 UHD_INSTALL(
