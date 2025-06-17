@@ -364,7 +364,6 @@ module radio_rx_core #(
   reg [             31:0] words_left_pkt;    // Words left in current packet
   reg                     first_word = 1'b1; // Next word is first in packet
   reg [             15:0] seq_num = 0;       // Sequence number (packet count)
-  reg [             63:0] error_time;        // Time at which overflow occurred
   reg [ERR_RX_CODE_W-1:0] error_code;        // Error code register
 
   // Output FIFO signals
@@ -372,13 +371,14 @@ module radio_rx_core #(
   reg  [SAMP_W*NSPC-1:0] out_fifo_tdata;
   reg                    out_fifo_tlast;
   reg                    out_fifo_tvalid = 1'b0;
-  reg  [           63:0] out_fifo_timestamp;
   reg                    out_fifo_teob;
   reg                    out_fifo_almost_full;
 
-  reg time_now;    // Indicates when we've reached the requested timestamp
-  reg time_now_p1; // Indicates we've reached the requested timestamp plus 1
-  reg time_past;   // Indicates when we've passed the requested timestamp
+  reg [63:0] radio_time_d1 = 64'b0; // Register for radio time to avoid timing issues
+  reg [63:0] radio_time_first_word = 64'b0; // Timestamp of the first word in the packet
+  reg        time_now;    // Indicates when we've reached the requested timestamp
+  reg        time_now_p1; // Indicates we've reached the requested timestamp plus 1
+  reg        time_past;   // Indicates when we've passed the requested timestamp
 
   reg [SHIFT_W-1:0] radio_offset;
   reg               align_delay;
@@ -405,13 +405,13 @@ module radio_rx_core #(
       radio_offset        <= 'bX;
       align_delay         <= 'bX;
       error_code          <= 'bX;
-      error_time          <= 'bX;
       m_ctrlport_req_addr <= 'bX;
       m_ctrlport_req_data <= 'bX;
       m_ctrlport_req_time <= 'bX;
       time_now            <= 'bX;
       time_now_p1         <= 'bX;
       time_past           <= 'bX;
+      radio_time_d1       <= 64'bX;
       words_left          <= 'bX;
       words_left_pkt      <= 'bX;
     end else begin
@@ -423,21 +423,21 @@ module radio_rx_core #(
       align_cfg_en      <= 1'b0;
 
       if (NSPC > 1) begin
-        if (radio_rx_stb) begin
-          radio_offset <= radio_time[0+:SHIFT_W];
-        end
+        radio_offset <= radio_time_d1[0+:SHIFT_W];
       end else begin
         radio_offset <= 0;
       end
 
       if (radio_rx_stb) begin
         // Register time comparisons so they don't become the critical path.
-        // Subtract two to compensate for the pipeline delays of this comparison
-        // and its propagation through the state machine. This ensures that the
-        // timestamp in the packet matches the requested timestamp.
-        time_now    <= (radio_time[63:SHIFT_W] == cmd_time[63:SHIFT_W]-2);
-        time_now_p1 <= time_now;
-        time_past   <= (radio_time[63:SHIFT_W] >= cmd_time[63:SHIFT_W]);
+        // Add three / one to compensate for the pipeline delays of this
+        // comparison and its propagation through the state machine. This
+        // ensures that the timestamp in the packet matches the requested
+        // timestamp.
+        radio_time_d1 <= radio_time;
+        time_now      <= (radio_time_d1[63:SHIFT_W]+3 == cmd_time[63:SHIFT_W]);
+        time_now_p1   <= time_now;
+        time_past     <= (radio_time_d1[63:SHIFT_W]+1 >= cmd_time[63:SHIFT_W]);
       end
 
       case (state)
@@ -483,7 +483,6 @@ module radio_rx_core #(
             $display("WARNING: radio_rx_core: Late command error");
             //synthesis translate_on
             error_code <= ERR_RX_LATE_CMD;
-            error_time <= radio_time;
             state      <= ST_REPORT_ERR;
           end else if (!cmd_timed ||
             (radio_rx_stb && time_now    && (!align_delay || NSPC == 1)) ||
@@ -504,8 +503,8 @@ module radio_rx_core #(
             out_fifo_tvalid <= 1'b1;
             out_fifo_tdata  <= aligned_data;
             if (first_word) begin
-              out_fifo_timestamp <= radio_time - time_shift;
               first_word         <= 1'b0;
+              radio_time_first_word <= radio_time;
             end
 
             // Update word counters
@@ -536,7 +535,6 @@ module radio_rx_core #(
               out_fifo_tlast <= 1'b1;
               out_fifo_teob  <= 1'b1;
               seq_num        <= seq_num + 1;
-              error_time     <= radio_time;
               error_code     <= ERR_RX_OVERRUN;
               state          <= ST_REPORT_ERR;
             end
@@ -555,7 +553,7 @@ module radio_rx_core #(
           m_ctrlport_req_data                    <= 0;
           m_ctrlport_req_data[ERR_RX_CODE_W-1:0] <= error_code;
           m_ctrlport_req_addr                    <= reg_error_addr;
-          m_ctrlport_req_time                    <= error_time;
+          m_ctrlport_req_time                    <= radio_time_d1;
           state                                  <= ST_REPORT_ERR_WAIT;
         end
 
@@ -589,6 +587,9 @@ module radio_rx_core #(
   // detect overflows.
   //
   //---------------------------------------------------------------------------
+  wire [63:0] out_fifo_timestamp;
+  assign out_fifo_timestamp = radio_time_first_word - time_shift;
+
 
   axi_fifo #(
     .WIDTH (1+64+1+SAMP_W*NSPC),

@@ -242,12 +242,12 @@ module radio_tx_core #(
   reg sop = 1'b1;  // Start of packet
 
   reg [ERR_TX_CODE_W-1:0] new_error_code;
-  reg [             63:0] new_error_time;
   reg                     new_error_valid = 1'b0;
 
-  reg time_now;    // Indicates when we've reached the requested timestamp
-  reg time_now_m1; // Indicates we've reached the requested timestamp minus 1
-  reg time_past;   // Indicates when we've passed the requested timestamp
+  reg [63:0] radio_time_d1 = 64'b0; // Register for radio time to avoid timing issues
+  reg        time_now;    // Indicates when we've reached the requested timestamp
+  reg        time_now_m1; // Indicates we've reached the requested timestamp minus 1
+  reg        time_past;   // Indicates when we've passed the requested timestamp
 
   reg [SHIFT_W-1:0] radio_offset = 0;
   reg               send_early;
@@ -265,11 +265,11 @@ module radio_tx_core #(
       radio_offset    <= 'bX;
       send_early      <= 'bX;
       new_error_code  <= 'bX;
-      new_error_time  <= 'bX;
       new_error_valid <= 'bX;
       time_now        <= 'bX;
       time_now_m1     <= 'bX;
       time_past       <= 'bX;
+      radio_time_d1   <= 64'bX;
     end else begin
       // Default assignments
       new_error_valid <= 1'b0;
@@ -277,15 +277,14 @@ module radio_tx_core #(
 
       if (radio_tx_stb) begin
         // Register time comparisons so they don't become the critical path
-        time_now_m1 <= (radio_time[63:SHIFT_W] == s_axis_ttimestamp[63:SHIFT_W]-1);
-        time_now    <= time_now_m1;
-        time_past   <= (radio_time[63:SHIFT_W]  > s_axis_ttimestamp[63:SHIFT_W]);
+        radio_time_d1 <= radio_time;
+        time_now_m1   <= (radio_time_d1[63:SHIFT_W]+2 == s_axis_ttimestamp[63:SHIFT_W]);
+        time_now      <= time_now_m1;
+        time_past     <= (radio_time_d1[63:SHIFT_W] >= s_axis_ttimestamp[63:SHIFT_W]);
       end
 
       if (NSPC > 1) begin
-        if (radio_tx_stb) begin
-          radio_offset <= radio_time[0+:SHIFT_W];
-        end
+        radio_offset <= radio_time_d1[0+:SHIFT_W];
       end else begin
         radio_offset <= 0;
       end
@@ -339,7 +338,6 @@ module radio_tx_core #(
             $display("WARNING: radio_tx_core: Late data error");
             //synthesis translate_on
             new_error_code  <= ERR_TX_LATE_DATA;
-            new_error_time  <= radio_time;
             new_error_valid <= 1'b1;
             state           <= ST_POLICY_WAIT;
           end
@@ -353,7 +351,6 @@ module radio_tx_core #(
               $display("WARNING: radio_tx_core: Underrun error");
               //synthesis translate_on
               new_error_code  <= ERR_TX_UNDERRUN;
-              new_error_time  <= radio_time;
               new_error_valid <= 1'b1;
               // If we're between packets, go straight to IDLE. Otherwise, drop
               // the rest of the packet before returning to IDLE.
@@ -362,7 +359,6 @@ module radio_tx_core #(
               // We're done with this burst of packets, so acknowledge EOB and
               // go back to idle.
               new_error_code  <= ERR_TX_EOB_ACK;
-              new_error_time  <= radio_time;
               new_error_valid <= 1'b1;
               if (NSPC > 1) begin
                 state <= ST_WAIT_ALIGN0;
@@ -444,7 +440,7 @@ module radio_tx_core #(
     .clk      (radio_clk),
     .reset    (radio_rst),
     .clear    (1'b0),
-    .i_tdata  ({new_error_time, new_error_code}),
+    .i_tdata  ({radio_time_d1, new_error_code}),
     .i_tvalid (new_error_valid),
     .i_tready (new_error_ready),
     .o_tdata  ({next_error_time, next_error_code}),
