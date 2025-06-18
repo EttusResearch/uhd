@@ -13,6 +13,8 @@ Will work on all derivatives of the X4xx series.
 import sys
 import time
 import subprocess
+from typing import Optional
+from dataclasses import dataclass
 from usrp_mpm import bist
 
 # Timeout values are in seconds:
@@ -1074,6 +1076,124 @@ class X4XXBIST(bist.UsrpBIST):
             "Write Test": write_test_output if write_error_msg is None else write_error_msg,
             "Read Test": read_test_output if read_error_msg is None else read_error_msg
         }
+
+    def bist_lmx_lo(self):
+        """
+        BIST for testing the LMX2572 LO on X410 and X420.
+        
+        Description: Checks if all LOs are accessible by creating 
+        a SPI connection to them and poking/peeking the scratch register.
+        
+        External Equipment: None
+        Return dictionary:
+        - <LO name>: {
+            - "available": True if the LO is accessible, False otherwise
+            - "error_msg": Error message if the LO is not accessible
+        }
+        """
+        assert 'lmx_lo' in self.tests_to_run
+
+        from uhd.utils import mpmtools
+        from time import sleep
+        
+        # default MPM port
+        MPM_PORT = 49601
+
+        mpm_c = mpmtools.MPMClient(mpmtools.InitMode.Claim, "localhost", MPM_PORT)
+
+        los_to_test = None
+        result = True
+        error = ""
+        data = {}
+
+        @dataclass
+        class SpiConfig:
+            """
+            Configuration for SPI communication with LMX2572.
+            - start_bit: Bit position for SPI_START_TRANSACTION
+            - read_bit: Bit position for SPI_READ
+            - addr_width: Width of the address field in bits
+            - data_width: Width of the data field in bits
+            - lo_select_bit: Bit position for LO_SELECT (if applicable)
+            - lo_select: Value to select the LO (if applicable)
+            """
+            start_bit: int
+            read_bit: int
+            addr_width: int
+            data_width: int
+            poke_addr: [int]
+            peek_addr: [int]
+            lo_select_bit: Optional[int] = None
+            lo_select: Optional[int] = None
+
+        def get_spi_command(register, value, conf, is_read):
+            command = 0b0000_0000_0000_0000_0000_0000_0000_0000
+            command |= 1 << conf.start_bit
+            command |= (1 if is_read else 0) << conf.read_bit
+            if conf.lo_select_bit is not None and conf.lo_select is not None:
+                command |= (conf.lo_select & 0x7) << conf.lo_select_bit
+            command |= (register & ((1 << conf.addr_width) - 1)) << conf.data_width
+            command |= (value & ((1 <<conf.data_width) - 1))
+            return command
+
+        def write_lmx(db, spi_conf, register, value):
+            """
+            Write a value to the LMX2572 register.
+            """
+            cmd = get_spi_command(register, value, spi_conf, False)
+            mpm_c.poke_db(db, spi_conf.poke_addr, cmd)
+
+        def read_lmx(db, spi_conf, register):
+            """
+            Read a value from the LMX2572 register.
+            """
+            cmd = get_spi_command(register, 0, spi_conf, True)
+            mpm_c.poke_db(db, spi_conf.poke_addr, cmd)
+            sleep(0.1)
+            status = int(mpm_c.peek_db(db, spi_conf.peek_addr), 0)
+            return status & ((1 << spi_conf.data_width) - 1)
+
+        if self.product_id == 'x410':
+            los_to_test = {"TX0_LO1" : 0,
+                        "TX0_LO2" : 1, 
+                        "TX1_LO1" : 2, 
+                        "TX1_LO2" : 3, 
+                        "RX0_LO1" : 4, 
+                        "RX0_LO2" : 5, 
+                        "RX1_LO1" : 6, 
+                        "RX1_LO2" : 7}
+            def get_spi_info(_db, lo):
+                return SpiConfig(start_bit = 28, 
+                                 read_bit = 23, 
+                                 addr_width = 0x7f, 
+                                 data_width = 16, 
+                                 poke_addr = 0x1020, 
+                                 peek_addr = 0x1020, 
+                                 lo_select_bit = 24, 
+                                 lo_select = lo[1])
+
+        if los_to_test is not None:
+            for db in range(2):
+                for lo, addr in los_to_test.items():
+                    try:
+                        spi_conf = get_spi_info(db, (lo, addr))
+                        # Enable read-back mode (and leave everything else default)
+                        write_lmx(db, spi_conf, 0, 0x218)
+                        # Check the magic register:
+                        magic = read_lmx(db, spi_conf, 125)
+                        if magic != 0x2288:
+                            raise ValueError(f"Magic number mismatch for {lo} "
+                                    f"on DB{db}: expected 0x2288, got 0x{magic:04X}")
+                        data[f"db{db}-{lo}"] = True
+                    except Exception as ex:
+                        # If we got here, then this LO is not accessible
+                        result = False
+                        error = str(ex)
+                        data[f"db{db}-{lo}"] =  False
+
+        data["error_msg"] = error
+        data["status"] = result
+        return result, data
 
 ##############################################################################
 # main
