@@ -40,7 +40,7 @@ jobs:
           devFpga: 'HG'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/pebbles-labgrid/device-configs/pebbles-n310-0.yml
+          devLabgridConfig: config/labgrid/pebbles-labgrid/device-configs/pebbles-n310-0.yml
           pytestDUT: 'n310-0'
           pytestAtsConfig: 'uhd_oss_ats'
           pipelineAgent: pebbles-agent-1

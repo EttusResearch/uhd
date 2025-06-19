@@ -161,7 +161,7 @@ jobs:
       pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements_312.txt
 
       python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
         --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
