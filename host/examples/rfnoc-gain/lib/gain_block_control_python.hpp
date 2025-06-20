@@ -13,7 +13,8 @@ using namespace rfnoc::gain;
 
 void export_gain_block_control(py::module& m)
 {
-    py::class_<gain_block_control, gain_block_control::sptr>(m, "gain_block_control")
+    py::class_<gain_block_control, uhd::rfnoc::noc_block_base, gain_block_control::sptr>(
+        m, "gain_block_control")
         .def(py::init(
             &uhd::rfnoc::block_controller_factory<gain_block_control>::make_from))
         .def("set_gain_value", &gain_block_control::set_gain_value, py::arg("gain"))
