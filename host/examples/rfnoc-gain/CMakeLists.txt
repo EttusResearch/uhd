@@ -69,6 +69,17 @@ else()
 endif()
 
 ###########################################################################
+# Find Boost
+###########################################################################
+# This matches the required Boost version with the one from UHD; if you
+# require a different version, you can manually specify it here.
+include(UHDMinDepVersions)
+find_package(Boost ${UHD_BOOST_MIN_VERSION}
+    OPTIONAL_COMPONENTS unit_test_framework)
+include(UHDUnitTest OPTIONAL RESULT_VARIABLE HAVE_UHD_UNIT_TEST_FRAMEWORK)
+
+
+###########################################################################
 # Find Python and uhd Python module
 ###########################################################################
 include(UHDPython)
@@ -216,4 +227,9 @@ if(UHD_FOUND)
 endif()
 if(ENABLE_PYTHON_API)
     add_subdirectory(python)
+endif()
+if(HAVE_UHD_UNIT_TEST_FRAMEWORK AND Boost_UNIT_TEST_FRAMEWORK_FOUND)
+    message(STATUS "Boost unit test framework found, enabling tests.")
+    enable_testing()
+    add_subdirectory(tests)
 endif()
