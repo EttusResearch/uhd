@@ -5,7 +5,7 @@
 //
 // Module: rfnoc_block_radio_regs (Header)
 //
-// Description: Header file for RFNoC radio functionality. This includes 
+// Description: Header file for RFNoC radio functionality. This includes
 // register offsets, bitfields and constants for the radio components.
 //
 
@@ -26,17 +26,17 @@ localparam REG_TIME_HI      = 'h08;  // Timestamp upper 32 bits
 // Radio Core Register Offsets (One Set Per Radio Port)
 //-----------------------------------------------------------------------------
 //
-// These registers are replicated depending on the number of radio channels 
-// requested. They start at BASE_ADDR_RADIO and repeat every RADIO_ADDR_SPACE 
+// These registers are replicated depending on the number of radio channels
+// requested. They start at BASE_ADDR_RADIO and repeat every RADIO_ADDR_SPACE
 // bytes.
 //
-// WARNING: All registers larger than a single 32-bit word must be read and 
+// WARNING: All registers larger than a single 32-bit word must be read and
 //          written least significant word first to guarantee coherency.
 //
 //-----------------------------------------------------------------------------
 
-localparam RADIO_BASE_ADDR = 20'h1000; // Base address of first radio. Choose a 
-                                       // nice big power of 2 so we can just pass 
+localparam RADIO_BASE_ADDR = 20'h1000; // Base address of first radio. Choose a
+                                       // nice big power of 2 so we can just pass
                                        // the lower bits to the radio cores.
 localparam RADIO_ADDR_W    = 7;        // Address space size per radio
 
@@ -83,9 +83,15 @@ localparam RX_CMD_NUM_WORDS_LEN = 48; // Number of bits that are used in the 64-
                                       // NUM_WORDS register (must be in range [33:64]).
 
 // REG_RX_STATUS bit fields
-localparam CMD_FIFO_SPACE_POS = 0;  // Indicates if radio is busy executing a command.
-localparam CMD_FIFO_SPACE_LEN = 6;  // Length of the FIFO_SPACE field
-localparam CMD_FIFO_SPACE_MAX = 32; // Size of command FIFO
+localparam CMD_FIFO_SPACE_POS = 0;    // Indicates if radio is busy executing a command.
+localparam CMD_FIFO_SPACE_LEN = 6;    // Length of the FIFO_SPACE field
+// The command FIFO is built from a FIFO and an output register.
+// The total size is the sum of both parts.
+localparam CMD_FIFO_SIZE_LOG2 = 5;   // Log2 of size of the command FIFO (in words)
+                                     // Choose a value 2 <= x <= 5 to infer a SRL-based FIFO.
+localparam CMD_FLOP_SIZE =  1;       // Number of words which can be stored in the output register
+                                     // Values allowed to generate a flop are 1 and 2.
+localparam CMD_FIFO_SPACE_MAX = 2**CMD_FIFO_SIZE_LOG2 + CMD_FLOP_SIZE;
 
 // REG_TX_ERROR_POLICY bit fields
 localparam TX_ERR_POLICY_LEN  = 2; // Length of error policy bit field

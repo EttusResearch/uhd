@@ -112,10 +112,11 @@ module radio_rx_core #(
   reg  [             19:0] reg_error_addr       = 0;  // Address to use for error reporting
   reg                      reg_has_time         = 1;  // Whether or not to use timestamps on data
 
-  wire [15:0] cmd_fifo_space;   // Empty space in the command FIFO
-  reg         cmd_stop     = 0; // Indicates a full stop request
-  wire        cmd_stop_ack;     // Acknowledgment that a stop has completed
-  reg         clear_fifo   = 0; // Signal to clear the command FIFO
+  wire [15:0] cmd_fifo_space_fifo;   // Empty space in the command FIFO
+  wire [15:0] cmd_fifo_space_flop;   // Empty space in the command flop
+  reg         cmd_stop     = 0;      // Indicates a full stop request
+  wire        cmd_stop_ack;          // Acknowledgment that a stop has completed
+  reg         clear_fifo   = 0;      // Signal to clear the command FIFO
 
   assign m_axis_thas_time = reg_has_time;
 
@@ -219,7 +220,8 @@ module radio_rx_core #(
         case (s_ctrlport_req_addr)
           REG_RX_STATUS: begin
             s_ctrlport_resp_data[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN]
-                                <= cmd_fifo_space[CMD_FIFO_SPACE_LEN-1:0];
+                                <= cmd_fifo_space_fifo[CMD_FIFO_SPACE_LEN-1:0] +
+                                   cmd_fifo_space_flop[CMD_FIFO_SPACE_LEN-1:0];
             s_ctrlport_resp_ack <= 1;
           end
           REG_RX_CMD: begin
@@ -289,9 +291,15 @@ module radio_rx_core #(
   wire                     cmd_valid;       // cmd_* is a valid command
   wire                     cmd_done;        // Command has completed and can be popped from FIFO
 
+  localparam CMD_FIFO_WIDTH = 64 + 1 + NUM_WORDS_LEN + 1;
+  wire cmd_flop_valid;
+  wire cmd_flop_ready;
+  wire [CMD_FIFO_WIDTH-1:0] cmd_flop_data;
+
+  // Ideally, this size will lead to an SRL-based FIFO
   axi_fifo #(
-    .WIDTH (64 + 1 + NUM_WORDS_LEN + 1),
-    .SIZE  ($clog2(CMD_FIFO_SPACE_MAX))     // Ideally, this size will lead to an SRL-based FIFO
+    .WIDTH (CMD_FIFO_WIDTH),
+    .SIZE  (CMD_FIFO_SIZE_LOG2)
   ) cmd_fifo (
     .clk      (radio_clk),
     .reset    (radio_rst),
@@ -300,10 +308,28 @@ module radio_rx_core #(
                 (reg_cmd_word == RX_CMD_CONTINUOUS) }),
     .i_tvalid (reg_cmd_valid),
     .i_tready (cmd_fifo_ready),
+    .o_tdata  (cmd_flop_data),
+    .o_tvalid (cmd_flop_valid),
+    .o_tready (cmd_flop_ready),
+    .space    (cmd_fifo_space_fifo),
+    .occupied ()
+  );
+
+  // output register to break critical path of FIFO data output
+  axi_fifo #(
+    .WIDTH (CMD_FIFO_WIDTH),
+    .SIZE  (CMD_FLOP_SIZE-1)
+  ) cmd_flop (
+    .clk      (radio_clk),
+    .reset    (radio_rst),
+    .clear    (clear_fifo),
+    .i_tdata  (cmd_flop_data),
+    .i_tvalid (cmd_flop_valid),
+    .i_tready (cmd_flop_ready),
     .o_tdata  ({ cmd_time, cmd_timed, cmd_num_words, cmd_continuous }),
     .o_tvalid (cmd_valid),
     .o_tready (cmd_done),
-    .space    (cmd_fifo_space),
+    .space    (cmd_fifo_space_flop),
     .occupied ()
   );
 
