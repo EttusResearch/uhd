@@ -66,10 +66,14 @@ package PkgMath;
     return num;
   endfunction : abs
 
-  // Round a float to the nearest whole number, rounding away from zero for 0.5
-  // (same as C++ and default SystemVerilog behavior).
-  function automatic real round(real num);
-    if (num >= 0) begin
+  // ROUND_AWAY_FROM_ZERO: Round a float to the nearest whole number, rounding
+  //   away from zero for 0.5 (same as C++ and default SystemVerilog behavior).
+  // ROUND_HALF_UP: Always round toward +inf (according to axi_round module)
+  typedef enum { ROUND_AWAY_FROM_ZERO, ROUND_HALF_UP } round_t;
+
+  // Round a float according to the specified mode.
+  function automatic real round(real num, round_t mode = ROUND_AWAY_FROM_ZERO);
+    if (num >= 0 || mode == ROUND_HALF_UP) begin
       // Round toward +inf
       if (num - $floor(num) < 0.5) return $floor(num);
       return $ceil(num);
