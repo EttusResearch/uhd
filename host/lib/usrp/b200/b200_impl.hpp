@@ -21,7 +21,6 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>

@@ -238,8 +238,7 @@ void usrp2_impl::io_impl::recv_pirate_loop(
  **********************************************************************/
 void usrp2_impl::io_init(void)
 {
-    // create new io impl
-    _io_impl = UHD_PIMPL_MAKE(io_impl, ());
+    _io_impl = std::make_shared<io_impl>();
 
     // init first so we dont have an access race
     for (const std::string& mb : _mbc.keys()) {

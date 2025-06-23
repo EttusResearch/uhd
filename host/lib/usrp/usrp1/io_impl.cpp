@@ -236,7 +236,7 @@ void usrp1_impl::io_impl::flush_send_buff(void)
  **********************************************************************/
 void usrp1_impl::io_init(void)
 {
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
+    _io_impl = std::make_shared<io_impl>(_data_transport);
 
     // init as disabled, then call the real function (uses restore)
     this->enable_rx(false);

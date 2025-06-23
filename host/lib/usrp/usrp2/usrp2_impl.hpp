@@ -23,7 +23,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
@@ -110,7 +109,10 @@ private:
 
     // io impl methods and members
     uhd::device_addr_t device_addr;
-    UHD_PIMPL_DECL(io_impl) _io_impl;
+    struct io_impl;
+    // pimpl is shared_ptr because the implementation of the dtor doesn't know
+    // the type of the io_impl, so it can't call the dtor directly.
+    std::shared_ptr<io_impl> _io_impl;
     std::atomic<bool> _pirate_task_exit;
     void io_init(void);
     void update_tick_rate(const double rate);
