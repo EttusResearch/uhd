@@ -21,6 +21,7 @@ link_directories(${test_common_SOURCEDIR})
 # unit test suite
 ########################################################################
 set(test_sources
+    actions_test.cpp
     addr_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
@@ -47,6 +48,7 @@ set(test_sources
     property_test.cpp
     ranges_test.cpp
     rfnoc_node_test.cpp
+    rfnoc_propprop_test.cpp
     scope_exit_test.cpp
     sensors_test.cpp
     soft_reg_test.cpp
@@ -148,13 +150,57 @@ macro(UHD_ADD_RFNOC_BLOCK_TEST)
     cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS" ${ARGN})
     UHD_ADD_NONAPI_TEST(
         TARGET rfnoc_block_tests/${test_TARGET}
-        EXTRA_SOURCES
-        ${test_EXTRA_SOURCES}
-        ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
         INCLUDE_DIRS
         ${test_INCLUDE_DIRS}
     )
 endmacro(UHD_ADD_RFNOC_BLOCK_TEST)
+
+###############################################################################
+# Add a unit test for an RFNoC block controller that requires non-api sources
+###############################################################################
+macro(UHD_ADD_RFNOC_BLOCK_NONAPI_TEST)
+    cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS" ${ARGN})
+    UHD_ADD_NONAPI_TEST(
+        TARGET rfnoc_block_tests/${test_TARGET}
+        EXTRA_SOURCES
+        ${test_EXTRA_SOURCES}
+        INCLUDE_DIRS
+        ${test_INCLUDE_DIRS}
+    )
+endmacro(UHD_ADD_RFNOC_BLOCK_TEST)
+
+###############################################################################
+# Add unit tests for RFNoC blocks that don't require special linkage
+###############################################################################
+set(rfnoc_block_sources
+    addsub_block_test.cpp
+    ddc_block_test.cpp
+    duc_block_test.cpp
+    fft_block_test.cpp
+    fft_block_test_v2.cpp
+    fir_filter_block_test.cpp
+    fosphor_block_test.cpp
+    keep_one_in_n_test.cpp
+    logpwr_block_test.cpp
+    moving_average_block_test.cpp
+    null_block_test.cpp
+    replay_block_test.cpp
+    siggen_block_test.cpp
+    split_stream_block_test.cpp
+    switchboard_block_test.cpp
+    vector_iir_block_test.cpp
+    window_block_test.cpp
+    lc_block_test.cpp
+)
+
+foreach(test_source ${rfnoc_block_sources})
+    get_filename_component(test_name ${test_source} NAME_WE)
+    add_executable(${test_name} rfnoc_block_tests/${test_source})
+    target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+    UHD_ADD_TEST(${test_name} ${test_name})
+    UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests/rfnoc_block_tests COMPONENT tests)
+endforeach(test_source)
+
 
 ###############################################################################
 # Now add all unit tests that require special linkage
@@ -237,27 +283,16 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
-    TARGET rfnoc_propprop_test.cpp
-    EXTRA_SOURCES
-    ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
-)
-
-UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_detailgraph_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
+    DEFINITIONS "-DUHD_RFNOC_DETAILGRAPH_TEST"
 )
 
 UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_topograph_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/topo_graph.cpp
-)
-
-UHD_ADD_NONAPI_TEST(
-    TARGET actions_test.cpp
-    EXTRA_SOURCES
-    ${UHD_SOURCE_DIR}/lib/rfnoc/graph.cpp
 )
 
 UHD_ADD_NONAPI_TEST(
@@ -321,84 +356,12 @@ set_source_files_properties(
     "HAVE_MICROSEC_CLOCK"
 )
 
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET addsub_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET ddc_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET duc_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET fft_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET fft_block_test_v2.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET fir_filter_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET fosphor_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET keep_one_in_n_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET logpwr_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET moving_average_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET null_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET replay_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET siggen_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET split_stream_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET switchboard_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET vector_iir_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET window_block_test.cpp
-)
-
-UHD_ADD_RFNOC_BLOCK_TEST(
-    TARGET lc_block_test.cpp
-)
-
 IF(ENABLE_X400)
     if (NOT APPLE)
     # This test isn't supported on macOS because there are
     # stricter casting and symbol export rules on this platform.
     # As a result this test fails when enabled.
-        UHD_ADD_RFNOC_BLOCK_TEST(
+        UHD_ADD_RFNOC_BLOCK_NONAPI_TEST(
             TARGET x4xx_radio_block_test.cpp
             EXTRA_SOURCES
             ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
@@ -432,7 +395,7 @@ IF(ENABLE_X400)
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
         )
     # TODO: Fix dependency list/duplicates
-        UHD_ADD_RFNOC_BLOCK_TEST(
+        UHD_ADD_RFNOC_BLOCK_NONAPI_TEST(
             TARGET ferrum_radio_block_test.cpp
             EXTRA_SOURCES
             ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp

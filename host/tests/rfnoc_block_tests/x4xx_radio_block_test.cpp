@@ -7,10 +7,10 @@
 #include "../rfnoc_graph_mock_nodes.hpp"
 #include "x4xx_radio_mock.hpp"
 #include "x4xx_zbx_mpm_mock.hpp"
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <iostream>

@@ -5,6 +5,7 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/scope_exit.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
@@ -47,28 +48,30 @@ auto get_dirty_props(graph_t::node_ref_t node_ref)
 
 /*! Graph-filtering predicate to find dirty nodes only
  */
-struct graph_t::DirtyNodePredicate
+struct graph_t::impl::DirtyNodePredicate
 {
     DirtyNodePredicate() {} // Default ctor is required
-    DirtyNodePredicate(graph_t::rfnoc_graph_t& graph) : _graph(&graph) {}
+    DirtyNodePredicate(graph_t::impl::rfnoc_graph_t& graph) : _graph(&graph) {}
 
     template <typename Vertex>
     bool operator()(const Vertex& v) const
     {
-        return !get_dirty_props(boost::get(graph_t::vertex_property_t(), *_graph, v))
+        return !get_dirty_props(
+            boost::get(graph_t::impl::vertex_property_t(), *_graph, v))
                     .empty();
     }
 
 private:
     // Don't make any attribute const, because default assignment operator
     // is also required
-    graph_t::rfnoc_graph_t* _graph;
+    graph_t::impl::rfnoc_graph_t* _graph;
 };
 
 /******************************************************************************
  * Public API calls
  *****************************************************************************/
-void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
+void graph_t::impl::connect(
+    node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
 
@@ -184,7 +187,8 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     }
 }
 
-void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
+void graph_t::impl::disconnect(
+    node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info)
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
 
@@ -238,13 +242,13 @@ void graph_t::disconnect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t 
     }
 }
 
-void graph_t::remove(node_ref_t node)
+void graph_t::impl::remove(node_ref_t node)
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     _remove_node(node);
 }
 
-void graph_t::commit()
+void graph_t::impl::commit()
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     if (_release_count) {
@@ -257,14 +261,14 @@ void graph_t::commit()
     }
 }
 
-void graph_t::release()
+void graph_t::impl::release()
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     UHD_LOG_TRACE(LOG_ID, "graph::release() => " << _release_count);
     _release_count++;
 }
 
-void graph_t::shutdown()
+void graph_t::impl::shutdown()
 {
     std::lock_guard<std::recursive_mutex> l(_graph_mutex);
     UHD_LOG_TRACE(LOG_ID, "graph::shutdown()");
@@ -272,7 +276,7 @@ void graph_t::shutdown()
     _release_count = std::numeric_limits<size_t>::max();
 }
 
-std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
+std::vector<graph_t::impl::graph_edge_t> graph_t::impl::enumerate_edges()
 {
     auto e_iterators = boost::edges(_graph);
     std::vector<graph_edge_t> result;
@@ -287,7 +291,7 @@ std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
     return result;
 }
 
-std::string graph_t::to_dot()
+std::string graph_t::impl::to_dot()
 {
     std::string result("digraph rfnoc_graph {\n"
                        "  rankdir=LR\n"
@@ -356,7 +360,7 @@ std::string graph_t::to_dot()
 /******************************************************************************
  * Private methods to be called by friends
  *****************************************************************************/
-void graph_t::resolve_all_properties(
+void graph_t::impl::resolve_all_properties(
     resolve_context context, rfnoc_graph_t::vertex_descriptor initial_node)
 {
     if (boost::num_vertices(_graph) == 0) {
@@ -386,7 +390,7 @@ void graph_t::resolve_all_properties(
 }
 
 
-void graph_t::_resolve_all_properties(resolve_context context,
+void graph_t::impl::_resolve_all_properties(resolve_context context,
     rfnoc_graph_t::vertex_descriptor initial_node,
     const bool forward)
 {
@@ -515,18 +519,19 @@ void graph_t::_resolve_all_properties(resolve_context context,
     }
 }
 
-void graph_t::resolve_all_properties(resolve_context context, node_ref_t initial_node)
+void graph_t::impl::resolve_all_properties(
+    resolve_context context, node_ref_t initial_node)
 {
     auto initial_node_vertex_desc = _node_map.at(initial_node);
     resolve_all_properties(context, initial_node_vertex_desc);
 }
 
-std::recursive_mutex& graph_t::get_graph_mutex()
+std::recursive_mutex& graph_t::impl::get_graph_mutex()
 {
     return _graph_mutex;
 }
 
-void graph_t::enqueue_action(
+void graph_t::impl::enqueue_action(
     node_ref_t src_node, res_source_info src_edge, action_info::sptr action)
 {
     // We can't release during action handling, so we lock this entire
@@ -617,7 +622,7 @@ void graph_t::enqueue_action(
 /******************************************************************************
  * Private methods
  *****************************************************************************/
-graph_t::vertex_list_t graph_t::_find_dirty_nodes()
+graph_t::impl::vertex_list_t graph_t::impl::_find_dirty_nodes()
 {
     // Create a view on the graph that doesn't include the back-edges
     DirtyNodePredicate vertex_filter(_graph);
@@ -628,7 +633,7 @@ graph_t::vertex_list_t graph_t::_find_dirty_nodes()
     return vertex_list_t(v_iterators.first, v_iterators.second);
 }
 
-graph_t::vertex_list_t graph_t::_get_topo_sorted_nodes()
+graph_t::impl::vertex_list_t graph_t::impl::_get_topo_sorted_nodes()
 {
     // Create a view on the graph that doesn't include the back-edges
     ForwardEdgePredicate edge_filter(_graph);
@@ -644,7 +649,7 @@ graph_t::vertex_list_t graph_t::_get_topo_sorted_nodes()
     return sorted_nodes;
 }
 
-void graph_t::_add_node(node_ref_t new_node)
+void graph_t::impl::_add_node(node_ref_t new_node)
 {
     if (_node_map.count(new_node)) {
         return;
@@ -653,7 +658,7 @@ void graph_t::_add_node(node_ref_t new_node)
     _node_map.emplace(new_node, boost::add_vertex(new_node, _graph));
 }
 
-void graph_t::_remove_node(node_ref_t node)
+void graph_t::impl::_remove_node(node_ref_t node)
 {
     if (_node_map.count(node)) {
         auto vertex_desc = _node_map.at(node);
@@ -677,8 +682,8 @@ void graph_t::_remove_node(node_ref_t node)
 }
 
 
-void graph_t::_forward_edge_props(
-    graph_t::rfnoc_graph_t::vertex_descriptor origin, const bool forward)
+void graph_t::impl::_forward_edge_props(
+    graph_t::impl::rfnoc_graph_t::vertex_descriptor origin, const bool forward)
 {
     node_accessor_t node_accessor{};
     node_ref_t origin_node = boost::get(vertex_property_t(), _graph, origin);
@@ -706,7 +711,7 @@ void graph_t::_forward_edge_props(
     }
 }
 
-bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
+bool graph_t::impl::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
 {
     node_ref_t src_node =
         boost::get(vertex_property_t(), _graph, boost::source(edge, _graph));
@@ -763,7 +768,7 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
     return props_match;
 }
 
-void graph_t::_check_topology()
+void graph_t::impl::_check_topology()
 {
     node_accessor_t node_accessor{};
     bool topo_ok     = true;
@@ -835,7 +840,8 @@ void graph_t::_check_topology()
     }
 }
 
-std::pair<graph_t::node_ref_t, graph_t::graph_edge_t> graph_t::_find_neighbour(
+std::pair<graph_t::impl::node_ref_t, graph_t::impl::graph_edge_t>
+graph_t::impl::_find_neighbour(
     rfnoc_graph_t::vertex_descriptor origin, res_source_info port_info)
 {
     if (port_info.type == res_source_info::INPUT_EDGE) {
@@ -865,3 +871,56 @@ std::pair<graph_t::node_ref_t, graph_t::graph_edge_t> graph_t::_find_neighbour(
 
     UHD_THROW_INVALID_CODE_PATH();
 }
+
+/*****************************************************************************
+ * Connect impl pimpl
+ *****************************************************************************/
+#ifndef UHD_RFNOC_DETAILGRAPH_TEST
+graph_t::graph_t() : _impl(std::make_unique<impl>()) {}
+
+graph_t::~graph_t() = default;
+
+void graph_t::connect(graph_t::node_ref_t src_node,
+    graph_t::node_ref_t dst_node,
+    graph_t::graph_edge_t edge_info)
+{
+    _impl->connect(src_node, dst_node, edge_info);
+}
+
+void graph_t::disconnect(graph_t::node_ref_t src_node,
+    graph_t::node_ref_t dst_node,
+    graph_t::graph_edge_t edge_info)
+{
+    _impl->disconnect(src_node, dst_node, edge_info);
+}
+
+void graph_t::remove(graph_t::node_ref_t node)
+{
+    _impl->remove(node);
+}
+
+void graph_t::commit()
+{
+    _impl->commit();
+}
+
+void graph_t::release()
+{
+    _impl->release();
+}
+
+void graph_t::shutdown()
+{
+    _impl->shutdown();
+}
+
+std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
+{
+    return _impl->enumerate_edges();
+}
+
+std::string graph_t::to_dot()
+{
+    return _impl->to_dot();
+}
+#endif

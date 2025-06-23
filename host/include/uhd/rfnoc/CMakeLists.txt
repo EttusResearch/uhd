@@ -62,6 +62,7 @@ UHD_INSTALL(FILES
 
 add_subdirectory(blocks)
 add_subdirectory(core)
+add_subdirectory(detail)
 add_subdirectory(modules)
 add_subdirectory(transport_adapters)
 add_subdirectory(rf_control)

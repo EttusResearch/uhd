@@ -7,13 +7,13 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_make_args.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/graph_stream_manager.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>

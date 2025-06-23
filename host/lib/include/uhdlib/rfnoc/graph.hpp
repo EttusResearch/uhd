@@ -7,11 +7,13 @@
 #pragma once
 
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhdlib/rfnoc/resolve_context.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <deque>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <tuple>
@@ -19,7 +21,7 @@
 namespace uhd { namespace rfnoc { namespace detail {
 
 //! Container for the logical graph within an uhd::rfnoc_graph
-class graph_t
+struct graph_t::impl
 {
 public:
     using uptr = std::unique_ptr<graph_t>;
