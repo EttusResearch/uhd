@@ -31,7 +31,6 @@ duc_chain.v \
 hb47_int.v \
 hb_dec.v \
 hb_interp.v \
-Makefile.srcs \
 mult_add_clip.v \
 round_reg.v \
 round_sd.v \
@@ -45,4 +44,6 @@ srl.v \
 tx_frontend.v \
 variable_delay_line.v \
 axi_fir_multisample_filter.sv \
+complex_multiply.sv \
+complex_multiply_iq.sv \
 ))
