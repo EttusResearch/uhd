@@ -76,6 +76,13 @@ endmacro(LIBUHD_REGISTER_COMPONENT)
 
 ########################################################################
 # Install only if appropriate for package and if component is enabled
+#
+# This behaves a lot like CMake's native install()
+# (see https://cmake.org/cmake/help/latest/command/install.html#install),
+# but it checks the component and package state before installing.
+#
+# Unlike CMake's native install(), this function will decide to not install
+# files based on UHD-specific rules.
 ########################################################################
 function(UHD_INSTALL)
     include(CMakeParseArguments)
@@ -90,13 +97,13 @@ function(UHD_INSTALL)
     endif(UHD_INSTALL_FILES)
 
     if(UHD_INSTALL_COMPONENT STREQUAL "headers")
-        if(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
+        if(NOT LIBUHD_PKG AND NOT UHDHOST_PKG AND ENABLE_LIBUHD)
             install(${ARGN})
-        endif(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
+        endif()
     elseif(UHD_INSTALL_COMPONENT STREQUAL "devel")
-        if(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
+        if(NOT LIBUHD_PKG AND NOT UHDHOST_PKG AND ENABLE_LIBUHD)
             install(${ARGN})
-        endif(NOT LIBUHD_PKG AND NOT UHDHOST_PKG)
+        endif()
     elseif(UHD_INSTALL_COMPONENT STREQUAL "examples")
         if(NOT LIBUHD_PKG AND NOT LIBUHDDEV_PKG)
             install(${ARGN})
@@ -133,7 +140,7 @@ function(UHD_INSTALL)
         if(NOT LIBUHD_PKG AND NOT LIBUHDDEV_PKG AND NOT UHDHOST_PKG)
             install(${ARGN})
         endif(NOT LIBUHD_PKG AND NOT LIBUHDDEV_PKG AND NOT UHDHOST_PKG)
-    endif(UHD_INSTALL_COMPONENT STREQUAL "headers")
+    endif()
 endfunction(UHD_INSTALL)
 
 ########################################################################
