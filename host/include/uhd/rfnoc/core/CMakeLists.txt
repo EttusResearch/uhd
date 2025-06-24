@@ -11,5 +11,5 @@ file(GLOB json_files "*.json")
 UHD_INSTALL(
     FILES ${yml_files} ${json_files}
     DESTINATION ${PKG_DATA_DIR}/rfnoc/core
-    COMPONENT headers # TODO: Different component
+    COMPONENT rfnoc
 )
