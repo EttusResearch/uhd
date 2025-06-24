@@ -49,6 +49,10 @@ parameters:
   type: boolean
   displayName: Build X4xx CPLDs
   default: false
+- name: build_regmaps
+  type: boolean
+  displayName: Build Register Maps
+  default: false
 - name: package_and_publish_images
   type: boolean
   displayName: Package & Publish Images
@@ -141,7 +145,7 @@ extends:
   parameters:
     add_tests: ${{
         format(
-          '{0};{1};{2};{3};{4};{5};{6};{7};',
+          '{0};{1};{2};{3};{4};{5};{6};{7};{8};',
           iif(parameters.run_testbenches,'fpga.usrp3.testbenches',''),
           iif(parameters.build_x3x0,'fpga.usrp3.x3xx',''),
           iif(parameters.build_n3xx,'fpga.usrp3.n3xx',''),
@@ -149,7 +153,8 @@ extends:
           iif(parameters.build_e32x,'fpga.usrp3.e32x',''),
           iif(parameters.build_x410,'fpga.usrp3.x410',''),
           iif(parameters.build_x440,'fpga.usrp3.x440',''),
-          iif(parameters.build_x4xx_cplds,'fpga.usrp3.cpld.x4xx','')
+          iif(parameters.build_x4xx_cplds,'fpga.usrp3.cpld.x4xx',''),
+          iif(parameters.build_regmaps,'fpga.usrp3.regmaps','')
         )
       }}
     skip_rule_checking: true

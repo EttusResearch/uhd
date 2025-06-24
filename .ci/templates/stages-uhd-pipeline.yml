@@ -513,6 +513,20 @@ stages:
 
 ### END: CPLD Build Stage
 
+### START: Regmap stage
+
+- stage: regmap
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.regmaps')
+    )
+  displayName: 'Check Regmaps'
+  jobs:
+  - template: ../fpga/templates/job-regmap.yml
+
+### END: Regmap stage
+
 - template: ../fpga/templates/job-build-fpga-all.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}

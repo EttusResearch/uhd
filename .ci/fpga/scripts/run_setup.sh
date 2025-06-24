@@ -33,7 +33,7 @@ echo "---- Run hwsetup ----"
 # variables based on the agent's configuration so we can find the EDA
 # tools.
 pushd $BUILD_SOURCESDIRECTORY/uhddev/.ci/hwtools
-source hwsetup.sh hwtools=0.1.3
+source hwsetup.sh --hwtools=0.1.3
 popd
 
 echo "---- Fetch the FPGA simulation libraries ----"

@@ -1,0 +1,31 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   Updating the register maps for the X400 based FPGA designs.
+#
+jobs:
+- job:
+  displayName: "Check regmaps"
+  timeoutInMinutes: 30
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
+  steps:
+    - template: setup_steps.yml
+
+    - bash: |
+        # Set up the hwtools path and run the build script
+        source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh $(Build.SourcesDirectory)/uhddev/fpga/usrp3/top/x400
+        python build.py
+      workingDirectory: uhddev/.ci/hwtools
+      displayName: "Run xmlparse"
+
+    # Check if regmaps are up to date
+    - template: check_clean_repo_steps.yml
+      parameters:
+        directory: uhddev

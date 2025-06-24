@@ -222,6 +222,7 @@
 - re: fpga/usrp3/
   add:
     - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
   stop: False
 
 # library changes
@@ -341,16 +342,24 @@
     - uhd.rfnoc_modtool.all
 
 
-- re: fpga/.ci/templates
+- re: .ci/fpga/templates
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
     - fpga.usrp3.testbenches
-- re: fpga/.ci/scripts
+    - fpga.usrp3.regmaps
+- re: .ci/fpga/scripts
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
     - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+- re: .ci/hwtools
+  add:
+    - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
 # Device-specific pipeline changes.
 - re: .ci/fpga/devices/job-build-x400.yml
   add:
