@@ -229,6 +229,7 @@
   add:
     - fpga.usrp3.all
     - uhd.rfnoc_modtool.all
+    - fpga.usrp3.cpld.x4xx
 
 # image builder changes
 - re: host/utils/rfnoc_image_builder.py
@@ -287,6 +288,17 @@
   add:
     - fpga.usrp3.n3xx
 
+# CPLD related changes
+- re: fpga/usrp3/top/x400/cpld
+  add:
+    - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x400/dboards
+  add:
+    - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x400/constraints/timing/shared_constants.sdc
+  add:
+    - fpga.usrp3.cpld.x4xx
+
 ###############################################################################
 # CI CHANGES
 ###############################################################################
@@ -329,9 +341,16 @@
     - uhd.rfnoc_modtool.all
 
 
-- re: fpga/.ci/templates*
+- re: fpga/.ci/templates
   add:
     - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.testbenches
+- re: fpga/.ci/scripts
+  add:
+    - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.testbenches
 # Device-specific pipeline changes.
 - re: .ci/fpga/devices/job-build-x400.yml
   add:

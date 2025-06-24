@@ -37,11 +37,20 @@ source hwsetup.sh hwtools=0.1.3
 popd
 
 echo "---- Fetch the FPGA simulation libraries ----"
-# The simulation libraries for our versions have been pre-compiled, so this
-# should simply copy them if they're not already on this agent.
-compileFpgaLibs vivado
-# This is where compileFpgaLibs puts the simulation libraries
-export MODELSIM_INI_DIR=/usr/hwlibs/vivado/2021.1/modelsim_SE-64_2020
+# Compiling the simulation libraries.
+# Extracting the modelsim.ini path from the output.
+# Creating a temporary modelsim.mpf file for the scripting to work.
+echo "[Library]" > modelsim.mpf
+compileFpgaLibs vivado | tee compileFpgaLib.log
+VIVADO_MODELSIM_INI_PATH=$(grep Reading compileFpgaLib.log | awk '{print $3}' | sed 's/\x1b\[[0-9;]*m//g')
+compileFpgaLibs diamond | tee compileFpgaLib.log
+DIAMOND_MODELSIM_INI_PATH=$(grep Reading compileFpgaLib.log | awk '{print $3}' | sed 's/\x1b\[[0-9;]*m//g')
+# Combine all modelsim.ini files to local copy
+python $(dirname $BASH_SOURCE)/merge_modelsim_ini.py \
+    -o $BUILD_SOURCESDIRECTORY/modelsim.ini \
+    $VIVADO_MODELSIM_INI_PATH $DIAMOND_MODELSIM_INI_PATH
+# Removing the temporary files
+rm -f modelsim.mpf compileFpgaLib.log
 
 echo "---- Fetch Vivado patches ----"
 export PATCHES_DIR=$BUILD_SOURCESDIRECTORY/patches
@@ -61,8 +70,7 @@ echo "---- Apply the Vivado patches ----"
 pushd $BUILD_SOURCESDIRECTORY
 # Apply the patch to Vivado
 export XILINX_PATH=$PATCHES_DIR/AR76780_Vivado_2021/vivado
-# Create a local copy of modelsim.ini and add the FIR compiler simulation model
-cp $MODELSIM_INI_DIR/modelsim.ini ./
+# Add the FIR compiler simulation model to local modelsim.ini
 # Delete all lines containing "fir_compiler_v7_2_76780" to avoid duplicates
 sed -i -e '/fir_compiler_v7_2_76780/d' ./modelsim.ini
 # Duplicate line containing "fir_compiler_v7_2_16"

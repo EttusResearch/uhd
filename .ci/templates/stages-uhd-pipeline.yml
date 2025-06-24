@@ -485,6 +485,29 @@ stages:
 
 ### END: Testbenches stage
 
+### START: CPLD Build Stage
+
+- stage: build_cpld_stage
+  displayName: x4xx CPLD Build Stage
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.cpld.x4xx')
+    )
+  jobs:
+  - template: ../fpga/templates/job-build-cpld.yml
+    parameters:
+      publish_int_files: true
+      cpldBuilds:
+        - displayName: 'MB CPLD Build'
+          workingDirectory: './top/x400/cpld'
+          artifactName: 'CPLD_MB'
+        - displayName: 'ZBX CPLD Build'
+          workingDirectory: './top/x400/dboards/zbx/cpld'
+          artifactName: 'CPLD_ZBX'
+
+### END: CPLD Build Stage
+
 - template: ../fpga/templates/job-build-fpga-all.yml
   parameters:
     clean_ip_build: ${{ parameters.clean_ip_build }}
