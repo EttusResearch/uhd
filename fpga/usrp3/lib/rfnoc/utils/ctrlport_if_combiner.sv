@@ -198,7 +198,7 @@ module ctrlport_if_combiner #(
       // Give the ack only to the master that made the request (use a demux)
       if (m_ctrlport.rst) begin
         s_ctrlport[i].resp.ack <= '0;
-      end else if (i == slave_sel && m_ctrlport.resp.ack) begin
+      end else if (req_active && i == slave_sel && m_ctrlport.resp.ack) begin
         s_ctrlport[i].resp.ack <= '1;
       end else begin
         s_ctrlport[i].resp.ack <= '0;
@@ -236,6 +236,12 @@ module ctrlport_if_combiner #(
       // The delay of the additional register compensates the delay of the logic above to
       // load the active request into the output register.
       timeout_occurred <= timeout_counter == TIMEOUT;
+
+      // synthesis translate_off
+      if (timeout_occurred && req_active) begin
+        $warning("Ctrlport combiner timeout occurred!");
+      end
+      // synthesis translate_on
     end
   end
 
