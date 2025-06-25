@@ -104,15 +104,18 @@ module spi_slave #(
   // Reset with cs_n might occur too early during clk sync.
   // Reset half way through the reception.
   always @(posedge sclk) begin
-    // Complete word was received
-    if (current_bit_index == 7) begin
-      reception_complete_sclk <= 1'b1;
-      received_word <= {receiver_reg[6:0], mosi};
-
-    // Reset after half transaction
-    end else if (current_bit_index == 3) begin
-      reception_complete_sclk <= 1'b0;
-    end
+    case (current_bit_index)
+      3: begin
+        // Reset after half transaction
+        reception_complete_sclk <= 1'b0;
+      end
+      7: begin
+        // Save received word
+        received_word <= {receiver_reg[6:0], mosi};
+        // Set after complete word was received
+        reception_complete_sclk <= 1'b1;
+      end
+    endcase
   end
 
   //---------------------------------------------------------------

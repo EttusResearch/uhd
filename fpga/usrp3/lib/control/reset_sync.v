@@ -14,7 +14,7 @@ module reset_sync (
   // glitch-free input reset
   input  reset_in,
   // output reset in the clk domain
-  output reg reset_out);
+  output reg reset_out = 1'b1);
 
   wire reset_c;
 

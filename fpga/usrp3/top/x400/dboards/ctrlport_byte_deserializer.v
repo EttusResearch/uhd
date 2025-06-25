@@ -196,7 +196,8 @@ module ctrlport_byte_deserializer (
         end
 
         default: begin
-          // NOP
+          // dummy assignment to avoid an empty block
+          bytestream_data_out <= 8'bx;
         end
       endcase
     end
