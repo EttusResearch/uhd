@@ -20,6 +20,7 @@ UHD_INSTALL(FILES
     lc_block_control.hpp
     logpwr_block_control.hpp
     mock_block.hpp
+    mock_nodes.hpp
     moving_average_block_control.hpp
     null_block_control.hpp
     radio_control.hpp

@@ -4,8 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP
-#define INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP
+#pragma once
 
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
@@ -13,7 +12,8 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <list>
 
-using namespace uhd::rfnoc;
+
+namespace uhd { namespace rfnoc { namespace test {
 
 constexpr int MAX_DECIM       = 512;
 constexpr double DEFAULT_RATE = 1e9;
@@ -594,4 +594,5 @@ private:
     size_t _input_ports;
     size_t _output_ports;
 };
-#endif /* INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP */
+
+}}} // namespace uhd::rfnoc::test

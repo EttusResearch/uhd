@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/detail/graph.hpp>
+#include <uhd/rfnoc/mock_nodes.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
@@ -16,6 +16,7 @@
 
 using uhd::rfnoc::detail::graph_t;
 using namespace uhd::rfnoc;
+using namespace uhd::rfnoc::test;
 
 namespace uhd { namespace rfnoc { namespace detail {
 

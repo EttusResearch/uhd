@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/detail/graph.hpp>
+#include <uhd/rfnoc/mock_nodes.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
@@ -14,6 +14,8 @@
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
+using namespace uhd::rfnoc;
+using namespace uhd::rfnoc::test;
 
 const std::string STREAM_CMD_KEY = "stream_cmd";
 
