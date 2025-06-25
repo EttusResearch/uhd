@@ -206,6 +206,10 @@ CLOCK_TO_OUT GROUP CTRL_SLAVE_OUTPUTS OUTPUT_DELAY $ctrl_spi_output_max_delay ns
                                         CLKPORT "MB_CTRL_SCK" ;
 
 
+# There is a direct path from MB_CPLD_CS to MB_CTRL_MISO to tristate the output when being inactive.
+# Defining the base PRC period as upper boundary for this path.
+MAXDELAY FROM PORT "MB_CTRL_CS" TO PORT "MB_CTRL_MISO" $prc_clock_period ns;
+
 # Additionally, Lattice detects an unconstrained path from MB_CTRL_CS
 # to clk_int_osc. Since MB_CTRL_CS is asynchronous to that clock net,
 # we use the same constraint strategy as for other asynchronous
