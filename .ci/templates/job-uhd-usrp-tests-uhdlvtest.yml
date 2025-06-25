@@ -1,0 +1,31 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+- name: testDevices
+  type: string
+  default: 'x410'
+
+jobs:
+- template: job-uhd-usrp-tests.yml
+  parameters:
+    suiteName: 'uhdlvtest'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    toolset: 'msbuild'
+    installer: 'nsis'
+    buildOSName: 'win-vs19-v142-x64-py310'
+    dutMatrix:
+      ${{ if contains(parameters.testDevices, 'x410') }}:
+        uhdlvtest-x410-0:
+          devModel: 'x410'
+          devName: 'uhdlvtest-x410-0'

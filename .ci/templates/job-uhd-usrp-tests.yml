@@ -1,0 +1,142 @@
+parameters:
+- name: suiteName
+  type: string
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+- name: uhdFpgaArtifactSource
+  type: string
+- name: fpga_imgs_source
+  type: string
+- name: dutMatrix
+  type: object
+- name: 'toolset'
+  type: string
+  values:
+  - fedora_rpm
+  - make
+  - msbuild
+  - ubuntu_deb
+- name: 'installer'
+  type: string
+  values:
+  - rpm # fedora_rpm
+  - tar # make
+  - nsis # msbuild
+  - deb # ubuntu_deb
+- name: buildOSName
+  type: string
+
+jobs:
+- job: uhd_usrp_examples_${{ parameters.suiteName }}
+  displayName: UHD USRP examples ${{ parameters.suiteName }}
+  timeoutInMinutes: 30
+  pool:
+    name: de-dre-lab
+    demands:
+    - suiteName -equals ${{ parameters.suiteName }}
+    - device -equals $(devName)
+  strategy:
+    matrix: ${{ parameters.dutMatrix }}
+  steps:    
+  - checkout: ettus-rts
+    clean: true
+
+  - checkout: labview-usrp-examples
+    clean: true
+
+  - checkout: self
+    clean: true
+
+  - script: |
+      if "${{ parameters.uhdArtifactSource }}" == "current" (
+        echo ##vso[task.setvariable variable=uhd_artifact_directory]%Agent_BuildDirectory%
+      ) else (
+        echo ##vso[task.setvariable variable=uhd_artifact_directory]%Agent_BuildDirectory%\${{ parameters.uhdArtifactSource }}
+      )
+    displayName: Set uhddev pipeline artifact location
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: uhddev-${{ parameters.buildOSName }}-${{ parameters.toolset }}-${{ parameters.installer }}-installer
+    displayName: Download uhddev-${{ parameters.buildOSName }}-${{ parameters.toolset }}-${{ parameters.installer }}-installer artifact
+
+  - script: |
+      echo ##vso[task.setvariable variable=uhd_installer_dir]%uhd_artifact_directory%\uhddev-${{ parameters.buildOSName }}-${{ parameters.toolset }}-${{ parameters.installer }}-installer
+    displayName: Set UHD installer directory location
+
+  - script: |
+      echo ##vso[task.setvariable variable=uhd_installation_dir]%Agent_BuildDirectory%\uhddev_installed
+    displayName: Set UHD installation directory location
+
+  - script: |
+      echo "Installing UHD from ${{ parameters.uhdArtifactSource }} uhddev artifact"
+      echo "UHD installer directory %uhd_installer_dir%"
+      dir %uhd_installer_dir%
+      if exist "%uhd_installation_dir%\Uninstall.exe" (
+        echo "Found existing UHD installed. Uninstalling using %uhd_installation_dir%\Uninstall.exe"
+        "%uhd_installation_dir%\Uninstall.exe" /S
+      ) else (
+        echo "No UHD installed"
+      )
+      echo "Creating UHD target installation directory %uhd_installation_dir%"
+      mkdir %uhd_installation_dir%
+      for %%f in ("%uhd_installer_dir%\uhd_*.exe") do (set uhd_installer_exe_path=%%f)
+      echo "Installing UHD from %uhd_installer_exe_path%"
+      %uhd_installer_exe_path% /S /D=%uhd_installation_dir%
+      echo ##vso[task.setvariable variable=UHD_PKG_PATH]%uhd_installation_dir%
+    displayName: Install UHD from uhddev artifact
+
+  # TODO make this work for all python versions we support (3.10 + 3.12)
+  - script: |
+      cd $(Build.SourcesDirectory)
+      echo "Upgrading required Python packages"
+      py -3.10 -m pip install --upgrade pip setuptools virtualenv wheel
+      echo "Creating virtual environment"
+      py -3.10 -m venv lvtest_venv
+      call lvtest_venv\Scripts\activate.bat
+      echo "Installing required Python packages into the virtual environment"
+      pip install lvtest
+      for %%f in ("%uhd_installer_dir%\uhd-*.whl") do (set uhd_python_pkg_path=%%f)
+      pip install "%uhd_python_pkg_path%"
+    displayName: Prepare venv (Python 3.10)
+
+  - script: |
+      set
+      cd $(Build.SourcesDirectory)
+      call lvtest_venv\Scripts\activate.bat
+      set UHD_PKG_PATH=%UHD_PKG_PATH%
+      mkdir -p $(Common.TestResultsDirectory)\uhdlvtest
+      set LVTEST_OUTPUT=$(Common.TestResultsDirectory)\uhdlvtest\lvtest_output.txt
+      set LVTEST_FAILED=$(Common.TestResultsDirectory)\uhdlvtest\lvtest_failed.txt
+      cd ettus-rts\config\remote\python_tests\lvtest
+      
+      echo "Running lvtest for LabVIEW USRP Examples in %cd%"
+      lvtest -f %cd%\lv_usrp_tests -o %cd%\ats_configs\dre-ec62-dut1\options.yaml > %LVTEST_OUTPUT% 2>&1
+      set lvtest_exit_code=%errorlevel%
+      if %lvtest_exit_code% neq 0 (
+        echo "lvtest did not run successfully, exit code: %lvtest_exit_code%"
+        exit %lvtest_exit_code%
+      )
+      
+      echo "Evaluate lvtest output for LabVIEW USRP Examples:"
+      type %LVTEST_OUTPUT%
+      findstr "FAILED" %LVTEST_OUTPUT% > %LVTEST_FAILED%
+      set findstr_exit_code=%errorlevel%
+      if %findstr_exit_code% equ 0 (
+        echo "--- LV TEST FAILED WITH: ---"
+        type %LVTEST_FAILED%
+        echo "--- LV TEST json outputs for all tests: ---"
+        type lv_usrp_tests\*.json
+        exit 1
+      )
+    displayName: Run lvtest for LabVIEW USRP Examples
+
+  - publish: $(Common.TestResultsDirectory)\uhdlvtest
+    artifact: test-logs-uhdlvtest-$(devName)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()
+  
+  workspace:
+    clean: all
+ 

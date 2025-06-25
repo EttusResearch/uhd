@@ -216,6 +216,11 @@ resources:
     type: git
     ref: refs/tags/pip/hwsetup/0.1/0.1.3
     name: DevCentral/hwtools
+  - repository: labview-usrp-examples
+    type: github
+    endpoint: EttusResearch
+    name: ni/labview-usrp-examples
+    ref: main
 
 stages:
 ###############################################################################
@@ -753,3 +758,14 @@ stages:
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
+
+- stage: test_labview_usrp_examples
+  displayName: Test LabVIEW USRP Examples
+  dependsOn:
+  - analyze_changeset
+  - build_uhd_installer_stage_win
+  jobs:
+  - template: job-uhd-usrp-tests-uhdlvtest.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
