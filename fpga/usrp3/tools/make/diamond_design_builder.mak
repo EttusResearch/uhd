@@ -31,6 +31,13 @@ BUILD_DIAMOND_DESIGN = \
 	export LC_ALL=en_US.UTF-8; \
 	cp $(TOOLS_DIR)/scripts/dmd_design_build.tcl $(4)/build.tcl; \
 	cd $(4); \
+	echo "BUILDER: Checking variables..."; \
+	python3 $(TOOLS_DIR)/scripts/diamond_check_variables.py $(1).lpf; \
+	if [ $$? -ne 0 ]; \
+		then \
+			echo "BUILDER: Diamond variable check failed."; \
+			exit 1; \
+		fi; \
 	echo "BUILDER: Implementating design..."; \
 	$(DIAMOND_EXE) build.tcl > $(1)_log.txt ; \
 	if [ $$? -ne 0 ]; \
@@ -43,6 +50,18 @@ BUILD_DIAMOND_DESIGN = \
 		if [ $$? -ne 0 ]; \
 		then \
 			echo "BUILDER: Timing failed. See $(1)_impl1.twr for details."; \
+			exit 1; \
+		fi; \
+	grep "unconstrained" impl1/$(1)_impl1.twr | grep -v "0 unconstrained" > /dev/null 2>&1; \
+		if [ $$? -eq 0 ]; \
+		then \
+			echo "BUILDER: Unconstrained paths found. See $(1)_impl1.twr for details."; \
+			exit 1; \
+		fi; \
+	grep "Semantic error" impl1/$(1)_impl1.mrp > /dev/null 2>&1; \
+		if [ $$? -eq 0 ]; \
+		then \
+			echo "BUILDER: Semantic error found. See $(1)_impl1.mrp for details."; \
 			exit 1; \
 		fi; \
 	echo "BUILDER: Generating bitfile..."; \
