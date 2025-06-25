@@ -9,8 +9,8 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/rfnoc/switchboard_block_control.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>

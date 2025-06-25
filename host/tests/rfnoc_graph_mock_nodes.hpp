@@ -9,8 +9,8 @@
 
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <list>
 
 using namespace uhd::rfnoc;

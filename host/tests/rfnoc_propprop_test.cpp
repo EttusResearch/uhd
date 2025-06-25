@@ -8,10 +8,10 @@
 #include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <algorithm>

@@ -8,8 +8,8 @@
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>

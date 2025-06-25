@@ -5,7 +5,7 @@
 //
 
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <atomic>
 #include <chrono>

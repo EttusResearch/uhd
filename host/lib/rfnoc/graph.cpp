@@ -6,10 +6,10 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/detail/graph.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/scope_exit.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/graph/filtered_graph.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <limits>

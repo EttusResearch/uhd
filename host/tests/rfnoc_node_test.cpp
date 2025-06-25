@@ -5,7 +5,7 @@
 //
 
 #include <uhd/rfnoc/node.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 

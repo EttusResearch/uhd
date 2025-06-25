@@ -46,6 +46,7 @@ UHD_INSTALL(FILES
     noc_block_make_args.hpp
     node.hpp
     node.ipp
+    node_accessor.hpp
     property.hpp
     property.ipp
     radio_control.hpp

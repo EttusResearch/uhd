@@ -16,9 +16,14 @@ namespace uhd { namespace rfnoc {
 //! Special class which may access nodes
 //
 // For the sake of property resolution, we require access to certain private
-// members of nodes. Instead of giving the entire graph
-// access to everything, we create this accessor class which is not available
-// in the public API.
+// members of nodes. Instead of giving everyone access to everything, we create
+// this accessor class to allow by-passing the access control.
+//
+// This class is not meant to be used by users of the RFNoC API, but in certain
+// corner cases, it may be useful for RFNoC block developers. One main use case
+// is unit tests, where we need to access the internals of nodes to test their
+// functionality (e.g., by reading hidden state). Is it not considered good
+// practice to use this class in production code, as it breaks encapsulation.
 class node_accessor_t
 {
 public:

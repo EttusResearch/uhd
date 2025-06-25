@@ -9,8 +9,8 @@
 #include "../../lib/usrp/x400/x400_radio_control.hpp"
 #include "x4xx_zbx_mpm_mock.hpp"
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <iostream>
 
 using namespace uhd;

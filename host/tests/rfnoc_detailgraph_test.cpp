@@ -7,9 +7,9 @@
 #include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
