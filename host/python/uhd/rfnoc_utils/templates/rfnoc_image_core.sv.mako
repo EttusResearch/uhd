@@ -104,6 +104,12 @@ module rfnoc_image_core #(
   //---------------------------------------------------------------------------
   // CHDR Crossbar
   //---------------------------------------------------------------------------
+  `define STRINGIFY(x) `"x`"
+  `ifdef CHDR_CROSSBAR_OPTIMIZE
+    localparam CHDR_CROSSBAR_OPTIMIZE = `STRINGIFY(`CHDR_CROSSBAR_OPTIMIZE);
+  `else
+    localparam CHDR_CROSSBAR_OPTIMIZE = "AREA";
+  `endif
 
 <%include file="/modules/sep_xb_wires.v.mako" args="seps=config.stream_endpoints"/>\
 <%
@@ -140,7 +146,7 @@ module rfnoc_image_core #(
     .BYTE_MTU       (BYTE_MTU),
     .ROUTE_TBL_SIZE (6),
     .MUX_ALLOC      ("ROUND-ROBIN"),
-    .OPTIMIZE       ("AREA"),
+    .OPTIMIZE       (CHDR_CROSSBAR_OPTIMIZE),
     .NPORTS_MGMT    (${num_tas}),
     .EXT_RTCFG_PORT (0),
     .PROTOVER       (PROTOVER)
