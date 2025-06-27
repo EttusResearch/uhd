@@ -154,6 +154,7 @@ def flash_sdimage_sdmux(
 
         print("Waiting 2 minutes for device to boot", flush=True)
         time.sleep(120)
+        cp_linux.write("\n".encode())
         cp_linux.expect("login:", timeout=5)
         known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
         subprocess.run(shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'))
