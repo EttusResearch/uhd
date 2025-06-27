@@ -192,11 +192,22 @@ some characteristics of the SPI need to be configured:
 The terms 'MISO' and 'MOSI' in the spi_config_t struct map to 'SDI' and 'SDO' respectively. 
 They are legacy terms which will not be used in new code anymore following the resolution
 to redefine SPI signal names by the Open Source Hardware Association: 
-<https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/>
+<https://oshwa.org/resources/a-resolution-to-redefine-spi-signal-names/>
 
-The SPI clock \f$SCLK\f$ is derived from the Radio clock and the SPI clock divider as follows: 
+The SPI clock frequency, \f$f_{SCLK}\f$, is derived from the radio clock
+frequency (\f$f_{RADIO\_CLK}\f$) and the SPI clock divider value
+(\f$SPI\_CLK\_DIV\f$). For X410, the SPI clock frequency is given by the
+equation shown below, where \f$f_{RADIO\_CLK}\f$ is 122.88 MHz or 125 MHz,
+depending on the master clock rate. Note that this is the master clock rate
+divided by 1 (for 100 MHz bandwidth), by 2 (for 200 MHz bandwidth), or by 4
+(for 400 MHz bandwidth).
 
-\f[SCLK = \frac{Radio\_Clk}{SPI\_CLK\_DIV + 1}\f]
+\f[X410: f_{SCLK} = \frac{f_{RADIO\_CLK}}{SPI\_CLK\_DIV + 1}\f]
+
+For X440, the SPI clock frequency is given by the equation shown below, where
+\f$f_{RADIO\_CLK}\f$ is the master clock rate divided by 8.
+
+\f[X440: f_{SCLK} = \frac{f_{RADIO\_CLK}}{2\cdot\left(SPI\_CLK\_DIV + 1\right)}\f]
 
 */
 // vim:ft=doxygen:
