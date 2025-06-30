@@ -9,6 +9,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
 #include <uhd/utils/noncopyable.hpp>
@@ -102,6 +103,13 @@ public:
     {
         std::ostringstream os;
         os << time.get_real_secs();
+        return os.str();
+    }
+
+    static std::string print(const device_addr_t addr)
+    {
+        std::ostringstream os;
+        os << addr.to_string();
         return os.str();
     }
 };
