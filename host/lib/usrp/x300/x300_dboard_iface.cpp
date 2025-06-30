@@ -284,6 +284,12 @@ void x300_dboard_iface::add_rx_fe(
     _rx_fes[fe_name] = fe_core;
 }
 
+void x300_dboard_iface::add_tx_fe(
+    const std::string& fe_name, tx_frontend_core_200::sptr fe_core)
+{
+    _tx_fes[fe_name] = fe_core;
+}
+
 void x300_dboard_iface::define_custom_register_space(const uint32_t start_addr,
     const uint32_t length,
     std::function<void(uint32_t, uint32_t)> poke_fn,
@@ -302,6 +308,14 @@ void x300_dboard_iface::set_fe_connection(
             throw uhd::assertion_error("front-end name was not registered: " + fe_name);
         }
     } else {
-        throw uhd::not_implemented_error("frontend connection not configurable for TX");
+        if (_tx_fes.has_key(fe_name)) {
+            if (fe_conn.is_iq_swapped()) {
+                _tx_fes[fe_name]->set_mux("QI");
+            } else {
+                _tx_fes[fe_name]->set_mux("IQ");
+            }
+        } else {
+            throw uhd::assertion_error("front-end name was not registered: " + fe_name);
+        }
     }
 }

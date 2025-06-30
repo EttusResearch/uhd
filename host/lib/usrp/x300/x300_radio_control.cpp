@@ -1855,6 +1855,7 @@ private:
     void _set_tx_fe(const std::string& fe, const size_t chan)
     {
         _tx_fe_map[chan].db_fe_name = fe;
+        _db_iface->add_tx_fe(fe, _tx_fe_map[chan].core);
         const std::string connection =
             get_tree()->access<std::string>(get_db_path("tx", chan) / "connection").get();
         _tx_fe_map[chan].core->set_mux(connection);
