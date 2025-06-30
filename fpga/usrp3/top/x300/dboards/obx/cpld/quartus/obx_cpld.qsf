@@ -1,0 +1,286 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2020  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and any partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel FPGA IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Intel and sold by Intel or its authorized distributors.  Please
+# refer to the applicable agreement for further details, at
+# https://fpgasoftware.intel.com/eula.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 20.1.0 Build 711 06/05/2020 SJ Standard Edition
+# Date created = 12:55:40  May 07, 2024
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		obx_cpld_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "MAX 10"
+set_global_assignment -name DEVICE 10M04SAU169I7G
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.0
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "12:55:40  MAY 07, 2024"
+set_global_assignment -name LAST_QUARTUS_VERSION "20.1.0 Standard Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name VHDL_INPUT_VERSION VHDL_2008
+set_global_assignment -name VHDL_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name VERILOG_INPUT_VERSION SYSTEMVERILOG_2005
+set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+
+set_global_assignment -name NUM_PARALLEL_PROCESSORS 2
+
+######################################################################################
+# Pin Location Information
+######################################################################################
+set_location_assignment PIN_B11 -to aLED_LOCKD
+set_location_assignment PIN_N7 -to aLED_RXD1
+set_location_assignment PIN_M5 -to aLED_RXD2
+set_location_assignment PIN_M4 -to aLED_TXD
+set_location_assignment PIN_F12 -to aLOCKD_RX
+set_location_assignment PIN_G12 -to aLOCKD_TX
+
+set_location_assignment PIN_N3 -to aMCTRL_ATR_RX_N
+set_location_assignment PIN_M3 -to aMCTRL_ATR_TX_N
+set_location_assignment PIN_M2 -to aMCTRL_RESET_N
+set_location_assignment PIN_N2 -to aMCTRL_RX2_EN
+set_location_assignment PIN_A11 -to MCTRL_SCLK
+set_location_assignment PIN_A10 -to mMCTRL_SDI
+set_location_assignment PIN_B10 -to mMCTRL_SDO
+set_location_assignment PIN_A9 -to mMCTRL_SEN
+set_location_assignment PIN_L2 -to aMCTRL_ADDR[0]
+set_location_assignment PIN_L3 -to aMCTRL_ADDR[1]
+set_location_assignment PIN_M1 -to aMCTRL_ADDR[2]
+
+set_location_assignment PIN_A8 -to aFE_SEL_CAL_RX2
+set_location_assignment PIN_C9 -to aFE_SEL_CAL_TX2
+set_location_assignment PIN_M9 -to aFE_SEL_RX_LNA1
+set_location_assignment PIN_N8 -to aFE_SEL_TRX_RX2
+set_location_assignment PIN_N5 -to aFE_SEL_TRX_TX
+
+set_location_assignment PIN_G13 -to aRXHB_SEL
+set_location_assignment PIN_H13 -to aRXHB_SEL2
+set_location_assignment PIN_L13 -to aRXLB_SEL
+set_location_assignment PIN_J12 -to aRXLB_SEL2
+set_location_assignment PIN_M10 -to aPWREN_LNA1
+set_location_assignment PIN_N10 -to aPWREN_LNA2
+set_location_assignment PIN_C12 -to mRXLO1_DATA
+set_location_assignment PIN_B13 -to mRXLO1_DCLK
+set_location_assignment PIN_C13 -to mRXLO1_DLE
+set_location_assignment PIN_F13 -to aRXLO1_FSEL1
+set_location_assignment PIN_D12 -to aRXLO1_FSEL2
+set_location_assignment PIN_E13 -to aRXLO1_FSEL3
+set_location_assignment PIN_E12 -to aRXLO1_FSEL4
+set_location_assignment PIN_A12 -to aRXLO1_LD
+set_location_assignment PIN_B12 -to aRXLO1_NPDRF
+set_location_assignment PIN_N12 -to mRXLO2_DATA
+set_location_assignment PIN_M12 -to mRXLO2_DCLK
+set_location_assignment PIN_L11 -to mRXLO2_DLE
+set_location_assignment PIN_M13 -to aRXLO2_LD
+set_location_assignment PIN_L12 -to aRXLO2_NPDRF
+set_location_assignment PIN_K12 -to aPWREN_RXAMP
+set_location_assignment PIN_J13 -to aPWREN_RXDEMOD_N
+set_location_assignment PIN_N9 -to aPWEN_RX_DOUBLER
+set_location_assignment PIN_M11 -to aPWREN_RXLBMIX
+
+set_location_assignment PIN_K2 -to aTXHB_SEL
+set_location_assignment PIN_K1 -to aTXHB_SEL2
+set_location_assignment PIN_J2 -to aTXLB_SEL
+set_location_assignment PIN_J1 -to aTXLB_SEL2
+set_location_assignment PIN_C2 -to mTXLO1_DATA
+set_location_assignment PIN_B3 -to mTXLO1_DCLK
+set_location_assignment PIN_B1 -to mTXLO1_DLE
+set_location_assignment PIN_C1 -to aTXLO1_FSEL1
+set_location_assignment PIN_E1 -to aTXLO1_FSEL2
+set_location_assignment PIN_F1 -to aTXLO1_FSEL3
+set_location_assignment PIN_D1 -to aTXLO1_FSEL4
+set_location_assignment PIN_A2 -to aTXLO1_LD
+set_location_assignment PIN_B2 -to aTXLO1_NPDRF
+set_location_assignment PIN_A6 -to mTXLO2_DATA
+set_location_assignment PIN_A5 -to mTXLO2_DCLK
+set_location_assignment PIN_A7 -to mTXLO2_DLE
+set_location_assignment PIN_A3 -to aTXLO2_LD
+set_location_assignment PIN_A4 -to aTXLO2_NPDRF
+set_location_assignment PIN_N6 -to aPWEN_TX_DOUBLER
+set_location_assignment PIN_H2 -to aPWREN_TXLBMIX
+set_location_assignment PIN_H3 -to aPWREN_TXMOD_N
+set_location_assignment PIN_N4 -to aPWREN_TXDRV
+
+
+######################################################################################
+# Pin Drive information
+######################################################################################
+#Defaulted drives to 8mA slow, may change driver strength from there as starting point
+
+#inout signal list
+
+#in signal list
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aRXLO1_LD
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aRXLO2_LD
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aTXLO1_LD
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aTXLO2_LD
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_ATR_RX_N
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_ATR_TX_N
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_RESET_N
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_RX2_EN
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to MCTRL_SCLK
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to mMCTRL_SDI
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to mMCTRL_SEN
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_ADDR[0]
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_ADDR[1]
+set_instance_assignment -name IO_STANDARD "3.3 V SCHMITT TRIGGER" -to aMCTRL_ADDR[2]
+
+#out signal list
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mMCTRL_SDO
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mMCTRL_SDO
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLOCKD_RX
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLOCKD_RX
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLOCKD_TX
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLOCKD_TX
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLED_LOCKD
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLED_LOCKD
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLED_RXD1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLED_RXD1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLED_RXD2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLED_RXD2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aLED_TXD
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLED_TXD
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aFE_SEL_CAL_RX2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aFE_SEL_CAL_RX2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aFE_SEL_CAL_TX2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aFE_SEL_CAL_TX2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aFE_SEL_RX_LNA1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aFE_SEL_RX_LNA1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aFE_SEL_TRX_RX2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aFE_SEL_TRX_RX2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aFE_SEL_TRX_TX
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aFE_SEL_TRX_TX
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXHB_SEL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXHB_SEL
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXHB_SEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXHB_SEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLB_SEL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLB_SEL
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLB_SEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLB_SEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_LNA1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_LNA1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_LNA2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_LNA2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO1_DATA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO1_DATA
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO1_DCLK
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO1_DCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO1_DLE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO1_DLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO1_FSEL1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO1_FSEL1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO1_FSEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO1_FSEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO1_FSEL3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO1_FSEL3
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO1_FSEL4
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO1_FSEL4
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO1_NPDRF
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO1_NPDRF
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO2_DATA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO2_DATA
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO2_DCLK
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO2_DCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mRXLO2_DLE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mRXLO2_DLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aRXLO2_NPDRF
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRXLO2_NPDRF
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_RXAMP
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_RXAMP
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_RXDEMOD_N
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_RXDEMOD_N
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWEN_RX_DOUBLER
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWEN_RX_DOUBLER
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_RXLBMIX
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_RXLBMIX
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_TXDRV
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_TXDRV
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXHB_SEL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXHB_SEL
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXHB_SEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXHB_SEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLB_SEL
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLB_SEL
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLB_SEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLB_SEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO1_DATA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO1_DATA
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO1_DCLK
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO1_DCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO1_DLE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO1_DLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO1_FSEL1
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO1_FSEL1
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO1_FSEL2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO1_FSEL2
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO1_FSEL3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO1_FSEL3
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO1_FSEL4
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO1_FSEL4
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO1_NPDRF
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO1_NPDRF
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO2_DATA
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO2_DATA
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO2_DCLK
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO2_DCLK
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to mTXLO2_DLE
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to mTXLO2_DLE
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aTXLO2_NPDRF
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTXLO2_NPDRF
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWEN_TX_DOUBLER
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWEN_TX_DOUBLER
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_TXLBMIX
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_TXLBMIX
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to aPWREN_TXMOD_N
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aPWREN_TXMOD_N
+
+
+set_global_assignment -name SDC_FILE obx_cpld.sdc
+
+set_global_assignment -name VERILOG_INCLUDE_FILE ../regmap/obx_cpld_regs_utils.vh
+set_global_assignment -name SYSTEMVERILOG_FILE ../obx_register_endpoints.sv
+set_global_assignment -name SYSTEMVERILOG_FILE ../obx_cpld.sv
+
+
+set_global_assignment -name TOP_LEVEL_ENTITY obx_cpld
+
+
+set_global_assignment -name POWER_DEFAULT_INPUT_IO_TOGGLE_RATE "40 %"
+set_global_assignment -name POWER_USE_PVA OFF
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_global_assignment -name FLOW_ENABLE_POWER_ANALYZER ON
+set_global_assignment -name POWER_DEFAULT_TOGGLE_RATE "20 %"
+
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

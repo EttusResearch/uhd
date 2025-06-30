@@ -27,6 +27,14 @@ parameters:
   type: boolean
   displayName: Run N310 RF tests
   default: false
+- name: run_obx_rf_tests
+  type: boolean
+  displayName: Run X310 + OBX RF tests
+  default: false
+- name: run_obx_devtests
+  type: boolean
+  displayName: Run X310 + OBX devtests
+  default: false
 - name: run_x410_rf_tests
   type: boolean
   displayName: Run X410 RF tests
@@ -249,6 +257,31 @@ stages:
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+
+- stage: test_obx_rf_tests
+  displayName: Run X310 + OBX RF tests
+  dependsOn: []
+  condition: ${{ parameters.run_obx_rf_tests }}
+  jobs:
+  - template: templates/job-uhd-rf-tests-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+
+- stage: test_obx_devtest
+  displayName: Test X310 + OBX Devtest
+  dependsOn: []
+  condition: ${{ parameters.run_obx_devtests }}
+  jobs:
+  - template: templates/job-uhd-devtest-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
 
 - stage: test_x410_rf_tests
   displayName: Run X410 RF tests

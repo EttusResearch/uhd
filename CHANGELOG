@@ -5,7 +5,9 @@ Change Log for Releases
 
 * Highlights / Main Changes
   - Support for USRP B206mini-i
+  - Support for OBX daughterboard
 * New Features
+  - OBX daughterboard and B206mini support added.
   - X3x0: Add support for the gps_iface feature. This allows sending arbitrary
     commands to the GPS module.
   - rfnoc_modtool: Add a new subcommand, `make-yaml`, that generates a block

@@ -34,6 +34,7 @@ utilities:
 -   SBX Series transceiver boards
 -   CBX Series transceiver boards
 -   UBX Series transceiver boards
+-   OBX Series transceiver boards
 -   USRP N320
 
 \subsection calibration_self_utils Calibration Utilities
@@ -104,7 +105,7 @@ of UHD.
 
 Older versions of UHD used a CSV-based format for storing calbration data for
 IQ imbalance and DC offset correction on some devices (e.g., X300, N200
-motherboards and WBX/SBX/CBX/UBX daughterboards).
+motherboards and WBX/SBX/CBX/UBX/OBX daughterboards).
 
 Going forward, all calibration data is stored as binary, to facilitate storing
 it on device's flash memory, among other reasons. Running the `uhd_cal_*`

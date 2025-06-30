@@ -15,6 +15,9 @@ parameters:
   type: string
 - name: dutMatrix
   type: object
+- name: vivado_dir
+  type: string
+  default: ''
 - name: extra_rf_test_args
   type: string
   default: ''
@@ -128,6 +131,70 @@ jobs:
 
 
   - script: |
+        export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        export PATH=$UHD_INSTALL_PATH/bin:$PATH
+        if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        else
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_dc_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_dc_offset..."
+          uhd_cal_tx_dc_offset --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_iq_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_iq_balance..."
+          uhd_cal_tx_iq_balance --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/rx_iq_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_rx_iq_balance..."
+          uhd_cal_rx_iq_balance --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+    displayName: Run corrections utilities for DB0
+    condition: and(eq(variables.supportsCorrections, true), ne(variables.db0Serial, ''))
+
+  - script: |
+        export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        export PATH=$UHD_INSTALL_PATH/bin:$PATH
+        if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        else
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_dc_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_dc_offset..."
+          uhd_cal_tx_dc_offset --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_iq_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_iq_balance..."
+          uhd_cal_tx_iq_balance --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/rx_iq_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_rx_iq_balance..."
+          uhd_cal_rx_iq_balance --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+    displayName: Run corrections utilities for DB1
+    condition: and(eq(variables.supportsCorrections, true), ne(variables.db1Serial, ''))
+
+  - script: |
       mkdir -p $(Common.TestResultsDirectory)/pytest
       cd $(Common.TestResultsDirectory)/pytest
 
@@ -158,17 +225,30 @@ jobs:
       source $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/setup_venv.sh
       pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements_312.txt
 
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
-        --fpgas $(devFpga) \
-        --sfp_addrs $(sfpAddrs) \
-        --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
-        "${{ parameters.redisHost }}" "$(devName)" \
-        "uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
-          --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      if [ "$(devType)" = "n3xx" ]; then
+        python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+          --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
+          --fpgas $(devFpga) \
+          --sfp_addrs $(sfpAddrs) \
+          --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
+          "${{ parameters.redisHost }}" "$(devName)" \
+          "uhd_usrp_probe --args addr=$(devAddr)" \
+          "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+            --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      elif [ "$(devType)" = "x300" ]; then
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
+        python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+          --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
+          --fpgas $(devFpga) \
+          --sfp_addrs $(sfpAddrs) \
+          --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
+          "${{ parameters.redisHost }}" "$(devName)" \
+          "uhd_usrp_probe --args addr=$(devAddr)" \
+          "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+            --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      fi
     continueOnError: true
-    condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
+    condition: succeeded()
     displayName: Run pytests on $(devName)
 
   - script: |
@@ -179,7 +259,7 @@ jobs:
         $(Common.TestResultsDirectory)/pytest/pytestresults.xml
     continueOnError: true
     displayName: Format devtest xml
-    condition: and(always(), eq(variables.devType, 'n3xx'))
+    condition: always()
 
   - task: PublishTestResults@2
     inputs:

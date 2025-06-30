@@ -7,6 +7,7 @@
 //
 
 #include "x300_impl.hpp"
+#include "../dboard/db_obx.hpp"
 #include "../dboard/db_ubx.hpp"
 #include "x300_claim.hpp"
 #include "x300_eth_mgr.hpp"
@@ -18,6 +19,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
@@ -370,11 +372,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
 
     // The default daughterboard clock rate may have to be overridden. This is due to the
     // limitation on X300 devices where both daughterboards must use the same clock rate.
-    // The daughterboards that require specific clock rates are UBX and TwinRX. TwinRX
-    // requires a clock rate of 100 MHz for the best RF performance. UBX daughterboards
-    // require a clock rate of no more than the max pfd frequency to maintain phase
-    // synchronization. If there is no UBX, the default daughterboard clock rate is half
-    // of the master clock rate for X300.
+    // The daughterboards that require specific clock rates are UBX, OBX, and TwinRX.
+    // TwinRX requires a clock rate of 100 MHz for the best RF performance. UBX and OBX
+    // daughterboards require a clock rate of no more than the max pfd frequency to
+    // maintain phase synchronization. If there is no UBX or OBX, the default
+    // daughterboard clock rate is half of the master clock rate for X300.
     const double x300_dboard_clock_rate = [dev_addr, mb]() -> double {
         // Do not override use-specified dboard clock rates
         if (dev_addr.has_key("dboard_clock_rate")) {
@@ -382,18 +384,20 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
         }
         const double mcr         = mb.args.get_master_clock_rate();
         double dboard_clock_rate = mb.args.get_dboard_clock_rate();
-        // Check for UBX daughterboards
+        // Check for UBX or OBX daughterboards
         std::vector<dboard_id_t> dboard_ids = get_dboard_ids(*mb.zpu_i2c);
         for (dboard_id_t dboard_id : dboard_ids) {
-            if (std::find(
-                    dboard::ubx::ubx_ids.begin(), dboard::ubx::ubx_ids.end(), dboard_id)
-                != dboard::ubx::ubx_ids.end()) {
-                double ubx_clock_rate = mcr;
-                for (int i = 2; ubx_clock_rate > dboard::ubx::get_max_pfd_freq(dboard_id);
-                     i++) {
-                    ubx_clock_rate = mcr / i;
+            bool ubx_db_found = uhd::has(dboard::ubx::ubx_ids, dboard_id);
+            bool obx_db_found = uhd::has(dboard::obx::obx_ids, dboard_id);
+            if (ubx_db_found || obx_db_found) {
+                double dboard_pfd_clock_rate = mcr;
+                double max_pfd_freq          = ubx_db_found
+                                                   ? dboard::ubx::get_max_pfd_freq(dboard_id)
+                                                   : dboard::obx::get_max_pfd_freq(dboard_id);
+                for (int i = 2; dboard_pfd_clock_rate > max_pfd_freq; i++) {
+                    dboard_pfd_clock_rate = mcr / i;
                 }
-                dboard_clock_rate = std::min(dboard_clock_rate, ubx_clock_rate);
+                dboard_clock_rate = std::min(dboard_clock_rate, dboard_pfd_clock_rate);
             }
         }
         return dboard_clock_rate;

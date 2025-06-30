@@ -430,6 +430,51 @@ DEV->get_tree()->access< std::map<int,uhd::range_t> >("/mboards/0/tx_frontends/A
     .set(tx_lo2_map);
 ~~~~
 
+\subsection dboards_obx OBX Series
+
+Features:
+-   2 quadrature frontends (1 transmit, 1 receive)
+    -   Defaults to direct conversion
+    -   Can be used in low IF mode through lo_offset with uhd::tune_request_t
+-   Independent receive and transmit LO's and synthesizers
+    -   Allows for full-duplex operation on different transmit and
+        receive frequencies
+    -   Can be set to use Integer-N tuning for better spur performance with uhd::tune_request_t
+
+Frequency Range: 10 MHz to 8.4 GHz
+
+Transmit Antennas: **TX/RX**
+
+Receive Antennas: **TX/RX** or **RX2**
+
+-   **Frontend 0:** Complex baseband signal for selected antenna
+
+-   **Note:** The user may set the receive antenna to be TX/RX or RX2.
+    However, when using a OBX board in full-duplex mode, the receive
+    antenna will always be set to RX2, regardless of the settings.
+
+Transmit Gains: **PGA0**, Range: 0-31.5dB
+
+Receive Gains: **PGA0**, Range: 0-31.5dB
+
+Bandwidth: 160MHz, RX & TX
+
+Sensors:
+
+-   **lo_locked**: boolean for LO lock state
+-   **temp_top**: float for measured temperature on the top side of the daughterboard in degC
+-   **temp_bottom**: float for measured temperature on the bottom side of the daughterboard in degC
+
+LEDs:
+
+-   **LOCK**: Synthesizer Lock Detect
+-   **TX/RX TXD**: Transmitting on TX/RX antenna port
+-   **TX/RX RXD**: Receiving on TX/RX antenna port
+-   **RX2 RXD**: Receiving on RX2 antenna port
+
+Notes:
+- The OBX design heavily leveraged the UBX design, the notes section of the UBX series can also be applied to the OBX series.
+
 \subsection dboards_twinrx TwinRX
 
 Features:

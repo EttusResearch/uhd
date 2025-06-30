@@ -76,6 +76,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         and tx_name.find("CBX") == std::string::npos
         and tx_name.find("RFX") == std::string::npos
         and tx_name.find("UBX") == std::string::npos
+        and tx_name.find("OBX") == std::string::npos
         and tx_name.find("Rhodium") == std::string::npos) {
         throw std::runtime_error(
             std::string("self-calibration is not supported for this TX dboard :")
@@ -89,6 +90,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         and rx_name.find("CBX") == std::string::npos
         and rx_name.find("RFX") == std::string::npos
         and rx_name.find("UBX") == std::string::npos
+        and rx_name.find("OBX") == std::string::npos
         and rx_name.find("Rhodium") == std::string::npos) {
         throw std::runtime_error(
             std::string("self-calibration is not supported for this RX dboard :")

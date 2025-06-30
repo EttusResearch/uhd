@@ -162,13 +162,13 @@ metadata should have a time spec set: :
     size_t num_tx_samps = tx_streamer->send(buffs, samps_to_send, md);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-\subsection sync_phase_lo Align LOs in the front-end (SBX, UBX)
+\subsection sync_phase_lo Align LOs in the front-end (SBX, UBX, OBX)
 
 Using timed commands, multiple frontends can be tuned at a specific
 time. This timed-tuning ensures that the phase offsets between VCO/PLL
 chains will remain constant after each re-tune. See notes below:
 
--   Phase synchronization with the UBX is only supported on the X3x0 Series
+-   Phase synchronization with the UBX or OBX is only supported on the X3x0 Series
 -   Phase synchronization with the SBX works on both N2x0 and X3x0 Series
 -   There is a random phase offset between any two frontends
 -   This phase offset is different for different LO frequencies

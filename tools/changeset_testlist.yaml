@@ -75,6 +75,12 @@
     - uhd.build.all
     - hw.rf.x310.twinrx
     - hw.rf.x300.twinrx
+- re: host/lib/usrp/dboard/obx|host/lib/include/uhdlib/usrp/dboard/obx
+  add:
+    - uhd.build.all
+    - hw.rf.x3xx
+    - devtest.x3xx
+    - hw.streaming.x3xx
 - re: host/lib/usrp/dboard/.*CMakeLists.txt
   add:
     - uhd.build.all
@@ -232,6 +238,7 @@
     - fpga.usrp3.all
     - uhd.rfnoc_modtool.all
     - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
 
 # image builder changes
 - re: host/utils/rfnoc_image_builder.py
@@ -300,6 +307,9 @@
 - re: fpga/usrp3/top/x400/constraints/timing/shared_constants.sdc
   add:
     - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x300/dboards
+  add:
+    - fpga.usrp3.cpld.x3xx
 
 ###############################################################################
 # CI CHANGES
@@ -347,18 +357,21 @@
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
     - fpga.usrp3.testbenches
     - fpga.usrp3.regmaps
 - re: .ci/fpga/scripts
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
     - fpga.usrp3.testbenches
     - fpga.usrp3.regmaps
 - re: .ci/hwtools
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
     - fpga.usrp3.testbenches
     - fpga.usrp3.regmaps
 # Device-specific pipeline changes.

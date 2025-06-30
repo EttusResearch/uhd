@@ -511,6 +511,22 @@ stages:
           workingDirectory: './top/x400/dboards/zbx/cpld'
           artifactName: 'CPLD_ZBX'
 
+- stage: build_x3xx_cpld_stage
+  displayName: x3xx CPLD Build Stage
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.cpld.x3xx')
+    )
+  jobs:
+  - template: ../fpga/templates/job-cpld-build.yml
+    parameters:
+      publish_int_files: false
+      cpldBuilds:
+        - displayName: 'OBX CPLD Build'
+          workingDirectory: './top/x300/dboards/obx/cpld'
+          artifactName: 'CPLD_OBX'
+
 ### END: CPLD Build Stage
 
 ### START: Regmap stage
@@ -730,6 +746,34 @@ stages:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
       testDevices: 'n3xx'
+
+- stage: test_uhd_obx_stage
+  displayName: Test UHD X310 + OBX
+  dependsOn:
+  - analyze_changeset
+  - build_uhd_stage_linux
+  - build_gnuradio_stage_linux
+  - provide_x300_fpga_images_stage
+  - provide_x310_fpga_images_stage
+  condition: >
+    and(
+      succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x3xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x3xx')
+      )
+    )
+  jobs:
+  - template: job-uhd-devtest-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+  - template: job-uhd-rf-tests-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: test_streaming_beauty_stage
   displayName: Test UHD Streaming beauty
