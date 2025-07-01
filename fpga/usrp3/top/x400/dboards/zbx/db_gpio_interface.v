@@ -211,4 +211,12 @@ endmodule
 //    </enumeratedtype>
 //  </group>
 //</regmap>
+//<regmap name="DB_WINDOW_REGMAP" generatevhdl="false" generateverilog="false">
+//  <info>
+//    This is a dummy regmap to have a common name for DB specific window to refer to.
+//  </info>
+//  <group name="DB_WINDOW">
+//    <window name="DB_GPIO_WINDOW" offset="0x0" size="0x8000" targetregmap="GPIO_REGMAP"/>
+//  </group>
+//</regmap>
 //XmlParse xml_off

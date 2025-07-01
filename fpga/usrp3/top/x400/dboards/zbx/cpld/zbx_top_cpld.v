@@ -268,7 +268,7 @@ module zbx_top_cpld (
   `include "../../../../../lib/rfnoc/core/ctrlport.vh"
   `include "regmap/db_control_regmap_utils.vh"
   `include "regmap/lo_control_regmap_utils.vh"
-  `include "regmap/spi_regmap_utils.vh"
+  `include "regmap/zbx_spi_regmap_utils.vh"
   `include "regmap/gpio_regmap_utils.vh"
 
   // Bring pll_ref_clk enable signal to the same clock domain.
@@ -1354,7 +1354,7 @@ endmodule
 //      each register. The GPIO port can access a subset of all register, where
 //      the use case is mainly RF configuration to enable fast changes.
 //    </info>
-//    <port name="SPI" targetregmap="SPI_REGMAP">
+//    <port name="SPI" targetregmap="ZBX_SPI_REGMAP">
 //      <info>
 //        Controlport requests from this SPI interface are driven by the PL part
 //        of the RFSoC via the MB CPLD.
@@ -1367,7 +1367,7 @@ endmodule
 //    </port>
 //  </ports>
 // </top>
-//<regmap name="SPI_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
+//<regmap name="ZBX_SPI_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
 //  <group name="SPI_REGMAP_WINDOWS">
 //    <window name="BASE_WINDOW_SPI"       offset="0x0000" size="0x0020" targetregmap="BASIC_REGS_REGMAP"/>
 //    <window name="RECONFIG"              offset="0x0020" size="0x0020" targetregmap="RECONFIG_REGMAP"/>
@@ -1393,6 +1393,15 @@ endmodule
 //    </window>
 //    <window name="SWITCH_SETUP_REGS"    offset="0x1000" size="0x1000" targetregmap="SWITCH_SETUP_REGMAP"/>
 //    <window name="DSA_SETUP_REGS"       offset="0x2000" size="0x3000" targetregmap="DSA_SETUP_REGMAP"/>
+//  </group>
+//</regmap>
+//<regmap name="X4XX_DB_SPI_REGMAP" generatevhdl="false" generateverilog="false">
+//  <info>
+//    This is a dummy regmap to have a common name for the regmap behind the SPI interface of the
+//    DB CPLD.
+//  </info>
+//  <group name="DB_WINDOW">
+//    <window name="SPI_WINDOW" offset="0x0" size="0x8000" targetregmap="ZBX_SPI_REGMAP"/>
 //  </group>
 //</regmap>
 //XmlParse xml_off
