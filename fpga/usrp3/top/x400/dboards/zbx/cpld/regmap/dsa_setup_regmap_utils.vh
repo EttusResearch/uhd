@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -102,61 +102,85 @@
   localparam RX1_DSA_TABLE_COUNT = 256; // Number of elements in array
 
   // Return the offset of an element of register array TX0_DSA_ATR
-  function integer TX0_DSA_ATR (input integer i);
+  function automatic integer TX0_DSA_ATR (input integer i);
+  begin
     TX0_DSA_ATR = (i * 'h4) + 'h0;
+  end
   endfunction
 
   // Return the offset of an element of register array TX1_DSA_ATR
-  function integer TX1_DSA_ATR (input integer i);
+  function automatic integer TX1_DSA_ATR (input integer i);
+  begin
     TX1_DSA_ATR = (i * 'h4) + 'h400;
+  end
   endfunction
 
   // Return the offset of an element of register array RX0_DSA_ATR
-  function integer RX0_DSA_ATR (input integer i);
+  function automatic integer RX0_DSA_ATR (input integer i);
+  begin
     RX0_DSA_ATR = (i * 'h4) + 'h800;
+  end
   endfunction
 
   // Return the offset of an element of register array RX1_DSA_ATR
-  function integer RX1_DSA_ATR (input integer i);
+  function automatic integer RX1_DSA_ATR (input integer i);
+  begin
     RX1_DSA_ATR = (i * 'h4) + 'hC00;
+  end
   endfunction
 
   // Return the offset of an element of register array TX0_DSA_TABLE_SELECT
-  function integer TX0_DSA_TABLE_SELECT (input integer i);
+  function automatic integer TX0_DSA_TABLE_SELECT (input integer i);
+  begin
     TX0_DSA_TABLE_SELECT = (i * 'h4) + 'h1000;
+  end
   endfunction
 
   // Return the offset of an element of register array TX1_DSA_TABLE_SELECT
-  function integer TX1_DSA_TABLE_SELECT (input integer i);
+  function automatic integer TX1_DSA_TABLE_SELECT (input integer i);
+  begin
     TX1_DSA_TABLE_SELECT = (i * 'h4) + 'h1400;
+  end
   endfunction
 
   // Return the offset of an element of register array RX0_DSA_TABLE_SELECT
-  function integer RX0_DSA_TABLE_SELECT (input integer i);
+  function automatic integer RX0_DSA_TABLE_SELECT (input integer i);
+  begin
     RX0_DSA_TABLE_SELECT = (i * 'h4) + 'h1800;
+  end
   endfunction
 
   // Return the offset of an element of register array RX1_DSA_TABLE_SELECT
-  function integer RX1_DSA_TABLE_SELECT (input integer i);
+  function automatic integer RX1_DSA_TABLE_SELECT (input integer i);
+  begin
     RX1_DSA_TABLE_SELECT = (i * 'h4) + 'h1C00;
+  end
   endfunction
 
   // Return the offset of an element of register array TX0_DSA_TABLE
-  function integer TX0_DSA_TABLE (input integer i);
+  function automatic integer TX0_DSA_TABLE (input integer i);
+  begin
     TX0_DSA_TABLE = (i * 'h4) + 'h2000;
+  end
   endfunction
 
   // Return the offset of an element of register array TX1_DSA_TABLE
-  function integer TX1_DSA_TABLE (input integer i);
+  function automatic integer TX1_DSA_TABLE (input integer i);
+  begin
     TX1_DSA_TABLE = (i * 'h4) + 'h2400;
+  end
   endfunction
 
   // Return the offset of an element of register array RX0_DSA_TABLE
-  function integer RX0_DSA_TABLE (input integer i);
+  function automatic integer RX0_DSA_TABLE (input integer i);
+  begin
     RX0_DSA_TABLE = (i * 'h4) + 'h2800;
+  end
   endfunction
 
   // Return the offset of an element of register array RX1_DSA_TABLE
-  function integer RX1_DSA_TABLE (input integer i);
+  function automatic integer RX1_DSA_TABLE (input integer i);
+  begin
     RX1_DSA_TABLE = (i * 'h4) + 'h2C00;
+  end
   endfunction

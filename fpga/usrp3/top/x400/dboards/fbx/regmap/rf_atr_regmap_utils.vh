@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -90,21 +90,29 @@
   localparam RF3_ATR_DISABLED      = 3;  //RF_ATR_DISABLED:RF3_ATR_DISABLED
 
   // Return the offset of an element of register array RF0_ATR_STATE
-  function integer RF0_ATR_STATE (input integer i);
+  function automatic integer RF0_ATR_STATE (input integer i);
+  begin
     RF0_ATR_STATE = (i * 'h4) + 'h0;
+  end
   endfunction
 
   // Return the offset of an element of register array RF1_ATR_STATE
-  function integer RF1_ATR_STATE (input integer i);
+  function automatic integer RF1_ATR_STATE (input integer i);
+  begin
     RF1_ATR_STATE = (i * 'h4) + 'h400;
+  end
   endfunction
 
   // Return the offset of an element of register array RF2_ATR_STATE
-  function integer RF2_ATR_STATE (input integer i);
+  function automatic integer RF2_ATR_STATE (input integer i);
+  begin
     RF2_ATR_STATE = (i * 'h4) + 'h800;
+  end
   endfunction
 
   // Return the offset of an element of register array RF3_ATR_STATE
-  function integer RF3_ATR_STATE (input integer i);
+  function automatic integer RF3_ATR_STATE (input integer i);
+  begin
     RF3_ATR_STATE = (i * 'h4) + 'hC00;
+  end
   endfunction

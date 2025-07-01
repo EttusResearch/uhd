@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -18,7 +18,7 @@
 //===============================================================================
 
 //===============================================================================
-// Register Group CLOCK_EN_REGISTERS
+// Register Group CLK_EN_REGISTERS
 //===============================================================================
 
   // CLK_EN_CONTROL Register (from clock_en_control.v)

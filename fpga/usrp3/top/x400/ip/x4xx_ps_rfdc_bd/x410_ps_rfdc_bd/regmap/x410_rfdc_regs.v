@@ -63,14 +63,26 @@
 //        {/ul}
 //      </info>
 //    </port>
+//    <port name="RFNoC Radio 0" targetregmap="RFNOC_RADIO_REGMAP">
+//      <info>
+//        The RFNoC radio0 module provides a control interface into the FPGA.
+//      </info>
+//    </port>
+//    <port name="RFNoC Radio 1" targetregmap="RFNOC_RADIO_REGMAP">
+//      <info>
+//        The RFNoC radio1 module provides a control interface into the FPGA.
+//      </info>
+//    </port>
 //  </ports>
 //  <regmapcfg readablestrobes="false">
 //    <map name="AXI_HPM0_REGMAP"/>
 //    <map name="MB_CPLD_PS_REGMAP"/>
+//    <map name="PL_DMA_MASTER_REGMAP"/>
+//    <map name="RFNOC_RADIO_REGMAP"/>
 //  </regmapcfg>
 //</top>
 //
-//<regmap name="RFDC_REGS_REGMAP" readablestrobes="false" generatevhdl="true" generateverilog="true" ettusguidelines="true">
+//<regmap name="RFDC_REGS_REGMAP" readablestrobes="false" generatevhdl="true" generateverilog="true" ettusguidelines="true" skipxreg="true">
 //  <group name="RFDC_REGS">
 //    <info>
 //      These are the registers located within the RFDC block design

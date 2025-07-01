@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -111,21 +111,29 @@
   localparam RX1_PATH_CONTROL_COUNT = 256; // Number of elements in array
 
   // Return the offset of an element of register array TX0_PATH_CONTROL
-  function integer TX0_PATH_CONTROL (input integer i);
+  function automatic integer TX0_PATH_CONTROL (input integer i);
+  begin
     TX0_PATH_CONTROL = (i * 'h4) + 'h0;
+  end
   endfunction
 
   // Return the offset of an element of register array TX1_PATH_CONTROL
-  function integer TX1_PATH_CONTROL (input integer i);
+  function automatic integer TX1_PATH_CONTROL (input integer i);
+  begin
     TX1_PATH_CONTROL = (i * 'h4) + 'h400;
+  end
   endfunction
 
   // Return the offset of an element of register array RX0_PATH_CONTROL
-  function integer RX0_PATH_CONTROL (input integer i);
+  function automatic integer RX0_PATH_CONTROL (input integer i);
+  begin
     RX0_PATH_CONTROL = (i * 'h4) + 'h800;
+  end
   endfunction
 
   // Return the offset of an element of register array RX1_PATH_CONTROL
-  function integer RX1_PATH_CONTROL (input integer i);
+  function automatic integer RX1_PATH_CONTROL (input integer i);
+  begin
     RX1_PATH_CONTROL = (i * 'h4) + 'hC00;
+  end
   endfunction

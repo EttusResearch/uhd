@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------
 --
--- Copyright 2023 Ettus Research, A National Instruments Brand
+-- Copyright 2025 Ettus Research, A National Instruments Brand
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
 -- Module: PkgRFDC_REGS_REGMAP.vhd
@@ -34,117 +34,12 @@ package PkgRFDC_REGS_REGMAP is
   -- THRESHOLD_STATUS      : 0x15000 (x440_rfdc_regs.v)
   -- RF_PLL_CONTROL_REG    : 0x16000 (x440_rfdc_regs.v)
   -- RF_PLL_STATUS_REG     : 0x16008 (x440_rfdc_regs.v)
-  -- ADC_TILEMAP_REG       : 0x17000 (x440_rfdc_regs.v)
-  -- DAC_TILEMAP_REG       : 0x17008 (x440_rfdc_regs.v)
+  -- RFDC_INFO_MEM         : 0x17000 (x440_rfdc_regs.v)
   -- RFDC_INFO_REG         : 0x18000 (x440_rfdc_regs.v)
 
 --===============================================================================
 -- RegTypes
 --===============================================================================
-
-  -- ADC_TILEMAP_REGTYPE Type (from common_regs.v)
-  constant kADC_TILEMAP_REGTYPESize: integer := 32;
-  constant kADC_TILEMAP_REGTYPEMask : std_logic_vector(31 downto 0) := X"ffffffff";
-  constant kADC_TILEMAP_DB0_CHAN0_TILESize       : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_TILE
-  constant kADC_TILEMAP_DB0_CHAN0_TILEMsb        : integer := 1;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_TILE
-  constant kADC_TILEMAP_DB0_CHAN0_TILE           : integer := 0;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_TILE
-  constant kADC_TILEMAP_DB0_CHAN0_BLOCKSize       : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN0_BLOCKMsb        : integer := 3;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN0_BLOCK           : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN1_TILESize       : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_TILE
-  constant kADC_TILEMAP_DB0_CHAN1_TILEMsb        : integer := 5;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_TILE
-  constant kADC_TILEMAP_DB0_CHAN1_TILE           : integer := 4;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_TILE
-  constant kADC_TILEMAP_DB0_CHAN1_BLOCKSize       : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN1_BLOCKMsb        : integer := 7;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN1_BLOCK           : integer := 6;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN2_TILESize       : integer := 2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_TILE
-  constant kADC_TILEMAP_DB0_CHAN2_TILEMsb        : integer := 9;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_TILE
-  constant kADC_TILEMAP_DB0_CHAN2_TILE           : integer := 8;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_TILE
-  constant kADC_TILEMAP_DB0_CHAN2_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN2_BLOCKMsb        : integer := 11;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN2_BLOCK           : integer := 10;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN3_TILESize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_TILE
-  constant kADC_TILEMAP_DB0_CHAN3_TILEMsb        : integer := 13;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_TILE
-  constant kADC_TILEMAP_DB0_CHAN3_TILE           : integer := 12;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_TILE
-  constant kADC_TILEMAP_DB0_CHAN3_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN3_BLOCKMsb        : integer := 15;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kADC_TILEMAP_DB0_CHAN3_BLOCK           : integer := 14;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN0_TILESize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_TILE
-  constant kADC_TILEMAP_DB1_CHAN0_TILEMsb        : integer := 17;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_TILE
-  constant kADC_TILEMAP_DB1_CHAN0_TILE           : integer := 16;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_TILE
-  constant kADC_TILEMAP_DB1_CHAN0_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN0_BLOCKMsb        : integer := 19;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN0_BLOCK           : integer := 18;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN1_TILESize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_TILE
-  constant kADC_TILEMAP_DB1_CHAN1_TILEMsb        : integer := 21;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_TILE
-  constant kADC_TILEMAP_DB1_CHAN1_TILE           : integer := 20;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_TILE
-  constant kADC_TILEMAP_DB1_CHAN1_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN1_BLOCKMsb        : integer := 23;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN1_BLOCK           : integer := 22;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN2_TILESize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_TILE
-  constant kADC_TILEMAP_DB1_CHAN2_TILEMsb        : integer := 25;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_TILE
-  constant kADC_TILEMAP_DB1_CHAN2_TILE           : integer := 24;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_TILE
-  constant kADC_TILEMAP_DB1_CHAN2_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN2_BLOCKMsb        : integer := 27;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN2_BLOCK           : integer := 26;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN3_TILESize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_TILE
-  constant kADC_TILEMAP_DB1_CHAN3_TILEMsb        : integer := 29;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_TILE
-  constant kADC_TILEMAP_DB1_CHAN3_TILE           : integer := 28;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_TILE
-  constant kADC_TILEMAP_DB1_CHAN3_BLOCKSize       : integer :=  2;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN3_BLOCKMsb        : integer := 31;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_BLOCK
-  constant kADC_TILEMAP_DB1_CHAN3_BLOCK           : integer := 30;  --ADC_TILEMAP_REGTYPE:ADC_TILEMAP_DB1_CHAN3_BLOCK
-
-  -- DAC_TILEMAP_REGTYPE Type (from common_regs.v)
-  constant kDAC_TILEMAP_REGTYPESize: integer := 32;
-  constant kDAC_TILEMAP_REGTYPEMask : std_logic_vector(31 downto 0) := X"ffffffff";
-  constant kDAC_TILEMAP_DB0_CHAN0_TILESize       : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_TILE
-  constant kDAC_TILEMAP_DB0_CHAN0_TILEMsb        : integer := 1;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_TILE
-  constant kDAC_TILEMAP_DB0_CHAN0_TILE           : integer := 0;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_TILE
-  constant kDAC_TILEMAP_DB0_CHAN0_BLOCKSize       : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN0_BLOCKMsb        : integer := 3;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN0_BLOCK           : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN1_TILESize       : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_TILE
-  constant kDAC_TILEMAP_DB0_CHAN1_TILEMsb        : integer := 5;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_TILE
-  constant kDAC_TILEMAP_DB0_CHAN1_TILE           : integer := 4;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_TILE
-  constant kDAC_TILEMAP_DB0_CHAN1_BLOCKSize       : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN1_BLOCKMsb        : integer := 7;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN1_BLOCK           : integer := 6;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN2_TILESize       : integer := 2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_TILE
-  constant kDAC_TILEMAP_DB0_CHAN2_TILEMsb        : integer := 9;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_TILE
-  constant kDAC_TILEMAP_DB0_CHAN2_TILE           : integer := 8;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_TILE
-  constant kDAC_TILEMAP_DB0_CHAN2_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN2_BLOCKMsb        : integer := 11;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN2_BLOCK           : integer := 10;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN3_TILESize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_TILE
-  constant kDAC_TILEMAP_DB0_CHAN3_TILEMsb        : integer := 13;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_TILE
-  constant kDAC_TILEMAP_DB0_CHAN3_TILE           : integer := 12;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_TILE
-  constant kDAC_TILEMAP_DB0_CHAN3_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN3_BLOCKMsb        : integer := 15;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kDAC_TILEMAP_DB0_CHAN3_BLOCK           : integer := 14;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB0_CHAN3_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN0_TILESize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_TILE
-  constant kDAC_TILEMAP_DB1_CHAN0_TILEMsb        : integer := 17;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_TILE
-  constant kDAC_TILEMAP_DB1_CHAN0_TILE           : integer := 16;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_TILE
-  constant kDAC_TILEMAP_DB1_CHAN0_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN0_BLOCKMsb        : integer := 19;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN0_BLOCK           : integer := 18;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN0_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN1_TILESize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_TILE
-  constant kDAC_TILEMAP_DB1_CHAN1_TILEMsb        : integer := 21;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_TILE
-  constant kDAC_TILEMAP_DB1_CHAN1_TILE           : integer := 20;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_TILE
-  constant kDAC_TILEMAP_DB1_CHAN1_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN1_BLOCKMsb        : integer := 23;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN1_BLOCK           : integer := 22;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN1_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN2_TILESize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_TILE
-  constant kDAC_TILEMAP_DB1_CHAN2_TILEMsb        : integer := 25;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_TILE
-  constant kDAC_TILEMAP_DB1_CHAN2_TILE           : integer := 24;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_TILE
-  constant kDAC_TILEMAP_DB1_CHAN2_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN2_BLOCKMsb        : integer := 27;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN2_BLOCK           : integer := 26;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN2_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN3_TILESize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_TILE
-  constant kDAC_TILEMAP_DB1_CHAN3_TILEMsb        : integer := 29;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_TILE
-  constant kDAC_TILEMAP_DB1_CHAN3_TILE           : integer := 28;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_TILE
-  constant kDAC_TILEMAP_DB1_CHAN3_BLOCKSize       : integer :=  2;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN3_BLOCKMsb        : integer := 31;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_BLOCK
-  constant kDAC_TILEMAP_DB1_CHAN3_BLOCK           : integer := 30;  --DAC_TILEMAP_REGTYPE:DAC_TILEMAP_DB1_CHAN3_BLOCK
 
   -- FABRIC_DSP_REGTYPE Type (from common_regs.v)
   constant kFABRIC_DSP_REGTYPESize: integer := 32;
@@ -225,7 +120,7 @@ package PkgRFDC_REGS_REGMAP is
 
   -- RF_RESET_CONTROL_REGTYPE Type (from common_regs.v)
   constant kRF_RESET_CONTROL_REGTYPESize: integer := 32;
-  constant kRF_RESET_CONTROL_REGTYPEMask : std_logic_vector(31 downto 0) := X"00000331";
+  constant kRF_RESET_CONTROL_REGTYPEMask : std_logic_vector(31 downto 0) := X"00000771";
   constant kFSM_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
   constant kFSM_RESETMsb        : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
   constant kFSM_RESET           : integer := 0;  --RF_RESET_CONTROL_REGTYPE:FSM_RESET
@@ -235,12 +130,18 @@ package PkgRFDC_REGS_REGMAP is
   constant kADC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
   constant kADC_ENABLEMsb        : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
   constant kADC_ENABLE           : integer := 5;  --RF_RESET_CONTROL_REGTYPE:ADC_ENABLE
+  constant kADC_GEARBOX_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
+  constant kADC_GEARBOX_RESETMsb        : integer := 6;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
+  constant kADC_GEARBOX_RESET           : integer := 6;  --RF_RESET_CONTROL_REGTYPE:ADC_GEARBOX_RESET
   constant kDAC_RESETSize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
   constant kDAC_RESETMsb        : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
   constant kDAC_RESET           : integer := 8;  --RF_RESET_CONTROL_REGTYPE:DAC_RESET
   constant kDAC_ENABLESize       : integer := 1;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
   constant kDAC_ENABLEMsb        : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
   constant kDAC_ENABLE           : integer := 9;  --RF_RESET_CONTROL_REGTYPE:DAC_ENABLE
+  constant kDAC_GEARBOX_RESETSize       : integer :=  1;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
+  constant kDAC_GEARBOX_RESETMsb        : integer := 10;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
+  constant kDAC_GEARBOX_RESET           : integer := 10;  --RF_RESET_CONTROL_REGTYPE:DAC_GEARBOX_RESET
 
   -- RF_RESET_STATUS_REGTYPE Type (from common_regs.v)
   constant kRF_RESET_STATUS_REGTYPESize: integer := 32;
@@ -254,6 +155,31 @@ package PkgRFDC_REGS_REGMAP is
   constant kDAC_SEQ_DONESize       : integer :=  1;  --RF_RESET_STATUS_REGTYPE:DAC_SEQ_DONE
   constant kDAC_SEQ_DONEMsb        : integer := 11;  --RF_RESET_STATUS_REGTYPE:DAC_SEQ_DONE
   constant kDAC_SEQ_DONE           : integer := 11;  --RF_RESET_STATUS_REGTYPE:DAC_SEQ_DONE
+
+  -- RFDC_INFO_MEMTYPE Type (from rfdc_info_pkg.sv)
+  constant kRFDC_INFO_MEMTYPESize: integer := 32;
+  constant kRFDC_INFO_MEMTYPEMask : std_logic_vector(31 downto 0) := X"00000fff";
+  constant kBLOCK_MODESize       : integer := 2;  --RFDC_INFO_MEMTYPE:BLOCK_MODE
+  constant kBLOCK_MODEMsb        : integer := 1;  --RFDC_INFO_MEMTYPE:BLOCK_MODE
+  constant kBLOCK_MODE           : integer := 0;  --RFDC_INFO_MEMTYPE:BLOCK_MODE
+  constant kBLOCKSize       : integer := 2;  --RFDC_INFO_MEMTYPE:BLOCK
+  constant kBLOCKMsb        : integer := 3;  --RFDC_INFO_MEMTYPE:BLOCK
+  constant kBLOCK           : integer := 2;  --RFDC_INFO_MEMTYPE:BLOCK
+  constant kTILESize       : integer := 2;  --RFDC_INFO_MEMTYPE:TILE
+  constant kTILEMsb        : integer := 5;  --RFDC_INFO_MEMTYPE:TILE
+  constant kTILE           : integer := 4;  --RFDC_INFO_MEMTYPE:TILE
+  constant kRESERVED2Size       : integer := 2;  --RFDC_INFO_MEMTYPE:RESERVED2
+  constant kRESERVED2Msb        : integer := 7;  --RFDC_INFO_MEMTYPE:RESERVED2
+  constant kRESERVED2           : integer := 6;  --RFDC_INFO_MEMTYPE:RESERVED2
+  constant kCHANNELSize       : integer := 2;  --RFDC_INFO_MEMTYPE:CHANNEL
+  constant kCHANNELMsb        : integer := 9;  --RFDC_INFO_MEMTYPE:CHANNEL
+  constant kCHANNEL           : integer := 8;  --RFDC_INFO_MEMTYPE:CHANNEL
+  constant kDBSize       : integer :=  1;  --RFDC_INFO_MEMTYPE:DB
+  constant kDBMsb        : integer := 10;  --RFDC_INFO_MEMTYPE:DB
+  constant kDB           : integer := 10;  --RFDC_INFO_MEMTYPE:DB
+  constant kIS_ADCSize       : integer :=  1;  --RFDC_INFO_MEMTYPE:IS_ADC
+  constant kIS_ADCMsb        : integer := 11;  --RFDC_INFO_MEMTYPE:IS_ADC
+  constant kIS_ADC           : integer := 11;  --RFDC_INFO_MEMTYPE:IS_ADC
 
   -- RFDC_INFO_REGTYPE Type (from common_regs.v)
   constant kRFDC_INFO_REGTYPESize: integer := 32;
@@ -289,10 +215,14 @@ package PkgRFDC_REGS_REGMAP is
   constant kFABRIC_DSP_BW_400M : integer := 400;  -- FABRIC_DSP_BW_ENUM:FABRIC_DSP_BW_400M
   constant kFABRIC_DSP_BW_FULL : integer := 1000;  -- FABRIC_DSP_BW_ENUM:FABRIC_DSP_BW_FULL
 
+  -- Enumerated type RFDC_BLOCK_INFO_ENUM
+  constant kRFDC_BLOCK_INFO_ENUMSize : integer := 2;
+  constant kENABLED  : integer := 0;  -- RFDC_BLOCK_INFO_ENUM:ENABLED
+  constant kDISABLED : integer := 3;  -- RFDC_BLOCK_INFO_ENUM:DISABLED
+
   -- MMCM Window (from x440_rfdc_regs.v)
   constant kMMCM : integer := 16#0#; -- Window Offset
   constant kMMCMSize: integer := 16#10000#;  -- size in bytes
-  --function kMMCMRec return XReg2_t; -- Window Record function commented out due to programmable attributes
 
   -- INVERT_DB0_IQ_REG Register (from x440_rfdc_regs.v)
   constant kINVERT_DB0_IQ_REG : integer := 16#10000#; -- Register Offset
@@ -322,7 +252,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kINVERT_DB0_DAC3_IQSize       : integer :=  1;  --INVERT_DB0_IQ_REG:INVERT_DB0_DAC3_IQ
   constant kINVERT_DB0_DAC3_IQMsb        : integer := 11;  --INVERT_DB0_IQ_REG:INVERT_DB0_DAC3_IQ
   constant kINVERT_DB0_DAC3_IQ           : integer := 11;  --INVERT_DB0_IQ_REG:INVERT_DB0_DAC3_IQ
-  --function kINVERT_DB0_IQ_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- INVERT_DB1_IQ_REG Register (from x440_rfdc_regs.v)
   constant kINVERT_DB1_IQ_REG : integer := 16#10800#; -- Register Offset
@@ -352,7 +281,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kINVERT_DB1_DAC3_IQSize       : integer :=  1;  --INVERT_DB1_IQ_REG:INVERT_DB1_DAC3_IQ
   constant kINVERT_DB1_DAC3_IQMsb        : integer := 11;  --INVERT_DB1_IQ_REG:INVERT_DB1_DAC3_IQ
   constant kINVERT_DB1_DAC3_IQ           : integer := 11;  --INVERT_DB1_IQ_REG:INVERT_DB1_DAC3_IQ
-  --function kINVERT_DB1_IQ_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- MMCM_RESET_REG Register (from x440_rfdc_regs.v)
   constant kMMCM_RESET_REG : integer := 16#11000#; -- Register Offset
@@ -361,37 +289,30 @@ package PkgRFDC_REGS_REGMAP is
   constant kRESET_MMCMSize       : integer := 1;  --MMCM_RESET_REG:RESET_MMCM
   constant kRESET_MMCMMsb        : integer := 0;  --MMCM_RESET_REG:RESET_MMCM
   constant kRESET_MMCM           : integer := 0;  --MMCM_RESET_REG:RESET_MMCM
-  --function kMMCM_RESET_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF0_RESET_CONTROL_REG Register (from x440_rfdc_regs.v)
   constant kRF0_RESET_CONTROL_REG : integer := 16#12000#; -- Register Offset
   constant kRF0_RESET_CONTROL_REGSize: integer := 32;  -- register width in bits
-  --function kRF0_RESET_CONTROL_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF0_RESET_STATUS_REG Register (from x440_rfdc_regs.v)
   constant kRF0_RESET_STATUS_REG : integer := 16#12008#; -- Register Offset
   constant kRF0_RESET_STATUS_REGSize: integer := 32;  -- register width in bits
-  --function kRF0_RESET_STATUS_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF1_RESET_CONTROL_REG Register (from x440_rfdc_regs.v)
   constant kRF1_RESET_CONTROL_REG : integer := 16#12800#; -- Register Offset
   constant kRF1_RESET_CONTROL_REGSize: integer := 32;  -- register width in bits
-  --function kRF1_RESET_CONTROL_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF1_RESET_STATUS_REG Register (from x440_rfdc_regs.v)
   constant kRF1_RESET_STATUS_REG : integer := 16#12808#; -- Register Offset
   constant kRF1_RESET_STATUS_REGSize: integer := 32;  -- register width in bits
-  --function kRF1_RESET_STATUS_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF_AXI_STATUS_REG Register (from x440_rfdc_regs.v)
   constant kRF_AXI_STATUS_REG : integer := 16#13000#; -- Register Offset
   constant kRF_AXI_STATUS_REGSize: integer := 32;  -- register width in bits
-  --function kRF_AXI_STATUS_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- FABRIC_DSP_REG Register (from x440_rfdc_regs.v)
   constant kFABRIC_DSP_REG : integer := 16#13008#; -- Register Offset
   constant kFABRIC_DSP_REGSize: integer := 32;  -- register width in bits
-  --function kFABRIC_DSP_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- CALIBRATION_DATA Register (from x440_rfdc_regs.v)
   constant kCALIBRATION_DATA : integer := 16#14000#; -- Register Offset
@@ -403,7 +324,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kQ_DATASize       : integer := 16;  --CALIBRATION_DATA:Q_DATA
   constant kQ_DATAMsb        : integer := 31;  --CALIBRATION_DATA:Q_DATA
   constant kQ_DATA           : integer := 16;  --CALIBRATION_DATA:Q_DATA
-  --function kCALIBRATION_DATARec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- CALIBRATION_ENABLE Register (from x440_rfdc_regs.v)
   constant kCALIBRATION_ENABLE : integer := 16#14008#; -- Register Offset
@@ -433,7 +353,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kENABLE_CALIBRATION_DATA_7Size       : integer := 1;  --CALIBRATION_ENABLE:ENABLE_CALIBRATION_DATA_7
   constant kENABLE_CALIBRATION_DATA_7Msb        : integer := 7;  --CALIBRATION_ENABLE:ENABLE_CALIBRATION_DATA_7
   constant kENABLE_CALIBRATION_DATA_7           : integer := 7;  --CALIBRATION_ENABLE:ENABLE_CALIBRATION_DATA_7
-  --function kCALIBRATION_ENABLERec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- THRESHOLD_STATUS Register (from x440_rfdc_regs.v)
   constant kTHRESHOLD_STATUS : integer := 16#15000#; -- Register Offset
@@ -487,7 +406,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kADC3_23_THRESHOLD2Size       : integer :=  1;  --THRESHOLD_STATUS:ADC3_23_THRESHOLD2
   constant kADC3_23_THRESHOLD2Msb        : integer := 15;  --THRESHOLD_STATUS:ADC3_23_THRESHOLD2
   constant kADC3_23_THRESHOLD2           : integer := 15;  --THRESHOLD_STATUS:ADC3_23_THRESHOLD2
-  --function kTHRESHOLD_STATUSRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF_PLL_CONTROL_REG Register (from x440_rfdc_regs.v)
   constant kRF_PLL_CONTROL_REG : integer := 16#16000#; -- Register Offset
@@ -508,7 +426,6 @@ package PkgRFDC_REGS_REGMAP is
   constant kENABLE_RF1_CLK_2XSize       : integer :=  1;  --RF_PLL_CONTROL_REG:ENABLE_RF1_CLK_2X
   constant kENABLE_RF1_CLK_2XMsb        : integer := 24;  --RF_PLL_CONTROL_REG:ENABLE_RF1_CLK_2X
   constant kENABLE_RF1_CLK_2X           : integer := 24;  --RF_PLL_CONTROL_REG:ENABLE_RF1_CLK_2X
-  --function kRF_PLL_CONTROL_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
   -- RF_PLL_STATUS_REG Register (from x440_rfdc_regs.v)
   constant kRF_PLL_STATUS_REG : integer := 16#16008#; -- Register Offset
@@ -520,581 +437,44 @@ package PkgRFDC_REGS_REGMAP is
   constant kDATA_CLK_PLL_LOCKEDSize       : integer :=  1;  --RF_PLL_STATUS_REG:DATA_CLK_PLL_LOCKED
   constant kDATA_CLK_PLL_LOCKEDMsb        : integer := 20;  --RF_PLL_STATUS_REG:DATA_CLK_PLL_LOCKED
   constant kDATA_CLK_PLL_LOCKED           : integer := 20;  --RF_PLL_STATUS_REG:DATA_CLK_PLL_LOCKED
-  --function kRF_PLL_STATUS_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
-  -- ADC_TILEMAP_REG Register (from x440_rfdc_regs.v)
-  constant kADC_TILEMAP_REG : integer := 16#17000#; -- Register Offset
-  constant kADC_TILEMAP_REGSize: integer := 32;  -- register width in bits
-  --function kADC_TILEMAP_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
-
-  -- DAC_TILEMAP_REG Register (from x440_rfdc_regs.v)
-  constant kDAC_TILEMAP_REG : integer := 16#17008#; -- Register Offset
-  constant kDAC_TILEMAP_REGSize: integer := 32;  -- register width in bits
-  --function kDAC_TILEMAP_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
+  -- RFDC_INFO_MEM Register (from x440_rfdc_regs.v)
+  function kRFDC_INFO_MEM (i:integer) return integer; -- Register Offset function
+  constant kRFDC_INFO_MEMCount : integer := 16; -- Number of elements in array
+  constant kRFDC_INFO_MEMSize: integer := 32; -- Register bit width (not array size)
 
   -- RFDC_INFO_REG Register (from x440_rfdc_regs.v)
   constant kRFDC_INFO_REG : integer := 16#18000#; -- Register Offset
   constant kRFDC_INFO_REGSize: integer := 32;  -- register width in bits
-  --function kRFDC_INFO_REGRec return XReg2_t; -- Register Record function commented out due to programmable attributes
 
 end package;
 
 package body PkgRFDC_REGS_REGMAP is
 
-  -- function kMMCMRec not implemented because MMCM has programmable attributes
-  ---- Return the record of window kMMCM
-  --function kMMCMRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"0");
-  --  Rec.size := kMMCMSize;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00");
-  --  Rec.rmask := XRegResize(X"00");
-  --  Rec.strobemask := XRegResize(X"00");
-  --  Rec.clearablemask := XRegResize(X"00");
-  --  Rec.iswin := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("MMCM");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kMMCMRec;
 
-  -- function kINVERT_DB0_IQ_REGRec not implemented because INVERT_DB0_IQ_REG has programmable attributes
-  ---- Return the record of register kINVERT_DB0_IQ_REG
-  --function kINVERT_DB0_IQ_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"10000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00000f0f");
-  --  Rec.rmask := XRegResize(X"00000f0f");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("INVERT_DB0_IQ_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kINVERT_DB0_IQ_REGRec;
 
-  -- function kINVERT_DB1_IQ_REGRec not implemented because INVERT_DB1_IQ_REG has programmable attributes
-  ---- Return the record of register kINVERT_DB1_IQ_REG
-  --function kINVERT_DB1_IQ_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"10800");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00000f0f");
-  --  Rec.rmask := XRegResize(X"00000f0f");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("INVERT_DB1_IQ_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kINVERT_DB1_IQ_REGRec;
 
-  -- function kMMCM_RESET_REGRec not implemented because MMCM_RESET_REG has programmable attributes
-  ---- Return the record of register kMMCM_RESET_REG
-  --function kMMCM_RESET_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"11000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00000001");
-  --  Rec.rmask := XRegResize(X"00000001");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("MMCM_RESET_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kMMCM_RESET_REGRec;
 
-  -- function kRF0_RESET_CONTROL_REGRec not implemented because RF0_RESET_CONTROL_REG has programmable attributes
-  ---- Return the record of register kRF0_RESET_CONTROL_REG
-  --function kRF0_RESET_CONTROL_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"12000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00000331");
-  --  Rec.rmask := XRegResize(X"00000331");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF0_RESET_CONTROL_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF0_RESET_CONTROL_REGRec;
 
-  -- function kRF0_RESET_STATUS_REGRec not implemented because RF0_RESET_STATUS_REG has programmable attributes
-  ---- Return the record of register kRF0_RESET_STATUS_REG
-  --function kRF0_RESET_STATUS_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"12008");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"00000888");
-  --  Rec.rmask := XRegResize(X"00000888");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF0_RESET_STATUS_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF0_RESET_STATUS_REGRec;
 
-  -- function kRF1_RESET_CONTROL_REGRec not implemented because RF1_RESET_CONTROL_REG has programmable attributes
-  ---- Return the record of register kRF1_RESET_CONTROL_REG
-  --function kRF1_RESET_CONTROL_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"12800");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"00000331");
-  --  Rec.rmask := XRegResize(X"00000331");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF1_RESET_CONTROL_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF1_RESET_CONTROL_REGRec;
 
-  -- function kRF1_RESET_STATUS_REGRec not implemented because RF1_RESET_STATUS_REG has programmable attributes
-  ---- Return the record of register kRF1_RESET_STATUS_REG
-  --function kRF1_RESET_STATUS_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"12808");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"00000888");
-  --  Rec.rmask := XRegResize(X"00000888");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF1_RESET_STATUS_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF1_RESET_STATUS_REGRec;
 
-  -- function kRF_AXI_STATUS_REGRec not implemented because RF_AXI_STATUS_REG has programmable attributes
-  ---- Return the record of register kRF_AXI_STATUS_REG
-  --function kRF_AXI_STATUS_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"13000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"ffffffff");
-  --  Rec.rmask := XRegResize(X"ffffffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kRFDC_DAC_TREADY) := kRFDC_DAC_TREADYMsb;
-  --  Rec.msblookupw(kRFDC_DAC_TVALID) := kRFDC_DAC_TVALIDMsb;
-  --  Rec.msblookupw(kRFDC_ADC_Q_TREADY) := kRFDC_ADC_Q_TREADYMsb;
-  --  Rec.msblookupw(kRFDC_ADC_I_TREADY) := kRFDC_ADC_I_TREADYMsb;
-  --  Rec.msblookupw(kRFDC_ADC_Q_TVALID) := kRFDC_ADC_Q_TVALIDMsb;
-  --  Rec.msblookupw(kRFDC_ADC_I_TVALID) := kRFDC_ADC_I_TVALIDMsb;
-  --  Rec.msblookupw(kUSER_ADC_TVALID) := kUSER_ADC_TVALIDMsb;
-  --  Rec.msblookupw(kUSER_ADC_TREADY) := kUSER_ADC_TREADYMsb;
-  --  Rec.msblookupw(kRFDC_DAC_TREADY_DB1) := kRFDC_DAC_TREADY_DB1Msb;
-  --  Rec.msblookupw(kRFDC_DAC_TVALID_DB1) := kRFDC_DAC_TVALID_DB1Msb;
-  --  Rec.msblookupw(kRFDC_ADC_Q_TREADY_DB1) := kRFDC_ADC_Q_TREADY_DB1Msb;
-  --  Rec.msblookupw(kRFDC_ADC_I_TREADY_DB1) := kRFDC_ADC_I_TREADY_DB1Msb;
-  --  Rec.msblookupw(kRFDC_ADC_Q_TVALID_DB1) := kRFDC_ADC_Q_TVALID_DB1Msb;
-  --  Rec.msblookupw(kRFDC_ADC_I_TVALID_DB1) := kRFDC_ADC_I_TVALID_DB1Msb;
-  --  Rec.msblookupw(kUSER_ADC_TVALID_DB1) := kUSER_ADC_TVALID_DB1Msb;
-  --  Rec.msblookupw(kUSER_ADC_TREADY_DB1) := kUSER_ADC_TREADY_DB1Msb;
-  --  Rec.msblookupr(kRFDC_DAC_TREADY) := kRFDC_DAC_TREADYMsb;
-  --  Rec.msblookupr(kRFDC_DAC_TVALID) := kRFDC_DAC_TVALIDMsb;
-  --  Rec.msblookupr(kRFDC_ADC_Q_TREADY) := kRFDC_ADC_Q_TREADYMsb;
-  --  Rec.msblookupr(kRFDC_ADC_I_TREADY) := kRFDC_ADC_I_TREADYMsb;
-  --  Rec.msblookupr(kRFDC_ADC_Q_TVALID) := kRFDC_ADC_Q_TVALIDMsb;
-  --  Rec.msblookupr(kRFDC_ADC_I_TVALID) := kRFDC_ADC_I_TVALIDMsb;
-  --  Rec.msblookupr(kUSER_ADC_TVALID) := kUSER_ADC_TVALIDMsb;
-  --  Rec.msblookupr(kUSER_ADC_TREADY) := kUSER_ADC_TREADYMsb;
-  --  Rec.msblookupr(kRFDC_DAC_TREADY_DB1) := kRFDC_DAC_TREADY_DB1Msb;
-  --  Rec.msblookupr(kRFDC_DAC_TVALID_DB1) := kRFDC_DAC_TVALID_DB1Msb;
-  --  Rec.msblookupr(kRFDC_ADC_Q_TREADY_DB1) := kRFDC_ADC_Q_TREADY_DB1Msb;
-  --  Rec.msblookupr(kRFDC_ADC_I_TREADY_DB1) := kRFDC_ADC_I_TREADY_DB1Msb;
-  --  Rec.msblookupr(kRFDC_ADC_Q_TVALID_DB1) := kRFDC_ADC_Q_TVALID_DB1Msb;
-  --  Rec.msblookupr(kRFDC_ADC_I_TVALID_DB1) := kRFDC_ADC_I_TVALID_DB1Msb;
-  --  Rec.msblookupr(kUSER_ADC_TVALID_DB1) := kUSER_ADC_TVALID_DB1Msb;
-  --  Rec.msblookupr(kUSER_ADC_TREADY_DB1) := kUSER_ADC_TREADY_DB1Msb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF_AXI_STATUS_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF_AXI_STATUS_REGRec;
 
-  -- function kFABRIC_DSP_REGRec not implemented because FABRIC_DSP_REG has programmable attributes
-  ---- Return the record of register kFABRIC_DSP_REG
-  --function kFABRIC_DSP_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"13008");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"ffffffff");
-  --  Rec.rmask := XRegResize(X"ffffffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  Rec.initialvalue := XRegResize(X"00000000");
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kFABRIC_DSP_RX_CNT) := kFABRIC_DSP_RX_CNTMsb;
-  --  Rec.msblookupw(kFABRIC_DSP_TX_CNT) := kFABRIC_DSP_TX_CNTMsb;
-  --  Rec.msblookupw(kFABRIC_DSP_RESERVED) := kFABRIC_DSP_RESERVEDMsb;
-  --  Rec.msblookupw(kFABRIC_DSP_RX_CNT_DB1) := kFABRIC_DSP_RX_CNT_DB1Msb;
-  --  Rec.msblookupw(kFABRIC_DSP_TX_CNT_DB1) := kFABRIC_DSP_TX_CNT_DB1Msb;
-  --  Rec.msblookupw(kFABRIC_DSP_RESERVED_DB1) := kFABRIC_DSP_RESERVED_DB1Msb;
-  --  Rec.msblookupw(kFABRIC_DSP_BW) := kFABRIC_DSP_BWMsb;
-  --  Rec.msblookupr(kFABRIC_DSP_RX_CNT) := kFABRIC_DSP_RX_CNTMsb;
-  --  Rec.msblookupr(kFABRIC_DSP_TX_CNT) := kFABRIC_DSP_TX_CNTMsb;
-  --  Rec.msblookupr(kFABRIC_DSP_RESERVED) := kFABRIC_DSP_RESERVEDMsb;
-  --  Rec.msblookupr(kFABRIC_DSP_RX_CNT_DB1) := kFABRIC_DSP_RX_CNT_DB1Msb;
-  --  Rec.msblookupr(kFABRIC_DSP_TX_CNT_DB1) := kFABRIC_DSP_TX_CNT_DB1Msb;
-  --  Rec.msblookupr(kFABRIC_DSP_RESERVED_DB1) := kFABRIC_DSP_RESERVED_DB1Msb;
-  --  Rec.msblookupr(kFABRIC_DSP_BW) := kFABRIC_DSP_BWMsb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("FABRIC_DSP_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kFABRIC_DSP_REGRec;
 
-  -- function kCALIBRATION_DATARec not implemented because CALIBRATION_DATA has programmable attributes
-  ---- Return the record of register kCALIBRATION_DATA
-  --function kCALIBRATION_DATARec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"14000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"ffffffff");
-  --  Rec.rmask := XRegResize(X"ffffffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kI_DATA) := kI_DATAMsb;
-  --  Rec.msblookupw(kQ_DATA) := kQ_DATAMsb;
-  --  Rec.msblookupr(kI_DATA) := kI_DATAMsb;
-  --  Rec.msblookupr(kQ_DATA) := kQ_DATAMsb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("CALIBRATION_DATA");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kCALIBRATION_DATARec;
 
-  -- function kCALIBRATION_ENABLERec not implemented because CALIBRATION_ENABLE has programmable attributes
-  ---- Return the record of register kCALIBRATION_ENABLE
-  --function kCALIBRATION_ENABLERec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"14008");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"000000ff");
-  --  Rec.rmask := XRegResize(X"000000ff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("CALIBRATION_ENABLE");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kCALIBRATION_ENABLERec;
 
-  -- function kTHRESHOLD_STATUSRec not implemented because THRESHOLD_STATUS has programmable attributes
-  ---- Return the record of register kTHRESHOLD_STATUS
-  --function kTHRESHOLD_STATUSRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"15000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"0000ffff");
-  --  Rec.rmask := XRegResize(X"0000ffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("THRESHOLD_STATUS");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kTHRESHOLD_STATUSRec;
 
-  -- function kRF_PLL_CONTROL_REGRec not implemented because RF_PLL_CONTROL_REG has programmable attributes
-  ---- Return the record of register kRF_PLL_CONTROL_REG
-  --function kRF_PLL_CONTROL_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"16000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := true;
-  --  Rec.wmask := XRegResize(X"01111100");
-  --  Rec.rmask := XRegResize(X"01111100");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF_PLL_CONTROL_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF_PLL_CONTROL_REGRec;
 
-  -- function kRF_PLL_STATUS_REGRec not implemented because RF_PLL_STATUS_REG has programmable attributes
-  ---- Return the record of register kRF_PLL_STATUS_REG
-  --function kRF_PLL_STATUS_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"16008");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"00110000");
-  --  Rec.rmask := XRegResize(X"00110000");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  -- no initial values specified
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RF_PLL_STATUS_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRF_PLL_STATUS_REGRec;
 
-  -- function kADC_TILEMAP_REGRec not implemented because ADC_TILEMAP_REG has programmable attributes
-  ---- Return the record of register kADC_TILEMAP_REG
-  --function kADC_TILEMAP_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"17000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"ffffffff");
-  --  Rec.rmask := XRegResize(X"ffffffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  Rec.initialvalue := XRegResize(X"00000000");
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN0_TILE) := kADC_TILEMAP_DB0_CHAN0_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN0_BLOCK) := kADC_TILEMAP_DB0_CHAN0_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN1_TILE) := kADC_TILEMAP_DB0_CHAN1_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN1_BLOCK) := kADC_TILEMAP_DB0_CHAN1_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN2_TILE) := kADC_TILEMAP_DB0_CHAN2_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN2_BLOCK) := kADC_TILEMAP_DB0_CHAN2_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN3_TILE) := kADC_TILEMAP_DB0_CHAN3_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB0_CHAN3_BLOCK) := kADC_TILEMAP_DB0_CHAN3_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN0_TILE) := kADC_TILEMAP_DB1_CHAN0_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN0_BLOCK) := kADC_TILEMAP_DB1_CHAN0_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN1_TILE) := kADC_TILEMAP_DB1_CHAN1_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN1_BLOCK) := kADC_TILEMAP_DB1_CHAN1_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN2_TILE) := kADC_TILEMAP_DB1_CHAN2_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN2_BLOCK) := kADC_TILEMAP_DB1_CHAN2_BLOCKMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN3_TILE) := kADC_TILEMAP_DB1_CHAN3_TILEMsb;
-  --  Rec.msblookupw(kADC_TILEMAP_DB1_CHAN3_BLOCK) := kADC_TILEMAP_DB1_CHAN3_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN0_TILE) := kADC_TILEMAP_DB0_CHAN0_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN0_BLOCK) := kADC_TILEMAP_DB0_CHAN0_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN1_TILE) := kADC_TILEMAP_DB0_CHAN1_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN1_BLOCK) := kADC_TILEMAP_DB0_CHAN1_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN2_TILE) := kADC_TILEMAP_DB0_CHAN2_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN2_BLOCK) := kADC_TILEMAP_DB0_CHAN2_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN3_TILE) := kADC_TILEMAP_DB0_CHAN3_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB0_CHAN3_BLOCK) := kADC_TILEMAP_DB0_CHAN3_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN0_TILE) := kADC_TILEMAP_DB1_CHAN0_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN0_BLOCK) := kADC_TILEMAP_DB1_CHAN0_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN1_TILE) := kADC_TILEMAP_DB1_CHAN1_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN1_BLOCK) := kADC_TILEMAP_DB1_CHAN1_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN2_TILE) := kADC_TILEMAP_DB1_CHAN2_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN2_BLOCK) := kADC_TILEMAP_DB1_CHAN2_BLOCKMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN3_TILE) := kADC_TILEMAP_DB1_CHAN3_TILEMsb;
-  --  Rec.msblookupr(kADC_TILEMAP_DB1_CHAN3_BLOCK) := kADC_TILEMAP_DB1_CHAN3_BLOCKMsb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("ADC_TILEMAP_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kADC_TILEMAP_REGRec;
+  -- Return the offset of an element of register array kRFDC_INFO_MEM
+  function kRFDC_INFO_MEM (i:integer) return integer is
+  begin
+    --synopsys translate_off
+    assert i>=0 and i<=15 report "kRFDC_INFO_MEM i=" & integer'image(i) & " is out of range" severity error;
+    --synopsys translate_on
+    return (i * 4) + 16#17000#;
+  end function kRFDC_INFO_MEM;
 
-  -- function kDAC_TILEMAP_REGRec not implemented because DAC_TILEMAP_REG has programmable attributes
-  ---- Return the record of register kDAC_TILEMAP_REG
-  --function kDAC_TILEMAP_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"17008");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"ffffffff");
-  --  Rec.rmask := XRegResize(X"ffffffff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  Rec.initialvalue := XRegResize(X"00000000");
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN0_TILE) := kDAC_TILEMAP_DB0_CHAN0_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN0_BLOCK) := kDAC_TILEMAP_DB0_CHAN0_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN1_TILE) := kDAC_TILEMAP_DB0_CHAN1_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN1_BLOCK) := kDAC_TILEMAP_DB0_CHAN1_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN2_TILE) := kDAC_TILEMAP_DB0_CHAN2_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN2_BLOCK) := kDAC_TILEMAP_DB0_CHAN2_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN3_TILE) := kDAC_TILEMAP_DB0_CHAN3_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB0_CHAN3_BLOCK) := kDAC_TILEMAP_DB0_CHAN3_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN0_TILE) := kDAC_TILEMAP_DB1_CHAN0_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN0_BLOCK) := kDAC_TILEMAP_DB1_CHAN0_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN1_TILE) := kDAC_TILEMAP_DB1_CHAN1_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN1_BLOCK) := kDAC_TILEMAP_DB1_CHAN1_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN2_TILE) := kDAC_TILEMAP_DB1_CHAN2_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN2_BLOCK) := kDAC_TILEMAP_DB1_CHAN2_BLOCKMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN3_TILE) := kDAC_TILEMAP_DB1_CHAN3_TILEMsb;
-  --  Rec.msblookupw(kDAC_TILEMAP_DB1_CHAN3_BLOCK) := kDAC_TILEMAP_DB1_CHAN3_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN0_TILE) := kDAC_TILEMAP_DB0_CHAN0_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN0_BLOCK) := kDAC_TILEMAP_DB0_CHAN0_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN1_TILE) := kDAC_TILEMAP_DB0_CHAN1_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN1_BLOCK) := kDAC_TILEMAP_DB0_CHAN1_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN2_TILE) := kDAC_TILEMAP_DB0_CHAN2_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN2_BLOCK) := kDAC_TILEMAP_DB0_CHAN2_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN3_TILE) := kDAC_TILEMAP_DB0_CHAN3_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB0_CHAN3_BLOCK) := kDAC_TILEMAP_DB0_CHAN3_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN0_TILE) := kDAC_TILEMAP_DB1_CHAN0_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN0_BLOCK) := kDAC_TILEMAP_DB1_CHAN0_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN1_TILE) := kDAC_TILEMAP_DB1_CHAN1_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN1_BLOCK) := kDAC_TILEMAP_DB1_CHAN1_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN2_TILE) := kDAC_TILEMAP_DB1_CHAN2_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN2_BLOCK) := kDAC_TILEMAP_DB1_CHAN2_BLOCKMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN3_TILE) := kDAC_TILEMAP_DB1_CHAN3_TILEMsb;
-  --  Rec.msblookupr(kDAC_TILEMAP_DB1_CHAN3_BLOCK) := kDAC_TILEMAP_DB1_CHAN3_BLOCKMsb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("DAC_TILEMAP_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kDAC_TILEMAP_REGRec;
 
-  -- function kRFDC_INFO_REGRec not implemented because RFDC_INFO_REG has programmable attributes
-  ---- Return the record of register kRFDC_INFO_REG
-  --function kRFDC_INFO_REGRec return XReg2_t is
-  --  variable Rec : XReg2_t;
-  --begin
-  --  Rec := kXRegDefault;
-  --  Rec.version := 1;
-  --  Rec.offset := XAddrResize(X"18000");
-  --  Rec.size := 32;
-  --  Rec.readable := true;
-  --  Rec.writable := false;
-  --  Rec.wmask := XRegResize(X"03ff03ff");
-  --  Rec.rmask := XRegResize(X"03ff03ff");
-  --  Rec.strobemask := XRegResize(X"00000000");
-  --  Rec.clearablemask := XRegResize(X"00000000");
-  --  Rec.initialvalue := XRegResize(X"00910091");
-  --  -- Single-bit bitfields are not listed here because the default for msblookup* is msb=lsb.
-  --  Rec.msblookupw(kRFDC_INFO_XTRA_RESAMP) := kRFDC_INFO_XTRA_RESAMPMsb;
-  --  Rec.msblookupw(kRFDC_INFO_SPC_RX) := kRFDC_INFO_SPC_RXMsb;
-  --  Rec.msblookupw(kRFDC_INFO_SPC_TX) := kRFDC_INFO_SPC_TXMsb;
-  --  Rec.msblookupw(kRFDC_INFO_XTRA_RESAMP_DB1) := kRFDC_INFO_XTRA_RESAMP_DB1Msb;
-  --  Rec.msblookupw(kRFDC_INFO_SPC_RX_DB1) := kRFDC_INFO_SPC_RX_DB1Msb;
-  --  Rec.msblookupw(kRFDC_INFO_SPC_TX_DB1) := kRFDC_INFO_SPC_TX_DB1Msb;
-  --  Rec.msblookupr(kRFDC_INFO_XTRA_RESAMP) := kRFDC_INFO_XTRA_RESAMPMsb;
-  --  Rec.msblookupr(kRFDC_INFO_SPC_RX) := kRFDC_INFO_SPC_RXMsb;
-  --  Rec.msblookupr(kRFDC_INFO_SPC_TX) := kRFDC_INFO_SPC_TXMsb;
-  --  Rec.msblookupr(kRFDC_INFO_XTRA_RESAMP_DB1) := kRFDC_INFO_XTRA_RESAMP_DB1Msb;
-  --  Rec.msblookupr(kRFDC_INFO_SPC_RX_DB1) := kRFDC_INFO_SPC_RX_DB1Msb;
-  --  Rec.msblookupr(kRFDC_INFO_SPC_TX_DB1) := kRFDC_INFO_SPC_TX_DB1Msb;
-  --  Rec.isreg := true;
-  --  --synopsys translate_off
-  --  Rec.name := rs("RFDC_INFO_REG");
-  --  --synopsys translate_on
-  --  return Rec;
-  --end function kRFDC_INFO_REGRec;
 
 end package body;

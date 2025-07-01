@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -79,21 +79,21 @@
 
   // Enumerated type FPGA_VERSION
   localparam FPGA_VERSION_SIZE = 7;
-  localparam FPGA_CURRENT_VERSION_BUILD            = 'h0;  // FPGA_VERSION:FPGA_CURRENT_VERSION_BUILD
-  localparam FPGA_OLDEST_COMPATIBLE_VERSION_BUILD  = 'h0;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
   localparam FPGA_CURRENT_VERSION_MINOR            = 'h0;  // FPGA_VERSION:FPGA_CURRENT_VERSION_MINOR
+  localparam FPGA_CURRENT_VERSION_BUILD            = 'h0;  // FPGA_VERSION:FPGA_CURRENT_VERSION_BUILD
   localparam FPGA_OLDEST_COMPATIBLE_VERSION_MINOR  = 'h0;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
+  localparam FPGA_OLDEST_COMPATIBLE_VERSION_BUILD  = 'h0;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
   localparam FPGA_CURRENT_VERSION_MAJOR            = 'hA;  // FPGA_VERSION:FPGA_CURRENT_VERSION_MAJOR
   localparam FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR  = 'hA;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR
   localparam FPGA_VERSION_LAST_MODIFIED_TIME       = 'h25031309;  // FPGA_VERSION:FPGA_VERSION_LAST_MODIFIED_TIME
 
   // Enumerated type RF_CORE_FULL_VERSION
   localparam RF_CORE_FULL_VERSION_SIZE = 7;
-  localparam RF_CORE_FULL_CURRENT_VERSION_MINOR            = 'h1;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_CURRENT_VERSION_MINOR
   localparam RF_CORE_FULL_CURRENT_VERSION_BUILD            = 'h0;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_CURRENT_VERSION_BUILD
   localparam RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_MINOR  = 'h0;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_MINOR
   localparam RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_BUILD  = 'h0;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_BUILD
   localparam RF_CORE_FULL_CURRENT_VERSION_MAJOR            = 'h1;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_CURRENT_VERSION_MAJOR
+  localparam RF_CORE_FULL_CURRENT_VERSION_MINOR            = 'h1;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_CURRENT_VERSION_MINOR
   localparam RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_MAJOR  = 'h1;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_MAJOR
   localparam RF_CORE_FULL_VERSION_LAST_MODIFIED_TIME       = 'h24080915;  // RF_CORE_FULL_VERSION:RF_CORE_FULL_VERSION_LAST_MODIFIED_TIME
 
@@ -123,21 +123,29 @@
   localparam RESERVED_COUNT = 64; // Number of elements in array
 
   // Return the offset of an element of register array CURRENT_VERSION
-  function integer CURRENT_VERSION (input integer i);
+  function automatic integer CURRENT_VERSION (input integer i);
+  begin
     CURRENT_VERSION = (i * 'h10) + 'h0;
+  end
   endfunction
 
   // Return the offset of an element of register array OLDEST_COMPATIBLE_VERSION
-  function integer OLDEST_COMPATIBLE_VERSION (input integer i);
+  function automatic integer OLDEST_COMPATIBLE_VERSION (input integer i);
+  begin
     OLDEST_COMPATIBLE_VERSION = (i * 'h10) + 'h4;
+  end
   endfunction
 
   // Return the offset of an element of register array VERSION_LAST_MODIFIED
-  function integer VERSION_LAST_MODIFIED (input integer i);
+  function automatic integer VERSION_LAST_MODIFIED (input integer i);
+  begin
     VERSION_LAST_MODIFIED = (i * 'h10) + 'h8;
+  end
   endfunction
 
   // Return the offset of an element of register array RESERVED
-  function integer RESERVED (input integer i);
+  function automatic integer RESERVED (input integer i);
+  begin
     RESERVED = (i * 'h10) + 'hC;
+  end
   endfunction

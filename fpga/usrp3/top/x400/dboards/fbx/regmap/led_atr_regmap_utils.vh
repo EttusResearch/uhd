@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -90,21 +90,29 @@
   localparam LED3_ATR_DISABLED      = 3;  //LED_ATR_DISABLED:LED3_ATR_DISABLED
 
   // Return the offset of an element of register array LED0_ATR_STATE
-  function integer LED0_ATR_STATE (input integer i);
+  function automatic integer LED0_ATR_STATE (input integer i);
+  begin
     LED0_ATR_STATE = (i * 'h4) + 'h0;
+  end
   endfunction
 
   // Return the offset of an element of register array LED1_ATR_STATE
-  function integer LED1_ATR_STATE (input integer i);
+  function automatic integer LED1_ATR_STATE (input integer i);
+  begin
     LED1_ATR_STATE = (i * 'h4) + 'h400;
+  end
   endfunction
 
   // Return the offset of an element of register array LED2_ATR_STATE
-  function integer LED2_ATR_STATE (input integer i);
+  function automatic integer LED2_ATR_STATE (input integer i);
+  begin
     LED2_ATR_STATE = (i * 'h4) + 'h800;
+  end
   endfunction
 
   // Return the offset of an element of register array LED3_ATR_STATE
-  function integer LED3_ATR_STATE (input integer i);
+  function automatic integer LED3_ATR_STATE (input integer i);
+  begin
     LED3_ATR_STATE = (i * 'h4) + 'hC00;
+  end
   endfunction

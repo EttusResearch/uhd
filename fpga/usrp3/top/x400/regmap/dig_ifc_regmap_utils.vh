@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -92,6 +92,8 @@
   localparam SLAVE_COUNT      = 0;  //CONTROLLER_INFO:SLAVE_COUNT
 
   // Return the offset of an element of register array SPI_SLAVE_CONFIG
-  function integer SPI_SLAVE_CONFIG (input integer i);
+  function automatic integer SPI_SLAVE_CONFIG (input integer i);
+  begin
     SPI_SLAVE_CONFIG = (i * 'h4) + 'h0;
+  end
   endfunction

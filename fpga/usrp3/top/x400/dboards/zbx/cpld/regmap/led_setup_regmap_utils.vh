@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -41,6 +41,8 @@
   localparam LED_CONTROL_COUNT = 256; // Number of elements in array
 
   // Return the offset of an element of register array LED_CONTROL
-  function integer LED_CONTROL (input integer i);
+  function automatic integer LED_CONTROL (input integer i);
+  begin
     LED_CONTROL = (i * 'h4) + 'h0;
+  end
   endfunction

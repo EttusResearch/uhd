@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -92,6 +92,8 @@
   localparam GPIO_IN_B      = 16;  //GPIO_IN:GPIO_IN_B
 
   // Return the offset of an element of register array ATR_STATE
-  function integer ATR_STATE (input integer i);
+  function automatic integer ATR_STATE (input integer i);
+  begin
     ATR_STATE = (i * 'h4) + 'h0;
+  end
   endfunction
