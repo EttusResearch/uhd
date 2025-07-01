@@ -904,16 +904,16 @@ endmodule
 //    starts at offset 0x80000 in the RFNoC Radio block's register space.
 //    The following diagram displays the distribution of the CtrlPort
 //    interface to the different modules it interacts with.
-//    <img src = "../common/x4xx_core_common_buses.svg"
+//    <img src = "doc/x4xx_core_common_buses.svg"
 // </info>
-//    <window name="DB_WINDOW"        offset="0x00000" size="0x08000">
+//    <window name="DB_WINDOW"        offset="0x00000" size="0x08000" targetregmap="DB_WINDOW_REGMAP">
 //      <info>Daughterboard GPIO interface. Register access within this space
 //      is directed to the associated daughterboard CPLD.</info>
 //    </window>
 //    <window name="RFDC_TIMING_WINDOW" offset="0x08000" size="0x02000" targetregmap="RFDC_TIMING_REGMAP">
 //      <info>RFDC timing control interface.</info>
 //    </window>
-//    <window name="RF_CORE_WINDOW" offset="0x0A000" size="0x02000">
+//    <window name="RF_CORE_WINDOW" offset="0x0A000" size="0x02000" targetregmap="RF_CORE_REGMAP">
 //      <info>Interface for the RF core.</info>
 //    </window>
 //    <window name="DIO_WINDOW" offset="0x0C000" size="0x04000" targetregmap="RADIO_DIO_REGMAP">

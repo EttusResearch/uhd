@@ -45,7 +45,7 @@ package rfdc_info_pkg;
 endpackage
 
 //XmlParse xml_on
-//<regmap name="RFDC_REGS_REGMAP">
+//<regmap name="RFDC_REGS_REGMAP" generatesv="false">
 //  <group name="RFDC_REGS">
 //    <enumeratedtype name="RFDC_BLOCK_INFO_ENUM" showhex="true">
 //      <value name="ENABLED" integer="0"/>

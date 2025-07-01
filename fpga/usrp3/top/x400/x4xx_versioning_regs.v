@@ -168,7 +168,7 @@ endmodule
 
 
 //XmlParse xml_on
-//<regmap name="VERSIONING_REGS_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
+//<regmap name="VERSIONING_REGS_REGMAP" readablestrobes="false" generatevhdl="true" generatesv="false" ettusguidelines="true">
 //  <group name="VERSIONING_REGS">
 //    <regtype name="VERSION_TYPE" size="32" attributes="Readable">
 //      <bitfield name="MAJOR" range="31..23" initialvalue="0">

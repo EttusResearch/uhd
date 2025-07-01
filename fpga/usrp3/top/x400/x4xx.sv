@@ -3090,7 +3090,7 @@ endmodule
 
 
 //XmlParse xml_on
-//<top name="X410_FPGA">
+//<top name="X410_FPGA" removeunreferenced="true">
 //  <info>
 //    This documentation provides a description of the different register spaces available
 //    for the USRP X4xx Open-Source FPGA target implementation, accessible through the
@@ -3098,7 +3098,7 @@ endmodule
 //  </info>
 //</top>
 //
-//<top name="X440_FPGA">
+//<top name="X440_FPGA" removeunreferenced="true">
 //  <info>
 //    This map contains register windows for controlling the different sources
 //    that drive the state of FBX control lines.
