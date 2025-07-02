@@ -24,8 +24,6 @@ parameters:
 - name: uhdFpgaArtifactSource
   type: string
   default: current
-- name: xilinxLocation
-  type: string
 - name: dpdkDirs
   type: object
   default:
@@ -156,7 +154,6 @@ jobs:
     condition: and(succeeded(), eq(variables.dutFamily, 'x4xx'))
 
   - script: |
-      source ${{ parameters.xilinxLocation }}/settings64.sh
       source $USRP_EMB_VENV/bin/activate
       usrp_emb_x4xx_mender_update
     displayName: Update device using Mender

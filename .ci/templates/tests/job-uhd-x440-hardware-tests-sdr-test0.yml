@@ -23,7 +23,6 @@ jobs:
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    xilinxLocation: $(xilinx_location)
     dutMatrix:
       sdr-test0-x440-0:
         dutName: 'sdr-test0-x440-0'

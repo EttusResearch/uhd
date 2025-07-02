@@ -24,7 +24,6 @@ jobs:
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
-    xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
     dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       # beauty-N320-0 XG:

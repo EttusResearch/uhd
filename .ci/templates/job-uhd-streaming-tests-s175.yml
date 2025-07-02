@@ -24,8 +24,6 @@ jobs:
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
-    # check location of Xilinx
-    xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
     dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       sdr-s175-streaming-tests-B206-0:

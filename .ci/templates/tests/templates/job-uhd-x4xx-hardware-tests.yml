@@ -36,8 +36,6 @@ parameters:
   values:
     - 'Filesystem'
     - 'Pipeline'
-- name: xilinxLocation
-  type: string
 - name: extra_rf_test_args
   type: string
   default: ''
@@ -151,7 +149,6 @@ jobs:
     displayName: Create usrp_emb venv
 
   - script: |
-      source ${{ parameters.xilinxLocation }}/settings64.sh
       source $USRP_EMB_VENV/bin/activate
       usrp_emb_x4xx_flash_emmc
     displayName: Flash eMMC

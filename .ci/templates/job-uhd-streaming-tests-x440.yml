@@ -25,7 +25,6 @@ jobs:
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
-    xilinxLocation: /opt/Xilinx/Vivado_Lab/2023.2
     dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       X440-0 CG_400:
