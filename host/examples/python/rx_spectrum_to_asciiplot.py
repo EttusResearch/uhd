@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""Curses FFT example using Python API.
+"""ASCII Spectrum display example using Python API and curses module.
 
 This example demonstrates how to use the UHD Python API to create a simple
 FFT (Fast Fourier Transform) display using the curses library. The script
@@ -17,8 +17,8 @@ signals received by the USRP device, allowing users to monitor and analyze the
 signal characteristics in a user-friendly manner.
 
 Example Usage:
-curses_fft.py --args addr=192.168.10.2 --freq 2.4e9 --rate 1e6 --gain 10
-              --nsamps 100000 --dyn 60
+rx_spectrum_to_asciiplot.py --args addr=192.168.10.2 --freq 2.4e9 --rate 1e6
+                            --gain 10 --nsamps 100000 --dyn 60
 """
 
 import argparse

@@ -27,9 +27,9 @@ The hardware setup includes
 destination
 
 Example Usage:
-remote_rx.py --args addr=192.168.10.2 --rate 1e6 --freq 2.4e9 --gain 10
-             --duration 10 --channels 0 1 --dest-addr 192.168.10.100
-             --dest-port 12345 12346
+rx_to_remote_udp.py --args addr=192.168.10.2 --rate 1e6 --freq 2.4e9 --gain 10
+                    --duration 10 --channels 0 1 --dest-addr 192.168.10.100
+                    --dest-port 12345 12346
 """
 
 import argparse

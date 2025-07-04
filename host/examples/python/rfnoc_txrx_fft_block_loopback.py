@@ -53,9 +53,9 @@ diagram shows one channel per radio for simplicity.
                      └────────────┘              └─────────┘     └─────────┘     └─────────┘
 
 Example usage:
-fft_loopback.py --args addr=192.168.10.2 --fft-length 1024 --num-symbols 10
-                --freq 915e6 --amplitude 0.6 --cp-list 352 288 --channels 0,1
-                --tx-gain 25 --rx-gain 45 --rate 10e6 --delay 5
+rfnoc_txrx_fft_block_loopback.py --args addr=192.168.10.2 --fft-length 1024 --num-symbols 10
+                                 --freq 915e6 --amplitude 0.6 --cp-list 352 288 --channels 0,1
+                                 --tx-gain 25 --rx-gain 45 --rate 10e6 --delay 5
 """
 
 import argparse
