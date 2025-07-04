@@ -491,6 +491,7 @@ if(WIN32)
 else()
     unset(ENABLE_EXTEND_WIN_PACKAGING CACHE)
 endif(WIN32)
+LIBUHD_REGISTER_COMPONENT("RFNoC/FPGA Development Files" ENABLE_RFNOC_DEV OFF "ENABLE_LIBUHD" OFF OFF)
 
 
 ########################################################################
@@ -613,6 +614,39 @@ if(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
     UHD_INSTALL(FILES ${_image_files} DESTINATION ${PKG_DATA_DIR}/images COMPONENT images)
 endif(DEFINED UHD_IMAGES_SRC_DIR AND EXISTS "${UHD_IMAGES_SRC_DIR}")
 
+########################################################################
+# Install RFNoC/HDL sources for installation
+########################################################################
+if(ENABLE_RFNOC_DEV)
+  # Note: This only depends on stage_rfnoc_dev_sources.py, because we want to
+  # avoid staging the sources every time we build UHD. However, that means if
+  # we modify HDL sources and expect `make install` to install the new sources,
+  # we need to force this target to be rebuilt by CMake, e.g., by removing the
+  # timestamp file.
+  if(CMAKE_VERSION VERSION_LESS "3.17")
+    set(_rm_dir_cmd "remove_directory")
+    set(_rm_dir_args "")
+  else()
+    set(_rm_dir_cmd "rm")
+    set(_rm_dir_args "-rf")
+  endif()
+  add_custom_command(
+    OUTPUT ${CMAKE_BINARY_DIR}/fpga/usrp3.stamp
+    DEPENDS ${UHD_SOURCE_DIR}/cmake/Modules/stage_rfnoc_dev_sources.py
+    COMMAND ${CMAKE_COMMAND} -E ${_rm_dir_cmd} ${_rm_dir_args} ${CMAKE_BINARY_DIR}/fpga
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/fpga
+    COMMAND
+    ${PYTHON_EXECUTABLE} ${UHD_SOURCE_DIR}/cmake/Modules/stage_rfnoc_dev_sources.py --src ${UHD_SOURCE_DIR}/../fpga/usrp3 --dest ${CMAKE_BINARY_DIR}/fpga/usrp3
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_BINARY_DIR}/fpga/usrp3.stamp
+    COMMENT "Copying RFNoC sources to build directory"
+  )
+  add_custom_target(rfnoc_dev_sources ALL DEPENDS ${CMAKE_BINARY_DIR}/fpga/usrp3.stamp)
+  UHD_INSTALL(
+    DIRECTORY ${CMAKE_BINARY_DIR}/fpga/usrp3
+    DESTINATION ${PKG_DATA_DIR}/rfnoc/fpga/
+    COMPONENT rfnoc
+  )
+endif()
 
 ########################################################################
 # Handle pre-built UHD functional dependencies specific to Windows for

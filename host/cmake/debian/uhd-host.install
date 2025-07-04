@@ -12,4 +12,9 @@ usr/bin/uhd_image_loader
 usr/bin/uhd_images_downloader
 usr/bin/uhd_usrp_probe
 usr/bin/usrp2_card_burner
-usr/share/uhd
+usr/share/uhd/cal
+usr/share/uhd/rfnoc/blocks
+usr/share/uhd/rfnoc/core
+usr/share/uhd/rfnoc/modules
+usr/share/uhd/rfnoc/transport_adapters
+usr/share/uhd/rfnoc-newmod
