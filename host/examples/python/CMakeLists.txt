@@ -1,5 +1,5 @@
 #
-# Copyright 2017-2018 Ettus Research, a National Instruments Company
+# Copyright 2025 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -15,6 +15,7 @@ set(python_examples
     rfnoc_rx_to_file.py
     x440_L_band_capture.py
     rfnoc_txrx_fft_block_loopback.py
+    rx_spectrum_to_pyplot.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples}
