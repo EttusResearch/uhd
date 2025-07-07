@@ -10,6 +10,7 @@ import logging
 import os
 import sys
 
+from uhd import get_pkg_data_path
 from uhd.rfnoc_utils import image_builder, log as rfnoc_log
 
 
@@ -247,7 +248,12 @@ def get_fpga_path(args):
         if top_dir == "":
             fpga_path = None
             break
-    # If it's valid FPGA base path, use that
+    # Try to find an FPGA directory in the install prefix
+    if fpga_path is None and os.path.isdir(
+        os.path.join(get_pkg_data_path(), "rfnoc", "fpga", "usrp3")
+    ):
+        fpga_path = os.path.join(get_pkg_data_path(), "rfnoc", "fpga")
+    # If fpga_path is a valid FPGA base path, use it
     if fpga_path and os.path.isdir(os.path.join(fpga_path, "usrp3", "top")):
         logging.info("Using FPGA directory %s", fpga_path)
         return fpga_path
