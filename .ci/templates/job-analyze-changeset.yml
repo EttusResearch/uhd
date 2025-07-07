@@ -36,8 +36,11 @@ jobs:
         env:
           ADD_TESTS: ${{ parameters.add_tests }}
     - ${{ else }}:
+      # Use checkout depth of large number in order to transfer history of merge commit only.
       - checkout: self
         clean: true
+        fetchDepth: 1000000000
+        fetchTags: false
       - bash: |
           python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
           source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
