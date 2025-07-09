@@ -127,7 +127,7 @@ For example, the following workflow is valid:
 
 ```sh
 cd /path/to/rfnoc-gain  # Switch to this file's directory
-mkdir build && cd build && cmake .. -F /path/to/uhd/fpga/usrp3  # Configure the project
+mkdir build && cd build && cmake .. -DUHD_FPGA_DIR=/path/to/uhd/fpga  # Configure the project
 # Now, launch an image build and use all files from this directory:
 rfnoc_image_builder -y ../icores/x310_rfnoc_image_core.yml -I ../rfnoc
 make install  # Install software and gateware
