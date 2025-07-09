@@ -1032,6 +1032,7 @@ class ImageBuilderConfig:
           case this function will expand them to absolute paths using include_paths.
         """
         dtsi_include_paths = include_paths + [os.path.join(self.device.top_dir, "dts")]
+        constraints_include_paths = include_paths + [self.device.top_dir]
         for module_name, module in self.get_module_list("all").items():
             for make_arg_type in ("make_defs", "constraints", "dts_includes"):
                 for arg in getattr(module.desc, make_arg_type, []):
@@ -1051,10 +1052,21 @@ class ImageBuilderConfig:
                             # as these are dynamically generated.
                             if not arg.endswith("version-info.dtsi"):
                                 self.log.error(
-                                    "Error evaluating %s: Could not find DTS file %s!",
+                                    "Error evaluating %s: Could not find DTS file %s! Searched in %s",
                                     module_name,
                                     arg,
+                                    ":".join(dtsi_include_paths)
                                 )
+                    elif make_arg_type == "constraints":
+                        try:
+                            arg = find_include_file(arg, constraints_include_paths)
+                        except FileNotFoundError:
+                            self.log.error(
+                                "Error evaluating %s: Could not find constraints file %s! Searched in %s",
+                                module_name,
+                                arg,
+                                ":".join(constraints_include_paths)
+                            )
                     getattr(self, make_arg_type).append(arg)
 
         def remove_dupes(lst):
