@@ -106,9 +106,13 @@ steps:
     - lib/CMakeLists.txt
     - python/pyrfnoc-newmod.cpp
     - python/setup.py.in
-    - README.md
     - rfnoc/CMakeLists.txt
     pattern: "gain"
+    repl: "newmod"
+- search_and_replace:
+    files:
+    - README.md
+    pattern: r"(?<!a)gain"
     repl: "newmod"
 - search_and_replace:
     files:
