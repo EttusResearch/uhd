@@ -227,6 +227,8 @@ jobs:
     demands:
       - agent.os -equals Windows_NT
       - docker
+      - large_disk -equals 1
+      - high_disk_io -equals 1
   condition: and(succeeded(), ${{ parameters.build_windows }})
   strategy:
     matrix: $[ variables.winDockerImages ]

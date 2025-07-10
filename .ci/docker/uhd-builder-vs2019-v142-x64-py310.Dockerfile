@@ -3,11 +3,7 @@
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
-# This uses Window Server 2019 since it supports container jobs.
-# This must match the Windows Server version that the Pipelines
-# agent runs on. It's possible to switch out the base image
-# with a Windows 10 image for local builds.
-FROM mcr.microsoft.com/windows/servercore:1809
+FROM mcr.microsoft.com/windows/servercore:ltsc2025
 LABEL maintainer="Ettus Research"
 
 ARG PIP_INDEX_HOST
