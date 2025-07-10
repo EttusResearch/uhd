@@ -39,6 +39,7 @@ RUN apt-get update && \
         python3-numpy \
         python3-pip \
         python3-requests \
+        python3-setuptools \
         pybind11-dev \
     # Install deb dependencies
         debootstrap \
