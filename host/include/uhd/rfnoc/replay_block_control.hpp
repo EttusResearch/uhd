@@ -149,6 +149,12 @@ public:
     static const uint32_t PLAY_CMD_FINITE;
     static const uint32_t PLAY_CMD_CONTINUOUS;
 
+    /*!
+     * This constant can be used in the play command to trigger continous
+     * play of the signal.
+     */
+    static constexpr auto PLAY_CONTINUOUS{std::numeric_limits<size_t>::max()};
+
     /**************************************************************************
      * Replay Control API calls
      *************************************************************************/
@@ -198,6 +204,9 @@ public:
      * the same time spec, and either continuous streaming (if \p repeat is true)
      * or STREAM_MODE_START_NUM_SAMPS_AND_DONE if it is not.
      *
+     * \deprecated{ This play command is deprecated, please use play command with
+     * repeat as size_t where 0 is repeat=true and 1 is repeat=false}
+     *
      * \param offset Memory offset of the data to be played. This value must be
      *               aligned to the size of the word in memory. Use get_word_size()
      *               to get the memory word size.
@@ -221,9 +230,56 @@ public:
      */
     virtual void play(const uint64_t offset,
         const uint64_t size,
+        const size_t port,
+        const uhd::time_spec_t time_spec,
+        const bool repeat) = 0;
+
+    /*! Play back data.
+     *
+     * The offset and size define what data is played back on an output port.
+     * It will stream out \p size bytes of data, starting at memory offset
+     * \p offset.
+     *
+     * The data can be played once or repeated continuously until a stop
+     * command is issued. If a time_spec is supplied, it will be placed in the
+     * header of the first packet. Typically, this is used to tell a downstream
+     * Radio block when to start transmitting the data.
+     *
+     * If the data type on the output port is not defined, this function will
+     * throw an error.
+     *
+     * This is equivalent to calling config_play() with the same arguments for
+     * \p offset, \p size, and \p port, and then calling issue_stream_cmd() with
+     * the same time spec, and either continuous streaming (if \p repeat is true)
+     * or STREAM_MODE_START_NUM_SAMPS_AND_DONE if it is not.
+     *
+     * \param offset Memory offset of the data to be played. This value must be
+     *               aligned to the size of the word in memory. Use get_word_size()
+     *               to get the memory word size.
+     * \param size Size of data to play back. This value must be aligned to the
+     *             size of the memory word and item size. Use get_word_size() to
+     *             get the memory word size and get_output_item_size() to get
+     *             the item size. This value will be used for the num_samps
+     *             component of the underlying stream command.
+     * \param port Which output port of the replay block to use
+     * \param time_spec Set the time for the first item. Any non-zero value is
+     *                  used to set the time in the header of the first packet.
+     *                  Most commonly, this is used to set the start time of a
+     *                  transmission. Note that this block will not wait for a
+     *                  time to occur, rather, it will tag the first outgoing
+     *                  packet with this time stamp.
+     * \param iterations Determines whether the data should be played continous
+     *                   (PLAY_CONTINUOUS) or num_repeat times. If set to
+     *                   PLAY_CONTINUOUS stop() must be called to stop the
+     *                   play back.
+     * \throws uhd::value_error if offset+size exceeds the available memory.
+     * \throws uhd::op_failed Too many play commands are queued.
+     */
+    virtual void play(const uint64_t offset,
+        const uint64_t size,
         const size_t port                = 0,
         const uhd::time_spec_t time_spec = uhd::time_spec_t(0.0),
-        const bool repeat                = false) = 0;
+        const size_t iterations          = 1) = 0;
 
     /*! Stops playback
      *

@@ -239,11 +239,27 @@ public:
         const uhd::time_spec_t time_spec,
         const bool repeat) override
     {
+        play(offset,
+            size,
+            port,
+            time_spec,
+            static_cast<size_t>(repeat ? PLAY_CONTINUOUS : 1));
+    }
+
+    void play(const uint64_t offset,
+        const uint64_t size,
+        const size_t port,
+        const uhd::time_spec_t time_spec,
+        const size_t iterations) override
+    {
         config_play(offset, size, port);
         uhd::stream_cmd_t play_cmd =
-            repeat ? uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS)
-                   : uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-        play_cmd.num_samps  = size / get_play_item_size(port);
+            iterations == PLAY_CONTINUOUS
+                ? uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS)
+                : uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+        play_cmd.num_samps  = iterations == PLAY_CONTINUOUS
+                                  ? 0
+                                  : iterations * size / get_play_item_size(port);
         play_cmd.time_spec  = time_spec;
         play_cmd.stream_now = (time_spec == 0.0);
         issue_stream_cmd(play_cmd, port);

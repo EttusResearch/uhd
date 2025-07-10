@@ -18,7 +18,18 @@ void export_replay_block_control(py::module& m)
         .def(py::init(&block_controller_factory<replay_block_control>::make_from))
         .def("record", &replay_block_control::record)
         .def("record_restart", &replay_block_control::record_restart)
-        .def("play", &replay_block_control::play)
+        .def("play",
+            py::overload_cast<const uint64_t,
+                const uint64_t,
+                const size_t,
+                const uhd::time_spec_t,
+                const bool>(&replay_block_control::play))
+        .def("play",
+            py::overload_cast<const uint64_t,
+                const uint64_t,
+                const size_t,
+                const uhd::time_spec_t,
+                const size_t>(&replay_block_control::play))
         .def("stop", &replay_block_control::stop)
         .def("get_mem_size", &replay_block_control::get_mem_size)
         .def("get_word_size", &replay_block_control::get_word_size)
