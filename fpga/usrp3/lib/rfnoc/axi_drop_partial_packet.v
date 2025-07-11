@@ -21,6 +21,8 @@ module axi_drop_partial_packet #(
   output [WIDTH-1:0] o_tdata, output o_tlast, output o_tvalid, input o_tready
 );
 
+  localparam MAX_PKT_SIZE_LOG2 = $clog2(MAX_PKT_SIZE+1);
+
   generate
     // Packet size of 1 means it is impossible to form a partial packet, so this module does nothing...
     if (MAX_PKT_SIZE == 1) begin
@@ -31,14 +33,15 @@ module axi_drop_partial_packet #(
     // All other packet sizes
     end else begin
       // Settings register
-      wire [$clog2(MAX_PKT_SIZE+1)-1:0] sr_pkt_size;
-      setting_reg #(.my_addr(SR_PKT_SIZE_ADDR), .width($clog2(MAX_PKT_SIZE+1)), .at_reset(DEFAULT_PKT_SIZE)) set_pkt_size (
+      wire [MAX_PKT_SIZE_LOG2-1:0] sr_pkt_size;
+      setting_reg #(.my_addr(SR_PKT_SIZE_ADDR), .width(MAX_PKT_SIZE_LOG2), .at_reset(DEFAULT_PKT_SIZE)) set_pkt_size (
         .clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
         .out(sr_pkt_size), .changed());
 
       // Do not change n unless block is not active
       reg active;
-      reg [$clog2(MAX_PKT_SIZE+1)-1:0] pkt_size = 1;
+      reg [MAX_PKT_SIZE_LOG2-1:0] pkt_size = 1;
+      reg pkt_size_is_one = 1;
       always @(posedge clk) begin
         if (reset | clear) begin
           active <= 1'b0;
@@ -50,6 +53,7 @@ module axi_drop_partial_packet #(
         if (clear | ~active) begin
           pkt_size <= (sr_pkt_size == 0) ? 1 : sr_pkt_size;
         end
+        pkt_size_is_one <= (pkt_size == 1);
       end
 
       wire [WIDTH-1:0] int_tdata;
@@ -59,8 +63,8 @@ module axi_drop_partial_packet #(
       reg small_pkt, large_pkt;
       wire hold_last_sample;
       reg release_last;
-      reg [$clog2(MAX_PKT_SIZE+1)-1:0] in_cnt;
-      reg [15:0] in_pkt_cnt, in_pkt_cnt_hold, out_pkt_cnt;
+      reg [MAX_PKT_SIZE_LOG2-1:0] in_cnt;
+      reg [15:0] in_pkt_cnt, in_pkt_cnt_hold, out_pkt_cnt, out_pkt_cnt_p1;
       always @(posedge clk) begin
         if (reset | clear) begin
           small_pkt             <= 1'b0;
@@ -70,6 +74,7 @@ module axi_drop_partial_packet #(
           in_pkt_cnt            <= 0;
           in_pkt_cnt_hold       <= 0;
           out_pkt_cnt           <= 0;
+          out_pkt_cnt_p1        <= 0;
         end else begin
           if (i_tvalid & i_tready) begin
             if (in_cnt == pkt_size | i_tlast_int) begin
@@ -100,7 +105,8 @@ module axi_drop_partial_packet #(
             in_pkt_cnt     <= in_pkt_cnt + 1'b1;
           end
           if (int_tvalid & int_tready & int_tlast & ~hold_last_sample) begin
-            out_pkt_cnt    <= out_pkt_cnt + 1'b1;
+            out_pkt_cnt    <= out_pkt_cnt + 1'd1;
+            out_pkt_cnt_p1 <= out_pkt_cnt + 2'd2;
           end
           if ((i_tvalid & i_tready & i_terror) | flush) begin
             release_last         <= 1'b1;
@@ -111,13 +117,14 @@ module axi_drop_partial_packet #(
         end
       end
 
-      assign hold_last_sample = ((in_pkt_cnt == out_pkt_cnt) | ((in_pkt_cnt == out_pkt_cnt+1) & ~release_last)) & (pkt_size != 1);
+      // This signal is difficult to meet timing on. All input should be registered.
+      assign hold_last_sample = ((in_pkt_cnt == out_pkt_cnt) | ((in_pkt_cnt == out_pkt_cnt_p1) & ~release_last)) & ~pkt_size_is_one;
 
       assign i_tlast_int = i_tlast | large_pkt;
       assign i_terror    = i_tlast & i_tvalid & (small_pkt | large_pkt);
 
       // FIFO with ability to rewind write pointer back if input packet is flagged as bad
-      axi_packet_gate #(.WIDTH(WIDTH+1), .SIZE($clog2(MAX_PKT_SIZE+1)), .USE_AS_BUFF(1)) pkt_gate_i (
+      axi_packet_gate #(.WIDTH(WIDTH+1), .SIZE(MAX_PKT_SIZE_LOG2), .USE_AS_BUFF(1)) pkt_gate_i (
         .clk(clk), .reset(reset), .clear(clear),
         .i_tdata({i_tlast,i_tdata}), .i_tvalid(i_tvalid), .i_tlast(i_tlast_int), .i_terror(i_terror), .i_tready(i_tready),
         .o_tdata({int_tlast,int_tdata}), .o_tvalid(int_tvalid), .o_tlast(), .o_tready(int_tready & ~(hold_last_sample & int_tlast)));
