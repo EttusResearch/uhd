@@ -16,8 +16,8 @@ RUN dnf install -y \
         dpdk \
         dpdk-devel \
         dpdk-tools \
-        gcc \
-        gcc-c++ \
+        gcc-15.0.1-0.11.fc42 \
+        gcc-c++-15.0.1-0.11.fc42 \
         git \
         libusb1-devel \
         make \
