@@ -48,6 +48,7 @@ jobs:
         - Agent.OS -equals Darwin
         - MACOS_MAJOR_VERSION -equals $(macOSVersionDemand)
         - Agent.OSArchitecture -equals $(macOSArchDemand)
+        - cmake
   workspace:
     clean: outputs
   strategy:
