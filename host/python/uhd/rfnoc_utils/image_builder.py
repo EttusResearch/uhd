@@ -22,11 +22,11 @@ import sys
 import mako.lookup
 from mako import exceptions
 
+from .. import get_pkg_data_path
 from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
 from .template import Template
 from .utils import check_include_paths_backward_compat
-from .. import get_pkg_data_path
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -185,7 +185,9 @@ def patch_netlist_constraints(device, build_dir):
         file.write(constraints)
 
 
-def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths):
+def gen_make_command(
+    args, build_dir, build_output_dir, build_ip_dir, device, use_secure_netlist, makefile_src_paths
+):
     """Generate the 'make' command that will build the desired bitfiles.
 
     This generates a full make command, including all the necessary options.
@@ -211,16 +213,10 @@ def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_p
         + (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "")
         + (" PROJECT=1" if args.get("save_project") else "")
         + (" IP_ONLY=1" if args.get("ip_only") else "")
-        + (
-            " BUILD_OUTPUT_DIR=" + os.path.abspath(args["build_output_dir"])
-            if args.get("build_output_dir")
-            else ""
-        )
-        + (
-            " BUILD_IP_DIR=" + os.path.abspath(args["build_ip_dir"])
-            if args.get("build_ip_dir")
-            else ""
-        )
+        + " BUILD_OUTPUT_DIR="
+        + build_output_dir
+        + " BUILD_IP_DIR="
+        + build_ip_dir
     )
 
 
@@ -258,6 +254,10 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
+    build_output_dir = os.path.abspath(
+        args.get("build_output_dir") or os.path.join(base_dir, "build")
+    )
+    build_ip_dir = os.path.abspath(args.get("build_ip_dir") or os.path.join(base_dir, "build-ip"))
     makefile_src_paths = [
         os.path.join(os.path.abspath(os.path.normpath(x)), os.path.join("fpga", "Makefile.srcs"))
         for x in args.get("include_paths", [])
@@ -268,7 +268,15 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
     make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
         make_cmd += "make cleanall && "
-    make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths)
+    make_cmd += gen_make_command(
+        args,
+        build_dir,
+        build_output_dir,
+        build_ip_dir,
+        device,
+        use_secure_netlist,
+        makefile_src_paths,
+    )
 
     if args.get("generate_only"):
         logging.info("Skipping build (--generate-only option given)!")
@@ -276,16 +284,6 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args)
         return 0
 
     make_cmd = setup_cmd + "&& " + make_cmd
-    build_output_dir = args.get("build_output_dir")
-    if build_output_dir is None:
-        build_output_dir = os.path.join(base_dir, "build")
-    else:
-        build_output_dir = os.path.abspath(build_output_dir)
-    build_ip_dir = args.get("build_ip_dir")
-    if build_ip_dir is None:
-        build_ip_dir = os.path.join(base_dir, "build-ip")
-    else:
-        build_ip_dir = os.path.abspath(build_ip_dir)
     logging.info("Launching build with the following settings:")
     logging.info(" * FPGA Directory: %s", fpga_top_dir)
     logging.info(" * Build Artifacts Directory: %s", build_dir)
