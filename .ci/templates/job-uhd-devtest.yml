@@ -39,6 +39,9 @@ jobs:
     clean: outputs
 
   steps:
+  - checkout: ettus-rts
+    clean: true
+
   - checkout: self
     clean: true
 
@@ -138,21 +141,21 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
-      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
-      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
         "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -164,21 +167,21 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
-      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
-      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig) \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
+        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
         "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -190,19 +193,19 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
-      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
-      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
         "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args serial=$(devSerial)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_image_loader --args serial=$(devSerial),type=$(devType)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args serial=$(devSerial),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -214,19 +217,19 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
-      pip3 install -r $(Build.SourcesDirectory)/host/tests/devtest/requirements.txt
-      pip3 install -r $(Build.SourcesDirectory)/.ci/utils/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
         --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
         --fpgas $(devFpga) \
         "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -242,7 +245,7 @@ jobs:
 
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/format_devtest_junitxml.py \
         $(Common.TestResultsDirectory)/devtest \
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
@@ -251,7 +254,7 @@ jobs:
 
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/format_devtest_junitxml.py \
         --fpgas $(devFpga) \
         $(Common.TestResultsDirectory)/devtest \
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml

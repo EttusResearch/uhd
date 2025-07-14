@@ -105,7 +105,7 @@ jobs:
           devFpga: 'HG,XG'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n310-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-n310-0.yml
         rhombus-n321-0:
           devType: 'n3xx'
           devModel: 'n320'
@@ -118,7 +118,7 @@ jobs:
           devFpga: 'HG,XG,XQ'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-n321-0.yml
 
       ${{ if contains(parameters.testDevices, 'e320') }}:
         rhombus-e320-0:
@@ -134,4 +134,4 @@ jobs:
           devtestPattern: 'e320'
           devInitramfsImage: fitImage-manufacturing
           devSDImage: gnuradio-image-ni-neon-rev2-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-e320-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-e320-0.yml
