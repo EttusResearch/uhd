@@ -170,18 +170,22 @@ Checklist:
 
 \subsection n3xx_getting_started_fs_update Updating the file system
 
-Before doing any major work with a newly acquired USRP N300/N310, it is
-recommended to update the file system. Updating the filesystem can be
-accomplished directly on the N300/N310 by using Mender or externally by
-manually writing an image onto a micro SD card and inserting it.  While
-manual updating is faster, Mender requires no direct physical access to the
-device.  For details on using Mender, see Section \ref n3xx_rasm_mender .
+Before doing any major work with a newly acquired USRP N3XX, it is
+recommended to update the file system. There are two methods to accomplish this:
+-# <b>Mender-based method</b> (over the network) 
+	- For detailed instructions on using Mender, refer to Section \ref n3xx_rasm_mender.
+-# <b>External method</b> (writing an image directly onto a micro SD card)  
+	- This method is faster than the Mender-based update. 
+	- It requires physical access to the USRP device. 
 
-Manual updating is simply loading an image on the micro SD card.  The first step
-in that process is to obtain an image.
+The <b>external method</b> is recommended for updating devices from the 
+factory-default file system version 3.x to file system versions greater than v4.6. 
 
-To obtain the default micro SD card image for a specific version of UHD, install
-that version of UHD (3.11.0.1 or later) on a host system with Internet access and run:
+The first step of the external method is to obtain the necessary file system image. To acquire
+the default micro SD card image for a specific version of UHD, follow these steps:
+- Install the desired version of UHD on a host system with internet access.
+- Run the following command:
+
 
     $ uhd_images_downloader -t n3xx_common_sdimg_default
 
@@ -189,7 +193,10 @@ that version of UHD (3.11.0.1 or later) on a host system with Internet access an
    `<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`,
    where `<UHD_INSTALL_DIR>` is the UHD installation directory.
 
-\subsubsection n3xx_fs_update_linux On Linux
+\note  In case the uhd_images_downloader operation fails due to missing write access: 
+use the  `-i` option to specify a download folder where you have write access. 
+
+\subsubsection n3xx_fs_update_linux The External Method on Linux
 
 To load an image onto the micro SD card, connect the card to the host and run:
 
@@ -202,7 +209,7 @@ To load an image onto the micro SD card, connect the card to the host and run:
    other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
    CAUTION:  Operating on the wrong device can cause damage to that device.
 
-\subsubsection n3xx_fs_update_windows On Windows
+\subsubsection n3xx_fs_update_windows The External Method on Windows
 
 Manual loading a file system image on to micro SD card is straight forward
 on Windows with the use of 3rd party utilities available online.
@@ -594,6 +601,12 @@ partition from which the update was originally launched (which presumably is in
 a working state). Another update can be launched now to correct the previous,
 failed update, until it works.
 See also Section \ref n3xx_sdcard.
+
+\note Updating devices from the factory-default file system version 3.x to 
+file system versions greater than v4.6: The Mender-based method requires 
+an initial update from the factory-default file system version v3.x to any 
+file system version between v4.0 and v4.5, followed by a second update to file 
+system versions greater than v4.6. 
 
 To initiate an update from the device itself, download a Mender artifact
 containing the update itself. These are files with a `.mender` suffix.
