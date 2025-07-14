@@ -173,7 +173,7 @@ def pytest_generate_tests(metafunc):
 def test_raw_udp_streaming(iterate_remote_rx, pytestconfig, dut_type, dual_sfp, rate, rx_rate, rx_channels,
                     dest_addr, dest_port, adapter, host_interface, keep_hdr, iterations, duration):
 
-    remote_rx_path = Path(pytestconfig.getoption('uhd_build_dir')) / 'examples/python/remote_rx.py'
+    remote_rx_path = Path(pytestconfig.getoption('uhd_build_dir')) / 'examples/python/rx_to_remote_udp.py'
 
     device_args = ""
 
