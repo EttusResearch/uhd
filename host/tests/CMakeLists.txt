@@ -129,11 +129,12 @@ endif(ENABLE_PYTHON_API)
 # API
 ###############################################################################
 macro(UHD_ADD_NONAPI_TEST)
-    cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS" ${ARGN})
+    cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS;DEFINITIONS" ${ARGN})
     get_filename_component(test_name ${test_TARGET} NAME_WE)
     include_directories(${test_INCLUDE_DIRS})
     add_executable(${test_name} ${test_TARGET} ${test_EXTRA_SOURCES})
     target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+    target_compile_definitions(${test_name} PUBLIC ${test_DEFINITIONS})
     if(NOT ${test_NOAUTORUN})
         UHD_ADD_TEST(${test_name} ${test_name})
     endif(NOT ${test_NOAUTORUN})
