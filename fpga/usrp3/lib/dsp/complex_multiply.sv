@@ -17,9 +17,9 @@
 // Parameters:
 //
 //   WIDTH_A : Width of the real and imaginary parts of the first complex
-//             number. The maximum width is 18 bits.
-//   WIDTH_B : Width of the real and imaginary parts of the second complex
 //             number. The maximum width is 25 bits.
+//   WIDTH_B : Width of the real and imaginary parts of the second complex
+//             number. The maximum width is 18 bits.
 //
 
 module complex_multiply #(
