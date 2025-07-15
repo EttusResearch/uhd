@@ -22,6 +22,7 @@ localparam REG_TIME_LO      = 'h04;  // Timestamp lower 32 bits
 localparam REG_TIME_HI      = 'h08;  // Timestamp upper 32 bits
 
 
+
 //-----------------------------------------------------------------------------
 // Radio Core Register Offsets (One Set Per Radio Port)
 //-----------------------------------------------------------------------------
@@ -33,39 +34,59 @@ localparam REG_TIME_HI      = 'h08;  // Timestamp upper 32 bits
 // WARNING: All registers larger than a single 32-bit word must be read and
 //          written least significant word first to guarantee coherency.
 //
+// The address space for each port is 2^10 or 0x400 byte adresses.
+//
+// 0x000 - 0x0FF General Radio Registers
+// 0x100 - 0x1FF RX Core Control Registers
+// 0x200 - 0x2FF TX Core Control Registers
+// 0x300 - 0x3FF Feature Control registers
+//
 //-----------------------------------------------------------------------------
 
-localparam RADIO_BASE_ADDR = 20'h1000; // Base address of first radio. Choose a
-                                       // nice big power of 2 so we can just pass
-                                       // the lower bits to the radio cores.
-localparam RADIO_ADDR_W    = 7;        // Address space size per radio
+localparam RADIO_BASE_ADDR   = 20'h1000; // Base address of first radio. Choose a
+                                         // nice big power of 2 so we can just pass
+                                         // the lower bits to the radio cores.
+localparam RADIO_ADDR_W      = 10;       // Address space size per radio
 
 // General Radio Registers
-localparam REG_LOOPBACK_EN   = 'h00;   // Loopback enable (connect Tx output to Rx input)
-localparam REG_RADIO_WIDTH   = 'h04;   // Upper 16 bits is sample width, lower 16 bits is NSPC
+localparam REG_PORT_GENERAL_ADDR_OFFSET = 'h000; // Address offset for general registers
+localparam REG_PORT_GENERAL_ADDR_W      = 8;     // Address space size for general registers
 
-// RX Control Registers
-localparam REG_RX_STATUS            = 'h10; // Status of Rx radio
-localparam REG_RX_CMD               = 'h14; // The next radio command to execute
-localparam REG_RX_CMD_NUM_WORDS_LO  = 'h18; // Number of radio words for the next command (low word)
-localparam REG_RX_CMD_NUM_WORDS_HI  = 'h1C; // Number of radio words for the next command (high word)
-localparam REG_RX_CMD_TIME_LO       = 'h20; // Time for the next command (low word)
-localparam REG_RX_CMD_TIME_HI       = 'h24; // Time for the next command (high word)
-localparam REG_RX_MAX_WORDS_PER_PKT = 'h28; // Maximum packet length to build from Rx data
-localparam REG_RX_ERR_PORT          = 'h2C; // Port ID for error reporting
-localparam REG_RX_ERR_REM_PORT      = 'h30; // Remote port ID for error reporting
-localparam REG_RX_ERR_REM_EPID      = 'h34; // Remote EPID (endpoint ID) for error reporting
-localparam REG_RX_ERR_ADDR          = 'h38; // Offset to write error code to
-localparam REG_RX_DATA              = 'h3C; // Read the current Rx output of the radio
-localparam REG_RX_HAS_TIME          = 'h70; // Controls whether or not a channel has timestamps
+localparam REG_LOOPBACK_EN      = 'h00;     // Loopback enable (connect Tx output to Rx input)
+localparam REG_RADIO_WIDTH      = 'h04;     // Upper 16 bits is sample width, lower 16 bits is NSPC
+localparam REG_FEATURES_PRESENT = 'h08;     // Indicates which features are present:
+                                            //  - Bit [31:2]  : Reserved
+                                            //  - Bit [1]     : RX Complex gain
+                                            //  - Bit [0]     : TX Complex gain
 
-// TX Control Registers
-localparam REG_TX_IDLE_VALUE   = 'h40; // Value to output when transmitter is idle
-localparam REG_TX_ERROR_POLICY = 'h44; // Tx error policy
-localparam REG_TX_ERR_PORT     = 'h48; // Port ID for error reporting
-localparam REG_TX_ERR_REM_PORT = 'h4C; // Remote port ID for error reporting
-localparam REG_TX_ERR_REM_EPID = 'h50; // Remote EPID (endpoint ID) for error reporting
-localparam REG_TX_ERR_ADDR     = 'h54; // Offset to write error code to
+// RX Core Control Registers
+localparam REG_PORT_RX_ADDR_OFFSET  = 'h100; // Address offset for RX registers
+localparam REG_PORT_RX_ADDR_W       = 8;     // Address space size for RX registers
+
+localparam REG_RX_STATUS            = 'h00; // Status of Rx radio
+localparam REG_RX_CMD               = 'h04; // The next radio command to execute
+localparam REG_RX_CMD_NUM_WORDS_LO  = 'h08; // Number of radio words for the next command (low word)
+localparam REG_RX_CMD_NUM_WORDS_HI  = 'h0C; // Number of radio words for the next command (high word)
+localparam REG_RX_CMD_TIME_LO       = 'h10; // Time for the next command (low word)
+localparam REG_RX_CMD_TIME_HI       = 'h14; // Time for the next command (high word)
+localparam REG_RX_MAX_WORDS_PER_PKT = 'h18; // Maximum packet length to build from Rx data
+localparam REG_RX_ERR_PORT          = 'h1C; // Port ID for error reporting
+localparam REG_RX_ERR_REM_PORT      = 'h20; // Remote port ID for error reporting
+localparam REG_RX_ERR_REM_EPID      = 'h24; // Remote EPID (endpoint ID) for error reporting
+localparam REG_RX_ERR_ADDR          = 'h28; // Offset to write error code to
+localparam REG_RX_DATA              = 'h2C; // Read the current Rx output of the radio
+localparam REG_RX_HAS_TIME          = 'h30; // Controls whether or not a channel has timestamps
+
+// TX Core Control Registers
+localparam REG_PORT_TX_ADDR_OFFSET  = 'h200; // Address offset for TX registers
+localparam REG_PORT_TX_ADDR_W       = 8;     // Address space size for TX registers
+
+localparam REG_TX_IDLE_VALUE   = 'h00; // Value to output when transmitter is idle
+localparam REG_TX_ERROR_POLICY = 'h04; // Tx error policy
+localparam REG_TX_ERR_PORT     = 'h08; // Port ID for error reporting
+localparam REG_TX_ERR_REM_PORT = 'h0C; // Remote port ID for error reporting
+localparam REG_TX_ERR_REM_EPID = 'h10; // Remote EPID (endpoint ID) for error reporting
+localparam REG_TX_ERR_ADDR     = 'h14; // Offset to write error code to
 
 
 //-----------------------------------------------------------------------------
@@ -133,3 +154,22 @@ localparam ERR_TX_CODE_W = 2;  // Bit width of error code values
 localparam ERR_TX_UNDERRUN  = 1;  // Data underflow (data not available when needed)
 localparam ERR_TX_LATE_DATA = 2;  // Late data (arrived after indicated time)
 localparam ERR_TX_EOB_ACK   = 3;  // Acknowledge end-of-burst (this is not an error)
+
+
+//----------------------------------------------------------------------------
+// Feature Control Registers
+//----------------------------------------------------------------------------
+//  - Complex Gain feature: 0x300-0x31F
+//    - TX Complex Gain registers: 0x300-0x30F
+//    - RX Complex Gain registers: 0x310-0x31F
+//----------------------------------------------------------------------------
+localparam REG_PORT_FEAT_ADDR_OFFSET = 'h300; // Address offset for feature control registers
+localparam REG_PORT_FEAT_ADDR_W      = 8;     // Address space size for feature control registers
+
+localparam REG_CGAIN_ADDR_OFFSET     = 'h000; // Address offset for complex gain registers
+
+// TX Complex Gain Registers
+localparam REG_CGAIN_TX_OFFSET       = 'h000;
+
+// RX Complex Gain Registers
+localparam REG_CGAIN_RX_OFFSET       = 'h010;

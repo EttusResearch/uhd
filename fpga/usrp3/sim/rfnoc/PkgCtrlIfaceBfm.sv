@@ -15,6 +15,9 @@ package PkgCtrlIfaceBfm;
   import rfnoc_chdr_utils_pkg::*;
   import PkgAxisCtrlBfm::*;
 
+  // Default timestamp value to indicate no timestamp is provided in a control packet
+  // (i.e. has_time = 0).
+  localparam chdr_timestamp_t RESERVED_TS = {CHDR_TIMESTAMP_W{1'b1}} - 1;
 
   class CtrlIfaceBfm extends AxisCtrlBfm;
     ctrl_port_t    dst_port;
@@ -44,10 +47,12 @@ package PkgCtrlIfaceBfm;
     //
     //   addr:       Address for the read request
     //   word:       Data word that was returned in response to the read
+    //   timestamp:  Timestamp for the read request (Optional)
     //
     task reg_read (
-      input  ctrl_address_t addr,
-      output ctrl_word_t    word
+      input  ctrl_address_t   addr,
+      output ctrl_word_t      word,
+      input  chdr_timestamp_t timestamp = RESERVED_TS
     );
       AxisCtrlPacket ctrl_packet;
 
@@ -58,6 +63,7 @@ package PkgCtrlIfaceBfm;
         num_data : 1,
         src_port : src_port,
         dst_port : dst_port,
+        has_time : (timestamp != RESERVED_TS),
         default  : 0
       };
       ctrl_packet.op_word = '{
@@ -68,6 +74,10 @@ package PkgCtrlIfaceBfm;
         default     : 0
       };
       ctrl_packet.data = { 0 };
+
+      if (ctrl_packet.header.has_time) begin
+        ctrl_packet.timestamp = timestamp;
+      end
 
       // Send the control packet and get the response
       put_ctrl(ctrl_packet);
@@ -85,10 +95,12 @@ package PkgCtrlIfaceBfm;
     //
     //   addr:       Address for the write request
     //   word:       Data word to write
+    //   timestamp:  Timestamp for the write request(Optional)
     //
     task reg_write (
-      ctrl_address_t addr,
-      ctrl_word_t    word
+      ctrl_address_t   addr,
+      ctrl_word_t      word,
+      chdr_timestamp_t timestamp = RESERVED_TS
     );
       AxisCtrlPacket ctrl_packet;
 
@@ -99,6 +111,7 @@ package PkgCtrlIfaceBfm;
         num_data : 1,
         src_port : src_port,
         dst_port : dst_port,
+        has_time : (timestamp != RESERVED_TS),
         default  : 0
       };
       ctrl_packet.op_word = '{
@@ -108,6 +121,10 @@ package PkgCtrlIfaceBfm;
         address     : addr,
         default     : 0
       };
+
+      if (ctrl_packet.header.has_time) begin
+        ctrl_packet.timestamp = timestamp;
+      end
 
       // Send the packet and get the response
       ctrl_packet.data = { word };

@@ -20,8 +20,8 @@ using namespace uhd::rfnoc;
 const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
 
-const uint16_t radio_control_impl::MAJOR_COMPAT = 0;
-const uint16_t radio_control_impl::MINOR_COMPAT = 1;
+const uint16_t radio_control_impl::MAJOR_COMPAT = 1;
+const uint16_t radio_control_impl::MINOR_COMPAT = 0;
 
 const uhd::fs_path radio_control_impl::DB_PATH("dboard");
 const uhd::fs_path radio_control_impl::FE_PATH("frontends");

@@ -48,6 +48,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   duc1:
     block_desc: 'duc.yml'
     parameters:
@@ -60,6 +62,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   replay0:
     block_desc: 'replay.yml'
     parameters:

@@ -46,4 +46,7 @@ variable_delay_line.v \
 axi_fir_multisample_filter.sv \
 complex_multiply.sv \
 complex_multiply_iq.sv \
+complex_multiply_stb.sv \
+timed_complex_gain_regs.svh \
+timed_complex_gain.sv \
 ))

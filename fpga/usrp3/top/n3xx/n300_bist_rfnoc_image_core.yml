@@ -42,6 +42,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   fifo0:
     block_desc: 'axi_ram_fifo.yml'
     parameters:

@@ -13,6 +13,8 @@ parameters:
   NUM_PORTS: 2
   NIPC: ${ config.device.parameters.get("RADIO_NIPC", 1) }
   ITEM_W: 32
+  EN_COMP_GAIN_TX: 0
+  EN_COMP_GAIN_RX: 0
 
 checks:
   - condition: "${parameters['NUM_PORTS'] > 0}"

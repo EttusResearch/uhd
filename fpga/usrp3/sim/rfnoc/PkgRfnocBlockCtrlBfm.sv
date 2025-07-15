@@ -267,36 +267,40 @@ package PkgRfnocBlockCtrlBfm;
     // Send a read request packet on the AXIS-Ctrl interface and get the
     // response.
     //
-    //   addr:   Address for the read request
-    //   word:   Data word that was returned in response to the read
+    //   addr:       Address for the read request
+    //   word:       Data word that was returned in response to the read
+    //   timestamp:  Timestamp for the read request (Optional)
     //
     task reg_read(
       input  ctrl_address_t addr,
-      output ctrl_word_t    word
+      output ctrl_word_t    word,
+      input  chdr_timestamp_t timestamp = RESERVED_TS
     );
       assert (running) else begin
         $fatal(1, "Cannot call reg_read until RfnocBlockCtrlBfm is running");
       end
 
-      ctrl.reg_read(addr, word);
+      ctrl.reg_read(addr, word, timestamp);
     endtask : reg_read
 
 
     // Send a a write request packet on the AXIS-Ctrl interface and get the
     // response.
     //
-    //   addr:   Address for the write request
-    //   word:   Data word to write
+    //   addr:       Address for the write request
+    //   word:       Data word to write
+    //   timestamp:  Timestamp for the write request (Optional)
     //
     task reg_write(
       ctrl_address_t addr,
-      ctrl_word_t    word
+      ctrl_word_t    word,
+      chdr_timestamp_t timestamp = RESERVED_TS
     );
       assert (running) else begin
         $fatal(1, "Cannot call reg_write until RfnocBlockCtrlBfm is running");
       end
 
-      ctrl.reg_write(addr, word);
+      ctrl.reg_write(addr, word, timestamp);
     endtask : reg_write
 
   endclass : RfnocBlockCtrlBfmCtrlOnly

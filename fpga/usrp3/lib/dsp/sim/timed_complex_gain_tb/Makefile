@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Ettus Research, A National Instruments Company
+# Copyright 2025 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
@@ -16,27 +16,25 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 # Design Specific
 #-------------------------------------------------
 # Include makefiles and sources for the DUT and its dependencies
-include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
-include $(BASE_DIR)/../lib/rfnoc/utils/Makefile.srcs
-include Makefile.srcs
-include $(BASE_DIR)/../lib/axi4s_sv/Makefile.srcs
+
+include $(BASE_DIR)/../lib/rfnoc/Makefile.srcs
+
 
 DESIGN_SRCS += $(abspath \
 $(RFNOC_CORE_SRCS) \
-$(RFNOC_UTIL_SRCS) \
-$(RFNOC_BLOCK_RADIO_SRCS) \
-$(AXI4S_SV_SRCS) \
 )
 
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-SIM_TOP = rfnoc_block_radio_all_tb
+SIM_TOP = timed_complex_gain_tb_all
 
 SIM_SRCS = \
-$(abspath sim_radio_gen.sv) \
-$(abspath rfnoc_block_radio_tb.sv) \
-$(abspath rfnoc_block_radio_all_tb.sv)
+$(abspath strobe_data_if.sv) \
+$(abspath strobe_data_bfm_pkg.sv) \
+$(abspath timed_complex_gain_tb.sv) \
+$(abspath timed_complex_gain_tb_all.sv)
+
 
 # MODELSIM_USER_DO = $(abspath wave.do)
 

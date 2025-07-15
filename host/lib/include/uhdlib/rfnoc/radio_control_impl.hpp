@@ -225,45 +225,76 @@ public:
                 0x1000 + 0x04, // Upper 16 bits is sample width, lower 16 bits is NSPC
 
             RADIO_BASE_ADDR = 0x1000,
-            REG_CHAN_OFFSET = 128,
-            RADIO_ADDR_W    = 7, // Address space size per radio
+            REG_CHAN_OFFSET = 1024,
+            RADIO_ADDR_W    = 10, // Address space size per radio
+
+            REG_PORT_GENERAL_ADDR_OFFSET = 0x000, // Address offset for general registers
+            REG_PORT_GENERAL_ADDR_W      = 8, // Address space size for general registers
 
             // General Radio Registers
-            REG_LOOPBACK_EN = 0x00, // Loopback enable (connect Tx output to Rx input)
+            REG_LOOPBACK_EN = REG_PORT_GENERAL_ADDR_OFFSET
+                              + 0x00, // Loopback enable (connect Tx output to Rx input)
+            REG_FEATURES_PRESENT = REG_PORT_GENERAL_ADDR_OFFSET
+                                   + 0x08, // Indicates which features are present:
+                                           //  - Bit [31:2]  : Reserved
+                                           //  - Bit [1]     : RX Complex gain
+                                           //  - Bit [0]     : TX Complex gain
 
             // Note on the RX and TX Control Registers: These are per-channel,
             // which means the values here are offsets. The base address per
             // channel is RADIO_BASE_ADDR + i * REG_CHAN_OFFSET, where i is the
             // channel index.
 
-            // RX Control Registers
-            REG_RX_STATUS = 0x10, // Status of Rx radio
-            REG_RX_CMD    = 0x14, // The next radio command to execute
-            REG_RX_CMD_NUM_WORDS_LO =
-                0x18, // Number of radio words for the next command (low word)
-            REG_RX_CMD_NUM_WORDS_HI =
-                0x1C, // Number of radio words for the next command (high word)
-            REG_RX_CMD_TIME_LO = 0x20, // Time for the next command (low word)
-            REG_RX_CMD_TIME_HI = 0x24, // Time for the next command (high word)
-            REG_RX_MAX_WORDS_PER_PKT =
-                0x28, // Maximum packet length to build from Rx data
-            REG_RX_ERR_PORT     = 0x2C, // Port ID for error reporting
-            REG_RX_ERR_REM_PORT = 0x30, // Remote port ID for error reporting
-            REG_RX_ERR_REM_EPID = 0x34, // Remote EPID (endpoint ID) for error reporting
-            REG_RX_ERR_ADDR =
-                0x38, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
-            REG_RX_DATA = 0x3C,
-            REG_RX_HAS_TIME =
-                0x70, // Set to one if radio output packets should have timestamps
+            // RX Core Control Registers
+            REG_PORT_RX_ADDR_OFFSET = 0x100, // Address offset for RX registers
+            REG_PORT_RX_ADDR_W      = 8, // Address space size for RX registers
 
-            // TX Control Registers
-            REG_TX_IDLE_VALUE   = 0x40, // Value to output when transmitter is idle
-            REG_TX_ERROR_POLICY = 0x44, // Tx error policy
-            REG_TX_ERR_PORT     = 0x48, // Port ID for error reporting
-            REG_TX_ERR_REM_PORT = 0x4C, // Remote port ID for error reporting
-            REG_TX_ERR_REM_EPID = 0x50, // Remote EPID (endpoint ID) for error reporting
+            REG_RX_STATUS = REG_PORT_RX_ADDR_OFFSET + 0x00, // Status of Rx radio
+            REG_RX_CMD =
+                REG_PORT_RX_ADDR_OFFSET + 0x04, // The next radio command to execute
+            REG_RX_CMD_NUM_WORDS_LO =
+                REG_PORT_RX_ADDR_OFFSET
+                + 0x08, // Number of radio words for the next command (low word)
+            REG_RX_CMD_NUM_WORDS_HI =
+                REG_PORT_RX_ADDR_OFFSET
+                + 0x0C, // Number of radio words for the next command (high word)
+            REG_RX_CMD_TIME_LO =
+                REG_PORT_RX_ADDR_OFFSET + 0x10, // Time for the next command (low word)
+            REG_RX_CMD_TIME_HI =
+                REG_PORT_RX_ADDR_OFFSET + 0x14, // Time for the next command (high word)
+            REG_RX_MAX_WORDS_PER_PKT =
+                REG_PORT_RX_ADDR_OFFSET
+                + 0x18, // Maximum packet length to build from Rx data
+            REG_RX_ERR_PORT =
+                REG_PORT_RX_ADDR_OFFSET + 0x1C, // Port ID for error reporting
+            REG_RX_ERR_REM_PORT =
+                REG_PORT_RX_ADDR_OFFSET + 0x20, // Remote port ID for error reporting
+            REG_RX_ERR_REM_EPID = REG_PORT_RX_ADDR_OFFSET
+                                  + 0x24, // Remote EPID (endpoint ID) for error reporting
+            REG_RX_ERR_ADDR =
+                REG_PORT_RX_ADDR_OFFSET
+                + 0x28, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+            REG_RX_DATA = REG_PORT_RX_ADDR_OFFSET + 0x2C,
+            REG_RX_HAS_TIME =
+                REG_PORT_RX_ADDR_OFFSET
+                + 0x30, // Set to one if radio output packets should have timestamps
+
+            // TX Core Control Registers
+            REG_PORT_TX_ADDR_OFFSET = 0x200, // Address offset for TX registers
+            REG_PORT_TX_ADDR_W      = 8, // Address space size for TX registers
+
+            REG_TX_IDLE_VALUE = REG_PORT_TX_ADDR_OFFSET
+                                + 0x00, // Value to output when transmitter is idle
+            REG_TX_ERROR_POLICY = REG_PORT_TX_ADDR_OFFSET + 0x04, // Tx error policy
+            REG_TX_ERR_PORT =
+                REG_PORT_TX_ADDR_OFFSET + 0x08, // Port ID for error reporting
+            REG_TX_ERR_REM_PORT =
+                REG_PORT_TX_ADDR_OFFSET + 0x0C, // Remote port ID for error reporting
+            REG_TX_ERR_REM_EPID = REG_PORT_TX_ADDR_OFFSET
+                                  + 0x10, // Remote EPID (endpoint ID) for error reporting
             REG_TX_ERR_ADDR =
-                0x54, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+                REG_PORT_TX_ADDR_OFFSET
+                + 0x14, // Offset to which to write error code (ADDR+0) and time (ADDR+8)
 
             RX_CMD_STOP       = 0, // Stop acquiring at end of next packet
             RX_CMD_FINITE     = 1, // Acquire NUM_SAMPS then stop
@@ -272,6 +303,31 @@ public:
             RX_CMD_TRIG_POS  = 30,
             RX_CMD_TIMED_POS = 31,
 
+            // Feature Control Registers
+            REG_PORT_FEAT_ADDR_OFFSET =
+                0x300, // Address offset for feature control registers
+            REG_PORT_FEAT_ADDR_W = 8, // Address space size for feature
+
+            // Complex Gain feature
+            //  - TX Complex Gain registers: 0x300-0x30F
+            //  - RX Complex Gain registers: 0x310-0x31F
+            REG_CGAIN_ADDR_OFFSET =
+                0x00, // Address offset for complex gain inside feature register
+
+            // Complex Gain TX Registers
+            REG_TX_CGAIN_COEFF = // The TX complex gain coefficient
+                                 // [31:16]  : Real part
+                                 // [15:0]   : Imaginary part
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_ADDR_OFFSET + 0x00,
+
+            // Complex Gain RX Registers
+            REG_RX_CGAIN_COEFF = // The RX complex gain coefficient
+                                 // [31:16]  : Real part
+                                 // [15:0]   : Imaginary part
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_ADDR_OFFSET + 0x10,
+
+
+            // Peripheral registers
             PERIPH_BASE       = 0x80000,
             PERIPH_REG_OFFSET = 8,
 
