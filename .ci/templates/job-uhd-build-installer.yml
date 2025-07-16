@@ -50,6 +50,7 @@ jobs:
       - docker
       - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - Agent.OS -equals Windows_NT
+        - high_disk_io -equals 1
       - ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
         - Agent.OS -equals Linux
   workspace:
