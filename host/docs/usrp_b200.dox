@@ -18,12 +18,84 @@
     -   Timed commands in FPGA
     -   Timed sampling in FPGA
 
-\section b200_power Power
+\section b200_getting_started Getting Started
 
-The B2xx devices draw power from the USB bus, which provides enough power when
-a USB 3.0 port is used. If a GPSDO (optional on B210) is used or when using
-USB 2.0, an external power supply (B200/210 only) or a cable designed to
-pull power from 2 USB ports (USB 2.0 dual A to micro-B or B) must be used.
+This will run you through the first steps relevant to getting your USRP B2xx
+device up and running.
+
+\subsection kit_contents Kit Contents
+
+- USRP B200/B210/B200mini/B205mini/B206mini
+- USB 3.0 Cable
+- Universal power supply (B210 only)
+- Jackscrew stress relief (B206mini enclosed variant only)
+
+\subsection verify_contents Verify the Contents of Your Kit
+Make sure that your kit contains all the items listed above. If any items are
+missing, please contact your sales agent or Ettus Research Technical support
+immediately.
+
+You will need a host computer with a USB2.0 or USB 3.0 port to use the USRP
+B2xx.
+
+\subsection care_and_handling Proper Care and Handling
+All Ettus Research products are individually tested before shipment. The USRP™
+is guaranteed to be functional at the time it is received by the customer.
+Improper use or handling of the USRP™ can easily cause the device to become
+non-functional. Listed below are some examples of actions which can prevent
+damage to the unit:
+
+- Never allow metal objects to touch the circuit board while powered.
+- Always properly terminate the transmit port with an antenna or 50Ω load.
+- Always handle the board with proper anti-static methods.
+- Never allow the board to directly or indirectly come into contact with any
+voltage spikes.
+- Never allow any water, or condensing moisture, to come into contact with the boards.
+- Always use caution with FPGA, firmware, or software modifications.
+
+Some warnings to prevent damage to the device:
+- Never apply more than -15 dBm of power into any RF input.
+- Always use at least 30 dB attenuation if operating in loopback configuration.
+
+\subsection install_software_tools Install and Setup the Software Tools on Your Host Computer
+In order to use your Universal Software Radio Peripheral (USRP™), you must have
+the software tools correctly installed and configured on your host computer.
+Download and install UHD on your host computer following \ref page_install or
+\ref page_build_guide. The following minimum UHD versions are required:
+
+- The USRP B2xx other than B206mini require UHD version 3.8.4 or above.
+- The USRP B206mini requires UHD version 4.9 or above.
+
+It is generally recommended to use the latest UHD version.
+
+\subsection connect_device Connect the USRP to the Host Computer
+The included USB 3.0 cable provides power and data connectivity for the
+USRP Bus Series. The shipping kits include appropriate USB 3 cables to connect
+the B200/B210, B200mini, or B205mini to available USB Type-A USB 3.0 (or 2.0)
+ports on the Host Computer. The B206mini shipping kit includes USB 3.2 Gen 1
+cable for plugging into available USB 3 Type-C ports on the Host Computer.
+
+Note: If a GPSDO module is installed (B200/210 only) or when using USB 2.0, an
+external DC power supply or a cable designed to pull power from 2 USB ports
+(USB 2.0 dual A to micro-B or B) must be used.
+
+Note: The cables for the B200-Series USRP have different device-side USB
+connectors. Before attempting to use custom 3rd party USB 3 cables ensure they
+have the required device side USB connector:
+- B200/B210: USB Type B connector
+- B200mini/B205mini:	USB Micro B Superspeed connector
+- B206mini:	USB Type C connector
+
+\subsection verify_device_operation Test and Verify the Operation of the USRP
+Once the software tools are installed on the host computer, verify the
+correct operation of the USRP by running the utility programs on the host
+computer. More information is available at the
+[Verifying the Operation of the USRP Using UHD and GNU Radio](https://kb.ettus.com/Verifying_the_Operation_of_the_USRP_Using_UHD_and_GNU_Radio)
+Application Note.
+
+\subsection technical_support Technical Support and Community Knowledge Base
+Please contact [Technical Support](https://kb.ettus.com/Technical_Support), for
+any questions or issues with your USRP.
 
 \section b200_imgs Specifying a Non-standard Image
 
