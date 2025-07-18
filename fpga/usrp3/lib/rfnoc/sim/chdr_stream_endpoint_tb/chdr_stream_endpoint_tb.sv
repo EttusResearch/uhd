@@ -290,9 +290,9 @@ module chdr_stream_endpoint_tb#(
     input [15:0] dst_epid
   );
     ChdrPacket         #(CHDR_W) tx_chdr, rx_chdr, exp_chdr;
-    chdr_header_t      chdr_hdr;
+    chdr_header_t      chdr_hdr, chdr_hdr_rx;
     chdr_str_command_t str_cmd;
-    chdr_str_status_t  str_sts;
+    chdr_str_status_t  str_sts, str_sts_rx;
     chdr_seq_num_t     seq_num, resp_seq_num;
     int                xfer_count_bytes;
     int                xfer_count_pkts;
@@ -370,6 +370,11 @@ module chdr_stream_endpoint_tb#(
       exp_chdr = new();
       exp_chdr.write_stream_status(chdr_hdr, str_sts);
       if (VERBOSE) begin $write("ExpRx"); exp_chdr.print(); end
+
+      // mask stream status info bits
+      rx_chdr.read_stream_status(chdr_hdr_rx, str_sts_rx);
+      str_sts_rx.status_info = 0;
+      rx_chdr.write_stream_status(chdr_hdr_rx, str_sts_rx);
 
       // Validate contents of the response
       `ASSERT_ERROR(exp_chdr.equal(rx_chdr),
