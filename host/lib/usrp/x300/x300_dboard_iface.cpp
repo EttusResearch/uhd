@@ -31,9 +31,6 @@ x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t& config)
         this->_write_aux_dac(unit);
     }
 
-    _clock_rates[UNIT_RX] = _config.clock->get_dboard_rate(_config.which_rx_clk);
-    _clock_rates[UNIT_TX] = _config.clock->get_dboard_rate(_config.which_tx_clk);
-
     this->set_clock_enabled(UNIT_RX, false);
     this->set_clock_enabled(UNIT_TX, false);
 }
@@ -52,10 +49,6 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
 
-    // Just return if the requested rate is already set
-    if (std::abs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
-        return;
-
     switch (unit) {
         case UNIT_RX:
             _config.clock->set_dboard_rate(_config.which_rx_clk, rate);
@@ -66,14 +59,21 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
         default:
             UHD_THROW_INVALID_CODE_PATH();
     }
-    _clock_rates[unit] = rate; // set to shadow
 }
 
 double x300_dboard_iface::get_clock_rate(unit_t unit)
 {
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
-    return _clock_rates[unit]; // get from shadow
+
+    switch (unit) {
+        case UNIT_RX:
+            return _config.clock->get_dboard_rate(_config.which_rx_clk);
+        case UNIT_TX:
+            return _config.clock->get_dboard_rate(_config.which_tx_clk);
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
@@ -109,6 +109,25 @@ double x300_dboard_iface::get_codec_rate(unit_t unit)
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _config.clock->get_master_clock_rate();
+}
+
+bool x300_dboard_iface::lock_clock_rate(const unit_t unit)
+{
+    switch (unit) {
+        case UNIT_RX:
+            _config.clock->lock_dboard_rate(_config.which_rx_clk);
+            break;
+        case UNIT_TX:
+            _config.clock->lock_dboard_rate(_config.which_tx_clk);
+            break;
+        case UNIT_BOTH:
+            _config.clock->lock_dboard_rate(_config.which_rx_clk);
+            _config.clock->lock_dboard_rate(_config.which_tx_clk);
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+    return true;
 }
 
 /***********************************************************************
