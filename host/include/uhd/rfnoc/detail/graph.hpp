@@ -54,7 +54,7 @@ public:
      *
      * Disconnects all edges and removes the node from the graph.
      *
-     * \param src_node A reference to the node
+     * \param node A reference to the node
      */
     void remove(node_ref_t node);
 
