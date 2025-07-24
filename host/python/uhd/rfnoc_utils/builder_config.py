@@ -18,6 +18,7 @@ import numpy as np
 from . import connections, yaml_utils
 from .common import DEVICE_NAME, RFNOC_PROTO_VERSION
 from .utils import find_include_file, generate_edge_table, merge_dicts, resolve
+from .template import render_wire_width
 
 
 class ImageBuilderConfig:
@@ -1187,14 +1188,7 @@ class ImageBuilderConfig:
     def render_wire_width(self, wire, pad=8):
         """Render a wire's width ([7:0])."""
         width = wire.get("width", 1)
-        if isinstance(width, int):
-            start_idx = width - 1
-        else:
-            start_idx = f"{width}-1"
-        if start_idx == 0:
-            return "".rjust(pad)
-        range_str = f"{start_idx}:0".rjust(pad - 2)
-        return f"[{range_str}]"
+        return render_wire_width(width, pad)
 
     def get_secure_core_def(self):
         """Return the secure image core dictionary."""
