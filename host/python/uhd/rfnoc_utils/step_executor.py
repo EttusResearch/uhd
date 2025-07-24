@@ -25,7 +25,8 @@ from pathlib import Path
 import mako.lookup
 from ruamel.yaml import YAML
 
-from .template import Template
+from . import yaml_utils
+from .template import Template, render_wire_width
 from .utils import resolve
 
 
@@ -52,6 +53,30 @@ def get_file_list(**kwargs):
         file_list.append(kwargs["file"])
     # Only return unique files that exist
     return [f for f in set(file_list) if os.path.isfile(f)]
+
+
+def expand_io_sig(filename, config):
+    """Expand io signatures.
+
+    This expands the IO signatures in a block descriptor YAML file. After
+    expansion, every entry in the IO signatures sub-dictionary is extended with
+    detailed information about the wires used, their direction, etc.
+
+    Arguments:
+        filename: The name of the YAML file this data was pulled from.
+        config: The contents of the block descriptor YAML file as a dictionary.
+
+    Return value:
+    The same config object, but the entries of the IO ports section has additional
+    information about the wires.
+    """
+    from uhd import get_pkg_data_path
+
+    signatures = yaml_utils.io_signatures(
+        yaml_utils.get_core_config_path(get_pkg_data_path()), {filename: config}
+    )
+    config = yaml_utils.IOConfig(config, signatures)
+    return config
 
 
 class StepExecutor:
@@ -232,6 +257,8 @@ class StepExecutor:
         try:
             with open(source, "r", encoding="utf-8") as f:
                 self.global_vars[var] = yaml.load(f)
+            if kwargs.get("expand_io_sig"):
+                self.global_vars[var] = expand_io_sig(source, self.global_vars[var])
         except FileNotFoundError:
             raise StepExecutor.StepError(f"Descriptor file {source} not found.")
         except Exception as e:
@@ -257,7 +284,7 @@ class StepExecutor:
         if os.path.exists(dest):
             self._log.warning("Overwriting existing file %s", dest)
         with open(dest, "w", encoding="utf-8") as f:
-            f.write(tpl.render(**self.global_vars, **vars))
+            f.write(tpl.render(**self.global_vars, **vars, render_wire_width=render_wire_width))
 
     def _insert_text(self, pattern, text, repl, **kwargs):
         """Insert text into a file based on a regex."""

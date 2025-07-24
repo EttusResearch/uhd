@@ -91,6 +91,7 @@ steps:
       symbol: ⚙️
   - parse_descriptor:
       source: "${ descriptor }"
+      expand_io_sig: true
   - log:
       msg: "Parsed block descriptor file ${ descriptor }."
   # RFNoC block gateware
