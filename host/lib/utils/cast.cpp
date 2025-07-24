@@ -59,7 +59,11 @@ template <>
 size_t cast::from_str(const std::string& val)
 {
     try {
-        return static_cast<size_t>(std::stoul(val));
+        if constexpr (sizeof(size_t) == sizeof(unsigned long)) {
+            return static_cast<size_t>(std::stoul(val));
+        } else {
+            return static_cast<size_t>(std::stoull(val));
+        }
     } catch (std::invalid_argument&) {
         throw uhd::runtime_error(std::string("Cannot convert `") + val + "' to size_t!");
     } catch (std::out_of_range&) {
