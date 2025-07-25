@@ -65,21 +65,44 @@ tbd
 
 \section rdtesting_devtest Devtests
 
-| Test Code           | Device        | Peripherals | Manual Test Procedure         | Automatic Test Procedure    |
-|---------------------|---------------|-------------|-------------------------------|-----------------------------|
-| DEVTEST-X310-XG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-X310-HG-v1  | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-X300-XG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-X300-HG-v1  | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-E310-SG1-v1 | USRP E310-SG1 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-E310-SG3-v1 | USRP E310-SG3 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-B200-v1     | USRP B200     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-B210-v1     | USRP B210     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-B200m-v1    | USRP B200mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-B205m-v1    | USRP B205mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-N310-v1     | USRP N310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-E320-v1     | USRP E320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
-| DEVTEST-B206m-v1    | USRP B206mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+The devtests are device tests designed to verify the basic functionality of UHD
+devices. These unit tests can be used to ensure hardware components like clock,
+sensors, GPIO, etc are functioning correctly. They also validate basic UHD API
+functions and device communication. They are not meant to be exhaustive tests,
+but rather a quick way to verify that the device is operational. These tests
+are created in python and are located in the
+`<local repo path>/host/tests/devtest/` directory. Refer
+[devtest README](https://github.com/EttusResearch/uhddev/blob/master/host/tests/devtest/README.md)
+for more information. The table below shows the list of devices and FPGA images
+that are being tested using the devtests.
+
+| Test Code               | Device        | Peripherals | Manual Test Procedure         | Automatic Test Procedure    |
+|-------------------------|---------------|-------------|-------------------------------|-----------------------------|
+| DEVTEST-X310-XG-v1      | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X310-HG-v1      | USRP X310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-XG-v1      | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X300-HG-v1      | USRP X300     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG1-v1     | USRP E310-SG1 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E310-SG3-v1     | USRP E310-SG3 | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-E320-1G-v1      | USRP E320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200-v1         | USRP B200     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B210-v1         | USRP B210     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B200m-v1        | USRP B200mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B205m-v1        | USRP B205mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-B206m-v1        | USRP B206mini | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-N310-XG-v1      | USRP N310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-N310-HG-v1      | USRP N310     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-N320-HG-v1      | USRP N320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-N320-XG-v1      | USRP N320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-N320-XQ-v1      | USRP N320     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X410-X4_200-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X410-UC_200-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X410-CG_400-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X440-X4_200-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X440-X4_400-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X440-CG_400-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X440-X4_1600-v1 | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X440-CG_1600-v1 | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 
 The devtests are hardware tests built in to the UHD make system. They can be run
 directly from the build directory and require no configuration.
@@ -97,64 +120,62 @@ peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
 GPSDOs on the B- and X-Series).
 
 Running these tests requires the yaml package. On Ubuntu, run
-`sudo apt-get install python-yaml` to install the Python 2 version of the YAML
-library.
+`sudo apt-get install python3-yaml` to install the Python 3 version of the YAML
+library. Follow steps in \ref page_build_guide to setup build environment. 
+
+Note: The devtests can be executed both on the host computer or on the embedded
+devices (x4xx, n3xx, e3xx) itself. In both cases, a build environment (build
+folder structure created when building uhd from source) is required. The below
+section \ref rdtesting_devtest_manual shows the steps to execute the devtests
+on the device using host computer.
 
 \subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
 
-### X3x0 procedure
-
-1. Make sure no peripherals are connected to the device (no daughterboards, no
-   GSPDO, front panel GPIO is unconnected).
-2. When testing the HG image, run a test once for each connection (1 GigE and
-   10 GigE). When testing the XG image, a test on either connection (SFP0 or
-   SFP1) is sufficient. In both cases, also test via PCIe.
-3. When the device is connected, simply run `make test_x3x0` from the command
-   line in the build directory. Multiple devices connected will all get tested,
-   there is no requirement to only connect a single device at a time (because
-   devtest will run sequentially anyway).
+### Running devtest using UHD make
+To run the devtests using UHD make, follow these steps:
+1. Make sure no optional peripherals are connected to the device and remove all
+   front panel connections, including from GPIO.
+2. Connect the device to the host computer via the appropriate
+   interface depending upon the FPGA image. Refer below table for some examples
+   of test cases.
+3. Run `make test_<devtest-pattern>` from the command line in the build
+   directory (i.e. <local repo path>/host/build). Refer below table for the
+   list of available `<devtest-pattern>`. By default, the devtest is executed
+   on all the connected devices matching the `<devtest-pattern>`. To target a
+   specific device use the argument `EXTRA_DEV_ARGS` and specify the device
+   address or name. For example, to run devtest on a specific x410:
+\code 
+<build_directory> make test_x410 EXTRA_DEV_ARGS="addr=10.2.161.10"
+\endcode
 4. Devtest must report no failures for a 'pass' validation.
 
-### B2xx procedure
+| Device (type) | make test_<devtest-pattern> | FPGA Image | Interface    | Testing                                                                                   |
+|---------------|-----------------------------|------------|--------------|-------------------------------------------------------------------------------------------|
+| X410 (x4xx)   | make test_x410              | X4_200     | 4x10GbE      | Test once on SFP0                                                                         |
+| X440 (x4xx)   | make test_x440              | X4_400     | 4x10GbE      | Test once on SFP0                                                                         |
+| X3x0 (x300)   | make test_x3x0              | HG, XG     | 1GbE, 10GbE  | For HG, test once for each connection: 1GbE (SFP0) and 10GbE (SFP1).<br> For XG, test once for either SFP0 or SFP1 is sufficient. In both cases, also test via PCIe.|
+| N3xx (n3xx)   | make test_n3x0              | HG, XG     | 1GbE, 10GbE  | For HG, test once for each connection: 1GbE (SFP0) and 10GbE (SFP1).<br>For XG, test once for either SFP0 or SFP1 is sufficient.|
+| B2xx (b200)   | make test_b2xx              | Default    | USB          | Test once via USB2 and USB3                                                               |
+| E320 (e3xx)   | make test_e320              | 1G, XG     | 1GbE, 10GbE  | Test once for each connection: 1GbE and 10GbE                                             |
+| E310 (e3xx)   | make test_e3xx              | sg3        | 1GbE         | Test once using ethernet                                                                  |
 
-Note: The test codes with an 'm' suffix refer to B200mini, B205mini and B206mini,
-respectively.
+### Running devtest using python test suite
+As an alternative to running the devtests using UHD make system from the
+build directory, one can also directly execute the tests using
+[run_testsuite.py](https://github.com/EttusResearch/uhddev/blob/master/host/tests/devtest/run_testsuite.py).
+For example, in case of testing on an E320, run the following command (the
+environment variables need to point to the location of the devtest code, the
+location of the UHD build, and where you want to store log files, respectively)
+on the host computer (or on the embedded device with build environment set up):
 
-1. Make sure no peripherals are connected to the device (no GPSDO if applicable,
-   GPIO pins unconnected)
-2. Test once via USB3, once via USB2.
-3. Simply run `make test_b2xx`
-4. Devtest must report no failures for a 'pass' validation.
-
-### E310 procedure
-
-1. Make sure GPIO pins are unconnected.
-2. Tests need to be run natively on the device. If the build environment is
-   available on the device, running `make test_e3xx` is sufficient.
-3. In general, there is no build environment on the device (e.g. when doing a
-   typical sshfs mount of an environment). In this case, copy the contents of
-   the devtest directory onto the device, and run the following command (the
-   environment variables need to point to the location of the devtest code, the
-   location of the UHD build, and where you want to store log files, respectively):
-
-       $DEVTEST_DIR/run_testsuite.py --src-dir $DEVTEST_DIR \
-                                     --devtest-pattern e3xx \
-                                     --build-type na \
-                                     --build-dir $BUILD_DIR \
-                                     --args type=e3x0 \
-                                     --log-dir $LOG_DIR
-
-4. Devtest must report no failures for a 'pass' validation.
-
-### E320 procedure
-
-1. Make sure no peripherals are connected to the device (no
-   GSPDO, front panel GPIO is unconnected).
-2. Run tests for both 1G and XG image.
-3. When the device is connected, simply run `make test_e320` from the command
-   line in the build directory.
-4. Devtest must report no failures for a 'pass' validation.
-
+\code
+$DEVTEST_DIR/run_testsuite.py --src-dir $DEVTEST_DIR \
+                              --devtest-pattern e3xx \
+                              --build-type na \
+                              --build-dir $BUILD_DIR \
+                              --args type=e3xx \
+                              --log-dir $LOG_DIR
+\endcode
 
 \subsection rdtesting_devtest_auto Devtest: Automatic Test Procedure
 
