@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <thread>
 
-#include <boost/asio.hpp>
+#include <uhdlib/asio.hpp>
 
 #include "rpc/detail/dev_utils.h"
 #include "rpc/detail/log.h"

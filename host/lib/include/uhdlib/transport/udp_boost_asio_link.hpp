@@ -9,11 +9,11 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
 #include <uhdlib/transport/link_base.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/transport/udp_common.hpp>
-#include <boost/asio.hpp>
 #include <memory>
 #include <vector>
 

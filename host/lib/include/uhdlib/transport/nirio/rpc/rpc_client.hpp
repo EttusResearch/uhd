@@ -10,7 +10,7 @@
 #include "rpc_common.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/asio.hpp>
+#include <uhdlib/asio.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/condition.hpp>

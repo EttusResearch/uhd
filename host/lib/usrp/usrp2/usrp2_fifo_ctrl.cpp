@@ -11,7 +11,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/asio.hpp> //htonl
+#include <uhdlib/asio.hpp> //htonl
 #include <mutex>
 
 using namespace uhd;

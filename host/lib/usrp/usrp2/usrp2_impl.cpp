@@ -14,8 +14,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
-#include <boost/asio.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/format.hpp>
 #include <cmath>

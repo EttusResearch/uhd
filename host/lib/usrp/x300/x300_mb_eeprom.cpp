@@ -8,8 +8,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>
-#include <boost/asio.hpp>
 
 namespace {
 const uint8_t X300_EEPROM_ADDR = 0x50;

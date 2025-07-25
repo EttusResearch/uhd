@@ -10,10 +10,10 @@
 #include "octoclock_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhdlib/asio.hpp>
 #include <stdint.h>
 #include <string.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <chrono>

@@ -12,10 +12,10 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <uhdlib/utils/serial_number.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
 #include <future>
 #ifdef HAVE_DPDK
 #    include <uhdlib/transport/dpdk/common.hpp>

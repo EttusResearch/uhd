@@ -10,7 +10,7 @@
 #include <thread>
 #include <unordered_map>
 
-#include <boost/asio.hpp>
+#include <uhdlib/asio.hpp>
 #include <boost/format.hpp>
 
 #include "rpc/detail/async_writer.h"

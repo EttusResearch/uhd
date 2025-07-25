@@ -13,9 +13,9 @@
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <thread>
 

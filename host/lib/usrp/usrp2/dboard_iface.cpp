@@ -15,8 +15,8 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhdlib/asio.hpp> //htonl and ntohl
 #include <uhdlib/usrp/cores/gpio_core_200.hpp>
-#include <boost/asio.hpp> //htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <cmath>
 

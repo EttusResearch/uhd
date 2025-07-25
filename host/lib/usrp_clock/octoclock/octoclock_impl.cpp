@@ -18,9 +18,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <stdint.h>
-#include <boost/asio.hpp>
 #include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>

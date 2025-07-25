@@ -6,10 +6,10 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/usrp/cores/xport_adapter_ctrl.hpp>
 #include <unordered_map>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/asio.hpp>
 #include <chrono>
 #include <cstdio>
 #include <thread>

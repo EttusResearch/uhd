@@ -16,8 +16,8 @@
 #include <uhd/utils/platform.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhdlib/asio.hpp> //used for htonl and ntohl
 #include <uhdlib/utils/paths.hpp>
-#include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>

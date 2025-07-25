@@ -3,7 +3,7 @@
 #ifndef SESSION_H_5KG6ZMAB
 #define SESSION_H_5KG6ZMAB
 
-#include <boost/asio.hpp>
+#include <uhdlib/asio.hpp>
 #include <memory>
 #include <vector>
 
