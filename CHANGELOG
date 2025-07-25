@@ -36,6 +36,7 @@ Change Log for Releases
   - Removed tools/uhd_dump. This tool is obsolete, the USRP X3x0 is not even
     compatible with it any more. Dumps can be recorded and analyzed with wireshark
     and the UHD dissectors in here.
+  - Removed network_relay example.
 
 
 ## 004.008.000.000
