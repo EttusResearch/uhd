@@ -38,9 +38,17 @@ Unicode true
   ;Set compression
   SetCompressor @CPACK_NSIS_COMPRESSOR@
 
+  ; Win10 and Win11 shared the same supportedOS
+  ; (see https://learn.microsoft.com/en-us/windows/win32/sbscs/application-manifests for reference)
+  ManifestSupportedOS "Win10"
+
 @CPACK_NSIS_DEFINES@   
 
+  !addplugindir /x86-unicode "@CPACK_MODULE_PATH@\..\nsis\Plugins\x86-unicode"
+  !addplugindir /x86-ansi "@CPACK_MODULE_PATH@\..\nsis\Plugins\x86-ansi"
+
   !include Sections.nsh
+  ;!include LogicLib.nsh
 
 ;--- Component support macros: ---
 ; The code for the add/remove functionality is from:
@@ -200,11 +208,10 @@ FunctionEnd
     !define WriteEnvStr_RegKey 'HKCU "Environment"'
   !endif
 !endif
- 
+
 ; AddToPath - Adds the given dir to the search path.
 ;        Input - head of the stack
 ;        Note - Win9x systems requires reboot
- 
 Function AddToPath
   Exch $0
   Push $1
@@ -623,6 +630,17 @@ FunctionEnd
   !insertmacro MUI_LANGUAGE "Ukrainian"
   !insertmacro MUI_LANGUAGE "Welsh"
 
+;--------------------------------
+;Version Information for $OutFile (needs to be after Languages macros)
+
+  VIProductVersion "@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION2_PATCH@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "@CPACK_PACKAGE_NAME@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductVersion" "@CPACK_PACKAGE_VERSION@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "Comments" "@CPACK_PACKAGE_FILE_NAME@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "@CPACK_PACKAGE_VENDOR@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "@CPACK_PACKAGE_COPYRIGHT@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "@CPACK_PACKAGE_DESCRIPTION_SUMMARY@"
+  VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "@CPACK_PACKAGE_VERSION_MAJOR@.@CPACK_PACKAGE_VERSION_MINOR@.@CPACK_PACKAGE_VERSION2_PATCH@"
 
 ;--------------------------------
 ;Reserve Files
@@ -637,6 +655,7 @@ FunctionEnd
 ;--------------------------------
 ;Installer Sections
 
+!include x64.nsh
 Section "-Core installation"
   ;Use the entire tree produced by the INSTALL target.  Keep the
   ;list of directories here in sync with the RMDir commands below.
@@ -723,14 +742,36 @@ Section "-Core installation"
 
   !insertmacro MUI_STARTMENU_WRITE_END
 
+  ${If} ${SectionIsSelected} ${winusbsupport}
+    Var /GLOBAL usbdriver_path
+    StrCpy $usbdriver_path "$INSTDIR\share\uhd\usbdriver"
+    ${If} ${RunningX64}
+      ${DisableX64FSRedirection}
+      DetailPrint "Disabling Windows 64-bit file system redirection"
+    ${EndIf}
+    SetOutPath $usbdriver_path
+#    nsExec::ExecToLog '"$SYSDIR\PnPutil.exe" /a "$usbdriver_path\erllc_uhd*.inf"'
+#    IntFmt $2 "0x%08X" $0
+    ExecShellWait '' '"$SYSDIR\PnPutil.exe"' '/a "$usbdriver_path\erllc_uhd*.inf"' SW_HIDE
+    IntFmt $2 "0x%08X" $0
+    ${If} ${RunningX64}
+      ${EnableX64FSRedirection}
+      DetailPrint "Re-enabling Windows 64-bit file system redirection"
+    ${EndIf}
+  ${EndIf}
+
 @CPACK_NSIS_EXTRA_INSTALL_COMMANDS@
+
+  ;
+  ;StrCpy $0 "$EXEDIR\install.log"
+  ;DumpLog::DumpLog $0 .r0
 
 SectionEnd
 
 Section "-Add to path"
   Push $INSTDIR\bin
   StrCmp "@CPACK_NSIS_MODIFY_PATH@" "ON" 0 doNotAddToPath
-  StrCmp $DO_NOT_ADD_TO_PATH "1" doNotAddToPath 0  
+  StrCmp $DO_NOT_ADD_TO_PATH "1" doNotAddToPath 0
     Call AddToPath
   doNotAddToPath:
 SectionEnd
@@ -745,7 +786,19 @@ FunctionEnd
 
 ;--------------------------------
 ; determine admin versus local install
+!include x64.nsh
 Function un.onInit
+
+  ${If} ${RunningX64}
+    StrCmp "@CPACK_INNOSETUP_ARCHITECTURE@" "x64" 0 +2
+      SetRegView 64
+  ${Else}
+    StrCmp "@CPACK_INNOSETUP_ARCHITECTURE@" "x64" 0 +6
+      MessageBox MB_ICONSTOP "Installer does not support 32-bit environments."
+      DetailPrint "$err_msg"
+      SetErrorlevel 5
+      Quit
+  ${EndIf}
 
   ClearErrors
   UserInfo::GetName
@@ -906,7 +959,26 @@ SectionEnd
 ; Choose different default installation folder based on SV_ALLUSERS...
 ; "Program Files" for AllUsers, "My Documents" for JustMe...
 
+!include WinVer.nsh
+!include x64.nsh
+
 Function .onInit
+  ${IfNot} ${AtLeastWin10}
+     MessageBox MB_OK "Installer requires Win 10 and above"
+     DetailPrint "Running on version less than Win 10"
+     SetErrorlevel 5
+     Quit
+  ${EndIf}
+  ${If} ${RunningX64}
+    StrCmp "@CPACK_INNOSETUP_ARCHITECTURE@" "x64" 0 +2
+      SetRegView 64
+  ${Else}
+    StrCmp "@CPACK_INNOSETUP_ARCHITECTURE@" "x64" 0 +6
+      MessageBox MB_ICONSTOP "Installer does not support 32-bit environments."
+      DetailPrint "$err_msg"
+      SetErrorlevel 5
+      Quit
+  ${EndIf}
   ; Reads components status for registry
   !insertmacro SectionList "InitSection"
 
