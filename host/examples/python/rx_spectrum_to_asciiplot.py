@@ -48,7 +48,7 @@ def parse_args():
         "--freq",
         type=float,
         required=True,
-        help="specifies the center frequency in Hz [default = 1e4].",
+        help="specifies the center frequency in Hz [input is required].",
     )
     parser.add_argument(
         "-r",
@@ -65,7 +65,7 @@ def parse_args():
         "--channel",
         type=int,
         default=0,
-        help='specifies the channels to use (e.g., "0", "1", "0 1", etc) [Default = 0]',
+        help='specifies the channel to use (e.g., "0", "1", etc) [Default = 0]',
     )
     parser.add_argument(
         "-n",
