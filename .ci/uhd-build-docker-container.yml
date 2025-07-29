@@ -227,6 +227,8 @@ jobs:
       - docker
       - large_disk -equals 1
       - high_disk_io -equals 1
+      - high_cpu_per_thread -equals 1
+      - cpu_host_type -equals Intel_x86-64-v4
   condition: and(succeeded(), ${{ parameters.build_windows }})
   strategy:
     matrix: $[ variables.winDockerImages ]
@@ -270,6 +272,10 @@ jobs:
     demands:
       - agent.os -equals Windows_NT
       - docker
+      - large_disk -equals 1
+      - high_disk_io -equals 1
+      - high_cpu_per_thread -equals 1
+      - cpu_host_type -equals Intel_x86-64-v4
   strategy:
     matrix: $[ variables.winDockerImages ]
   container:
