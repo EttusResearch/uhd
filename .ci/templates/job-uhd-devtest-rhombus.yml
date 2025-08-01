@@ -120,7 +120,8 @@ jobs:
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
           devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-n321-0.yml
 
-      ${{ if contains(parameters.testDevices, 'e320') }}:
+      # disabling e320 for now due to broken device
+      ${{ if contains(parameters.testDevices, 'e320_disabled') }}:
         rhombus-e320-0:
           devType: 'e3xx'
           devModel: 'e320'
