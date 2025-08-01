@@ -168,7 +168,7 @@ macro(UHD_ADD_RFNOC_BLOCK_NONAPI_TEST)
         INCLUDE_DIRS
         ${test_INCLUDE_DIRS}
     )
-endmacro(UHD_ADD_RFNOC_BLOCK_TEST)
+endmacro(UHD_ADD_RFNOC_BLOCK_NONAPI_TEST)
 
 ###############################################################################
 # Add unit tests for RFNoC blocks that don't require special linkage
