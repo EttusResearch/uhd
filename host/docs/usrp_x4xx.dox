@@ -159,6 +159,12 @@ related connections, and some status LEDs:
 
 The back panel is identical between X4x0 variants.
 
+\subsection x4xx_overview_rackmount Rack Mounting and Cooling
+
+The X4x0's cooling system uses a field replaceable fan assembly and supports two
+variants: one that pulls air front-to-back and one that pulls air back-to-front.
+By default, the unit comes with the front-to-back fan assembly.
+
 \subsection x4xx_overview_micro The STM32 Microcontroller
 
 The STM32 microcontroller (also referred to as the "SCU") controls various
@@ -171,12 +177,6 @@ It is possible to log into the STM32 using the serial interface
 (see \ref x4xx_getting_started_serial_micro). This will allow certain low-level
 controls, such as remote power cycling should the CPU have become unresponsive
 for whatever reason.
-
-\subsection x4xx_overview_rackmount Rack Mounting and Cooling
-
-The X4x0's cooling system uses a field replaceable fan assembly and supports two
-variants: one that pulls air front-to-back and one that pulls air back-to-front.
-By default, the unit comes with the front-to-back fan assembly.
 
 \subsection x4xx_overview_storage eMMC Storage
 
@@ -215,69 +215,28 @@ following two sections), run the following commands:
 The device node in the mount command might differ, depending on which partition
 is currently already mounted.
 
-\section x4xx_getting_started Getting Started
+\subsection x4xx_pl_dram DDR4 Memory for Programmable Logic
 
-Firstly, download and install UHD on a host computer following \ref page_install
-or \ref page_build_guide. The following minimum UHD versions are required:
+The USRP X4x0 has two banks of DDR4 memory available for use by the
+programmable logic in the FPGA. Each bank has a 4 GiB capacity. Because the
+banks are independent, applications are normally limited to 4 GiB per channel.
+The DRAM can be run at up to 2.4 GT/s but is clocked at 2.0 GT/s on X410 by
+default to ease FPGA timing closure.
 
-- The USRP X410 requires UHD version 4.1 or above.
-- The USRP X440 requires UHD version 4.5 or above.
+The FPGA memory controller exposes each bank of DRAM as a 512-bit interface,
+which is clocked at 300 MHz for X440 and 250 MHz on X410. This interface is
+then presented to RFNoC as multiple AXI interfaces (one interface for each RF
+channel). Each AXI interface is sized in order to match the expected throughput
+for a single channel. For example, on X410 200 MHz images, each AXI interface
+is 64-bit at 250 MHz. For 400 MHz images, each AXI interface is 128-bit at 250
+MHz. This allows for the maximum sample rate to be read and written to DRAM
+simultaneously.
 
-It is generally recommended to use the latest UHD version.
-
-\subsection x4xx_getting_started_assembling Assembling the X4x0
-
-Inside the kit you will find the X4x0 and an X4x0 power supply. Plug these in,
-connect the 1GbE RJ45 interface to your network, and power on the device by
-pressing the power button.
+The default use for the DRAM is the RFNoC Replay block, which supports
+recording and playback of data in real time. See section \ref
+x4xx_updating_fpga_types for a list of FPGA images which support the RFNoc Replay block.
 
 \subsection x4xx_getting_started_network_connectivity Network Connectivity
-
-Once the X4x0 has booted, determine the IP address and verify network
-connectivity by running `uhd_find_devices` on the host computer:
-
-    $ uhd_find_devices
-    --------------------------------------------------
-    -- UHD Device 0
-    --------------------------------------------------
-    Device Address:
-        serial: 1234ABC
-        addr: 10.2.161.10
-        claimed: False
-        mgmt_addr: 10.2.161.10
-        product: x410
-        type: x4xx
-
-By default, an X4x0 will use DHCP to attempt to find an address.
-
-All X4x0 variants will report their `type` as 'x4xx'. The `product` key can be
-used to identify the X410/X440 variant.
-
-At this point, you should run:
-
-    uhd_usrp_probe --args addr=<IP address>
-
-to ensure functionality of the device.
-
-Note: If you receive the following error:
-
-    Error: RuntimeError: Graph edge list is empty for rx channel 0
-
-then you will need to download a UHD-compatible FPGA image as described in
-\ref x4xx_updating_fpga or using the following command (it assumes that FPGA
-images have been downloaded previously using uhd_images_downloader, or that the
-command is run on the device itself):
-
-    uhd_image_loader --args type=x4xx,addr=<ip address>,fpga=X4_200
-
-When running on the device, use `127.0.0.1` as the IP address.
-
-You can now use existing UHD examples or applications (such as
-rx_sample_to_file, rx_ascii_art_dft, or tx_waveforms) or other UHD-compatible
-applications to start receiving and transmitting with the device.
-
-See \ref x4xx_getting_started_network_connectivity_ifcs for further details on
-the various network interfaces available on the X4x0.
 
 \subsubsection x4xx_getting_started_network_connectivity_ifcs Network Interfaces
 
@@ -378,148 +337,143 @@ No Link            | Off                  |
 Link / No Activity | Green (solid)        |
 Link / Activity    | Amber (blinking)     |
 
-\subsubsection x4xx_network_troubleshooting_tips Network Troubleshooting Tips
+\section x4xx_getting_started Getting Started
+In this section, users will learn how to set up a device received from the factory 
+to successfully run an application by completing the following steps:
 
-If you are not familiar with the X4xx and its network interface, please 
-refer to \ref page_usrp_x4xx. Most of the network related problems are
-similar among different embedded or MPM based USRPs. You might notice
-differences in error messages or interface configurations. Please go through
-some common issues listed in the application note
-[Troubleshooting N310/N320 Device Discovery Issues]
-(https://kb.ettus.com/Troubleshooting_N310/N320_Device_Discovery_Issues).
-It is also advisable to read through the KB application note
-[USRP Host Performance Tuning Tips and Tricks]
-(https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks)
-to get best network performance with host and USRP.
+- Start with setting up the device 
+- Update the Filesystem 
+- Updating the FPGA image 
+- Verifying the setup
+- Make necessary network connections
+- Now you are ready to run applications on the device! 
 
-Below are listed some more network issues and troubleshooting tips.
+\subsection x4xx_getting_started_install_uhd_host Installing UHD on the Host Computer
 
-<b>Issue 1:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout waiting
-for ACK error.
+Firstly, download and install UHD on a Linux/OS X/Windows host computer. The easiest way to install USRP Hardware Driver 
+(UHD) is by getting a binary installer package for your operating system as described in \ref page_install. 
+If no binary packages are available for your operating system or you want to modify the sources by yourself, 
+a step-by-step guide is available at \ref page_build_guide. 
 
-The setup includes a host PC connected to a x4xx with both 10Gb Ethernet 
-QSFP28 cables. Both remote PC and x4xx are connected to a network switch 
-and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when 
-you try to execute it on a remote host, it throws below error:
-<blockquote>[ERROR] [RFNOC::GRAPH] Caught exception while initializing graph:
-RfnocError: OpTimeout: Control operation timed out waiting for ACK</blockquote>
+The following minimum UHD versions are required:
 
-Solution: Ensure both switch ports show LED blinking green and Ethernet cables
-are fine.
- - If the LEDs on the switch ports are not green, connect with different 
- Ethernet ports on the switch. LED should blink green. If not try with 
- another network switch. Try running udh_usrp_probe again.
- - If you still get errors, make sure that the Ethernet cables connecting host
- and x4xx to the network switch are not damaged. Replace the Ethernet cables 
- and check again by running uhd_usrp_probe.
- - If you are still unable to probe your x4xx without errors, contact
- Ettus support.
+- The USRP X410 requires UHD version 4.1 or above.
+- The USRP X440 requires UHD version 4.5 or above.
 
-<b>Issue 2:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout recv
-buff error.
+It is generally recommended to use the latest UHD version.
 
-The setup includes a host PC connected to a x4xx with both 10Gb Ethernet
-QSFP28 cables. Both the remote PC and x4xx are connected to a network switch
-and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when
-you try to execute it on the remote host, it throws below error:
-<blockquote>[ERROR] [RFNOC::GRAPH] IO Error during GSM initialization. 
-EnvironmentError: IOError: Timed out getting recv buff for management 
-transaction</blockquote> 
+\subsection x4xx_getting_started_setting_up Setting up USRP X4x0
 
-Solution: Such errors are noticed when the SFP cables are swapped between
-the SFP ports of the device and host Ethernet ports. 
- - Verify the FPGA image flavor loaded in x4xx. Refer section
- \ref x4xx_updating_fpga_types. 
- - Verify that the host is configured with the correct IP addresses to 
- communicate with the loaded FPGA image. 
- Refer \ref x4xx_getting_started_network_connectivity_ifcs.
- - Check and ensure that the SFP cables connect the ports between the 
- x4xx and the host with the corresponding ip addresses.
- - Verify single 10/100GbE network connections by pinging the USRP 
- network ports separately.
- - Try to run uhd_usrp_probe, this should return results without errors.
- - If you are still unable to probe your x4xx without errors, contact 
- Ettus support.
+\paragraph x4xx_verify_kit_contents Verifying the Kit Contents:
 
-\subsection x4xx_getting_started_security Security-related Settings
+\image html x4x0_KitContents.svg "Ettus USRP X4x0 Kit contents" width=50%
 
-The X4x0 ships without a root password set. It is possible to ssh into the
-device by simply connecting as root, and thus gaining access to all subsystems.
-To set a password, run the command
+1. Ettus USRP X410/X440
+2. Cat 5E Ethernet Cable
+3. USB-A (m) to USB-C (m) with Jack Screw Cable
+4. Power supply
+5. Ettus USRP X410/X440 Documentation Note
+6. Ettus USRP X410/X440 Safety, Environmental and Regulatory Information
 
-    $ passwd
+Refer the product page [X410](https://www.ettus.com/all-products/usrp-x410/)/
+[X440](https://www.ettus.com/all-products/usrp-x440/) for recommended accessories.
 
-on the device.
+Inside the kit you will find the X4x0 and an X4x0 power supply. Plug these in,
+connect the 1GbE RJ45 interface to your network, and power on the device by
+pressing the power button.
 
-\subsection x4xx_getting_started_serial Serial Connection
+You can choose to run operations on the device by directly logging into it (Stand-alone 
+mode) or establishing a remote connection to it (Network mode).
 
-It is possible to gain access to the device using a serial terminal
-emulator. To do so, the USB debug port needs to be connected to a separate
-computer to gain access.
-Most Linux, OSX, or other Unix flavors have a tool called 'screen'
-which can be used for this purpose, by running the following command:
+Host system requirements:
+<blockquote>
+<b>For Network Mode:</b> A host computer with at least one 10 or one 100 Gigabit 
+Ethernet interface available for sample streaming. In addition to the Ethernet interface 
+used for sample streaming, your host computer will require a separate 1 Gigabit 
+Ethernet interface for command and control streaming. Th exact interface requirement 
+varies based on the FPGA image from \ref x4xx_updating_fpga_types loaded to the device.
 
-    $ sudo screen /dev/ttyUSB2 115200
+<b>For Stand-Alone Mode:</b> A host computer with an available 1 Gigabit Ethernet 
+port or a USB 2.0 port to remotely access the embedded Linux operating system 
+running on ARM CPU.
+</blockquote>
 
-In this command, we prepend 'sudo' to elevate user privileges (by default,
-accessing serial ports is not available to regular users), we specify the
-device node (in this case, `/dev/ttyUSB2`), and the baud rate (115200).
+<b> The Getting Started Guide refers to the network mode setup for the operations 
+in the following sections. Ensure the host computer and the device are on the same 
+subnet network.</b>
 
-The exact device node depends on your operating system's driver and other USB
-devices that might be already connected. Modern Linux systems offer alternatives
-to simply trying device nodes; instead, the OS might have a directory of
-symlinks under `/dev/serial/by-id`:
+\image html x4x0_NetworkMode.svg "Ettus USRP X4x0 Connections (UHD)" width=50%
+1. Ettus USRP X410/X440
+2. Network Switch (optional)
+3. Host PC
+4. 100 G Ethernet Network Card
+5. 10 G Ethernet Network Card
+6. QSFP28 to QSFP28 Ethernet Cable (optional)
+7. CAT 5E Ethernet Cable (optional)
+8. CAT 5E Ethernet Cable (optional)
+9. QSFP28 to 4xSFP28 Ethernet Breakout Cable (optional)
+10. Power Supply
 
-    $ ls /dev/serial/by-id
-    usb-Digilent_Digilent_USB_Device_2516351DDCC0-if02-port0
-    usb-Digilent_Digilent_USB_Device_2516351DDCC0-if03-port0
+To successfully run applications, either cable from 6. or 9. is required. In this context, when using the 
+default `X4_200` FPGA image, the Ethernet Breakout Cable from 9. is required. Please proceed to make the 
+connections as shown in the figure above.
 
-Note: Exact names depend on the host operating system version and may differ.
+\subsection x4xx_updating_filesystems Updating the Filesystem
+It is strongly recommended to start with upgrading the filesystem on the device to have an up-to-date 
+firmware running the latest UHD version. Ensure that, in Network Mode, the version of UHD running on the host 
+computer and the UHD version on USRP X4x0 match. 
 
-The first (with the `if02` suffix) connects to the STM32 microcontroller (SCU), whereas
-the second (with the `if03` suffix) connects to Linux running on the RFSoC APU.
+This section explains how to update the filesystem directly on the device, which
+requires the device to have an active internet connection.
+Alternatively, it is possible to update the filesystem via:
+- Mender: when the device does not have an internet connection or to update without physically 
+accessing the device (see \ref x4xx_updating_filesystems_mender)
+- Internal eMMC: in stand-alone mode (see \ref x4xx_accessing_emmc_usb)
+Alternatively, it is possible to access the internal eMMC from an external host to flash the device
+(see \ref x4xx_accessing_emmc_usb).
 
-    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_2516351DDCC0-if03-port0 115200
+\subsubsection x4xx_getting_started_access Logging in to the Root of X4x0
+To directly update the filesystem on the device, you need to first log in to the
+`root` user. This can be achieved via SSH from a host computer.
 
-After entering the username `root` (no password is set by default), you should be presented with a shell prompt similar to the following:
-
-    root@ni-x4xx-1234ABC:~#
-
-On this prompt, you can enter any Linux command available. Using the default
-configuration, the serial console will also show all kernel log messages (unlike
-when using SSH, for example), and give access to the boot loader (U-boot
-prompt). This can be used to debug kernel or bootloader issues more efficiently
-than when logged in via SSH.
-
-\subsubsection x4xx_getting_started_serial_micro Connecting to the Microcontroller
-
-The microcontroller (which controls the power sequencing, among other things)
-also has a serial console available. To connect to the microcontroller, use the
-other UART device. In the example above:
-
-    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_251635234ABC-if02-port0 115200
-
-It provides a very simple prompt. The command 'help' will list all available
-commands. A direct connection to the microcontroller can be used to hard-reset
-the device without physically accessing it and other low-level diagnostics. For
-example, running the command `reboot` will emulate a reset button press,
-resetting the state of the device, while the command `powerbtn` will emulate a
-power button press, turning the device back on again.
-
-Note that the final 6 digits of the serial number match between the device and
-the serial connection (in this example, 234ABC).
-
-\subsection x4xx_getting_started_ssh SSH Connection
-
-The USRP X4x0-Series devices have two network connections: The dual QSFP28
-ports, and an RJ45 connector. The latter is by default configured by DHCP; by
-plugging it into into 1 Gigabit switch on a DHCP-capable network, it will get
-assigned an IP address and thus be accessible via ssh.
+The USRP X4x0-Series devices have an RJ45 connector that is by default configured by DHCP. By
+plugging it into 1 Gigabit switch on a DHCP-capable network, it will get
+assigned an IP address and thus be accessible via ssh. If so, continue with 
+\ref x4xx_getting_started_ssh.
 
 In case your network setup does not include a DHCP server, refer to the section
-\ref x4xx_getting_started_serial. A serial login can be used to assign an IP address manually.
+\ref x4xx_getting_started_serial to access the device. 
 
-After the device obtained an IP address you can log in from a Linux or OSX
+\paragraph x4xx_getting_started_ssh SSH Connection
+
+Once the X4x0 has booted, determine the IP address and verify network
+connectivity by running `uhd_find_devices` on the host computer:
+
+    $ uhd_find_devices
+    --------------------------------------------------
+    -- UHD Device 0
+    --------------------------------------------------
+    Device Address:
+        serial: 1234ABC
+        addr: 10.2.161.10
+        claimed: False
+        mgmt_addr: 10.2.161.10
+        name: ni-4xx-1234ABC
+        product: x410
+        type: x4xx
+
+By default, the device will use DHCP to attempt to find an IP address and the host 
+name 'ni-4xx-<serial>' (in this case 'ni-x4xx-1234ABC').
+Verify the serial number printed on the devices matches the corresponding 
+device serial number returned by the command. 
+
+All X4x0 variants will report their `type` as 'x4xx'. The `product` key can be
+used to identify the X410/X440 variant.
+
+If a firewall is enabled on the host computer, allow UDP port 49600 to detect X4x0 devices. 
+On a Linux host, add a new bi-directional rule under iptables.
+
+After obtaining the device's IP address you can log in from the host
 machine by typing:
 
     $ ssh root@ni-x4xx-1234ABC # Replace with your actual device name!
@@ -528,8 +482,7 @@ Depending on your network setup, using a `.local` domain may work:
 
     $ ssh root@ni-x4xx-1234ABC.local
 
-Of course, you can also connect to the IP address directly if you know it (or
-set it manually using the serial console).
+Of course, you can also connect to the IP address directly if you know it.
 
 Note: The device's hostname is derived from its serial number by default
 (`ni-x4xx-$SERIAL`). You can change the hostname by creating the file
@@ -538,33 +491,38 @@ Note: The device's hostname is derived from its serial number by default
 On Microsoft Windows, the connection can be established using a tool such as
 PuTTY, by selecting a username of root without password.
 
-Like with the serial console, you should be presented with a prompt like the
-following:
+You should be presented with a prompt like the following:
 
     root@ni-x4xx-1234ABC:~#
 
+\subsubsection x4xx_update_filesystem_direct Device Utility to Update Filesystem
+The easiest and recommended way to update the filesystem is directly from the X4x0 
+via the built-in `usrp_update_fs` utility.
+
+To reset the current filesystem version, run:
+
+    $ usrp_update_fs
+
+To update to the most-recent filesystem, run:
+
+    $ usrp_update_fs -t master
+
+To update to a specific version of the filesystem (e.g. 4.7.0.0), run:
+
+    $ usrp_update_fs -t v4.7.0.0
+
+Note: The `usrp_update_fs` utility will trigger a reboot to switch to the new
+filesystem. After the reboot, verify that the device is in a working state by running `uhd_find_devices`. 
+If MPM is started and the default FPGA image was successfully loaded, run:
+
+    $ mender commit
+
+on the device to make the change permanent.
+
+If you run into a boot issue or need to update components such as the Motherboard CPLD 
+or the SCU, refer \ref x4xx_troubleshooting.
+
 \subsection x4xx_updating_fpga Updating the FPGA
-
-The FPGA can be updated simply using `uhd_image_loader`:
-
-    uhd_image_loader --args type=x4xx,addr=<IP address of device> --fpga-path <path to .bit>
-
-or
-
-    uhd_image_loader --args type=x4xx,addr=<IP address of device>,fpga=FPGA_TYPE
-
-A UHD install will likely have pre-built images in `/usr/share/uhd/images/`.
-Up-to-date images can be downloaded using the `uhd_images_downloader` script:
-
-    uhd_images_downloader
-
-will download images into `/usr/share/uhd/images/` (the path may differ,
-depending on how UHD was installed).
-
-Also note that the USRP already ships with compatible FPGA images on the device -
-these images can be loaded by SSH'ing into the device and running:
-
-    uhd_image_loader --args type=x4xx,mgmt_addr=127.0.0.1,fpga=X4_200
 
 \subsubsection x4xx_updating_fpga_types FPGA Image Flavors
 
@@ -629,7 +587,7 @@ The following list shows some potential use-cases for different FPGA images:
 - `X4_200` or `UC_200`: On X410, 200 MHz analog bandwidth per channel, or below
   (using RFNoC DDC/DUCs), streaming between the X410 and an external host
   computer, or streaming to/from on-board DRAM using the RFNoC Record/Replay
-  block.
+  block. For more on DRAM, refer \ref x4xx_pl_dram.
 - `X4_200`: On X440, 200 MHz analog bandwidth per channel, or below (using
   RFNoC DDC/DUCs), streaming between the X440 and an external host computer.
 - `CG_400`: 400 MHz analog bandwidth streaming per channel between the X4x0 and
@@ -652,67 +610,374 @@ The following list shows some potential use-cases for different FPGA images:
   this image. Due to the available FPGA bandwidth only 2 channels are enabled,
   the first channel on each daughterboard.
 
-Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
+<blockquote>Run `make help` in the `fpga/usrp3/top/x400` directory of the UHD repository to
 see a complete list of FPGA images that can be built, some of which are
-experimental (unsupported).
+experimental (unsupported).</blockquote>
 
 The analog bandwidth determines the available master clock rates. See section
-\ref x4xx_usage_mcrs for more information on available mater clock rates.
+\ref x4xx_usage_mcrs for more information on available master clock rates.
 
 Applications that require 200 MHz bandwidth or less (X410 only)
-should use the 200 MHz images and make use the DDC/DUC for lower rates. 
+should use the 200 MHz images and make use of the DDC/DUC for lower rates. 
 Applications that require higher bandwidth and use limited signal durations 
 should use the DRAM enabled X4_xxx images to ease streaming requirements.
 Applications that require the full device bandwidth or require on-the-fly 
 data access should use the CG_xxx images. 
 
-\subsubsection x4xx_pl_dram DDR4 Memory for Programmable Logic
+\subsubsection x4xx_updating_fpga_load Loading the FPGA Image
 
-The USRP X4x0 has two banks of DDR4 memory available for use by the
-programmable logic in the FPGA. Each bank has a 4 GiB capacity. Because the
-banks are independent, applications are normally limited to 4 GiB per channel.
-The DRAM can be run at up to 2.4 GT/s but is clocked at 2.0 GT/s on X410 by
-default to ease FPGA timing closure.
+A UHD binary install on Windows host computer will have pre-built images in `C:\Program Files\UHD\share\uhd`.
+This is not the case when using Linux/OSX host computers and when building UHD from source.
+The UHD installation path can be queried by running the command:
 
-The FPGA memory controller exposes each bank of DRAM as a 512-bit interface,
-which is clocked at 300 MHz for X440 and 250 MHz on X410. This interface is
-then presented to RFNoC as multiple AXI interfaces (one interface for each RF
-channel). Each AXI interface is sized in order to match the expected throughput
-for a single channel. For example, on X410 200 MHz images, each AXI interface
-is 64-bit at 250 MHz. For 400 MHz images, each AXI interface is 128-bit at 250
-MHz. This allows for the maximum sample rate to be read and written to DRAM
-simultaneously.
+    uhd_config_info --print-all
 
-The default use for the DRAM is the Replay RFNoC block, which supports
-recording and playback of data in real time. See section \ref
-x4xx_updating_fpga_types for a list of which images have DRAM by default.
+If pre-built images are not found at the UHD installation path, up-to-date images 
+can be downloaded using the `uhd_images_downloader` script:
 
-\section x4xx_updating_filesystems Updating Filesystems
+    sudo uhd_images_downloader
 
-The easiest way to update the filesystem is directly from the X4x0 via the
-built-in `usrp_update_fs` utility.
+which will download images into `/usr/share/uhd/images/` (the path may differ,
+depending on how UHD was installed).
+This script downloads all available FPGA images for USRPs. Images for a particular USRP series
+can be downloaded by setting the device type specifier:
 
-To perform a filesystem "factory-reset", run:
+    sudo uhd_images_downloader --args "type=x4xx"
 
-    $ usrp_update_fs
+The FPGA can be updated to one of the available FPGA images using `uhd_image_loader` on the host computer 
+by explicitly providing the FPGA bitfile path:
 
-To update to the most-recent filesystem, run:
+    uhd_image_loader --args "type=x4xx,addr=<IP address of device>" --fpga-path <path to .bit>
 
-    $ usrp_update_fs -t master
+or by providing the FPGA image type:
 
-To update to a specific version of the filesystem (e.g. 4.7.0.0), run:
+    uhd_image_loader --args "type=x4xx,addr=<IP address of device>,fpga=FPGA_TYPE"
 
-    $ usrp_update_fs -t v4.7.0.0
 
-Note: The `usrp_update_fs` utility will trigger a reboot to switch to the new
-filesystem. After the reboot run:
+Also note that the USRP already ships with compatible FPGA images on the device -
+these images can be loaded by SSH'ing into the device (Stand-alone mode) and running:
 
-    $ mender commit
+X410:
 
-on the device to make the change permanent.
+    uhd_image_loader --args "type=x4xx,mgmt_addr=127.0.0.1,fpga=X4_200"
 
-Note: Old filesystems may not support this utility. Alternatively, one may use
-Mender to update the filesystem. See \ref x4xx_updating_filesystems_mender.
+X440:
+
+    uhd_image_loader --args "type=x4xx,mgmt_addr=127.0.0.1,fpga=X4_400"
+
+\subsection x4xx_getting_started_security Security-related Settings
+
+USRP X4x0 ships without a root password set. To set a root password, ssh into the
+device by connecting as root. To set a password, run the command:
+
+    $ passwd
+
+on the device.
+
+\subsection x4xx_getting_started_verify_setup Verifying the Setup
+
+Ensure right network connection and QSFP network setup before you start. 
+When using the default `X4_200` image, connect a QSFP28 to 4xSFP28 Ethernet 
+Breakout Cable between the X4x0 device and the host computer. 
+Alternatively, to use the `CG_400` image, connect a QSFP28 to QSFP28 Ethernet 
+Cable between the X4x0 device and the host computer.
+
+See \ref x4xx_getting_started_network_connectivity_ifcs for further details on 
+the various network interfaces available on the X4x0. In order to communicate with the 
+QSFP Ethernet interfaces, modify either the host IP address or device sfp network 
+configuration such that they are on the same subnet.
+
+At this point, you should run:
+
+    uhd_usrp_probe --args "addr=<IP address>"
+
+to ensure proper installation, network connectivity and operation of the device.
+This command should run without any errors and return device details including 
+unit names, revision numbers, and available sensors on all attached USRP 
+motherboards and daughterboards. Verify that the number of radio blocks on the 
+device matches the output of the command.
+
+Example output of ´uhd_usrp_probe´:
+
+    $ uhd_usrp_probe --args "addr=10.2.161.15"
+          _____________________________________________________
+    /
+    |       Device: X400-Series Device
+    |     _____________________________________________________
+    |    /
+    |   |       Mboard: ni-x4xx-324685E
+    |   |   module_pid: 42000
+    |   |   module_rev: 5
+    |   |   module_serial: 324685E
+    |   |   pid: 1040
+    |   |   rev: 5
+    |   |   rev_compat: 5
+    |   |   serial: 3243087
+    |   |   MPM Version: 5.3
+    |   |   FPGA Version: 8.3
+    |   |   FPGA git hash: 8e780be.clean
+    |   |   Device DNA: 40020000015164C61D20C205
+    |   |   RFNoC capable: Yes
+    |   |
+    |   |   Time sources:  internal, external, qsfp0, gpsdo
+    |   |   Clock sources: mboard, internal, external, nsync, gpsdo
+    |   |   Sensors: ref_locked, fan0, fan1, temp_fpga, temp_main_power0, temp_main_power1, temp_scu_internal, temp_sample_clock_pcb, temp_dram_pcb, temp_tmp464_internal, temp_power_supply_pcb, gps_alarm, gps_enabled, gps_gpgga, gps_locked, gps_phase_lock, gps_sky, gps_survey, gps_time, gps_tpv, gps_warmup
+    |     _____________________________________________________
+    |    /
+    |   |       RFNoC blocks on this device:
+    |   |
+    |   |   * 0/DDC#0
+    |   |   * 0/DDC#1
+    |   |   * 0/DUC#0
+    |   |   * 0/DUC#1
+    |   |   * 0/Radio#0
+    |   |   * 0/Radio#1
+    |   |   * 0/Replay#0
+    |     _____________________________________________________
+    |    /
+    |   |       Static connections on this device:
+    |   |
+    |   |   * 0/SEP#0:0==>0/DUC#0:0
+    |   |   * 0/DUC#0:0==>0/Radio#0:0
+    |   |   * 0/Radio#0:0==>0/DDC#0:0
+    |   |   * 0/DDC#0:0==>0/SEP#0:0
+    |   |   * 0/SEP#1:0==>0/DUC#0:1
+    |   |   * 0/DUC#0:1==>0/Radio#0:1
+    |   |   * 0/Radio#0:1==>0/DDC#0:1
+    |   |   * 0/DDC#0:1==>0/SEP#1:0
+    |   |   * 0/SEP#2:0==>0/DUC#1:0
+    |   |   * 0/DUC#1:0==>0/Radio#1:0
+    |   |   * 0/Radio#1:0==>0/DDC#1:0
+    |   |   * 0/DDC#1:0==>0/SEP#2:0
+    |   |   * 0/SEP#3:0==>0/DUC#1:1
+    |   |   * 0/DUC#1:1==>0/Radio#1:1
+    |   |   * 0/Radio#1:1==>0/DDC#1:1
+    |   |   * 0/DDC#1:1==>0/SEP#3:0
+    |   |   * 0/SEP#4:0==>0/Replay#0:0
+    |   |   * 0/Replay#0:0==>0/SEP#4:0
+    |   |   * 0/SEP#5:0==>0/Replay#0:1
+    |   |   * 0/Replay#0:1==>0/SEP#5:0
+    |   |   * 0/SEP#6:0==>0/Replay#0:2
+    |   |   * 0/Replay#0:2==>0/SEP#6:0
+    |   |   * 0/SEP#7:0==>0/Replay#0:3
+    |   |   * 0/Replay#0:3==>0/SEP#7:0
+    |     _____________________________________________________
+    |    /
+    |   |       TX Dboard: 0/Radio#0
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       TX Frontend: 0
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, CAL_LOOPBACK
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range AMP: 0.0 to 21.0 step 7.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       TX Frontend: 1
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, CAL_LOOPBACK
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range AMP: 0.0 to 21.0 step 7.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |     _____________________________________________________
+    |    /
+    |   |       RX Dboard: 0/Radio#0
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       RX Frontend: 0
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, RX1, CAL_LOOPBACK, TERMINATION
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3A: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3B: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       RX Frontend: 1
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, RX1, CAL_LOOPBACK, TERMINATION
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3A: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3B: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |     _____________________________________________________
+    |    /
+    |   |       TX Dboard: 0/Radio#1
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       TX Frontend: 0
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, CAL_LOOPBACK
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range AMP: 0.0 to 21.0 step 7.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       TX Frontend: 1
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, CAL_LOOPBACK
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 31.0 step 1.0 dB
+    |   |   |   Gain range AMP: 0.0 to 21.0 step 7.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |     _____________________________________________________
+    |    /
+    |   |       RX Dboard: 0/Radio#1
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       RX Frontend: 0
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, RX1, CAL_LOOPBACK, TERMINATION
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3A: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3B: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+    |   |     _____________________________________________________
+    |   |    /
+    |   |   |       RX Frontend: 1
+    |   |   |   Name: ZBX
+    |   |   |   Antennas: TX/RX0, RX1, CAL_LOOPBACK, TERMINATION
+    |   |   |   Sensors: temperature, rfdc_rate, lo1_locked, lo2_locked, lo_locked, nco_locked
+    |   |   |   Freq range: 1.000 to 8000.000 MHz
+    |   |   |   Gain range all: 0.0 to 60.0 step 1.0 dB
+    |   |   |   Gain range DSA1: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA2: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3A: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Gain range DSA3B: 0.0 to 15.0 step 1.0 dB
+    |   |   |   Bandwidth range: 400000000.0 to 400000000.0 step 0.0 Hz
+    |   |   |   Connection Type: IQ
+    |   |   |   Uses LO offset: No
+
+If you run into errors, refer \ref x4xx_network_troubleshooting for common
+issues.
+
+You can now use existing UHD examples or applications (such as
+rx_sample_to_file, rx_ascii_art_dft, or tx_waveforms) or other UHD-compatible
+applications to start receiving and transmitting with the device. 
+
+\subsection x4xx_getting_started_handling Proper Care and Handling
+All Ettus Research products are individually tested before shipment. The USRP is guaranteed to be functional 
+at the time it is received by the customer. Improper use or handling of the USRP can cause the device to 
+become non-functional. Take the following precautions to prevent damage to the unit.
+
+- Never allow metal objects to touch the circuit board while powered.
+- Always properly terminate the transmit port with an antenna or 50Ω load.
+- Always handle the board with proper anti-static methods.
+- Never allow the board to directly or indirectly come into contact with any voltage spikes.
+- Never allow any water or condensing moisture to come into contact with the device.
+- Always use caution with FPGA, firmware, or software modifications.
+
+<b> Caution! X410: Never feed a signal at power levels exceeding {+14 dBm continuous <=3GHz, +17 dBm continuous >3GHz, 
+or +20dBm for longer than 5 minutes >3GHz} into any RF input. </b>
+
+<b> Caution! X440: Never feed a signal at power levels exceeding {+13 dBm continuous <=2.5GHz, +17 dBm continuous between 
+2.5GHz and 3.6 GHz, or +20dBm continuous between 3.6 GHz and 4 GHz} into any RF input. </b>
+
+<b> Caution! X410: Always use at least 30dB attenuation if operating in loopback configuration. </b>
+
+\section x4xx_advanced_operations Advanced Operations
+
+\subsection x4xx_getting_started_serial Serial Connection
+
+It is possible to gain access to the device using a serial terminal
+emulator. To do so, the USB debug port needs to be connected to a host
+computer to gain access.
+Most Linux, OSX, or other Unix flavors have a tool called 'screen'
+which can be used for this purpose, by running the following command:
+
+    $ sudo screen /dev/ttyUSB2 115200
+
+In this command, we prepend 'sudo' to elevate user privileges (by default,
+accessing serial ports is not available to regular users), we specify the
+device node (in this case, `/dev/ttyUSB2`), and the baud rate (115200).
+
+The exact device node depends on your operating system's driver and other USB
+devices that might be already connected. Modern Linux systems offer alternatives
+to simply trying device nodes; instead, the OS might have a directory of
+symlinks under `/dev/serial/by-id`:
+
+    $ ls /dev/serial/by-id
+    usb-Digilent_Digilent_USB_Device_2516351DDCC0-if02-port0
+    usb-Digilent_Digilent_USB_Device_2516351DDCC0-if03-port0
+
+Note: Exact names depend on the host operating system version and may differ.
+
+The first (with the `if02` suffix) connects to the STM32 microcontroller (SCU), whereas
+the second (with the `if03` suffix) connects to Linux running on the RFSoC APU.
+
+    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_2516351DDCC0-if03-port0 115200
+
+After entering the username `root` (no password is set by default), you should be presented with a shell prompt similar to the following:
+
+    root@ni-x4xx-1234ABC:~#
+
+On this prompt, you can enter any Linux command available. Using the default
+configuration, the serial console will also show all kernel log messages (unlike
+when using SSH, for example), and give access to the boot loader (U-boot
+prompt). 
+
+\paragraph x4xx_getting_started_serial_micro Connecting to the Microcontroller
+
+The microcontroller (which controls the power sequencing, among other things)
+also has a serial console available. To connect to the microcontroller, use the
+other UART device. In the example above:
+
+    $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_251635234ABC-if02-port0 115200
+
+It provides a very simple prompt. The command 'help' will list all available
+commands. A direct connection to the microcontroller can be used to hard-reset
+the device without physically accessing it and other low-level diagnostics. For
+example, running the command `reboot` will emulate a reset button press,
+resetting the state of the device, while the command `powerbtn` will emulate a
+power button press, turning the device back on again.
+
+The filesystem can be updating using the `usrp_update_fs` utility and the 
+device will automatically boot with the standard fpga image.
+
+Note that the final 6 digits of the serial number match between the device and
+the serial connection (in this example, 234ABC).
 
 \subsection x4xx_updating_filesystems_mender Updating the Filesystem Using Mender
 
@@ -735,18 +1000,20 @@ update was originally launched (which presumably is in a working state). Another
 update can be launched now to correct the previous, failed update, until it
 works.
 
-\subsubsection x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
+\paragraph x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
 
-To initiate an update directly from the X4x0 device, download a Mender artifact
-containing the update itself. These are files with a `.mender` suffix. They can
-be downloaded by using the `uhd_images_downloader` utility:
+To initiate an update directly from the X4x0 device or from a host computer with Internet 
+access (say, when X4x0 does not have internet acess), download a Mender artifact containing the  
+update itself. These are files with a `.mender` suffix. They can be downloaded by using the 
+`uhd_images_downloader` utility:
 
-    $ uhd_images_downloader -t mender -t x4xx
+    $ sudo uhd_images_downloader -t mender -t x4xx --yes
 
 Append the `-l` switch to print out the URLs only:
 
     $ uhd_images_downloader -t mender -t x4xx -l
 
+Note: In the output of the command, the folder destination where the images are saved is printed out.
 By default, this utility will download the `.mender` artifact to
 `/usr/share/uhd/images`.
 
@@ -761,7 +1028,12 @@ Second, use the `-m` switch to use the new manifest file:
 
     $ uhd_images_downloader -t mender -t x4xx -m manifest.txt
 
-\subsubsection x4xx_updating_filesystems_mender_install Installing the Mender Artifact
+If downloading on a host computer, you will need to copy this Mender filesystem image to the USRP  
+X4xx. This can be done with the Linux utility `scp`:
+
+    $ scp /path/to/usrp_x4xx_fs.mender root@<usrp_ipaddr>:~/. 
+
+\paragraph x4xx_updating_filesystems_mender_install Installing the Mender Artifact
 
 Once a Mender artifact is downloaded to the X4x0 (see
 \ref x4xx_updating_filesystems_mender_artifact), install it by running mender
@@ -790,32 +1062,91 @@ the following command:
 
     $ mender show-artifact
 
-If you are running a hosted server, the updates can be initiated from a web
+If you are running a hosted server or using a Mender server, the updates can be initiated from a web
 dashboard. From there, you can start the updates without having to log into the
 device, and can update groups of USRPs with a few clicks in a web GUI. The
 dashboard can also be used to inspect the state of USRPs. This is a simple way
 to update groups of rack-mounted USRPs with custom file systems.
 
+If you run into boot issue or require more updates, refer \ref x4xx_troubleshooting.
 
-\subsection x4xx_resetting_boot_environment Resetting Boot Environment
+\subsection x4xx_accessing_emmc_usb USB Access to eMMC
 
-In the event that the new system has problems booting, you can attempt to reset
-the boot environment using the following instructions.
+While Mender should be used for routine filesystem updates (see \ref
+x4xx_updating_filesystems), it is also possible to access the X4x0's internal
+eMMC from an external host over USB. This allows accessing or modifying the
+filesystem, as well as the ability to flash the device with an entirely new
+filesystem.
 
-First, connect to the USB serial console at a baud rate of 115200. Boot the
+In order to do so, you'll need an external computer with two USB ports, and two
+USB cables to connect the computer to your X4x0. The instructions below assume
+a Linux host.
+
+First, connect to the APU serial console at a baud rate of 115200. Boot the
 device, and stop the boot sequence by typing `noautoboot` at the prompt. Then,
-run the following commands in the U-boot command prompt:
+run the following command in the U-boot command prompt:
 
-    env default -a
-    env save
-    reset
+    ums 0 mmc 0
 
-The last command will reboot the USRP. If the `/` filesystem was mounted to `mmcblk0p2` as
-described in \ref x4xx_updating_filesystems, then stop the boot again and run:
+This will start the USB mass storage gadget to expose the eMMC as a USB mass
+storage device. You should see a spinning indicator on the console, which
+indicates the gadget is active.
 
-    run altbootcmd
+Next, connect your external computer to the X4x0's USB to PS port using an OTG
+cable. Your computer should recognize the X4x0 as a mass storage device, and you
+should see an entry in your kernel logs (`dmesg`) that looks like this:
 
-Otherwise, let the boot continue as normal.
+    usb 3-1: New USB device found, idVendor=3923, idProduct=7a7d, bcdDevice= 2.23
+    usb 3-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+    usb 3-1: Product: USB download gadget
+    usb 3-1: Manufacturer: National Instruments
+    sd 6:0:0:0: [sdc] 30932992 512-byte logical blocks: (15.8 GB/14.8 GiB)
+     sdc: sdc1 sdc2 sdc3 sdc4
+    sd 6:0:0:0: [sdc] Attached SCSI removable disk
+
+The exact output will depend on your machine, but from this log you can see that
+the X4x0 was recognized and `/dev/sdc` is the block device representing the
+eMMC, with 4 partitions detected (see \ref x4xx_overview_storage for details on
+the partition layout).
+
+It is now possible to treat the X4x0's eMMC as you would any other USB drive:
+the individual partitions can be mounted and accessed, or the entire block
+device can be read/written.
+
+Once you're finished accessing the device over USB, the u-boot gadget may be
+stopped by hitting Ctrl-C at the APU serial console.
+
+\subsubsection x4xx_flash_emmc Flashing eMMC with the Filesystem
+
+Once the X4x0's eMMC is accessible over USB, it's possible to write the
+filesystem image using `dd`. You can obtain the latest filesystem image by
+running:
+
+    uhd_images_downloader -t sdimg -t x4xx
+
+The output of this command will indicate where the downloaded image can be
+found.
+
+Run:
+
+    sudo dd if=/path/to/usrp_x4xx_fs.sdimg of=/dev/sdX bs=1M
+
+to flash the eMMC with this image (replacing /dev/sdX with the block device
+of the X4x0's eMMC as indicated by your kernel log).
+
+You can also use the `bmaptool`:
+    sudo bmaptool copy --bmap /path/to/usrp_x4xx_fs.sdimg.bmap /path/to/usrp_x4xx_fs.sdimg /dev/sdX
+
+The former is generally preferred as it will always work, even if it slower than the latter.
+
+When copying has completed, hit Ctrl-C on the U-boot
+prompt to terminate the mass storage mode. Then, power-cycle the device to load
+the new filesystem.
+
+\subsection Autoboot
+The USRP X4x0 can be configured to power on and boot automatically when power is applied. This setting 
+can be controlled using the `eeprom-set-autoboot` script. This script is executed directly on the USRP X4x0. 
+To enable autoboot, run `eeprom-set-autoboot on`; to disable autoboot, run `eeprom-set-autoboot off`.
 
 \subsection x4xx_updating_cpld Updating the Motherboard CPLD
 
@@ -886,73 +1217,106 @@ The writable SCU image file is stored on the filesystem under
 number). To update, simply replace the `.bin` file with the updated version and
 reboot.
 
-\subsection x4xx_accessing_emmc_usb USB Access to eMMC
+\section x4xx_troubleshooting Troubleshooting
 
-While Mender should be used for routine filesystem updates (see \ref
-x4xx_updating_filesystems), it is also possible to access the X4x0's internal
-eMMC from an external host over USB. This allows accessing or modifying the
-filesystem, as well as the ability to flash the device with an entirely new
-filesystem.
+Refer [Ettus USRP X410/X440 Getting Started Guide](https://kb.ettus.com/USRP_X410/X440_Getting_Started_Guide) 
+for Support, Legal Considerations and T&C.
 
-In order to do so, you'll need an external computer with two USB ports, and two
-USB cables to connect the computer to your X4x0. The instructions below assume
-a Linux host.
+\subsection x4xx_network_troubleshooting Network Troubleshooting
 
-First, connect to the APU serial console at a baud rate of 115200. Boot the
+If you are not familiar with the X4xx and its network interface, please 
+refer to \ref page_usrp_x4xx. Most of the network related problems are
+similar among different embedded or MPM based USRPs. You might notice
+differences in error messages or interface configurations. Please go through
+some common issues listed in the application note
+[Troubleshooting N310/N320 Device Discovery Issues](https://kb.ettus.com/Troubleshooting_N310/N320_Device_Discovery_Issues).
+It is also advisable to read through the KB application note
+[USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks)
+to get best network performance with host and USRP.
+
+Below are listed some more network issues and troubleshooting tips.
+
+<b>Issue 1:</b> If you receive the following error:
+
+<blockquote>Error: RuntimeError: Graph edge list is empty for rx channel 0</blockquote>
+
+then you will need to download a UHD-compatible FPGA image as described in
+\ref x4xx_updating_fpga or using the following command (it assumes that FPGA
+images have been downloaded previously using uhd_images_downloader, or that the
+command is run on the device itself):
+X410:
+   uhd_image_loader --args "type=x4xx,addr=<ip address>,fpga=X4_200"
+X440:
+   uhd_image_loader --args "type=x4xx,addr=<ip address>,fpga=X4_400"
+
+When running on the device, use `127.0.0.1` as the IP address.
+
+<b>Issue 2:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout waiting
+for ACK error.
+
+The setup includes a host PC connected to a x4xx with both 10Gb Ethernet 
+QSFP28 cables. Both remote PC and x4xx are connected to a network switch 
+and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when 
+you try to execute it on a remote host, it throws below error:
+<blockquote>[ERROR] [RFNOC::GRAPH] Caught exception while initializing graph:
+RfnocError: OpTimeout: Control operation timed out waiting for ACK</blockquote>
+
+Solution: Ensure both switch ports show LED blinking green and Ethernet cables
+are fine.
+ - If the LEDs on the switch ports are not green, connect with different 
+ Ethernet ports on the switch. LED should blink green. If not try with 
+ another network switch. Try running uhd_usrp_probe again.
+ - If you still get errors, make sure that the Ethernet cables connecting host
+ and x4xx to the network switch are not damaged. Replace the Ethernet cables 
+ and check again by running uhd_usrp_probe.
+ - If you are still unable to probe your x4xx without errors, contact
+ Ettus support.
+
+<b>Issue 3:</b> uhd_usrp_probe --args addr=\<x4xx_DHCP_IP\> gives timeout recv
+buff error.
+
+The setup includes a host PC connected to a x4xx with both 10Gb Ethernet
+QSFP28 cables. Both the remote PC and x4xx are connected to a network switch
+and are in the same sub-net. uhd_usrp_probe on x4xx works fine but when
+you try to execute it on the remote host, it throws below error:
+<blockquote>[ERROR] [RFNOC::GRAPH] IO Error during GSM initialization. 
+EnvironmentError: IOError: Timed out getting recv buff for management 
+transaction</blockquote> 
+
+Solution: Such errors are noticed when the SFP cables are swapped between
+the SFP ports of the device and host Ethernet ports. 
+ - Verify the FPGA image flavor loaded in x4xx. Refer section
+ \ref x4xx_updating_fpga_types. 
+ - Verify that the host is configured with the correct IP addresses to 
+ communicate with the loaded FPGA image. 
+ Refer \ref x4xx_getting_started_network_connectivity_ifcs.
+ - Check and ensure that the SFP cables connect the ports between the 
+ x4xx and the host with the corresponding ip addresses.
+ - Verify single 10/100GbE network connections by pinging the USRP 
+ network ports separately.
+ - Try to run uhd_usrp_probe, this should return results without errors.
+ - If you are still unable to probe your x4xx without errors, contact 
+ Ettus support.
+
+\subsection x4xx_resetting_boot_environment Resetting Boot Environment
+
+In the event that the new system has problems booting, you can attempt to reset
+the boot environment using the following instructions.
+
+First, connect to the USB serial console at a baud rate of 115200. Boot the
 device, and stop the boot sequence by typing `noautoboot` at the prompt. Then,
-run the following command in the U-boot command prompt:
+run the following commands in the U-boot command prompt:
 
-    ums 0 mmc 0
+    env default -a
+    env save
+    reset
 
-This will start the USB mass storage gadget to expose the eMMC as a USB mass
-storage device. You should see a spinning indicator on the console, which
-indicates the gadget is active.
+The last command will reboot the USRP. If the `/` filesystem was mounted to `mmcblk0p2` as
+described in \ref x4xx_updating_filesystems, then stop the boot again and run:
 
-Next, connect your external computer to the X4x0's USB to PS port using an OTG
-cable. Your computer should recognize the X4x0 as a mass storage device, and you
-should see an entry in your kernel logs (`dmesg`) that looks like this:
+    run altbootcmd
 
-    usb 3-1: New USB device found, idVendor=3923, idProduct=7a7d, bcdDevice= 2.23
-    usb 3-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
-    usb 3-1: Product: USB download gadget
-    usb 3-1: Manufacturer: National Instruments
-    sd 6:0:0:0: [sdc] 30932992 512-byte logical blocks: (15.8 GB/14.8 GiB)
-     sdc: sdc1 sdc2 sdc3 sdc4
-    sd 6:0:0:0: [sdc] Attached SCSI removable disk
-
-The exact output will depend on your machine, but from this log you can see that
-the X4x0 was recognized and `/dev/sdc` is the block device representing the
-eMMC, with 4 partitions detected (see \ref x4xx_overview_storage for details on
-the partition layout).
-
-It is now possible to treat the X4x0's eMMC as you would any other USB drive:
-the individual partitions can be mounted and accessed, or the entire block
-device can be read/written.
-
-Once you're finished accessing the device over USB, the u-boot gadget may be
-stopped by hitting Ctrl-C at the APU serial console.
-
-\subsubsection x4xx_flash_emmc Flashing eMMC
-
-Once the X4x0's eMMC is accessible over USB, it's possible to write the
-filesystem image using `dd`. You can obtain the latest filesystem image by
-running:
-
-    uhd_images_downloader -t sdimg -t x4xx
-
-The output of this command will indicate where the downloaded image can be
-found.
-
-Run:
-
-    sudo dd if=/path/to/usrp_x4xx_fs.sdimg of=/dev/sdX bs=1M
-
-to flash the eMMC with this image (replacing /dev/sdX with the block device
-of the X4x0's eMMC as indicated by your kernel log).
-
-When copying has completed, hit Ctrl-C on the U-boot
-prompt to terminate the mass storage mode. Then, power-cycle the device to load
-the new filesystem.
+Otherwise, let the boot continue as normal.
 
 \subsection x4xx_jtag_boot Booting X4x0 over JTAG
 
