@@ -40,14 +40,17 @@ the UHD installer file name and run the downloaded installer package.
 
 Using a USB-based device?
 
-- Starting from UHD version 4.8 the UHD Installer package installs a copy of 
-  the Windows UHD USB Driver within the UHD installation folder 
-  (by default "C:\\Program Files\\UHD"). Alternatively, these may be 
-  separately downloaded from the UHD wiki page: 
+- Starting with UHD version 4.9, the UHD Installer package installs a copy 
+  of the Windows UHD USB Driver within the UHD installation folder 
+  (by default "C:\\Program Files\\UHD"). It also automatically installs 
+  all driver installer packages into Windows, eliminating this 
+  post-installation step that was required in previous UHD versions.
+  
+  Alternatively, these may be separately downloaded from the UHD wiki page: 
   <a href="http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip">erllc_uhd_winusb_driver.zip</a>.
-- These driver installer packages must be installed once per host computer 
-  to use a USB-based product with UHD software. Perform the following steps 
-  for each USB device type:
+  Manually downloaded driver installer packages must also be installed into Windows
+  once per host computer to use a USB-based product with UHD software.
+  Perform the following steps for each USB device type:
   + Open the device manager and plug in the USRP device. 
     You will see an unrecognized USB device in the device manager.
   + Right click on the unrecognized USB device and select update/install 

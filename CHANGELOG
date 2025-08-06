@@ -17,6 +17,9 @@ Change Log for Releases
   - LabVIEW/USRP: New repository containing example applications which 
     demonstrate how to use NI LabVIEW with USRP devices via the UHD APIs.
     (https://github.com/ni/labview-usrp-examples)
+  - Enhanced the UHD Windows installer to automatically install Windows 
+    driver packages into the OS, eliminating this manual post-installation
+    step for B-Series USB devices. 
 * API Changes
   - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
      headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
