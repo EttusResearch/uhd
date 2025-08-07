@@ -73,6 +73,9 @@ def main(args):
 
     # Copy debian build files to build folder
     shutil.copytree("host/cmake/debian", uhd_deb_build_path / "debian")
+    # Copy version specific files (e.g. debian/control.noble to debian/control)
+    for version_specific_file in pathlib.Path(uhd_deb_build_path / "debian").glob(f"*.{args.release}"):
+        shutil.copy2(version_specific_file, version_specific_file.with_suffix(""))
     shutil.copy2("host/utils/uhd-usrp.rules",
                  uhd_deb_build_path / "debian/uhd-host.udev")
     with open(uhd_deb_build_path / "debian/uhd-host.manpages", "w") as man_file:
