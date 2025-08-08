@@ -1,3 +1,55 @@
+uhd (4.9.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * Highlights / Main Changes
+    - Support for USRP B206mini-i
+    - Support for OBX daughterboard
+  * New Features
+    - OBX daughterboard and B206mini support added.
+    - X3x0: Add support for the gps_iface feature. This allows sending arbitrary
+      commands to the GPS module.
+    - rfnoc_modtool: Add a new subcommand, `make-yaml`, that generates a block
+      YAML file from some user inputs. When calling `rfnoc_modtool add`  without
+      a valid block YAML file, the tool will now automatically call `make-yaml` to
+      generate a new YAML file.
+    - Added support for processing multiple samples per cycle in FFT block.
+    - LabVIEW/USRP: New repository containing example applications which 
+      demonstrate how to use NI LabVIEW with USRP devices via the UHD APIs.
+      (https://github.com/ni/labview-usrp-examples)
+  * API Changes
+    - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
+       headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
+       or `boost::math::gcd` and `boost::math::lcm` if not.
+    - When calling `recv()` on an RX streamer connected to an RFNoC device, we
+      no longer artificially inflate the timeout value. The old behaviour was
+      in some cases abused to detect overruns, but this is not a reliable method
+      and is now explicitly declared unsupported.
+  * Bug Fixes
+    - RFNoC
+      - Calling `recv()` on an RX streamer connected to an RFNoC device with a
+        zero timeout value now correctly returns immediately.
+      - rfnoc-gain: Moved the fpga/ subdirectory under rfnoc/. This way, the
+        directory structure inside the OOT module is identical to the directory
+        structure after installation.
+    - X410:
+      - Fixed NCO reset mechanism that caused ADC self-cal errors to occur during
+        reopening of a UHD session when timed tune commands were previously used.
+  * Removals / Deprecations
+    - Removed tools/uhd_dump. This tool is obsolete, the USRP X3x0 is not even
+      compatible with it any more. Dumps can be recorded and analyzed with wireshark
+      and the UHD dissectors in here.
+    - Removed network_relay example.
+  * Validated OS Environments
+    (Versions for build and runtime dependencies can be determined from the
+     docker container definitions in the UHD repository at .ci/docker/...)
+    - Linux:
+      - Ubuntu: focal (20.04), jammy (22.04), noble (24.04), plucky (25.04)
+      - Fedora: 40, 41, 42
+    - Windows: 10 22H2, 11 23H2
+    - MacOS: Sequoia (15.2)
+
+ -- Ettus Research <uhd.maintainer@emerson.com>  Mon, 11 Aug 2025 05:36:26 -0800
+
+
 uhd (4.8.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * Highlights / Main Changes

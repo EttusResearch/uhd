@@ -1,8 +1,7 @@
 Change Log for Releases
 ==============================
 
-## 004.next
-
+## 004.009.000.000
 * Highlights / Main Changes
   - Support for USRP B206mini-i
   - Support for OBX daughterboard
@@ -14,6 +13,10 @@ Change Log for Releases
     YAML file from some user inputs. When calling `rfnoc_modtool add`  without
     a valid block YAML file, the tool will now automatically call `make-yaml` to
     generate a new YAML file.
+  - Added support for processing multiple samples per cycle in FFT block.
+  - LabVIEW/USRP: New repository containing example applications which 
+    demonstrate how to use NI LabVIEW with USRP devices via the UHD APIs.
+    (https://github.com/ni/labview-usrp-examples)
 * API Changes
   - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
      headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
@@ -37,7 +40,14 @@ Change Log for Releases
     compatible with it any more. Dumps can be recorded and analyzed with wireshark
     and the UHD dissectors in here.
   - Removed network_relay example.
-
+* Validated OS Environments
+  (Versions for build and runtime dependencies can be determined from the
+   docker container definitions in the UHD repository at .ci/docker/...)
+  - Linux:
+    - Ubuntu: focal (20.04), jammy (22.04), noble (24.04), plucky (25.04)
+    - Fedora: 40, 41, 42
+  - Windows: 10 22H2, 11 23H2
+  - MacOS: Sequoia (15.2)
 
 ## 004.008.000.000
 * Highlights / Main Changes
