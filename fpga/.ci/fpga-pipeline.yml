@@ -33,9 +33,9 @@ parameters:
   type: boolean
   displayName: Build E31x
   default: false
-- name: build_e32x
+- name: build_e320
   type: boolean
-  displayName: Build E32x
+  displayName: Build E320
   default: false
 - name: build_x410
   type: boolean
@@ -150,7 +150,7 @@ extends:
           iif(parameters.build_x3x0,'fpga.usrp3.x3xx',''),
           iif(parameters.build_n3xx,'fpga.usrp3.n3xx',''),
           iif(parameters.build_e31x,'fpga.usrp3.e31x',''),
-          iif(parameters.build_e32x,'fpga.usrp3.e32x',''),
+          iif(parameters.build_e320,'fpga.usrp3.e320',''),
           iif(parameters.build_x410,'fpga.usrp3.x410',''),
           iif(parameters.build_x440,'fpga.usrp3.x440',''),
           iif(parameters.build_x4xx_cplds,'fpga.usrp3.cpld.x4xx',''),

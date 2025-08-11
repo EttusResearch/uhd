@@ -5,7 +5,7 @@
 #
 # Description:
 #
-#   This template defines a stages-based pipeline for building E32X FPGA targets.
+#   This template defines a stages-based pipeline for building E320 FPGA targets.
 #
 #   See https://aka.ms/yaml for pipeline YAML documentation.
 #
