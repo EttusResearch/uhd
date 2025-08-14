@@ -70,6 +70,9 @@ module ddc #(
   wire dds_out_tready;
   wire [15:0] dds_input_fifo_space, dds_input_fifo_occupied;  
 
+  wire clip_out_tlast;
+  wire clip_out_tvalid;
+
   wire [17:0] scale_factor;
   wire last_cic;
   wire last_cic_decimate_in;
@@ -274,7 +277,6 @@ module ddc #(
     .m_axis_dout_tvalid(dds_out_tvalid),
     .m_axis_dout_tready(dds_out_tready),
     .m_axis_dout_tdata({dds_out_q_tdata, dds_out_i_tdata})
-        
   );
 
   // Drop MSBs to match expected gain/bit use found in freq shift
@@ -290,9 +292,11 @@ module ddc #(
     .i_tvalid(dds_out_tvalid),
     .i_tready(dds_out_tready),
     .o_tdata({i_dds_clip[WIDTH-1:8], q_dds_clip[WIDTH-1:8]}),
-    .o_tlast(last_cic_decimate_in),
-    .o_tvalid(strobe_dds_clip),
+    .o_tlast(clip_out_tlast),
+    .o_tvalid(clip_out_tvalid),
     .o_tready(ddc_chain_tready));
+  assign last_cic_decimate_in = clip_out_tlast;
+  assign strobe_dds_clip = clip_out_tvalid & sample_out_tready;
   assign i_dds_clip[7:0] = 8'h00;
   assign q_dds_clip[7:0] = 8'h00;
   
