@@ -28,7 +28,6 @@ device up and running.
 - USRP B200/B210/B200mini/B205mini/B206mini
 - USB 3.0 Cable
 - Universal power supply (B210 only)
-- Jackscrew stress relief (B206mini enclosed variant only)
 
 \subsection verify_contents Verify the Contents of Your Kit
 Make sure that your kit contains all the items listed above. If any items are
@@ -46,7 +45,7 @@ non-functional. Listed below are some examples of actions which can prevent
 damage to the unit:
 
 - Never allow metal objects to touch the circuit board while powered.
-- Always properly terminate the transmit port with an antenna or 50Ω load.
+- Always properly terminate the transmit port with an antenna or 50 Ohms load.
 - Always handle the board with proper anti-static methods.
 - Never allow the board to directly or indirectly come into contact with any
 voltage spikes.
@@ -56,6 +55,10 @@ voltage spikes.
 Some warnings to prevent damage to the device:
 - Never apply more than -15 dBm of power into any RF input.
 - Always use at least 30 dB attenuation if operating in loopback configuration.
+
+\subsection getting_started_tutorials Getting Started with B206mini Tutorials
+To learn how to set up the USRP Hardware Driver (UHD), and use UHD to acquire 
+an RF spectrum using the B206 follow the [Getting Started with USRP Products](https://learn.ni.com/pages/getting-started?labels=%5B%22Product%22%5D&values=%5B%22usrp%22%5D) tutorials.
 
 \subsection install_software_tools Install and Setup the Software Tools on Your Host Computer
 In order to use your Universal Software Radio Peripheral (USRP™), you must have
@@ -71,9 +74,12 @@ It is generally recommended to use the latest UHD version.
 \subsection connect_device Connect the USRP to the Host Computer
 The included USB 3.0 cable provides power and data connectivity for the
 USRP Bus Series. The shipping kits include appropriate USB 3 cables to connect
-the B200/B210, B200mini, or B205mini to available USB Type-A USB 3.0 (or 2.0)
-ports on the Host Computer. The B206mini shipping kit includes USB 3.2 Gen 1
-cable for plugging into available USB 3 Type-C ports on the Host Computer.
+the B200/B210, B200mini, or B205mini to an available USB 3.0 (or 2.0) Type-A 
+port on the host computer. The B206mini shipping kit includes a USB 3.2 Gen 1 
+Type-C cable, designed for connection to USB 3 Type-C ports on the host 
+computer. It also features a USB Type-C connector with a locking screw, 
+which when used with the optional enclosure and matching threaded insert, 
+provides added strain relief for secure and stable operation.
 
 Note: If a GPSDO module is installed (B200/210 only) or when using USB 2.0, an
 external DC power supply or a cable designed to pull power from 2 USB ports
@@ -422,6 +428,35 @@ Component ID            |  Description               | Details
  SW1                    |  FX3 Hard Reset Switch     | Resets the USB controller / System reset
 
  <sup>1</sup> GPIO pinout is 1=3.3V, 2=GPIO_0, 3=GPIO_1, 4=GPIO_2, 5=GPIO_3, 6=GND, 7=3.3V, 8=GPIO_4, 9=GPIO_5, 10=GPIO_6, 11=GPIO_7, 12=GND
+
+\section b200_resources Additional Documentation
+
+\subsection b200_certifications Product Certifications
+- https://www.ni.com/en/support/documentation/product-certifications.html
+
+\subsection b200_specs Specifications
+- [B200/B210 Specifications](https://kb.ettus.com/B200/B210/B200mini/B205mini#RF_Specifications)
+- [B200mini/205mini Specifications](https://kb.ettus.com/B200/B210/B200mini/B205mini#RF_Specifications)
+- [B206mini Specifications](https://www.ni.com/docs/en-US/bundle/usrp-b206mini-i-specs)
+
+\subsection b200_seri Safety, Environmental, and Regulatory Information
+- B200/210 - Printout included in hardware shipping kit
+- B200mini/205mini - Printout included in hardware shipping kit
+- [USRP B206mini-i Safety, Environmental, and Regulatory Information](https://www.ni.com/docs/en-US/bundle/usrp-b206mini-i-seri)
+
+\subsection b200_letter_of_volatility Certificate of Volatility
+- [B200/B210 Letter of Volatility](https://www.ni.com/pdf/manuals/377354a.pdf)
+- [B200mini/205mini Letter of Volatility](https://www.ni.com/pdf/manuals/377354a.pdf)
+- [B206mini Letter of Volatility](https://www.ni.com/pdf/manuals/379248a.pdf)
+
+\subsection b200_enclosure_assembly_instructions Enclosure Assembly Instructions
+- B200/210 - Printout included in 'Enclosure Kit for USRP B200/B210'
+- B200mini - Printout included in 'Enclosure kit for USRP B205mini-i (I-Grade)' or 'Enclosure kit for USRP B200mini-i (C-Grade)'
+- B205mini - Printout included in 'Enclosure kit for USRP B205mini-i (I-Grade)'
+- [B206mini-i Enclosure Assembly Instructions](https://ni.com/docs/en-US/bundle/usrp-b206mini-i-getting-started/page/assembling.html)
+
+\subsection b200_hardware Hardware Resources
+- [B200/B210/B200mini/B205mini/206mini Motherboard Resources](https://kb.ettus.com/B200/B210/B200mini/B205mini/B206mini)
 
 \section b200_known_issues Known issues
 
