@@ -21,9 +21,36 @@ from subprocess import Popen, PIPE
 # For what we're doing here, ruamel.yaml and yaml are compatible, and we'll use
 # whatever we can find
 try:
-    from ruamel import yaml
+    from ruamel.yaml import YAML
+    from io import StringIO
+    
+    def yaml_load(stream):
+        yaml = YAML(typ="base", pure=True)
+        return yaml.load(stream)
+
+    def yaml_dump(data, stream):
+        yaml = YAML(typ="base", pure=True)
+        yaml.dump(data, stream)
+
+    def yaml_dump_to_str(data):
+        buf = StringIO()
+        yaml_dump(data, buf)
+        return buf.getvalue()
+
 except:
     import yaml
+    from io import StringIO
+    
+    def yaml_load(stream):
+        return yaml.load(stream, Loader=yaml.BaseLoader)
+
+    def yaml_dump(data, stream):
+        return yaml.dump(data, stream, default_flow_style=False)
+
+    def yaml_dump_to_str(data):
+        buf = StringIO()
+        yaml_dump(data, buf)
+        return buf.getvalue()
 from usrp_probe import get_usrp_list
 
 #--------------------------------------------------------------------------
@@ -114,7 +141,9 @@ class uhd_test_case(unittest.TestCase):
         self.results_file = os.getenv('_UHD_TEST_RESULTSFILE', "")
         if self.results_file and os.path.isfile(self.results_file):
             with open(self.results_file) as res_file:
-                self.results = yaml.safe_load(res_file.read()) or {}
+                self.results = yaml_load(res_file)
+                if not isinstance(self.results, dict):
+                    self.results = {}
         self.args_str = os.getenv('_UHD_TEST_ARGS_STR', "")
         self.usrp_info = get_usrp_list(self.args_str)[0]
         if self.usrp_info['serial'] not in self.results:
@@ -151,7 +180,7 @@ class uhd_test_case(unittest.TestCase):
         self.tear_down()
         if self.results_file:
             with open(self.results_file, 'w') as res_file:
-                res_file.write(yaml.dump(self.results, default_flow_style=False))
+                yaml_dump(self.results, res_file)
         time.sleep(15)
 
     def report_result(self, testname, key, value):
@@ -259,7 +288,7 @@ class uhd_example_test_case(uhd_test_case):
                         "Check log file for details.\n"
                         "Run results:\n{r}".format(
                             t=test_name,
-                            r=yaml.dump(run_results, default_flow_style=False)
+                            r=yaml_dump_to_str(run_results)
                         )
                 )
 
@@ -314,6 +343,6 @@ class UHDPythonTestCase(uhd_test_case):
                         "Check log file for details.\n"
                         "Run results:\n{r}".format(
                             t=test_name,
-                            r=yaml.dump(run_results, default_flow_style=False)
+                            r=yaml_dump_to_str(run_results)
                         )
                 )
