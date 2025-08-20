@@ -1,4 +1,4 @@
-; ======== libusb 1.0 (WinUSB) device driver ==========
+;
 ;
 ; To customize this inf file for your own device
 ;
@@ -23,45 +23,40 @@
 ; Note 1: if you need to create a matching cat file for this inf, you can use
 ; the inf2cat utility from the WinDDK, with the the following command:
 ; inf2cat /driver:"path_to_your inf" /os:7_X86,7_X64,Vista_X86,Vista_X64
-
-; ===================== Strings =======================
+;
+; Note 2: The co-installers provided in these files are version 1.9.
+; Please refer to:
+; http://blogs.msdn.com/iliast/archive/2008/03/10/why-do-we-need-wdf-coinstallers.aspx and
+; http://blogs.msdn.com/iliast/archive/2009/08/13/wdf-logo-requirements-regarding-coinstallers.aspx
+; for more information about co-installers and their versioning
 
 [Strings]
-
-; =====================================================
-; ========= START USER CONFIGURABLE SECTION ===========
-; =====================================================
-
-DeviceName = "Ettus Research LLC B200mini"
-; Make sure "VID_" and "PID_" are always part of the strings below
-VendorID = "VID_2500"
-ProductID = "PID_0021"
-DeviceGUID = "{6960fcb7-8440-4271-a4e3-fef0cb9d01f7}"
-DeviceClassGUID = "{69B50283-8B4F-40BF-AE63-0F2609E68DE1}"
+NIString0 = "Ettus Research"
+VendorID = "VID_3923"
+;VendorID = "VID_2500"
+;dev0_ProductID = "PID_0020"
+;dev1_ProductID = "PID_0021"
+dev0_ProductID = "PID_7813"
+dev1_ProductID = "PID_7814"
+;DeviceGUID was generated using Visual Studio GUID generation tool.
+DeviceGUID = "{7de53da3-1027-4e90-b6f0-46fc59fa5ce8}"
+DeviceClassGUID = "{f6afcb2d-01e5-48cc-8c0c-a28a9ad4d0e3}"
+dev0_dDesc = "NI USRP-2900"
+dev1_dDesc = "NI USRP-2901"
+DiskName = "libusb (WinUSB) Device Install Disk"
+ClassName = "NI-USRP USB Devices"
 ; Date MUST be in MM/DD/YYYY format
 Date = "08/05/2025"
 Version = "4.9.0.0"
-
-; =====================================================
-; ========== END USER CONFIGURABLE SECTION ============
-; =====================================================
-
-ProviderName = "Ettus Research"
-DiskName = "libusb (WinUSB) Device Install Disk"
-ClassName = "USRPs"
-
-; ====================== Version ======================
 
 [Version]
 DriverVer = %Date%,%Version%
 Signature = "$Windows NT$"
 Class = %ClassName%
 ClassGuid = %DeviceClassGUID%
-Provider = %ProviderName%
+Provider = %NIString0%
 CatalogFile = erllc_uhd.cat
-PnpLockdown = 1
-
-; =================== Class section ===================
+PnpLockdown=1
 
 ; Since the device is not a standard USB device, we define a new class for it.
 [ClassInstall32]
@@ -72,16 +67,12 @@ HKR,,,0,%ClassName%
 ; -20 is for the USB icon
 HKR,,Icon,,-20
 
-; =========== Manufacturer/Models sections ============
-
 [Manufacturer]
-%ProviderName% = libusbDevice_WinUSB,NTx86,NTamd64
+%NIString0% = niusrp290x_WinUSB,NTamd64
 
-[libusbDevice_WinUSB.NTx86]
-%DeviceName% = USB_Install, USB\%VendorID%&%ProductID%
-
-[libusbDevice_WinUSB.NTamd64]
-%DeviceName% = USB_Install, USB\%VendorID%&%ProductID%
+[niusrp290x_WinUSB.NTamd64]
+%dev0_dDesc% = USB_Install, USB\%VendorID%&%dev0_ProductID%
+%dev1_dDesc% = USB_Install, USB\%VendorID%&%dev1_ProductID%
 
 ; ==================== Installation ===================
 
@@ -95,7 +86,7 @@ Needs=WINUSB.NT
 ; The Include directive in the USB_Install.Services section includes the system-
 ; supplied INF for WinUSB. This INF is installed by the WinUSB co-installer if
 ; it is not already on the target system. The AddService directive specifies
-; WinUsb.sys as the device�s function driver. These directives should not be
+; WinUsb.sys as the device's function driver. These directives should not be
 ; modified.
 [USB_Install.Services]
 Include=winusb.inf
@@ -114,7 +105,7 @@ KmdfLibraryVersion=1.9
 ; USB_Install.HW is the key section in the INF. It specifies the device
 ; interface globally unique identifier (GUID) for your device. The AddReg
 ; directive puts the interface GUID in a standard registry value. When
-; WinUsb.sys is loaded as the device�s function driver, it reads the registry
+; WinUsb.sys is loaded as the device's function driver, it reads the registry
 ; value and uses the specified GUID to represent the device interface. You
 ; should replace the GUID in this example with one that you create specifically
 ; for your device. If the protocols for the device change, you should create a

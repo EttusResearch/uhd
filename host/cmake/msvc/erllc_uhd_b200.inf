@@ -38,8 +38,8 @@ ProductID = "PID_0020"
 DeviceGUID = "{43ec6c7f-2686-492f-add6-601ebbf5e89a}"
 DeviceClassGUID = "{69B50283-8B4F-40BF-AE63-0F2609E68DE1}"
 ; Date MUST be in MM/DD/YYYY format
-Date = "04/08/2025"
-Version = "4.8.0.0"
+Date = "08/05/2025"
+Version = "4.9.0.0"
 
 ; =====================================================
 ; ========== END USER CONFIGURABLE SECTION ============
