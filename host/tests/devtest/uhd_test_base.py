@@ -25,32 +25,46 @@ try:
     from io import StringIO
     
     def yaml_load(stream):
+        """Loads YAML data from a stream."""
         yaml = YAML(typ="base", pure=True)
         return yaml.load(stream)
 
     def yaml_dump(data, stream):
+        """Dumps data to a file."""
         yaml = YAML(typ="base", pure=True)
+        yaml.default_flow_style = False
         yaml.dump(data, stream)
 
     def yaml_dump_to_str(data):
+        """Workaround to get returned string after dumping"""
         buf = StringIO()
         yaml_dump(data, buf)
         return buf.getvalue()
 
 except:
     import yaml
-    from io import StringIO
     
     def yaml_load(stream):
+        """Loads YAML data from a stream."""
         return yaml.load(stream, Loader=yaml.BaseLoader)
 
     def yaml_dump(data, stream):
-        return yaml.dump(data, stream, default_flow_style=False)
+        """ Dumps data to a file.
+        
+        yaml.dump accepts the second optional argument,
+        which must be an open text or binary file.
+        In this case, yaml.dump will write the produced YAML document into the file.
+        """
+        yaml.dump(data, stream, default_flow_style=False)
 
     def yaml_dump_to_str(data):
-        buf = StringIO()
-        yaml_dump(data, buf)
-        return buf.getvalue()
+        """ Dumps data to a string using yaml.dump.
+        
+        If the stream optional argument is not given then,
+        yaml.dump returns the produced document.
+        Refer: https://pyyaml.org/wiki/PyYAMLDocumentation
+        """
+        return yaml.dump(data, default_flow_style=False)
 from usrp_probe import get_usrp_list
 
 #--------------------------------------------------------------------------
