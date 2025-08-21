@@ -1,0 +1,63 @@
+From af108046be0ba873597259fb523001edde8e2119 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?J=C3=B6rg=20Hofrichter?= <joerg.hofrichter@emerson.com>
+Date: Mon, 18 Aug 2025 17:57:31 +0200
+Subject: [PATCH] host: paths: return uhd::build_info::install_prefix as
+ "package path"
+
+The function uhd::get_pkg_path which returns the "UHD package path"
+derived the path indirectly from the library path. This approach may be
+incorrect, for example for recent Linux distributions with merged /usr
+directories.
+
+The new implementation calls uhd::build_info::install_prefix which
+returns the CMAKE_INSTALL_PREFIX. This means that the function now
+returns exactly the configured installation prefix just as it is
+stated in description of the function.
+---
+ host/include/uhd/utils/paths.hpp | 3 ---
+ host/lib/utils/paths.cpp         | 8 +-------
+ 2 files changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/host/include/uhd/utils/paths.hpp b/host/include/uhd/utils/paths.hpp
+index 45eb639910..25fff32908 100644
+--- a/host/include/uhd/utils/paths.hpp
++++ b/host/include/uhd/utils/paths.hpp
+@@ -35,9 +35,6 @@ UHD_API std::string get_lib_path(void);
+ //
+ // This path is typically identical with the installation prefix, but can be
+ // overridden with the UHD_PKG_PATH environment variable.
+-//
+-// This path is "calculated" by identifying the path to the UHD library and
+-// returning the parent directory of the library path.
+ UHD_API std::string get_pkg_path(void);
+ 
+ 
+diff --git a/host/lib/utils/paths.cpp b/host/lib/utils/paths.cpp
+index 96c8ba9198..06ff27bd9e 100644
+--- a/host/lib/utils/paths.cpp
++++ b/host/lib/utils/paths.cpp
+@@ -268,8 +268,7 @@ std::string uhd::get_appdata_path(void)
+ 
+ std::string uhd::get_pkg_path(void)
+ {
+-    fs::path pkg_path = fs::path(uhd::get_lib_path()).parent_path().lexically_normal();
+-    return get_env_var("UHD_PKG_PATH", pkg_path.string());
++    return get_env_var("UHD_PKG_PATH", uhd::build_info::install_prefix());
+ }
+ 
+ 
+@@ -480,11 +479,6 @@ std::string uhd::get_images_dir(const std::string& search_paths)
+     if (fs::is_directory(pkg_data_imgs_dir)) {
+         return pkg_data_imgs_dir.string();
+     }
+-    const auto install_prefix_imgs_dir =
+-        fs::path(uhd::build_info::install_prefix()) / "share" / "uhd" / "images";
+-    if (fs::is_directory(install_prefix_imgs_dir)) {
+-        return install_prefix_imgs_dir.string();
+-    }
+ 
+     /* No luck. Return an empty string. */
+     return std::string("");
+-- 
+2.43.0
+
