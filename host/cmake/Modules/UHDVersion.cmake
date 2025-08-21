@@ -160,7 +160,7 @@ endif()
 
 ########################################################################
 # Define the derived version variables:
-if(DEFINED UHD_VERSION)
+if(UHD_VERSION)
     set(UHD_VERSION "${UHD_VERSION}" CACHE STRING "Set UHD_VERSION to a custom value")
 elseif(TRIM_UHD_VERSION STREQUAL "True")
     set(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")

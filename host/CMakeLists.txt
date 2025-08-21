@@ -31,7 +31,22 @@ set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 ########################################################################
 # Project setup
 ########################################################################
+# Backup custom UHD_VERSION if defined by using option -DUHD_VERSION=...,
+# because project() will reset it to an empty string.
+if(UHD_VERSION)
+   set(CUSTOM_UHD_VERSION "${UHD_VERSION}")
+endif(UHD_VERSION)
+
+# Note: if UHD_VERSION is not defined, project() will leave it undefined
+# for cmake version < 4.1.0, but set it to an empty string for cmake
+# version >= 4.1.0.
 project(UHD CXX C)
+
+# Restore the custom UHD_VERSION if it was defined before project()
+if(DEFINED CUSTOM_UHD_VERSION)
+   set(UHD_VERSION "${CUSTOM_UHD_VERSION}" CACHE STRING "" FORCE)
+endif(DEFINED CUSTOM_UHD_VERSION)
+
 enable_testing()
 
 # Make sure our local CMake Modules path comes first
