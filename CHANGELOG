@@ -17,7 +17,12 @@ Change Log for Releases
   - LabVIEW/USRP: New repository containing example applications which 
     demonstrate how to use NI LabVIEW with USRP devices via the UHD APIs.
     (https://github.com/ni/labview-usrp-examples)
-  - Enhanced the UHD Windows installer to automatically install Windows 
+  - Improved RFNoC OOT Block support:
+    New repository containing official RFNoC OOT Blocks
+    (https://github.com/EttusResearch/rfnoc-oot-blocks)
+    - Added new RFNoC Aurora Block for TX and RX remote streaming applications
+      to and from Aurora capable compute nodes like FPGA Coprocessors.
+  - Enhanced the UHD Windows installer to automatically install Windows
     driver packages into the OS, eliminating this manual post-installation
     step for B-Series USB devices. 
 * API Changes

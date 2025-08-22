@@ -15,6 +15,14 @@ uhd (4.9.0.0-0ubuntu1) ubuntu_release; urgency=low
     - LabVIEW/USRP: New repository containing example applications which 
       demonstrate how to use NI LabVIEW with USRP devices via the UHD APIs.
       (https://github.com/ni/labview-usrp-examples)
+    - Improved RFNoC OOT Block support:
+      New repository containing official RFNoC OOT Blocks
+      (https://github.com/EttusResearch/rfnoc-oot-blocks)
+      - Added new RFNoC Aurora Block for TX and RX remote streaming applications
+        to and from Aurora capable compute nodes like FPGA Coprocessors.
+    - Enhanced the UHD Windows installer to automatically install Windows
+      driver packages into the OS, eliminating this manual post-installation
+      step for B-Series USB devices. 
   * API Changes
     - `uhd::math::gcd` and `uhd::math::lcm` are removed from the public
        headers. Use `std::gcd` and `std::lcm` instead if C++17 is available,
@@ -47,7 +55,7 @@ uhd (4.9.0.0-0ubuntu1) ubuntu_release; urgency=low
     - Windows: 10 22H2, 11 23H2
     - MacOS: Sequoia (15.2)
 
- -- Ettus Research <uhd.maintainer@emerson.com>  Mon, 11 Aug 2025 05:36:26 -0800
+ -- Ettus Research <uhd.maintainer@emerson.com>  Fri, 22 Aug 2025 06:07:44 -0800
 
 
 uhd (4.8.0.0-0ubuntu1) ubuntu_release; urgency=low

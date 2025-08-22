@@ -41,6 +41,7 @@ UHD can be used to build stand-alone applications with USRP™ hardware, or with
 third-party applications. Some common toolkits / frameworks are:
 
 * [GNU Radio](http://gnuradio.org/)
+* [RFNoC OOT Blocks](https://github.com/EttusResearch/rfnoc-oot-blocks)
 * [NI LabVIEW - UHD RFNoC](https://github.com/ni/labview-usrp-examples)
 * [NI LabVIEW](https://www.ni.com/download/ni-usrp-1.3/4711/en/)
 * [MathWorks Matlab and Simulink](https://www.mathworks.com/discovery/sdr/usrp.html)
