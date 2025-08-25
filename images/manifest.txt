@@ -75,4 +75,4 @@ usrp1_b100_fw_default           fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b10
 octoclock_octoclock_fw_default  uhd-14000041        octoclock/uhd-14000041/octoclock_octoclock_fw_default-g14000041.zip     8da7f1af8cecb7f6259a237a18c39058ba69a11567fa373cffc9704031a1d053
 
 # Legacy USB Windows drivers
-usb_common_windrv_default       uhd-ccf87eb        usb/uhd-ccf87eb/usb_common_windrv_default-gccf87eb.zip   8739c76e681f900923b900c9df0ef75cf421d39cabb54650c4b9ad19b6a76d85
+usb_common_windrv_default       uhd-ccf87eb        usb/uhd-ccf87eb/usb_common_windrv_default-gccf87eb.zip   0d7e0b89619bb96bb620724fd417564560c50c2c3fcc886ece1f04e175f89c85
