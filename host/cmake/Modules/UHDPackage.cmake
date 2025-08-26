@@ -99,7 +99,7 @@ if(${CPACK_GENERATOR} STREQUAL NSIS)
     # note CPACK_PACKAGE_VERSION_PATCH may have another meaning for NSIS based installers
     # has been defaulting to '1'
     if(UHD_RELEASE_MODE)
-        set(CPACK_PACKAGE_VERSION2_PATCH "${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}")
+        set(CPACK_PACKAGE_VERSION2_PATCH "${UHD_VERSION_ABI}.${UHD_VERSION_PATCH_ORIG}")
     else()
         set(CPACK_PACKAGE_VERSION2_PATCH "${UHD_VERSION_ABI}.9999")
     endif(UHD_RELEASE_MODE)
