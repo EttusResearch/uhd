@@ -34,6 +34,9 @@ SKIP_PATHS = [
     "lib/packet_proc_200",
     "lib/radio_200",
     "lib/vita_200",
+    "lib/wb_spi/bench",
+    "lib/wb_spi/doc",
+    "lib/wb_spi/sim",
 ]
 
 

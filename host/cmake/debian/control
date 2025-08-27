@@ -126,7 +126,7 @@ Description: universal hardware driver for Ettus Research products - doc
 Package: uhd-rfnoc-dev
 Architecture: all
 Section: libdevel
-Depends: python3, csh, ${misc:Depends}
+Depends: python3, ${misc:Depends}
 Recommends: libuhd-dev (= ${binary:Version})
 Suggests: uhd-doc
 Multi-Arch: foreign
