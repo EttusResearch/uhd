@@ -96,6 +96,7 @@ data:
   outputs:
     # This will generate one or more ports all called 'out'. It is also
     # possible to have multiple ports with different names.
+    out:
 %    if data_iface_type == 'axis_data':
       num_ports: ${ num_outputs }
       item_width: ${ out_item_width }
