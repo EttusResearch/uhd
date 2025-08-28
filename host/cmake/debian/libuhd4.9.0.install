@@ -1,1 +1,6 @@
 usr/lib/*/*.so.*
+usr/share/uhd/*/cal
+usr/share/uhd/*/rfnoc/blocks
+usr/share/uhd/*/rfnoc/core
+usr/share/uhd/*/rfnoc/modules
+usr/share/uhd/*/rfnoc/transport_adapters

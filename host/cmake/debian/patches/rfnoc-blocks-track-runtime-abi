@@ -1,0 +1,22 @@
+From c32d2668697311670df8b9023e97b45d574566e3 Mon Sep 17 00:00:00 2001
+From: "A. Maitland Bottoms" <bottoms@debian.org>
+Date: Mon, 21 Dec 2020 21:17:23 -0400
+Subject: [PATCH 07/11] rfnoc blocks track runtime abi
+
+Including ABI version in paths allows multiple versions of libuhd
+to be installed at once, easing transition conflicts.
+---
+ host/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/host/CMakeLists.txt
++++ b/host/CMakeLists.txt
+@@ -135,7 +135,7 @@ include(UHDPackage)   #setup cpack
+ ########################################################################
+ include(GNUInstallDirs)
+
+-set(PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd)
++set(PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd/${UHD_ABI_VERSION})
+ if(NOT DEFINED PKG_LIB_DIR)
+     set(PKG_LIB_DIR ${CMAKE_INSTALL_LIBDIR}/uhd)
+ endif()
