@@ -1,4 +1,5 @@
 debian/NetworkManager-USRP /etc/NetworkManager/system-connections/
+usr/libexec/uhd* /usr/libexec/
 usr/bin/rfnoc_image_builder
 usr/bin/rfnoc_modtool
 usr/bin/uhd_adc_self_cal

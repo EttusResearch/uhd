@@ -10,7 +10,7 @@ DEB_UHD_PACKAGE_CONFIGURATION=$(shell echo "-DCMAKE_BUILD_TYPE=RelWithDebInfo -D
 					-DENABLE_PYTHON_API=ON \
 					-DENABLE_RFNOC_DEV=ON \
 					-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3 \
-					-DPKG_LIB_DIR="/usr/lib/uhd" \
+					-DPKG_LIB_DIR="/usr/libexec/uhd" \
 					-DDOXYGEN_HAVE_DOT=True \
 					-DUHD_PYTHON_DIR="lib/python3/dist-packages" \
 					-DUSRP_MPM_PYTHON_DIR="lib/python3/dist-packages" \
@@ -40,9 +40,9 @@ override_dh_auto_install-arch:
 	cp debian/uhd-host.limits debian/uhd-host/etc/security/limits.d/uhd.conf
 	cp debian/uhd-host.sysctl debian/uhd-host/etc/sysctl.d/uhd-usrp2.conf
 	dh_auto_install
-	chmod -x debian/tmp/usr/lib/uhd/tests/devtest/*.py
-	chmod -x debian/tmp/usr/lib/uhd/tests/streaming_performance/parse_benchmark_rate.py
-	chmod -x debian/tmp/usr/lib/uhd/tests/streaming_performance/run_benchmark_rate.py
+	chmod -x debian/tmp/usr/libexec/uhd/tests/devtest/*.py
+	chmod -x debian/tmp/usr/libexec/uhd/tests/streaming_performance/parse_benchmark_rate.py
+	chmod -x debian/tmp/usr/libexec/uhd/tests/streaming_performance/run_benchmark_rate.py
 	rm -rf debian/tmp/usr/share/man
 	rm -rf debian/tmp/usr/share/doc/uhd/LICENSE
 	rm -rf debian/tmp/usr/share/doc/uhd/README.md
