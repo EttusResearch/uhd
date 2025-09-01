@@ -1080,7 +1080,7 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8)
     }
 }
 
-BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
+// BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc32_and_sc8)
 {
     SKIP_BENCHMARK_CHECK;
