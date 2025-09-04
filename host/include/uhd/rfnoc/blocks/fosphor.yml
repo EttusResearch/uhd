@@ -1,5 +1,10 @@
 schema: rfnoc_modtool_args
 module_name: fosphor
+name: RFNoC Fosphor (F15)
+description: |
+  This block takes input from an FFT block and produces data for a histogram
+  and waterfall. It should be combined with a graphical widget that displays
+  the data correctly.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

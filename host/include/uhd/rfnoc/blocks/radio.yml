@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: radio
+name: Radio
+description: |
+  The Radio block is a hardware-dependent block that exposes access to the
+  RF data interface of the underlying hardware and supports streaming to/from this interface on demand.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

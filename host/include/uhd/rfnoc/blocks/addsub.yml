@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
+name: Add/Subtract
 module_name: addsub
+description: |
+  This block provides the sum and difference of two input channels. It also
+  provides different types of implementations as an example.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

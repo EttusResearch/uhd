@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: license_check
+name: License Checker
+description: |
+  This block is used to read and evaluate license keys. It is used in combination
+  with RFNoC blocks that require such keys.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
