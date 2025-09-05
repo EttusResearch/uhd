@@ -176,7 +176,7 @@ def convert_to_image_config(grc, config_path, known_modules):
         "chdr_width": int(device["parameters"]["chdr_width"]),
         "device": device["parameters"]["device"],
         "image_core_name": grc["options"]["parameters"]["id"],
-        "default_target": device["parameters"].get("default_target", None),
+        "default_target": param_resolve(device["parameters"].get("default_target", None)),
         "parameters": {
             k: param_resolve(v)
             for k, v in device["parameters"].items()
@@ -189,6 +189,11 @@ def convert_to_image_config(grc, config_path, known_modules):
         "connections": [],
         "clk_domains": [],
     }
+    # default_target is not always populated, but if it's not, then we should
+    # remove it from this dictionary or the default target will be an 'empty'
+    # target.
+    if result["default_target"] in (None, ""):
+        result.pop("default_target")
     # This dictionary lists all clock ports as a list of clock port names for
     # each block, e.g., {"radio0": ["radio",], "ddc0": ["ce",]}.
     clocks = {"_device_": [clk["name"] for clk in device_config["clocks"]]}
