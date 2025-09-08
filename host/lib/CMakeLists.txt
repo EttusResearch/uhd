@@ -15,6 +15,9 @@ endmacro(LIBUHD_APPEND_SOURCES)
 macro(LIBUHD_APPEND_LIBS)
     list(APPEND libuhd_libs ${ARGV})
 endmacro(LIBUHD_APPEND_LIBS)
+macro(LIBUHD_APPEND_PRIV_LIBS)
+    list(APPEND libuhd_priv_libs ${ARGV})
+endmacro(LIBUHD_APPEND_PRIV_LIBS)
 
 macro(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     # Ensure that the directory exists for outfile
@@ -137,7 +140,7 @@ endif(ENABLE_C_API)
 # Add common resource compiler subdirectory
 ########################################################################
 add_subdirectory(rc)
-LIBUHD_APPEND_LIBS(uhd_rc)
+LIBUHD_APPEND_PRIV_LIBS(uhd_rc)
 
 ########################################################################
 # Add DLL resource file to Windows build
@@ -180,7 +183,10 @@ if(ENABLE_MPMD)
     list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
 endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
+target_link_libraries(uhd
+    PUBLIC ${Boost_LIBRARIES} ${libuhd_libs}
+    PRIVATE ${libuhd_priv_libs}
+)
 if(ENABLE_DPDK)
     add_definitions(-DHAVE_DPDK)
     # The compile flags DPDK_CFLAGS add the DPDK_INCLUDE_DIRS include
@@ -224,12 +230,14 @@ if(ENABLE_SIM)
 
     # For PYUHD we don't link against the python libraries, but when calling
     # python instead of being called by it, we have to.
-    target_link_libraries(uhd ${PYTHON_LIBRARIES})
+    target_link_libraries(uhd PUBLIC ${PYTHON_LIBRARIES})
 
 endif(ENABLE_SIM)
 
 if(NOT UHDHOST_PKG) # Syntax makes it unusable by UHD_INSTALL
-    install(TARGETS uhd
+    install(
+        TARGETS uhd
+        EXPORT  uhdTargets
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .so file
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib file
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries # .dll file
