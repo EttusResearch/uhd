@@ -1,6 +1,13 @@
 Change Log for Releases
 ==============================
 
+## 004.next
+
+
+* New Features
+  - CMake: Create UHD::uhd package for improved integration in downstream build
+    processes. The init_usrp example is used to showcase this feature.
+
 ## 004.009.000.000
 * Highlights / Main Changes
   - Support for USRP B206mini-i

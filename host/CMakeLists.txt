@@ -610,6 +610,13 @@ configure_file(
     @ONLY
 )
 
+include(CMakePackageConfigHelpers)
+export(
+    EXPORT uhdTargets
+    FILE ${UHD_BINARY_DIR}/cmake/Modules/UHDTargets.cmake
+    NAMESPACE UHD::
+)
+
 set(uhd_cmake_scripts
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
@@ -621,6 +628,13 @@ set(uhd_cmake_scripts
 
 UHD_INSTALL(
     FILES ${uhd_cmake_scripts}
+    DESTINATION ${CMAKE_MODULES_DIR}/uhd
+    COMPONENT "devel"
+)
+install(
+    EXPORT uhdTargets
+    FILE UHDTargets.cmake
+    NAMESPACE UHD::
     DESTINATION ${CMAKE_MODULES_DIR}/uhd
     COMPONENT "devel"
 )

@@ -196,6 +196,7 @@ if(ENABLE_MPMD)
     add_subdirectory(deps)
     UHD_LIB_ADD_RPCLIB(uhd)
 endif()
+
 if(ENABLE_DPDK)
     add_definitions(-DHAVE_DPDK)
     # The compile flags DPDK_CFLAGS add the DPDK_INCLUDE_DIRS include
@@ -247,10 +248,13 @@ if(ENABLE_SIM)
 endif(ENABLE_SIM)
 
 if(NOT UHDHOST_PKG) # Syntax makes it unusable by UHD_INSTALL
-    install(TARGETS uhd
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .so file
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib file
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries # .dll file
+    install(
+        TARGETS uhd
+        EXPORT  uhdTargets
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .so file
+        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib/.a file
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries # .dll file
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif(NOT UHDHOST_PKG)
 
@@ -286,7 +290,9 @@ function(UHD_ADD_STATIC_LIB)
         UHD_LIB_ADD_PYTHON(uhd_static)
     endif()
     install(TARGETS uhd_static
+        EXPORT  uhdTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib or .a file
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endfunction(UHD_ADD_STATIC_LIB)
 
