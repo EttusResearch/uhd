@@ -495,20 +495,6 @@ class PeriphManagerBase:
         self.log.trace("Found EEPROM paths: %s", eeprom_paths)
         for name, path in eeprom_paths.items():
             self.log.debug("Reading EEPROM info for %s...", name)
-            if not path:
-                if "db" in name:
-                    # In order to support having a single dboard in slot 1
-                    # with slot 0 empty on a x4xx, we pretend that there is
-                    # a dummy "EmptyDaughterboard" here.
-                    self.log.debug("Not present. Inserting dummy DB info")
-                    result[name] = {
-                        "eeprom_md": {"serial": "deadbee", "pid": 0x0},
-                        "eeprom_raw": [],
-                        "pid": 0x0,
-                    }
-                else:
-                    self.log.debug("Not present. Skipping board")
-                continue
             try:
                 eeprom_md, eeprom_rawdata = self._read_dboard_eeprom_data(path)
                 self.log.trace("Found EEPROM metadata: `{}'".format(str(eeprom_md)))
