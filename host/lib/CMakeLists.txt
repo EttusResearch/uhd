@@ -135,9 +135,9 @@ endif(ENABLE_C_API)
 
 ########################################################################
 # Add common resource compiler subdirectory
+# This will provide a new target (uhd_rc) which we need to link to later
 ########################################################################
 add_subdirectory(rc)
-LIBUHD_APPEND_LIBS(uhd_rc)
 
 ########################################################################
 # Add DLL resource file to Windows build
@@ -174,13 +174,24 @@ endif(MSVC)
 ########################################################################
 # Setup libuhd library
 ########################################################################
-if(ENABLE_MPMD)
-    include_directories(deps/rpclib/include)
-    add_subdirectory(deps)
-    list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
-endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
+target_link_libraries(uhd
+    PUBLIC
+    Boost::boost
+    Boost::chrono
+    Boost::date_time
+    Boost::filesystem
+    Boost::serialization
+    Boost::system
+    Boost::thread
+    ${libuhd_libs}
+    PRIVATE uhd_rc
+)
+if(ENABLE_MPMD)
+    target_include_directories(uhd PRIVATE deps/rpclib/include)
+    add_subdirectory(deps)
+    target_sources(uhd PRIVATE $<TARGET_OBJECTS:uhd_rpclib>)
+endif()
 if(ENABLE_DPDK)
     add_definitions(-DHAVE_DPDK)
     # The compile flags DPDK_CFLAGS add the DPDK_INCLUDE_DIRS include
@@ -191,7 +202,7 @@ if(ENABLE_DPDK)
     target_link_options(uhd PUBLIC ${DPDK_LDFLAGS})
     # explicitly link against the DPDK libraries, otherwise there are
     # undefined references when linking libuhd
-    target_link_libraries(uhd ${DPDK_LIBRARIES})
+    target_link_libraries(uhd PUBLIC ${DPDK_LIBRARIES})
 endif()
 if(APPLE)
     target_link_options(uhd PRIVATE "LINKER:-undefined,dynamic_lookup")
@@ -208,10 +219,10 @@ endif(DEFINED LIBUHD_OUTPUT_NAME)
 
 if(ENABLE_SIM)
     # Get python include dirs
-    # This contitional code somewhat duplicates logic also found in 
-    # ../python/CMakeLists.txt but omits user messages. This avoid 
-    # duplicate output, since SIM mode requires python support. 
-    include_directories(${PYTHON_INCLUDE_DIRS})
+    # This conditional code somewhat duplicates logic also found in
+    # ../python/CMakeLists.txt but omits user messages. This avoid
+    # duplicate output, since SIM mode requires python support.
+    target_include_directories(uhd PUBLIC ${PYTHON_INCLUDE_DIRS})
     if(NOT pybind11_FOUND)
         set(PYBIND11_INCLUDE_DIR
             "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
@@ -220,11 +231,11 @@ if(ENABLE_SIM)
             "Location of PyBind11 includes"
         )
     endif()
-    include_directories(${PYBIND11_INCLUDE_DIR})
+    target_include_directories(uhd PRIVATE ${PYBIND11_INCLUDE_DIR})
 
     # For PYUHD we don't link against the python libraries, but when calling
     # python instead of being called by it, we have to.
-    target_link_libraries(uhd ${PYTHON_LIBRARIES})
+    target_link_libraries(uhd PUBLIC ${PYTHON_LIBRARIES})
 
 endif(ENABLE_SIM)
 

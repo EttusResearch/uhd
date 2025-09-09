@@ -282,7 +282,6 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
 endif()
 
 if(MSVC)
-    include_directories(${UHD_SOURCE_DIR}/cmake/msvc)
     # Stop all kinds of compatibility warnings
     add_definitions(
         -DWIN32_LEAN_AND_MEAN
@@ -331,7 +330,6 @@ include(UHDBoost)
 
 # Include boost headers as system headers to avoid compiler warnings from them.
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
 
 
 ########################################################################
