@@ -49,8 +49,12 @@ def get_eeprom_paths_by_symbol(symbol_name_glob):
     eeproms = glob.glob(os.path.join(symbol_base, symbol_name_glob))
     paths = {os.path.basename(eeprom): read_symbol_file(eeprom)
              for eeprom in eeproms}
-    return {name: find_device_path(path)
-            for name, path in sorted(paths.items())}
+    retval = {name: find_device_path(path)
+              for name, path in sorted(paths.items())}
+    for name, path in retval.items():
+        if path is None:
+            raise RuntimeError(f"Could not resolve eeprom path for symbol {name}")
+    return retval
 
 
 def get_device_from_dt_symbol(symbol, subsystem=None, context=None):
