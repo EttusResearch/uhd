@@ -112,21 +112,7 @@ device_addrs_t mpmd_find_with_addr(
                 new_addr[value[0]] = value[1];
             }
         }
-        // filter the discovered device below by matching optional keys
-        if ((not hint_.has_key("name") or hint_["name"] == new_addr["name"])
-            and (not hint_.has_key("serial")
-                 or utils::serial_numbers_match(hint_["serial"], new_addr["serial"]))
-            and (not hint_.has_key("type") or hint_["type"] == new_addr["type"]
-                 or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
-            and (not hint_.has_key("product")
-                 or hint_["product"] == new_addr["product"])) {
-            UHD_LOG_TRACE(
-                "MPMD FIND", "Found device that matches hints: " << new_addr.to_string());
-            addrs.push_back(new_addr);
-        } else {
-            UHD_LOG_DEBUG(
-                "MPMD FIND", "Found device, but does not match hint: " << recv_addr);
-        }
+        addrs.push_back(new_addr);
     }
     return addrs;
 };

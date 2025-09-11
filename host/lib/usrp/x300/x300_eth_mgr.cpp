@@ -168,12 +168,7 @@ device_addrs_t eth_manager::find(const device_addr_t& hint)
             new_addr["name"]   = "";
             new_addr["serial"] = "";
         }
-        // filter the discovered device below by matching optional keys
-        if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
-            and (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
-            and (not hint.has_key("product") or hint["product"] == new_addr["product"])) {
-            addrs.push_back(new_addr);
-        }
+        addrs.push_back(new_addr);
     }
 
     return addrs;

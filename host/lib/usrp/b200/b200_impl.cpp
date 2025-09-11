@@ -14,6 +14,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
@@ -184,6 +185,13 @@ static device_addrs_t b200_find(const device_addr_t& hint)
     if (hint.has_key("type") and hint["type"] != "b200")
         return b200_addrs;
 
+    // return an empty list of addresses when product is set to non-B2XX
+    if (hint.has_key("product")) {
+        if (!uhd::has(B2XX_STR_NAMES.vals(), hint["product"])) {
+            return b200_addrs;
+        }
+    }
+
     // Return an empty list of addresses when an address or resource is specified,
     // since an address and resource is intended for a different, non-USB, device.
     for (device_addr_t hint_i : separate_device_addr(hint)) {
@@ -252,13 +260,7 @@ static device_addrs_t b200_find(const device_addr_t& hint)
                 // No problem if this fails -- this is just device discovery, after all.
                 new_addr["product"] = "B2??";
             }
-
-            // this is a found b200 when the hint serial and name match or blank
-            if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
-                and (not hint.has_key("serial")
-                     or hint["serial"] == new_addr["serial"])) {
-                b200_addrs.push_back(new_addr);
-            }
+            b200_addrs.push_back(new_addr);
         }
     }
 
