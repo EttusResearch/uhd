@@ -559,6 +559,18 @@ if(CMAKE_CROSSCOMPILING)
     set(UHD_PC_LIBS)
 endif(CMAKE_CROSSCOMPILING)
 
+# Support absolute paths for LIBDIR and INCLUDEDIR
+if(IS_ABSOLUTE "${CMAKE_INSTALL_LIBDIR}")
+    set(UHD_PC_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+else()
+    set(UHD_PC_LIBDIR "\${exec_prefix}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if(IS_ABSOLUTE "${CMAKE_INSTALL_INCLUDEDIR}")
+    set(UHD_PC_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+else()
+    set(UHD_PC_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
+endif()
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
