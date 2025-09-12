@@ -645,9 +645,12 @@ module e31x_core #(
       );
 
       // 4) Select if the radio or the PS drives the direction
-      //
+      // Note:
+      // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
+      // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
+      // -> the first input (radio_gpio_src_ddr_reg[i]) needs to be inverted
       (* dont_touch = "TRUE" *) LUT3 #(
-        .INIT(8'hC5) // Specify LUT Contents. O = ~I2&I0 | I2&~I1
+        .INIT(8'hC5) // Specify LUT Contents. O = ~I2&~I0 | I2&I1
       ) mux_ddr_i (
         .O(fp_gpio_tri[i]),             // LUT general output. Mux output
         .I0(radio_gpio_src_ddr_reg[i]), // LUT input. Input 1
