@@ -145,7 +145,7 @@ up with the following code:
     usrp->set_gpio_attr("FP0", "DDR", GPIO_DDR, ATR_MASKS);
 
     // let's manually set GPIO4 high
-    usrp->set_gpio_attr("FP0", "OUT", 1, MAN_GPIO_MASK);
+    usrp->set_gpio_attr("FP0", "OUT", MAN_GPIO_MASK, MAN_GPIO_MASK);
 
     // finally, let's set up GPIO6 as we described above
     usrp->set_gpio_attr("FP0", "ATR_0X", 0, AMP_GPIO_MASK);
