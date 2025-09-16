@@ -101,12 +101,12 @@ def check_and_sanitize(config):
 
     def sanitize_port(con, s_d, failure):
         """Unpack port names (separate slice from port name)."""
-        port_match = re.match(r"^([a-z0-9_]+)(?:\[([^]])\])?$", con[f"{s_d}port"])
+        port_match = re.match(r"^([a-z0-9_]+)(?:\[([^]]+)\])?$", con[f"{s_d}port"])
         if not port_match:
             failure += f"Invalid port name: {con[f'{s_d}port']}\n"
-            return con
+            return con, failure
         con[f"{s_d}port"], con[f"{s_d}slice"] = port_match.groups()
-        return con
+        return con, failure
 
     def check_port_is_valid(blk_key, blk, port, s_d):
         """Return true if the port is valid for the block."""
@@ -134,7 +134,7 @@ def check_and_sanitize(config):
     ## Phase 1: We go through the list of connections and provide annotations
     for conn_idx, con in enumerate(config.connections):
         for s_d in ("src", "dst"):
-            con = sanitize_port(con, s_d, failure)
+            con, failure = sanitize_port(con, s_d, failure)
         src_blk = config.get_module(con["srcblk"])
         if src_blk is None:
             failure += f"Source block '{con['srcblk']}' not found\n"
