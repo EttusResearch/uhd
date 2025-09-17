@@ -10,6 +10,7 @@ parameters:
   NUM_DRAM_CHANS: 0
   DRAM_WIDTH: 64
   RADIO_NIPC: 8
+  FP_GPIO_BANK_WIDTH: 12
 
 checks:
   - condition: ${int(parameters['RF_BW'] in [200, 400, 1600])}
@@ -205,6 +206,24 @@ io_ports:
     rename:
       pattern: (.*)
       repl: m_dma_\1
+    required: recommended
+  gpio0:
+    type: gpio
+    drive: slave
+    parameters:
+      width: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+    rename:
+      pattern: gpio(.*)
+      repl: gpio0\1
+    required: recommended
+  gpio1:
+    type: gpio
+    drive: slave
+    parameters:
+      width: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+    rename:
+      pattern: gpio(.*)
+      repl: gpio1\1
     required: recommended
 
 default_secure_image_core:
