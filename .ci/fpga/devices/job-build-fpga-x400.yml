@@ -157,6 +157,13 @@ parameters:
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 stages:
 
@@ -187,6 +194,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/x400
       target_full_matrix: ${{ parameters.x410_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x410_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 - stage: provide_x440_fpga_images_stage
   displayName: Provide X440 FPGA Images
@@ -213,6 +222,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/x400
       target_full_matrix: ${{ parameters.x440_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x440_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 
 ### END: X440 stages

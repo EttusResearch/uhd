@@ -234,6 +234,11 @@ resources:
     endpoint: EttusResearch
     name: ni/labview-usrp-examples
     ref: main
+  - repository: rfnoc-oot-blocks
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/rfnoc-oot-blocks-dev
+    ref: main
 
 stages:
 ###############################################################################
@@ -602,6 +607,10 @@ stages:
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    additional_setup_steps:
+      - checkout: rfnoc-oot-blocks
+        clean: true
+    rfnoc_include_dir: $(Build.SourcesDirectory)/rfnoc-oot-blocks-dev/rfnoc
 
 ###############################################################################
 # Hardware Test Stages. These require having valid software and FPGA images.

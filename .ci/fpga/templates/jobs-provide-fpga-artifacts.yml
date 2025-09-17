@@ -48,6 +48,13 @@ parameters:
 # Reduced matrix of FPGA targets to build
 - name: target_reduced_matrix
   type: object
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 jobs:
 - template: job-build-ip.yml
@@ -56,6 +63,7 @@ jobs:
     ip_target: ${{ parameters.ip_target }}
     clean_build: ${{ parameters.clean_ip_build }}
     num_jobs: ${{ parameters.num_ip_jobs }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
 - template: ../templates/job-build-fpga.yml
   parameters:
     ${{ if eq(parameters.package_and_publish_images, true) }}:
@@ -65,6 +73,8 @@ jobs:
     ip_artifact: ${{ parameters.ip_target }}
     top_dir: ${{ parameters.top_dir }}
     publish_int_files: ${{ parameters.publish_int_files }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 - template: ../templates/job-package-images.yml
   parameters:
     package_name: ${{ parameters.package_name }}

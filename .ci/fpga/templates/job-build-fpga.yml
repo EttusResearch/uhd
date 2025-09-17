@@ -42,6 +42,13 @@ parameters:
   type: number
   default: 20
   displayName: 'Max parallel jobs'
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 
 jobs:
@@ -62,6 +69,7 @@ jobs:
   dependsOn: ${{ parameters.ip_artifact }}
   condition: and(succeeded(), eq(variables.BuildRequired, true))
   steps:
+    - ${{ parameters.additional_setup_steps }}
     - template: setup_steps.yml
 
     - download: current
@@ -117,8 +125,11 @@ jobs:
         else
             export TIMEOUT_ARG=""
         fi
+        if [[ -n "${{ parameters.rfnoc_include_dir }}" ]]; then
+            export INCLUDE_DIR_ARG="--include-dir ${{ parameters.rfnoc_include_dir }}"
+        fi
         python3 ../../tools/utils/repeat_fpga_build.py \
-            --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG \
+            --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG $INCLUDE_DIR_ARG \
             --image-core-name $IMAGE_CORE_NAME \
             --vivado-path $(dirname $XILINX_VIVADO) \
             --num $(max_attempts) --seed $BUILD_SEED --persistent \
