@@ -6,11 +6,8 @@
 
 # The following variables can be defined external to this script.
 #
-# ENABLE_STATIC_LIBS : whether to enable static libraries, which will
-# require static Boost libraries too. If not using static libraries,
-# shared libraries will be used. The default is to use shared
-# libraries, and this default will be used if this variable is not
-# defined or if is it NO/OFF/FALSE.
+# Boost_*: Check the FindBoost CMake documentation. For example,
+# Boost_USE_STATIC_LIBS can be set to require static libraries.
 #
 # UHD_BOOST_REQUIRED_COMPONENTS : Boost components that are required
 # for Boost_FOUND to be true. The linkage (shared or static) must be
@@ -162,23 +159,6 @@ if(NOT CMAKE_CXX_STANDARD)
   message(WARNING "\nC++ standard not yet set; setting to C++14.\n")
 endif()
 
-# tell boost the linkage required
-set(Boost_USE_STATIC_LIBS ${ENABLE_STATIC_LIBS})
-# temporarily explicitly enable or disable shared libraries,
-# build-wise; this can be disabled on a case by case basis for each
-# library built.
-if(BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS_SET TRUE)
-    set(OLD_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-else()
-    set(BUILD_SHARED_LIBS_SET FALSE)
-endif()
-if(ENABLE_STATIC_LIBS)
-    set(BUILD_SHARED_LIBS FALSE)
-else()
-    set(BUILD_SHARED_LIBS TRUE)
-endif()
-
 if(${UHD_BOOST_OPTIONAL_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for optional Boost components...")
     find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
@@ -189,14 +169,6 @@ if(${UHD_BOOST_REQUIRED_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for required Boost components...")
     find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
         COMPONENTS ${UHD_BOOST_REQUIRED_COMPONENTS} ${UHD_BOOST_REQUIRED})
-endif()
-
-# restore BUILD_SHARED_LIBS, if set
-if(BUILD_SHARED_LIBS_SET)
-    set(BUILD_SHARED_LIBS ${OLD_BUILD_SHARED_LIBS})
-    unset(OLD_BUILD_SHARED_LIBS)
-else()
-    unset(BUILD_SHARED_LIBS)
 endif()
 
 if(NOT Boost_FOUND)
