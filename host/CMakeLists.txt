@@ -320,8 +320,8 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
     program_options
-    system
     serialization
+    #system Boost.System is used, but explicitly listing it causes errors on some systems.
     thread
     unit_test_framework
 )
@@ -579,9 +579,9 @@ endif(NOT CMAKE_MODULES_DIR)
 list(APPEND UHD_LINK_LIST_STATIC "dl")
 list(APPEND UHD_LINK_LIST_STATIC "pthread")
 foreach(Boost_Comp ${UHD_BOOST_REQUIRED_COMPONENTS})
-    if(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+    if(NOT ${Boost_Comp} STREQUAL "unit_test_framework" AND NOT ${Boost_Comp} STREQUAL "system")
         list(APPEND UHD_LINK_LIST_STATIC "boost_${Boost_Comp}")
-    endif(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+    endif()
 endforeach(Boost_Comp)
 if(ENABLE_USB)
     list(APPEND UHD_LINK_LIST_STATIC "usb-1.0")

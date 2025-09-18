@@ -182,7 +182,6 @@ target_link_libraries(uhd
     Boost::date_time
     Boost::filesystem
     Boost::serialization
-    Boost::system
     Boost::thread
     ${libuhd_libs}
     PRIVATE uhd_rc
