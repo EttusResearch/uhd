@@ -18,7 +18,9 @@
 ########################################################################
 # setup project and compiler
 ########################################################################
-cmake_minimum_required(VERSION 2.6)
+# In a pinch, this will work with older CMake versions too (down to 2.6),
+# but we set it to 3.5 to also work with newer CMake versions (4 and above).
+cmake_minimum_required(VERSION 3.5)
 #force the compiler because the check wont use the special flag below
 include(CMakeForceCompiler)
 set(CMAKE_SYSTEM_NAME Generic)
