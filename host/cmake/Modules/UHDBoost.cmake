@@ -100,14 +100,6 @@ if(MINGW)
     endif()
 endif()
 
-# if 'system' is in the list, make sure it comes last; sometimes this
-# linkage makes a difference
-list(FIND UHD_BOOST_REQUIRED_COMPONENTS "system" SYSTEM_NDX)
-if(NOT ${SYSTEM_NDX} EQUAL -1)
-    list(REMOVE_AT UHD_BOOST_REQUIRED_COMPONENTS ${SYSTEM_NDX})
-    list(APPEND UHD_BOOST_REQUIRED_COMPONENTS "system")
-endif()
-
 # special library directory that's used by some Linux
 if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix

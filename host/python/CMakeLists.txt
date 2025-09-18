@@ -154,11 +154,11 @@ target_include_directories(pyuhd PUBLIC
 )
 
 if(WIN32)
-    target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} uhd)
+    target_link_libraries(pyuhd ${PYTHON_LIBRARIES} uhd)
 else()
     # for extension module, proper to NOT link against python library and instead
     # add dynamic lookup link option on OSX
-    target_link_libraries(pyuhd ${Boost_LIBRARIES} uhd)
+    target_link_libraries(pyuhd uhd)
     if(APPLE)
         target_link_options(pyuhd PRIVATE "LINKER:-undefined,dynamic_lookup")
     endif(APPLE)
