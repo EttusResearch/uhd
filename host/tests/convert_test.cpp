@@ -55,32 +55,6 @@ const std::array<uhd::convert::priority_type, 5> CONV_PRIO_TYPES{-1, 0, 1, 2, 3}
         return;                                         \
     }
 
-// There appears to be a bug with Boost <1.68 where decorators on Boost data
-// test cases are not honored. (While I could not find the bug itself, it is
-// referred to in a comment at https://github.com/boostorg/test/issues/139 on
-// Boost's GitHub bug tracker.) Unfortunately, that means that the benchmarks
-// are run by default on those versions of Boost, causing this unit test to
-// take much longer than usual and thus slowing down our entire CI pipeline.
-// The SKIP_BENCHMARK_CHECK macro implements a run-time check on older versions
-// of Boost to determine whether the benchmarks should be skipped or not. To
-// 'unskip' the benchmarks on those versions, pass `--benchmark` to the
-// invocation of `convert_test` (note that the `--benchmark` flag must be
-// specified after `--` to ensure it is passed directly to the test and not
-// interpreted by Boost.)
-#if (BOOST_VERSION < 106800)
-#    define SKIP_BENCHMARK_CHECK                                                         \
-        if (!(boost::unit_test::framework::master_test_suite().argc >= 2                 \
-                && std::string(boost::unit_test::framework::master_test_suite().argv[1]) \
-                       == "--benchmark")) {                                              \
-            return;                                                                      \
-        }
-#else
-// For versions of Boost where this issue has been fixed, the benchmarks can
-// be enabled by invoking convert_test with `--run-test=+benchmark*` to
-// explicitly enable all the disabled benchmark tests.
-#    define SKIP_BENCHMARK_CHECK
-#endif
-
 // Shorthand for defining a test case that tests all prios. Creates a variable
 // 'conv_prio_type'
 #define MULTI_CONVERTER_TEST_CASE(test_name) \
@@ -298,8 +272,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_be_sc16)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "sc16";
     id.num_inputs    = 1;
@@ -333,8 +305,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_le_sc16)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "sc16";
     id.num_inputs    = 1;
@@ -368,8 +338,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_chdr_sc16)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_chdr_sc16)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "sc16";
     id.num_inputs    = 1;
@@ -516,8 +484,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -563,8 +529,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -610,8 +574,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_chdr_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -657,8 +619,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc64)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc64";
     id.num_inputs    = 1;
@@ -704,8 +664,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc64)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc64";
     id.num_inputs    = 1;
@@ -751,8 +709,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64_with_saturation)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_chdr_fc64)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc64";
     id.num_inputs    = 1;
@@ -788,8 +744,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc12_with_fc32)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_sc12_with_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -821,8 +775,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_sc12_with_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -854,8 +806,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_le_sc16_and_sc12)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_le_sc16_and_sc12)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "sc16";
     id.num_inputs   = 1;
@@ -889,8 +839,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_be_sc16_and_sc12)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_be_sc16_and_sc12)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "sc16";
     id.num_inputs   = 1;
@@ -928,8 +876,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32_with_fc32)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_le_fc32_with_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -961,8 +907,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_fc32)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_be_fc32_with_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -994,8 +938,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_with_fc32_chdr)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc32_with_fc32_chdr)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.num_inputs    = 1;
@@ -1036,8 +978,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc64_and_sc8)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc64_and_sc8)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "fc64";
     id.num_inputs   = 1;
@@ -1083,8 +1023,6 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_sc8)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 BOOST_AUTO_TEST_CASE(benchmark_convert_types_fc32_and_sc8)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "fc32";
     id.num_inputs   = 1;
@@ -1131,8 +1069,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_sc16_and_sc8)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_sc16_and_sc8)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "sc16";
     id.num_inputs   = 1;
@@ -1208,8 +1144,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_u8_and_u8)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "u8";
     id.num_inputs   = 1;
@@ -1254,8 +1188,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_u8_and_u8_chdr)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_u8_and_u8_chdr)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "u8";
     id.output_format = "u8_chdr";
@@ -1319,8 +1251,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s8_and_s8)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "s8";
     id.num_inputs   = 1;
@@ -1366,8 +1296,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s8_and_s8_chdr)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s8_and_s8_chdr)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "s8";
     id.output_format = "s8_chdr";
@@ -1431,8 +1359,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s16_and_s16)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "s16";
     id.num_inputs   = 1;
@@ -1477,8 +1403,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_s16_and_s16_chdr)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_s16_and_s16_chdr)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "s16";
     id.output_format = "s16_chdr";
@@ -1543,8 +1467,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_fc32_and_fc32)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format = "fc32";
     id.num_inputs   = 1;
@@ -1588,8 +1510,6 @@ MULTI_CONVERTER_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
 BOOST_TEST_DECORATOR(*boost::unit_test::disabled())
 MULTI_CONVERTER_TEST_CASE(benchmark_convert_types_fc32_and_fc32_chdr)
 {
-    SKIP_BENCHMARK_CHECK;
-
     convert::id_type id;
     id.input_format  = "fc32";
     id.output_format = "fc32_chdr";
