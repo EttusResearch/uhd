@@ -11,5 +11,5 @@ Requires:
 Requires.private: @UHD_PC_REQUIRES@
 Conflicts:
 Cflags: -I${includedir} @UHD_PC_CFLAGS@
-Libs: -L${libdir} -luhd -lboost_system
+Libs: -L${libdir} -luhd
 Libs.private: @UHD_PC_LIBS@
