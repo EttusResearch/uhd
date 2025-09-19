@@ -10,9 +10,9 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/transport/nirio/nirio_driver_iface.h>
 #include <uhdlib/transport/nirio/nirio_quirks.h>
-#include <stdint.h>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/shared_mutex.hpp>
+#include <shared_mutex>
+#include <cstdint>
+#include <mutex>
 
 #define NI_VENDOR_NUM 0x1093
 
@@ -30,12 +30,9 @@
 #define GET_FIFO_MEMORY_TYPE(fifo_inst) \
     (static_cast<uint16_t>(0x0100 | static_cast<uint16_t>(fifo_inst)))
 
-#define READER_LOCK boost::shared_lock<boost::shared_mutex> reader_lock(_synchronization);
+#define READER_LOCK std::shared_lock reader_lock(_synchronization);
 
-#define WRITER_LOCK                                                                \
-    boost::upgrade_lock<boost::shared_mutex> write_upgrade_lock(_synchronization); \
-    boost::upgrade_to_unique_lock<boost::shared_mutex> write_unique_lock(          \
-        write_upgrade_lock);
+#define WRITER_LOCK std::unique_lock writer_lock(_synchronization);
 
 
 namespace uhd { namespace niusrprio {
@@ -242,7 +239,7 @@ protected: // Members
     uint32_t _interface_num;
     nirio_quirks _rio_quirks;
 
-    static boost::shared_mutex _synchronization;
+    static std::shared_mutex _synchronization;
 
     // protected close function that doesn't acquire synchronization lock
     virtual void _close() = 0;

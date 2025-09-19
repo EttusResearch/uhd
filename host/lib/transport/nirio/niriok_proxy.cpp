@@ -20,7 +20,7 @@
 
 namespace uhd { namespace niusrprio {
 // initialization of static members
-boost::shared_mutex niriok_proxy::_synchronization;
+std::shared_mutex niriok_proxy::_synchronization{};
 
 //-------------------------------------------------------
 // niriok_proxy

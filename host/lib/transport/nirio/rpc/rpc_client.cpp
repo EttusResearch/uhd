@@ -8,6 +8,7 @@
 #include <uhdlib/transport/nirio/rpc/rpc_client.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/asio/error.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/version.hpp>
 
@@ -73,8 +74,8 @@ rpc_client::rpc_client(const std::string& server,
 
                 // Spawn a thread for the io_context callback handler. This thread will
                 // run until rpc_client is destroyed.
-                _io_context_thread.reset(new boost::thread(
-                    boost::bind(&boost::asio::io_context::run, &_io_context)));
+                _io_context_thread.reset(
+                    new std::thread([this]() { _io_context.run(); }));
             } else {
                 UHD_LOGGER_DEBUG("NIRIO") << "rpc_client handshake failed.";
                 _exec_err.assign(boost::asio::error::connection_refused,
@@ -104,7 +105,7 @@ rpc_client::~rpc_client()
 const boost::system::error_code& rpc_client::call(func_id_t func_id,
     const func_args_writer_t& in_args,
     func_args_reader_t& out_args,
-    boost::posix_time::milliseconds timeout)
+    std::chrono::milliseconds timeout)
 {
     std::unique_lock<std::mutex> lock(_mutex);
 
@@ -136,7 +137,7 @@ const boost::system::error_code& rpc_client::call(func_id_t func_id,
 
         // Wait for response using condition variable
         if (status) {
-            if (!_exec_gate.timed_wait(lock, timeout)) {
+            if (_exec_gate.wait_for(lock, timeout) == std::cv_status::timeout) {
                 UHD_LOGGER_DEBUG("NIRIO") << "rpc_client function timed out.";
                 _exec_err.assign(boost::asio::error::timed_out,
                     boost::asio::error::get_system_category());

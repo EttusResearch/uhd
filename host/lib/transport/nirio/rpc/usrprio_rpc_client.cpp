@@ -7,9 +7,13 @@
 
 #include <uhd/utils/platform.hpp>
 #include <uhdlib/transport/nirio/rpc/usrprio_rpc_client.hpp>
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 
 namespace {
-constexpr int64_t DEFAULT_TIMEOUT_IN_MS = 5000;
+constexpr auto DEFAULT_TIMEOUT_IN_MS = 5000ms;
 }
 
 
@@ -17,7 +21,7 @@ namespace uhd { namespace usrprio_rpc {
 
 usrprio_rpc_client::usrprio_rpc_client(std::string server, std::string port)
     : _rpc_client(server, port, uhd::get_process_id(), uhd::get_host_id())
-    , _timeout(boost::posix_time::milliseconds(long(DEFAULT_TIMEOUT_IN_MS)))
+    , _timeout(DEFAULT_TIMEOUT_IN_MS)
 {
     _ctor_status = _rpc_client.status() ? NiRio_Status_RpcConnectionError
                                         : NiRio_Status_Success;
@@ -88,11 +92,9 @@ nirio_status usrprio_rpc_client::niusrprio_open_session(NIUSRPRIO_OPEN_SESSION_A
 
     // Open needs a longer timeout because the FPGA download can take upto 6 secs and the
     // NiFpga libload can take 4.
-    static const uint32_t OPEN_TIMEOUT = 15000;
-    status = _boost_error_to_nirio_status(_rpc_client.call(NIUSRPRIO_OPEN_SESSION,
-        in_args,
-        out_args,
-        boost::posix_time::milliseconds(OPEN_TIMEOUT)));
+    constexpr auto OPEN_TIMEOUT = 15000ms;
+    status                      = _boost_error_to_nirio_status(
+        _rpc_client.call(NIUSRPRIO_OPEN_SESSION, in_args, out_args, OPEN_TIMEOUT));
 
     if (nirio_status_not_fatal(status)) {
         out_args >> status;
@@ -185,12 +187,9 @@ nirio_status usrprio_rpc_client::niusrprio_download_fpga_to_flash(
     in_args << resource;
     in_args << bitstream_path;
 
-    static const uint32_t DOWNLOAD_FPGA_TIMEOUT = 1200000;
-    status =
-        _boost_error_to_nirio_status(_rpc_client.call(NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH,
-            in_args,
-            out_args,
-            boost::posix_time::milliseconds(DOWNLOAD_FPGA_TIMEOUT)));
+    constexpr auto DOWNLOAD_FPGA_TIMEOUT = 1200000ms;
+    status                               = _boost_error_to_nirio_status(_rpc_client.call(
+        NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH, in_args, out_args, DOWNLOAD_FPGA_TIMEOUT));
 
     if (nirio_status_not_fatal(status)) {
         out_args >> status;

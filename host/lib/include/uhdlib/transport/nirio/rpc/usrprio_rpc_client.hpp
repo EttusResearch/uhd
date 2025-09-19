@@ -7,10 +7,14 @@
 
 #pragma once
 
+#include <uhd/config.hpp>
 #include <uhdlib/transport/nirio/rpc/rpc_client.hpp>
 #include <uhdlib/transport/nirio/rpc/rpc_common.hpp>
 #include <uhdlib/transport/nirio/rpc/usrprio_rpc_common.hpp>
 #include <uhdlib/transport/nirio/status.h>
+#include <boost/system/error_code.hpp>
+#include <chrono>
+#include <string>
 
 namespace uhd { namespace usrprio_rpc {
 
@@ -20,7 +24,7 @@ public:
     usrprio_rpc_client(std::string server, std::string port);
     ~usrprio_rpc_client();
 
-    inline void set_rpc_timeout(boost::posix_time::milliseconds timeout_in_ms)
+    inline void set_rpc_timeout(std::chrono::milliseconds timeout_in_ms)
     {
         _timeout = timeout_in_ms;
     }
@@ -44,7 +48,7 @@ private:
         const boost::system::error_code& err);
 
     rpc_client _rpc_client;
-    boost::posix_time::milliseconds _timeout;
+    std::chrono::milliseconds _timeout;
     nirio_status _ctor_status;
 };
 

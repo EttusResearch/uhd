@@ -11,11 +11,12 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/asio.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/condition.hpp>
+#include <condition_variable>
+#include <boost/system/error_code.hpp>
+#include <chrono>
 #include <memory>
 #include <mutex>
+#include <thread>
 
 namespace uhd { namespace usrprio_rpc {
 
@@ -34,7 +35,7 @@ public:
     const boost::system::error_code& call(func_id_t func_id,
         const func_args_writer_t& in_args,
         func_args_reader_t& out_args,
-        boost::posix_time::milliseconds timeout);
+        std::chrono::milliseconds timeout);
 
     inline const boost::system::error_code& status() const
     {
@@ -69,7 +70,7 @@ private:
 
     // Services
     boost::asio::io_context _io_context;
-    std::unique_ptr<boost::thread> _io_context_thread;
+    std::unique_ptr<std::thread> _io_context_thread;
     boost::asio::ip::tcp::socket _socket;
     // Handshake info
     hshake_args_t _hshake_args_client;
@@ -79,7 +80,7 @@ private:
     func_xport_buf_t _response;
     // Synchronization
     std::mutex _mutex;
-    boost::condition _exec_gate;
+    std::condition_variable _exec_gate;
     boost::system::error_code _exec_err;
 };
 
