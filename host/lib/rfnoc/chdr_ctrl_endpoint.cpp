@@ -12,8 +12,8 @@
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <thread>
 
@@ -160,8 +160,8 @@ private:
                 // FIXME Move lock back to lock_guard once have threaded_io_service
                 lock.unlock();
                 // Be a good citizen and yield if no packet is processed
-                static const size_t MIN_DUR = 1;
-                boost::this_thread::sleep_for(boost::chrono::nanoseconds(MIN_DUR));
+                constexpr auto MIN_DUR = std::chrono::nanoseconds(1);
+                std::this_thread::sleep_for(MIN_DUR);
                 // We call sleep(MIN_DUR) above instead of yield() to ensure that we
                 // relinquish the current scheduler time slot.
                 // yield() is a hint to the scheduler to end the time
@@ -169,9 +169,7 @@ private:
                 // However in most situations, there will be no other thread and
                 // this thread will continue to run which will rail a CPU core.
                 // We call sleep(MIN_DUR=1) instead which will sleep for a minimum
-                // time. Ideally we would like to use boost::chrono::.*seconds::min()
-                // but that is bound to 0, which causes the sleep_for call to be a
-                // no-op and thus useless to actually force a sleep.
+                // time.
             }
         }
     }
