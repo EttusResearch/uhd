@@ -10,8 +10,8 @@
 #include <uhd/utils/msg_task.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
-#include <boost/thread/barrier.hpp>
-#include <boost/thread/thread.hpp>
+#include <condition_variable>
+#include <boost/optional.hpp>
 #include <atomic>
 #include <exception>
 #include <functional>
@@ -85,18 +85,21 @@ msg_task::~msg_task(void)
 class msg_task_impl : public msg_task
 {
 public:
-    msg_task_impl(const task_fcn_type& task_fcn) : _spawn_barrier(2)
+    msg_task_impl(const task_fcn_type& task_fcn)
+        : _running(false), _thread([this, task_fcn]() { this->task_loop(task_fcn); })
     {
-        (void)_thread_group.create_thread(
-            std::bind(&msg_task_impl::task_loop, this, task_fcn));
-        _spawn_barrier.wait();
+        // Wait for the thread to successfully start
+        std::unique_lock<std::mutex> _l(_mutex);
+
+        _start_cv.wait(_l, [this]() { return _running.load(); });
     }
 
     ~msg_task_impl(void) override
     {
         _running = false;
-        _thread_group.interrupt_all();
-        _thread_group.join_all();
+        if (_thread.joinable()) {
+            _thread.join();
+        }
     }
 
     /*
@@ -123,7 +126,7 @@ private:
     void task_loop(const task_fcn_type& task_fcn)
     {
         _running = true;
-        _spawn_barrier.wait();
+        _start_cv.notify_one();
 
         try {
             while (_running) {
@@ -138,8 +141,6 @@ private:
                     _dump_queue.push_back(buff.get());
                 }
             }
-        } catch (const boost::thread_interrupted&) {
-            // this is an ok way to exit the task loop
         } catch (const std::exception& e) {
             do_error_msg(e.what());
         } catch (...) {
@@ -157,9 +158,9 @@ private:
     }
 
     std::mutex _mutex;
-    boost::thread_group _thread_group;
-    boost::barrier _spawn_barrier;
-    bool _running;
+    std::condition_variable _start_cv;
+    std::atomic<bool> _running;
+    std::thread _thread;
 
     /*
      * This queue holds stranded messages until a radio_ctrl_core grabs them via

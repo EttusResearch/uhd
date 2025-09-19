@@ -19,9 +19,6 @@
 #include <uhdlib/asio.hpp>
 #include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
-#include <boost/format.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <chrono>
 #include <functional>
 #include <iostream>
@@ -31,16 +28,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
-namespace asio = boost::asio;
-namespace pt   = boost::posix_time;
-
-/***********************************************************************
- * helpers
- **********************************************************************/
-static UHD_INLINE pt::time_duration to_time_dur(double timeout)
-{
-    return pt::microseconds(long(timeout * 1e6));
-}
 
 /***********************************************************************
  * constants
@@ -95,8 +82,9 @@ public:
         std::unique_lock<std::mutex> lock(_fc_mutex);
         if (this->ready())
             return true;
-        boost::this_thread::disable_interruption di; // disable because the wait can throw
-        return _fc_cond.timed_wait(lock, to_time_dur(timeout), _ready_fcn);
+        return _fc_cond.wait_for(lock,
+            std::chrono::microseconds(static_cast<int64_t>(timeout * 1e6)),
+            _ready_fcn);
     }
 
     /*!
@@ -118,7 +106,7 @@ private:
     }
 
     std::mutex _fc_mutex;
-    boost::condition _fc_cond;
+    std::condition_variable _fc_cond;
     seq_type _last_seq_out, _last_seq_ack;
     const seq_type _max_seqs_out;
     std::function<bool(void)> _ready_fcn;
@@ -388,7 +376,6 @@ void usrp2_impl::update_tx_subdev_spec(
  **********************************************************************/
 bool usrp2_impl::recv_async_msg(async_metadata_t& async_metadata, double timeout)
 {
-    boost::this_thread::disable_interruption di; // disable because the wait can throw
     return _io_impl->async_msg_fifo.pop_with_timed_wait(async_metadata, timeout);
 }
 
@@ -410,9 +397,9 @@ void usrp2_impl::program_stream_dest(
     // user has provided an alternative address and port for destination
     if (args.args.has_key("addr") and args.args.has_key("port")) {
         UHD_LOGGER_INFO("USRP2")
-            << boost::format("Programming streaming destination for custom address. "
-                             "IPv4 Address: %s, UDP Port: %s")
-                   % args.args["addr"] % args.args["port"];
+            << "Programming streaming destination for custom address. "
+               "IPv4 Address: "
+            << args.args["addr"] << ", UDP Port: " << args.args["port"];
 
         asio::io_context io_context;
         asio::ip::udp::resolver resolver(io_context);

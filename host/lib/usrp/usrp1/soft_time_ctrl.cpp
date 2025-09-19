@@ -8,7 +8,7 @@
 #include "soft_time_ctrl.hpp"
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/system_time.hpp>
-#include <boost/thread/condition.hpp>
+#include <condition_variable>
 #include <chrono>
 #include <functional>
 #include <iostream>
@@ -71,10 +71,11 @@ public:
     UHD_INLINE void sleep_until_time(
         std::unique_lock<std::mutex>& lock, const time_spec_t& time)
     {
-        boost::condition cond;
+        std::condition_variable cond;
         // use a condition variable to unlock, sleep, lock
         const double seconds_to_sleep = (time - time_now()).get_real_secs();
-        cond.timed_wait(lock, pt::microseconds(long(seconds_to_sleep * 1e6)));
+        cond.wait_for(lock,
+            std::chrono::microseconds(static_cast<int64_t>(seconds_to_sleep * 1e6)));
     }
 
     /*******************************************************************

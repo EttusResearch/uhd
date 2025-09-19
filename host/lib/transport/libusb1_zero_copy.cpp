@@ -12,9 +12,10 @@
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
+#include <condition_variable>
 #include <boost/circular_buffer.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/condition.hpp>
+#include <chrono>
 #include <functional>
 #include <list>
 #include <memory>
@@ -50,7 +51,7 @@ struct lut_result_t
     libusb_transfer_status status;
     int actual_length;
     std::mutex mut;
-    boost::condition usb_transfer_complete;
+    std::condition_variable usb_transfer_complete;
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
     // These are fore debugging
@@ -60,7 +61,7 @@ struct lut_result_t
 #endif
 };
 
-// Created to be used as an argument to boost::condition_variable::timed_wait() function
+// Created to be used as an argument to std::condition_variable::wait_for() function
 struct lut_result_completed
 {
     const lut_result_t& _result;
@@ -184,11 +185,9 @@ public:
             if (timeout < 0.0) {
                 result.usb_transfer_complete.wait(lock);
             } else {
-                const boost::system_time timeout_time =
-                    boost::get_system_time()
-                    + boost::posix_time::microseconds(long(timeout * 1000000));
-                result.usb_transfer_complete.timed_wait(
-                    lock, timeout_time, lut_result_completed(result));
+                result.usb_transfer_complete.wait_for(lock,
+                    std::chrono::microseconds(static_cast<int64_t>(timeout * 1e6)),
+                    lut_result_completed(result));
             }
         }
         return (result.completed > 0);
@@ -317,8 +316,8 @@ public:
 
         std::unique_lock<std::mutex> queue_lock(_queue_mutex);
         if (_enqueued.empty()) {
-            _buff_ready_cond.timed_wait(
-                queue_lock, boost::posix_time::microseconds(long(timeout * 1e6)));
+            _buff_ready_cond.wait_for(queue_lock,
+                std::chrono::microseconds(static_cast<int64_t>(timeout * 1e6)));
         }
         if (_enqueued.empty())
             return buff;
@@ -352,7 +351,7 @@ private:
     std::vector<std::shared_ptr<libusb_zero_copy_mb>> _mb_pool;
 
     std::mutex _queue_mutex;
-    boost::condition _buff_ready_cond;
+    std::condition_variable _buff_ready_cond;
     std::mutex _get_buff_mutex;
 
     //! why 2 queues? there is room in the future to have > N buffers but only N in flight
