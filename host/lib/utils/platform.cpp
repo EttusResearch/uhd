@@ -53,4 +53,15 @@ uint32_t get_process_hash()
     boost::hash_combine(hash, uhd::get_host_id());
     return uint32_t(hash);
 }
+
+size_t get_page_size()
+{
+#ifdef UHD_PLATFORM_WIN32
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return size_t(si.dwPageSize);
+#else
+    return size_t(sysconf(_SC_PAGESIZE));
+#endif
+}
 } // namespace uhd

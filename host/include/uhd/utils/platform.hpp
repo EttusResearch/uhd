@@ -8,6 +8,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <cstddef>
 
 namespace uhd {
 
@@ -19,5 +20,8 @@ uint32_t get_host_id();
 
 /* Get a unique identifier for the current machine and process */
 uint32_t get_process_hash();
+
+/* Returns the system memory page size in bytes */
+size_t get_page_size();
 
 } // namespace uhd

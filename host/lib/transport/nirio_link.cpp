@@ -5,6 +5,7 @@
 //
 
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/platform.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/transport/adapter.hpp>
 #include <uhdlib/transport/links.hpp>
@@ -24,22 +25,7 @@ using namespace uhd::niusrprio;
  *****************************************************************************/
 namespace {
 
-#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
-#    include <windows.h>
-size_t get_page_size()
-{
-    SYSTEM_INFO si;
-    GetSystemInfo(&si);
-    return si.dwPageSize;
-}
-#else
-#    include <unistd.h>
-size_t get_page_size()
-{
-    return size_t(sysconf(_SC_PAGESIZE));
-}
-#endif
-const size_t page_size = get_page_size();
+const size_t page_size = uhd::get_page_size();
 
 } // namespace
 
