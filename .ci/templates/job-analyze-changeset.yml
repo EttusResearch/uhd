@@ -24,7 +24,8 @@ jobs:
         - group: github-ettusresearch-uhddev
     pool:
       name: Drivers-NIBuildFarm-RFMIBUILD
-      demands: sh
+      demands: 
+        - Agent.OS -equals Linux
     steps:
     - ${{ if parameters.skip_rule_checking }}:
       - checkout: none
