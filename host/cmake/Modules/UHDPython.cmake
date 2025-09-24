@@ -270,7 +270,7 @@ macro(UHD_PYTHON_INSTALL_MODULE)
             # In virtualenvs, let setuptools do its thing
             install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip in '${CMAKE_CURRENT_BINARY_DIR}'.\")")
             install(CODE
-                "execute_process(COMMAND pip3 install . --force-reinstall WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+                "execute_process(COMMAND pip3 install . WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
         else()
             # Otherwise, use sysconfig to determine the correct relative path for Python
             # packages, and install to our prefix
