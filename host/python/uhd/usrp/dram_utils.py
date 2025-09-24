@@ -644,7 +644,7 @@ class DramReceiver:
 
         if not self.receive_metadata:
             self.receive_metadata = RXMetadata()
-        num_items = self.rx_streamer.recv(waveform, self.receive_metadata, 15.0)
+        num_items = self.rx_streamer.recv(waveform, self.receive_metadata, 1.0)
         if self.receive_metadata.error_code != RXMetadataErrorCode.none:
             # While the error code might be overwritten by the next call to _download(),
             # returning 0 will lead to recv() returning 0, too, which indicates an error.
@@ -655,7 +655,7 @@ class DramReceiver:
         """Download a waveform from memory to host.
 
         Arguments:
-        waveform: The waveform to download.
+        waveform: The waveform buffer to download into.
         ports: If this argument is given, then we use the mem_regions attribute
                of this class to identify where the waveform is stored. If ports
                is a list, then the waveform will be downloaded once per port from
@@ -734,15 +734,20 @@ class DramReceiver:
                 stream_cmd.time_spec = tmp_stream_cmd.time_spec
             rcp[0].issue_stream_cmd(stream_cmd, rcp[1])
 
-        timeout = time.monotonic() + 15.0
-        while any(
-            (
-                self.replay_blocks[0].get_record_fullness(ports[idx]) < mem_size
+        timeout = 0.5
+        last_fullness = [0] * len(self.radio_chan_pairs)
+        last_update = [time.monotonic()] * len(self.radio_chan_pairs)
+        while any((last_fullness[idx] < mem_size for idx, _ in enumerate(self.radio_chan_pairs))):
+            time.sleep(0.001)
+            for idx, _ in enumerate(self.radio_chan_pairs):
+                fullness = self.replay_blocks[0].get_record_fullness(ports[idx])
+                if fullness > last_fullness[idx]:
+                    last_update[idx] = time.monotonic()
+                last_fullness[idx] = fullness
+            if any(
+                time.monotonic() - last_update[idx] > timeout
                 for idx, _ in enumerate(self.radio_chan_pairs)
-            )
-        ):
-            time.sleep(0.200)
-            if time.monotonic() > timeout:
+            ):
                 raise RuntimeError("Timeout while loading replay buffer!")
 
     def recv(self, data, metadata, timeout=0.1):
