@@ -495,9 +495,9 @@ LIBUHD_REGISTER_COMPONENT(
     OFF OFF)
 if(WIN32)
     LIBUHD_REGISTER_COMPONENT(
-        "UHD Extended Packaging for Windows" 
-        ENABLE_EXTEND_WIN_PACKAGING 
-        OFF 
+        "UHD Extended Packaging for Windows"
+        ENABLE_EXTEND_WIN_PACKAGING
+        OFF
         "ENABLE_LIBUHD"
         OFF
         OFF)
@@ -611,11 +611,13 @@ configure_file(
 )
 
 include(CMakePackageConfigHelpers)
-export(
-    EXPORT uhdTargets
-    FILE ${UHD_BINARY_DIR}/cmake/Modules/UHDTargets.cmake
-    NAMESPACE UHD::
-)
+if(TARGET uhd)
+    export(
+        EXPORT uhdTargets
+        FILE ${UHD_BINARY_DIR}/cmake/Modules/UHDTargets.cmake
+        NAMESPACE UHD::
+    )
+endif()
 
 set(uhd_cmake_scripts
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
@@ -631,13 +633,15 @@ UHD_INSTALL(
     DESTINATION ${CMAKE_MODULES_DIR}/uhd
     COMPONENT "devel"
 )
-install(
-    EXPORT uhdTargets
-    FILE UHDTargets.cmake
-    NAMESPACE UHD::
-    DESTINATION ${CMAKE_MODULES_DIR}/uhd
-    COMPONENT "devel"
-)
+if(TARGET uhd)
+    install(
+        EXPORT uhdTargets
+        FILE UHDTargets.cmake
+        NAMESPACE UHD::
+        DESTINATION ${CMAKE_MODULES_DIR}/uhd
+        COMPONENT "devel"
+    )
+endif()
 
 
 ########################################################################
