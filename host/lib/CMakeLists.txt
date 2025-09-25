@@ -227,7 +227,7 @@ function(UHD_LIB_ADD_PYTHON uhd_lib_name)
     # This conditional code somewhat duplicates logic also found in
     # ../python/CMakeLists.txt but omits user messages. This avoid
     # duplicate output, since SIM mode requires python support.
-    target_include_directories(${uhd_lib_name} PUBLIC ${PYTHON_INCLUDE_DIRS})
+    target_include_directories(${uhd_lib_name} PRIVATE ${PYTHON_INCLUDE_DIRS})
     if(NOT pybind11_FOUND)
         set(PYBIND11_INCLUDE_DIR
             "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
