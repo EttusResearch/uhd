@@ -405,6 +405,29 @@ stages:
       uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
       release_binaries: ${{ parameters.release_binaries }}
 
+- stage: build_uhd_manual
+  displayName: Build UHD Manual (the ReadTheDocs way)
+  dependsOn: analyze_changeset
+  # This stage is executed if any of these are true:
+  # - uhd.build* is set to Force-yes or auto
+  # - uhd.docs is set to Force-yes or auto
+  # - fpga.usrp3* is set to Force-yes or auto
+  condition: >
+    and(succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.docs'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3')
+      )
+    )
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-manual.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+      release_binaries: ${{ parameters.release_binaries }}
+
 - stage: build_gnuradio_stage_linux
   displayName: Build gnuradio Linux
   dependsOn:
