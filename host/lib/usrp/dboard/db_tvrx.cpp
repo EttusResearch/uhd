@@ -29,8 +29,8 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <tuner_4937di5_regs.hpp>
-#include <boost/array.hpp>
 #include <boost/format.hpp>
+#include <array>
 #include <cfloat>
 #include <cmath>
 #include <functional>
@@ -52,7 +52,7 @@ static const uhd::dict<std::string, freq_range_t> tvrx_freq_ranges{
     {"VHFHI", freq_range_t(158e6, 454e6)},
     {"UHF", freq_range_t(454e6, 860e6)}};
 
-static const boost::array<double, 17> vhflo_gains_db = {{-6.00000,
+static const std::array<double, 17> vhflo_gains_db = {{-6.00000,
     -6.00000,
     -6.00000,
     -4.00000,
@@ -70,7 +70,7 @@ static const boost::array<double, 17> vhflo_gains_db = {{-6.00000,
     50.30000,
     50.30000}};
 
-static const boost::array<double, 17> vhfhi_gains_db = {{-13.3000,
+static const std::array<double, 17> vhfhi_gains_db = {{-13.3000,
     -13.3000,
     -13.3000,
     -1.0000,
@@ -88,7 +88,7 @@ static const boost::array<double, 17> vhfhi_gains_db = {{-13.3000,
     48.2000,
     48.2000}};
 
-static const boost::array<double, 17> uhf_gains_db = {{-8.0000,
+static const std::array<double, 17> uhf_gains_db = {{-8.0000,
     -8.0000,
     -7.0000,
     4.0000,
@@ -106,7 +106,7 @@ static const boost::array<double, 17> uhf_gains_db = {{-8.0000,
     43.2000,
     43.8000}};
 
-static const boost::array<double, 17> tvrx_if_gains_db = {{-1.50000,
+static const std::array<double, 17> tvrx_if_gains_db = {{-1.50000,
     -1.50000,
     -1.50000,
     -1.00000,
@@ -130,11 +130,11 @@ static const boost::array<double, 17> tvrx_if_gains_db = {{-1.50000,
 // need dang near as many coefficients as to just map it like this and interp.
 // these numbers are culled from the 4937DI5 datasheet and are probably totally inaccurate
 // but if it's better than the old linear fit i'm happy
-static const uhd::dict<std::string, boost::array<double, 17>> tvrx_rf_gains_db{
+static const uhd::dict<std::string, std::array<double, 17>> tvrx_rf_gains_db{
     {"VHFLO", vhflo_gains_db}, {"VHFHI", vhfhi_gains_db}, {"UHF", uhf_gains_db}};
 
 // sample voltages for the above points
-static const boost::array<double, 17> tvrx_gains_volts = {{0.8,
+static const std::array<double, 17> tvrx_gains_volts = {{0.8,
     1.0,
     1.2,
     1.4,
@@ -321,8 +321,8 @@ static std::string get_band(double freq)
  */
 
 static double gain_interp(double gain,
-    const boost::array<double, 17>& db_vector,
-    const boost::array<double, 17>& volts_vector)
+    const std::array<double, 17>& db_vector,
+    const std::array<double, 17>& volts_vector)
 {
     double volts;
     gain = uhd::clip<double>(

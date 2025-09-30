@@ -54,8 +54,8 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/array.hpp>
 #include <boost/format.hpp>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <functional>
@@ -89,10 +89,10 @@ struct tvrx2_tda18272_rfcal_coeffs_t
 
 struct tvrx2_tda18272_cal_map_t
 {
-    boost::array<uint32_t, 4> cal_freq;
-    boost::array<uint8_t, 4> c_offset;
+    std::array<uint32_t, 4> cal_freq;
+    std::array<uint8_t, 4> c_offset;
     tvrx2_tda18272_cal_map_t(
-        boost::array<uint32_t, 4> freqs, boost::array<uint8_t, 4> offsets)
+        std::array<uint32_t, 4> freqs, std::array<uint8_t, 4> offsets)
     {
         cal_freq = freqs;
         c_offset = offsets;
@@ -100,8 +100,7 @@ struct tvrx2_tda18272_cal_map_t
     // For readability, this file initializes c_offset with integers, so
     // this is a converting constructor that converts integers to uint8_t
     // without compiler issues.
-    tvrx2_tda18272_cal_map_t(
-        boost::array<uint32_t, 4> freqs, boost::array<int, 4> offsets)
+    tvrx2_tda18272_cal_map_t(std::array<uint32_t, 4> freqs, std::array<int, 4> offsets)
     {
         cal_freq = freqs;
         for (size_t i = 0; i < 4; i++) {
@@ -129,7 +128,7 @@ struct tvrx2_tda18272_freq_map_t
  * The TVRX2 constants
  **********************************************************************/
 // clang-format off
-static const boost::array<freq_range_t, 4> tvrx2_tda18272_rf_bands{
+static const std::array<freq_range_t, 4> tvrx2_tda18272_rf_bands{
     freq_range_t(  44.056e6, 144.408e6),
     freq_range_t( 145.432e6, 361.496e6),
     freq_range_t( 365.592e6, 618.520e6),
@@ -139,18 +138,18 @@ static const boost::array<freq_range_t, 4> tvrx2_tda18272_rf_bands{
 #define TVRX2_TDA18272_FREQ_MAP_ENTRIES (565)
 
 static const uhd::dict<uint32_t, tvrx2_tda18272_cal_map_t> tvrx2_tda18272_cal_map{
-    { 0, tvrx2_tda18272_cal_map_t({ 44032000,  48128000,  52224000,  56320000}, boost::array<int, 4>{15, 0,10,17} ) },
-    { 1, tvrx2_tda18272_cal_map_t({ 84992000,  89088000,  93184000,  97280000}, boost::array<int, 4>{ 1, 0,-2, 3} ) },
-    { 2, tvrx2_tda18272_cal_map_t({106496000, 111616000, 115712000, 123904000}, boost::array<int, 4>{ 0,-1, 1, 2} ) },
-    { 3, tvrx2_tda18272_cal_map_t({161792000, 165888000, 169984000, 174080000}, boost::array<int, 4>{ 3, 0, 1, 2} ) },
-    { 4, tvrx2_tda18272_cal_map_t({224256000, 228352000, 232448000, 235520000}, boost::array<int, 4>{ 3, 0, 1, 2} ) },
-    { 5, tvrx2_tda18272_cal_map_t({301056000, 312320000, 322560000, 335872000}, boost::array<int, 4>{ 0,-1, 1, 2} ) },
-    { 6, tvrx2_tda18272_cal_map_t({389120000, 393216000, 397312000, 401408000}, boost::array<int, 4>{-2, 0,-1, 1} ) },
-    { 7, tvrx2_tda18272_cal_map_t({455680000, 460800000, 465920000, 471040000}, boost::array<int, 4>{ 0,-2,-3, 1} ) },
-    { 8, tvrx2_tda18272_cal_map_t({555008000, 563200000, 570368000, 577536000}, boost::array<int, 4>{-1, 0,-3,-2} ) },
-    { 9, tvrx2_tda18272_cal_map_t({647168000, 652288000, 658432000, 662528000}, boost::array<int, 4>{-6,-3, 0,-5} ) },
-    {10, tvrx2_tda18272_cal_map_t({748544000, 755712000, 762880000, 770048000}, boost::array<int, 4>{-6,-3, 0,-5} ) },
-    {11, tvrx2_tda18272_cal_map_t({792576000, 801792000, 809984000, 818176000}, boost::array<int, 4>{-5,-2, 0,-4} ) }
+    { 0, tvrx2_tda18272_cal_map_t({ 44032000,  48128000,  52224000,  56320000}, std::array<int, 4>{15, 0,10,17} ) },
+    { 1, tvrx2_tda18272_cal_map_t({ 84992000,  89088000,  93184000,  97280000}, std::array<int, 4>{ 1, 0,-2, 3} ) },
+    { 2, tvrx2_tda18272_cal_map_t({106496000, 111616000, 115712000, 123904000}, std::array<int, 4>{ 0,-1, 1, 2} ) },
+    { 3, tvrx2_tda18272_cal_map_t({161792000, 165888000, 169984000, 174080000}, std::array<int, 4>{ 3, 0, 1, 2} ) },
+    { 4, tvrx2_tda18272_cal_map_t({224256000, 228352000, 232448000, 235520000}, std::array<int, 4>{ 3, 0, 1, 2} ) },
+    { 5, tvrx2_tda18272_cal_map_t({301056000, 312320000, 322560000, 335872000}, std::array<int, 4>{ 0,-1, 1, 2} ) },
+    { 6, tvrx2_tda18272_cal_map_t({389120000, 393216000, 397312000, 401408000}, std::array<int, 4>{-2, 0,-1, 1} ) },
+    { 7, tvrx2_tda18272_cal_map_t({455680000, 460800000, 465920000, 471040000}, std::array<int, 4>{ 0,-2,-3, 1} ) },
+    { 8, tvrx2_tda18272_cal_map_t({555008000, 563200000, 570368000, 577536000}, std::array<int, 4>{-1, 0,-3,-2} ) },
+    { 9, tvrx2_tda18272_cal_map_t({647168000, 652288000, 658432000, 662528000}, std::array<int, 4>{-6,-3, 0,-5} ) },
+    {10, tvrx2_tda18272_cal_map_t({748544000, 755712000, 762880000, 770048000}, std::array<int, 4>{-6,-3, 0,-5} ) },
+    {11, tvrx2_tda18272_cal_map_t({792576000, 801792000, 809984000, 818176000}, std::array<int, 4>{-5,-2, 0,-4} ) }
 };
 
 static const std::vector<tvrx2_tda18272_freq_map_t> tvrx2_tda18272_freq_map{
