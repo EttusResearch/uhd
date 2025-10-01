@@ -19,7 +19,6 @@
 #include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <cmath>
 #include <functional>
 #include <utility>

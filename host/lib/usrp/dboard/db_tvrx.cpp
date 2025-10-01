@@ -32,8 +32,6 @@
 #include <boost/array.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
-#include <boost/thread.hpp>
 #include <cfloat>
 #include <cmath>
 #include <functional>

@@ -15,7 +15,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <stdint.h>
-#include <boost/thread/thread.hpp>
 
 namespace uhd { namespace usrp {
 

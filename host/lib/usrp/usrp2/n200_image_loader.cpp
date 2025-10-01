@@ -22,7 +22,6 @@
 #include <boost/assign.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <cstring>
 #include <fstream>
 #include <iostream>
