@@ -170,7 +170,7 @@ resources:
     branch: kirkstone
   - pipeline: uhd_mono_pipeline
     source: 'uhddev mono pipeline'
-    branch: master
+    branch: UHD-4.9
   - pipeline: uhd_mono_pipeline_pr
     source: 'uhddev mono pipeline PR'
     branch: master
