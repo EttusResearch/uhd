@@ -364,8 +364,9 @@ It is generally recommended to use the latest UHD version.
 
 \subsection x4xx_getting_started_setting_up Setting up USRP X4x0
 
-\paragraph x4xx_verify_kit_contents Verifying the Kit Contents:
+\subsubsection x4xx_verify_kit_contents Verifying the Kit Contents:
 
+<br/>
 \image html x4x0_KitContents.svg "Ettus USRP X4x0 Kit contents" width=50%
 
 1. Ettus USRP X410/X440
@@ -381,6 +382,8 @@ Refer the product page [X410](https://www.ettus.com/all-products/usrp-x410/)/
 Inside the kit you will find the X4x0 and an X4x0 power supply. Plug these in,
 connect the 1GbE RJ45 interface to your network, and power on the device by
 pressing the power button.
+
+\subsubsection x4xx_getting_started_setting_up_host Host System Requirements
 
 You can choose to run operations on the device by directly logging into it (Stand-alone 
 mode) or establishing a remote connection to it (Network mode).
@@ -398,10 +401,13 @@ port or a USB 2.0 port to remotely access the embedded Linux operating system
 running on ARM CPU.
 </blockquote>
 
-<b> The Getting Started Guide refers to the network mode setup for the operations 
-in the following sections. Ensure the host computer and the device are on the same 
-subnet network.</b>
+<br/><b> Network Mode Setup</b>
 
+The Getting Started Guide refers to the network mode setup for the operations 
+in the following sections. Ensure the host computer and the device are on the same 
+subnet network.
+
+<br/>
 \image html x4x0_NetworkMode.svg "Ettus USRP X4x0 Connections (UHD)" width=50%
 1. Ettus USRP X410/X440
 2. Network Switch (optional)
@@ -463,7 +469,7 @@ connectivity by running `uhd_find_devices` on the host computer:
         type: x4xx
 
 By default, the device will use DHCP to attempt to find an IP address and the host 
-name 'ni-4xx-<serial>' (in this case 'ni-x4xx-1234ABC').
+name "ni-x4xx-<serial>" (in this case `ni-x4xx-1234ABC`).
 Verify the serial number printed on the devices matches the corresponding 
 device serial number returned by the command. 
 
@@ -947,6 +953,10 @@ Note: Exact names depend on the host operating system version and may differ.
 The first (with the `if02` suffix) connects to the STM32 microcontroller (SCU), whereas
 the second (with the `if03` suffix) connects to Linux running on the RFSoC APU.
 
+\subsubsection x4xx_getting_started_serial_apu Connecting to the RFSoC APU
+
+To connect to the RFSoC APU in the above example use:
+
     $ sudo screen /dev/serial/by-id/usb-Digilent_Digilent_USB_Device_2516351DDCC0-if03-port0 115200
 
 After entering the username `root` (no password is set by default), you should be presented with a shell prompt similar to the following:
@@ -958,7 +968,7 @@ configuration, the serial console will also show all kernel log messages (unlike
 when using SSH, for example), and give access to the boot loader (U-boot
 prompt). 
 
-\paragraph x4xx_getting_started_serial_micro Connecting to the Microcontroller
+\subsubsection x4xx_getting_started_serial_micro Connecting to the Microcontroller
 
 The microcontroller (which controls the power sequencing, among other things)
 also has a serial console available. To connect to the microcontroller, use the
@@ -1000,7 +1010,7 @@ update was originally launched (which presumably is in a working state). Another
 update can be launched now to correct the previous, failed update, until it
 works.
 
-\paragraph x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
+\subsubsection x4xx_updating_filesystems_mender_artifact Downloading a Mender Artifact
 
 To initiate an update directly from the X4x0 device or from a host computer with Internet 
 access (say, when X4x0 does not have internet acess), download a Mender artifact containing the  
@@ -1033,7 +1043,7 @@ X4xx. This can be done with the Linux utility `scp`:
 
     $ scp /path/to/usrp_x4xx_fs.mender root@<usrp_ipaddr>:~/. 
 
-\paragraph x4xx_updating_filesystems_mender_install Installing the Mender Artifact
+\subsubsection x4xx_updating_filesystems_mender_install Installing the Mender Artifact
 
 Once a Mender artifact is downloaded to the X4x0 (see
 \ref x4xx_updating_filesystems_mender_artifact), install it by running mender

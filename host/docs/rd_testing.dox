@@ -139,7 +139,7 @@ To run the devtests using UHD make, follow these steps:
    interface depending upon the FPGA image. Refer below table for some examples
    of test cases.
 3. Run `make test_<devtest-pattern>` from the command line in the build
-   directory (i.e. <local repo path>/host/build). Refer below table for the
+   directory (i.e. `<local repo path>/host/build`). Refer below table for the
    list of available `<devtest-pattern>`. By default, the devtest is executed
    on all the connected devices matching the `<devtest-pattern>`. To target a
    specific device use the argument `EXTRA_DEV_ARGS` and specify the device
