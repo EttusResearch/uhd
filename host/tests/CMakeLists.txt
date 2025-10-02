@@ -375,9 +375,11 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/complex_gain_iface.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
@@ -409,9 +411,11 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/complex_gain_iface.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
@@ -494,6 +498,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "custom_reg_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/ctrlport_endpoint.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "complex_gain_3000_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
 )
 
 ########################################################################

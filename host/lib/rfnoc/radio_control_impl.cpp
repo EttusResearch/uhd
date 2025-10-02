@@ -5,6 +5,7 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/features/complex_gain_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
@@ -14,6 +15,24 @@
 #include <map>
 #include <numeric>
 #include <tuple>
+
+
+// Forward-declare factories for complex gain
+namespace uhd { namespace features {
+
+tx_complex_gain_iface::sptr make_tx_complex_gain_iface(
+    uhd::rfnoc::multichan_register_iface& regs,
+    const size_t base,
+    const double tick_rate,
+    const size_t nipc);
+
+rx_complex_gain_iface::sptr make_rx_complex_gain_iface(
+    uhd::rfnoc::multichan_register_iface& regs,
+    const size_t base,
+    const double tick_rate,
+    const size_t nipc);
+
+}} // namespace uhd::features
 
 using namespace uhd::rfnoc;
 
@@ -307,6 +326,27 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     // Set the default gain profiles
     _rx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
     _tx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
+
+    // Create complex gain APIs, if available
+    const uint32_t feature_reg = _radio_reg_iface.peek32(regmap::REG_FEATURES_PRESENT);
+    // FIXME, this must come from get_tick_rate(), but in the unit tests, that
+    // returns 0.0
+    double tick_rate = get_tick_rate();
+    if (tick_rate == 0.0) {
+        RFNOC_LOG_WARNING("Complex gain blocks will have incorrect time base, FIXME!");
+        tick_rate = 125e6;
+    }
+    if (feature_reg & regmap::FEATURE_TX_CGAIN) {
+        RFNOC_LOG_TRACE("Enabling TX complex gain feature.");
+        register_feature(uhd::features::make_tx_complex_gain_iface(
+            _radio_reg_iface, regmap::REG_TX_CGAIN_BASE, tick_rate, get_spc()));
+    }
+    if (feature_reg & regmap::FEATURE_RX_CGAIN) {
+        RFNOC_LOG_TRACE("Enabling RX complex gain feature.");
+        register_feature(uhd::features::make_rx_complex_gain_iface(
+            _radio_reg_iface, regmap::REG_RX_CGAIN_BASE, tick_rate, get_spc()));
+    }
+
 } /* ctor */
 
 /******************************************************************************

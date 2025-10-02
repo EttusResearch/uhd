@@ -58,6 +58,12 @@ public:
 
         // Setup the GPIO addresses
         read_memory[gpio_offset + 0x4] = 0;
+
+        // Enable the complex gain feature
+        read_memory[radio_control_impl::regmap::RADIO_BASE_ADDR
+                    + radio_control_impl::regmap::REG_FEATURES_PRESENT] =
+            radio_control_impl::regmap::FEATURE_TX_CGAIN
+            | radio_control_impl::regmap::FEATURE_RX_CGAIN;
     }
 
     void _poke_cb(uint32_t addr, uint32_t data, uhd::time_spec_t, bool) override

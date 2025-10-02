@@ -239,6 +239,9 @@ public:
                                            //  - Bit [31:2]  : Reserved
                                            //  - Bit [1]     : RX Complex gain
                                            //  - Bit [0]     : TX Complex gain
+                                           //
+            FEATURE_TX_CGAIN = 0b00000001,
+            FEATURE_RX_CGAIN = 0b00000010,
 
             // Note on the RX and TX Control Registers: These are per-channel,
             // which means the values here are offsets. The base address per
@@ -315,17 +318,12 @@ public:
                 0x00, // Address offset for complex gain inside feature register
 
             // Complex Gain TX Registers
-            REG_TX_CGAIN_COEFF = // The TX complex gain coefficient
-                                 // [31:16]  : Real part
-                                 // [15:0]   : Imaginary part
+            REG_TX_CGAIN_BASE = // Base address of TX complex gain control
             REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_ADDR_OFFSET + 0x00,
 
             // Complex Gain RX Registers
-            REG_RX_CGAIN_COEFF = // The RX complex gain coefficient
-                                 // [31:16]  : Real part
-                                 // [15:0]   : Imaginary part
+            REG_RX_CGAIN_BASE = // Base address of RX complex gain control
             REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_ADDR_OFFSET + 0x10,
-
 
             // Peripheral registers
             PERIPH_BASE       = 0x80000,
