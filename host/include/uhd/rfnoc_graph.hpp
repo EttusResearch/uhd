@@ -432,6 +432,9 @@ public:
 
     //! Return the CHDR width for a given device
     virtual chdr_w_t get_chdr_width(const size_t mb_index = 0) const = 0;
+
+    //! Return a list of transport adapters that can be used for remote streaming for a given device
+    virtual std::map<std::string, device_addr_t> get_chdr_xport_adapters(size_t mb_index = 0) const = 0;
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc
