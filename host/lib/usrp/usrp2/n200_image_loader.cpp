@@ -19,15 +19,15 @@
 #include <uhd/utils/static.hpp>
 #include <boost/algorithm/string/erase.hpp>
 #include <boost/asio/ip/address_v4.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 
 typedef boost::asio::ip::address_v4 ip_v4;
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace boost::algorithm;
 
 using namespace uhd;

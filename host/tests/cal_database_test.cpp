@@ -8,13 +8,13 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/paths.hpp>
 #include <stdlib.h> // putenv or _putenv
-#include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
+#include <filesystem>
 #include <iostream>
 #include <numeric>
 
 using namespace uhd::usrp::cal;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 BOOST_AUTO_TEST_CASE(test_rc)
 {
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(test_fs)
 
     const auto tmp_dir      = uhd::get_tmp_path();
     const auto tmp_cal_path = fs::path(tmp_dir) / "CAL_TEST";
-    boost::system::error_code ec;
+    std::error_code ec;
     fs::create_directory(tmp_cal_path, ec);
     if (ec) {
         std::cout << "WARNING: Could not create temp cal path. Skipping test."

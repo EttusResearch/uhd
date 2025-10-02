@@ -10,8 +10,8 @@
 #include <uhdlib/utils/paths.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <config.h>
-#include <boost/filesystem.hpp>
 #include <cstdlib>
+#include <filesystem>
 
 using namespace uhd;
 
@@ -23,7 +23,7 @@ inline bool _update_conf_file(
 {
     if (not path.empty()) {
         UHD_LOG_TRACE("PREFS", "Trying to load " << path);
-        if (boost::filesystem::exists(path)) {
+        if (std::filesystem::exists(path)) {
             try {
                 conf_file.read_file(path);
                 UHD_LOG_DEBUG(

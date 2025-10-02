@@ -21,15 +21,15 @@
 #include <uhdlib/asio.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <stdint.h>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
+#include <filesystem>
 
 using namespace uhd;
 using namespace uhd::usrp_clock;
 using namespace uhd::transport;
 namespace asio = boost::asio;
-namespace fs   = boost::filesystem;
+namespace fs   = std::filesystem;
 
 /***********************************************************************
  * Discovery

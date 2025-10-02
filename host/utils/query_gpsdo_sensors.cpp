@@ -11,7 +11,6 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
@@ -19,12 +18,13 @@
 #include <complex>
 #include <cstdlib>
 #include <ctime>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <thread>
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 void print_notes(void)
 {

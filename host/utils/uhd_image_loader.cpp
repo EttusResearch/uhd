@@ -10,14 +10,14 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/assign.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <csignal>
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace po = boost::program_options;
 
 static std::string device_type = "";
