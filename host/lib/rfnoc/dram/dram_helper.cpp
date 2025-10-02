@@ -25,7 +25,8 @@ namespace uhd::rfnoc::dram {
 typedef std::pair<std::string, size_t> block_port_t;
 typedef std::shared_ptr<block_port_t> block_port_ptr_t;
 
-constexpr const char* DRAM_UTILS = "DRAM Utils";
+constexpr const char* DRAM_UTILS                  = "DRAM Utils";
+constexpr const size_t MAX_CHUNK_DOWNLOAD_RETRIES = 10;
 
 /*!
  * Helper to find a block connected to a given block/port combination.
@@ -85,6 +86,89 @@ replay_block_control::sptr get_replay_block(
     return replay;
 }
 
+/*!
+ * Helper function to coerce a byte size to the word size of the replay block.
+ * \param replay The replay block to use for word size lookup.
+ * \param num_bytes The number of bytes to coerce.
+ * \returns The coerced number of bytes.
+ */
+size_t coerce_to_word_size(replay_block_control::sptr replay, size_t num_bytes)
+{
+    return num_bytes - (num_bytes % replay->get_word_size());
+}
+
+/*!
+ * Helper to download a chunk of data from the replay block.
+ *
+ * Tries to download a chunk from replay. There is only a single attempt to get
+ * the data. If this fails the streamer is stopped remaining data is flushed and false
+ * is returned.
+ *
+ * \param replay The replay block to use.
+ * \param port The output port of the replay block to use.
+ * \param rx_streamer The RX streamer to use.
+ * \param buff The buffer to write the samples to.
+ *             This function adds offset to buffer so no need to adjust this beforehand.
+ * \param offset_samples The sample offset into the buffer to start writing to.
+ * \param num_samples The number of samples to download.
+ * \param bytes_per_sample The number of bytes per sample.
+ * \param offset The offset into the replay memory to start reading from (in samples).
+ * \returns True on success, false on failure.
+ */
+bool download_chunk(replay_block_control::sptr replay,
+    size_t port,
+    uhd::rx_streamer::sptr rx_streamer,
+    const void* buff,
+    size_t offset_samples,
+    size_t num_samples,
+    size_t bytes_per_sample,
+    size_t offset)
+{
+    replay->config_play((offset + offset_samples) * bytes_per_sample,
+        num_samples * bytes_per_sample,
+        port);
+
+    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps = num_samples;
+    rx_streamer->issue_stream_cmd(stream_cmd);
+    uhd::rx_metadata_t rx_md;
+    size_t rx_samples = rx_streamer->recv(
+        static_cast<const char*>(buff) + (offset_samples * bytes_per_sample),
+        num_samples,
+        rx_md,
+        1.0);
+    bool result = (rx_samples == num_samples)
+                  && (rx_md.error_code == uhd::rx_metadata_t::ERROR_CODE_NONE);
+    if (!result) {
+        uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+        rx_streamer->issue_stream_cmd(stream_cmd);
+        while (true) {
+            // for flushing data we can reuse buff, because the data is not valid and
+            // will be overwritten with the next attempt.
+            rx_streamer->recv(
+                static_cast<const char*>(buff) + (offset_samples * bytes_per_sample),
+                num_samples,
+                rx_md,
+                1.0);
+            if (rx_md.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT) {
+                // clear error code because this is expected behaviour
+                // and shouldn't be logged as an error
+                rx_md.error_code = rx_metadata_t::ERROR_CODE_NONE;
+                break;
+            }
+        }
+        if (rx_samples != num_samples) {
+            UHD_LOG_DEBUG(DRAM_UTILS,
+                "Missed samples received " << rx_samples << " vs expected "
+                                           << num_samples);
+        }
+        if (rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
+            UHD_LOG_DEBUG(DRAM_UTILS, "Received had metadata error " << rx_md.error_code);
+        }
+    }
+    return result;
+}
+
 void upload(rfnoc_graph::sptr graph,
     const void* buff,
     const size_t nsamps,
@@ -94,22 +178,22 @@ void upload(rfnoc_graph::sptr graph,
     size_t port,
     size_t offset)
 {
-    UHD_LOG_DEBUG("RepHlp", "Send " << nsamps << " samples to replay block.");
+    UHD_LOG_DEBUG(DRAM_UTILS, "Send " << nsamps << " samples to replay block.");
     replay          = get_replay_block(graph, replay);
     auto [src, dst] = connected_blocks(graph, replay->get_unique_id(), port);
 
     if (src) {
         // if something is connected to the input port of the replay block
         // disconnect it temporarily
-        UHD_LOG_DEBUG(DRAM_UTILS,
+        UHD_LOG_TRACE(DRAM_UTILS,
             "Disconnect source block " << src->first << "#" << src->second
                                        << " for replay transfer.");
         graph->disconnect(src->first, src->second, replay->get_unique_id(), port);
     }
 
-    size_t bytes_per_sample = uhd::convert::get_bytes_per_item(cpu_fmt);
-    size_t num_bytes        = bytes_per_sample * nsamps;
-    auto args               = uhd::stream_args_t(cpu_fmt, otw_fmt);
+    const size_t bytes_per_sample = uhd::convert::get_bytes_per_item(cpu_fmt);
+    const size_t num_bytes        = bytes_per_sample * nsamps;
+    uhd::stream_args_t args(cpu_fmt, otw_fmt);
     args.args["transmit_policy"] =
         "stop_on_seq_error"; // stop on loss, to enable transmit restart
     auto tx_streamer = graph->create_tx_streamer(1, args);
@@ -132,6 +216,7 @@ void upload(rfnoc_graph::sptr graph,
             nsamps - received_samples,
             tx_md,
             1.0);
+
         received_samples = get_record_fullness(replay, port) / bytes_per_sample;
     }
 
@@ -162,73 +247,52 @@ void download(rfnoc_graph::sptr graph,
 
     auto [src, dst] = connected_blocks(graph, replay->get_unique_id(), port);
     if (dst) {
-        UHD_LOG_DEBUG(DRAM_UTILS,
+        UHD_LOG_TRACE(DRAM_UTILS,
             "Disconnect dest block " << dst->first << "#" << dst->second
                                      << " for replay transfer.");
         graph->disconnect(replay->get_unique_id(), port, dst->first, dst->second);
     }
 
-    size_t bytes_per_sample = uhd::convert::get_bytes_per_item(cpu_fmt);
-    auto args               = stream_args_t(cpu_fmt, otw_fmt);
-    auto rx_streamer        = graph->create_rx_streamer(1, args);
+    auto args        = stream_args_t(cpu_fmt, otw_fmt);
+    auto rx_streamer = graph->create_rx_streamer(1, args);
     graph->connect(replay->get_unique_id(), port, rx_streamer, 0);
     graph->commit();
 
-    uhd::rx_metadata_t rx_md;
-    auto offset_bytes = bytes_per_sample * offset;
-    auto num_bytes    = bytes_per_sample * nsamps;
-
-    replay->config_play(offset_bytes, num_bytes, port);
-
-    uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-    stream_cmd.num_samps = nsamps;
-    rx_streamer->issue_stream_cmd(stream_cmd);
-
+    const size_t bytes_per_sample = uhd::convert::get_bytes_per_item(cpu_fmt);
+    const size_t chunk_in_bytes   = coerce_to_word_size(
+        replay, 1000 * rx_streamer->get_max_num_samps() * bytes_per_sample);
     size_t samples_received = 0;
 
+    UHD_LOG_INFO(DRAM_UTILS, "Download chunks of " << chunk_in_bytes << " bytes");
+
+    size_t chunk_failures = 0;
+    // download data in chunks
     while (samples_received < nsamps) {
-        UHD_LOG_TRACE(DRAM_UTILS,
-            "Receive " << (nsamps - samples_received) << " samples from replay block");
-        size_t rx_samples = rx_streamer->recv(
-            static_cast<const char*>(buff) + samples_received * bytes_per_sample,
-            nsamps - samples_received,
-            rx_md,
-            10.0);
+        size_t chunk_nsamps =
+            std::min(chunk_in_bytes / bytes_per_sample, nsamps - samples_received);
         UHD_LOG_TRACE(
-            DRAM_UTILS, "Received " << rx_samples << " samples from replay block");
-        if (rx_samples > 0) {
-            size_t play_pos = replay->get_play_position(port);
-            samples_received += rx_samples;
-            if (bytes_per_sample * samples_received + offset_bytes < play_pos) {
-                UHD_LOG_TRACE(DRAM_UTILS,
-                    "Lost bytes during reception from replay block, restart play at "
-                        << bytes_per_sample * samples_received + offset_bytes);
-                uhd::stream_cmd_t stop_cmd(
-                    uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-                rx_streamer->issue_stream_cmd(stop_cmd);
-                std::vector<char> dev_null(
-                    10 * bytes_per_sample * rx_streamer->get_max_num_samps(), 0);
-                UHD_LOG_TRACE(DRAM_UTILS, "Draining RX");
-                while (true) {
-                    rx_streamer->recv(
-                        dev_null.data(), dev_null.size() / bytes_per_sample, rx_md, 0.1);
-                    if (rx_md.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT) {
-                        break;
-                    }
-                }
-                UHD_LOG_TRACE(DRAM_UTILS, "Drain complete, restart play");
-                replay->config_play(offset_bytes + bytes_per_sample * samples_received,
-                    num_bytes - bytes_per_sample * samples_received,
-                    port);
-                stream_cmd.num_samps = nsamps - samples_received;
-                rx_streamer->issue_stream_cmd(stream_cmd);
+            DRAM_UTILS, "Receive " << nsamps << " samples start at " << samples_received);
+
+        bool success = download_chunk(replay,
+            port,
+            rx_streamer,
+            buff,
+            samples_received,
+            chunk_nsamps,
+            bytes_per_sample,
+            offset);
+        if (!success) {
+            // we need some exit criteria to break the loop if receive is not working
+            // MAX_CHUNK_DOWNLOAD_RETRIES is arbitrary, but should be enough to get
+            // a few tries.
+            if (chunk_failures > MAX_CHUNK_DOWNLOAD_RETRIES) {
+                break;
             }
+            chunk_failures++;
+        } else {
+            chunk_failures = 0;
+            samples_received += chunk_nsamps;
         }
-    }
-    UHD_LOG_DEBUG(
-        DRAM_UTILS, "Received " << samples_received << " samples from replay block");
-    if (rx_md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
-        UHD_LOG_ERROR(DRAM_UTILS, "Error during receive: " << rx_md.strerror());
     }
 
     rx_streamer.reset();
