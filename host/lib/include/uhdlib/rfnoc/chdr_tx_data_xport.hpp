@@ -16,6 +16,7 @@
 #include <uhdlib/rfnoc/tx_flow_ctrl_state.hpp>
 #include <uhdlib/transport/io_service.hpp>
 #include <uhdlib/transport/link_if.hpp>
+#include <chrono>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -83,6 +84,13 @@ private:
     uint16_t _fc_seq_num = 0;
 };
 } // namespace detail
+
+// Time we have to wait after sending init before we can trigger
+// next command.
+// TODO: remove if we can configure init sequence or handle FPGA
+//       responses based on the request.
+using namespace std::chrono_literals;
+constexpr const auto INIT_WAIT_TIME = 100ms;
 
 /*!
  * Flow-controlled transport for TX chdr data
@@ -270,7 +278,21 @@ public:
         const size_t size = header.get_length();
 
         buff->set_packet_size(size);
-        _send_io->release_send_buff(std::move(buff));
+        _send_io->release_send_buff(std::move(buff)); // release actually sends the packet
+
+        // Asking the FPGA to do an initialization of the stream endpoint will, as a side
+        // effect, clear the queue of incoming packets, so we have to wait a bit to make
+        // sure the flow control packet that gets sent with the wait_for_dest_ready below
+        // is not dropped.
+        // TODO: come up with a better solution like split handling the STRS packets or
+        // have an additional bit in the STRS packet to indicate the queue should not be
+        // cleared.
+        std::this_thread::sleep_for(INIT_WAIT_TIME);
+
+        // Asking for dest ready with maximum size will enforce flow control and (as a
+        // side effect) process the STRS packet that the FPGA will send in response to the
+        // init packet. This is currently the only way to handle this because flow control
+        // and init get the same STRS response from the FPGA.
         _send_io->wait_for_dest_ready(UINT_MAX, 0);
     }
 
