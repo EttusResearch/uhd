@@ -269,6 +269,7 @@ public:
             RX_CMD_FINITE     = 1, // Acquire NUM_SAMPS then stop
             RX_CMD_CONTINUOUS = 2, // Acquire until stopped
 
+            RX_CMD_TRIG_POS  = 30,
             RX_CMD_TIMED_POS = 31,
 
             PERIPH_BASE       = 0x80000,

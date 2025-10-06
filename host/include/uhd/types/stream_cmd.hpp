@@ -30,7 +30,8 @@ namespace uhd {
  *
  * The stream now parameter controls when the stream begins.
  * When true, the device will begin streaming ASAP. When false,
- * the device will begin streaming at a time specified by time_spec.
+ * the device will start streaming based on the trigger source.
+ * The trigger source TIMED will begin at a time specified by time_spec.
  *
  * Note: When a radio runs at multiple samples per clock cycle, it may not be
  * possible to request samples at any given time, and \p num_samps might have to
@@ -46,8 +47,24 @@ struct UHD_API stream_cmd_t
     } stream_mode;
     uint64_t num_samps;
 
+    //! When true, the device will begin streaming ASAP.
+    //
+    // When false, the device will start streaming based on the \p trigger source.
     bool stream_now;
+    //! The time spec to use when \p stream_now is false and \p trigger is TIMED
     time_spec_t time_spec;
+
+    //! Trigger source to be used when stream_now is false
+    //
+    // When \p stream_now is false, the trigger source controls when
+    // streaming begins. The default trigger source is TIMED, meaning
+    // that streaming will begin when the time specified in time_spec is reached.
+    enum class trigger_t {
+        //! Start streaming when the time specified in time_spec is reached
+        TIMED,
+        //! Start streaming when the transmitter is running
+        TX_RUNNING,
+    } trigger;
 
     stream_cmd_t(const stream_mode_t& stream_mode);
 };
