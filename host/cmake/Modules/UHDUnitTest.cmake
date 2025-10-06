@@ -28,10 +28,8 @@ function(UHD_ADD_TEST test_name)
             set(UHD_TEST_LIBRARY_DIRS
                 "${UHD_BINARY_DIR}/lib"
                 "${CMAKE_CURRENT_BINARY_DIR}"
+                "${Boost_LIBRARY_DIRS}"
             )
-            if(NOT APPLE)
-                list(APPEND UHD_TEST_LIBRARY_DIRS "${Boost_LIBRARY_DIRS}")
-            endif(NOT APPLE)
         endif(WIN32)
 
     file(TO_NATIVE_PATH "${UHD_TEST_LIBRARY_DIRS}" libpath)
