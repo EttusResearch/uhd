@@ -75,6 +75,8 @@ localparam REG_TX_ERR_ADDR     = 'h54; // Offset to write error code to
 // REG_RX_CMD bit fields
 localparam RX_CMD_POS       = 0;  // Location of the command bit field
 localparam RX_CMD_LEN       = 2;  // Bit length of the command bit field
+localparam RX_CMD_TRIG_POS  = 30; // Location of the bit indicating if this is a triggered
+                                  // command or not.
 localparam RX_CMD_TIMED_POS = 31; // Location of the bit indicating if this is
                                   // a timed command or not.
 

@@ -285,13 +285,15 @@ module radio_core #(
 
   reg  [SAMP_W*NSPC-1:0] radio_tx_data_to_rx;
   reg                    radio_tx_stb_to_rx;
+  reg                    radio_tx_running_to_rx;
   wire [SAMP_W*NSPC-1:0] radio_rx_data_mux;
   wire                   radio_rx_stb_mux;
 
   // Create register without reset on TX to RX loopback path to avoid timing failures.
   always @(posedge radio_clk) begin
-    radio_tx_data_to_rx <= radio_tx_data;
-    radio_tx_stb_to_rx  <= radio_tx_stb;
+    radio_tx_data_to_rx    <= radio_tx_data;
+    radio_tx_stb_to_rx     <= radio_tx_stb;
+    radio_tx_running_to_rx <= radio_tx_running;
   end
 
   assign radio_rx_data_mux = reg_loopback_en ? radio_tx_data_to_rx : radio_rx_data;
@@ -362,6 +364,7 @@ module radio_core #(
     .m_ctrlport_req_rem_epid   (ctrlport_err_rx_req_rem_epid),
     .m_ctrlport_req_rem_portid (ctrlport_err_rx_req_rem_portid),
     .m_ctrlport_resp_ack       (ctrlport_err_rx_resp_ack),
+    .tx_trigger                (radio_tx_running_to_rx),
     .radio_time                (radio_time),
     .radio_rx_data             (radio_rx_data_mux),
     .radio_rx_stb              (radio_rx_stb_mux),

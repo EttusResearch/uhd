@@ -61,6 +61,9 @@ module radio_rx_core #(
   output wire [ 9:0] m_ctrlport_req_rem_portid,
   input  wire        m_ctrlport_resp_ack,
 
+  // Triggers
+  input wire tx_trigger,
+
 
   //---------------------------------------------------------------------------
   // Radio Interface
@@ -105,6 +108,7 @@ module radio_rx_core #(
   reg  [NUM_WORDS_LEN-1:0] reg_cmd_num_words    = 0;  // Number of words for the command
   reg  [             63:0] reg_cmd_time         = 0;  // Time for the command
   reg                      reg_cmd_timed        = 0;  // Indicates if this is a timed command
+  reg                      reg_cmd_triggered    = 0;  // Indicates if this is a triggered command
   reg  [             31:0] reg_max_pkt_len      = 64; // Maximum words per packet
   reg  [              9:0] reg_error_portid     = 0;  // Port ID to use for error reporting
   reg  [             15:0] reg_error_rem_epid   = 0;  // Remote EPID to use for error reporting
@@ -128,6 +132,7 @@ module radio_rx_core #(
       reg_cmd_num_words    <= 0;
       reg_cmd_time         <= 0;
       reg_cmd_timed        <= 0;
+      reg_cmd_triggered    <= 0;
       reg_max_pkt_len      <= 64;
       reg_error_portid     <= 0;
       reg_error_rem_epid   <= 0;
@@ -157,6 +162,7 @@ module radio_rx_core #(
           REG_RX_CMD: begin
             reg_cmd_word  <= s_ctrlport_req_data[RX_CMD_LEN-1:0];
             reg_cmd_timed <= s_ctrlport_req_data[RX_CMD_TIMED_POS];
+            reg_cmd_triggered <= s_ctrlport_req_data[RX_CMD_TRIG_POS];
 
             // All commands go into the command FIFO except STOP
             if (s_ctrlport_req_data[RX_CMD_LEN-1:0] == RX_CMD_STOP) begin
@@ -227,6 +233,7 @@ module radio_rx_core #(
           REG_RX_CMD: begin
             s_ctrlport_resp_data[RX_CMD_LEN-1:0]   <= reg_cmd_word;
             s_ctrlport_resp_data[RX_CMD_TIMED_POS] <= reg_cmd_timed;
+            s_ctrlport_resp_data[RX_CMD_TRIG_POS]  <= reg_cmd_triggered;
             s_ctrlport_resp_ack                    <= 1;
           end
           REG_RX_CMD_NUM_WORDS_LO: begin
@@ -286,12 +293,13 @@ module radio_rx_core #(
 
   wire [             63:0] cmd_time;        // Time for next start of command
   wire                     cmd_timed;       // Command is timed (use cmd_time)
+  wire                     cmd_triggered;   // Command is triggered (use tx_trigger)
   wire [NUM_WORDS_LEN-1:0] cmd_num_words;   // Number of words for next command
   wire                     cmd_continuous;  // Command is continuous (ignore cmd_num_words)
   wire                     cmd_valid;       // cmd_* is a valid command
   wire                     cmd_done;        // Command has completed and can be popped from FIFO
 
-  localparam CMD_FIFO_WIDTH = 64 + 1 + NUM_WORDS_LEN + 1;
+  localparam CMD_FIFO_WIDTH = 64 + 2 + NUM_WORDS_LEN + 1;
   wire cmd_flop_valid;
   wire cmd_flop_ready;
   wire [CMD_FIFO_WIDTH-1:0] cmd_flop_data;
@@ -304,7 +312,7 @@ module radio_rx_core #(
     .clk      (radio_clk),
     .reset    (radio_rst),
     .clear    (clear_fifo),
-    .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_num_words,
+    .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_triggered, reg_cmd_num_words,
                 (reg_cmd_word == RX_CMD_CONTINUOUS) }),
     .i_tvalid (reg_cmd_valid),
     .i_tready (cmd_fifo_ready),
@@ -326,7 +334,7 @@ module radio_rx_core #(
     .i_tdata  (cmd_flop_data),
     .i_tvalid (cmd_flop_valid),
     .i_tready (cmd_flop_ready),
-    .o_tdata  ({ cmd_time, cmd_timed, cmd_num_words, cmd_continuous }),
+    .o_tdata  ({ cmd_time, cmd_timed, cmd_triggered, cmd_num_words, cmd_continuous }),
     .o_tvalid (cmd_valid),
     .o_tready (cmd_done),
     .space    (cmd_fifo_space_flop),
@@ -513,6 +521,11 @@ module radio_rx_core #(
           if (cmd_stop) begin
             // Nothing to do but stop (timed STOP commands are not supported)
             state <= ST_STOP;
+          end else if (cmd_triggered) begin
+            // Execute the command once the trigger (assume trigger is pulse) arrives
+            if (tx_trigger && radio_rx_stb) begin
+              state <= ST_RUNNING;
+            end
           end else if (cmd_timed && time_past && radio_rx_stb) begin
             // Got this command later than its execution time
             //synthesis translate_off
