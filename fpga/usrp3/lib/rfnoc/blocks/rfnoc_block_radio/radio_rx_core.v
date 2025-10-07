@@ -379,11 +379,12 @@ module radio_rx_core #(
 
   // FSM state values
   localparam ST_IDLE               = 0;
-  localparam ST_TIME_CHECK         = 1;
-  localparam ST_RUNNING            = 2;
-  localparam ST_STOP               = 3;
-  localparam ST_REPORT_ERR         = 4;
-  localparam ST_REPORT_ERR_WAIT    = 5;
+  localparam ST_ALIGN              = 1;
+  localparam ST_TIME_CHECK         = 2;
+  localparam ST_RUNNING            = 3;
+  localparam ST_STOP               = 4;
+  localparam ST_REPORT_ERR         = 5;
+  localparam ST_REPORT_ERR_WAIT    = 6;
 
   reg [              2:0] state   = ST_IDLE; // Current state
   reg [NUM_WORDS_LEN-1:0] words_left;        // Words left in current command
@@ -471,7 +472,7 @@ module radio_rx_core #(
           // Wait for a new command to arrive and a radio strobe to update the
           // time comparisons.
           if (cmd_valid && radio_rx_stb) begin
-            state <= ST_TIME_CHECK;
+            state <= (NSPC > 1) ? ST_ALIGN : ST_TIME_CHECK;
           end else if (cmd_stop) begin
             state <= ST_STOP;
           end
@@ -499,6 +500,15 @@ module radio_rx_core #(
           end
         end
 
+        ST_ALIGN : begin
+          // We need two cycles for the align_samples module to flush so that
+          // the first sample has the new alignment. The first cycle will be
+          // here and the second will be in ST_TIME_CHECK.
+          if (radio_rx_stb) begin
+            state <= ST_TIME_CHECK;
+          end
+        end
+
         ST_TIME_CHECK : begin
           if (cmd_stop) begin
             // Nothing to do but stop (timed STOP commands are not supported)
@@ -510,7 +520,10 @@ module radio_rx_core #(
             //synthesis translate_on
             error_code <= ERR_RX_LATE_CMD;
             state      <= ST_REPORT_ERR;
-          end else if (!cmd_timed ||
+          end else if (
+            // We check for radio_rx_stb here when it's not timed to give the
+            // align_samples core a second cycle to flush.
+            (radio_rx_stb && !cmd_timed) ||
             (radio_rx_stb && time_now    && (!align_delay || NSPC == 1)) ||
             (radio_rx_stb && time_now_p1 && ( align_delay && NSPC  > 1))
           ) begin
