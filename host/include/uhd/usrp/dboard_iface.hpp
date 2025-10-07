@@ -254,7 +254,7 @@ public:
      * \param unit which unit rx or tx
      * \return true if clock rate was locked
      */
-    virtual bool lock_clock_rate(const unit_t unit)
+    virtual bool lock_clock_rate([[maybe_unused]] const unit_t unit)
     {
         return false; // default implementation does not support locking
     }
