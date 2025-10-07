@@ -313,6 +313,8 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make_homebrew_macos
+      custom_boost_version: ${{ parameters.custom_boost_version }}
+      custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
 - stage: build_uhd_embedded_system_images
   displayName: Build UHD Embedded System Images

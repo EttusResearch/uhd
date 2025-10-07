@@ -9,6 +9,12 @@ parameters:
   - msbuild
   - msbuild_python
   - make_homebrew_macos
+# note: the parameter 'custom_boost_version' is currently only evaluated in case of 'toolset'='make_homebrew_macos'
+- name: 'custom_boost_version'
+  type: boolean
+  default: false
+# note: the parameter 'custom_boost_version_url' is currently only evaluated in case of 'toolset'='make_homebrew_macos'
+# and 'toolset'='make_custom_boost_version'
 - name: 'custom_boost_version_url'
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
@@ -95,6 +101,8 @@ jobs:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdGenerateTestBinaries: true
+        uhdCustomBoostPackage: ${{ parameters.custom_boost_version }}
+        uhdCustomBoostPackageURL: ${{ parameters.custom_boost_version_url }}
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
