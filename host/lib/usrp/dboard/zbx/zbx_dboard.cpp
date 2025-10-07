@@ -533,14 +533,14 @@ freq_range_t zbx_dboard_impl::_get_lo_freq_range(
         // used when the LO frequencies are automatically calculated (which is
         // the normal use case). When setting LO frequencies manually, it is
         // possible to set LOs to values outside of the step size.
-        return freq_range_t{LMX2572_MIN_FREQ, LMX2572_MAX_FREQ};
+        return freq_range_t(LMX2572_MIN_FREQ, LMX2572_MAX_FREQ);
     }
     if (name == RFDC_NCO) {
         // It might make sense to constrain the possible NCO values more, since
         // the bandpass filters for IF2 only allow a certain range. Note that LO1
         // and LO2 freq ranges are also constrained by their analog filters.
         // But in principle, this is the range for the NCO... so why not.
-        return freq_range_t{0.0, _rfdc_rate};
+        return freq_range_t(0.0, _rfdc_rate);
     }
     throw uhd::value_error("Invalid LO name: " + name);
 }
