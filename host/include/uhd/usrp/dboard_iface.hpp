@@ -251,10 +251,10 @@ public:
     /*!
      * Lock the clock rate for the dboard.
      *
-     * \param unit_t which unit rx or tx
+     * \param unit which unit rx or tx
      * \return true if clock rate was locked
      */
-    virtual bool lock_clock_rate(const unit_t)
+    virtual bool lock_clock_rate(const unit_t unit)
     {
         return false; // default implementation does not support locking
     }

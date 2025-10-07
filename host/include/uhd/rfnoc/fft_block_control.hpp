@@ -308,8 +308,6 @@ public:
      * Gets values to the cyclic prefix insertion list. After initialization,
      * no CP insertion values are configured. Use the function
      * set_cp_insertion_list to set the values.
-     *
-     * \param cp_lengths The cyclic prefix lengths to be written to the list
      */
     virtual std::vector<uint32_t> get_cp_insertion_list() const = 0;
 
@@ -333,8 +331,6 @@ public:
      * Gets values to the cyclic prefix removal list. After initialization,
      * no CP removal values are configured. Use the function
      * set_cp_removal_list to set the values.
-     *
-     * \param cp_lengths The cyclic prefix lengths to be written to the list
      */
     virtual std::vector<uint32_t> get_cp_removal_list() const = 0;
 };
