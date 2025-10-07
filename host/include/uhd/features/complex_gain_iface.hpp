@@ -49,6 +49,9 @@ public:
      * the timestamp is the current command time. If the timestamp has already passed or
      * no time is specified, the gain will be applied as soon as possible.
      *
+     * Note: This timed function takes the timestamp as an argument and does not honor the
+     * timestamp which was set by 'set_command_time()'.
+     *
      * Note to check if the complex gain feature is enabled in the device bitfile.
      * When the coefficient is queued, it will be immediately acknowledged by the USRP.
      * However, if the queue is full, the acknowledgment will be delayed until it can

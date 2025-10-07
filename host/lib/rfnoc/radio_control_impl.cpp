@@ -329,13 +329,9 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
 
     // Create complex gain APIs, if available
     const uint32_t feature_reg = _radio_reg_iface.peek32(regmap::REG_FEATURES_PRESENT);
-    // FIXME, this must come from get_tick_rate(), but in the unit tests, that
-    // returns 0.0
+
     double tick_rate = get_tick_rate();
-    if (tick_rate == 0.0) {
-        RFNOC_LOG_WARNING("Complex gain blocks will have incorrect time base, FIXME!");
-        tick_rate = 125e6;
-    }
+
     if (feature_reg & regmap::FEATURE_TX_CGAIN) {
         RFNOC_LOG_TRACE("Enabling TX complex gain feature.");
         register_feature(uhd::features::make_tx_complex_gain_iface(

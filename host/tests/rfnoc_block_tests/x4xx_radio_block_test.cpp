@@ -1199,15 +1199,18 @@ BOOST_FIXTURE_TEST_CASE(zbx_complex_gain_test, x400_radio_fixture)
     auto& rx_cgain = test_radio->get_feature<uhd::features::rx_complex_gain_iface>();
 
     size_t chan = 0;
+    // Test setting gain coefficients
     tx_cgain.set_gain_coeff({0.5, 0.5}, chan);
     rx_cgain.set_gain_coeff({0.5, 0.5}, chan);
 
-    // FIXME now do some checks, no need to duplicate checks from complex_gain_core_3000
+    // Test getting gain coefficients
+    std::complex<double> expected_result{0.5, 0.5};
+    BOOST_CHECK_EQUAL(tx_cgain.get_gain_coeff(chan), expected_result);
+    BOOST_CHECK_EQUAL(rx_cgain.get_gain_coeff(chan), expected_result);
 
-    // If we want to read back the value, we need to either modify the reg iface
-    // to copy the write-memory to the read-memory, or do that manually here
-    // std::complex<double> expected_result{0.5, 0.5};
-    // BOOST_CHECK_EQUAL(tx_cgain.get_gain_coeff(chan), expected_result);
+    // Test out-of-bounds gain coefficients
+    BOOST_CHECK_THROW(tx_cgain.set_gain_coeff({2.0, -2.1}, chan), uhd::value_error);
+    BOOST_CHECK_THROW(rx_cgain.set_gain_coeff({-2.1, 2.0}, chan), uhd::value_error);
 }
 
 // TODO:
