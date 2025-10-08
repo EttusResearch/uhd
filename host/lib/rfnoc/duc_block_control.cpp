@@ -484,7 +484,7 @@ private:
                                     double freq) { set_freq(freq, chan, boost::none); };
 
             double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
-            tune_request_action->tune_result.target_dsp_freq = abs(
+            tune_request_action->tune_result.target_dsp_freq = std::abs(
                 tune_request_action->tune_result.actual_rf_freq - clipped_requested_freq);
 
             //------------------------------------------------------------------
