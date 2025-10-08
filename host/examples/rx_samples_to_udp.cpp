@@ -22,6 +22,41 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rx_samples_to_udp [-h] [--args ARGS] [-f FREQ] [-r RATE]\n"
+        "                         [--nsamps NSAMPS] [--gain GAIN] [--ant ANT]\n"
+        "                         [--subdev SUBDEV] [--bw BW] [--port PORT]\n"
+        "                         [--addr ADDR]\n"
+        "                         [--ref {internal,external,mimo,gpsdo}]\n"
+        "                         [--int-n]"
+        "\n\n"
+        "This example program configures a single USRP device to receive\n"
+        "RF signals on one channel, stores the resulting complex baseband data in\n"
+        "a local buffer on the host computer, and streams the data from that\n"
+        "buffer over UDP to a specified network destination.\n"
+        "It is suitable for applications where received IQ data needs to be\n"
+        "transmitted over a network for remote processing, analysis, or\n"
+        "recording.\n"
+        "The captured baseband samples are streamed in fc32 data format (32-bit\n"
+        "float) with I and Q being interleaved.\n"
+        "\n"
+        "Note: The USRP may round the requested sample rate to the nearest\n"
+        "      supported value; use the actual rate shown in the console for\n"
+        "      subsequent processing of the data.\n"
+        "\n"
+        "Usage example:\n"
+        "  Below, we demonstrate how this example program can be used to forward\n"
+        "  baseband samples received from the USRP via UDP to a local UDP server,\n"
+        "  which stores the data in a file for subsequent analysis.\n"
+        "  Step 1: Use netcat to set up a UDP server that listens on port\n"
+        "          7124 and redirect the output to a file:\n"
+        "          netcat -ul -p 7124 > usrp_samples_fc32.dat\n"
+        "  Step 2: Run this example with UDP destination localhost and port 7124\n"
+        "          rx_samples_to_udp --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                            --rate 7.68e06 --addr localhost --port 7124\n"
+        "                            --nsamps 10000\n"
+        "  Step 3: Stop the UDP server and check the written file and optionally\n"
+        "          do further processing of the data.\n";
     // variables to be set by po
     std::string args, file, ant, subdev, ref;
     size_t total_num_samps;
@@ -32,30 +67,58 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "total number of samples to receive")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
-        ("freq", po::value<double>(&freq)->default_value(0), "rf center frequency in Hz")
-        ("gain", po::value<double>(&gain)->default_value(0), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
-        ("port", po::value<std::string>(&port)->default_value("7124"), "server udp port")
-        ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "resolvable server address")
-        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
-        ("int-n", "tune USRP with integer-N tuning")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(1000), "Total number of samples to "
+            "receive. The program stops when this number is reached.")
+        ("rate,r", po::value<double>(&rate)->default_value(100e6/16), "Sample rate in samples/second. Note that each USRP "
+            "device only supports a set of discrete sample rates, which depend on the hardware model and configuration. "
+            "If you request a rate that is not supported, the USRP device will automatically select and use the closest "
+            "available rate. For accurate processing of received baseband data, always verify and use the actual sample "
+            "rate.")
+        ("freq,f", po::value<double>(&freq)->default_value(0), "RF center frequency in Hz.")
+        ("gain", po::value<double>(&gain)->default_value(0), "RX gain for the RF chain in dB.")
+        ("ant", po::value<std::string>(&ant), "Antenna port selection string selecting a specific antenna "
+            "port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("subdev", po::value<std::string>(&subdev), "RX subdevice configuration string, selecting which RF "
+            "path to use for the receive channel."
+            "\nThis example program always uses channel 0; use --subdev to select which RF path is mapped to channel 0."
+            "\nThe format and available values depend on your USRP model. If not specified, the default subdevice will be "
+            "used."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed."
+            "\nBy default, channel 0 maps to A:0 (1st UBX in slot A, RF RX 0), which is equivalent to --subdev \"A:0\"."
+            "\nTo use the 2nd UBX (slot B, RF RX 0), specify --subdev \"B:0\".")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the RX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
+        ("port", po::value<std::string>(&port)->default_value("7124"), "Server UDP port.")
+        ("addr", po::value<std::string>(&addr)->default_value("192.168.1.10"), "Server address (hostname or "
+            "IP).")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("int-n", "Use integer-N tuning for USRP RF synthesizers. With this mode, the LO can only be tuned in "
+            "discrete steps, which are integer multiples of the reference frequency. This mode can improve phase noise "
+            "and spurious performance at the cost of coarser frequency resolution.")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD RX to UDP %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     // create a usrp device
     std::cout << std::endl;

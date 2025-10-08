@@ -130,17 +130,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // clang-format off
     desc.add_options()
         ("help,h", "Show this help message and exit.")
-        ("args", po::value<std::string>(&args)->default_value(""), "USRP device arguments, which holds "
-            "multiple key-value pairs separated by commas."
-            "\nFor a list of available options for a specific USRP model, see the UHD manual."
-            "\nFor USRPs supporting multi-device operation, this option is also used to define how multiple USRPs are "
-            "grouped to form a single virtual USRP device."
-            "\nIf not specified, UHD will connect to the first device it can find."
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device selection and configuration "
+            "arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
             "\nExamples:"
-            "\n  --args \"type=b200,serial=30A\" (single device)"
-            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\" (multiple devices)")
-        ("file", po::value<std::string>(&file)->required(), "Name of the raw binary file to read and transmit "
-            "data from. The file must use the data format indicated by the --type argument.")
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "Name of the raw binary "
+            "file to read and transmit data from. The file must use the data format indicated by the --type argument.")
         ("type", po::value<std::string>(&type)->default_value("short"), "Specifies the data format of the "
             "file specified by the --file option. The file must contain interleaved IQ samples in order I0_Ch0, Q0_Ch0, "
             "I0_Ch1, Q0_Ch1, ..., I0_ChN, Q0_ChN, I1_Ch0, Q1_Ch0, ... and in one of the following numeric formats: "
@@ -149,11 +151,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("spb", po::value<size_t>(&spb)->default_value(10000), "Size of the host data buffer that is "
             "allocated for each Tx channel."
             "\nLarger values may improve throughput. Typical value is between 1,000 and 10,000 samples.")
-        ("rate,r", po::value<double>(&rate)->required(), "Sample rate in samples/second. Note that each USRP "
-            "device only supports a set of discrete sample rates, which depend on the hardware model and configuration. "
-            "If you request a rate that is not supported, the USRP device will automatically select and use the closest "
+        ("rate", po::value<double>(&rate), "TX sample rate in samples/second. Note that each USRP device only "
+            "supports a set of discrete sample rates, which depend on the hardware model and configuration. If you "
+            "request a rate that is not supported, the USRP device will automatically select and use the closest "
             "available rate.")
-        ("freq,f", po::value<double>(&freq)->required(), "RF center frequency in Hz.")
+        ("freq", po::value<double>(&freq), "RF center frequency in Hz.")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
             "LO offset for the frontend in Hz.")
         ("gain", po::value<double>(&gain), "Gain for the RF chain in dB. Will be ignored, if --power is "
@@ -171,15 +173,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             "\nNote: this example program expects a single-USRP subdevice configuration which is applied to all USRPs "
             "equally, if multiple USRPs are configured."
             "\nExample:"
-            "\nAssume we have an X310 with two CBX daughterboards installed. Then the default channel mapping is:"
-            "\n  - Ch 0 -> A:0 (1st CBX in slot A, RF TX 0)"
-            "\n  - Ch 1 -> B:0 (2nd CBX in slot B, RF TX 0)"
+            "\nAssume we have an X310 with two UBX daughterboards installed. Then the default channel mapping is:"
+            "\n  - Ch 0 -> A:0 (1st UBX in slot A, RF TX 0)"
+            "\n  - Ch 1 -> B:0 (2nd UBX in slot B, RF TX 0)"
             "\nSpecifying --subdev=\"B:0 A:0\" would change the channel mapping to:"
-            "\n  - Ch 0 -> B:0 (2nd CBX in slot B RF TX 0)"
-            "\n  - Ch 1 -> A:0 (1st CBX in slot A RF TX 0)")
-        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth in Hz. Not all USRP devices "
-            "support programmable bandwidth; if an unsupported value is requested, the device will use the nearest "
-            "supported bandwidth instead.")
+            "\n  - Ch 0 -> B:0 (2nd UBX in slot B RF TX 0)"
+            "\n  - Ch 1 -> A:0 (1st UBX in slot A RF TX 0)")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the TX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
         ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
             "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
         ("otw", po::value<std::string>(&otw)->default_value("sc16"), "Specifies the over-the-wire (OTW) data "

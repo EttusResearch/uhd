@@ -369,8 +369,77 @@ bool check_locked_sensor(std::vector<std::string> sensor_names,
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    // clang-format off
+    const std::string program_doc =
+        "usage: rx_samples_to_file [-h] [--args ARGS] [-f FREQ] [-r RATE]\n"
+        "                          [--file FILE] [--type {double,float,short}]\n"
+        "                          [--nsamps NSAMPS] [--duration DURATION]\n"
+        "                          [--spb SPB] [--lo-offset LO_OFFSET]\n"
+        "                          [--gain GAIN] [--ant ANT] [--subdev SUBDEV]\n"
+        "                          [--channels CHANNELS] [--bw BW]\n"
+        "                          [--ref {internal,external,mimo,gpsdo}]\n"
+        "                          [--otw {sc16,sc8}] [--setup SETUP]\n"
+        "                          [--progress] [--stats] [--sizemap] [--null]\n"
+        "                          [--continue] [--skip-lo] [--int-n]\n"
+        "                          [--multi-streamer]"
+        "\n\n"
+        "This example program configures the USRP device for reception of\n"
+        "an RF signal and writes the resulting complex baseband data to a raw\n"
+        "binary file. It supports multi-channel operation, automated file naming\n"
+        "for each channel, and optional multi-threaded reception per channel.\n"
+        "\n"
+        "Key features:\n"
+        "  - Configures the USRP device(s) for receive operation.\n"
+        "  - Supports simultaneous reception from multiple USRP devices and from\n"
+        "    multiple RX channels.\n"
+        "  - Automatically generates distinct output filenames for each channel.\n"
+        "  - Optional multi-threaded reception, with each channel processed in a\n"
+        "    separate thread.\n"
+        "  - Streams received data directly to disk in the specified format.\n"
+        "  - Allows configuration of sample rate, frequency, gain, bandwidth, LO\n"
+        "    offset, antenna selection, and more via command-line options.\n"
+        "  - Provides progress reporting and statistics.\n"
+        "  - Suitable for recording IQ data for later analysis or processing.\n"
+        "\n"
+        "Notes:\n"
+        "  - The USRP may round the requested sample rate to the nearest\n"
+        "    supported value; use the actual rate shown in the console for\n"
+        "    subsequent processing of the data.\n"
+        "    If supported by your USRP device model, you could also change the\n"
+        "    master clock rate to an integer multiple of the desired sample rate\n"
+        "    to achieve precise sampling. For available master clock rates for a\n"
+        "    specific USRP device model, see the UHD manual.\n"
+        "  - Although this example program supports simultaneous reception from\n"
+        "    multiple USRP devices, it does not synchronize them to a common time\n"
+        "    reference such as an external PPS pulse.\n"
+        "\n"
+        "Usage examples:\n"
+        "  1. Assume we want to capture 10ms of a 5 MHz LTE signal transmitted at\n"
+        "     2.4 GHz, the program call would look like:\n"
+        "       rx_samples_to_file --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                          --rate 7.68e06 --duration 0.01\n"
+        "  2. Change master clock rate to an integer multiple of the desired\n"
+        "     sampling rate:\n"
+        "       rx_samples_to_file --args \"addr=192.168.10.2, master_clock_rate=184.32e6\"\n"
+        "                          --freq 2.4e09 --rate 7.68e06 --duration 0.01\n"
+        "  3. Optionally, you may set the analog filter bandwidth:\n"
+        "       rx_samples_to_file --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                          --rate 7.68e06 --bw 5e06 --duration 0.01\n"
+        "  4. To capture 10 seconds with detailed status messages enabled:\n"
+        "       rx_samples_to_file --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                          --rate 7.68e06 --duration 10 --progress --stats --sizemap\n"
+        "  5. To capture signals from two antennas, with a user-specified file\n"
+        "     name and separate threads for each channel:\n"
+        "       rx_samples_to_file --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                          --rate 7.68e06 --channels \"0,1\" --duration 0.01\n"
+        "                          --file \"lte_5mhz.dat\" -- multi-streamer\n"
+        "  6. Capture signals from two USRP devices each having two RX channels:\n"
+        "       rx_samples_to_file --args \"addr0=192.168.10.2,addr1=192.168.10.3, master_clock_rate=184.32e6\"\n"
+        "                          --freq 2.4e09 --rate 7.68e06 --channels \"0,1,2,3\"\n"
+        "                          --duration 0.01 --file \"lte_5mhz.dat\" --multi-streamer\n";
+    // clang-format on
     // variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt, channels;
+    std::string args, file, type, ant, subdev, ref, otw, channels;
     size_t total_num_samps, spb;
     double rate, freq, gain, bw, total_time, setup_time, lo_offset;
 
@@ -380,57 +449,118 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::vector<std::string> channel_strings;
     // setup the program options
     po::options_description desc("Allowed options");
+    po::options_description alias_options;
+    po::options_description all_options;
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type: double, float, or short")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("rate", po::value<double>(&rate)->default_value(1e6), "rate of incoming samples")
-        ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device selection and configuration "
+            "arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "Name of the raw binary "
+            "file to which received data will be written.")
+        ("type", po::value<std::string>(&type)->default_value("short"), "Specifies the data format of the "
+            "file. The data will be written as interleaved IQ samples in one of the following numeric formats: 'double' "
+            "(64-bit float, fc64), 'float' (32-bit float, fc32), or 'short' (16-bit integer, sc16, scaled to int16 range "
+            "-32768 to 32767)."
+            "\nChoosing 'short' as the file format matches the default sc16 over-the-wire format and is usually sufficient. Using "
+            "'float' or 'double' does not improve precision, but may be more convenient for post processing or for "
+            "compatibility with certain analysis tools.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "Total number of samples to "
+            "receive. The program stops when this number is reached. If set to 0, data will be continuously received and "
+            "written to file.")
+        ("duration", po::value<double>(&total_time)->default_value(0), "Total number of samples to receive. "
+            "The program stops when this number is reached. If set to 0, data will be continuously received and written "
+            "to file.")
+        ("spb", po::value<size_t>(&spb)->default_value(10000), "Size of the host data buffer that is "
+            "allocated for each Rx channel."
+            "\nLarger values may help to improve throughput.")
+        ("freq,f", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz.")
+        ("rate,r", po::value<double>(&rate)->default_value(1e6), "Sample rate in samples/second. Note that each USRP "
+            "device only supports a set of discrete sample rates, which depend on the hardware model and configuration. "
+            "If you request a rate that is not supported, the USRP device will automatically select and use the closest "
+            "available rate. For accurate processing of received baseband data, always verify and use the actual sample "
+            "rate.")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
-            "Offset for frontend LO in Hz (optional)")
-        ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("channels,channel", po::value<std::string>(&channels)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref), "reference source (internal, external, mimo)")
-        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8, sc16 or s16)")
-        ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
-        ("progress", "periodically display short-term bandwidth")
-        ("stats", "show average bandwidth on exit")
-        ("sizemap", "track packet size and display breakdown on exit. Use with multi_streamer option if CPU limits stream rate.")
-        ("null", "run without writing to file")
-        ("continue", "don't abort on a bad packet")
-        ("skip-lo", "skip checking LO lock status")
-        ("int-n", "tune USRP with integer-N tuning")
-        ("multi_streamer", "Create a separate streamer per channel.")
+            "LO offset for the frontend in Hz.")
+        ("gain", po::value<double>(&gain), "RX gain for the RF chain in dB.")
+        ("ant", po::value<std::string>(&ant), "Antenna port selection string selecting a specific antenna "
+            "port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("subdev", po::value<std::string>(&subdev), "RX subdevice configuration defining the mapping of "
+            "channels to RF RX paths."
+            "\nThe format and available values depend on your USRP model. If not specified, the channels will be numbered "
+            "in order of the devices, daughterboard slots, and their RF RX channels."
+            "\nFor typical applications, this default subdevice configuration is sufficient."
+            "\nNote: this example program expects a single-USRP subdevice configuration which is applied to all USRPs "
+            "equally, if multiple USRPs are configured."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed. Then the default channel mapping is:"
+            "\n  - Ch 0 -> A:0 (1st UBX in slot A, RF RX 0)"
+            "\n  - Ch 1 -> B:0 (2nd UBX in slot B, RF RX 0)"
+            "\nSpecifying --subdev=\"B:0 A:0\" would change the channel mapping to:"
+            "\n  - Ch 0 -> B:0 (2nd UBX in slot B RF RX 0)"
+            "\n  - Ch 1 -> A:0 (1st UBX in slot A RF RX 0)")
+        ("channels,channel", po::value<std::string>(&channels)->default_value("0"), "Specifies which channels "
+            "to use. E.g. \"0\", \"1\", \"0,1\", etc.")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the RX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("otw", po::value<std::string>(&otw)->default_value("sc16"), "Specifies the over-the-wire (OTW) data "
+            "format used for transmission between the host and the USRP device. Common values are \"sc16\" (16-bit signed "
+            "complex) and \"sc8\" (8-bit signed complex). Using \"sc8\" can reduce network bandwidth at the cost of "
+            "dynamic range."
+            "\nNote, that not all conversions between CPU and OTW formats are possible.")
+        ("setup", po::value<double>(&setup_time)->default_value(1.0), "Sets the amount of time (in seconds) "
+            "the program waits for hardware locks (e.g. LO) to ensure the device is properly synchronized before starting "
+            "reception.")
+        ("progress", "Periodically display the estimated short-term USRP device to host streaming rate in "
+            "samples per second.")
+        ("stats", "Show the total number of samples received and the elapsed time when the program exits.")
+        ("sizemap", "Track and display a breakdown of received packet sizes on exit. This helps diagnose "
+            "streaming performance and packetization issues. Use with multi-streamer option if CPU limits stream rate.")
+        ("null", "Run without writing to file.")
+        ("continue", "Continue streaming even if a bad packet is received.")
+        ("skip-lo", "Skip checking and waiting for hardware locks (LO, reference, MIMO synchronization) "
+            "before starting reception.")
+        ("int-n", "Use integer-N tuning for USRP RF synthesizers. With this mode, the LO can only be tuned in "
+            "discrete steps, which are integer multiples of the reference frequency. This mode can improve phase noise "
+            "and spurious performance at the cost of coarser frequency resolution.")
+        ("multi-streamer", "Create a separate data streamer for each channel, each running in a separate "
+            "thread.")
     ;
+    alias_options.add_options()
+        ("wirefmt", po::value<std::string>(&otw), "") // alias for --otw for backward compatibility
+        ("multi_streamer", "") // alias for --multi-streamer for backward compatibility
+    ;
+    all_options.add(desc).add(alias_options);
     // clang-format on
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
+    po::store(po::parse_command_line(argc, argv, all_options), vm);
     // print the help message
     if (vm.count("help")) {
-        std::cout << "UHD RX samples to file " << desc << std::endl;
-        std::cout << std::endl
-                  << "This application streams data from a single channel of a USRP "
-                     "device to a file.\n"
-                  << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     bool bw_summary             = vm.count("progress") > 0;
     bool stats                  = vm.count("stats") > 0;
     bool null                   = vm.count("null") > 0;
     bool enable_size_map        = vm.count("sizemap") > 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
-    bool multithread            = vm.count("multi_streamer") > 0;
+    bool multithread = (vm.count("multi-streamer") || vm.count("multi_streamer")) > 0;
 
     if (enable_size_map)
         std::cout << "Packet size tracking enabled - will only recv one packet at a time!"
@@ -482,7 +612,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << std::endl;
 
     // set the center frequency
-    if (vm.count("freq")) { // with default of 0.0 this will always be true
+    if (vm.count("freq")) {
         std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq / 1e6)
                   << std::endl;
         std::cout << boost::format("Setting RX LO Offset: %f MHz...") % (lo_offset / 1e6)
@@ -566,9 +696,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
 #ifdef __linux__
     const double req_disk_rate = usrp->get_rx_rate(channel_list[0]) * channel_list.size()
-                                 * uhd::convert::get_bytes_per_item(wirefmt);
+                                 * uhd::convert::get_bytes_per_item(otw);
     const double disk_rate_meas = disk_rate_check(
-        uhd::convert::get_bytes_per_item(wirefmt), channel_list.size(), spb, file);
+        uhd::convert::get_bytes_per_item(otw), channel_list.size(), spb, file);
     if (disk_rate_meas > 0 && req_disk_rate >= disk_rate_meas) {
         std::cerr
             << boost::format(
@@ -587,7 +717,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 #define recv_to_file_args(format)                                                    \
     (usrp,                                                                           \
         format,                                                                      \
-        wirefmt,                                                                     \
+        otw,                                                                         \
         chans_in_thread,                                                             \
         channel_list.size(),                                                         \
         multithread ? "ch" + std::to_string(chans_in_thread[0]) + "_" + file : file, \
@@ -612,7 +742,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         }
         threads.push_back(std::thread([=, &rates]() {
             // recv to file
-            if (wirefmt == "s16") {
+            if (otw == "s16") {
                 if (type == "double")
                     recv_to_file<double> recv_to_file_args("f64");
                 else if (type == "float")
