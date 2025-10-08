@@ -122,7 +122,7 @@ void upload(rfnoc_graph::sptr graph,
     tx_md.start_of_burst = true;
     tx_md.end_of_burst   = true;
 
-    size_t sent_samples = 0, received_samples = 0;
+    size_t UHD_UNUSED(sent_samples) = 0, received_samples = 0;
 
     while (bytes_per_sample * received_samples < replay->get_record_size(port)) {
         UHD_LOG_TRACE(DRAM_UTILS,
