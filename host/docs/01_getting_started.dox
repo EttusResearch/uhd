@@ -1,0 +1,11 @@
+/*! \page page_getting_started Getting Started
+
+
+
+\li \subpage page_gsg_devices
+\li \subpage page_gsg_uhd
+\li \subpage page_gsg_rfnoc
+
+
+*/
+// vim:ft=doxygen:

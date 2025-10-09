@@ -89,8 +89,8 @@ jobs:
         exit 1
       fi
       # Fail if generated hierarchy tree html file is not found
-      if [ ! -f "$READTHEDOCS_OUTPUT/html/uhd_8dox.html" ]; then
-        echo "Sphinx build did not complete successfully. uhd_8dox.html not found."
+      if [ ! -f "$READTHEDOCS_OUTPUT/html/05__driver__api_8dox.html" ]; then
+        echo "Sphinx build did not complete successfully. 05__driver__api_8dox.html not found."
         exit 1
       fi
       # Check for warnings that indicate syntax errors in the generated html files

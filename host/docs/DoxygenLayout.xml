@@ -1,0 +1,37 @@
+<doxygenlayout version="1.0">
+
+<navindex>
+ <tab type="mainpage" visible="yes" title="" url="[none]" />
+ 
+ <tab type="pages" visible="yes" />
+ 
+ <tab type="user" url="[none]" visible="yes" title=""/> 
+
+  <tab type="usergroup" visible="yes" title="C++ API Reference">
+
+    <tab type="classes" visible="yes" title="Classes">
+      <tab type="classlist" visible="yes"/>
+      <tab type="hierarchy" visible="yes"/>
+      <tab type="classmembers" visible="yes"/>
+      <tab type="classindex" visible="yes"/>
+    </tab>
+  
+    <tab type="files" visible="yes" title="Files">
+      <tab type="filelist" visible="yes"/>
+      <tab type="globals" visible="yes"/>
+    </tab>
+
+    <tab type="namespaces" visible="yes" title="Namespaces">
+      <tab type="namespacelist" visible="yes"/>
+      <tab type="namespacemembers" visible="yes"/>
+    </tab>
+	
+
+    <tab type="modules" visible="yes" title="Modules">
+    </tab>
+   
+  </tab>
+
+</navindex>
+
+</doxygenlayout>

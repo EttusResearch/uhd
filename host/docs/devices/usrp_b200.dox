@@ -63,7 +63,7 @@ an RF spectrum using the B206 follow the [Getting Started with USRP Products](ht
 \subsection install_software_tools Install and Setup the Software Tools on Your Host Computer
 In order to use your Universal Software Radio Peripheral (USRP™), you must have
 the software tools correctly installed and configured on your host computer.
-Download and install UHD on your host computer following \ref page_install or
+Download and install UHD on your host computer following \ref page_install_binary or
 \ref page_build_guide. The following minimum UHD versions are required:
 
 - The USRP B2xx other than B206mini require UHD version 3.8.4 or above.

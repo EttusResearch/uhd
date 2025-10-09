@@ -351,7 +351,7 @@ to successfully run an application by completing the following steps:
 \subsection x4xx_getting_started_install_uhd_host Installing UHD on the Host Computer
 
 Firstly, download and install UHD on a Linux/OS X/Windows host computer. The easiest way to install USRP Hardware Driver 
-(UHD) is by getting a binary installer package for your operating system as described in \ref page_install. 
+(UHD) is by getting a binary installer package for your operating system as described in \ref page_install_binary. 
 If no binary packages are available for your operating system or you want to modify the sources by yourself, 
 a step-by-step guide is available at \ref page_build_guide. 
 

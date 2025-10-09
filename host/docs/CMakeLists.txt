@@ -89,7 +89,7 @@ if(ENABLE_MANUAL_OR_DOXYGEN)
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     @ONLY)
     configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/build.dox.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/installation/build.dox.in
         ${CMAKE_CURRENT_BINARY_DIR}/build.dox
     @ONLY)
 
