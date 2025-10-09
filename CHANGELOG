@@ -7,6 +7,38 @@ Change Log for Releases
 * New Features
   - CMake: Create UHD::uhd package for improved integration in downstream build
     processes. The init_usrp example is used to showcase this feature.
+  - Add helper routines to up- and download data (reliably) from and to the
+    DRAM block
+  - X310: Allow daughterboards to set dboard clock rate
+  - RFNoC: Add names and descriptions for block's and module's YAML files, so
+    that other tools may read information about those in an automated fashion
+* API Changes
+  - meta_range_t and uhd::dict can now be initialized from initializer lists
+* Bug Fixes
+  - Fix static UHD library builds
+  - Fix compatibility with Boost 1.89
+  - RFNoC:
+    - Fix slicing notation in rfnoc_image_builder
+    - Fix building of GRC files with empty default target (this would affect
+      builds of X410 and X440 device bitfiles from GNU Radio)
+    - Fix installation of OOT modules in Python venvs
+    - Fix time alignment of first sample
+  - E31x: Fix GPIO control
+  - FPGA
+    - Fix various simulation-related bugs
+* Dependencies changes
+  - Increase minimum required versions
+    - Boost to 1.71
+    - Changed minimum CMake versions for various non-UHD projects, e.g.
+      firmware builds, to stay compatible with CMake 4
+* Documentation
+  - Restructured the UHD manual
+* Codebase Management
+  - Increased C++ version to 20 for UHD library, examples, and utilities
+  - Removed Boost in multiple locations and replaced with standard library
+    calls
+  - Fix numerous (mostly harmless) compiler warnings
+  - Improve CMake linking instructions
 
 ## 004.009.000.000
 * Highlights / Main Changes
