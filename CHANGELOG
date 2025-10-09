@@ -1,6 +1,20 @@
 Change Log for Releases
 ==============================
 
+## 004.009.000.001
+
+Changes compared to UHD 4.9.0.0:
+
+* Dependency changes
+  - Support Boost 1.89.0
+  - Drop support for boost below 1.71.0
+* Fixes
+  - Fix static build of libuhd
+* Notes
+  - We suggest to only update to this version if the boost 1.89.0 compability
+    is required. Apart from the Boost build fixes, there are no other changes
+    in this UHD release.
+
 ## 004.009.000.000
 * Highlights / Main Changes
   - Support for USRP B206mini-i
