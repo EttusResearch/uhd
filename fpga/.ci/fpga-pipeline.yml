@@ -75,6 +75,7 @@ parameters:
       target_name: X410
       artifact_name: X410_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_UC_200:
       image_core: x410_UC_200_rfnoc_image_core.yml
@@ -82,6 +83,7 @@ parameters:
       target_name: X410
       artifact_name: X410_UC_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_X4_400:
       image_core: x410_X4_400_rfnoc_image_core.yml
@@ -89,6 +91,7 @@ parameters:
       target_name: X410
       artifact_name: X410_X4_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_CG_400:
       image_core: x410_CG_400_rfnoc_image_core.yml
@@ -96,6 +99,7 @@ parameters:
       target_name: X410
       artifact_name: X410_CG_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 - name: x440_targets_matrix
   displayName: X440 Targets
@@ -107,6 +111,7 @@ parameters:
       target_name: X440
       artifact_name: X440_CG_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_CG_400:
       image_core: x440_CG_400_rfnoc_image_core.yml
@@ -114,6 +119,7 @@ parameters:
       target_name: X440
       artifact_name: X440_CG_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_1600:
       image_core: x440_X4_1600_rfnoc_image_core.yml
@@ -121,6 +127,7 @@ parameters:
       target_name: X440
       artifact_name: X440_X4_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_400:
       image_core: x440_X4_400_rfnoc_image_core.yml
@@ -128,6 +135,7 @@ parameters:
       target_name: X440
       artifact_name: X440_X4_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_200:
       image_core: x440_X4_200_rfnoc_image_core.yml
@@ -135,6 +143,7 @@ parameters:
       target_name: X440
       artifact_name: X440_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 
 trigger: none

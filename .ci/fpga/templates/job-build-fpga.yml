@@ -110,11 +110,19 @@ jobs:
         then
           export BUILD_SEED=$(($(System.JobAttempt)-1))
         fi
+        # Add timeout arg if provided, otherwise don't specify a timeout.
+        if [ -n "$ATTEMPT_TIMEOUT" ]; then
+            # Convert from minutes to hours
+            export TIMEOUT_ARG="--timeout $(echo "scale=2; $ATTEMPT_TIMEOUT / 60.0" | bc)"
+        else
+            export TIMEOUT_ARG=""
+        fi
         python3 ../../tools/utils/repeat_fpga_build.py \
             --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG \
             --image-core-name $IMAGE_CORE_NAME \
             --vivado-path $(dirname $XILINX_VIVADO) \
-            --num $(max_attempts) --seed $BUILD_SEED --persistent
+            --num $(max_attempts) --seed $BUILD_SEED --persistent \
+            $TIMEOUT_ARG
         pip3 uninstall -y uhd
       workingDirectory: ${{ parameters.top_dir }}
       displayName: 'Build Target'
