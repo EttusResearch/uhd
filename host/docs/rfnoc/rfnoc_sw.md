@@ -1,9 +1,57 @@
-/*! \page page_properties RFNoC Block Properties
+\page page_rfnoc_sw RFNoC Software Specification
 
 \tableofcontents
 
-\section props_intro Introduction
+# Basics
 
+On the software side (UHD) RFNoC has the following interfaces:
+
+- *Block Controller*: This is a control interface to each block in the design. Block controllers are discovered automatically by UHD based on the blocks in an FPGA, and they can be retrieved by the user to send and receive commands from blocks.
+
+- *Graph*: The graph object manages a topology of blocks in an application. The static connections in the FPGA and the dynamic connections made by the user will be reflected in the graph. The graph will ensure state integrity between blocks if there are inherent dependencies.
+
+- *Streamers*: Streamers are used to send/receive data to/from blocks in the FPGA.
+
+\image html rfnoc_fg_FPGA_sw.png "Example FPGA and SW objects in an RFNoC graph" width=900px
+
+
+\anchor block_controller_anchor
+# Block Controller
+
+The *block controller* is the UHD (C++) counterpart of the NoC Shell. It is a block-level API to interface with the clients of NoC shell. UHD has a default block controller object but it is possible to override it (via inheritance) with a custom controller C++ class. UHD maintains a list of block controllers for each block type and dynamically creates instances of it in software when the block is present in the FPGA image for the target USRP.
+
+## Block IDs
+
+An identifier is needed to retrieve a block controller from UHD. Each block has two kinds of identification tags:
+
+1.  Each block in the FPGA must have a *NoC ID* which serves as a unique identifier of the function of the block. *NoC IDs* are 32 bits wide and can take on any value as long as it is unique among blocks. For example, the FIR filter block will have a unique NoC ID that is different from the FFT block NoC ID. Multiple instances of the FIR block have the same NoC ID.
+
+2.  Each instance of a block in an FPGA has a *Block ID*. It is used to locate a specific block in an RFNoC network. For instance, if the same NoC block is instantiated twice, then the two instances will have the same *NoC ID* but different *Block IDs*. The syntax of a *Block ID* is as follows: `<Device>/<BlockName>:<BlockInstance>` 
+
+### C++ API
+\li \ref uhd::rfnoc::block_id_t "block_id_t class"
+
+## Registers
+
+Each block has a unique register space for low-level configuration. In the FPGA, this space is accessible using the AXIS-Ctrl port or the CtrlPort interface. Registers have a fixed bit width of 32 bits. Each block in software will provide an implementation for the rfnoc::register_iface interface that can be used to access registers in the FPGA. The rfnoc::register_iface interface supports the following:
+
+- Peek/poke functionality for 32-bit registers
+
+- Sleep functionality to time-sequence operations
+
+- Timed commands
+
+- Callbacks for asynchronous messages from the block
+
+- Optional resilience parameters to trade throughput for robustness
+
+### C++ API
+\li \ref uhd::rfnoc::register_iface "register_iface class"
+
+## Block Properties
+
+\anchor props_intro
+### Introduction
 One of the mechanisms that RFNoC blocks can use to control their configuration
 are *properties*. There are two types of properties within a block: User
 properties, and edge properties.
@@ -56,8 +104,9 @@ user property (e.g., it can also set a command time). Direct access of user
 properties is thus often not necessary, and can be considered a lower-level API
 than directly calling block APIs.
 
-\section props_propprop Property Propagation
 
+\anchor props_propprop
+### Property Propagation
 By itself, these relationships between properties are already useful to describe
 something about the block, but the real power comes when connecting blocks. This
 allows blocks to communicate their settings, even without knowing which block
@@ -96,7 +145,8 @@ produce an integer multiple of 30.72 Msps, which the radio can't provide. Using
 properties, UHD would be able to throw an exception, telling the user that the
 requested combination is not achievable.
 
-\section props_multichan Properties on multi-channel blocks and resource types
+\anchor  props_multichan
+### Properties on multi-channel blocks and resource types
 
 The DDC block is configurable to have a variable number of channels, and the
 same is true for the properties. To accommodate for this, both edge and user
@@ -126,7 +176,8 @@ also its type (input edge, user property, or output edge) and its index. For the
 sake of convenience, the type and index are sometimes combined into a
 uhd::rfnoc::res_source_info object.
 
-\section props_define Defining Properties
+\anchor props_define
+### Defining Properties
 
 To define properties in an RFNoC block, the block controller needs to declare
 class attributes of type uhd::rfnoc::property_t. This is a template type which can
@@ -174,7 +225,8 @@ register_property(&_freq[1]);
 The final step of creating properties is to define the relationship between
 them, which is covered in the following section.
 
-\section props_resolvers Property Resolvers and Property Resolution
+\anchor props_resolvers
+### Property Resolvers and Property Resolution
 
 A property resolver is a function object that is associated with an input list
 of properties and an output list of properties. The function object will be
@@ -216,9 +268,8 @@ A few noteworthy comments:
 - When the resolver function completes, we have ensured that `samp_rate_in`,
   `samp_rate_out`, and `decim` are in a consistent state.
 
-
-\subsection props_resolvers_cldrty Clean/Dirty Attributes of Properties
-
+\anchor props_resolvers_cldrty
+#### Clean/Dirty Attributes of Properties
 To keep track of which properties have been modified, every property has a "dirty"
 flag that is set when a property's value is changed. This dirty flagged is also
 used to determine which property resolver functions need to be called. A property
@@ -313,9 +364,8 @@ recommended. However, not always does changing properties map to poking
 registers (or other actions) in a clean, one-to-one manner, which is when the
 first approach may be better suited.
 
-
-\section props_graph_resolution Graph Property Resolution
-
+\anchor props_graph_resolution
+### Graph Property Resolution
 In an RFNoC graph, after calling `uhd::rfnoc::rfnoc_graph::commit()`, edge
 properties are used to resolve properties of a whole graph. When any property is
 changed, the corresponding block's properties are resolved as explained before.
@@ -323,7 +373,8 @@ However, by modifying the edge properties of a block, other blocks' properties
 may be dirtied as well. In this case, the resolver algorithm will keep resolving
 blocks until either all properties are clean, or a conflict is detected.
 
-\subsection props_graph_resolution_back_edges Back edges
+\anchor props_graph_resolution_back_edges
+#### Back edges
 
 The graph object uses a topological sort to identify the order in which blocks
 are resolved. However, in RFNoC, it is OK to have loops, or *back edges*.
@@ -368,8 +419,8 @@ necessary. In the graph above, any of the three edges could have been declared
 a back-edge to result in a topologically valid graph that can still resolve its
 properties, but the one chosen is the most intuitive selection.
 
-\section props_unknown Handling unknown properties
-
+\anchor props_unknown
+### Handling unknown properties
 Since every block can define its own edge- and user properties, it is likely that
 a block may not have defined an edge property that an up- or downstream block
 has.
@@ -389,8 +440,8 @@ corresponding output edge. For more special use cases,
 uhd::rfnoc::node_t::forwarding_policy_t::USE_MAP can be used to define
 forwarding rules for non-static cases (e.g., see uhd::rfnoc::switchboard_block_control).
 
-\section props_common_props Common Properties
-
+\anchor props_common_props
+### Common Properties
 There are some properties that are commonly used, and blocks should use these
 property names if appropriate:
 
@@ -429,13 +480,13 @@ User properties:
 See also the following sections for properties that receive special treatment by
 the framework.
 
-\section props_special_props Special Properties
-
+\anchor props_special_props
+### Special Properties
 There is a small number of edge properties that treated differently by the RFNoC
 framework.
 
-\section props_special_props_tickrate Tick Rate (`tick_rate`)
-
+\anchor props_special_props_tickrate
+#### Tick Rate (\`tick_rate\`)
 The "tick rate" is the rate that is used for converting floating point timestamps
 into integer ticks. The tick rate has the additional constraint that within a
 graph, the tick rate must be the same for all blocks. Therefore, the tick rate
@@ -452,8 +503,8 @@ Within a block implementation, the uhd::rfnoc::noc_block_base::set_tick_rate()
 API call can be used to update the tick rate (most blocks do not have to do
 this).
 
-\section props_special_props_mtu MTU (`mtu`)
-
+\anchor props_special_props_mtu
+#### MTU (\`mtu\`)
 Because the maximum transmission unit (MTU) is part of the RFNoC framework (it
 is constrained by the buffer size chosen between blocks, and is thus read back
 from a register in the FPGA), its property is also created by the RFNoC
@@ -479,5 +530,156 @@ these blocks equals the output MTU. Thus, they set the MTU forwarding policy to
 uhd::rfnoc::node_t::forwarding_policy_t::ONE_TO_ONE.
 
 
-*/
-// vim:ft=doxygen:
+### C++ API
+\li \ref uhd::rfnoc::property_t "property_t class"
+
+## Block Actions
+
+An action is an ephemeral operation that can be performed on a block. An action does not change the state of a block (although the block can implement an action handler that will change its state). Like a property, an action may propagate across the graph. Actions provide a mechanism for blocks to communicate in the software domain (i.e., not by sending command CHDR packets, but by calling into APIs provided by the graph). An example of an action is a stream command. A stream command that issues on a block that is not a source or a sink will eventually propagate through the topology to a source or sink, and be executed there. Actions are exposed through the public API via an action code and an action payload. Actions are defined by the block designer, and they can be handled internally in the block or be forwarded on an upstream or downstream port.
+
+### C++ API
+
+The uhd::rfnoc::noc_block_base  class provides functionality to access registers, properties and to execute actions on a block. The API for the block is detailed below (Note that all fields/functions that are public are intended for the users (clients) of a block; and all fields/functions that are protected are intended for the designers of custom block controllers).
+
+\li \ref uhd::rfnoc::noc_block_base "noc_block_base class"
+
+## Custom Block Controllers
+
+Custom block controllers can be built by inheriting from uhd::rfnoc::noc_block_base . The protected functions in the base class must be used to correctly register properties and handle actions. UHD will provide a mechanism to retrieve controllers for discovered blocks, and it will have the capability to ```dynamic_cast``` the generic block controller to the user-defined type. The following is an example of a sample custom block controller.
+
+```cpp
+class null_block_control_impl : public null_block_control
+{
+public:
+    RFNOC_BLOCK_CONSTRUCTOR(null_block_control)
+    {
+        uint32_t initial_state = regs().peek32(REG_CTRL_STATUS);
+        _nipc = (initial_state >> 24) & 0xFF;
+        _item_width = (initial_state >> 16) & 0xFF;
+        register_property(&_lpp);
+        add_property_resolver(
+            {&_lpp}, // Input/trigger list
+            {&_lpp}, // Output list
+            [this](){
+                set_lines_per_packet(_lpp.get());
+                _lpp = get_lines_per_packet();
+            });
+        register_issue_stream_cmd();
+    }
+
+    void issue_stream_cmd(const stream_cmd_t& stream_cmd)
+    {
+        /* Implement functionality to start and stop streaming */
+    }
+
+    void set_lines_per_packet(const uint32_t lpp)
+    {
+        const uint32_t reg_val = /* figure out from lpp */;
+        regs().poke32(REG_SRC_LINES_PER_PKT, reg_val);
+    }
+
+    uint32_t get_lines_per_packet()
+    {
+        return regs().peek32(REG_SRC_LINES_PER_PKT) + 2;
+    }
+
+private:
+
+    /*! Action API: Register a handler for stream commands
+     */
+    void register_issue_stream_cmd()
+    {
+        register_action_handler(ACTION_KEY_STREAM_CMD,
+            [this](const res_source_info& src, action_info::sptr action) {
+                stream_cmd_action_info::sptr stream_cmd_action =
+                    std::dynamic_pointer_cast<stream_cmd_action_info>(action);
+                if (!stream_cmd_action) {
+                    throw uhd::runtime_error(
+                        "Received stream_cmd of invalid action type!");
+                }
+                if (src.instance != 0 || src.type != res_source_info::OUTPUT_EDGE) {
+                    throw uhd::runtime_error(
+                        "The null source can only stream from output port 0!");
+                }
+                RFNOC_LOG_DEBUG("Received stream command action request!");
+                issue_stream_cmd(stream_cmd_action->stream_cmd);
+            });
+    }
+
+    void deinit()
+    {
+        // This is the last time we can do any kind of peek or poke
+        issue_stream_cmd(stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    }
+
+
+    /**************************************************************************
+     * Attributes
+     *************************************************************************/
+    property_t<int> _lpp{"lpp", 100, {res_source_info::USER}};
+
+    //! Number of items per clock
+    uint32_t _nipc;
+
+    //! Bits per item
+    uint32_t _item_width;
+};
+```
+
+# RFNoC Graph
+
+The graph object in UHD allows users to build functional applications using individual blocks by connecting them together in a meaningful topology. The RFNoC graph has the following properties:
+
+- The *edges* of the graph represent the data flow paths. It is thus directed.
+
+- There can be multiple connections between nodes (e.g., for blocks that handle MIMO applications). It is thus a multigraph.
+
+- A block can have multiple inputs or outputs (e.g., a summation block might have two inputs and one output). A property of an edge is thus which port of a node it is connected to. If there are multiple edges between the same nodes, they are not interchangeable.
+
+- It is *disconnected*, meaning there can be multiple, disconnected sub-graphs.
+
+- It cannot have *loose (unconnected) edges*.
+
+- If the blocks support such a usage, data connections can be cyclic.
+
+- All nodes have a unique identifier of type ```string```.
+
+## Capabilities
+
+There are three types of connections (edges) supported by the graph:
+
+- Block to Block: A connection between two blocks that are connected by some transport
+
+- Block to Stream: A connection between a block in the FPGA and a host-resident RX streamer
+
+- Stream to Block: A connection between a host-resident TX streamer and a block in the FPGA
+
+The graph object is responsible for making the appropriate data connections between blocks and/or the host streamers. It is also responsible for propagating port (edge) properties between blocks. Multi-block state resolution is handled by the framework and is not the responsibility of the application designer.
+
+*Note*: The architecture of RFNoC does not preclude software running on a remote computer that acts like an RFNoC device. From the perspective of the graph, this would also register as a block controller, even if the remote computer is using a streamer object. When the software is running on the same context as the UHD session, it is considered a streamer.
+
+## C++ API
+\li \ref uhd::rfnoc::rfnoc_graph "rfnoc_graph class"
+
+# Streamers
+
+Streamers allow users to send data to or receive data from an RFNoC block. The API for streamers will be the same as what multi_usrp has today.
+
+## C++ API
+\li \ref uhd::rx_streamer "rx_streamer class"
+\li \ref uhd::tx_streamer "tx_streamer class"
+
+
+# Motherboard Controllers
+
+The motherboards are represented by a "motherboard controller". This object can be used to configure, modify, or query properties that are specific to the motherboard itself, and are not tied to any particular block. A very common motherboard-level setting is the source for time and/or clock reference. The timekeepers are also controlled on the motherboard level and are controlled through the motherboard controller.
+
+The indexing for motherboard controllers is consistent between block IDs and device arguments. For example, suppose an uhd::rfnoc::rfnoc_graph was created with the arguments ```addr0=192.168.10.2```, ```addr1=192.168.10.3```, in which case there will be two motherboards in this RFNoC graph. A call to ```get_mb_controller(0)``` will return the motherboard controller for the first motherboard (the one who's IP address ends in 10.2 in this example), and the block ID 0/Radio#0 will correspond to the first radio on this same motherboard.
+
+In RFNoC versions prior to UHD 4.0, the only API to interact with the graph were the block controllers. This left an API gap, and some API calls that affected the motherboard were attached to the radio block controllers instead. By splitting up block controllers and motherboard controllers, API calls are attached to the actual component they're controlling.
+
+However, block controllers may request access to the motherboard controllers themselves, which they sometimes require (e.g., to control or query clocks on the motherboard). This mechanism may also allow blocks, such as the radio blocks, to expose functionality that is technically tied to the motherboard.
+
+# uhd::multi_usrp API
+
+An RFNoC capable USRP must work out of the box using the multi_usrp API. To do so, multi_usrp will expect a default image with Radios, DDCs, DUCs and buffering to implement the native USRP API. Internally, multi_usrp will build a graph to make the appropriate connections, much like a user application.

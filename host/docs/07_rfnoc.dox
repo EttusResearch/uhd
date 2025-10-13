@@ -1,8 +1,12 @@
 /*! \page page_rfnoc RFNoC 
 
-\li \subpage page_rfnoc_gsg
-\li \subpage page_rfnoc_spec
-\li \subpage page_properties
+
+\li \subpage page_rfnoc_intro
+\li \subpage page_rfnoc_fpga
+\li \subpage page_rfnoc_sw
+\li \subpage page_rfnoc_tools
+
+
 \li \subpage page_rfnoc_blocks
 
 

@@ -1,5 +1,8 @@
 /*! \page page_gsg_rfnoc RFNoC
 
+
+\li **Getting started guide** 
+    - <a href="https://kb.ettus.com/Getting_Started_with_RFNoC_in_UHD_4.0">Getting Started with RFNoC in UHD 4.0</a>
 \li  **Developing Custom FPGA Designs Using RFNoC - Video Series**
     - <a href="https://www.youtube.com/watch?v=g0jmvSkNaAM">What is RFNoC?</a>
     - <a href="https://www.youtube.com/watch?v=OabezeZI36w">Creating a Custom RFNoC FPGA Design I</a>

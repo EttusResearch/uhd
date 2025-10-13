@@ -79,7 +79,7 @@ depending on the transport medium, there will be some additional bytes needed
 for header information.
 
 In RFNoC, a block can set further contraints on the samples transferred
-in a packet (see also \ref props_common_props). This is called the atomic
+in a packet (see also \ref props_common_props "Common Properties"). This is called the atomic
 item size (AIS) and denotes the number of bytes the block expects per packet
 (or a multiple of it). This enables easier data processing on the FPGA
 (think of an FFT that does not need to handle samples for one transformation
