@@ -1,4 +1,4 @@
-# Simulation Libraries
+\page usrp3_sim_simulation_libraries Simulation Libraries
 
 Several simulation libraries are available for use in your testbenches, in the
 form of SystemVerilog packages, classes, and interfaces. The bus functional
@@ -9,9 +9,9 @@ member functions and tasks for communicating with the BFMs.
 A few commonly used SystemVerilog packages are described below. See each
 package file for additional documentation.
 
-## PktTestExec
+# PkgTestExec
 
-`PktTestExec.sv` contains utilities for testbench reporting, assertions, and
+`PkgTestExec.sv` contains utilities for testbench reporting, assertions, and
 simulation timeouts. The associated header file, `test_exec.svh`, contains
 macros for use with PkgTestExec. These macros are used to implement
 SystemVerilog assertions. The header also defines `timeunit` and
@@ -20,7 +20,7 @@ SystemVerilog assertions. The header also defines `timeunit` and
 **Note:** The `timeunit` must be `1ns` in order for PkgTestExec to use
 and report times correctly.
 
-### PkgTestExec Tasks and Functions
+## PkgTestExec Tasks and Functions
 
 Below are some of the methods available in PkgTestExec. See `PkgTestExec.sv`
 for additional documentation.
@@ -52,7 +52,7 @@ manner and to report which timeout was exceeded.
 - <b>`end_timeout(timeout_t handle)`</b><br>
 Called to end a timeout countdown when it is no longer needed.
 
-### Macros
+## Macros
 
 The following macros are defined in `test_exec.svh`. These update internal
 variables to track the state of the testbench and to report the final results.
@@ -70,13 +70,13 @@ Where:
 - <b>`EXPR`</b> is the condition for the assertion (what you expect to be true)
 - <b>`MESSAGE`</b> is the message string to report if the assertion fails
 
-## PkgChdrUtils
+# PkgChdrUtils
 
 The `PkgChdrUtils` package includes various definitions and functions for
 interacting with the RFNoC network protocol, called the Condensed Hierarchical
 Datagram for RFNoC (CHDR). See `PkgChdrUtils.sv` for additional documentation.
 
-## PkgChdrData
+# PkgChdrData
 
 The `PkgChdrData` package contains the CHDR and item data types, as well as
 utilities, that are useful for interacting with RFNoC data. An *item* refers to
@@ -110,12 +110,12 @@ widths using the following example:
     // Convert the bytes to a queue of samples
     bytes = ChdrData#(ITEM_W, 8)::item_to_chdr(samples);
 
-## PkgRfnocBlockCtrlBfm
+# PkgRfnocBlockCtrlBfm
 
 The `PkgRfnocBlockCtrlBfm` package contains the `RfnocBlockCtrlBfm` bus
 functional model (BFM) used to emulate a software block controller for an RFNoC
 block. This is the BFM used to interact with an RFNoC block in simulation. See
-the \ref md_usrp3_sim_writing_sim_top "testbench example" for an example
+the \ref usrp3_sim_writing_sim_top "testbench example" for an example
 of how to instantiate and connect the BFM to your DUT.
 
 To be used, the BFM must be connected to the RFNoC block using an
@@ -153,7 +153,7 @@ underflow and overflow tolerance in your testbenches.
 Low-level tasks and functions are also available for inputting raw packets
 directly.
 
-## sim_clock_gen
+# sim_clock_gen
 
 The `sim_clock_gen` module makes it easy create clocks and synchronous resets,
 and to interact with them. See `sim_clock_gen.sv` for additional documentation.
@@ -166,7 +166,7 @@ Some features include:
 - Kill the clock (prevent any new simulation events)
 - Wait for \em n rising/falling clock edges
 
-## PkgAxiStream
+# PkgAxiStream
 
 The `PkgAxiStreamBfm` package contains the `AxistreamPacket` and `AxiStreamBfm`
 classes which are used to model AXI4-Stream interfaces in the testbenches.

@@ -81,7 +81,7 @@ The build commands for a particular image can be found in
 USRP Xilinx FPGA images are built with either Vivado or one of two versions of ISE,
 depending on the device.
 
-Refer to the \ref md_fpga "FPGA Manual" for setup and build instructions
+Refer to the \ref page_fpga "FPGA Manual" for setup and build instructions
 relevant to your device family.
 
 \subsection images_building_zpu ZPU firmware builds

@@ -1,4 +1,4 @@
-# Running a Testbench
+\page usrp3_sim_running_testbenches Running a Testbench
 
 Each executable testbench has its own Makefile that automatically pulls in support
 for all supported simulators. The build infrastructure supports the following simulators:
@@ -23,7 +23,7 @@ all supported simulator targets. Currently, the following targets will work:
     vcom:       Run ModelSim/Questa compiler to compile HDL files
     vclean:     Cleanup ModelSim/Questa intermediate files
 
-## Using Xilinx Vivado XSim
+# Using Xilinx Vivado XSim
 
 XSim is the built-in simulator in the Xilinx Vivado toolchain. If you already met the
 prerequisites for building an FPGA image, then you don't need to install anything else.
@@ -42,9 +42,9 @@ Follow these steps to run a testbench:
   ``$ make xsim``
 
 
-## Using Siemens ModelSim or Questa
+# Using Siemens ModelSim or Questa
 
-### Setting Up ModelSim or QuestaSim
+## Setting Up ModelSim or QuestaSim
 
 ModelSim and Questa are third-party simulation tools that are compatible with
 Vivado and the USRP FPGA build infrastructure.
@@ -91,7 +91,7 @@ Use the following one-time setup to install and configure ModelSim on your syste
   If they have already been built, you can set the ``SIM_COMPLIBDIR``
   environment variable to point to their location and rerun setupenv.sh.
 
-### Simulating with ModelSim through Vivado
+## Simulating with ModelSim through Vivado
 
 Follow these steps to run a testbench using ModelSim with Vivado:
 
@@ -113,7 +113,7 @@ Follow these steps to run a testbench using ModelSim with Vivado:
 
   ``$ make vsim GUI=1``
 
-### Simulating with ModelSim
+## Simulating with ModelSim
 
 To run the simulation using ModelSim natively, the process is the same as
 above, except use the `modelsim` make target.
@@ -140,7 +140,7 @@ ARGS are simply appended to the ModelSim `vsim` command line invocation. LIBS
 are added to the "-L" vsim command line argument. These can also be added to
 the Makefile for the testbench.
 
-### Simulating with QuestaSim
+## Simulating with QuestaSim
 
 For Questa, use the ``qsim`` target instead of ``msim``. For example:
 
@@ -150,7 +150,7 @@ Because the commands for Questa are very similar to ModelSim, you can also use
 the ``msim`` target with Questa, but this will use the classic GUI and the
 legacy +acc mode with vopt. +acc mode is no longer recommended with Questa.
 
-### Compiling the Simulation with ModelSim or Questa
+## Compiling the Simulation with ModelSim or Questa
 
 To compile your code in ModelSim or Questa, without running the simulation,
 use the `vcom` target.
@@ -164,9 +164,9 @@ Using the `msim`/`qsim` and `vcom` targets allows for more rapid simulation
 iterations than when using Vivado.
 
 
-## Troubleshooting
+# Troubleshooting
 
-#### Vivado Not Found
+## Vivado Not Found
 
 If running the setupenv.sh script returns an error like the following:
 
@@ -178,7 +178,7 @@ run the following:
 
 ``$ source <repo>/fpga/usrp3/top/<product>/setupenv.sh --vivado-path=<PATH>``
 
-#### ModelSim/Questa Not Found
+## ModelSim/Questa Not Found
 
 If running the setupenv.sh script returns an error like the following:
 
@@ -201,7 +201,7 @@ in a non-default location, run the following:
 
     $ source <repo>/fpga/usrp3/top/<product>/setupenv.sh --modelsim-path=<PATH>
 
-#### ModelSim Simulation Libraries Not Found
+## ModelSim Simulation Libraries Not Found
 
 If running the setupenv.sh script returns an error like the following:
 

@@ -1,13 +1,13 @@
-# Legacy Simulation Libraries
+\page usrp3_sim_libs_general Legacy Simulation Libraries
 
 This document describes legacy simulation libraries used by some testbenches.
 They are included here due to their continued use.
 
-## Execution and Reporting (sim\_exec\_report.vh)
+# Execution and Reporting (sim\_exec\_report.vh)
 
 Macros to do boilerplate testbench initialization and utilities to define test cases
 
-#### TEST\_BENCH\_INIT
+## TEST\_BENCH\_INIT
 
     // Initializes state for a test bench.
     // This macro *must be* called within the testbench module but 
@@ -25,7 +25,7 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - ns_per_tick:      The time_unit_base from the timescale declaration
     //
 
-#### TEST\_CASE\_START
+## TEST\_CASE\_START
 
     // Indicates the start of a test case
     // This macro *must be* called inside the primary initial block
@@ -35,7 +35,7 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - test_name:        The name of the test.
     //
 
-#### TEST\_CASE\_DONE
+## TEST\_CASE\_DONE
     // Indicates the end of a test case
     // This macro *must be* called inside the primary initial block
     // The pass/fail status of test case is determined based on the
@@ -47,7 +47,7 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - test_result:  User specified outcome
     //
 
-#### ASSERT\_FATAL
+## ASSERT\_FATAL
 
     // Wrapper around a an assert.
     // ASSERT_FATAL throws an error assertion and halts the simulator
@@ -59,7 +59,7 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - msg:  Message for the assert
     //
 
-#### ASSERT\_ERROR
+## ASSERT\_ERROR
 
     // Wrapper around a an assert.
     // ASSERT_ERROR throws an error assertion and fails the test case
@@ -71,7 +71,7 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - msg:  Message for the assert
     //
 
-#### ASSERT\_WARNING
+## ASSERT\_WARNING
 
     // Wrapper around a an assert.
     // ASSERT_WARNING throws an warning assertion but does not fail the
@@ -83,11 +83,11 @@ Macros to do boilerplate testbench initialization and utilities to define test c
     //  - msg:  Message for the assert
     //
 
-## Clocks and Resets (sim\_clks\_rsts.vh)
+# Clocks and Resets (sim\_clks\_rsts.vh)
 
 Shortcut macros to create typical clock and reset signals.
 
-#### DEFINE\_CLK
+## DEFINE\_CLK
 
     // Generates a persistent clock that starts at t=0 and runs forever
     //
@@ -98,7 +98,7 @@ Shortcut macros to create typical clock and reset signals.
     //  - duty_cycle: Percentage duty cycle
     //
 
-#### DEFINE\_LATE\_START\_CLK
+## DEFINE\_LATE\_START\_CLK
 
     // Generates a clock that starts at the specified time and runs forever
     //
@@ -111,7 +111,7 @@ Shortcut macros to create typical clock and reset signals.
     //  - start_time_res: Start time resolution (must be > timescale increment and < start_time)
     //
 
-#### DEFINE_RESET
+## DEFINE_RESET
 
     // Generates an active high reset
     //
@@ -122,7 +122,7 @@ Shortcut macros to create typical clock and reset signals.
     //  - reset_duration: Duration of reset assertion
     //
 
-#### DEFINE_RESET_N
+## DEFINE_RESET_N
 
     // Generates an active low reset
     //
@@ -133,13 +133,13 @@ Shortcut macros to create typical clock and reset signals.
     //  - reset_duration: Duration of reset assertion
     //
 
-## File I/O (sim\_file\_io.svh)
+# File I/O (sim\_file\_io.svh)
 
-### interface data\_file\_t
+## interface data\_file\_t
 
 Defines a ``data_file_t`` interface with the following functions:
 
-#### open
+### open
 
     // Open the data file for reading or writing.
     //
@@ -148,14 +148,14 @@ Defines a ``data_file_t`` interface with the following functions:
     //  - mode: RW mode (Choose from: READ, WRITE, APPEND)
     //
 
-#### close
+### close
 
     // Close an open data file. No-op if file isn't already open
     //
     // Usage: close()
     //
 
-#### is_eof
+### is_eof
 
     // Is end-of-file reached.
     //
@@ -164,7 +164,7 @@ Defines a ``data_file_t`` interface with the following functions:
     // - eof: A boolean
     //
 
-#### readline
+### readline
 
     // Read a line from the datafile
     //
@@ -173,7 +173,7 @@ Defines a ``data_file_t`` interface with the following functions:
     // - data: A logic array of width DWIDTH containing the read word
     //
 
-#### writeline
+### writeline
 
     // Write a line to the datafile
     //

@@ -1,4 +1,4 @@
-# Writing a Top-level Simulation Module
+\page usrp3_sim_writing_sim_top Writing a Top-level Simulation Module
 
 The top-level simulation module will instantiate the DUT and implement
 self-checking behavior. Testbenches can be written in any language
@@ -9,7 +9,7 @@ An example testbench is shown below. This example is for an RFNoC block. If
 creating a testbench for RFNoC, it is recommended to use the RFNoC ModTool to
 generate a testbench template for your RFNoC block.
 
-See \ref md_usrp3_sim_simulation_libraries for documentation on the simulation
+See \ref usrp3_sim_simulation_libraries for documentation on the simulation
 libraries used in this example.
 
     //

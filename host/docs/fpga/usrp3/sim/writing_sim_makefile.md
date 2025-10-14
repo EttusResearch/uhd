@@ -1,4 +1,4 @@
-# Writing a Simulation Makefile
+\page usrp3_sim_writing_sim_makefile Writing a Simulation Makefile
 
 The testbench Makefile tells the build tools what to build, where to build it,
 dependency information, and runtime information. The build infrastructure will
@@ -93,7 +93,7 @@ template for your RFNoC block.
 
 You will notice that the Makefile has 5 distinct sections.
 
-## Section 1: Boilerplate
+# Section 1: Boilerplate
 
     #-------------------------------------------------
     # Top-of-Makefile
@@ -119,7 +119,7 @@ This example uses the make variable UHD_FPGA_DIR to specify the location of the
 FPGA repository. This is useful for out-of-tree modules. UHD_FPGA_DIR is the
 variable used by CMake for the RFNoC examples.
 
-## Section 2: Design Specific
+# Section 2: Design Specific
 
     #-------------------------------------------------
     # Design Specific
@@ -159,7 +159,7 @@ The following makefile variables are special and should be defined:
 If `ARCH` and `PART_ID` are not specified, a default part will be assumed. This
 may be fine if your DUT doesn't have any architecture-specific IP.
 
-## Section 3: IP Specific
+# Section 3: IP Specific
 
     #-------------------------------------------------
     # IP Specific
@@ -194,7 +194,7 @@ IP sources.
 The IP included in this example may not be needed for your testbench, in which
 case it can be removed to reduce compile times.
 
-## Section 4: Testbench Specific
+# Section 4: Testbench Specific
 
     #-------------------------------------------------
     # Testbench Specific
@@ -222,7 +222,7 @@ The following variables should be defined:
 - `SIM_SRCS`: This is similar to DESIGN_SRCS except that it should contain a
   path to `SIM_TOP` and all of its dependencies.
 
-## Section 5: Tool Support
+# Section 5: Tool Support
 
     #-------------------------------------------------
     # Bottom-of-Makefile
