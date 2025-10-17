@@ -192,6 +192,75 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: txrx_loopback_to_file [-h] --tx-rate TX_RATE --rx-rate RX_RATE\n"
+        "                                  --tx-freq TX_FREQ --rx-freq RX_FREQ\n"
+        "                             [--tx-args TX_ARGS] [--rx-args RX_ARGS]\n"
+        "                             [--file FILE]\n"
+        "                             [--type {double,float,short}]\n"
+        "                             [--nsamps NSAMPS] [--settling SETTLING]\n"
+        "                             [--spb SPB] [--tx-gain TX_GAIN]\n"
+        "                             [--rx-gain RX_GAIN] [--tx-ant TX_ANT]\n"
+        "                             [--rx-ant RX_ANT] [--tx-subdev TX_SUBDEV]\n"
+        "                             [--rx-subdev RX_SUBDEV] [--tx-bw TX_BW]\n"
+        "                             [--rx-bw RX_BW]\n"
+        "                             [--wave-type {CONST,SQUARE,RAMP,SINE}]\n"
+        "                             [--wave-freq WAVE_FREQ]\n"
+        "                             [--wave-ampl WAVE_AMPL]\n"
+        "                             [--ref {internal,external,mimo,gpsdo}]\n"
+        "                             [--otw {sc16,sc8}]\n"
+        "                             [--tx-channels TX_CHANNELS]\n"
+        "                             [--rx-channels RX_CHANNELS] [--tx-int-n]\n"
+        "                             [--rx-int-n]"
+        "\n\n"
+        "This example demonstrates how to use the UHD multi_usrp C++ API\n"
+        "to transmit a generated waveform and simultaneously receive signals\n"
+        "using USRP devices. Transmission and reception can be performed on the\n"
+        "same USRP or on separate USRP devices, and both TX and RX can use\n"
+        "multiple channels across one or more devices.\n"
+        "\n"
+        "Key features:\n"
+        "  - Generates predefined baseband waveforms (CONST, SINE, SQUARE, or\n"
+        "    RAMP).\n"
+        "  - Transmits the same waveform on all selected TX channels.\n"
+        "  - Starts RX streaming at a precise hardware timestamp for synchronized\n"
+        "    capture.\n"
+        "  - Supports independent configuration of transmit and receive devices,\n"
+        "    including sample rate, frequency, gain, bandwidth, and channel\n"
+        "    mapping.\n"
+        "  - Handles multi-channel and multi-device setups for advanced use\n"
+        "    cases.\n"
+        "  - Saves received data to raw binary files, with one file per RX\n"
+        "    channel.\n"
+        "  - Stops automatically when the requested number of samples has been\n"
+        "    received, or continues until interrupted by the user.\n"
+        "\n"
+        "Usage examples:\n"
+        "  1. Loopback operation of a single USRP transmitting and receiving on\n"
+        "     one channel:\n"
+        "     txrx_loopback_to_file --tx-args \"addr=192.168.10.2\"\n"
+        "                           --rx-args \"addr=192.168.10.2\"\n"
+        "                           --tx-freq 2.4e09 --rx-freq 2.4e09\n"
+        "                           --tx-rate 10e06 --rx-rate 10e06 --nsamps 10000\n"
+        "  2. Loopback operation of a single USRP transmitting on one channel and\n"
+        "     receiving on two channels:\n"
+        "     txrx_loopback_to_file --tx-args \"addr=192.168.10.2\"\n"
+        "                           --rx-args \"addr=192.168.10.2\"\n"
+        "                           --tx-freq 2.4e09 --rx-freq 2.4e09\n"
+        "                           --tx-rate 10e06 --rx-rate 10e06\n"
+        "                           --tx-channels \"0\" --rx-channels \"0,1\"\n"
+        "                           --wave-type SINE --wave-freq 1e6\n"
+        "                           --nsamps 10000\n"
+        "  3. One transmit USRP and two receive USRP devices which are synchronized by\n"
+        "     an external pps pulse with transmission on one channel and reception\n"
+        "     on four channels:\n"
+        "     txrx_loopback_to_file --tx-args \"addr=192.168.10.2\"\n"
+        "                           --rx-args \"addr0=192.168.10.2,addr1=192.168.10.3\"\n"
+        "                           --tx-freq 2.4e09 --rx-freq 2.4e09\n"
+        "                           --tx-rate 10e06 --rx-rate 10e06 --tx-channels \"0\"\n"
+        "                           --rx-channels \"0,1,2,3\" --pps \"external\"\n"
+        "                           --wave-type SINE --wave-freq 1e6\n"
+        "                           --nsamps 10000\n";
     // transmit variables to be set by po
     std::string tx_args, wave_type, tx_ant, tx_subdev, ref, otw, tx_channels;
     double tx_rate, tx_freq, tx_gain, wave_freq, tx_bw;
@@ -207,46 +276,104 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("tx-args", po::value<std::string>(&tx_args)->default_value(""), "uhd transmit device address args")
-        ("rx-args", po::value<std::string>(&rx_args)->default_value(""), "uhd receive device address args")
-        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
-        ("type", po::value<std::string>(&type)->default_value("short"), "sample type in file: double, float, or short")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("settling", po::value<double>(&settling)->default_value(double(0.2)), "settling time (seconds) before receiving")
-        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
-        ("tx-rate", po::value<double>(&tx_rate), "rate of transmit outgoing samples")
-        ("rx-rate", po::value<double>(&rx_rate), "rate of receive incoming samples")
-        ("tx-freq", po::value<double>(&tx_freq), "transmit RF center frequency in Hz")
-        ("rx-freq", po::value<double>(&rx_freq), "receive RF center frequency in Hz")
-        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of the waveform [0 to 0.7]")
-        ("tx-gain", po::value<double>(&tx_gain), "gain for the transmit RF chain")
-        ("rx-gain", po::value<double>(&rx_gain), "gain for the receive RF chain")
-        ("tx-ant", po::value<std::string>(&tx_ant), "transmit antenna selection")
-        ("rx-ant", po::value<std::string>(&rx_ant), "receive antenna selection")
-        ("tx-subdev", po::value<std::string>(&tx_subdev), "transmit subdevice specification")
-        ("rx-subdev", po::value<std::string>(&rx_subdev), "receive subdevice specification")
-        ("tx-bw", po::value<double>(&tx_bw), "analog transmit filter bandwidth in Hz")
-        ("rx-bw", po::value<double>(&rx_bw), "analog receive filter bandwidth in Hz")
-        ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "waveform type (CONST, SQUARE, RAMP, SINE)")
-        ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "waveform frequency in Hz")
-        ("ref", po::value<std::string>(&ref), "reference source (internal, external, gpsdo, mimo)")
-        ("otw", po::value<std::string>(&otw)->default_value("sc16"), "specify the over-the-wire sample mode")
-        ("tx-channels", po::value<std::string>(&tx_channels)->default_value("0"), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-        ("rx-channels", po::value<std::string>(&rx_channels)->default_value("0"), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-        ("tx-int-n", "tune USRP TX with integer-N tuning")
-        ("rx-int-n", "tune USRP RX with integer-N tuning")
+        ("help,h", "Show this help message and exit.")
+        ("tx-args", po::value<std::string>(&tx_args)->default_value(""), "USRP device selection and "
+            "configuration arguments for the transmit USRP device(s)."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("rx-args", po::value<std::string>(&rx_args)->default_value(""), "USRP device selection and "
+            "configuration arguments for the receive USRP device(s).")
+        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "Base name of the raw "
+            "binary file to which data received on each channel will be written (one file per channel).")
+        ("type", po::value<std::string>(&type)->default_value("short"), "Specifies the data format of the "
+            "file. The data will be written as interleaved IQ samples in one of the following numeric formats: 'double' "
+            "(64-bit float, fc64), 'float' (32-bit float, fc32), or 'short' (16-bit integer, sc16, scaled to int16 range "
+            "-32768 to 32767)."
+            "\nChoosing 'short' as the file format matches the default sc16 over-the-wire format and is usually sufficient. Using "
+            "'float' or 'double' does not improve precision, but may be more convenient for post processing or for "
+            "compatibility with certain analysis tools.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "Total number of samples to "
+            "receive. The program stops when this number is reached. If set to 0, data will be continuously received and "
+            "written to file.")
+        ("settling", po::value<double>(&settling)->default_value(double(0.2)), "Settling time in seconds "
+            "before receiving.")
+        ("spb", po::value<size_t>(&spb)->default_value(0), "Specifies the size (in samples) of the host-side "
+            "data buffer. For TX, a single buffer of this size is used for all transmit channels. For RX, a separate "
+            "buffer of this size is allocated for each receive channel. Larger values may improve throughput. If set to "
+            "0, the size is determined automatically based on the buffer size of the UHD transmit streamer.")
+        ("tx-rate", po::value<double>(&tx_rate)->required(), "TX sample rate in samples/second. Note that "
+            "each USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("rx-rate", po::value<double>(&rx_rate)->required(), "RX sample rate in samples/second.")
+        ("tx-freq", po::value<double>(&tx_freq)->required(), "TX RF center frequency in Hz.")
+        ("rx-freq", po::value<double>(&rx_freq)->required(), "RX RF center frequency in Hz.")
+        ("tx-gain", po::value<double>(&tx_gain), "TX gain for the RF chain in dB.")
+        ("rx-gain", po::value<double>(&rx_gain), "RX gain for the RF chain in dB.")
+        ("tx-ant", po::value<std::string>(&tx_ant), "TX antenna port selection string selecting a specific "
+            "antenna port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("rx-ant", po::value<std::string>(&rx_ant), "RX antenna port selection string.")
+        ("tx-subdev", po::value<std::string>(&tx_subdev), "TX subdevice configuration defining the mapping of "
+            "channels to RF TX paths."
+            "\nThe format and available values depend on your USRP model. If not specified, the channels will be numbered "
+            "in order of the devices, daughterboard slots, and their RF TX channels."
+            "\nFor typical applications, this default subdevice configuration is sufficient."
+            "\nNote: this example program expects a single-USRP subdevice configuration which is applied to all USRPs "
+            "equally, if multiple USRPs are configured."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed. Then the default channel mapping is:"
+            "\n  - Ch 0 -> A:0 (1st UBX in slot A, RF TX 0)"
+            "\n  - Ch 1 -> B:0 (2nd UBX in slot B, RF TX 0)"
+            "\nSpecifying --subdev=\"B:0 A:0\" would change the channel mapping to:"
+            "\n  - Ch 0 -> B:0 (2nd UBX in slot B RF TX 0)"
+            "\n  - Ch 1 -> A:0 (1st UBX in slot A RF TX 0)")
+        ("rx-subdev", po::value<std::string>(&rx_subdev), "RX subdevice configuration defining the mapping of "
+            "channels to RF RX paths.")
+        ("tx-bw", po::value<double>(&tx_bw), "Sets the analog frontend filter bandwidth for the TX path in "
+            "Hz. Not all USRP devices support programmable bandwidth; if an unsupported value is requested, the device "
+            "will use the nearest supported bandwidth instead.")
+        ("rx-bw", po::value<double>(&rx_bw), "Sets the analog frontend filter bandwidth for the RX path in "
+            "Hz.")
+        ("wave-type", po::value<std::string>(&wave_type)->default_value("CONST"), "Baseband waveform type to "
+            "generate."
+            "\nAvailable types are CONST (real), SQUARE (real), RAMP (real), and SINE (complex)")
+        ("wave-freq", po::value<double>(&wave_freq)->default_value(0), "Baseband waveform frequency in Hz."
+            "\nThis option is required for waveform types SQUARE, RAMP, and SINE.")
+        ("wave-ampl", po::value<float>(&ampl)->default_value(float(0.3)), "Baseband waveform amplitude in the "
+            "range [0 to 0.7].")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("otw", po::value<std::string>(&otw)->default_value("sc16"), "Specifies the over-the-wire (OTW) data "
+            "format used for transmission between the host and the USRP device. Common values are \"sc16\" (16-bit signed "
+            "complex) and \"sc8\" (8-bit signed complex). Using \"sc8\" can reduce network bandwidth at the cost of "
+            "dynamic range."
+            "\nNote, that not all conversions between CPU and OTW formats are possible.")
+        ("tx-channels", po::value<std::string>(&tx_channels)->default_value("0"), "Specifies which TX "
+            "channels to use. E.g. \"0\", \"1\", \"0,1\", etc.")
+        ("rx-channels", po::value<std::string>(&rx_channels)->default_value("0"), "Specifies which RX "
+            "channels to use. E.g. \"0\", \"1\", \"0,1\", etc.")
+        ("tx-int-n", "Use integer-N tuning for USRP TX. With this mode, the LO can only be tuned in discrete "
+            "steps, which are integer multiples of the reference frequency. This mode can improve phase noise and "
+            "spurious performance at the cost of coarser frequency resolution.")
+        ("rx-int-n", "Use integer-N tuning for USRP RX.")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
-    // print the help message
     if (vm.count("help")) {
-        std::cout << "UHD TXRX Loopback to File " << desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     // create a usrp device
     std::cout << std::endl;
