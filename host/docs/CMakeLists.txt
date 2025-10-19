@@ -171,7 +171,7 @@ if(ENABLE_MAN_PAGES)
             #make the gzip file depend on the text file
             string(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
             set(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
-            set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
+            set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/manpages/${manfile}")
             add_custom_command(
                 OUTPUT ${gzfile}
                 DEPENDS ${manfile}
