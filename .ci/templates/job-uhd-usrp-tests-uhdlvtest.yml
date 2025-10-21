@@ -27,5 +27,9 @@ jobs:
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x410') }}:
         uhdlvtest-x410-0:
-          devModel: 'x410'
-          devName: 'uhdlvtest-x410-0'
+          dutType: 'x4xx'
+          dutModel: 'x410'
+          dutName: 'uhdlvtest-x410-0'
+          dutSerial: $(x410_serial)
+          dutFPGA: 'X4_200'
+          dutEmbeddedImagesArtifact: 'x4xx-images'

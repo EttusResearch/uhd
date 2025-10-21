@@ -871,9 +871,11 @@ stages:
   displayName: Test LabVIEW USRP Examples
   dependsOn:
   - analyze_changeset
+  - build_uhd_embedded_system_images
   - build_uhd_installer_stage_win
+  - provide_x410_fpga_images_stage
   jobs:
   - template: job-uhd-usrp-tests-uhdlvtest.yml
     parameters:
-      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
