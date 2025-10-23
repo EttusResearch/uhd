@@ -228,7 +228,7 @@ module rfnoc_block_null_src_sink #(
   reg        reg_src_eob = 1'b0;
   reg [11:0] reg_src_lpp = 12'd0;
   reg [15:0] reg_src_bpp = 16'd0;
-  reg [9:0]  reg_throttle_cyc = 10'd0;
+  reg [19:0] reg_throttle_cyc = 20'd0;
 
   localparam [1:0] ST_HDR  = 2'd0;
   localparam [1:0] ST_PYLD = 2'd1;
@@ -236,7 +236,7 @@ module rfnoc_block_null_src_sink #(
 
   reg  [1:0] state = ST_HDR;
   reg [11:0] lines_left = 12'd0;
-  reg  [9:0] throttle_cntr = 10'd0;
+  reg [19:0] throttle_cntr = 20'd0;
 
   always @(posedge rfnoc_chdr_clk) begin
     if (rfnoc_chdr_rst) begin
@@ -252,7 +252,7 @@ module rfnoc_block_null_src_sink #(
         ST_PYLD: begin
           if (src_pyld_tvalid && src_pyld_tready) begin
             if (src_pyld_tlast) begin
-              if (reg_throttle_cyc == 10'd0) begin
+              if (reg_throttle_cyc == 20'd0) begin
                 state <= ST_HDR;
                 if (!reg_src_en && !reg_src_eob)
                   reg_src_eob  <=  1'b1;
@@ -268,14 +268,14 @@ module rfnoc_block_null_src_sink #(
           end
         end
         ST_WAIT: begin
-          if (throttle_cntr == 10'd0) begin
+          if (throttle_cntr == 20'd0) begin
             state <= ST_HDR;
             if (!reg_src_en && !reg_src_eob)
               reg_src_eob  <=  1'b1;
             else
               reg_src_eob  <=  1'b0;
           end else begin
-            throttle_cntr <= throttle_cntr - 10'd1;
+            throttle_cntr <= throttle_cntr - 20'd1;
           end
         end
         default: begin
@@ -314,7 +314,7 @@ module rfnoc_block_null_src_sink #(
           REG_SRC_BYTES_PER_PKT:
             reg_src_bpp <= ctrlport_req_data[15:0];
           REG_SRC_THROTTLE_CYC:
-            reg_throttle_cyc <= ctrlport_req_data[9:0];
+            reg_throttle_cyc <= ctrlport_req_data[19:0];
         endcase
       end
       // Handle register reads
@@ -327,7 +327,7 @@ module rfnoc_block_null_src_sink #(
           REG_SRC_BYTES_PER_PKT:
             ctrlport_resp_data <= {16'h0, reg_src_bpp};
           REG_SRC_THROTTLE_CYC:
-            ctrlport_resp_data <= {22'h0, reg_throttle_cyc};
+            ctrlport_resp_data <= {12'h0, reg_throttle_cyc};
           REG_SNK_LINE_CNT_LO:
             ctrlport_resp_data <= snk_line_cnt[31:0];
           REG_SNK_LINE_CNT_HI:

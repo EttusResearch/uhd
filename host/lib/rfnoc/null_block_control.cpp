@@ -106,8 +106,8 @@ public:
 
     void set_throttle_cycles(const uint32_t cycs) override
     {
-        if (cycs > 0x3FF) {
-            throw uhd::value_error("Null source throttle cycles cannot exceed 10 bits!");
+        if (cycs > 0xFFFFF) {
+            throw uhd::value_error("Null source throttle cycles cannot exceed 20 bits!");
         }
         regs().poke32(REG_SRC_THROTTLE_CYC, cycs);
     }
