@@ -130,6 +130,12 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
 
     puts "BUILDER: Setting $g_top_module as the top module"
     set_property top $g_top_module [current_fileset]
+
+    # Turn off the cs_server version check so that Vivado doesn't give a
+    # version mismatch error when users have a patch installed. The error
+    # prevents users from using JTAG after the build finishes. It will still
+    # give a warning, in case they really do have a legitimate mismatch.
+    set_param labtools.override_cs_server_version_check 1
 }
 
 # ---------------------------------------------------
