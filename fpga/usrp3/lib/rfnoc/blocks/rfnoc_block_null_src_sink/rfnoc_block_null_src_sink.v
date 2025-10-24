@@ -78,6 +78,8 @@ module rfnoc_block_null_src_sink #(
   localparam [19:0] REG_LOOP_LINE_CNT_HI  = 20'h34;
   localparam [19:0] REG_LOOP_PKT_CNT_LO   = 20'h38;
   localparam [19:0] REG_LOOP_PKT_CNT_HI   = 20'h3C;
+  localparam [19:0] REG_SRC_NUM_PKT_LO    = 20'h40;
+  localparam [19:0] REG_SRC_NUM_PKT_HI    = 20'h44;
 
   wire                 rfnoc_chdr_rst;
 
@@ -185,6 +187,7 @@ module rfnoc_block_null_src_sink #(
 
   // Packet Counters
   // ---------------------------
+  // The line counters count every CHDR word, including headers.
   reg        reg_clear_cnts = 1'b0;
   reg [63:0] snk_line_cnt  = 64'd0, snk_pkt_cnt  = 64'd0;
   reg [63:0] src_line_cnt  = 64'd0, src_pkt_cnt  = 64'd0;
@@ -225,42 +228,61 @@ module rfnoc_block_null_src_sink #(
   // NULL Source
   // ---------------------------
   reg        reg_src_en = 1'b0;
-  reg        reg_src_eob = 1'b0;
-  reg [11:0] reg_src_lpp = 12'd0;
-  reg [15:0] reg_src_bpp = 16'd0;
+  reg        reg_src_finite = 1'b0;
+  reg [11:0] reg_src_lpp = 12'd0;      // Number of lines of payload minus 1
+  reg [15:0] reg_src_bpp = 12'd0;      // Number of bytes per packet, including
+                                       // header.
   reg [19:0] reg_throttle_cyc = 20'd0;
+  reg        reg_throttle_cyc_is_zero = 1'b0;
+  reg [47:0] reg_src_num_pkt = 48'd0;  // Number of packets to send
+  reg        reg_src_num_pkt_is_one = 1'b0;
+  reg [47:0] src_pkt_sent = 48'd2;     // Number of packets sent this run
+  reg        src_last_pkt = 1'b0;
+  reg        src_pkt_count_done = 1'b0;
 
-  localparam [1:0] ST_HDR  = 2'd0;
-  localparam [1:0] ST_PYLD = 2'd1;
-  localparam [1:0] ST_WAIT = 2'd2;
+  localparam [1:0] ST_IDLE = 2'd0;
+  localparam [1:0] ST_HDR  = 2'd1;
+  localparam [1:0] ST_PYLD = 2'd2;
+  localparam [1:0] ST_WAIT = 2'd3;
 
-  reg  [1:0] state = ST_HDR;
-  reg [11:0] lines_left = 12'd0;
-  reg [19:0] throttle_cntr = 20'd0;
+  reg [ 1:0] state = ST_IDLE;
+  reg [11:0] lines_left;
+  reg [19:0] throttle_cntr;
 
   always @(posedge rfnoc_chdr_clk) begin
     if (rfnoc_chdr_rst) begin
-      state <= ST_HDR;
+      state <= ST_IDLE;
+      src_pkt_sent <= 48'd2;
+      src_last_pkt <= 1'b0;
+      lines_left <= {12{1'bX}};
+      throttle_cntr <= {20{1'bX}};
+      src_pkt_count_done <= 1'b0;
     end else begin
       case (state)
+        ST_IDLE: begin
+          src_pkt_sent <= 48'd2;
+          src_last_pkt <= (reg_src_finite && reg_src_num_pkt_is_one);
+          if (reg_src_en) state <= ST_HDR;
+        end
         ST_HDR: begin
+          lines_left <= reg_src_lpp;
+          src_pkt_count_done <= (src_pkt_sent == reg_src_num_pkt);
           if (src_ctxt_tvalid && src_ctxt_tready) begin
             state <= ST_PYLD;
-            lines_left <= reg_src_lpp;
+            src_pkt_sent <= src_pkt_sent + 1;
           end
         end
         ST_PYLD: begin
+          throttle_cntr <= reg_throttle_cyc;
           if (src_pyld_tvalid && src_pyld_tready) begin
             if (src_pyld_tlast) begin
-              if (reg_throttle_cyc == 20'd0) begin
+              src_last_pkt <= (!reg_src_en || (reg_src_finite && src_pkt_count_done));
+              if (src_last_pkt) begin
+                state <= ST_IDLE;
+              end else if (reg_throttle_cyc_is_zero) begin
                 state <= ST_HDR;
-                if (!reg_src_en && !reg_src_eob)
-                  reg_src_eob  <=  1'b1;
-                else
-                  reg_src_eob  <=  1'b0;
               end else begin
                 state <= ST_WAIT;
-                throttle_cntr <= reg_throttle_cyc;
               end
             end else begin
               lines_left <= lines_left - 12'd1;
@@ -270,16 +292,12 @@ module rfnoc_block_null_src_sink #(
         ST_WAIT: begin
           if (throttle_cntr == 20'd0) begin
             state <= ST_HDR;
-            if (!reg_src_en && !reg_src_eob)
-              reg_src_eob  <=  1'b1;
-            else
-              reg_src_eob  <=  1'b0;
           end else begin
             throttle_cntr <= throttle_cntr - 20'd1;
           end
         end
         default: begin
-          state <= ST_HDR;
+          state <= ST_IDLE;
         end
       endcase
     end
@@ -291,67 +309,120 @@ module rfnoc_block_null_src_sink #(
   assign src_pyld_tvalid = (state == ST_PYLD);
 
   assign src_ctxt_tdata  = chdr_build_header(
-    6'd0, reg_src_eob, 1'b0, CHDR_PKT_TYPE_DATA, CHDR_NO_MDATA, src_pkt_cnt[15:0], reg_src_bpp, 16'd0);
+    6'd0,
+    src_last_pkt,
+    1'b0,
+    CHDR_PKT_TYPE_DATA,
+    CHDR_NO_MDATA,
+    src_pkt_cnt[15:0],
+    reg_src_bpp,
+    16'd0
+  );
   assign src_ctxt_tuser  = CHDR_W > 64 ? CONTEXT_FIELD_HDR_TS : CONTEXT_FIELD_HDR;
   assign src_ctxt_tlast  = 1'b1;
-  assign src_ctxt_tvalid = (state == ST_HDR && (reg_src_en || reg_src_eob));
+  assign src_ctxt_tvalid = (state == ST_HDR);
+
+  // Holding register for the upper half of 64-bit reads
+  reg [31:0] temp_hi;
 
   // Register Interface
   // ---------------------------
   always @(posedge rfnoc_chdr_clk) begin
     if (rfnoc_chdr_rst) begin
       ctrlport_resp_ack <= 1'b0;
+      reg_src_num_pkt <= 48'd0;
+      reg_src_num_pkt_is_one <= 1'b0;
+      reg_src_en <= 1'b0;
+      reg_src_finite <= 1'b0;
+      ctrlport_resp_data <= 32'bX;
+      temp_hi <= 32'bX;
+      reg_src_lpp <= 12'b0;
+      reg_src_bpp <= 16'b0;
+      reg_throttle_cyc <= 20'b0;
+      reg_throttle_cyc_is_zero <= 1'b1;
     end else begin
+      reg_throttle_cyc_is_zero <= (reg_throttle_cyc == 20'd0);
+      reg_src_num_pkt_is_one <= (reg_src_num_pkt == 48'd1);
+
+      // EOB gets set when we finish sending the requested number of packets in
+      // finite mode, so clear the reg_src_en bit.
+      if (src_last_pkt) reg_src_en <= 1'b0;
+
       // All transactions finish in 1 cycle
       ctrlport_resp_ack <= ctrlport_req_wr | ctrlport_req_rd;
       // Handle register writes
       if (ctrlport_req_wr) begin
         case(ctrlport_req_addr)
-          REG_CTRL_STATUS:
-            {reg_src_en, reg_clear_cnts} <= ctrlport_req_data[1:0];
+          REG_CTRL_STATUS: begin
+            {reg_src_finite, reg_src_en, reg_clear_cnts} <= ctrlport_req_data[2:0];
+          end
           REG_SRC_LINES_PER_PKT:
             reg_src_lpp <= ctrlport_req_data[11:0];
           REG_SRC_BYTES_PER_PKT:
             reg_src_bpp <= ctrlport_req_data[15:0];
           REG_SRC_THROTTLE_CYC:
             reg_throttle_cyc <= ctrlport_req_data[19:0];
+          REG_SRC_NUM_PKT_LO:
+            reg_src_num_pkt[31:0] <= ctrlport_req_data[31:0];
+          REG_SRC_NUM_PKT_HI:
+            reg_src_num_pkt[47:32] <= ctrlport_req_data[15:0];
+          default: begin
+            // Do nothing for undefined registers
+          end
         endcase
       end
       // Handle register reads
       if (ctrlport_req_rd) begin
         case(ctrlport_req_addr)
           REG_CTRL_STATUS:
-            ctrlport_resp_data <= {NIPC[7:0],ITEM_W[7:0], state, 12'h0, reg_src_en, reg_clear_cnts};
+            ctrlport_resp_data <= {NIPC[7:0], ITEM_W[7:0], state, 11'h0,
+            reg_src_finite, reg_src_en, reg_clear_cnts};
           REG_SRC_LINES_PER_PKT:
             ctrlport_resp_data <= {20'h0, reg_src_lpp};
           REG_SRC_BYTES_PER_PKT:
             ctrlport_resp_data <= {16'h0, reg_src_bpp};
           REG_SRC_THROTTLE_CYC:
             ctrlport_resp_data <= {12'h0, reg_throttle_cyc};
-          REG_SNK_LINE_CNT_LO:
+          REG_SNK_LINE_CNT_LO: begin
             ctrlport_resp_data <= snk_line_cnt[31:0];
+            temp_hi <= snk_line_cnt[63:32];
+          end
           REG_SNK_LINE_CNT_HI:
-            ctrlport_resp_data <= snk_line_cnt[63:32];
-          REG_SNK_PKT_CNT_LO:
+            ctrlport_resp_data <= temp_hi;
+          REG_SNK_PKT_CNT_LO: begin
             ctrlport_resp_data <= snk_pkt_cnt[31:0];
+            temp_hi <= snk_pkt_cnt[63:32];
+          end
           REG_SNK_PKT_CNT_HI:
-            ctrlport_resp_data <= snk_pkt_cnt[63:32];
-          REG_SRC_LINE_CNT_LO:
+            ctrlport_resp_data <= temp_hi;
+          REG_SRC_LINE_CNT_LO: begin
             ctrlport_resp_data <= src_line_cnt[31:0];
+            temp_hi <= src_line_cnt[63:32];
+          end
           REG_SRC_LINE_CNT_HI:
-            ctrlport_resp_data <= src_line_cnt[63:32];
-          REG_SRC_PKT_CNT_LO:
+            ctrlport_resp_data <= temp_hi;
+          REG_SRC_PKT_CNT_LO: begin
             ctrlport_resp_data <= src_pkt_cnt[31:0];
+            temp_hi <= src_pkt_cnt[63:32];
+          end
           REG_SRC_PKT_CNT_HI:
-            ctrlport_resp_data <= src_pkt_cnt[63:32];
-          REG_LOOP_LINE_CNT_LO:
+            ctrlport_resp_data <= temp_hi;
+          REG_LOOP_LINE_CNT_LO: begin
             ctrlport_resp_data <= loop_line_cnt[31:0];
+            temp_hi <= loop_line_cnt[63:32];
+          end
           REG_LOOP_LINE_CNT_HI:
-            ctrlport_resp_data <= loop_line_cnt[63:32];
-          REG_LOOP_PKT_CNT_LO:
+            ctrlport_resp_data <= temp_hi;
+          REG_LOOP_PKT_CNT_LO: begin
             ctrlport_resp_data <= loop_pkt_cnt[31:0];
+            temp_hi <= loop_pkt_cnt[63:32];
+          end
           REG_LOOP_PKT_CNT_HI:
-            ctrlport_resp_data <= loop_pkt_cnt[63:32];
+            ctrlport_resp_data <= temp_hi;
+          REG_SRC_NUM_PKT_LO:
+            ctrlport_resp_data <= reg_src_num_pkt[31:0];
+          REG_SRC_NUM_PKT_HI:
+            ctrlport_resp_data <= {16'h0, reg_src_num_pkt[47:32]};
           default:
             ctrlport_resp_data <= 32'h0;
         endcase
