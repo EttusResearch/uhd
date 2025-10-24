@@ -33,6 +33,8 @@ const uint32_t null_block_control::REG_LOOP_LINE_CNT_LO  = 0x30;
 const uint32_t null_block_control::REG_LOOP_LINE_CNT_HI  = 0x34;
 const uint32_t null_block_control::REG_LOOP_PKT_CNT_LO   = 0x38;
 const uint32_t null_block_control::REG_LOOP_PKT_CNT_HI   = 0x3C;
+const uint32_t null_block_control::REG_SRC_NUM_PKT_LO    = 0x40;
+const uint32_t null_block_control::REG_SRC_NUM_PKT_HI    = 0x44;
 
 
 class null_block_control_impl : public null_block_control
@@ -57,15 +59,64 @@ public:
     void issue_stream_cmd(const stream_cmd_t& stream_cmd) override
     {
         if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
-            RFNOC_LOG_TRACE("Received start stream request!");
-            regs().poke32(REG_CTRL_STATUS, 0x2);
+            RFNOC_LOG_TRACE("Received start continuous stream request!");
+            regs().poke32(REG_CTRL_STATUS, 0x2); // Continuous mode, enable source
+            _streaming = true;
+        } else if (stream_cmd.stream_mode
+                   == stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE) {
+            RFNOC_LOG_TRACE("Received finite stream request for " << stream_cmd.num_samps
+                                                                  << " samples");
+            // Calculate number of packets needed for the requested samples
+            const uint32_t bpp            = get_bytes_per_packet();
+            const uint32_t bytes_per_item = _item_width / 8;
+            const uint32_t bytes_per_line = (_item_width * _nipc) / 8;
+
+            // Validate that packet payload is a multiple of item size
+            const uint32_t payload_bytes = bpp - bytes_per_line;
+            if (payload_bytes % bytes_per_item != 0) {
+                throw uhd::value_error("Packet payload size ("
+                                       + std::to_string(payload_bytes)
+                                       + " bytes) must be a multiple of item size ("
+                                       + std::to_string(bytes_per_item) + " bytes)");
+            }
+
+            // CHDR header occupies one full line
+            const uint32_t spp = payload_bytes / bytes_per_item;
+            const uint64_t num_packets =
+                (stream_cmd.num_samps + spp - 1) / spp; // Ceiling division
+
+            // Calculate actual number of samples that will be sent
+            const uint64_t actual_samps = num_packets * spp;
+
+            // Inform user if we're sending more samples than requested due to packet
+            // alignment
+            if (actual_samps != stream_cmd.num_samps) {
+                RFNOC_LOG_INFO("Requested " << stream_cmd.num_samps << " samples, but "
+                                            << actual_samps << " samples will be sent ("
+                                            << num_packets << " packets)");
+            }
+
+            // Hardware supports 48-bit packet limit
+            constexpr uint64_t MAX_PACKET_LIMIT = (1ULL << 48) - 1;
+            if (num_packets > MAX_PACKET_LIMIT) {
+                throw uhd::value_error(
+                    "Requested sample count requires more than 2^48-1 packets!");
+            }
+
+            // Set the packet limit
+            regs().poke64(REG_SRC_NUM_PKT_LO, num_packets);
+
+            // Enable source in finite mode
+            regs().poke32(
+                REG_CTRL_STATUS, 0x6); // Finite mode (bit 2), enable source (bit 1)
             _streaming = true;
         } else if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS) {
             RFNOC_LOG_TRACE("Received stop stream request!");
             regs().poke32(REG_CTRL_STATUS, 0x0);
             _streaming = false;
         } else {
-            throw uhd::runtime_error("Null source can only do continuous streaming!");
+            throw uhd::runtime_error(std::string("Unsupported stream_mode: ")
+                                     + std::to_string(stream_cmd.stream_mode));
         }
     }
 
