@@ -1300,6 +1300,11 @@ public:
         return _rx_chans.size();
     }
 
+    size_t get_rx_radio_channel(size_t chan = 0) override
+    {
+        return _get_rx_chan(chan).block_chan;
+    }
+
     std::string get_rx_subdev_name(size_t chan = 0) override
     {
         auto rx_chain = _get_rx_chan(chan);
@@ -1978,6 +1983,11 @@ public:
     size_t get_tx_num_channels(void) override
     {
         return _tx_chans.size();
+    }
+
+    size_t get_tx_radio_channel(size_t chan = 0) override
+    {
+        return _get_tx_chan(chan).block_chan;
     }
 
     std::string get_tx_subdev_name(size_t chan = 0) override
