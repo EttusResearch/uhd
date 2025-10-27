@@ -522,6 +522,11 @@ stages:
     )
   jobs:
   - template: ../fpga/templates/job-run-testbenches.yml
+    parameters:
+      simulator: modelsim
+  - template: ../fpga/templates/job-run-testbenches.yml
+    parameters:
+      simulator: xsim
 
 ### END: Testbenches stage
 

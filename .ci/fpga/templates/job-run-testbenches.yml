@@ -5,13 +5,18 @@
 #
 # Description:
 #
-#   This template is used to run all the testbenches using ModelSim.
+#   This template is used to run all the testbenches using the requested simulator.
 #
 
+parameters:
+### Required parameters
+# Simulator to use (e.g. modelsim, xsim, etc.)
+- name: simulator
+  type: string
 
 jobs:
 - job:
-  displayName: "ModelSim Simulation"
+  displayName: "${{ parameters.simulator }} Simulation"
   timeoutInMinutes: 360
   pool:
     name: Drivers-NIBuildFarm-RFMIBUILD
@@ -19,6 +24,8 @@ jobs:
     - Agent.OS -equals Linux
   variables:
   - group: sdr-pipeline-vars
+  - name: excludes_file
+    value: ${{ iif(eq(parameters.simulator, 'xsim'), 'testbenches', parameters.simulator) }}
   steps:
     - template: setup_steps.yml
 
@@ -28,7 +35,7 @@ jobs:
         echo "---- Run testbenches ----"
         pushd ./tools/utils
         pip3 install -r requirements.txt
-        python3 ./run_testbenches.py --logged --simulator modelsim --excludes=modelsim.excludes -j4 --report $(Build.ArtifactStagingDirectory)/junit.xml run
+        python3 ./run_testbenches.py --logged --simulator ${{ parameters.simulator }} --excludes=${{ variables.excludes_file }}.excludes -j4 --report $(Build.ArtifactStagingDirectory)/junit.xml run
         popd
       workingDirectory: uhddev/fpga/usrp3
       displayName: "Run Testbenches"
