@@ -46,6 +46,72 @@ void sig_int_handler(int)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    // clang-format off
+    const std::string program_doc =
+        "usage: rfnoc_replay_samples_from_file [-h] [--args ARGS] -f FREQ [-r RATE]\n"
+        "                                           [--tx-args TX_ARGS]\n"
+        "                                           [--radio-id RADIO_ID]\n"
+        "                                           [--radio-chan RADIO_CHAN]\n"
+        "                                           [--replay-id REPLAY_ID]\n"
+        "                                           [--replay-chan REPLAY_CHAN]\n"
+        "                                           [--nsamps NSAMPS] [--file FILE]\n"
+        "                                           [--lo-offset LO_OFFSET]\n"
+        "                                           [--gain GAIN] [--ant ANT]\n"
+        "                                           [--bw BW]\n"
+        "                                           [--ref {internal,external,mimo,gpsdo}]\n"
+        "                                           [--dot]"
+        "\n\n"
+        "This example program demonstrates how to use the RFNoC C++ API\n"
+        "to create an RFNoC graph involving an RFNoC Replay block for playback of\n"
+        "baseband samples through the radio.\n"
+        "The program loads sample data into the Replay block, configures the RF\n"
+        "chain, and plays back the data through the radio. Playback can be\n"
+        "continuous or for a specified number of samples.\n"
+        "\n"
+        "Notes:\n"
+        "  - The Replay block is included in most default FPGA images for\n"
+        "    RFNoC-capable USRP devices, so custom FPGA builds are usually not\n"
+        "    required to use this example program.\n"
+        "  - The USRP may round the requested transmit sample rate to the nearest\n"
+        "    supported value. For accurate playback, please ensure that the sample\n"
+        "    rate of the input data in the file matches the USRP sample rate.\n"
+        "    If supported by your USRP device model, you could also change the\n"
+        "    master clock rate to an integer multiple of the desired sample rate\n"
+        "    to achieve precise sampling. For available master clock rates for a\n"
+        "    specific USRP device model, see the UHD manual.\n"
+        "\n"
+        "Key features:\n"
+        "- Loads baseband samples from a binary file and uploads them to the\n"
+        "  RFNoC Replay block for playback through the radio.\n"
+        "- Dynamically builds and configures an RFNoC graph connecting the Replay\n"
+        "  block to the radio block, with automatic integration of a DUC block if\n"
+        "  present.\n"
+        "- Supports flexible selection of Replay and radio blocks and channels\n"
+        "  via program options.\n"
+        "- Allows configuration of key transmission parameters, including\n"
+        "  frequency, sample rate, gain, bandwidth, LO offset, and antenna.\n"
+        "- Enables continuous or finite playback of samples, as specified by the\n"
+        "  user.\n"
+        "\n"
+        "Usage examples:\n"
+        "1. Replay a signal from a file on default radio and using default replay\n"
+        "   block.\n"
+        "     rfnoc_replay_samples_from_file --args \"addr=192.168.10.2\"\n"
+        "                                    --freq 2.4e09 --rate 10e06\n"
+        "                                    --file usrp_samples.dat\n"
+        "2. Replay a signal from a file explicitly selecting and configuring the\n"
+        "   radio and replay block:\n"
+        "     rfnoc_replay_samples_from_file --args \"addr=192.168.10.2\"\n"
+        "                                    --freq 2.4e09 --rate 10e06\n"
+        "                                    --file usrp_samples.dat\n"
+        "                                    --radio-id 1 --radio-chan 0\n"
+        "                                    --replay-id 0 --replay-chan 0\n"
+        "3. Replay an LTE signal at a sampling rate of 30.72MSps with master\n"
+        "   clock rate changed to an integer multiple of the sampling rate:\n"
+        "     rfnoc_replay_samples_from_file --args \"addr=192.168.10.2,master_clock_rate=184.32e6\"\n"
+        "                                    --freq 2.4e09 --rate 30.72e06\n"
+        "                                    --file LTE_30d72MSps_sc16.dat\n";
+    // clang-format on
     // We use sc16 in this example, but the replay block only uses 64-bit words
     // and is not aware of the CPU or wire format.
     std::string wire_format("sc16");
@@ -59,41 +125,75 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     size_t radio_id, radio_chan, replay_id, replay_chan, nsamps;
 
     po::options_description desc("Allowed Options");
+    po::options_description alias_options;
+    po::options_description all_options;
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("tx_args", po::value<std::string>(&tx_args), "Block args for the transmit radio")
-        ("radio_id", po::value<size_t>(&radio_id)->default_value(0), "radio block to use (e.g., 0 or 1).")
-        ("radio_chan", po::value<size_t>(&radio_chan)->default_value(0), "radio channel to use")
-        ("replay_id", po::value<size_t>(&replay_id)->default_value(0), "replay block to use (e.g., 0 or 1)")
-        ("replay_chan", po::value<size_t>(&replay_chan)->default_value(0), "replay channel to use")
-        ("nsamps", po::value<size_t>(&nsamps)->default_value(0), "number of samples to play (0 for infinite)")
-        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to read binary samples from")
-        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
-        ("lo-offset", po::value<double>(&lo_offset), "Offset for frontend LO in Hz (optional)")
-        ("rate", po::value<double>(&rate), "rate of radio block")
-        ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("bw", po::value<double>(&bw), "analog front-end filter bandwidth in Hz")
-        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
-        ("dot", "instead of a textual representation, generate a dot graph of the RFNoC connections")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("tx-args", po::value<std::string>(&tx_args), "Provides additional configuration options for the TX "
+            "radio block as key-value pairs (e.g., mode_n, lo_source). The available options depend on the USRP model. "
+            "Refer to the UHD manual for a complete list and details of supported arguments for your hardware.")
+        ("radio-id", po::value<size_t>(&radio_id)->default_value(0), "Specifies the RFNoC radio block index "
+            "to use for transmission. On devices with multiple radio blocks, this argument selects which RF frontend "
+            "(e.g., 0 for the first radio, 1 for the second) is addressed for streaming.")
+        ("radio-chan", po::value<size_t>(&radio_chan)->default_value(0), "Selects the channel index within "
+            "the chosen RFNoC radio block for data transmission. This determines which physical transmit channel (e.g., 0 "
+            "for the first channel, 1 for the second) is used for streaming.")
+        ("replay-id", po::value<size_t>(&replay_id)->default_value(0), "Specifies the RFNoC Replay block "
+            "index to use for playback (e.g., 0 for the first Replay block).")
+        ("replay-chan", po::value<size_t>(&replay_chan)->default_value(0), "Selects the channel index within "
+            "the chosen Replay block for data playback.")
+        ("nsamps", po::value<size_t>(&nsamps)->default_value(0), "Sets the total number of samples to play "
+            "back from the file. If set to 0, playback is continuous; otherwise, playback stops after the specified "
+            "number of samples.")
+        ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "Specifies the name of the "
+            "binary file containing baseband samples to be loaded into the Replay block for playback."
+            "\nThis example program requires the input file to use the sc16 format (interleaved 16-bit signed integers for "
+            "I/Q), although the Replay block itself can support other data formats.")
+        ("freq,f", po::value<double>(&freq)->required(), "RF center frequency in Hz.")
+        ("lo-offset", po::value<double>(&lo_offset), "LO offset for the frontend in Hz.")
+        ("rate,r", po::value<double>(&rate), "TX sample rate in samples/second. Note that each "
+            "USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("gain", po::value<double>(&gain), "TX gain for the RF chain in dB.")
+        ("ant", po::value<std::string>(&ant), "Antenna port selection string selecting a specific antenna "
+            "port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the TX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("dot", "Outputs the RFNoC graph as a DOT-format representation, showing the connections between "
+            "blocks for visualization or analysis.")
     ;
+    alias_options.add_options()
+        ("tx_args", po::value<std::string>(&tx_args), "")    // alias for --tx-args for backward compatibility
+        ("radio_id", po::value<size_t>(&radio_id), "")       // alias for --radio-id
+        ("radio_chan", po::value<size_t>(&radio_chan), "")   // alias for --radio-chan
+        ("replay_id", po::value<size_t>(&replay_id), "")     // alias for --replay-id
+        ("replay_chan", po::value<size_t>(&replay_chan), "") // alias for --replay-chan
+    ;
+    all_options.add(desc).add(alias_options);
     // clang-format on
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
-    // Print help message
+    po::store(po::parse_command_line(argc, argv, all_options), vm);
+    // print the help message
     if (vm.count("help")) {
-        cout << "UHD/RFNoC Replay samples from file " << desc << endl;
-        cout << "This application uses the Replay block to playback data from a file to "
-                "a radio"
-             << endl
-             << endl;
-        return EXIT_FAILURE;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
+        return ~0;
     }
-
+    po::notify(vm); // only called if --help was not requested
 
     /************************************************************************
      * Create device and block controls
