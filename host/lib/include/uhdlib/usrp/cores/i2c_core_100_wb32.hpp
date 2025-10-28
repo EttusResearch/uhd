@@ -20,8 +20,17 @@ public:
 
     ~i2c_core_100_wb32(void) override = 0;
 
-    //! makes a new i2c core from iface and slave base
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base);
+    /*!
+     * Makes a new i2c core from iface and slave base
+     *
+     * \param iface the wb_iface to use
+     * \param base the base address of the i2c core
+     * \param multi_byte_eeprom_offset true if the eeprom uses two bytes from the 16-bit
+     *        offset passed into the write_eeprom function, false if it uses one byte
+     */
+    static sptr make(uhd::wb_iface::sptr iface,
+        const size_t base,
+        const bool multi_byte_eeprom_offset = false);
 
     /*!
      * Sets the clock rate of the i2c core

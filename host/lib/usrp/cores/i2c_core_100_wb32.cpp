@@ -8,6 +8,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <chrono>
 #include <thread>
 
@@ -53,8 +54,10 @@ i2c_core_100_wb32::~i2c_core_100_wb32(void)
 class i2c_core_100_wb32_wb32_impl : public i2c_core_100_wb32
 {
 public:
-    i2c_core_100_wb32_wb32_impl(wb_iface::sptr iface, const size_t base)
-        : _iface(iface), _base(base)
+    i2c_core_100_wb32_wb32_impl(wb_iface::sptr iface,
+        const size_t base,
+        const bool multi_byte_eeprom_offset = false)
+        : _iface(iface), _base(base), _multi_byte_eeprom_offset(multi_byte_eeprom_offset)
     {
         // init I2C FPGA interface.
         _iface->poke32(REG_I2C_CTRL, 0x0000);
@@ -116,11 +119,34 @@ public:
         return bytes;
     }
 
+    void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& bytes) override
+    {
+        for (size_t i = 0; i < bytes.size(); i++) {
+            // write a byte at a time, its easy that way
+            byte_vector_t cmd;
+            if (_multi_byte_eeprom_offset) {
+                // Some EEPROM require writing the full 16-bit offset to write to.
+                cmd.push_back(narrow_cast<uint8_t>((offset + i) >> 8));
+            }
+            cmd.push_back(narrow_cast<uint8_t>(offset + i));
+            cmd.push_back(narrow_cast<uint8_t>(bytes[i]));
+            this->write_i2c(addr, cmd);
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(10)); // worst case write
+        }
+    }
+
     // override read_eeprom so we can write once, read all N bytes
     // the default implementation calls read i2c once per byte
     byte_vector_t read_eeprom(uint16_t addr, uint16_t offset, size_t num_bytes) override
     {
-        this->write_i2c(addr, byte_vector_t(1, uint8_t(offset)));
+        byte_vector_t byte_vector_to_write;
+        if (_multi_byte_eeprom_offset) {
+            // Some EEPROM require writing the full 16-bit offset to read from.
+            byte_vector_to_write.push_back(narrow_cast<uint8_t>(offset >> 8));
+        }
+        byte_vector_to_write.push_back(narrow_cast<uint8_t>(offset));
+        this->write_i2c(addr, byte_vector_to_write);
         return this->read_i2c(addr, num_bytes);
     }
 
@@ -143,9 +169,11 @@ private:
 
     wb_iface::sptr _iface;
     const size_t _base;
+    bool _multi_byte_eeprom_offset;
 };
 
-i2c_core_100_wb32::sptr i2c_core_100_wb32::make(wb_iface::sptr iface, const size_t base)
+i2c_core_100_wb32::sptr i2c_core_100_wb32::make(
+    wb_iface::sptr iface, const size_t base, const bool multi_byte_eeprom_offset)
 {
-    return sptr(new i2c_core_100_wb32_wb32_impl(iface, base));
+    return sptr(new i2c_core_100_wb32_wb32_impl(iface, base, multi_byte_eeprom_offset));
 }
