@@ -23,5 +23,12 @@ public:
     //! makes a new i2c core from iface and slave base
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
-    virtual void set_clock_rate(const double rate) = 0;
+    /*!
+     * Sets the clock rate of the i2c core
+     *
+     * \param rate the clock rate in Hz
+     * \param i2c_datarate the data rate of the i2c bus in Hz
+     */
+    virtual void set_clock_rate(
+        const double rate, const uint32_t i2c_datarate = 400000) = 0;
 };
