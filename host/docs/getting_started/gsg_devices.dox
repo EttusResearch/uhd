@@ -1,19 +1,21 @@
 /*! \page page_gsg_devices Devices
 
-
-\li  **USRP B2xx**
+\section b2xx_gsg_list USRP B2xx
     - \ref b200_getting_started "USRP B2xx getting started (USRP Manual)"
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-gnu-radio-on-ubuntu">Getting Started with USRP B206mini-i and GNU Radio on Ubuntu</a>
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-gnu-radio-on-windows">Getting Started with USRP B206mini-i and GNU Radio on Windows</a>
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-py-on-linux-ubuntu">Getting Started with USRP B206mini-i and Python on Linux Ubuntu</a>
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-python-on-windows">Getting Started with USRP B206mini-i and Python on Windows</a>
-\li **USRP E3xx**
+
+\section e3xx_gsg_list USRP E3xx
     - \ref e3xx_getting_started "USRP E3xx getting started (USRP Manual)"
-\li **USRP X3xx**
+
+\section x3xx_gsg_list USRP X3xx
     - \ref x3x0_getting_started "USRP X3xx getting started (USRP Manual)"
-\li **USRP N3xx**
+
+\section n3xx_gsg_list USRP N3xx
     - \ref n3xx_getting_started "USRP N3xx getting started (USRP Manual)"
-\li **USRP X4xx**
+\section x4xx_gsg_list USRP X4xx
     - \ref x4xx_getting_started "USRP X4xx getting started (USRP Manual)"
 
 
