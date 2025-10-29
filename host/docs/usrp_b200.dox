@@ -58,7 +58,7 @@ Some warnings to prevent damage to the device:
 
 \subsection getting_started_tutorials Getting Started with B206mini Tutorials
 To learn how to set up the USRP Hardware Driver (UHD), and use UHD to acquire 
-an RF spectrum using the B206 follow the [Getting Started with USRP Products](https://learn.ni.com/pages/getting-started?labels=%5B%22Product%22%5D&values=%5B%22usrp%22%5D) tutorials.
+an RF spectrum using the B206 follow the [Getting Started with USRP Products](https://ni.com/usrp-getting-started) tutorials.
 
 \subsection install_software_tools Install and Setup the Software Tools on Your Host Computer
 In order to use your Universal Software Radio Peripheral (USRP™), you must have
