@@ -13,6 +13,8 @@
 #    pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
 
+#include <chrono>
+
 template <typename data_t>
 nirio_fifo<data_t>::nirio_fifo(niriok_proxy::sptr riok_proxy,
     const fifo_direction_t direction,

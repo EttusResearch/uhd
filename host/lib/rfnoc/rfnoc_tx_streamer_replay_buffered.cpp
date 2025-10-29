@@ -7,6 +7,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer_replay_buffered.hpp>
+#include <chrono>
 #include <numeric>
 
 using namespace uhd;

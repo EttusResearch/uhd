@@ -1,3 +1,5 @@
+#include <chrono>
+
 namespace rpc {
 
 template <typename... Args>

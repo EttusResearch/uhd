@@ -7,6 +7,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_lo_ctrl.hpp>
+#include <chrono>
 #include <thread>
 
 namespace uhd { namespace usrp { namespace zbx {

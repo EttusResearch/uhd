@@ -11,6 +11,7 @@
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
+#include <chrono>
 #include <iostream>
 
 using namespace uhd;

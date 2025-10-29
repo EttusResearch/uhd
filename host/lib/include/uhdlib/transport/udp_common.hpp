@@ -17,6 +17,7 @@
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/format.hpp>
+#include <chrono>
 #include <thread>
 
 namespace uhd { namespace transport {

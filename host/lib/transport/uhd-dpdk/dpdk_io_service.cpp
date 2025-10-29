@@ -10,6 +10,7 @@
 #include <uhdlib/transport/dpdk/udp.hpp>
 #include <uhdlib/transport/dpdk_io_service_client.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <chrono>
 #include <cmath>
 
 /*

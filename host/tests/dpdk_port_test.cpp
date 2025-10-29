@@ -9,6 +9,7 @@
 #include <uhdlib/transport/dpdk_io_service.hpp>
 #include <uhdlib/transport/udp_dpdk_link.hpp>
 #include <boost/program_options.hpp>
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <thread>

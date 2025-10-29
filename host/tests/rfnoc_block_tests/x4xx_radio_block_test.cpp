@@ -12,6 +12,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <boost/test/unit_test.hpp>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <thread>

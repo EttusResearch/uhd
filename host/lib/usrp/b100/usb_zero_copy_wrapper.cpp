@@ -13,6 +13,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/atomic.hpp>
 #include <condition_variable>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <mutex>
