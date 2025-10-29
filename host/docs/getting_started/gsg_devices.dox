@@ -6,7 +6,7 @@
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-gnu-radio-on-ubuntu">Getting Started with USRP B206mini-i and GNU Radio on Ubuntu</a>
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-gnu-radio-on-windows">Getting Started with USRP B206mini-i and GNU Radio on Windows</a>
     - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-py-on-linux-ubuntu">Getting Started with USRP B206mini-i and Python on Linux Ubuntu</a>
-    - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-python-on-windows">Getting Started with USRP B206mini-i and GNU Radio on Windows</a>
+    - <a href="https://learn.ni.com/courses/getting-started-with-usrp-b206mini-i-and-python-on-windows">Getting Started with USRP B206mini-i and Python on Windows</a>
 \li **USRP E3xx**
     - \ref e3xx_getting_started "USRP E3xx getting started (USRP Manual)"
 \li **USRP X3xx**
