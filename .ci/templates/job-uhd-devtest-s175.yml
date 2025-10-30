@@ -11,7 +11,7 @@ parameters:
   type: string
 - name: testDevices
   type: string
-  default: 'b2xx'
+  default: 'b2xx,x3xx'
 
 jobs:
 - template: job-uhd-devtest.yml
@@ -23,8 +23,8 @@ jobs:
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
-    redisHost: ''
-    vivado_dir: '/opt/Xilinx/Vivado_Lab/2020.1/'
+    redisHost: 'dre-s175'
+    vivado_dir: $(xilinx_location)
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'b2xx') }}:
         sdr-s175-dev-tests-b206-0:
@@ -34,3 +34,15 @@ jobs:
           devSerial: $(b206_devSerial)
           devBus: 'usb'
           devtestPattern: 'b2xx'
+      ${{ if contains(parameters.testDevices, 'x3xx') }}:
+        sdr-s175-dev-tests-x310-4:
+          devType: 'x300'
+          devModel: 'x310'
+          devName: sdr_s175_x310_4
+          devSerial: $(x310_4_devSerial)
+          devBus: 'ip'
+          devAddr: $(x310_4_devAddr)
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: $(x310_4_jtagSerial)
+          jtagServer: 'nitest@dre-s175'

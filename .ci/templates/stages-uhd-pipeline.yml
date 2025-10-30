@@ -632,7 +632,7 @@ stages:
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-      testDevices: 'b2xx'
+      testDevices: 'x3xx,b2xx'
 
 - stage: devtest_uhd_n3xx_e320_stage
   displayName: Dev Test UHD n3xx e320
