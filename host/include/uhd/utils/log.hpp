@@ -136,7 +136,7 @@ boost::optional<uhd::log::severity_level> UHD_API parse_log_level_from_string(
  */
 struct UHD_API logging_info
 {
-    logging_info() : verbosity(uhd::log::off) {}
+    logging_info() : verbosity(uhd::log::off), line(0) {}
     logging_info(const boost::posix_time::ptime& time_,
         const uhd::log::severity_level& verbosity_,
         const std::string& file_,
