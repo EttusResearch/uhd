@@ -5,6 +5,9 @@ parameters:
   type: string
 - name: ubuntuReleaseName
   type: string
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 - script: |

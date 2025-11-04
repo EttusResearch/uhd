@@ -51,6 +51,9 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
+- name: cmake_args
+  type: string
+  default: " "
 - name: fpga_imgs_source
   type: string
   displayName: FPGA Images Source
@@ -280,17 +283,21 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make
+      cmake_args: ${{ parameters.cmake_args }}
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make_trace
+      cmake_args: ${{ parameters.cmake_args }}
   - template: job-uhd-build-src.yml
     parameters:
       toolset: ninja
+      cmake_args: ${{ parameters.cmake_args }}
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
       parameters:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+        cmake_args: ${{ parameters.cmake_args }}
 
 - stage: build_rfnoc_modtool_stage_linux
   displayName: Build and Test RFNoC Modtool
@@ -468,6 +475,7 @@ stages:
       parameters:
         toolset: ubuntu_deb
         installer: deb
+        cmake_args: ${{ parameters.cmake_args }}
 
 - stage: build_uhd_installer_stage_fedora
   displayName: Build UHD Installers Fedora
@@ -478,6 +486,7 @@ stages:
       parameters:
         toolset: fedora_rpm
         installer: rpm
+        cmake_args: ${{ parameters.cmake_args }}
         releaseBinaries: ${{ parameters.release_binaries }}
 
 - stage: build_uhd_installer_stage_win
@@ -496,6 +505,7 @@ stages:
       parameters:
         toolset: msbuild
         installer: nsis
+        cmake_args: ${{ parameters.cmake_args }}
         releaseBinaries: ${{ parameters.release_binaries }}
         ${{ if contains(parameters.fpga_imgs_source, 'files.ettus.com') }}:
           fpga_imgs_source: 'files.ettus.com'

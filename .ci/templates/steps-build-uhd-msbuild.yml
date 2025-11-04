@@ -22,6 +22,9 @@ parameters:
   default: false
 - name: uhdVcpkgManifestDir
   type: string
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 - script: |
@@ -41,6 +44,9 @@ steps:
       SET UHD_CI_CMAKE_PYTHON="-DENABLE_PYTHON_API=ON"
       SET UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
     )
+    if not "${{ parameters.cmake_args }}" == " " (
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    )
     cmake ${{ parameters.uhdSrcDir }}/host ^
       -DVCPKG_TARGET_TRIPLET=uhd-$(vsArch)-windows-static-md ^
       -DCMAKE_TOOLCHAIN_FILE=%VCPKG_INSTALL_DIR%/scripts/buildsystems/vcpkg.cmake ^
@@ -52,6 +58,7 @@ steps:
       %UHD_CI_CMAKE_RELEASE_MODE% ^
       %UHD_CI_CMAKE_PYTHON% ^
       %UHD_CI_CMAKE_SIM% ^
+      ${{ parameters.cmake_args }} ^
       -G "$(cmakeCompiler)" -A $(cmakeArch)
   displayName: cmake msbuild UHD
 

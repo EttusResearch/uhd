@@ -21,6 +21,9 @@ parameters:
 - name: release_binaries
   type: boolean
   default: false
+- name: cmake_args
+  type: string
+  default: " "
 
 jobs:
 - job: build_ctest_and_upload_uhd_${{ parameters.toolset }}
@@ -87,6 +90,7 @@ jobs:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdGenerateTestBinaries: true
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'make_trace') }}:
     - template: steps-build-uhd-make.yml
@@ -94,6 +98,7 @@ jobs:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
         uhdEnableTraceLog: true
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'make_homebrew_macos') }}:
     - template: steps-build-uhd-make-homebrew-macos.yml
@@ -103,6 +108,7 @@ jobs:
         uhdGenerateTestBinaries: true
         uhdCustomBoostPackage: ${{ parameters.custom_boost_version }}
         uhdCustomBoostPackageURL: ${{ parameters.custom_boost_version_url }}
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'ninja') }}:
     - template: steps-build-uhd-ninja.yml
@@ -123,6 +129,7 @@ jobs:
         vsArch: $(vsArch)
         vsYear: $(vsYear)
         uhdGenerateTestBinaries: true
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'msbuild_python') }}:
     - template: steps-build-uhd-msbuild.yml
@@ -137,6 +144,7 @@ jobs:
         vsArch: $(vsArch)
         vsYear: $(vsYear)
         uhdGenerateTestBinaries: true
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'make_custom_boost_version') }}:
     - template: steps-build-uhd-make.yml

@@ -12,6 +12,9 @@ parameters:
 - name: uhdCustomBoostPackageURL
   type: string
   default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 - ${{ if parameters.uhdCustomBoostPackage }}:
@@ -63,10 +66,14 @@ steps:
       BOOST_INSTALL_DIR=${{ parameters.uhdBuildDir }}-boost
       export UHD_BOOST_OPTIONS="-DCMAKE_PREFIX_PATH=$BOOST_INSTALL_DIR"
     fi
+    if [[ "${{ parameters.cmake_args }}" != " " ]]; then
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       $UHD_CI_CMAKE_SIM \
       $UHD_BOOST_OPTIONS \
+      ${{ parameters.cmake_args }} \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake homebrew macOS UHD
 

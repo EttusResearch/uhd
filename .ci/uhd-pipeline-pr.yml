@@ -95,6 +95,10 @@ parameters:
   type: boolean
   displayName: Build x4xx filesystem image
   default: true
+- name: cmake_args
+  type: string
+  displayName: Additional CMake arguments (optional)
+  default: ' '
 - name: fpga_imgs_source
   type: string
   values:
@@ -249,6 +253,7 @@ extends:
     build_e320: ${{ parameters.build_e320 }}
     build_n3xx: ${{ parameters.build_n3xx }}
     build_x4xx: ${{ parameters.build_x4xx }}
+    cmake_args: ${{ parameters.cmake_args }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     # FPGA parameters
     clean_ip_build: ${{ parameters.clean_ip_build }}
