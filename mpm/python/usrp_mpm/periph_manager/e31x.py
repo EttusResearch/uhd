@@ -32,8 +32,9 @@ E310_DEFAULT_DONT_RELOAD_FPGA = False # False means idle image gets reloaded
 E310_FPGA_COMPAT = (6, 0)
 E310_DBOARD_SLOT_IDX = 0
 E310_GPIO_SRC_PS = "PS"
+E310_GPIO_SRC_USER_APP = "USER_APP"
 # We use the index positions of RFA and RFB to map between name and radio index
-E310_GPIO_SRCS = ("RFA", "RFB", E310_GPIO_SRC_PS)
+E310_GPIO_SRCS = ("RFA", "RFB", E310_GPIO_SRC_PS, E310_GPIO_SRC_USER_APP)
 E310_FPGPIO_WIDTH = 6
 E310_GPIO_BANKS = ["INT0",]
 
@@ -560,13 +561,17 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
         gpio_master_reg = self.mboard_regs_control.get_fp_gpio_master()
+        gpio_user_mux_reg = self.mboard_regs_control.get_fp_gpio_user_mux()
         gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
         def get_gpio_src_i(gpio_pin_index):
             """
             Return the current radio source given a pin index.
             """
             if gpio_master_reg & (1 << gpio_pin_index):
-                return E310_GPIO_SRC_PS
+                if gpio_user_mux_reg & (1 << gpio_pin_index):
+                    return E310_GPIO_SRC_USER_APP
+                else:
+                    return E310_GPIO_SRC_PS
             radio_src = (gpio_radio_src_reg >> (2 * gpio_pin_index)) & 0b11
             assert radio_src in (0, 1)
             return E310_GPIO_SRCS[radio_src]
@@ -580,22 +585,29 @@ class e31x(ZynqComponents, PeriphManagerBase):
         assert len(src) == E310_FPGPIO_WIDTH, \
             "Invalid number of GPIO sources!"
         gpio_master_reg = 0x00
+        gpio_user_mux_reg = 0x00
         gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
         for src_index, src_name in enumerate(src):
             if src_name not in self.get_gpio_srcs(bank):
                 raise RuntimeError(
-                    "Invalid GPIO source name `{}' at bit position {}!"
-                    .format(src_name, src_index))
-            gpio_master_flag = (src_name == E310_GPIO_SRC_PS)
-            gpio_master_reg = gpio_master_reg | (gpio_master_flag << src_index)
+                    "Invalid GPIO source name `{}' at bit position {}!".format(src_name, src_index)
+                )
+            gpio_master_flag = src_name in (E310_GPIO_SRC_PS, E310_GPIO_SRC_USER_APP)
+            gpio_master_reg |= gpio_master_flag << src_index
+            if src_name == E310_GPIO_SRC_USER_APP:
+                gpio_user_mux_reg |= 1 << src_index
             if gpio_master_flag:
                 continue
             # If PS is not the master, we also need to update the radio source:
             radio_index = E310_GPIO_SRCS.index(src_name)
-            gpio_radio_src_reg = gpio_radio_src_reg | (radio_index << (2*src_index))
-        self.log.trace("Updating GPIO source: master==0x{:02X} radio_src={:03X}"
-                       .format(gpio_master_reg, gpio_radio_src_reg))
+            gpio_radio_src_reg = gpio_radio_src_reg | (radio_index << (2 * src_index))
+        self.log.trace(
+            "Setting GPIO bank {} to source {}: master=0x{:02X} user_mux=0x{:02X} radio_src=0x{:04X}".format(
+                bank, src, gpio_master_reg, gpio_user_mux_reg, gpio_radio_src_reg
+            )
+        )
         self.mboard_regs_control.set_fp_gpio_master(gpio_master_reg)
+        self.mboard_regs_control.set_fp_gpio_user_mux(gpio_user_mux_reg)
         self.mboard_regs_control.set_fp_gpio_radio_src(gpio_radio_src_reg)
 
     ###########################################################################
