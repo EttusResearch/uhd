@@ -698,10 +698,15 @@ class DramReceiver:
                     if ports:
                         self.download_size[ports[region_idx]] = bytes_downloaded
 
-    def issue_stream_cmd(self, stream_cmd, ports=None):
+    def issue_stream_cmd(self, stream_cmd, ports=None, wait_for_buffer_complete=True):
         """Issue a command to start or stop the streaming to DRAM.
 
-        If ports is not specified, issue the stream command on all ports.
+        By default, issue_stream_cmd() starts the streaming and waits until the buffer is
+        full. If the RX stream_cmd was used with a trigger condition, then issue_stream_cmd()
+        needs to be run with wait_for_buffer_complete=False as it only arms the trigger,
+        returns immediately, and the buffer will only be filled once the trigger condition is
+        fulfilled. In that case the user has to call wait_for_buffer_complete() manually once
+        the TX is started.
         """
         assert (
             stream_cmd.stream_mode == StreamMode.num_done
@@ -733,6 +738,23 @@ class DramReceiver:
                 stream_cmd.stream_now = tmp_stream_cmd.stream_now
                 stream_cmd.time_spec = tmp_stream_cmd.time_spec
             rcp[0].issue_stream_cmd(stream_cmd, rcp[1])
+
+        if wait_for_buffer_complete:
+            self.wait_for_buffer_complete(stream_cmd, ports)
+
+    def wait_for_buffer_complete(self, stream_cmd, ports=None):
+        """Wait until the replay buffer is full.
+
+        This method is called automatically by issue_stream_cmd() unless
+        wait_for_buffer_complete=False is specified which is useful when using
+        the RX_RUNNING trigger. Then the user has to call this method manually once
+        the TX is started.
+        """
+        ports = self._sanitize_replay_ports(ports)
+        mem_regions = self._sanitize_mem_regions(self.mem_regions)
+        for idx, _ in enumerate(self.radio_chan_pairs):
+            mem_region = mem_regions[ports[idx]]
+            mem_size = min(stream_cmd.num_samps * self.bytes_per_sample, mem_region[1])
 
         timeout = 0.5
         last_fullness = [0] * len(self.radio_chan_pairs)
