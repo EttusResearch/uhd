@@ -635,13 +635,11 @@ module e31x_core #(
       // The following implements a 2:1 mux in a LUT explicitly to avoid
       // glitches that can be introduced by unexpected Vivado synthesis.
       //
-      (* dont_touch = "TRUE" *) LUT3 #(
-        .INIT(8'hCA) // Specify LUT Contents. O = ~I2&I0 | I2&I1
-      ) mux_out_i (
-        .O(fp_gpio_out[i]),             // LUT general output. Mux output
-        .I0(radio_gpio_src_out_reg[i]), // LUT input. Input 1
-        .I1(ps_gpio_out[i]),            // LUT input. Input 2
-        .I2(fp_gpio_master_reg[i])      // LUT input. Select bit
+      glitch_free_mux glitch_free_mux_master_out(
+        .select       (fp_gpio_master_reg[i]),
+        .signal0      (radio_gpio_src_out_reg[i]),
+        .signal1      (ps_gpio_out[i]),
+        .muxed_signal (fp_gpio_out[i])
       );
 
       // 4) Select if the radio or the PS drives the direction
@@ -649,13 +647,11 @@ module e31x_core #(
       // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
       // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
       // -> the first input (radio_gpio_src_ddr_reg[i]) needs to be inverted
-      (* dont_touch = "TRUE" *) LUT3 #(
-        .INIT(8'hC5) // Specify LUT Contents. O = ~I2&~I0 | I2&I1
-      ) mux_ddr_i (
-        .O(fp_gpio_tri[i]),             // LUT general output. Mux output
-        .I0(radio_gpio_src_ddr_reg[i]), // LUT input. Input 1
-        .I1(ps_gpio_tri[i]),            // LUT input. Input 2
-        .I2(fp_gpio_master_reg[i])      // LUT input. Select bit
+      glitch_free_mux glitch_free_mux_master_tri(
+        .select       (fp_gpio_master_reg[i]),
+        .signal0      (~radio_gpio_src_ddr_reg[i]),
+        .signal1      (ps_gpio_tri[i]),
+        .muxed_signal (fp_gpio_tri[i])
       );
 
     end
