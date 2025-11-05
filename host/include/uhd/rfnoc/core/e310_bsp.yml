@@ -4,6 +4,7 @@ family: 7SERIES
 
 parameters:
   RADIO_NIPC: 1
+  FP_GPIO_BANK_WIDTH: 6
 
 checks:
   - condition: ${ parameters['RADIO_NIPC'] == 1 }
@@ -40,3 +41,12 @@ io_ports:
   dram:
     type: axi4_mm
     drive: slave
+  int_gpio:
+    type: gpio
+    drive: slave
+    parameters:
+      width: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+    rename:
+      pattern: (.*)
+      repl: int_\1
+    required: recommended

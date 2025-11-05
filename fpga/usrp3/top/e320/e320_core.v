@@ -232,6 +232,7 @@ module e320_core #(
   localparam REG_DBOARD_STATUS     = REG_BASE_MISC + 14'h44;
   localparam REG_NUM_TIMEKEEPERS   = REG_BASE_MISC + 14'h48;
   localparam REG_BUILD_SEED        = REG_BASE_MISC + 14'h4C;
+  localparam REG_FP_GPIO_USER_MUX  = REG_BASE_MISC + 14'h50;
 
   localparam NUM_TIMEKEEPERS = 1;
 
@@ -244,8 +245,16 @@ module e320_core #(
   wire                  m_ctrlport_resp_ack;
   wire [31:0]           m_ctrlport_resp_data;
 
+  // User logic GPIO source
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_out;
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_ddr;
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_in;
+  wire [FP_GPIO_WIDTH-1:0] user_mux_gpio_out;
+  wire [FP_GPIO_WIDTH-1:0] user_mux_gpio_tri;
+
   reg  [31:0]           fp_gpio_master_reg = 32'h0;
   reg  [31:0]           fp_gpio_src_reg    = 32'h0;
+  reg  [31:0]           fp_gpio_user_mux_reg = 32'h0;
 
   reg [31:0] scratch_reg = 32'h0;
   reg [31:0] bus_counter = 32'h0;
@@ -454,6 +463,9 @@ module e320_core #(
           REG_DBOARD_CTRL:
             dboard_ctrl <= cp_glob_req_data;
 
+          REG_FP_GPIO_USER_MUX:
+            fp_gpio_user_mux_reg <= cp_glob_req_data;
+
           default: begin
             // Don't acknowledge if the address doesn't match
             cp_glob_resp_ack <= 1'b0;
@@ -537,6 +549,9 @@ module e320_core #(
             `endif
             cp_glob_resp_data <= `BUILD_SEED;
           end
+
+          REG_FP_GPIO_USER_MUX:
+            cp_glob_resp_data <= fp_gpio_user_mux_reg;
 
           default: begin
             // Don't acknowledge if the address doesn't match
@@ -935,6 +950,7 @@ module e320_core #(
     ) radio_gpio_in_sync_i (
     .clk(radio_clk), .rst(1'b0), .in(fp_gpio_in), .out(radio_gpio_in_sync)
   );
+  assign user_gpio_in = fp_gpio_in;
 
   // Map the double-synchronized inputs to all radio channels
   generate
@@ -943,51 +959,82 @@ module e320_core #(
     end
   endgenerate
 
-  // For each of the FP GPIO bits, implement four control muxes
+  // For each pin and also for both the output ("out") signal and the
+  // direction/tristate ("ddr"/"tri") signal, the following chain of
+  // muxes is generated:
+  //
+  // Note:
+  // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
+  // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
+  //
+  //                               1. Radio source mux
+  //                               +------+
+  //  ATR for pin i from ----------| 00   |
+  //  daughter board 0 (RFA)       |      |
+  //                               |      |----+
+  //  ATR for pin i from ----------| 01   |    |
+  //  daughter board 1 (RFB)       +------+    |
+  //                                 |         |   3. Master mux
+  //  fp_gpio_src[2*i+1:2*i] --------+         |   +------+
+  //                                           +---| 0    |
+  //                                               |      |--- GPIO pin i
+  //                               2. User     +---| 1    |
+  //                               logic mux   |   +------+
+  //                               +------+    |      |
+  //  PS for pin i ----------------| 0    |    |      |
+  //                               |      |----+      |
+  //  User logic for pin i --------| 1    |           |
+  //                               +------+           |
+  //                                 |                |
+  //  fp_gpio_user_mux_reg[i]--------+                |
+  //                                                  |
+  //  fp_gpio_master_reg[i]---------------------------+
+  //
   generate
     for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin: gpio_muxing_gen
 
-      // 1) Select which radio drives the output
+      // 1. Radio source mux: Select which radio drives the output and direction
       assign radio_gpio_src_out[i] = radio_gpio_out[fp_gpio_src_reg[2*i+1:2*i]][i];
       always @ (posedge radio_clk) begin
         if (radio_rst) begin
           radio_gpio_src_out_reg <= 0;
-        end else begin
-          radio_gpio_src_out_reg <= radio_gpio_src_out;
-        end
-      end
-
-      // 2) Select which radio drives the direction
-      assign radio_gpio_src_ddr[i] = radio_gpio_ddr[fp_gpio_src_reg[2*i+1:2*i]][i];
-      always @ (posedge radio_clk) begin
-        if (radio_rst) begin
           radio_gpio_src_ddr_reg <= ~0;
         end else begin
+          radio_gpio_src_out_reg <= radio_gpio_src_out;
           radio_gpio_src_ddr_reg <= radio_gpio_src_ddr;
         end
       end
 
-      // 3) Select if the radio or the ps drives the output
-      //
-      // The following implements a 2:1 mux in a LUT explicitly to avoid
-      // glitches that can be introduced by unexpected Vivado synthesis.
-      //
+      // 3) User logic mux: Select if the PS or user logic drives the output and direction
+      glitch_free_mux glitch_free_mux_user_mux_out(
+        .select       (fp_gpio_user_mux_reg[i]),
+        .signal0      (ps_gpio_out[i]),
+        .signal1      (user_gpio_out[i]),
+        .muxed_signal (user_mux_gpio_out[i])
+      );
+      // Note: the second input (user_gpio_ddr[i], 0: input, 1: output) needs to be
+      // inverted in order to be interpreted as "tri" signal (0: output, 1: input)
+      glitch_free_mux glitch_free_mux_user_mux_tri(
+        .select       (fp_gpio_user_mux_reg[i]),
+        .signal0      (ps_gpio_tri[i]),
+        .signal1      (~user_gpio_ddr[i]),
+        .muxed_signal (user_mux_gpio_tri[i])
+      );
+
+      // 3. Master mux: Select if the signal from the radio source mux or from the
+      // user mux drives the output and direction
       glitch_free_mux glitch_free_mux_master_out(
         .select       (fp_gpio_master_reg[i]),
         .signal0      (radio_gpio_src_out_reg[i]),
-        .signal1      (ps_gpio_out[i]),
+        .signal1      (user_mux_gpio_out[i]),
         .muxed_signal (fp_gpio_out[i])
       );
-
-      // 4) Select if the radio or the PS drives the direction
-      // Note:
-      // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
-      // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
-      // -> the first input (radio_gpio_src_ddr_reg[i]) needs to be inverted
+      // Note: the first input (radio_gpio_src_ddr_reg[i], 0:input, 1: output) needs
+      // to be inverted in order to be interpreted as "tri" signal (0: output, 1: input)
       glitch_free_mux glitch_free_mux_master_tri(
         .select       (fp_gpio_master_reg[i]),
         .signal0      (~radio_gpio_src_ddr_reg[i]),
-        .signal1      (ps_gpio_tri[i]),
+        .signal1      (user_mux_gpio_tri[i]),
         .muxed_signal (fp_gpio_tri[i])
       );
 
@@ -1125,8 +1172,11 @@ module e320_core #(
     .m_dma_tdata             (m_dma_tdata),
     .m_dma_tlast             (m_dma_tlast),
     .m_dma_tvalid            (m_dma_tvalid),
-    .m_dma_tready            (m_dma_tready)
-  );
+    .m_dma_tready            (m_dma_tready),
+    .fp_gpio_out             (user_gpio_out),
+    .fp_gpio_ddr             (user_gpio_ddr),
+    .fp_gpio_in              (user_gpio_in)
+);
 
   //---------------------------------------------------------------------------
   // Convert Control Port to Settings Bus

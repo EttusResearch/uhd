@@ -17,6 +17,9 @@ clocks:
   - name: dram
   - name: ce
 
+parameters:
+  FP_GPIO_BANK_WIDTH: 12
+
 io_ports:
   ctrlport_radio0:
     type: ctrlport
@@ -54,3 +57,12 @@ io_ports:
   dram:
     type: axi4_mm
     drive: slave
+  fp_gpio:
+    type: gpio
+    drive: slave
+    parameters:
+      width: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+    rename:
+      pattern: (.*)
+      repl: fp_\1
+    required: recommended
