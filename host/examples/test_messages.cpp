@@ -282,6 +282,18 @@ void flush_recv(uhd::rx_streamer::sptr rx_stream)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: test_messages [-h] [--args ARGS] [--ntests NTESTS] [--test-chain]"
+        "\n\n"
+        "This example program demonstrates how to trigger, receive, and inspect\n"
+        "standard UHD (USRP Hardware Driver) error and event messages using the\n"
+        "UHD API.\n"
+        "It runs a series of tests that issue specific stream commands and\n"
+        "transmit operations to intentionally provoke built-in UHD responses such\n"
+        "as late command, broken chain, burst acknowledgment, underflow, and time\n"
+        "error messages. The program prints the outcome of each test, helping\n"
+        "users understand how UHD reports errors and how to implement robust\n"
+        "error handling in message-based communication with USRP devices.\n";
     // variables to be set by po
     std::string args;
     size_t ntests;
@@ -290,10 +302,20 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args",   po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("ntests", po::value<size_t>(&ntests)->default_value(50),    "number of tests to run")
-        ("test-chain", "Run broken chain tests")
+        ("help", "Show this help message and exit.")
+        ("args",   po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("ntests", po::value<size_t>(&ntests)->default_value(50),    "Number of tests to run.")
+        ("test-chain", "Include tests that trigger a \"broken chain\" error, which happens when the host "
+            "stops receiving data too early after starting a special streaming mode."
+            "\nThe test does this by issuing a stream command with STREAM_MODE_NUM_SAMPS_AND_MORE but not continuing to "
+            "call recv as required.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -302,7 +324,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD Test Messages %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
 

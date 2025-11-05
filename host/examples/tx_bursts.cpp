@@ -26,6 +26,39 @@ void sig_int_handler(int)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: tx_bursts [-h] [--args ARGS] [-f FREQ] [-r RATE] [--secs SECS]\n"
+        "                      [--repeat] [--rep-delay REP_DELAY] [--nsamps NSAMPS]\n"
+        "                      [--ampl AMPL] [--gain GAIN] [--dilv]\n"
+        "                      [--channels CHANNELS] [--int-n] [--subdev SUBDEV]\n"
+        "                      [--ref {internal,external,mimo,gpsdo}]\n"
+        "                      [--lo-offset LO_OFFSET] [--bw BW]"
+        "\n\n"
+        "This example program illustrates how to use metadata to schedule and\n"
+        "control timed burst transmission with a USRP device.\n"
+        "It demonstrates how to transmit a sequence of timed bursts using the UHD\n"
+        "multi_usrp API by configuring the USRP for transmission and scheduling\n"
+        "multiple bursts of samples at precise hardware timestamps. The program\n"
+        "shows the use of burst control flags, specifically the start_of_burst\n"
+        "and end_of_burst fields in the transmit metadata, to mark the beginning\n"
+        "and end of each burst, enabling precise burst-based signaling. This\n"
+        "approach is essential for applications such as protocol emulation,\n"
+        "radar, or time-slotted communication systems that require accurate\n"
+        "timing and non-continuous transmissions.\n"
+        "For demonstration, each burst transmits samples with constant I and Q\n"
+        "value.\n"
+        "\n"
+        "Usage examples:\n"
+        "  1. Transmits a single burst of 10,000 samples at 2.4 GHz, starting 1\n"
+        "     second in the future, with a sample rate of 1 MSps and constant\n"
+        "     baseband data with I and Q component having a value of 0.5:\n"
+        "       tx_bursts --args=\"addr=192.168.10.2\" --freq=2.4e9 --rate=1e6\n"
+        "                 --secs=1.0 --nsamps=10000 --ampl=0.5\n"
+        "  2. Repeated transmission of bursts of 10,000 samples at 2.4 GHz,\n"
+        "     starting 1 second in the future, with a sample rate of 1 MSps. Each\n"
+        "     burst is repeated every 0.5 seconds until interrupted:\n"
+        "       tx_bursts --args=\"addr=192.168.10.2\" --freq=2.4e9 --rate=1e6\n"
+        "                 --secs=1.0 --nsamps=10000 --repeat --rep-delay=0.5\n";
     // variables to be set by po
     std::string args, channel_list, subdev, ref;
     double seconds_in_future, rate, freq, rep_rate, gain, lo_offset, bw;
@@ -36,24 +69,52 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "delay before first burst")
-        ("repeat", "repeat burst")
-        ("rep-delay", po::value<double>(&rep_rate)->default_value(0.5), "delay between bursts")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
-        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
-        ("freq", po::value<double>(&freq)->default_value(0), "center frequency")
-        ("gain", po::value<double>(&gain)->default_value(0), "gain")
-        ("dilv", "specify to disable inner-loop verbose")
-        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc")
-        ("int-n", "tune USRP with integer-n tuning")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("ref", po::value<std::string>(&ref), "reference source (internal, external, gpsdo, mimo)")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "Delay in seconds before "
+            "transmitting the first burst.")
+        ("repeat", "Continuously repeat the burst transmission until interrupted.")
+        ("rep-delay", po::value<double>(&rep_rate)->default_value(0.5), "Time in seconds between scheduled "
+            "start of each burst (start-to-start interval). Applies only if --repeat is configured.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "Total number of samples to "
+            "transmit per burst.")
+        ("rate,r", po::value<double>(&rate)->default_value(100e6/16), "TX sample rate in samples/second. Note "
+            "that each USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "Value assigned to both I and Q "
+            "component of each complex baseband sample (i.e., each sample is ampl + j*ampl).")
+        ("freq,f", po::value<double>(&freq)->default_value(0), "RF center frequency in Hz.")
+        ("gain", po::value<double>(&gain)->default_value(0), "TX gain for the RF chain in dB.")
+        ("dilv", "Disables inner-loop verbose status prints.")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "Specifies which channels to "
+            "use. E.g. \"0\", \"1\", \"0,1\", etc.")
+        ("int-n", "Use integer-N tuning for USRP RF synthesizers. With this mode, the LO can only be tuned in "
+            "discrete steps, which are integer multiples of the reference frequency. This mode can improve phase noise "
+            "and spurious performance at the cost of coarser frequency resolution.")
+        ("subdev", po::value<std::string>(&subdev), "TX subdevice configuration string, selecting which RF "
+            "path to use for the receive channel."
+            "\nThis example always uses channel 0; use --subdev to select which RF path is mapped to channel 0."
+            "\nThe format and available values depend on your USRP model. If not specified, the default subdevice will be "
+            "used."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed."
+            "\nBy default, channel 0 maps to A:0 (1st UBX in slot A, RF TX 0), which is equivalent to --subdev \"A:0\"."
+            "\nTo use the 2nd UBX (slot B, RF TX 0), specify --subdev \"B:0\".")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
-            "Offset for frontend LO in Hz (optional)")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
+            "LO offset for the frontend in Hz.")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the TX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -62,7 +123,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD TX Timed Samples %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
 
