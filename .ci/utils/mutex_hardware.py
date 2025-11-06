@@ -22,28 +22,34 @@ from tftp import TFTPServer
 
 bitfile_name = "usrp_{}_fpga_{}.bit"
 
-class AcquiredPlace():
+
+class AcquiredPlace:
     """This class provides the default target from a given yaml configuration file.
     A context manager is used to automatically acquire and release the associated
     place. Instantiate the class using the 'with' statement as follows:
-    
+
     with AcquiredPlace(config) as target:
         (...)
     """
-    def __init__(self, config):
+
+    def __init__(self, config, force_release=False):
         self.config = config
+        self.force_release = force_release
         self.env = labgrid.environment.Environment(self.config)
 
     def __enter__(self):
         """Acquire the place and return the target"""
-        proc = subprocess.run(['labgrid-client', '-c', self.config, 'acquire'])
+        proc = subprocess.run(["labgrid-client", "-c", self.config, "acquire"])
+        if (proc.returncode != 0) and self.force_release:
+            proc = subprocess.run(["labgrid-client", "-c", self.config, "release", "--kick"])
+            proc = subprocess.run(["labgrid-client", "-c", self.config, "acquire"])
         if proc.returncode != 0:
             sys.exit(proc.returncode)
         return self.env.get_target()
 
     def __exit__(self, *args):
         """Release the place"""
-        subprocess.run(['labgrid-client', '-c', self.config, 'release'])
+        subprocess.run(["labgrid-client", "-c", self.config, "release"])
 
 
 def jtag_x3xx(
@@ -99,7 +105,9 @@ def set_sfp_addrs(mgmt_addr, sfp_addrs):
     time.sleep(30)
 
 
-def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs):
+def flash_sdimage_sdmux(
+    dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs, force_release=False
+):
     """Flash image using sdmux.
 
     This method uses an sdmux (https://linux-automation.com/en/products/usb-sd-mux.html)
@@ -107,8 +115,8 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
     """
     if dev_model not in ["n300", "n310", "n320", "n321"]:
         raise RuntimeError(f"{dev_model} not supported with sdimage_sdmux")
-    
-    with AcquiredPlace(labgrid_device_yaml) as target:
+
+    with AcquiredPlace(labgrid_device_yaml, force_release) as target:
 
         cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
         cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
@@ -146,6 +154,7 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
 
         print("Waiting 2 minutes for device to boot", flush=True)
         time.sleep(120)
+        cp_linux.write("\n".encode())
         cp_linux.expect("login:", timeout=5)
         known_hosts_path = os.path.expanduser("~/.ssh/known_hosts")
         subprocess.run(shlex.split(f'ssh-keygen -f "{known_hosts_path}" -R "{mgmt_addr}"'))
@@ -155,7 +164,7 @@ def flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr,
 
 
 def flash_sdimage_tftp(
-    dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, redis_server
+    dev_model, sdimage_path, initramfs_path, labgrid_device_yaml, sfp_addrs, force_release=False
 ):
     """Flash image using tftp.
 
@@ -170,7 +179,7 @@ def flash_sdimage_tftp(
         dev_ram_address = "0x20000000"
         dev_bootm_config = "conf@zynq-ni-${mboard}.dtb"
 
-    with AcquiredPlace(labgrid_device_yaml) as target:
+    with AcquiredPlace(labgrid_device_yaml, force_release) as target:
 
         cp_scu = target.get_driver(labgrid.protocol.ConsoleProtocol, name="scu_serial_driver")
         cp_linux = target.get_driver(labgrid.protocol.ConsoleProtocol, name="linux_serial_driver")
@@ -254,92 +263,121 @@ def flash_sdimage_tftp(
         return mgmt_addr
 
 
-def main(args):
+def get_redis_server(args):
+    """Return the Redis object from the given URL (args.redis_server) or None if no URL was provided."""
+    if args.redis_server:
+        return {Redis.from_url("redis://{}:6379/0".format(args.redis_server))}
+    else:
+        return None
+
+
+def main_mutexed(args):
     """Main entry point for mutex_hardware."""
-    redis_server = {Redis.from_url("redis://{}:6379/0".format(args.redis_server))}
     print("Waiting to acquire mutex for {}".format(args.dut_name), flush=True)
     with Redlock(
-        key=args.dut_name, masters=redis_server, auto_release_time=1000 * 60 * args.dut_timeout
+        key=args.dut_name,
+        masters=get_redis_server(args),
+        auto_release_time=1000 * 60 * args.dut_timeout,
     ):
         print("Got mutex for {}".format(args.dut_name), flush=True)
+        main(args)
 
-        if args.sdimage_sdmux:
-            dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = (
-                args.sdimage_sdmux.split(",")
-            )
-            if args.sfp_addrs:
-                sfp_addrs = args.sfp_addrs.split(",")
-            else:
-                sfp_addrs = None
-            flash_sdimage_sdmux(dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr, sfp_addrs)
 
-        if args.sdimage_tftp:
-            dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = (
-                args.sdimage_tftp.split(",")
-            )
-            if args.sfp_addrs:
-                sfp_addrs = args.sfp_addrs.split(",")
-            else:
-                sfp_addrs = None
-            mgmt_addr = flash_sdimage_tftp(
-                dev_model,
-                sdimage_path,
-                initramfs_path,
-                labgrid_device_yaml,
-                sfp_addrs,
-                redis_server,
-            )
-
-        if args.fpgas:
-            working_dir = os.getcwd()
-            return_code = 0
-            for fpga in args.fpgas.split(","):
-                os.mkdir(os.path.join(working_dir, fpga))
-                os.chdir(os.path.join(working_dir, fpga))
-
-                if args.jtag_x3xx:
-                    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = (
-                        args.jtag_x3xx.split(",")
-                    )
-                    jtag_x3xx(
-                        dev_type,
-                        dev_model,
-                        jtag_server,
-                        jtag_serial,
-                        fpga_folder,
-                        fpga,
-                        redis_server,
-                        vivado_dir,
-                    )
-
-                if dev_type and dev_type in ["n3xx", "e3xx"]:
-                    subprocess.run(
-                        shlex.split(
-                            f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"
-                        )
-                    )
-                    if sfp_addrs:
-                        set_sfp_addrs(mgmt_addr, sfp_addrs)
-
-                for command in args.test_commands:
-                    if args.working_dir:
-                        result = subprocess.run(
-                            shlex.split(command.format(fpga=fpga)), cwd=args.working_dir
-                        )
-                    else:
-                        result = subprocess.run(shlex.split(command.format(fpga=fpga)))
-                    if return_code == 0:
-                        return_code = result.returncode
-            sys.exit(return_code)
+def main(args):
+    """Main entry point for mutex_hardware with aquired mutex."""
+    if args.sdimage_sdmux:
+        dev_type, dev_model, sdimage_path, labgrid_device_yaml, mgmt_addr = (
+            args.sdimage_sdmux.split(",")
+        )
+        if args.sfp_addrs:
+            sfp_addrs = args.sfp_addrs.split(",")
         else:
+            sfp_addrs = None
+        flash_sdimage_sdmux(
+            dev_model,
+            sdimage_path,
+            labgrid_device_yaml,
+            mgmt_addr,
+            sfp_addrs,
+            force_release=args.force_release,
+        )
+
+    if args.sdimage_tftp:
+        dev_type, dev_model, sdimage_path, initramfs_path, labgrid_device_yaml = (
+            args.sdimage_tftp.split(",")
+        )
+        if args.sfp_addrs:
+            sfp_addrs = args.sfp_addrs.split(",")
+        else:
+            sfp_addrs = None
+        mgmt_addr = flash_sdimage_tftp(
+            dev_model,
+            sdimage_path,
+            initramfs_path,
+            labgrid_device_yaml,
+            sfp_addrs,
+            force_release=args.force_release,
+        )
+
+    if args.fpgas:
+        working_dir = os.getcwd()
+        return_code = 0
+        for fpga in args.fpgas.split(","):
+            os.mkdir(os.path.join(working_dir, fpga))
+            os.chdir(os.path.join(working_dir, fpga))
+
+            if args.jtag_x3xx:
+                dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = (
+                    args.jtag_x3xx.split(",")
+                )
+                jtag_x3xx(
+                    dev_type,
+                    dev_model,
+                    jtag_server,
+                    jtag_serial,
+                    fpga_folder,
+                    fpga,
+                    get_redis_server(args),
+                    vivado_dir,
+                )
+
+            if dev_type and dev_type in ["n3xx", "e3xx"]:
+                subprocess.run(
+                    shlex.split(
+                        f"uhd_image_loader --args=mgmt_addr={mgmt_addr},type={dev_type},fpga={fpga}"
+                    )
+                )
+                if sfp_addrs:
+                    set_sfp_addrs(mgmt_addr, sfp_addrs)
+
             for command in args.test_commands:
                 if args.working_dir:
-                    result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+                    result = subprocess.run(
+                        shlex.split(command.format(fpga=fpga)), cwd=args.working_dir
+                    )
                 else:
-                    result = subprocess.run(shlex.split(command))
+                    result = subprocess.run(shlex.split(command.format(fpga=fpga)))
                 if result.returncode != 0:
-                    sys.exit(result.returncode)
-            sys.exit(0)
+                    print(
+                        "Command exited with return code {}".format(result.returncode), flush=True
+                    )
+                    print("Aborting execution (fpga={})".format(fpga), flush=True)
+                    return_code = result.returncode
+                    break
+        sys.exit(return_code)
+    else:
+        return_code = 0
+        for command in args.test_commands:
+            if args.working_dir:
+                result = subprocess.run(shlex.split(command), cwd=args.working_dir)
+            else:
+                result = subprocess.run(shlex.split(command))
+            if result.returncode != 0:
+                print("Command exited with return code {}".format(result.returncode), flush=True)
+                print("Aborting execution", flush=True)
+                return_code = result.returncode
+                break
+        sys.exit(return_code)
 
 
 if __name__ == "__main__":
@@ -368,6 +406,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--working_dir", type=str, help="Change working directory for commands to be run"
     )
+    parser.add_argument(
+        "--no-force-release",
+        action="store_true",
+        help="Don't force-release labgrid place if it was acquired before",
+    )
     parser.add_argument("redis_server", type=str, help="Redis server for mutex")
     parser.add_argument("dut_name", type=str, help="Unique identifier for device under test")
     # test_commands allows for any number of shell commands
@@ -375,4 +418,8 @@ if __name__ == "__main__":
     # number of commands in string format as the last positional arguments.
     parser.add_argument("test_commands", type=str, nargs="+", help="Commands to run")
     args = parser.parse_args()
-    main(args)
+    args.force_release = not args.no_force_release
+    if args.redis_server:
+        main_mutexed(args)
+    else:
+        main(args)

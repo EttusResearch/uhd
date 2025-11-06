@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
+name: Add/Subtract
 module_name: addsub
+description: |
+  This block provides the sum and difference of two input channels. It also
+  provides different types of implementations as an example.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
@@ -7,7 +11,14 @@ noc_id: 0xADD00000
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_addsub/Makefile.srcs"
 
 parameters:
-  USE_IMPL: '"Verilog"'
+  USE_IMPL: Verilog
+
+hdl_parameters:
+  USE_IMPL: ${ parameters['USE_IMPL'] | q}
+
+checks:
+  - condition: ${ parameters['USE_IMPL'] in ('Verilog', 'HLS', 'VHDL') }
+    message: "USE_IMPL parameter must be one of Verilog, HLS, VHDL. Is: ${ parameters['USE_IMPL'] }"
 
 clocks:
   - name: rfnoc_chdr
@@ -33,14 +44,12 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     in_b:
       item_width: 32
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
   outputs:
     add:
       item_width: 32
@@ -48,11 +57,9 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     sub:
       item_width: 32
       nipc: 1
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~

@@ -14,6 +14,7 @@
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include <functional>
 #include <memory>
+#include <numeric>
 #include <set>
 
 using namespace uhd;
@@ -35,19 +36,19 @@ size_t b200_impl::max_chan_count(const std::string& direction /* = "" */)
 {
     size_t max_count = 0;
     for (radio_perifs_t& perif : _radio_perifs) {
-        if ((direction == "RX" or direction.empty())
-            and not perif.rx_streamer.expired()) {
-            std::shared_ptr<sph::recv_packet_streamer> rx_streamer =
-                std::dynamic_pointer_cast<sph::recv_packet_streamer>(
-                    perif.rx_streamer.lock());
-            max_count = std::max(max_count, rx_streamer->get_num_channels());
+        if (direction == "RX" or direction.empty()) {
+            if (auto p = perif.rx_streamer.lock()) {
+                auto rx_streamer =
+                    std::dynamic_pointer_cast<sph::recv_packet_streamer>(p);
+                max_count = std::max(max_count, rx_streamer->get_num_channels());
+            }
         }
-        if ((direction == "TX" or direction.empty())
-            and not perif.tx_streamer.expired()) {
-            std::shared_ptr<sph::send_packet_streamer> tx_streamer =
-                std::dynamic_pointer_cast<sph::send_packet_streamer>(
-                    perif.tx_streamer.lock());
-            max_count = std::max(max_count, tx_streamer->get_num_channels());
+        if (direction == "TX" or direction.empty()) {
+            if (auto p = perif.tx_streamer.lock()) {
+                auto tx_streamer =
+                    std::dynamic_pointer_cast<sph::send_packet_streamer>(p);
+                max_count = std::max(max_count, tx_streamer->get_num_channels());
+            }
         }
     }
     return max_count;
@@ -110,7 +111,7 @@ void b200_impl::set_auto_tick_rate(
             }
             // Clean up floating point rounding errors if they crept in
             this_dsp_rate = std::min(max_tick_rate, this_dsp_rate);
-            lcm_rate      = uhd::math::lcm<uint32_t>(
+            lcm_rate      = std::lcm<uint32_t>(
                 lcm_rate, static_cast<uint32_t>(floor(this_dsp_rate + 0.5)));
         }
     }
@@ -256,7 +257,8 @@ uhd::usrp::subdev_spec_t b200_impl::coerce_subdev_spec(
     // Any other spec is probably illegal and will be caught by
     // validate_subdev_spec().
     if (!spec.empty()
-        and (_product == B200 or _product == B200MINI or _product == B205MINI)
+        and (_product == B200 or _product == B200MINI or _product == B205MINI
+             or _product == B206MINI)
         and spec[0].sd_name == "B") {
         spec[0].sd_name = "A";
     }

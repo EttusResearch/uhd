@@ -143,13 +143,19 @@ module axi_tag_time #(
     end
   endgenerate
 
-  // FIFO to hold tags + times
+  // FIFO + output register to hold tags + times
   wire [SR_TWIDTH-1:0] fifo_set_time;
   wire [NUM_TAGS-1:0] fifo_tags;
   wire fifo_tvalid, fifo_tready;
   wire timed_cmd_fifo_full_n;
+
+  localparam CMD_FIFO_WIDTH = SR_TWIDTH + NUM_TAGS;
+  wire cmd_flop_valid;
+  wire cmd_flop_ready;
+  wire [CMD_FIFO_WIDTH-1:0] cmd_flop_data;
+
   axi_fifo #(
-    .WIDTH (SR_TWIDTH+NUM_TAGS),
+    .WIDTH (CMD_FIFO_WIDTH),
     .SIZE  (CMD_FIFO_SIZE)
   ) axi_fifo (
     .clk      (clk),
@@ -158,6 +164,23 @@ module axi_tag_time #(
     .i_tdata  ({in_set_time,tags}),
     .i_tvalid (timed_set_stb),
     .i_tready (timed_cmd_fifo_full_n),
+    .o_tdata  (cmd_flop_data),
+    .o_tvalid (cmd_flop_valid),
+    .o_tready (cmd_flop_ready),
+    .space    (),
+    .occupied ()
+  );
+  // output register after FIFO to simplify timing closure
+  axi_fifo #(
+    .WIDTH (CMD_FIFO_WIDTH),
+    .SIZE  (1)
+  ) axi_flop (
+    .clk      (clk),
+    .reset    (reset),
+    .clear    (clear),
+    .i_tdata  (cmd_flop_data),
+    .i_tvalid (cmd_flop_valid),
+    .i_tready (cmd_flop_ready),
     .o_tdata  ({fifo_set_time,fifo_tags}),
     .o_tvalid (fifo_tvalid),
     .o_tready (fifo_tready),

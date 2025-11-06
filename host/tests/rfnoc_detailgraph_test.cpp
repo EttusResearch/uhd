@@ -4,17 +4,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rfnoc_graph_mock_nodes.hpp"
+#include <uhd/rfnoc/detail/graph.hpp>
+#include <uhd/rfnoc/mock_nodes.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
 using uhd::rfnoc::detail::graph_t;
 using namespace uhd::rfnoc;
+using namespace uhd::rfnoc::test;
 
 namespace uhd { namespace rfnoc { namespace detail {
 
@@ -25,36 +27,41 @@ namespace uhd { namespace rfnoc { namespace detail {
 class graph_accessor_t
 {
 public:
-    using vertex_descriptor = graph_t::rfnoc_graph_t::vertex_descriptor;
+    using vertex_descriptor = graph_t::impl::rfnoc_graph_t::vertex_descriptor;
 
     graph_accessor_t(graph_t* graph_ptr) : _graph_ptr(graph_ptr)
     { /* nop */
     }
 
-    graph_t::rfnoc_graph_t& get_graph()
+    graph_t::impl* p()
     {
-        return _graph_ptr->_graph;
+        return _graph_ptr->_impl.get();
+    }
+
+    graph_t::impl::rfnoc_graph_t& get_graph()
+    {
+        return p()->_graph;
     }
 
     template <typename VertexIterator>
     graph_t::node_ref_t get_node_ref_from_iterator(VertexIterator it)
     {
-        return boost::get(graph_t::vertex_property_t(), get_graph(), *it);
+        return boost::get(graph_t::impl::vertex_property_t(), get_graph(), *it);
     }
 
     auto find_neighbour(vertex_descriptor origin, res_source_info port_info)
     {
-        return _graph_ptr->_find_neighbour(origin, port_info);
+        return p()->_find_neighbour(origin, port_info);
     }
 
     auto find_dirty_nodes()
     {
-        return _graph_ptr->_find_dirty_nodes();
+        return p()->_find_dirty_nodes();
     }
 
     auto get_topo_sorted_nodes()
     {
-        return _graph_ptr->_vertices_to_nodes(_graph_ptr->_get_topo_sorted_nodes());
+        return p()->_vertices_to_nodes(p()->_get_topo_sorted_nodes());
     }
 
 private:

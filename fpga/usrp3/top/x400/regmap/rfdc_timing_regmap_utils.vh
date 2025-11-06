@@ -1,5 +1,5 @@
 //
-// Copyright 2023 Ettus Research, A National Instruments Company
+// Copyright 2025 Ettus Research, A National Instruments Company
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -11,8 +11,8 @@
 // A numerically ordered list of registers and their HDL source files
 //===============================================================================
 
-  // NCO_RESET_REG     : 0x0 (rfdc_timing_control.v)
-  // GEARBOX_RESET_REG : 0x4 (rfdc_timing_control.v)
+  // NCO_RESET_REG     : 0x0 (rfdc_timing_control.sv)
+  // GEARBOX_RESET_REG : 0x4 (rfdc_timing_control.sv)
 
 //===============================================================================
 // RegTypes
@@ -22,18 +22,27 @@
 // Register Group RFDC_TIMING_REGS
 //===============================================================================
 
-  // NCO_RESET_REG Register (from rfdc_timing_control.v)
+  // NCO_RESET_REG Register (from rfdc_timing_control.sv)
   localparam NCO_RESET_REG = 'h0; // Register Offset
   localparam NCO_RESET_REG_SIZE = 32;  // register width in bits
-  localparam NCO_RESET_REG_MASK = 32'h3;
+  localparam NCO_RESET_REG_MASK = 32'h1FF0103;
   localparam NCO_RESET_START_SIZE = 1;  //NCO_RESET_REG:NCO_RESET_START
   localparam NCO_RESET_START_MSB  = 0;  //NCO_RESET_REG:NCO_RESET_START
   localparam NCO_RESET_START      = 0;  //NCO_RESET_REG:NCO_RESET_START
   localparam NCO_RESET_DONE_SIZE = 1;  //NCO_RESET_REG:NCO_RESET_DONE
   localparam NCO_RESET_DONE_MSB  = 1;  //NCO_RESET_REG:NCO_RESET_DONE
   localparam NCO_RESET_DONE      = 1;  //NCO_RESET_REG:NCO_RESET_DONE
+  localparam NCO_SYNC_FAILED_SIZE = 1;  //NCO_RESET_REG:NCO_SYNC_FAILED
+  localparam NCO_SYNC_FAILED_MSB  = 8;  //NCO_RESET_REG:NCO_SYNC_FAILED
+  localparam NCO_SYNC_FAILED      = 8;  //NCO_RESET_REG:NCO_SYNC_FAILED
+  localparam SYSREF_WAIT_SIZE =  8;  //NCO_RESET_REG:SYSREF_WAIT
+  localparam SYSREF_WAIT_MSB  = 23;  //NCO_RESET_REG:SYSREF_WAIT
+  localparam SYSREF_WAIT      = 16;  //NCO_RESET_REG:SYSREF_WAIT
+  localparam WRITE_SYSREF_WAIT_SIZE =  1;  //NCO_RESET_REG:WRITE_SYSREF_WAIT
+  localparam WRITE_SYSREF_WAIT_MSB  = 24;  //NCO_RESET_REG:WRITE_SYSREF_WAIT
+  localparam WRITE_SYSREF_WAIT      = 24;  //NCO_RESET_REG:WRITE_SYSREF_WAIT
 
-  // GEARBOX_RESET_REG Register (from rfdc_timing_control.v)
+  // GEARBOX_RESET_REG Register (from rfdc_timing_control.sv)
   localparam GEARBOX_RESET_REG = 'h4; // Register Offset
   localparam GEARBOX_RESET_REG_SIZE = 32;  // register width in bits
   localparam GEARBOX_RESET_REG_MASK = 32'h3;

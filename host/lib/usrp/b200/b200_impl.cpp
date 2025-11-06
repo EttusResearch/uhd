@@ -14,6 +14,7 @@
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
@@ -37,6 +38,10 @@ using namespace uhd::transport;
 
 namespace {
 constexpr int64_t REENUMERATION_TIMEOUT_MS = 3000;
+}
+constexpr bool is_b2xx_mini(const b200_product_t& product)
+{
+    return product == B200MINI || product == B205MINI || product == B206MINI;
 }
 
 // B200 + B210:
@@ -180,6 +185,13 @@ static device_addrs_t b200_find(const device_addr_t& hint)
     if (hint.has_key("type") and hint["type"] != "b200")
         return b200_addrs;
 
+    // return an empty list of addresses when product is set to non-B2XX
+    if (hint.has_key("product")) {
+        if (!uhd::has(B2XX_STR_NAMES.vals(), hint["product"])) {
+            return b200_addrs;
+        }
+    }
+
     // Return an empty list of addresses when an address or resource is specified,
     // since an address and resource is intended for a different, non-USB, device.
     for (device_addr_t hint_i : separate_device_addr(hint)) {
@@ -248,13 +260,7 @@ static device_addrs_t b200_find(const device_addr_t& hint)
                 // No problem if this fails -- this is just device discovery, after all.
                 new_addr["product"] = "B2??";
             }
-
-            // this is a found b200 when the hint serial and name match or blank
-            if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
-                and (not hint.has_key("serial")
-                     or hint["serial"] == new_addr["serial"])) {
-                b200_addrs.push_back(new_addr);
-            }
+            b200_addrs.push_back(new_addr);
         }
     }
 
@@ -341,6 +347,8 @@ b200_impl::b200_impl(
         vid_pid_pair_list.push_back(
             usb_device_handle::vid_pid_pair_t(vid, B205MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(
+            usb_device_handle::vid_pid_pair_t(vid, B206MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(
             usb_device_handle::vid_pid_pair_t(vid, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(
             usb_device_handle::vid_pid_pair_t(vid, B210_PRODUCT_NI_ID));
@@ -360,6 +368,8 @@ b200_impl::b200_impl(
             usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(
             usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B205MINI_PRODUCT_ID));
+        vid_pid_pair_list.push_back(
+            usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B206MINI_PRODUCT_ID));
         vid_pid_pair_list.push_back(
             usb_device_handle::vid_pid_pair_t(B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID));
         vid_pid_pair_list.push_back(
@@ -421,7 +431,7 @@ b200_impl::b200_impl(
 
     UHD_LOGGER_INFO("B200") << "Detected Device: " << B2XX_STR_NAMES[_product];
 
-    _gpsdo_capable = (not(_product == B200MINI or _product == B205MINI));
+    _gpsdo_capable = not is_b2xx_mini(_product);
 
     ////////////////////////////////////////////////////////////////////
     // Set up frontend mapping
@@ -440,8 +450,7 @@ b200_impl::b200_impl(
     _fe2                 = 0;
     _gpio_state.swap_atr = 1;
     // Unswapped setup:
-    if (_product == B200MINI or _product == B205MINI
-        or (_product == B200 and _revision >= 5)) {
+    if (is_b2xx_mini(_product) or (_product == B200 and _revision >= 5)) {
         _fe1                 = 0; // map radio0 to FE1
         _fe2                 = 1; // map radio1 to FE2
         _gpio_state.swap_atr = 0; // ATRs for radio0 are mapped to FE1
@@ -545,7 +554,7 @@ b200_impl::b200_impl(
     _tree->create<std::string>("/name").set("B-Series Device");
     _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename")
-        .set((_product == B200MINI or _product == B205MINI) ? "Pixie" : "Sasquatch");
+        .set(is_b2xx_mini(_product) ? "Pixie" : "Sasquatch");
 
     ////////////////////////////////////////////////////////////////////
     // Create data transport
@@ -610,7 +619,7 @@ b200_impl::b200_impl(
     // create time and clock control objects
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
-    if (not(_product == B200MINI or _product == B205MINI)) {
+    if (not is_b2xx_mini(_product)) {
         _adf4001_iface = std::make_shared<b200_ref_pll_ctrl>(_spi_iface);
     }
 
@@ -620,7 +629,7 @@ b200_impl::b200_impl(
     UHD_LOGGER_INFO("B200") << "Initialize CODEC control...";
     reset_codec();
     ad9361_params::sptr client_settings;
-    if (_product == B200MINI or _product == B205MINI) {
+    if (is_b2xx_mini(_product)) {
         client_settings = std::make_shared<b2xxmini_ad9361_client_t>();
     } else {
         client_settings = std::make_shared<b200_ad9361_client_t>();
@@ -849,7 +858,7 @@ b200_impl::b200_impl(
 
 b200_impl::~b200_impl(void)
 {
-    UHD_SAFE_CALL(_async_task.reset();)
+    UHD_SAFE_CALL(_async_task.reset());
 }
 
 /***********************************************************************
@@ -985,8 +994,8 @@ void b200_impl::setup_radio(const size_t dspno)
     // b2xx_power_cal_$dir_$ant, depending on the form factor.
     // $dir is either "tx" or "rx", and "ant" is either "tx_rx" or "rx2" (i.e.,
     // sanitized version of the antenna names that work in filenames.
-    const std::string cal_key_base =
-        (_product == B200MINI or _product == B205MINI) ? "b2xxmini_pwr_" : "b2xx_pwr_";
+    const std::string cal_key_base = (is_b2xx_mini(_product)) ? "b2xxmini_pwr_"
+                                                              : "b2xx_pwr_";
     for (direction_t dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
         const std::string dir_key = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key     = std::string(((dir == RX_DIRECTION) ? "RX" : "TX"))
@@ -1203,9 +1212,8 @@ void b200_impl::check_fpga_compat(void)
         throw uhd::runtime_error(
             "b200::check_fpga_compat signature register readback failed");
 
-    const uint16_t expected = ((_product == B200MINI or _product == B205MINI)
-                                   ? B205_FPGA_COMPAT_NUM
-                                   : B200_FPGA_COMPAT_NUM);
+    const uint16_t expected =
+        (is_b2xx_mini(_product) ? B205_FPGA_COMPAT_NUM : B200_FPGA_COMPAT_NUM);
     if (compat_major != expected) {
         throw uhd::runtime_error(str(
             boost::format("Expected FPGA compatibility number %d, but got %d:\n"
@@ -1225,7 +1233,7 @@ void b200_impl::check_fpga_compat(void)
 void b200_impl::update_clock_source(const std::string& source)
 {
     // For B205, ref_sel selects whether or not to lock to the external clock source
-    if (_product == B200MINI or _product == B205MINI) {
+    if (is_b2xx_mini(_product)) {
         if (source == "external" and _time_source == EXTERNAL) {
             throw uhd::value_error(
                 "external reference cannot be both a clock source and a time source");
@@ -1274,8 +1282,7 @@ void b200_impl::update_clock_source(const std::string& source)
 
 void b200_impl::update_time_source(const std::string& source)
 {
-    if ((_product == B200MINI or _product == B205MINI) and source == "external"
-        and _gpio_state.ref_sel == 1) {
+    if (is_b2xx_mini(_product) and source == "external" and _gpio_state.ref_sel == 1) {
         throw uhd::value_error(
             "external reference cannot be both a time source and a clock source");
     }
@@ -1336,7 +1343,7 @@ void b200_impl::sync_times()
 void b200_impl::update_bandsel(const std::string& which, double freq)
 {
     // B205 does not have bandsels
-    if (_product == B200MINI or _product == B205MINI) {
+    if (is_b2xx_mini(_product)) {
         return;
     }
 

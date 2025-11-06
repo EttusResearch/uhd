@@ -7,10 +7,10 @@
 //
 // Description:
 //
-//   Pulse stretcher. Takes any input pulse that is SCALE+2 clock cycles or 
-//   less and outputs a pulse that is SCALE+1 clock cycles. However, if an 
-//   input pulse is longer than SCALE+2 clock cycles then the output pulse 
-//   repeats. If more than one pulse is input within SCALE+2 clock cycles then 
+//   Pulse stretcher. Takes any input pulse that is SCALE+2 clock cycles or
+//   less and outputs a pulse that is SCALE+1 clock cycles. However, if an
+//   input pulse is longer than SCALE+2 clock cycles then the output pulse
+//   repeats. If more than one pulse is input within SCALE+2 clock cycles then
 //   additional pulses will be ignored.
 //
 // Examples (SCALE = 2):
@@ -66,10 +66,9 @@ module pulse_stretch #(
       end
 
       1'b1: begin
+        count <= count + 1'b1;
         if (count == SCALE)
           state <= 1'b0;
-        else
-          count <= count + 1'b1;
       end
       endcase
     end

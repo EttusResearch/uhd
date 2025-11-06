@@ -353,7 +353,7 @@ class B200Calibrator(USRPCalibratorBase):
     """
     B200 calibration
     """
-    mboard_ids = ('B200', 'B210', 'B200mini', 'B205mini')
+    mboard_ids = ('B200', 'B210', 'B200mini', 'B205mini', 'B206mini')
     # Choosing 5 MHz: It is a small rate, but carries enough bandwidth to receive
     # a tone. By default, the auto MCR will kick in and set the MCR to 40 Msps,
     # thus engaging all halfbands.

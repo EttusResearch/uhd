@@ -43,12 +43,18 @@ std::string uhd::path_expandvars(const std::string& path)
 #else
     wordexp_t p;
     std::string return_value;
-    if (wordexp(path.c_str(), &p, 0) == 0 && p.we_wordc > 0) {
+    const int err = wordexp(path.c_str(), &p, 0);
+    if (err == 0 && p.we_wordc > 0) {
         return_value = std::string(p.we_wordv[0]);
     } else {
         return_value = path;
     }
-    wordfree(&p);
+    // According to
+    // https://www.gnu.org/software/libc/manual/html_node/Wordexp-Example.html, p might be
+    // partially allocated, so we need to free it even if we got a NOSPACE error.
+    if (err == 0 || err == WRDE_NOSPACE) {
+        wordfree(&p);
+    }
     return return_value;
 #endif
 }

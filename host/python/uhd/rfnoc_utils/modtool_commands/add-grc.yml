@@ -1,0 +1,91 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+help: |
+  Add GNU Radio GRC bindings for an existing block in this RFNoC OOT module.
+
+  This command may be called within an existing RFNoC OOT module directory, if
+  within it there exists a GNU Radio OOT module. It will add GRC bindings for
+  a given block.
+
+  Note: Must be called from within a valid RFNoC OOT module directory. Use -C to
+  specify the module directory if necessary.
+
+
+args:
+  blockname:
+    name_or_flags: "blockname"
+    type: str
+    help: Name of the block to add GRC bindings for. This should be the same as the block's ID in the RFNoC module.
+    default: ""
+  yaml_descriptor:
+    name_or_flags: ["-y", "--yaml-descriptor"]
+    type: str
+    metavar: YAML_FILE
+    help: >
+      Path to the YAML descriptor file for the block. Defaults to rfnoc/blocks/<blockname>.yml.
+      If this file does not exist, the command will fail with an error.
+  binding_type:
+    name_or_flags: "--binding-type"
+    type: str
+    help: Type of GRC binding to add.
+    choices:
+      - auto
+      - generic
+      - native
+    default: "auto"
+  grc_filename:
+    name_or_flags: "--grc-filename"
+    type: str
+    help: Name of the GRC file to add the binding to. If not specified, the default is to use the module and block name.
+    default: ""
+
+
+variables:
+  type: block
+  type_d: blocks
+  bindings_type: "${ args.binding_type }"
+  blockname: "${ args.blockname }"
+  descriptor: "${ args.yaml_descriptor }"
+  grc_bindings_file: "rfnoc_${ MODULE_NAME }_${ blockname }.block.yml"
+
+
+template_namespace: blocktool
+
+steps:
+  - find_file:
+      dst_var: descriptor
+      glob: "${ '' if descriptor else os.path.join('rfnoc', type_d, blockname + '.y*l') }"
+      file: "${ descriptor }"
+  - find_file:
+      dst_var: gr_header
+      file: "${ os.path.join(f'gr-rfnoc_{MODULE_NAME}', 'include', 'gnuradio', f'rfnoc_{MODULE_NAME}', f'{ blockname }.h') }"
+  - run_if:
+      condition: "${ gr_header is not None and bindings_type == 'auto' }"
+      steps:
+        - log:
+            msg: "Detected C++ block controller for ${ blockname }, using native GRC bindings."
+            symbol: 🔔
+        - set:
+            name: bindings_type
+            value: "native"
+  - log:
+      msg: "Parsing block descriptor file ${ descriptor }..."
+      symbol: ⚙️
+  - parse_descriptor:
+      source: "${ descriptor }"
+      var: config
+  - write_template:
+      template: grc_bindings_template.block.yml.mako
+      dest: "gr-rfnoc_${ MODULE_NAME }/grc/${ grc_bindings_file }"
+  - log:
+      msg: "Created GRC bindings file at ${ grc_bindings_file }."
+  - insert_after:
+      file: "gr-rfnoc_${ MODULE_NAME }/grc/CMakeLists.txt"
+      pattern: "install.*FILES"
+      text: "\n    ${ grc_bindings_file }"
+  - log:
+      msg: "Added GRC bindings file to CMakeLists.txt."

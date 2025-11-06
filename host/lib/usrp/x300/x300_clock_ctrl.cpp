@@ -76,13 +76,17 @@ public:
         const size_t hw_rev,
         const double master_clock_rate,
         const double dboard_clock_rate,
-        const double system_ref_rate)
+        const double system_ref_rate,
+        const bool user_specified_dboard_clock_rate)
         : _spiface(spiface)
         , _slaveno(static_cast<int>(slaveno))
         , _hw_rev(hw_rev)
         , _master_clock_rate(master_clock_rate)
         , _dboard_clock_rate(dboard_clock_rate)
         , _system_ref_rate(system_ref_rate)
+        , _user_specified_dboard_clock_rate(user_specified_dboard_clock_rate)
+        , _rx_dboard_clock_rate_locked(false)
+        , _tx_dboard_clock_rate_locked(false)
     {
         init();
     }
@@ -130,6 +134,10 @@ public:
 
     void set_dboard_rate(const x300_clock_which_t which, double rate) override
     {
+        if (uhd::math::frequencies_are_equal(get_dboard_rate(which), rate)) {
+            return; // Just return if the requested rate is already set
+        }
+
         uint16_t div  = uint16_t(_vco_freq / rate);
         uint16_t* reg = NULL;
         uint8_t addr  = 0xFF;
@@ -157,13 +165,22 @@ public:
             return;
 
         // Since the clock rate on one daughter board cannot be changed without
-        // affecting the other daughter board, don't allow it.
-        throw uhd::not_implemented_error(
-            "x3xx set dboard clock rate does not support changing the clock rate");
-
-        // This is open source code and users may need to enable this function
-        // to support other daughterboards.  If so, comment out the line above
-        // that throws the error and allow the program to reach the code below.
+        // affecting the other daughter board, don't allow it if another daughter board
+        // has locked the clock rate or the user has manually specified a clock rate.
+        if (_user_specified_dboard_clock_rate) {
+            throw uhd::runtime_error("Cannot change the dboard_clock_rate "
+                                     "when user has set a specific dboard_clock_rate.");
+        } else if (((which == X300_CLOCK_WHICH_DB0_TX || which == X300_CLOCK_WHICH_DB1_TX)
+                       && _tx_dboard_clock_rate_locked)
+                   || ((which == X300_CLOCK_WHICH_DB0_RX
+                           || which == X300_CLOCK_WHICH_DB1_RX)
+                       && _rx_dboard_clock_rate_locked)) {
+            throw uhd::runtime_error(
+                "Cannot change the daughterboard clock rate because a daughterboard has "
+                "locked the clock rate and both daughterboards share the same rate. To "
+                "manually set a clock rate for both daughterboards, pass in the "
+                "dboard_clock_rate argument.");
+        }
 
         // The LMK04816 datasheet says the register must be written twice if SYNC is
         // enabled
@@ -189,6 +206,22 @@ public:
                 UHD_THROW_INVALID_CODE_PATH();
         }
         return rate;
+    }
+
+    void lock_dboard_rate(const x300_clock_which_t which) override
+    {
+        switch (which) {
+            case X300_CLOCK_WHICH_DB0_RX:
+            case X300_CLOCK_WHICH_DB1_RX:
+                _rx_dboard_clock_rate_locked = true;
+                break;
+            case X300_CLOCK_WHICH_DB0_TX:
+            case X300_CLOCK_WHICH_DB1_TX:
+                _tx_dboard_clock_rate_locked = true;
+                break;
+            default:
+                UHD_THROW_INVALID_CODE_PATH();
+        }
     }
 
     std::vector<double> get_dboard_rates(const x300_clock_which_t) override
@@ -993,6 +1026,9 @@ private:
     double _master_clock_rate;
     const double _dboard_clock_rate;
     const double _system_ref_rate;
+    const bool _user_specified_dboard_clock_rate;
+    bool _rx_dboard_clock_rate_locked;
+    bool _tx_dboard_clock_rate_locked;
     lmk04816_regs_t _lmk04816_regs;
     double _vco_freq;
     x300_clk_delays _delays;
@@ -1003,8 +1039,14 @@ x300_clock_ctrl::sptr x300_clock_ctrl::make(uhd::spi_iface::sptr spiface,
     const size_t hw_rev,
     const double master_clock_rate,
     const double dboard_clock_rate,
-    const double system_ref_rate)
+    const double system_ref_rate,
+    const bool user_specified_dboard_clock_rate)
 {
-    return sptr(new x300_clock_ctrl_impl(
-        spiface, slaveno, hw_rev, master_clock_rate, dboard_clock_rate, system_ref_rate));
+    return sptr(new x300_clock_ctrl_impl(spiface,
+        slaveno,
+        hw_rev,
+        master_clock_rate,
+        dboard_clock_rate,
+        system_ref_rate,
+        user_specified_dboard_clock_rate));
 }

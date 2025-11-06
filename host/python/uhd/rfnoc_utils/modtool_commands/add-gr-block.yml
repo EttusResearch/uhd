@@ -1,0 +1,103 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+help: |
+  Add a GNU Radio block for an existing block in this RFNoC OOT module.
+
+  This command may be called within an existing RFNoC OOT module directory, if
+  within it there exists a GNU Radio OOT module. It will add a C++ block
+  implementation for an RFNoC block.
+
+  Note: Must be called from within a valid RFNoC OOT module directory. Use -C to
+  specify the module directory if necessary.
+
+  Note: This command will call into `gr_modtool` under the hood, so make sure it
+  is installed and available in your PATH.
+
+args:
+  blockname:
+    name_or_flags: "blockname"
+    type: str
+    help: Name of the block to add a GNU Radio block for. This should be the same as the block's ID in the RFNoC module.
+    default: ""
+  yaml_descriptor:
+    name_or_flags: ["-y", "--yaml-descriptor"]
+    type: str
+    metavar: YAML_FILE
+    help: >
+      Path to the YAML descriptor file for the block. Defaults to rfnoc/blocks/<blockname>.yml.
+      If this file does not exist, the command will fail with an error.
+  gr_blockname:
+    name_or_flags: "--gr-blockname"
+    type: str
+    help: Name of the GNU Radio block. If not specified, the default is to use the RFNoC block name.
+    default: ""
+  copyright:
+    name_or_flags: ["-C", "--copyright"]
+    type: str
+    help: Name of copyright holder (you or your organization).
+
+
+variables:
+  type: block
+  type_d: blocks
+  blockname: "${ args.blockname }"
+  descriptor: "${ args.yaml_descriptor }"
+  gr_blockname: "${ args.gr_blockname if args.gr_blockname else args.blockname }"
+
+steps:
+  - find_file:
+      dst_var: descriptor
+      glob: "${ '' if descriptor else os.path.join('rfnoc', type_d, blockname + '.y*l') }"
+      file: "${ descriptor }"
+      required: true
+      error_msg: "YAML descriptor file for block '${ blockname }' not found. Please specify a valid descriptor file with -y or ensure it exists in rfnoc/blocks/<blockname>.yml."
+  - parse_descriptor:
+      source: "${ descriptor }"
+  - find_executable:
+      dst_var: gr_modtool
+      name: gr_modtool
+      error_msg: "gr_modtool not found. Please install GNU Radio and ensure it is in your PATH."
+  - run_subprocess:
+      cmd: [
+        "${ gr_modtool }",
+        "add",
+        "--help",
+      ]
+      dst_var: gr_modtool_help
+      error_msg: "gr_modtool failed version check. Ensure GNU Radio is correctly installed."
+  - run_if:
+      condition: "${ bool('rfnoc_block' not in gr_modtool_help) }"
+      steps:
+        - exit:
+            msg: "This version of gr_modtool does not support adding rfnoc_blocks."
+  - log:
+      msg: "Running gr_modtool to add bare GNU Radio block..."
+  - run_subprocess:
+      cmd: [
+        "${ gr_modtool }",
+        "add",
+        "-d", "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{ MODULE_NAME }') }",
+        "-l", "cpp",
+        "-t", "rfnoc_block",
+        "${ gr_blockname }",
+        "--skip-grc",
+        "--yes",
+        "${ '' if args.copyright is None else '--copyright=' + args.copyright }",
+      ]
+  - search_and_replace:
+      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.h') }"
+      pattern: "::uhd::rfnoc::noc_block_base::sptr"
+      repl: "::rfnoc::${ MODULE_NAME }::${ blockname }_block_control::sptr"
+  - search_and_replace:
+      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.h') }"
+      pattern: "[^\\n]+replace with[^\\n]+\\n"
+      repl: ""
+  - log:
+      msg: "Successfully added GNU Radio block ${ gr_blockname } for RFNoC block ${ blockname }."
+  - log:
+      msg: "Make sure to modify the newly added files according to your block's functionality."
+      

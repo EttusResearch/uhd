@@ -10,6 +10,7 @@
 #include "../stream_python.hpp"
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/features/gpio_power_iface.hpp>
+#include <uhd/features/gps_iface.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
@@ -197,7 +198,7 @@ void export_rfnoc(py::module& m)
             py::arg("streamer"),
             py::arg("strm_port"),
             py::arg("dst_blk"),
-            py::arg("dst_blk"),
+            py::arg("dst_port"),
             py::arg("adapter_id") = uhd::transport::NULL_ADAPTER_ID)
         .def("connect",
             py::overload_cast<const block_id_t&,
@@ -206,7 +207,7 @@ void export_rfnoc(py::module& m)
                 size_t,
                 uhd::transport::adapter_id_t>(&rfnoc_graph::connect),
             py::arg("src_blk"),
-            py::arg("src_blk"),
+            py::arg("src_port"),
             py::arg("streamer"),
             py::arg("strm_port"),
             py::arg("adapter_id") = uhd::transport::NULL_ADAPTER_ID)
@@ -233,7 +234,22 @@ void export_rfnoc(py::module& m)
         .def(
             "get_tree",
             [](rfnoc_graph& self) { return self.get_tree().get(); },
-            py::return_value_policy::reference_internal);
+            py::return_value_policy::reference_internal)
+        .def("get_chdr_width",
+            [](rfnoc_graph& self) { return chdr_w_to_bits(self.get_chdr_width()); })
+        .def(
+            "get_chdr_xport_adapters",
+            [](rfnoc_graph& self, size_t mb_index) {
+                // convert return value to
+                // std::map<std::string, std::map<std::string, std::string>>
+                std::map<std::string, std::map<std::string, std::string>> retval;
+                for (auto const& [iface, addrs] :
+                    self.get_chdr_xport_adapters(mb_index)) {
+                    retval[iface] = std::map<std::string, std::string>(addrs);
+                }
+                return retval;
+            },
+            py::arg("mb_index") = 0);
 
     py::class_<uhd::features::gpio_power_iface>(m, "gpio_power")
         .def("get_supported_voltages",
@@ -243,6 +259,11 @@ void export_rfnoc(py::module& m)
         .def("set_external_power", &uhd::features::gpio_power_iface::set_external_power)
         .def("get_external_power_status",
             &uhd::features::gpio_power_iface::get_external_power_status);
+
+    py::class_<uhd::features::gps_iface>(m, "gps")
+        .def("get_sensor", &uhd::features::gps_iface::get_sensor)
+        .def("get_sensors", &uhd::features::gps_iface::get_sensors)
+        .def("send_cmd", &uhd::features::gps_iface::send_cmd);
 
     py::class_<detail::filter_node>(m, "filter_node")
         .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)
@@ -274,7 +295,11 @@ void export_rfnoc(py::module& m)
         .def("set_time_source_out", &mb_controller::set_time_source_out)
         .def("get_sensor", &mb_controller::get_sensor)
         .def("get_sensor_names", &mb_controller::get_sensor_names)
-        .def("get_eeprom", &mb_controller::get_eeprom)
+        .def("get_eeprom",
+            [](mb_controller& self) {
+                auto eeprom = self.get_eeprom();
+                return static_cast<std::map<std::string, std::string>>(eeprom);
+            })
         .def("synchronize", &mb_controller::synchronize)
         .def("get_gpio_banks", &mb_controller::get_gpio_banks)
         .def("get_gpio_srcs", &mb_controller::get_gpio_srcs)
@@ -284,6 +309,12 @@ void export_rfnoc(py::module& m)
             "get_gpio_power",
             [](mb_controller& self) {
                 return &self.get_feature<uhd::features::gpio_power_iface>();
+            },
+            py::return_value_policy::reference_internal)
+        .def(
+            "get_gps_iface",
+            [](mb_controller& self) {
+                return &self.get_feature<uhd::features::gps_iface>();
             },
             py::return_value_policy::reference_internal);
 

@@ -69,7 +69,6 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
-      NIPC: RADIO_NIPC
     ctrl_clock: _device_.rfnoc_ctrl     # The clock that is used for the control
                                         # interface. This is the default clock,
                                         # so we could skip it.
@@ -78,7 +77,6 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
-      NIPC: RADIO_NIPC
     ctrl_clock: _device_.rfnoc_ctrl
     timebase_clock: _device_.radio
   duc0:                                 # NoC block name

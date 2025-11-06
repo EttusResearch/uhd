@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <mpm/noncopyable.hpp>
 #include <boost/circular_buffer.hpp>
-#include <boost/noncopyable.hpp>
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <tuple>
 
 namespace mpm { namespace types {
@@ -41,7 +43,7 @@ struct log_message
     }
 };
 
-class log_buf : public boost::noncopyable
+class log_buf : public mpm::noncopyable
 {
 public:
     using sptr = std::shared_ptr<log_buf>;

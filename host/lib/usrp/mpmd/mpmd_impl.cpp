@@ -10,8 +10,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/prefs.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/thread.hpp>
+#include <boost/format.hpp>
 #include <chrono>
 #include <future>
 #include <memory>

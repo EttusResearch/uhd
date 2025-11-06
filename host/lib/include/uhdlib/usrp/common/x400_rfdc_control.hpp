@@ -18,7 +18,7 @@ namespace uhd { namespace rfnoc { namespace x400 {
 //! Control class for the RFDC components of a single daughterboard
 //
 // This class controls the NCOs and other RFDC settings. The corresponding FPGA
-// module is rfdc_timing_control.v.
+// module is rfdc_timing_control.sv.
 class rfdc_control
 {
 public:
@@ -32,6 +32,12 @@ public:
         static constexpr uint32_t NCO_RESET_START_MSB = 0;
         //! Bit position of reset-done bit (r)
         static constexpr uint32_t NCO_RESET_DONE_MSB = 1;
+        //! Bit position of nco-sync-failed bit (r)
+        static constexpr uint32_t NCO_SYNC_FAILED_MSB = 8;
+        //! Bit position of sysref wait time register(w)
+        static constexpr uint32_t SYSREF_WAIT_LSB = 16;
+        //! Bit position of sysref-wait-write-enable bit (w)
+        static constexpr uint32_t WRITE_SYSREF_WAIT = 24;
         //! Address of the gearbox reset register
         static constexpr uint32_t GEARBOX_RESET = 4;
         //! Bit position of ADC gearbox reset

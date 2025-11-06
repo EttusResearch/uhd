@@ -15,21 +15,19 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 
 /***********************************************************************
  * WBX Version 2 Constants
  **********************************************************************/
-static const uhd::dict<std::string, gain_range_t> wbx_v2_tx_gain_ranges =
-    map_list_of("PGA0", gain_range_t(0, 25, 0.05));
+static const uhd::dict<std::string, gain_range_t> wbx_v2_tx_gain_ranges{
+    {"PGA0", gain_range_t(0, 25, 0.05)}};
 
 static const freq_range_t wbx_v2_freq_range(68.75e6, 2.2e9);
 

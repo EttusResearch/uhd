@@ -16,7 +16,6 @@
 #include <boost/program_options.hpp>
 #include <iostream>
 
-static const std::string SPI_DEFAULT_GPIO      = "GPIOA";
 static const size_t SPI_DEFAULT_CLK_PIN        = 0;
 static const size_t SPI_DEFAULT_SDI_PIN        = 1;
 static const size_t SPI_DEFAULT_SDO_PIN        = 2;

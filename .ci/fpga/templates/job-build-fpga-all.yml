@@ -1,0 +1,112 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building all FPGA bitfiles.
+#
+
+parameters:
+## Optional parameters
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+## Device-specific parameters
+- name: x410_targets_matrix
+  type: object
+  default: {}
+- name: x440_targets_matrix
+  type: object
+  default: {}
+
+
+stages:
+### START: X400 stages
+
+- template: ../devices/job-build-fpga-x400.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    ${{ if ne(length(parameters.x410_targets_matrix), 0) }}:
+      x410_full_targets_matrix: ${{ parameters.x410_targets_matrix }}
+      x410_reduced_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    ${{ if ne(length(parameters.x440_targets_matrix), 0) }}:
+      x440_full_targets_matrix: ${{ parameters.x440_targets_matrix }}
+      x440_reduced_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: X400 stages
+
+### START: X3x0 stages
+
+- template: ../devices/job-build-fpga-x300.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files: ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: X3x0 stages
+
+### START: N3xx stages
+
+- template: ../devices/job-build-fpga-n3xx.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: N3xx stages
+
+### START: E31x stages
+
+- template: ../devices/job-build-fpga-e31x.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: E31x stages
+
+### START: E320 stages
+
+- template: ../devices/job-build-fpga-e320.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: E320 stages

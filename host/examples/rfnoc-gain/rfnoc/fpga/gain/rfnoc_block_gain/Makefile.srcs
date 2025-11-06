@@ -1,0 +1,22 @@
+#
+# Copyright 2019 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Block Sources
+##################################################
+# Here, list all the files that are necessary to synthesize this block. Don't
+# include testbenches! They get put in 'Makefile' (without .srcs).
+# Make sure that the source files are nicely detectable by a regex. Best to put
+# one on each line.
+# The first argument to addprefix is the current path to this Makefile, so the
+# path list is always absolute, regardless of from where we're including or
+# calling this file.
+# Note that the name of the variable we choose here is also referenced in
+# gain.yml, those two names must match!
+RFNOC_BLOCK_GAIN_SRCS := $(addprefix $(dir $(abspath $(lastword $(MAKEFILE_LIST)))), \
+rfnoc_block_gain.sv \
+noc_shell_gain.sv \
+)

@@ -1,5 +1,10 @@
 schema: rfnoc_modtool_args
 module_name: null_src_sink
+name: "Null Source/Sink"
+description: |
+  The Null Source/Sink acts as a streaming endpoint, consuming all the incoming
+  data, generating data, or looping back data. It is typically used for testing and debugging
+  purposes.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
@@ -38,14 +43,12 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     loop:
       item_width: 32
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
   outputs:
     source:
       item_width: 32
@@ -53,11 +56,9 @@ data:
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~
     loop:
       item_width: 32
       nipc: 2
       context_fifo_depth: 2
       payload_fifo_depth: 2
       format: sc16
-      mdata_sig: ~

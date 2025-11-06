@@ -4,16 +4,28 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 
-module axi_round
-  #(parameter WIDTH_IN=17,
+module axi_round #(
+    parameter WIDTH_IN=17,
     parameter WIDTH_OUT=16,
-    parameter round_to_zero=0,       // original behavior
-    parameter round_to_nearest=1,    // lowest noise
-    parameter trunc=0,               // round to negative infinity
-    parameter FIFOSIZE=0)  // leave at 0 for a normal single flop
-   (input clk, input reset,
-    input [WIDTH_IN-1:0] i_tdata, input i_tlast, input i_tvalid, output i_tready,
-    output [WIDTH_OUT-1:0] o_tdata, output o_tlast, output o_tvalid, input o_tready);
+    parameter round_to_zero=0,      // original behavior
+    parameter round_to_nearest=1,   // lowest noise
+    parameter trunc=0,              // round to negative infinity
+    parameter FIFOSIZE=0,           // leave at 0 for a normal single flop
+    parameter USE_SAFE_ROUND=1      // ensure rounding does not overflow for positive numbers
+  ) (
+    input clk,
+    input reset,
+
+    input [WIDTH_IN-1:0] i_tdata,
+    input                i_tlast,
+    input                i_tvalid,
+    output               i_tready,
+
+    output [WIDTH_OUT-1:0] o_tdata,
+    output                 o_tlast,
+    output                 o_tvalid,
+    input                  o_tready
+  );
 
   wire [WIDTH_OUT-1:0] out;
 
@@ -24,19 +36,23 @@ module axi_round
       assign o_tvalid = i_tvalid;
       assign i_tready = o_tready;
     end else begin
-      wire round_corr,round_corr_trunc,round_corr_rtz,round_corr_nearest,round_corr_nearest_safe;
+      wire round_corr, round_corr_trunc, round_corr_rtz, round_corr_nearest,
+           round_corr_nearest_safe;
       wire [WIDTH_IN-WIDTH_OUT-1:0] err;
 
       assign round_corr_trunc = 0;
       assign round_corr_rtz = (i_tdata[WIDTH_IN-1] & |i_tdata[WIDTH_IN-WIDTH_OUT-1:0]);
       assign round_corr_nearest = i_tdata[WIDTH_IN-WIDTH_OUT-1];
 
-      assign round_corr_nearest_safe =  (WIDTH_IN-WIDTH_OUT > 1) ? 
-                                        ((~i_tdata[WIDTH_IN-1] & (&i_tdata[WIDTH_IN-2:WIDTH_IN-WIDTH_OUT])) ? 1'b0 : round_corr_nearest) :
-                                        round_corr_nearest;
+      // Detect special case of maximum positive number.
+      // Rounding up is not possible in this case to avoid a wrap to a negative number.
+      // This detection can be skipped by setting the parameter USE_SAFE_ROUND to 0.
+      assign round_corr_nearest_safe = ((WIDTH_IN-WIDTH_OUT > 1) && USE_SAFE_ROUND) ?
+        ((~i_tdata[WIDTH_IN-1] & (&i_tdata[WIDTH_IN-2:WIDTH_IN-WIDTH_OUT])) ? 1'b0 : round_corr_nearest) :
+        round_corr_nearest;
 
       assign round_corr = round_to_nearest ? round_corr_nearest_safe :
-                          trunc ? round_corr_trunc : 
+                          trunc ? round_corr_trunc :
                           round_to_zero ? round_corr_rtz :
                           0;  // default to trunc
 
@@ -50,7 +66,7 @@ module axi_round
          .o_tdata({o_tlast, o_tdata}), .o_tvalid(o_tvalid), .o_tready(o_tready),
          .occupied(), .space());
 
-   end
+    end
   endgenerate
 
 endmodule // axi_round

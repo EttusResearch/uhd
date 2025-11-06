@@ -23,6 +23,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <chrono>
+#include <cmath>
 #include <functional>
 #include <map>
 #include <memory>
@@ -289,18 +290,24 @@ public:
         _tx_target_pfd_freq = pfd_freq_max;
         if (_rev >= 1) {
             bool can_set_clock_rate = true;
-            // set dboard clock rates to as close to the max PFD freq as possible
+            // set dboard clock rates to as close to the max PFD freq as possible while
+            // making sure the master clock rate is integer-divisible by the chosen rate.
             if (_iface->get_clock_rate(dboard_iface::UNIT_RX) > pfd_freq_max) {
                 std::vector<double> rates =
                     _iface->get_clock_rates(dboard_iface::UNIT_RX);
-                double highest_rate = 0.0;
+                double master_clock_rate = _iface->get_codec_rate(dboard_iface::UNIT_RX);
+                double highest_rate      = 0.0;
                 for (double rate : rates) {
-                    if (rate <= pfd_freq_max and rate > highest_rate)
+                    if (rate <= pfd_freq_max and rate > highest_rate
+                        and uhd::math::fp_compare::freq_compare_epsilon(
+                                std::fmod(master_clock_rate, rate))
+                                == 0.0)
                         highest_rate = rate;
                 }
                 try {
                     _iface->set_clock_rate(dboard_iface::UNIT_RX, highest_rate);
-                } catch (const uhd::not_implemented_error&) {
+                    _iface->lock_clock_rate(dboard_iface::UNIT_RX);
+                } catch (const uhd::runtime_error&) {
                     UHD_LOG_WARNING(
                         "UBX", "Unable to set dboard clock rate - phase will vary");
                     can_set_clock_rate = false;
@@ -311,14 +318,19 @@ public:
                 and _iface->get_clock_rate(dboard_iface::UNIT_TX) > pfd_freq_max) {
                 std::vector<double> rates =
                     _iface->get_clock_rates(dboard_iface::UNIT_TX);
-                double highest_rate = 0.0;
+                double master_clock_rate = _iface->get_codec_rate(dboard_iface::UNIT_TX);
+                double highest_rate      = 0.0;
                 for (double rate : rates) {
-                    if (rate <= pfd_freq_max and rate > highest_rate)
+                    if (rate <= pfd_freq_max and rate > highest_rate
+                        and uhd::math::fp_compare::freq_compare_epsilon(
+                                std::fmod(master_clock_rate, rate))
+                                == 0.0)
                         highest_rate = rate;
                 }
                 try {
                     _iface->set_clock_rate(dboard_iface::UNIT_TX, highest_rate);
-                } catch (const uhd::not_implemented_error&) {
+                    _iface->lock_clock_rate(dboard_iface::UNIT_TX);
+                } catch (const uhd::runtime_error&) {
                     UHD_LOG_WARNING(
                         "UBX", "Unable to set dboard clock rate - phase will vary");
                 }

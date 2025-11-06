@@ -13,9 +13,9 @@
 #include <uhd/rfnoc/replay_block_control.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/utils/math.hpp>
-#include <uhdlib/utils/compat_check.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <numeric>
 #include <string>
 
 using namespace uhd::rfnoc;
@@ -161,6 +161,16 @@ public:
                 }
                 _handle_tx_event_action(src, tx_event_action);
             });
+        register_action_handler(ACTION_KEY_TUNE_REQUEST,
+            [this](const res_source_info& src, action_info::sptr action) {
+                tune_request_action_info::sptr tune_request_action =
+                    std::dynamic_pointer_cast<tune_request_action_info>(action);
+                if (!tune_request_action) {
+                    RFNOC_LOG_WARNING("Received invalid tune request action!");
+                    return;
+                }
+                RFNOC_LOG_DEBUG("Received tune request on " << src.to_string());
+            });
 
         // Initialize record properties
         _record_type.reserve(_num_input_ports);
@@ -229,11 +239,27 @@ public:
         const uhd::time_spec_t time_spec,
         const bool repeat) override
     {
+        play(offset,
+            size,
+            port,
+            time_spec,
+            static_cast<size_t>(repeat ? PLAY_CONTINUOUS : 1));
+    }
+
+    void play(const uint64_t offset,
+        const uint64_t size,
+        const size_t port,
+        const uhd::time_spec_t time_spec,
+        const size_t iterations) override
+    {
         config_play(offset, size, port);
         uhd::stream_cmd_t play_cmd =
-            repeat ? uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS)
-                   : uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
-        play_cmd.num_samps  = size / get_play_item_size(port);
+            iterations == PLAY_CONTINUOUS
+                ? uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS)
+                : uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+        play_cmd.num_samps  = iterations == PLAY_CONTINUOUS
+                                  ? 0
+                                  : iterations * size / get_play_item_size(port);
         play_cmd.time_spec  = time_spec;
         play_cmd.stream_now = (time_spec == 0.0);
         issue_stream_cmd(play_cmd, port);
@@ -462,6 +488,26 @@ public:
         }
     }
 
+    void post_input_action(const std::shared_ptr<uhd::rfnoc::action_info>& action,
+        const size_t port) override
+    {
+        if (port > get_num_input_ports()) {
+            throw uhd::runtime_error("Invalid port. Please provide a valid port");
+        }
+        const uhd::rfnoc::res_source_info info(res_source_info::INPUT_EDGE, port);
+        post_action(info, action);
+    }
+
+    void post_output_action(const std::shared_ptr<uhd::rfnoc::action_info>& action,
+        const size_t port) override
+    {
+        if (port > get_num_output_ports()) {
+            throw uhd::runtime_error("Invalid port. Please provide a valid port");
+        }
+        const uhd::rfnoc::res_source_info info(res_source_info::OUTPUT_EDGE, port);
+        post_action(info, action);
+    }
+
 protected:
     // Block-specific register interface
     multichan_register_iface _replay_reg_iface;
@@ -505,7 +551,7 @@ private:
                                   get_mtu_prop_ref({res_source_info::INPUT_EDGE, port})},
             {&_atomic_item_size_in.back()},
             [this, port, &ais_in = _atomic_item_size_in.back()]() {
-                ais_in = uhd::math::lcm<size_t>(ais_in, get_word_size());
+                ais_in = std::lcm<size_t>(ais_in, get_word_size());
                 ais_in = std::min<size_t>(
                     ais_in, get_mtu({res_source_info::INPUT_EDGE, port}));
                 if (ais_in.get() % get_word_size() > 0) {
@@ -568,7 +614,7 @@ private:
                                   get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, port})},
             {&_atomic_item_size_out.back()},
             [this, port, &ais_out = _atomic_item_size_out.back()]() {
-                ais_out = uhd::math::lcm<size_t>(ais_out, get_word_size());
+                ais_out = std::lcm<size_t>(ais_out, get_word_size());
                 ais_out = std::min<size_t>(
                     ais_out, get_mtu({res_source_info::OUTPUT_EDGE, port}));
                 if (ais_out.get() % get_word_size() > 0) {
@@ -649,8 +695,8 @@ private:
         //   - Configured item size (e.g., sample size)
         const uint32_t item_size        = get_play_item_size(port);
         const uint32_t atomic_item_size = _atomic_item_size_out.at(port).get();
-        const uint32_t min_chunk        = uhd::math::lcm<uint32_t>(
-            uhd::math::lcm<uint32_t>(item_size, atomic_item_size), _word_size);
+        const uint32_t min_chunk        = std::lcm<uint32_t>(
+            std::lcm<uint32_t>(item_size, atomic_item_size), _word_size);
 
         if (new_pyld_size % min_chunk != 0) {
             const uint32_t coerced_size = new_pyld_size - (new_pyld_size % min_chunk);
@@ -721,8 +767,7 @@ private:
                 uhd::time_spec_t::from_ticks(tx_event_action->tsf, get_tick_rate());
         }
         RFNOC_LOG_DEBUG("Received TX error code on channel "
-                        << src.instance << ", error code "
-                        << static_cast<int>(md.event_code));
+                        << src.instance << ", error code " << md.strevent());
         _playback_msg_queue.push_with_pop_on_full(md);
     }
 

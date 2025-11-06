@@ -2,6 +2,6 @@ etc/security/limits.d
 etc/sysctl.d
 usr/bin
 usr/lib
-usr/lib/uhd/examples
-usr/lib/uhd/tests
-usr/lib/uhd/utils
+usr/libexec/uhd/examples
+usr/libexec/uhd/tests
+usr/libexec/uhd/utils

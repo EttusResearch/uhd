@@ -142,7 +142,7 @@ endmodule
 `default_nettype wire
 
 //XmlParse xml_on
-//<regmap name="CLK_EN_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
+//<regmap name="CLOCK_EN_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
 //  <group name="CLK_EN_REGISTERS">
 //    <info>
 //      Clock Enable Register

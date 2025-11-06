@@ -63,7 +63,6 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <functional>
@@ -75,17 +74,16 @@ namespace uhd { namespace usrp {
 /***********************************************************************
  * The WBX Common dboard constants
  **********************************************************************/
-static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges =
-    boost::assign::map_list_of("PGA0", gain_range_t(0, 31.5, 0.5));
+static const uhd::dict<std::string, gain_range_t> wbx_rx_gain_ranges{
+    {"PGA0", gain_range_t(0, 31.5, 0.5)}};
 
-static const freq_range_t wbx_tx_lo_5dbm =
-    boost::assign::list_of(range_t(0.05e9, 1.7e9))(range_t(1.9e9, 2.2e9));
+static const freq_range_t wbx_tx_lo_5dbm{range_t(0.05e9, 1.7e9), range_t(1.9e9, 2.2e9)};
 
-static const freq_range_t wbx_tx_lo_m1dbm = boost::assign::list_of(range_t(1.7e9, 1.9e9));
+static const freq_range_t wbx_tx_lo_m1dbm{range_t(1.7e9, 1.9e9)};
 
-static const freq_range_t wbx_rx_lo_5dbm = boost::assign::list_of(range_t(0.05e9, 1.4e9));
+static const freq_range_t wbx_rx_lo_5dbm{range_t(0.05e9, 1.4e9)};
 
-static const freq_range_t wbx_rx_lo_2dbm = boost::assign::list_of(range_t(1.4e9, 2.2e9));
+static const freq_range_t wbx_rx_lo_2dbm{range_t(1.4e9, 2.2e9)};
 
 
 /***********************************************************************

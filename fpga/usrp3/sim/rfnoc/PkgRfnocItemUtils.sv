@@ -13,11 +13,11 @@
 //                   width and functions to convert to and from a CHDR vector.
 //
 //   - ItemDataBuffQueue: A queue of ItemDataBuff buffers
-// 
+//
 
 package PkgRfnocItemUtils;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
 
   //---------------------------------------------------------------------------
   // Item Data Buffer
@@ -31,7 +31,7 @@ package PkgRfnocItemUtils;
 
     localparam ITEM_W = $bits(item_t);
 
-    // Redefine these types from PkgChdrUtils to workaround Vivado 2019.1 bug
+    // Redefine these types from rfnoc_chdr_utils_pkg to workaround Vivado 2019.1 bug
     typedef logic [CHDR_W-1:0] chdr_word_t;
     typedef chdr_word_t        chdr_word_queue_t[$];
 

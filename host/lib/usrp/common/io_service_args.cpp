@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/io_service_args.hpp>
 #include <uhdlib/usrp/constrained_device_args.hpp>
@@ -84,7 +85,8 @@ io_service_args_t read_io_service_args(
             std::smatch match;
             if (std::regex_match(key, match, expr)) {
                 UHD_ASSERT_THROW(match.size() == 2); // first match is the entire key
-                const size_t thread = std::stoul(match.str(1));
+                // The regex ensures that match.str(1) is a valid number
+                const size_t thread = uhd::cast::from_str<size_t>(match.str(1));
                 const size_t cpu    = args.cast<size_t>(key, 0);
                 dest[thread]        = cpu;
             }

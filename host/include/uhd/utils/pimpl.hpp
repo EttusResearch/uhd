@@ -10,33 +10,18 @@
 #include <uhd/config.hpp>
 #include <memory>
 
-/*! \file pimpl.hpp
- * "Pimpl idiom" (pointer to implementation idiom).
- * The UHD_PIMPL_* macros simplify code overhead for declaring and making pimpls.
+/*! Make a declaration for a pimpl in a header file.
  *
- * Each pimpl is implemented as a shared pointer to the implementation:
- * - The container class will not have to deallocate the pimpl.
- * - The container class will use the pimpl as a regular pointer.
- * - Usage: _impl->method(arg0, arg1)
- * - Usage: _impl->member = value;
- *
- * \see http://en.wikipedia.org/wiki/Opaque_pointer
- */
-
-/*!
- * Make a declaration for a pimpl in a header file.
- * - Usage: UHD_PIMPL_DECL(impl) _impl;
- * \param _name the name of the pimpl class
+ * \deprecated This macro is deprecated and will be removed in a future release.
+ *             Instead, directly declare the pimpl struct in the header file.
  */
 #define UHD_PIMPL_DECL(_name) \
     struct _name;             \
     std::shared_ptr<_name>
 
-/*!
- * Make an instance of a pimpl in a source file.
- * - Usage: _impl = UHD_PIMPL_MAKE(impl, ());
- * - Usage: _impl = UHD_PIMPL_MAKE(impl, (a0, a1));
- * \param _name the name of the pimpl class
- * \param _args the constructor args for the pimpl
+/*! Make an instance of a pimpl in a source file.
+ *
+ * \deprecated This macro is deprecated and will be removed in a future release.
+ *             Instead, directly instantiate the pimpl struct in the source file.
  */
-#define UHD_PIMPL_MAKE(_name, _args) std::shared_ptr<_name>(new _name _args)
+#define UHD_PIMPL_MAKE(_name, _args) std::make_shared<_name> _args

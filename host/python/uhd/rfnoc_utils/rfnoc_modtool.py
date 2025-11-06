@@ -12,6 +12,7 @@ import os
 import sys
 
 from ruamel.yaml import YAML
+from uhd import get_pkg_data_path
 
 from .log import init_logging
 from .step_executor import StepExecutor
@@ -53,7 +54,7 @@ def parse_args(cmds):
     arg_parser.add_argument(
         "-l", "--log-level", default="INFO", help="Set the log level (default: INFO)"
     )
-    subparsers = arg_parser.add_subparsers(dest="command")
+    subparsers = arg_parser.add_subparsers(dest="command", required=True)
     parser_list = []
     for cmd in cmds:
         new_parser = subparsers.add_parser(cmd, help=cmds[cmd]["help"])
@@ -103,8 +104,9 @@ def check_valid_oot_dir(oot_dir):
     )
 
 
-def main(pkg_data_dir):
+def main():
     """Run main rfnoc_modtool function."""
+    pkg_data_dir = os.path.normpath(get_pkg_data_path())
     cmds = collect_commands()
     args = parse_args(cmds)
     init_logging(log_level=args.log_level)
@@ -112,7 +114,6 @@ def main(pkg_data_dir):
         os.chdir(args.directory)
     cmd = cmds[args.command]
     global_vars = get_global_vars(pkg_data_dir)
-    cmd = resolve_vars(cmd, global_vars, args)
     if not cmd.get("skip_identify_module", False):
         if not check_valid_oot_dir(os.getcwd()):
             print("Error: Not a valid OOT module directory")
@@ -121,6 +122,8 @@ def main(pkg_data_dir):
         module_name = oot_dir_name.replace("rfnoc-", "")
         global_vars["MODULE_NAME"] = module_name
         global_vars["MODULE_NAME_FULL"] = oot_dir_name
+        global_vars["MODULE_DIR"] = os.getcwd()
+    cmd = resolve_vars(cmd, global_vars, args)
     executor = StepExecutor(global_vars, args, cmd)
     executor.run(cmd["steps"])
     return 0

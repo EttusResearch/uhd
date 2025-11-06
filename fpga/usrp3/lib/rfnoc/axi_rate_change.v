@@ -138,7 +138,7 @@ module axi_rate_change #(
   wire [15:0] word_cnt_div_n_fifo_tdata;
   reg word_cnt_div_n_tvalid;
   wire word_cnt_div_n_tready, word_cnt_div_n_fifo_tvalid, word_cnt_div_n_fifo_tready;
-  axi_fifo #(.WIDTH(16), .SIZE(0)) axi_fifo_word_cnt (
+  axi_fifo #(.WIDTH(16), .SIZE(1)) axi_fifo_word_cnt (
     .clk(clk), .reset(reset), .clear(clear),
     .i_tdata(word_cnt_div_n_tdata), .i_tvalid(word_cnt_div_n_tvalid), .i_tready(word_cnt_div_n_tready),
     .o_tdata(word_cnt_div_n_fifo_tdata), .o_tvalid(word_cnt_div_n_fifo_tvalid), .o_tready(word_cnt_div_n_fifo_tready),

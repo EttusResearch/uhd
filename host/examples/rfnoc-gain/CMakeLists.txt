@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.12)
 project(rfnoc-gain CXX C)
 
 #make sure our local CMake Modules path comes first
@@ -18,28 +18,22 @@ set(VERSION_ABI   0)
 ########################################################################
 # Setup install directories
 ########################################################################
-set(RFNOC_DATA_DIR     share
-    CACHE PATH "Base location for data")
-set(UHD_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/
+include(GNUInstallDirs)
+set(UHD_PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd/
     CACHE PATH "Path to install UHD-related package data")
-set(RFNOC_PKG_DATA_DIR ${RFNOC_DATA_DIR}/uhd/rfnoc/
+set(RFNOC_PKG_DATA_DIR ${CMAKE_INSTALL_DATAROOTDIR}/uhd/rfnoc/
     CACHE PATH "Path to install RFNoC package data")
 set(GATEWARE_PKG_DATA_DIR ${RFNOC_PKG_DATA_DIR}/fpga/gain
     CACHE PATH "Path to install RFNoC package data")
 set(PROJECT_DATA_DIR   ${RFNOC_PKG_DATA_DIR}/gain/
     CACHE PATH "Path for this project's package data")
-
-if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
-    set(LIB_SUFFIX 64)
-endif()
-if(CMAKE_INSTALL_LIBDIR MATCHES lib64)
-    set(LIB_SUFFIX 64)
-endif()
+set(MODULES_D_DIR   ${UHD_PKG_DATA_DIR}/modules.d/
+    CACHE PATH "Path for the UHD modules.d/ directory")
 
 ########################################################################
 # Find bash (for executing make and sourcing the Vivado env)
 ########################################################################
-find_package(UnixCommands)
+find_program(BASH "bash")
 if(BASH)
     message(STATUS "Found bash interpreter: ${BASH}")
     configure_file(
@@ -75,6 +69,17 @@ else()
 endif()
 
 ###########################################################################
+# Find Boost
+###########################################################################
+# This matches the required Boost version with the one from UHD; if you
+# require a different version, you can manually specify it here.
+include(UHDMinDepVersions)
+find_package(Boost ${UHD_BOOST_MIN_VERSION}
+    OPTIONAL_COMPONENTS unit_test_framework)
+include(UHDUnitTest OPTIONAL RESULT_VARIABLE HAVE_UHD_UNIT_TEST_FRAMEWORK)
+
+
+###########################################################################
 # Find Python and uhd Python module
 ###########################################################################
 include(UHDPython)
@@ -105,7 +110,7 @@ set(UHD_FPGA_DIR "" CACHE PATH "Path to FPGA source directory")
 message(STATUS "Checking FPGA source directory...")
 if(NOT UHD_FPGA_DIR)
     message(WARNING
-        "Could not find FPGA directory. Skipping all FPGA targets."
+        "Could not find FPGA directory. Skipping all FPGA targets. "
         "Please provide it using -DUHD_FPGA_DIR!")
 endif(NOT UHD_FPGA_DIR)
 if(UHD_FPGA_DIR AND NOT EXISTS ${UHD_FPGA_DIR}/usrp3/top/Makefile.common)
@@ -116,9 +121,13 @@ if(UHD_FPGA_DIR AND NOT EXISTS ${UHD_FPGA_DIR}/usrp3/top/Makefile.common)
 endif()
 message(STATUS "Using FPGA source directory: ${UHD_FPGA_DIR}")
 
-set(UHD_FPGA_DEFAULT_DEVICE "x310"
+# We make E310 the default device, because this can be programmed with the free
+# tier of Vivado. The other devices require a license.
+set(UHD_FPGA_DEFAULT_DEVICE "e31x"
     CACHE STRING "Default device for testbench execution")
 
+# As above, we set this to a value that works with the free tier of Vivado.
+# Other values require a license (e.g., for ModelSim).
 set(FPGA_SIM_CMD "xsim"
     CACHE STRING "Executable for running testbenches (e.g., xsim, vsim)")
 
@@ -132,7 +141,7 @@ macro(RFNOC_ADD_TB_DIR)
         set(_target_name "${_tb_dir}_tb")
         message(STATUS "Adding testbench target: ${_target_name}")
         add_custom_target(${_target_name}
-            COMMAND ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} ${FPGA_SIM_CMD}
+            COMMAND ${BASH} ${CMAKE_BINARY_DIR}/cmake/Modules/run_testbench.sh ${UHD_FPGA_DIR} ${UHD_FPGA_DEFAULT_DEVICE} ${CMAKE_CURRENT_SOURCE_DIR} ${FPGA_SIM_CMD}
         )
         add_dependencies(testbenches ${_target_name})
     endif()
@@ -149,7 +158,11 @@ macro(RFNOC_REGISTER_BLOCK_DIR)
     message(STATUS "Registering RFNoC block: ${_blk_name}")
     file(READ ${CMAKE_CURRENT_SOURCE_DIR}/Makefile.srcs _makefile_srcs)
     list(APPEND _block_src_files "Makefile.srcs")
-    string(REGEX MATCHALL "[a-z0-9_]+\\.(s?v|vhdl?)" _src_files ${_makefile_srcs})
+    # Note: CMake uses an old regex engine that does not (among other things)
+    # support word boundaries. When changing this regex, make sure that it
+    # fully captures intended file names. For example, file.v is a subset of
+    # file.vhd, so the regex should match file.vhd first.
+    string(REGEX MATCHALL "[a-z0-9_]+\\.(vhdl?|s?v)" _src_files ${_makefile_srcs})
     foreach(_src_file ${_src_files})
         string(STRIP "${_src_file}" _src_file})
         list(APPEND _block_src_files "${_src_file}")
@@ -192,20 +205,18 @@ add_custom_target(uninstall
 # Install cmake search helper for this library
 ########################################################################
 if(NOT CMAKE_MODULES_DIR)
-    set(CMAKE_MODULES_DIR lib${LIB_SUFFIX}/cmake)
+    set(CMAKE_MODULES_DIR ${CMAKE_INSTALL_LIBDIR}/cmake)
 endif(NOT CMAKE_MODULES_DIR)
 
-#TODO
-#install(FILES cmake/Modules/RfnocExampleConfig.cmake
-#    DESTINATION ${CMAKE_MODULES_DIR}/rfnoc
-#)
+install(FILES cmake/Modules/rfnoc-gainConfig.cmake
+    DESTINATION ${CMAKE_MODULES_DIR}/rfnoc-gain
+)
 
 ########################################################################
 # Subdirectories
 ########################################################################
 if(UHD_FPGA_DIR)
     add_subdirectory(rfnoc)
-    add_subdirectory(fpga/gain)
     add_subdirectory(icores)
 endif()
 if(UHD_FOUND)
@@ -216,4 +227,9 @@ if(UHD_FOUND)
 endif()
 if(ENABLE_PYTHON_API)
     add_subdirectory(python)
+endif()
+if(HAVE_UHD_UNIT_TEST_FRAMEWORK AND Boost_UNIT_TEST_FRAMEWORK_FOUND)
+    message(STATUS "Boost unit test framework found, enabling tests.")
+    enable_testing()
+    add_subdirectory(tests)
 endif()

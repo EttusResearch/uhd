@@ -10,8 +10,6 @@
 #include "b100_impl.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
-#include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <functional>
 #include <memory>
 

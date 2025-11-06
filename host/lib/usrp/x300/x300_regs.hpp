@@ -67,6 +67,7 @@ static const int ZPU_RB_SFP1_TYPE   = 5;
 static const int ZPU_RB_COMPAT_NUM  = 6;
 static const int ZPU_RB_RFNOC_INFO  = 7; // See defines below for bits
 static const int ZPU_RB_GIT_HASH    = 10;
+static const int ZPU_RB_XADC_VALS   = 11;
 static const int ZPU_RB_FP_GPIO_SRC = 13;
 static const int ZPU_RB_DEVICE_ID   = 14;
 static const int ZPU_RB_BUILD_SEED  = 15;

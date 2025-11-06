@@ -8,9 +8,9 @@
 
 //@TODO: Move the register defs required by the class to a common location
 #include "../../usrp/x300/x300_regs.hpp"
-#include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio/niusrprio_session.h>
-#include <uhd/transport/nirio/status.h>
+#include <uhdlib/transport/nirio/nirio_fifo.h>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
+#include <uhdlib/transport/nirio/status.h>
 #include <stdio.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>

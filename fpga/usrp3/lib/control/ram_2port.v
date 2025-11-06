@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Description
-//  This code implements a parameterizable true dual port memory 
+//  This code implements a parameterizable true dual port memory
 //  (both ports can read and write). If an enable is not necessary
 //  it may be tied off.
 //
@@ -13,7 +13,7 @@
 //  This module requires the ram_2port_impl.vh header file. The
 //  header is included multiple times with different values of
 //  the RAM_DIRECTIVE macro to create different implementations of the
-//  RAM. An implementation is chosen in ram_2port based on the 
+//  RAM. An implementation is chosen in ram_2port based on the
 //  user parameter for RAM_TYPE.
 
 // Mode: AUTOMATIC
@@ -52,12 +52,14 @@
 `undef RAM_DIRECTIVE
 
 module ram_2port #(
-  parameter DWIDTH    = 32,           // Width of the memory block
-  parameter AWIDTH    = 9,            // log2 of the depth of the memory block
-  parameter RW_MODE   = "READ-FIRST", // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
-  parameter RAM_TYPE  = "AUTOMATIC",  // Type of RAM to infer {AUTOMATIC, REG, LUTRAM, BRAM, URAM}
-  parameter OUT_REG   = 0,            // Instantiate an output register? (+1 cycle of read latency)
-  parameter INIT_FILE = ""            // Optionally initialize memory with this file
+  parameter DWIDTH    = 32,             // Width of the memory block
+  parameter AWIDTH    = 9,              // log2 of the depth of the memory block
+  parameter RW_MODE   = "READ-FIRST",   // Read-write mode {READ-FIRST, WRITE-FIRST, NO-CHANGE, B-READ-ONLY}
+  parameter RAM_TYPE  = "AUTOMATIC",    // Type of RAM to infer {AUTOMATIC, REG, LUTRAM, BRAM, URAM}
+  parameter OUT_REG   = 0,              // Instantiate an output register? (+1 cycle of read latency)
+  parameter INIT_FILE = "",             // Optionally initialize memory with this file
+  parameter INIT_VAL  = {DWIDTH{1'b0}}  // Optionally initialize output registers with this value and
+                                        // memory will be filled with this value if INIT_FILE is empty
 ) (
   input  wire              clka,
   input  wire              ena,
@@ -78,7 +80,7 @@ module ram_2port #(
     if (RAM_TYPE == "URAM")
       ram_2port_impl_uram #(
         .DWIDTH(DWIDTH), .AWIDTH(AWIDTH), .RW_MODE(RW_MODE),
-        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE)
+        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE), .INIT_VAL(INIT_VAL)
       ) impl (
         .clka(clka), .ena(ena), .wea(wea), .addra(addra), .dia(dia), .doa(doa),
         .clkb(clkb), .enb(enb), .web(web), .addrb(addrb), .dib(dib), .dob(dob)
@@ -86,7 +88,7 @@ module ram_2port #(
     else if (RAM_TYPE == "BRAM")
       ram_2port_impl_bram #(
         .DWIDTH(DWIDTH), .AWIDTH(AWIDTH), .RW_MODE(RW_MODE),
-        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE)
+        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE), .INIT_VAL(INIT_VAL)
       ) impl (
         .clka(clka), .ena(ena), .wea(wea), .addra(addra), .dia(dia), .doa(doa),
         .clkb(clkb), .enb(enb), .web(web), .addrb(addrb), .dib(dib), .dob(dob)
@@ -94,7 +96,7 @@ module ram_2port #(
     else if (RAM_TYPE == "LUTRAM")
       ram_2port_impl_lutram #(
         .DWIDTH(DWIDTH), .AWIDTH(AWIDTH), .RW_MODE(RW_MODE),
-        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE)
+        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE), .INIT_VAL(INIT_VAL)
       ) impl (
         .clka(clka), .ena(ena), .wea(wea), .addra(addra), .dia(dia), .doa(doa),
         .clkb(clkb), .enb(enb), .web(web), .addrb(addrb), .dib(dib), .dob(dob)
@@ -102,7 +104,7 @@ module ram_2port #(
     else if (RAM_TYPE == "REG")
       ram_2port_impl_reg #(
         .DWIDTH(DWIDTH), .AWIDTH(AWIDTH), .RW_MODE(RW_MODE),
-        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE)
+        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE), .INIT_VAL(INIT_VAL)
       ) impl (
         .clka(clka), .ena(ena), .wea(wea), .addra(addra), .dia(dia), .doa(doa),
         .clkb(clkb), .enb(enb), .web(web), .addrb(addrb), .dib(dib), .dob(dob)
@@ -110,7 +112,7 @@ module ram_2port #(
     else
       ram_2port_impl_auto #(
         .DWIDTH(DWIDTH), .AWIDTH(AWIDTH), .RW_MODE(RW_MODE),
-        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE)
+        .OUT_REG(OUT_REG), .INIT_FILE(INIT_FILE), .INIT_VAL(INIT_VAL)
       ) impl (
         .clka(clka), .ena(ena), .wea(wea), .addra(addra), .dia(dia), .doa(doa),
         .clkb(clkb), .enb(enb), .web(web), .addrb(addrb), .dib(dib), .dob(dob)

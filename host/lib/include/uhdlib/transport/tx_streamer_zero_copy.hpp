@@ -28,6 +28,14 @@ public:
     {
     }
 
+    void resend_init()
+    {
+        // TODO: implement logic to retransmit on multi-channel setups.
+        //  currently we reject TX streamers with multip-channel and
+        //  STREAM_MODE_STOP_ON_SEQ_ERROR both enabled, so calling resend_init
+        //  here only on _xports[0] is safe.
+        _xports[0]->resend_init();
+    }
     //! Connect a new channel to the streamer
     void connect_channel(const size_t port, typename transport_t::uptr xport)
     {

@@ -8,6 +8,6 @@ UHD_INSTALL(FILES
     expert_container.hpp
     expert_factory.hpp
     expert_nodes.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/experts
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/experts
     COMPONENT headers
 )

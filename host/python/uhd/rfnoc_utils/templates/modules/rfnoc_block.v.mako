@@ -3,10 +3,9 @@
 <%
   block = config.noc_blocks[block_name]
   block_params = config.get_hdl_parameters(block_name)
-  ctrl_clock = block.get('ctrl_clock')
-  timebase_clock = block.get('timebase_clock')
-  clocks = config.clocks
   block_domain = block.get('domain')
+  ctrl_clk_index = config.get_clock_index(block.get('ctrl_clock'))
+  timebase_clk_index = config.get_clock_index(block.get('timebase_clock'))
   # Create two strings, one for the input and one for the output, that each
   # contains all the signal names to be connected to the input or output
   # AXIS-CHDR ports of this block.
@@ -60,14 +59,6 @@
 %for name, value in block_params.items():
     .${"%-20s" % name}(${value}),
 %endfor
-<%
-    if ctrl_clock and '.' not in ctrl_clock:
-        ctrl_clock = '_device_.' + ctrl_clock
-    if timebase_clock and '.' not in timebase_clock:
-        timebase_clock = '_device_.' + timebase_clock
-    ctrl_clk_index = clocks.get(ctrl_clock, {}).get('index')
-    timebase_clk_index = clocks.get(timebase_clock, {}).get('index')
-%>\
 %if ctrl_clk_index is not None:
     .CTRL_CLK_IDX        (${ctrl_clk_index}),
 %endif

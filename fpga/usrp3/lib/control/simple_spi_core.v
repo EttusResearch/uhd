@@ -25,8 +25,8 @@
 //
 // BASE+2 input data
 // Writing this register begins a spi transaction.
-// Bits are latched out from bit 0.
-// Therefore, load this register in reverse.
+// Bits are latched out starting from bit 31.
+// Therefore, data has to be MSB aligned for transmission.
 //
 // Readback
 // Bits are latched into bit 0.
@@ -122,7 +122,7 @@ module simple_spi_core
    // IJB. One pipeline stage to break critical path from register in I/O pads.
     reg [31:0] dataout_reg;
     wire [31:0] dataout_next = {dataout_reg[30:0], 1'b0};
-   
+
    always @(posedge clock)
      mosi <= dataout_reg[31];
 
@@ -133,7 +133,7 @@ module simple_spi_core
       miso_pipe2 <= miso;
       miso_pipe <= miso_pipe2;
    end
-   
+
     reg [31:0] datain_reg;
     wire [31:0] datain_next = {datain_reg[30:0], miso_pipe};
     assign readback = datain_reg;

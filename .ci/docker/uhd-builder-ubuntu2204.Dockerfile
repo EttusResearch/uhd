@@ -4,6 +4,8 @@
 FROM ubuntu:22.04
 LABEL maintainer="Ettus Research"
 
+ARG PIP_INDEX_HOST
+ARG PIP_INDEX_URL
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -72,3 +74,12 @@ RUN apt-get update && \
         libsndfile1-dev \
         && \
     rm -rf /var/lib/apt/lists/*
+
+# Optionally use cached index.
+RUN if [[ -n "$PIP_INDEX_URL" ]]; then \
+        python3 -m pip config --global set global.index-url $PIP_INDEX_URL && \
+        python3 -m pip config --global set global.trusted-host $PIP_INDEX_HOST; \
+    fi
+
+RUN python3 -m pip config list
+RUN python3 -m pip install --upgrade pip

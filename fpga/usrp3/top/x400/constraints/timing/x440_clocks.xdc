@@ -12,26 +12,12 @@
 #
 # Note: Vivado will create generated clocks based on the default MMCM settings
 # configured in the clocking wizard, but we are going to dynamically change
-# those clocks, and so we need to provide worst-case values in here.
+# those clocks, and so the MMCM has to be configured for the highest frequency.
 ###############################################################################
 
 # PLL Reference Clock (PRC) input. This goes from the LMK straight to the MMCM
 # input, and is used to generate the internal PRC as well as RFDC/data clocks.
-set pll_ref_clk_in_period 15.625
-create_clock -name pll_ref_in_clk -period $pll_ref_clk_in_period [get_ports PLL_REFCLK_FPGA_P]
-
-# Internal PLL Reference Clock (PRC). Used to derive data clocks. Constrain to
-# the fastest possible clock rate supported in the driver.
+# Set to maximum frequency of 64 MHz. Actual frequency depends on the LMK
+# configuration.
 set pll_ref_clk_period 15.625
-create_clock -name pll_ref_clk \
-             -period $pll_ref_clk_period \
-             [get_pins x440_ps_rfdc_bd_i/rfdc/data_clock_mmcm/inst/CLK_CORE_DRP_I/clk_inst/mmcme4_adv_inst/CLKOUT0]
-
-###############################################################################
-# Generated Clocks
-###############################################################################
-
-create_generated_clock -name sync_ref_clk \
-                       -source [get_ports BASE_REFCLK_FPGA_P] \
-                       -divide_by 2 [get_pins clock_div_5mhz/clk_out_reg/Q]
-
+create_clock -name pll_ref_clk -period $pll_ref_clk_period [get_ports PLL_REFCLK_FPGA_P]

@@ -10,7 +10,6 @@
 #include <mpm/spi/spi_iface.hpp>
 #include <mpm/spi/spi_regs_iface.hpp>
 #include <mpm/types/regs_iface.hpp>
-#include <boost/make_shared.hpp>
 #include <memory>
 
 using namespace mpm::dboards;

@@ -1,0 +1,142 @@
+.TH UHD "1" "December 2024" "UHD 4" "User Commands"
+.SH NAME
+rfnoc_image_builder - Build UHD image using RFNoC blocks.
+.SH USAGE
+rfnoc_image_builder [\-h] (\fB\-y\fR YAML_CONFIG | \fB\-r\fR GRC_CONFIG)
+[\-C BASE_DIR] [\-F FPGA_DIR] [\-B BUILD_DIR] [\-O BUILD_OUTPUT_DIR]
+[\-E BUILD_IP_DIR] [\-o IMAGE_CORE_OUTPUT] [\-I INCLUDE_DIR] [\-b GRC_BLOCKS]
+[\-l LOG_LEVEL] [\-R] [\-G] [\-W] [\-S SECURE_CORE] [\-K SECURE_KEY]
+[\-d DEVICE] [\-n IMAGE_CORE_NAME] [\-t TARGET] [\-g] [\-Y] [\-\-CHECK] [\-s]
+[\-P] [\-j JOBS] [\-c] [\-p VIVADO_PATH] [\-H] [\-D]
+[\-\-color {never,auto,always}]
+.SS "optional arguments:"
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+show a help message and exit
+.TP
+\fB\-y\fR YAML_CONFIG, \fB\-\-yaml\-config\fR YAML_CONFIG
+Path to YAML configuration file (image core file). Either this option or \fB\-\-grc\-config\fR is required.
+.TP
+\fB\-r\fR GRC_CONFIG, \fB\-\-grc\-config\fR GRC_CONFIG
+Path to .grc file to generate config from
+.TP
+\fB\-C\fR BASE_DIR, \fC\-\-base\-dir\fR BASE_DIR
+Path to the base directory. Defaults to the current directory.
+.TP
+\fB\-F\fR FPGA_DIR, \fB\-\-fpga\-dir\fR FPGA_DIR
+Path to directory for the FPGA source tree. Defaults to the FPGA source tree
+of the current repo.
+.TP
+\fB\-B\fR BUILD_DIR, \fB\-\-build\-dir\fR BUILD_DIR
+Path to directory where the image core and and build artifacts will be
+generated. Defaults to "build-<image-core-name>" in the base directory.
+.TP
+\fB\-O\fR BUILD_OUTPUT_DIR, \fB\-\-build\-output\-dir\fR BUILD_OUTPUT_DIR
+Path to directory for final FPGA build outputs. Defaults to "build" in the
+base directory.
+.TP
+\fB\-E\fR BUILD_IP_DIR, \fB\-\-build\-ip\-dir\fR BUILD_IP_DIR
+Path to directory for IP build artifacts. Defaults to "build-ip" in the
+base directory.
+.TP
+\fB\-o\fR IMAGE_CORE_OUTPUT, \fB\-\-image\-core\-output\fR IMAGE_CORE_OUTPUT
+DEPRECATED! This has been replaced by \fB\-\-build\-dir\fR.
+.TP
+\fB\-x\fR ROUTER_HEX_OUTPUT, \fB\-\-router\-hex\-output\fR ROUTER_HEX_OUTPUT
+DEPRECATED! This option will be ignored.
+.TP
+\fB\-I\fR INCLUDE_DIR, \fB\-\-include\-dir\fR INCLUDE_DIR
+Path to directory of the RFNoC Out\-of\-Tree module
+.TP
+\fB\-b\fR GRC_BLOCKS, \fB\-\-grc\-blocks\fR GRC_BLOCKS
+Path to directory of GRC block descriptions (needed for
+\fB\-\-grc\-config\fR only)
+.TP
+\fB\-l\fR LOG_LEVEL, \fB\-\-log\-level\fR LOG_LEVEL
+Adjust log level
+.TP
+\fB\-R\fR, \fB\-\-reuse\fR
+Reuse existing files (do not regenerate image core).
+.TP
+\fB\-G\fR, \fB\-\-generate\-only\fR
+Just generate files without building the FPGA
+.TP
+\fB\-W\fR, \fB\-\-ignore\-warnings\fR
+Run build even when there are warnings in the build process.
+.TP
+\fB\-S\fR SECURE_CORE, \fB\-\-secure\-core\fR SECURE_CORE
+Build a secure image core instead of a bitfile. This argument provides the name of the generated YAML.
+.TP
+\fB\-K\fR SECURE_KEY, \fB\-\-secure\-key\fR SECURE_KEY
+Path to encryption key file to use for secure core.
+.TP
+\fB\-d\fR DEVICE, \fB\-\-device\fR DEVICE
+Device to be programmed [x300, x310, e310, e320, n300, n310, n320, x410, x440]. Needs to be specified either here, or in the configuration file.
+.TP
+\fB\-n\fR IMAGE_CORE_NAME, \fB\-\-image\-core\-name\fR IMAGE_CORE_NAME, \fB\-\-image_core_name\fR IMAGE_CORE_NAME
+Name to use for the RFNoC image core. Defaults to name of the image core YML file, without the extension.
+.TP
+\fB\-t\fR TARGET, \fB\-\-target\fR TARGET
+Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified either here, on the configuration file.
+.TP
+\fB\-g\fR, \fB\-\-GUI\fR
+Open Vivado GUI during the FPGA building process.
+.TP
+\fB\-Y\fR, \fB\-\-SYNTH\fR
+Stop the FPGA build process after Synthesis.
+.TP
+\fB\-C\fR, \fB\-\-CHECK\fR
+Run elaboration only to check HDL syntax.
+.TP
+\fB\-s\fR, \fB\-\-save\-project\fR
+Save Vivado project to disk.
+.TP
+\fB\-P\fR, \fB\-\-ip\-only\fR
+Build only the required IPs.
+.TP
+\fB\-j\fR JOBS, \fB\-\-jobs\fR JOBS
+Number of parallel jobs to use with make.
+.TP
+\fB\-c\fR, \fB\-\-clean\-all\fR
+Cleans the IP before a new build.
+.TP
+\fB\-p\fR VIVADO_PATH, \fB\-\-vivado\-path\fR VIVADO_PATH
+Path to the base install for Xilinx Vivado if not in default location (e.g., /tools/Xilinx/Vivado).
+.TP
+\fB\-H\fR, \fB\-\-no\-hash\fR
+Do not include source YAML hash in the generated source code.
+.TP
+\fB\-D\fR, \fB\-\-no\-date\fR
+Do not include date or time in the generated source code.
+.TP
+\fB\-\-color\fR {never,auto,always}
+Enable colorful output. When set to 'auto' will only show color output in TTY environments (e.g., interactive shells).
+.SH "DESCRIPTION"
+This tool takes a YAML configuration file and generates an FPGA bitfile that
+can be used with an RFNoC-capable UHD device. The YAML configuration file
+describes the RFNoC blocks that are to be included in the FPGA image, along with
+the connections between the blocks, and any additional configuration that is
+required for the blocks.
+.SH "SEE ALSO"
+UHD documentation:
+.B https://uhd.readthedocs.io/
+.LP
+Other UHD programs:
+.sp
+uhd_cal_tx_dc_offset(1) uhd_cal_rx_iq_balance(1) uhd_images_downloader(1)
+uhd_config_info(1) uhd_find_devices(1)
+.SH AUTHOR
+This manual page was written by Maitland Bottoms
+for the Debian project (but may be used by others).
+.SH COPYRIGHT
+Copyright (c) 2020 Ettus Research LLC
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

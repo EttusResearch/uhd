@@ -68,7 +68,7 @@ ctrlport_spi_master.v \
 cpld_interface.v \
 cpld_interface_regs.v \
 qsfp_led_controller.v \
-rfdc_timing_control.v \
+rfdc_timing_control.sv \
 x4xx_pps_sync.v \
 ../../lib/timing/pps_generator.v \
 dboards/ctrlport_byte_serializer.v \
@@ -110,9 +110,9 @@ ifneq (,$(findstring RF_BW=400,$(RFNOC_IMAGE_CORE_DEFS)))
 MB_XDC += \
 constraints/timing/x440_clocks_400.xdc
 endif
-ifneq (,$(findstring RF_BW=1600,$(RFNOC_IMAGE_CORE_DEFS)))
+ifneq (,$(findstring RF_BW=200,$(RFNOC_IMAGE_CORE_DEFS)))
 MB_XDC += \
-constraints/timing/x440_clocks_1600.xdc
+constraints/timing/x440_clocks_200.xdc
 endif
 MB_XDC += \
 constraints/timing/x440_clocks.xdc

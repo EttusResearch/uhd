@@ -20,7 +20,7 @@ module axis_pyld_ctxt_converter_tb;
 
   import PkgTestExec::*;
   import PkgAxiStreamBfm::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
   import PkgChdrBfm::*;
 
   // Parameters

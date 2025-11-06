@@ -85,12 +85,10 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 4
-      NIPC: RADIO_NIPC
   radio1:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 4
-      NIPC: RADIO_NIPC
   duc0:
     block_desc: 'duc.yml'
     parameters:

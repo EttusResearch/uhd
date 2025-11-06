@@ -81,6 +81,8 @@ if(${CPACK_GENERATOR} STREQUAL NSIS)
             set(MSVC_VERSION "VS2017")
         elseif(MSVC_TOOLSET_VERSION EQUAL 142) # Visual Studio 2019 (14.2)
             set(MSVC_VERSION "VS2019")
+        elseif(MSVC_TOOLSET_VERSION EQUAL 143) # Visual Studio 2022 (14.3)
+            set(MSVC_VERSION "VS2022")
         endif()
         set(CPACK_PACKAGE_FILE_NAME "uhd_${UHD_VERSION}_Win${BIT_WIDTH}_${MSVC_VERSION}" CACHE INTERNAL "")
     else()
@@ -88,15 +90,31 @@ if(${CPACK_GENERATOR} STREQUAL NSIS)
     endif(SPECIFY_MSVC_VERSION)
 
     set(CPACK_PACKAGE_INSTALL_DIRECTORY "${CMAKE_PROJECT_NAME}")
+    # alternative to using CPACK_INNOSETUP_ARCHITECTURE
+    #set(CPACK_PACKAGE_PLATFORM_BITNESS "${CMAKE_GENERATOR_PLATFORM}")
+
+    # consider moving these definitions outside NSIS in General section
+    set(CPACK_PACKAGE_VERSION_MAJOR "${UHD_VERSION_MAJOR}") # defaults to '0'
+    set(CPACK_PACKAGE_VERSION_MINOR "${UHD_VERSION_API}")   # defaults to '1'
+    # note CPACK_PACKAGE_VERSION_PATCH may have another meaning for NSIS based installers
+    # has been defaulting to '1'
+    if(UHD_RELEASE_MODE)
+        set(CPACK_PACKAGE_VERSION2_PATCH "${UHD_VERSION_ABI}.${UHD_VERSION_PATCH_ORIG}")
+    else()
+        set(CPACK_PACKAGE_VERSION2_PATCH "${UHD_VERSION_ABI}.9999")
+    endif(UHD_RELEASE_MODE)
+
 endif()
 
 ########################################################################
 # Setup CPack General
 ########################################################################
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Ettus Research - USRP Hardware Driver")
-set(CPACK_PACKAGE_VENDOR              "Ettus Research (National Instruments)")
-set(CPACK_PACKAGE_CONTACT             "Ettus Research <packages@ettus.com>")
-set(CPACK_PACKAGE_VERSION "${UHD_VERSION}")
+set(CPACK_PACKAGE_VENDOR              "Ettus Research (NI, now part of Emerson)")
+set(CPACK_PACKAGE_CONTACT             "Ettus Research <uhd.maintainer@emerson.com>")
+set(CPACK_PACKAGE_VERSION             "${UHD_VERSION}")
+string(TIMESTAMP CURRENT_YEAR "%Y")
+set(CPACK_PACKAGE_COPYRIGHT           "Copyright © 2010-${CURRENT_YEAR} Ettus Research, a National Instruments Company")
 set(CPACK_RESOURCE_FILE_WELCOME ${UHD_SOURCE_DIR}/README.md)
 set(CPACK_RESOURCE_FILE_LICENSE ${UHD_SOURCE_DIR}/LICENSE)
 
@@ -118,6 +136,7 @@ set(CPACK_COMPONENT_EXAMPLES_GROUP       "Runtime")
 set(CPACK_COMPONENT_MANUAL_GROUP         "Documentation")
 set(CPACK_COMPONENT_DOXYGEN_GROUP        "Documentation")
 set(CPACK_COMPONENT_README_GROUP         "Documentation")
+set(CPACK_COMPONENT_WINUSBSUPPORT_GROUP  "Runtime")
 
 set(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME      "Libraries")
 set(CPACK_COMPONENT_PYTHONAPI_DISPLAY_NAME      "UHD Python API")
@@ -128,6 +147,7 @@ set(CPACK_COMPONENT_MANUAL_DISPLAY_NAME         "Manual")
 set(CPACK_COMPONENT_DOXYGEN_DISPLAY_NAME        "Doxygen")
 set(CPACK_COMPONENT_README_DISPLAY_NAME         "Readme")
 set(CPACK_COMPONENT_IMAGES_DISPLAY_NAME         "Images")
+set(CPACK_COMPONENT_WINUSBSUPPORT_DISPLAY_NAME  "USB Drivers")
 
 set(CPACK_COMPONENT_LIBRARIES_DESCRIPTION     "Dynamic link library")
 set(CPACK_COMPONENT_PYTHONAPI_DESCRIPTION     "UHD Python API")
@@ -138,6 +158,7 @@ set(CPACK_COMPONENT_MANUAL_DESCRIPTION        "Manual/application notes (rst and
 set(CPACK_COMPONENT_DOXYGEN_DESCRIPTION       "API documentation (html)")
 set(CPACK_COMPONENT_README_DESCRIPTION        "Readme files (txt)")
 set(CPACK_COMPONENT_IMAGES_DESCRIPTION        "FPGA and firmware images")
+set(CPACK_COMPONENT_WINLUSBSUPPORT_DESCRIPTION "Ettus USB driver installers")
 
 set(CPACK_COMPONENT_README_REQUIRED TRUE)
 
@@ -168,6 +189,9 @@ endforeach(filename)
 # Setup CPack NSIS
 ########################################################################
 set(CPACK_NSIS_MODIFY_PATH ON)
+set(CPACK_NSIS_INSTALLED_ICON_NAME Uninstall.exe)
+set(CPACK_NSIS_MUI_ICON "${UHD_SOURCE_DIR}/cmake/Modules/ettus_256x256.ico")
+set(CPACK_NSIS_MUI_UNIICON "${UHD_SOURCE_DIR}/cmake/Modules/ettus_256x256.ico")
 
 set(HLKM_ENV "\\\"SYSTEM\\\\CurrentControlSet\\\\Control\\\\Session Manager\\\\Environment\\\"")
 
@@ -179,10 +203,20 @@ set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "
     DeleteRegValue HKLM ${HLKM_ENV} \\\"UHD_PKG_PATH\\\"
 ")
 
-if(WIN32)
-    #Install necessary runtime DLL's
+if(WIN32 AND ENABLE_EXTEND_WIN_PACKAGING)
+    #Install necessary runtime DLL's into prefix (these are not included in the installer)
     include(InstallRequiredSystemLibraries)
-endif(WIN32)
+    # Single source path definition of dynamically generated libusb license file 
+    # Variable defined here is also consumed by module USBLIBUSB, 
+    # which is included via lib/CMakeLists.txt
+    set(UHD_LIBUSB_LICENSEFILE "${UHD_BINARY_DIR}/LIBUSB_LICENSE")
+    # This works as long as path of UHD_LIBUSB_LICENSEFILE does not contain spaces,
+    # may need to change it to a relative path (to ?)
+    set(CPACK_RESOURCE_FILE_LICENSE_LIBUSB "!insertmacro MUI_PAGE_LICENSE ${UHD_LIBUSB_LICENSEFILE}")
+    set(CPACK_COMPONENT_WINLUSBSUPPORT_DEPENDS libraries)
+    # Extend all components list after defining new component relationships
+    set(CPACK_COMPONENTS_ALL ${CPACK_COMPONENTS_ALL} winusbsupport)
+endif(WIN32 AND ENABLE_EXTEND_WIN_PACKAGING)
 
 ########################################################################
 include(CPack) #include after setting vars

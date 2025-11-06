@@ -7,6 +7,7 @@
 #include "usrp1_impl.hpp"
 #include <uhd/types/byte_vector.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>
 
 namespace {

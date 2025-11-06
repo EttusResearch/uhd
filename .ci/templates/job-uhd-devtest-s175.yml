@@ -1,0 +1,36 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+- name: testDevices
+  type: string
+  default: 'b2xx'
+
+jobs:
+- template: job-uhd-devtest.yml
+  parameters:
+    suiteName: 'sdr_s175_tests'
+    knownHost: ''
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    redisHost: ''
+    vivado_dir: '/opt/Xilinx/Vivado_Lab/2020.1/'
+    dutMatrix:
+      ${{ if contains(parameters.testDevices, 'b2xx') }}:
+        sdr-s175-dev-tests-b206-0:
+          devType: 'b200'
+          devModel: 'b206mini'
+          devName: sdr_s175_tests-b206-0
+          devSerial: $(b206_devSerial)
+          devBus: 'usb'
+          devtestPattern: 'b2xx'

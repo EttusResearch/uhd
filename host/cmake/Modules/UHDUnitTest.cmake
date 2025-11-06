@@ -28,10 +28,8 @@ function(UHD_ADD_TEST test_name)
             set(UHD_TEST_LIBRARY_DIRS
                 "${UHD_BINARY_DIR}/lib"
                 "${CMAKE_CURRENT_BINARY_DIR}"
+                "${Boost_LIBRARY_DIRS}"
             )
-            if(NOT APPLE)
-                list(APPEND UHD_TEST_LIBRARY_DIRS "${Boost_LIBRARY_DIRS}")
-            endif(NOT APPLE)
         endif(WIN32)
 
     file(TO_NATIVE_PATH "${UHD_TEST_LIBRARY_DIRS}" libpath)
@@ -56,7 +54,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator
         string(REPLACE ";" ":" libpath "${libpath}")
-        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"" "UHD_RFNOC_DIR=\"${UHD_SOURCE_DIR}/include/uhd/rfnoc\"")
+        list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"")
 
         #generate a bat file that sets the environment and runs the test
         if (CMAKE_CROSSCOMPILING)
@@ -88,7 +86,7 @@ function(UHD_ADD_TEST test_name)
 
         #replace list separator with the path separator (escaped)
         string(REPLACE ";" "\\;" libpath "${libpath}")
-        list(APPEND environs "PATH=${libpath}" "UHD_RFNOC_DIR=${UHD_SOURCE_DIR}/include/uhd/rfnoc")
+        list(APPEND environs "PATH=${libpath}")
 
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)
@@ -134,18 +132,18 @@ function(UHD_ADD_PYTEST test_name)
     if(APPLE)
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
+            "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
     elseif(MSVC)
         string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
     # MSVC is a multi-config generator in CMake, so we must specify the config value
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "PATH=${WIN_PATH}\\;${UHD_BINARY_DIR}\\lib\\$<CONFIG>;PYTHONPATH=${UHD_BINARY_DIR}\\python\\$<CONFIG>\\;${UHD_SOURCE_DIR}\\tests\\common\\;${UHD_BINARY_DIR}\\utils"
+            "PATH=${WIN_PATH}\\;${UHD_BINARY_DIR}\\lib\\$<CONFIG>\\;${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}\\python\\$<CONFIG>\\;${UHD_SOURCE_DIR}\\tests\\common\\;${UHD_BINARY_DIR}\\utils"
             )
     else()
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "LD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/;PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/"
+            "LD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/"
             )
     endif()
 endfunction(UHD_ADD_PYTEST)

@@ -30,7 +30,8 @@ public:
     //               in the destructor
     static uptr make(exit_cb_t&& exit_cb)
     {
-        // When we have C++14, use make_unique instead (TODO)
+        // Note: We can't use make_unique() here because it requires the
+        // constructor to be public.
         return uptr(new scope_exit(std::forward<exit_cb_t>(exit_cb)));
     }
 
@@ -40,13 +41,12 @@ public:
     }
 
 private:
-    scope_exit(std::function<void(void)>&& exit_cb)
-        : _exit_cb(std::forward<std::function<void(void)>>(exit_cb))
+    scope_exit(exit_cb_t&& exit_cb) : _exit_cb(std::forward<exit_cb_t>(exit_cb))
     {
         // nop
     }
 
-    std::function<void(void)> _exit_cb;
+    exit_cb_t _exit_cb;
 };
 
 }} // namespace uhd::utils

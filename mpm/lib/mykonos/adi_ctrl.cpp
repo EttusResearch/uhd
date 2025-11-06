@@ -8,7 +8,6 @@
 #include <uhd/exception.hpp>
 #include <mpm/ad937x/adi_ctrl.hpp>
 #include <mpm/types/log_buf.hpp>
-#include <boost/format.hpp>
 #include <chrono>
 #include <iostream>
 #include <sstream>

@@ -15,7 +15,15 @@
 #include <boost/program_options.hpp>
 #ifdef __linux__
 #    include <boost/filesystem.hpp>
-#    include <boost/process.hpp>
+#    include <boost/version.hpp>
+#    if BOOST_VERSION >= 108800
+#        define BOOST_PROCESS_VERSION 1
+#        include <boost/process/v1/child.hpp>
+#        include <boost/process/v1/io.hpp>
+#        include <boost/process/v1/pipe.hpp>
+#    else
+#        include <boost/process.hpp>
+#    endif
 #endif
 #include <chrono>
 #include <complex>
@@ -64,7 +72,7 @@ double disk_rate_check(const size_t sample_type_size,
         boost::filesystem::path(file).parent_path() / boost::filesystem::unique_path();
 
     std::string disk_check_proc_str =
-        "dd if=/dev/random of=" + temp_file.native()
+        "dd if=/dev/zero of=" + temp_file.native()
         + " bs=" + std::to_string(samps_per_buff * channel_count * sample_type_size)
         + " count=100";
 
@@ -106,7 +114,7 @@ double disk_rate_check(const size_t sample_type_size,
     );
     std::regex_match(dd_output, dd_matchs, dd_regex);
 
-    if (dd_matchs[0].str() != dd_output) {
+    if ((dd_output.length() == 0) || (dd_matchs[0].str() != dd_output)) {
         std::cerr << err_msg << std::endl;
     } else {
         double disk_rate_sigfigs = std::stod(dd_matchs[1]);

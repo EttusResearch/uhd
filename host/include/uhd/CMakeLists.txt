@@ -33,7 +33,7 @@ UHD_INSTALL(FILES
     rfnoc_graph.hpp
     stream.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd
     COMPONENT headers
 )
 
@@ -42,7 +42,7 @@ if(ENABLE_C_API)
         config.h
         error.h
         version.h
-        DESTINATION ${INCLUDE_DIR}/uhd
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd
         COMPONENT headers
     )
 endif(ENABLE_C_API)

@@ -6,6 +6,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 
 namespace mpm {

@@ -90,6 +90,9 @@ typedef SSIZE_T ssize_t;
 #    endif
 #    define UHD_FUNCTION        __func__
 #    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#    if __clang_major__ >= 10
+#        define UHD_HAVE_WDEPRECATED_VOLATILE
+#    endif
 #elif defined(__GNUG__) && __GNUG__ >= 4
 #    define UHD_EXPORT        __attribute__((visibility("default")))
 #    define UHD_IMPORT        __attribute__((visibility("default")))
@@ -107,6 +110,9 @@ typedef SSIZE_T ssize_t;
 #    endif
 #    define UHD_FUNCTION        __func__
 #    define UHD_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#    if __GNUG__ >= 10
+#        define UHD_HAVE_WVOLATILE
+#    endif
 #else
 #    define UHD_EXPORT
 #    define UHD_IMPORT

@@ -8,7 +8,7 @@
 
 #include "xrfdc.h"
 #include "xrfdc_mts.h"
-#include <boost/noncopyable.hpp>
+#include <mpm/noncopyable.hpp>
 #include <string>
 #include <vector>
 
@@ -43,7 +43,7 @@ struct rfdc_pll_config
  * A class to control the Xilinx RFdc driver.
  * This will be imported into a MPM shared library.
  */
-class rfdc_ctrl : public boost::noncopyable
+class rfdc_ctrl : public mpm::noncopyable
 {
     XRFdc rfdc_inst;
     XRFdc* rfdc_inst_ptr;

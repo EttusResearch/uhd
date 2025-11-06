@@ -11,13 +11,13 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
 #include <algorithm>
 #include <chrono>
+#include <numeric>
 #include <thread>
 #include <utility>
 
@@ -125,8 +125,7 @@ static clock_settings_type get_clock_settings(double rate)
 
     const uint64_t out_rate = uint64_t(rate);
     const uint64_t ref_rate = uint64_t(cs.get_ref_rate());
-    const size_t gcd =
-        uhd::narrow_cast<size_t>((uhd::math::gcd<size_t>(ref_rate, out_rate)));
+    const size_t gcd = uhd::narrow_cast<size_t>((std::gcd<size_t>(ref_rate, out_rate)));
 
     for (size_t i = 1; i <= 100; i++) {
         const size_t X = size_t(i * ref_rate / gcd);
@@ -316,7 +315,7 @@ public:
         const double ref_rate             = REFERENCE_INPUT_RATE * 2;
 
         // bypass prescaler such that N = B
-        long gcd = uhd::math::gcd(long(ref_rate), long(rate));
+        long gcd = std::gcd(long(ref_rate), long(rate));
         _ad9522_regs.set_r_counter(int(ref_rate / gcd));
         _ad9522_regs.a_counter = 0;
         _ad9522_regs.set_b_counter(int(rate / gcd));

@@ -12,7 +12,7 @@ configure_file(
 
 if(ENABLE_C_API)
     UHD_INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/uhd.h
-        DESTINATION ${INCLUDE_DIR}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
         COMPONENT headers
     )
 endif(ENABLE_C_API)

@@ -1,0 +1,312 @@
+/*! \page page_transport Transport Notes
+
+\tableofcontents
+
+\section transport_intro Introduction
+
+A transport is the layer between the packet interface and a device IO
+interface. The advanced user can pass optional parameters into the
+underlying transport layer through the device address. These optional
+parameters control how the transport object allocates memory, resizes
+kernel buffers, spawns threads, etc. When not specified, the transport
+layer will use values for these parameters that are known to perform
+well on a variety of systems. The transport parameters are defined below
+for the various transports in the UHD software.
+
+\subsection transport_param_overrides Overriding transport parameters
+
+On MPMD-based and X300 devices, applications may wish to further modify
+certain transport parameters beyond the default values chosen by the UHD
+software or those supplied via the device address.  For the following
+transport parameters, if a value is specified in the device arguments,
+that value is used to configure the transport, overriding the default
+value chosen by UHD.  Additionally, if a value is specified in the
+stream arguments, that value takes priority over the value specified in
+the device arguments for the transport associated with the stream.
+
+<b>Note:</b> These default values apply to UDP transports.
+
+- `num_send_frames` and `num_recv_frames`
+  - Default value: 32
+  - <b>Note:</b> Value is only applied to TX and RX links, not control links
+- `send_frame_size`
+  - Default value (X3x0):
+       1472 (if link rate is GigE) or
+       8000 (if link rate is 10GigE)
+  - Default value (MPMD):
+       1472 (if link rate is GigE);
+       8000 (if link rate is 10GigE or 100GigE);
+       TX MTU (other link rates)
+  - <b>Note:</b> Value will be capped at the link's send MTU
+- `recv_frame_size`
+  - Default value (X3x0 and MPMD):
+       1472 (if link rate is GigE);
+       8000 (if link rate is 10GigE or 100GigE);
+       RX MTU (other link rates)
+  - <b>Note:</b> Value will be capped at the link's receive MTU
+- `send_buff_size`
+  - Default value (X3x0 and MPMD):
+       20 ms of data at the link rate (2.5 MB for 1GigE, 25 MB for 10GigE, 250 MB for 100GigE)
+- `recv_buff_size`
+  - Default value (X3x0 and MPMD):
+       20 ms of data at the link rate
+       (X3x0: <b>OR</b> 64 1472-byte packets, whichever is larger)
+
+<b>Note:</b> Be aware that values may be further limited due to platform-
+specific restrictions. See the platform-specific notes below for more
+details.
+
+\section transport_udp UDP Transport (Sockets)
+
+The UDP transport is implemented with user-space sockets. This means
+standard Berkeley sockets API using `send()`/`recv()`.
+
+\subsection transport_data_size_restrictions Data size restrictions in transport
+
+UHD passes data over transports using packets. The maximum size of such
+a packet is known as the MTU. The MTU is limited by a variety of things such as
+networking hardware capabilities.
+A packet size larger than the MTU of the transport medium will drop or fragment
+packets while smaller packets will decrease the achievable throughput.
+In setups with different MTUs along the transport the smallest MTU
+determines the overall MTU (path MTU).
+
+For transport, one sets an over the wire (OTW) data type with the streamer
+which determines the size of one sample in bytes, e.g. four bytes for sc16.
+The number of samples per packet (SPP) will be a multiple of this sample
+size. The maximum samples per packet are limited by the MTU. Note that,
+depending on the transport medium, there will be some additional bytes needed
+for header information.
+
+In RFNoC, a block can set further contraints on the samples transferred
+in a packet (see also \ref props_common_props). This is called the atomic
+item size (AIS) and denotes the number of bytes the block expects per packet
+(or a multiple of it). This enables easier data processing on the FPGA
+(think of an FFT that does not need to handle samples for one transformation
+spread over more than one packet).
+
+\ref props_resolvers "Property resolvers" in the graph will ensure that MTU,
+SPP and AIS matches with each other. If necessary, values will be coerced.
+If there is no achievable configuration (e.g. AIS is bigger than max payload
+defined by the MTU, or SPP times samples size in bytes is smaller than AIS), then an
+exception will be thrown.
+
+\subsection transport_udp_params Transport parameters
+
+The following parameters can be used to alter the transport's default
+behavior. These options can be passed to a USRP device as arguments
+at initialization time (see \ref config_devaddr). For MPMD-based and X3x0
+devices, some of these parameters may also be passed via stream arguments (see
+\ref config_stream_args), in which case the values passed as device arguments
+are overridden. See \ref transport_param_overrides for more details on
+default values and the priority of device argument and stream argument
+overrides.
+
+-   `recv_frame_size:` The size of a single receive buffer in bytes
+-   `num_recv_frames:` The number of receive buffers to allocate
+-   `send_frame_size:` The size of a single send buffer in bytes
+-   `num_send_frames:` The number of send buffers to allocate
+-   `recv_buff_fullness:` The targeted fullness factor of the the buffer (typically around 90%)
+-   `ups_per_sec`: USRP2 only. Flow control ACKs per second on TX.
+-   `ups_per_fifo`: USRP2 only. Flow control ACKs per total buffer size (in packets) on TX.
+
+<b>Notes:</b>
+- `num_recv_frames` does not affect performance.
+- `num_send_frames` does not affect performance.
+- `recv_frame_size` and `send_frame_size` can be used
+   to increase or decrease the maximum number of samples per packet. The
+   frame sizes default to an MTU of 1472 bytes per IP/UDP packet and may be
+   increased if permitted by your network hardware.
+
+\subsection transport_udp_flow Flow control parameters
+
+The host-based flow control expects periodic update packets from the
+device. These update packets inform the host of the last packet consumed
+by the device, which allows the host to determine throttling conditions
+for the transmission of packets. The following mechanisms affect the
+transmission of periodic update packets:
+
+-   `ups_per_fifo:` The number of update packets for each FIFO's
+    worth of bytes sent into the device
+-   `ups_per_sec:` The number of update packets per second (defaults
+    to 20 updates per second)
+
+\subsection transport_udp_sockbufs Resize socket buffers
+
+It may be useful to increase the size of the socket buffers to move the
+burden of buffering samples into the kernel or to buffer incoming
+samples faster than they can be processed. However, if your application
+cannot process samples fast enough, no amount of buffering can save you.
+The following parameters can be used to alter socket's buffer sizes:
+
+-   `recv_buff_size:` The desired size of the receive buffer in
+    bytes
+-   `send_buff_size:` The desired size of the send buffer in bytes
+
+<b>Note:</b> Large send buffers tend to decrease transmit performance.
+
+\subsection transport_udp_latency Latency Optimization
+
+Latency is a measurement of the time it takes a sample to travel between
+the host and device. Most computer hardware and software is bandwidth
+optimized, which may negatively affect latency. If your application has
+strict latency requirements, please consider the following notes:
+
+<b>Note1:</b> The time taken by the device to populate a packet is
+proportional to the sample rate. Therefore, to improve receive latency,
+configure the transport for a smaller frame size.
+
+<b>Note2:</b> For overall latency improvements, look for "Interrupt
+Coalescing" settings for your OS and Ethernet chipset. It seems the
+Intel Ethernet chipsets offer fine-grained control in Linux. Also,
+consult:
+
+-   <http://www.ibm.com/support/knowledgecenter/SSQPD3_2.6.0/com.ibm.wllm.doc/batchingnic.html>
+
+\subsection transport_udp_linux Linux specific notes
+
+On Linux, the maximum buffer sizes are capped by the sysctl values
+`net.core.rmem_max` and `net.core.wmem_max`. To change the maximum
+values, run the following commands: :
+
+    sudo sysctl -w net.core.rmem_max=<new value>
+    sudo sysctl -w net.core.wmem_max=<new value>
+
+Set the values permanently by editing `/etc/sysctl.conf`.
+
+It is also possible to tune the network interface controller (NIC)
+by using ethtool. Increasing the number of descriptors for TX or RX can
+dramatically boost performance on some hosts.
+
+To change the number of TX/RX descriptors, run the following command:
+
+    sudo ethtool -G <interface> tx <N> rx <N>
+
+One can query the maximums and current settings with the following command:
+
+    ethtool -g <interface>
+
+Tx pause frame support must be enabled when using 100GigE with X410 to ensure proper streaming performance.
+
+To enable Tx pause frames run the following command on the device in a Linux prompt.
+
+    ethtool -A <interface> tx on
+
+If you are using both SFP ports, you will need to run the above command separately on both of them.
+
+One can query the the current enable status of TX pause frames by running the following command on the X410 device in a Linux prompt.
+
+    ethtool -a <interface>
+
+The above changes will be volatile and will need to be re-applied every time the device boots or the SFP ports are reconfigured,
+e.g. after a fpga image load.
+
+ Automatic enable of TX pause frames will be possible in the future when systemd v2.4.6 or higher is used on the device.
+ This will be done by using the `TxFlowControl` parameter in the `.network` files(s) used for configuring the SFP port(s) being used.
+ E.g. When using sfp0 port, add a line `TxFlowControl=1` as shown below to the `/data/network/sfp0.network` file.
+```
+    [Link]
+    TxFlowControl=1
+```
+
+\subsection transport_udp_windows Windows specific notes
+
+<b>UDP send fast-path:</b> It is important to change the default UDP
+behavior such that 1500 byte packets still travel through the fast path
+of the sockets stack. This can be adjusted with the
+`FastSendDatagramThreshold` registry key:
+
+-   `FastSendDatagramThreshold` registry key documented here:
+
+    -   <http://www.microsoft.com/windows/windowsmedia/howto/articles/optimize_web.aspx#appendix_e>
+
+-   Double click and run
+    `<install-path>/share/uhd/FastSendDatagramThreshold.reg`
+-   A system reboot is recommended after the registry key change.
+
+<b>Power profile:</b> The Windows power profile can seriously impact
+instantaneous bandwidth. Application can take time to ramp-up to full
+performance capability. It is recommended that users set the power
+profile to "high performance".
+
+\subsection transport_udp_osx Mac OS X specific notes
+
+OS X restricts the value of the `send_buff_size` and `recv_buff_size`
+transport parameters to a maximum value of 1 MiB (1048576 bytes).
+
+
+\section transport_usb USB Transport (LibUSB)
+
+The USB transport is implemented with LibUSB. LibUSB provides an
+asynchronous API for USB bulk transfers.
+
+\subsection transport_usb_params Transport parameters
+
+The following parameters can be used to alter the transport's default
+behavior:
+
+-   `recv_frame_size:` The size of a single receive transfers in
+    bytes
+-   `num_recv_frames:` The number of simultaneous receive transfers
+-   `send_frame_size:` The size of a single send transfers in bytes
+-   `num_send_frames:` The number of simultaneous send transfers
+
+\subsection transport_usb_udev Setup Udev for USB (Linux)
+
+On Linux, Udev handles USB plug and unplug events. The following
+commands install a Udev rule so that non-root users may access the
+device:
+
+    cd <install-path>/lib/uhd/utils
+    sudo cp uhd-usrp.rules /etc/udev/rules.d/
+    sudo udevadm control --reload-rules
+    sudo udevadm trigger
+
+\subsection transport_usb_installwin Install USB driver (Windows)
+
+A driver package must be installed to use a USB-based product with UHD
+software. To install the driver when building and installing UHD from 
+source perform the following steps for each desired USB device type:
+
+-   Download the driver from the UHD wiki page: 
+    <a href="http://files.ettus.com/binaries/misc/erllc_uhd_winusb_driver.zip">erllc_uhd_winusb_driver.zip</a>.
+-   Unzip the file into a known location. We will refer to this as the `<directory>`.
+-   Open the device manager and plug in the USRP device. You will see an
+    unrecognized USB device in the device manager.
+-   Right click on the unrecognized USB device and select update/install
+    driver software (may vary for your OS).
+-   In the driver installation wizard, select "browse for driver",
+    browse to the `<directory>`, and select the `.inf` file.
+-   Continue through the installation wizard until the driver is
+    installed.
+
+Note: As of UHD 4.8 the UHD software installer for Windows omits the need
+      for this individual download, refer to \ref install_libUSB.
+
+\section transport_pcie PCIe Transport (NI-RIO)
+
+The NI-RIO-based PCIe transport is only used with the X300/X310. It uses a
+separate driver stack (NI-RIO) which must be installed separately (see also
+\ref page_ni_rio_kernel).
+
+More information on how to set it up can be found here: \ref x3x0_hw_pcie.
+
+The X3x0 PCIe transport has 6 separate bidirectional DMA channels, and UHD will
+use two of those for command, control, and asynchronous messages. That means a
+total of four DMA channels can be used for streaming (either 4xRX, for TwinRX
+operations, or 2xRX + 2xTX for full-duplex operation).
+
+\subsection transport_pcie_params Transport parameters
+
+The following parameters can be used to alter the transport's default
+behavior:
+
+-   `recv_frame_size:` The size of a single receive transfers in bytes
+-   `num_recv_frames:` The number of simultaneous receive transfers
+-   `recv_buff_size:` The socket buffer size. Must be a multiple of pages
+-   `send_frame_size:` The size of a single send transfers in bytes
+-   `num_send_frames:` The number of simultaneous send transfers
+-   `send_buff_size:` The socket buffer size. Must be a multiple of pages
+
+*/
+// vim:ft=doxygen:

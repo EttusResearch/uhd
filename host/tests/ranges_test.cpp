@@ -110,3 +110,40 @@ BOOST_AUTO_TEST_CASE(test_meta_range_monotonize)
     BOOST_CHECK_CLOSE(monotonic_mr.at(1).start(), 2.1, tolerance);
     BOOST_CHECK_CLOSE(monotonic_mr.at(1).stop(), 4.0, tolerance);
 }
+
+BOOST_AUTO_TEST_CASE(test_meta_range_init_braces)
+{
+    constexpr double max = 2949.12e6;
+
+    meta_range_t mr(0.0, max);
+    BOOST_CHECK_EQUAL(mr.start(), 0.0);
+    BOOST_CHECK_CLOSE(mr.stop(), max, tolerance);
+    BOOST_CHECK_CLOSE(mr.clip((mr.start() + mr.stop()) / 2.0), max / 2.0, tolerance);
+
+    meta_range_t mr2{0.0, max};
+    BOOST_CHECK_EQUAL(mr2.start(), 0.0);
+    BOOST_CHECK_CLOSE(mr2.stop(), max, tolerance);
+    BOOST_CHECK_CLOSE(mr2.clip((mr2.start() + mr2.stop()) / 2.0), max / 2.0, tolerance);
+}
+
+BOOST_AUTO_TEST_CASE(test_meta_range_init_list)
+{
+    meta_range_t mr{range_t(1.0, 2.0), range_t(3.0, 4.0)};
+    BOOST_CHECK(mr.start() == 1.0);
+    BOOST_CHECK(mr.stop() == 4.0);
+    BOOST_CHECK_CLOSE(mr.clip(1.5), 1.5, tolerance);
+    BOOST_CHECK_CLOSE(mr.clip(2.8), 3.0, tolerance);
+
+    meta_range_t mr2{1.0, 2.25, 3.0, 4.0};
+    BOOST_CHECK(mr2.start() == 1.0);
+    BOOST_CHECK(mr2.stop() == 4.0);
+    BOOST_CHECK_EQUAL(mr2.clip(2.0), 2.25);
+
+    // test for two sub-ranges given by initializer list
+    // This is not recommended notation, prefer the notation of mr above!
+    meta_range_t mr3{{0, 100}, {200, 400}};
+    BOOST_CHECK_EQUAL(mr3.start(), 0);
+    BOOST_CHECK_EQUAL(mr3.stop(), 400);
+    BOOST_CHECK_EQUAL(mr3.clip(110), 100);
+    BOOST_CHECK_EQUAL(mr3.clip(160), 200);
+}

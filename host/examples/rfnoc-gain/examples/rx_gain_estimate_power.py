@@ -9,9 +9,8 @@
 import argparse
 import sys
 
-import rfnoc_gain
 import uhd
-
+import rfnoc_gain
 
 def parse_args():
     """Parse the command line arguments."""

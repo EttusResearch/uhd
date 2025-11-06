@@ -123,6 +123,8 @@ public:
         size_t payload_bytes = 0;
     };
 
+    void resend_init() {}
+
     mock_tx_data_xport(const size_t buff_size) : _buff_size(buff_size)
     {
         _buff = std::make_unique<buff_t>();
@@ -196,6 +198,11 @@ public:
     }
 
     void issue_stream_cmd(const stream_cmd_t& /*stream_cmd*/) override {}
+
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+    }
 };
 
 /*!
@@ -229,6 +236,11 @@ public:
         uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/) override
     {
         return false;
+    }
+
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
     }
 };
 
@@ -366,6 +378,7 @@ static std::shared_ptr<tx_streamer_mock_link> make_tx_streamer_mock_link(
         epids,
         send_link->get_num_send_frames(),
         fc_params,
+        chdr::strc_payload(),
         [io_srv = io_srv, recv_link, send_link]() {
             io_srv->detach_recv_link(recv_link);
             io_srv->detach_send_link(send_link);

@@ -20,11 +20,13 @@ import subprocess
 import sys
 
 import mako.lookup
-import mako.template
 from mako import exceptions
 
-from . import yaml_utils
+from .. import get_pkg_data_path
+from . import grc, yaml_utils
 from .builder_config import ImageBuilderConfig
+from .template import Template
+from .utils import check_include_paths_backward_compat
 
 ### DATA ######################################################################
 # Directory under the FPGA repo where the device directories are
@@ -53,6 +55,8 @@ DEVICE_DIR_MAP = {
 DEVICE_DEFAULTTARGET_MAP = {
     "x300": "X300_HG",
     "x310": "X310_HG",
+    "x410": "X410",
+    "x440": "X440",
     "e310": "E310_SG3",
     "e320": "E320_1G",
     "n300": "N300_HG",
@@ -81,7 +85,7 @@ def get_vivado_path(fpga_top_dir, args):
     if args.get("vivado_path"):
         viv_path = args["vivado_path"]
     else:
-        get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=\$VIVADO_PATH"'
+        get_viv_path_cmd = '. ./setupenv.sh && echo "VIVADO_PATH=$VIVADO_PATH"'
         try:
             output = subprocess.check_output(
                 f'{BASH_EXECUTABLE} -c "{get_viv_path_cmd}"',
@@ -118,7 +122,7 @@ def write_verilog(config, destination, args, template):
     template_dir = os.path.join(os.path.dirname(__file__), "templates")
     lookup = mako.lookup.TemplateLookup(directories=[template_dir])
     tpl_filename = os.path.join(template_dir, template)
-    tpl = mako.template.Template(filename=tpl_filename, lookup=lookup, strict_undefined=True)
+    tpl = Template(filename=tpl_filename, lookup=lookup)
     try:
         block = tpl.render(**{"config": config, "args": args})
     except:
@@ -181,7 +185,9 @@ def patch_netlist_constraints(device, build_dir):
         file.write(constraints)
 
 
-def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths):
+def gen_make_command(
+    args, build_dir, build_output_dir, build_ip_dir, device, use_secure_netlist, makefile_src_paths
+):
     """Generate the 'make' command that will build the desired bitfiles.
 
     This generates a full make command, including all the necessary options.
@@ -197,29 +203,24 @@ def gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_p
         )
         + (" SECURE_NETLIST=1" if use_secure_netlist else "")
         + (" GUI=1 " if args.get("GUI") else "")
+        + (" CHECK=1" if args.get("check_hdl") else "")
+        + (" SYNTH=1" if args.get("synthesize_only") else "")
         + (
             " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
             if makefile_src_paths
             else ""
         )
         + (" --jobs " + args["num_jobs"] if args.get("num_jobs") else "")
-        + (" GUI=1" if args.get("GUI") else "")
         + (" PROJECT=1" if args.get("save_project") else "")
         + (" IP_ONLY=1" if args.get("ip_only") else "")
-        + (
-            " BUILD_OUTPUT_DIR=" + os.path.abspath(args["build_output_dir"])
-            if args.get("build_output_dir")
-            else ""
-        )
-        + (
-            " BUILD_IP_DIR=" + os.path.abspath(args["build_ip_dir"])
-            if args.get("build_ip_dir")
-            else ""
-        )
+        + " BUILD_OUTPUT_DIR="
+        + build_output_dir
+        + " BUILD_IP_DIR="
+        + build_ip_dir
     )
 
 
-def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
+def build(fpga_top_dir, device, build_dir, use_secure_netlist, base_dir, **args):
     """Call FPGA toolchain to actually build the image.
 
     :param fpga_top_dir: A path to the FPGA device source directory
@@ -233,6 +234,7 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
                          (e.g., .../usrp3/x400/build-x410_XG_200_rfnoc_image_core/)
     :param use_secure_netlist: Boolean for whether the build with secure image
                                core netlist
+    :param base_dir: The base directory
     :param **args: Additional options
                    target: The target to build (leave empty for default).
                    clean_all: passed to Makefile
@@ -249,10 +251,13 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     """
     ret_val = 0
     build_dir = os.path.abspath(build_dir)
-    cwd = os.getcwd()
     if not os.path.isdir(fpga_top_dir):
         logging.error("Not a valid directory: %s", fpga_top_dir)
         return 1
+    build_output_dir = os.path.abspath(
+        args.get("build_output_dir") or os.path.join(base_dir, "build")
+    )
+    build_ip_dir = os.path.abspath(args.get("build_ip_dir") or os.path.join(base_dir, "build-ip"))
     makefile_src_paths = [
         os.path.join(os.path.abspath(os.path.normpath(x)), os.path.join("fpga", "Makefile.srcs"))
         for x in args.get("include_paths", [])
@@ -263,7 +268,15 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
     make_cmd = ""
     if "clean_all" in args and args["clean_all"]:
         make_cmd += "make cleanall && "
-    make_cmd += gen_make_command(args, build_dir, device, use_secure_netlist, makefile_src_paths)
+    make_cmd += gen_make_command(
+        args,
+        build_dir,
+        build_output_dir,
+        build_ip_dir,
+        device,
+        use_secure_netlist,
+        makefile_src_paths,
+    )
 
     if args.get("generate_only"):
         logging.info("Skipping build (--generate-only option given)!")
@@ -271,30 +284,24 @@ def build(fpga_top_dir, device, build_dir, use_secure_netlist, **args):
         return 0
 
     make_cmd = setup_cmd + "&& " + make_cmd
-    build_output_dir = args.get("build_output_dir")
-    if build_output_dir is None:
-        build_output_dir = os.path.join(fpga_top_dir, "build")
-    else:
-        build_output_dir = os.path.abspath(build_output_dir)
-    build_ip_dir = args.get("build_ip_dir")
-    if build_ip_dir is None:
-        build_ip_dir = os.path.join(fpga_top_dir, "build-ip")
-    else:
-        build_ip_dir = os.path.abspath(build_ip_dir)
     logging.info("Launching build with the following settings:")
     logging.info(" * FPGA Directory: %s", fpga_top_dir)
     logging.info(" * Build Artifacts Directory: %s", build_dir)
     logging.info(" * Build Output Directory: %s", build_output_dir)
     logging.info(" * Build IP Directory: %s", build_ip_dir)
     # Wrap it into a bash call:
-    logging.debug("Temporarily changing working directory to %s", fpga_top_dir)
-    os.chdir(fpga_top_dir)
     make_cmd = f'{BASH_EXECUTABLE} -c "{make_cmd}"'
     logging.info("Executing the following command: %s", make_cmd)
-    ret_val = os.system(make_cmd)
+    my_env = os.environ.copy()
+    ret_val = subprocess.call(make_cmd, shell=True, env=my_env, cwd=fpga_top_dir)
     if ret_val == 0 and args.get("secure_core"):
         patch_netlist_constraints(device, build_dir)
-    os.chdir(cwd)
+    logging.info("Build finished with return code %d.", ret_val)
+    logging.info("It was launched with the following settings:")
+    logging.info(" * FPGA Directory: %s", fpga_top_dir)
+    logging.info(" * Build Artifacts Directory: %s", build_dir)
+    logging.info(" * Build Output Directory: %s", build_output_dir)
+    logging.info(" * Build IP Directory: %s", build_ip_dir)
     return ret_val
 
 
@@ -328,7 +335,9 @@ def load_module_yamls(include_paths):
 
     def load_module_descs(module_type):
         """Load separate block/module defs."""
-        paths = [os.path.join(x, module_type) for x in include_paths]
+        paths = [
+            os.path.abspath(os.path.normpath(os.path.join(x, module_type))) for x in include_paths
+        ]
         logging.debug("Looking for %s descriptors in:", module_type[:-1])
         for path in paths:
             logging.debug("    %s", os.path.normpath(path))
@@ -344,11 +353,53 @@ def load_module_yamls(include_paths):
     return known_modules
 
 
-def build_image(config, repo_fpga_path, config_path, device, **args):
+def load_image_core_source(
+    source,
+    source_type,
+    config_path,
+    core_config_path,
+    device,
+    target,
+    image_core_name,
+    known_modules,
+):
+    """Load image configuration.
+
+    The configuration can be either passed as RFNoC image configuration or as
+    GNU Radio Companion grc. In latter case the grc files is converted into a
+    RFNoC image configuration on the fly.
+    :param source: Path to the source f ile
+    :param source_type: Type of the source file (yaml or grc)
+    :return: image configuration as dictionary
+    """
+
+    def get_image_core_name(config):
+        icore_name = image_core_name or config.get("image_core_name")
+        if not icore_name:
+            icore_name = os.path.splitext(os.path.basename(source))[0]
+        return icore_name
+
+    if source_type == "yaml":
+        config = yaml_utils.load_config_validate(source, config_path, True)
+    # Otherwise, it's a GRC file
+    elif source_type == "grc":
+        config = yaml_utils.read_yaml(source)
+        logging.info("Converting GNU Radio Companion file to image builder format")
+        config = grc.convert_to_image_config(config, core_config_path, known_modules)
+        # Run it through ruamel.yaml backwards and forwards to guarantee the
+        # same object types as if we had loaded it directly from a YAML file.
+        config = yaml_utils.reload_dict(config)
+    else:
+        logging.error("No configuration file provided")
+        sys.exit(1)
+    device = device or config.get("device")
+    target = target or config.get("default_target")
+    return config, device, get_image_core_name(config), target
+
+
+def build_image(repo_fpga_path, device, **args):
     """Generate image dependent Verilog code and run FPGA toolchain, if requested.
 
-    :param config: A dictionary containing the image configuration options.
-                   This must obey the rfnoc_image_builder_args schema.
     :param repo_fpga_path: A path that holds the FPGA sources (/path/to/uhd/fpga).
                            Under this path, there should be a usrp3/top/
                            directory.
@@ -366,17 +417,49 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
                                     (e.g., usrp_x410_fpga_CG_400)
     :return: Exit result of build process or 0 if generate-only is given.
     """
+    config_path = get_pkg_data_path()
+    # We start by loading some core/standard files that are always needed.
+    core_config_path = yaml_utils.get_core_config_path(config_path)
+    include_paths = check_include_paths_backward_compat(args.get("include_paths", [])) + [
+        os.path.join(config_path, "rfnoc")
+    ]
+    logging.debug("Include paths: %s", ";".join(include_paths))
+    # A list of all known module descriptors
+    known_modules = load_module_yamls(include_paths)
+    # resolve signature after modules have been loaded (the module YAML files
+    # may contain signatures themselves)
+    signatures_conf = yaml_utils.io_signatures(core_config_path, *list(known_modules.values()))
+
+    # Next, load the image core configuration
     assert "source" in args
+    config, device, image_core_name, target = load_image_core_source(
+        args["source"],
+        args["source_type"],
+        config_path,
+        core_config_path,
+        device,
+        args.get("target"),
+        args.get("image_core_name"),
+        known_modules,
+    )
+    # If no target specified on the command line, use the default target from the
+    # yaml configuration file.
+    if args.get("target") is None and target is not None:
+        args["target"] = target
     logging.info("Selected device: %s", device)
-    image_core_name = args.get("image_core_name")
     assert image_core_name
+    args["image_core_name"] = image_core_name
     logging.debug("Image core name: %s", image_core_name)
+    if "base_dir" in args and args["base_dir"]:
+        base_dir = args["base_dir"]
+    else:
+        base_dir = os.getcwd()
+    args.pop("base_dir", None)
+    logging.debug("Using base directory: %s", base_dir)
     if "build_dir" in args and args["build_dir"]:
         build_dir = args["build_dir"]
     else:
-        build_dir = os.path.join(
-            os.path.normpath(os.path.split(args.get("source"))[0]), "build-" + image_core_name
-        )
+        build_dir = os.path.join(base_dir, "build-" + image_core_name)
     args.pop("build_dir", None)
     logging.debug("Using build artifacts directory: %s", build_dir)
     if pathlib.Path(build_dir).is_file():
@@ -396,17 +479,10 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
         yaml_utils.get_top_path(os.path.abspath(repo_fpga_path)), target_dir(device)
     )
 
-    # Now load core configs
-    core_config_path = yaml_utils.get_core_config_path(config_path)
+    # If desired, dump the configuration into the build directory
+    if args.get("dump_config"):
+        yaml_utils.write_yaml(config, os.path.join(build_dir, f"{image_core_name}.yml"))
 
-    # TODO does this work for both block yamls and HDL sources?
-    include_paths = args.get('include_paths', []) + [os.path.join(config_path, 'rfnoc')]
-
-    known_modules = load_module_yamls(include_paths)
-
-    # resolve signature after modules have been loaded (the module YAML files
-    # may contain signatures themselves)
-    signatures_conf = yaml_utils.io_signatures(core_config_path, *list(known_modules.values()))
     device_conf = yaml_utils.IOConfig(
         yaml_utils.device_config(core_config_path, device), signatures_conf
     )
@@ -418,9 +494,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
 
     # Load the image core config
     try:
-        builder_conf = ImageBuilderConfig(
-            config, known_modules, device_conf, include_paths
-        )
+        builder_conf = ImageBuilderConfig(config, known_modules, device_conf, include_paths)
     except (ValueError, KeyError) as e:
         logging.error("Error parsing image configuration: %s", e)
         return 1
@@ -504,7 +578,7 @@ def build_image(config, repo_fpga_path, config_path, device, **args):
                 logging.error(f"Failed to copy {source} to artifact directory")
                 return 1
 
-    ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), **args)
+    ret_val = build(fpga_top_dir, device, build_dir, bool(netlist_files), base_dir, **args)
     if args.get("generate_only"):
         return ret_val
 

@@ -1,0 +1,70 @@
+schema: rfnoc_modtool_args
+module_name: fft
+name: FFT
+description: |
+  An FFT implementation that provides forward and inverse FFT, cyclic prefix
+  insertion and removal, variable FFT sizes and different output formats.
+version: "1.0"
+rfnoc_version: "1.0"
+chdr_width: 64
+noc_id: 0xFF700002
+
+# Provide a custom path to Makefile.srcs for this block relative to the
+# FPGA repository
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fft/Makefile.srcs"
+
+parameters:
+  NIPC: 1
+  NUM_PORTS: 1
+  NUM_CORES: 1
+  MAX_FFT_SIZE_LOG2: 10
+  EN_CP_REMOVAL: 1
+  EN_CP_INSERTION: 1
+  MAX_CP_LIST_LEN_INS_LOG2: 5
+  MAX_CP_LIST_LEN_REM_LOG2: 5
+  CP_INSERTION_REPEAT: 1
+  CP_REMOVAL_REPEAT: 1
+  EN_FFT_BYPASS: 0
+  EN_FFT_ORDER: 1
+  EN_MAGNITUDE: 0
+  EN_MAGNITUDE_SQ: 1
+  USE_APPROX_MAG: 1
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_data
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 32
+      format: sc16
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: 32
+      sideband_at_end: True
+      format: sc16

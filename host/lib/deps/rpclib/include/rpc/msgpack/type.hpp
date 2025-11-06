@@ -22,13 +22,6 @@
 #include "adaptor/msgpack_tuple.hpp"
 #include "adaptor/define.hpp"
 
-#if defined(MSGPACK_USE_CPP03)
-
-#include "adaptor/tr1/unordered_map.hpp"
-#include "adaptor/tr1/unordered_set.hpp"
-
-#else  // defined(MSGPACK_USE_CPP03)
-
 #include "adaptor/cpp11/array.hpp"
 #include "adaptor/cpp11/array_char.hpp"
 #include "adaptor/cpp11/array_unsigned_char.hpp"
@@ -38,8 +31,6 @@
 #include "adaptor/cpp11/unique_ptr.hpp"
 #include "adaptor/cpp11/unordered_map.hpp"
 #include "adaptor/cpp11/unordered_set.hpp"
-
-#endif // defined(MSGPACK_USE_CPP03)
 
 #if defined(MSGPACK_USE_BOOST)
 

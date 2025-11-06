@@ -183,7 +183,7 @@ void fbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
         .set(FBX_DEFAULT_BANDWIDTH)
         .set_coercer([](const double) { return FBX_DEFAULT_BANDWIDTH; });
     subtree->create<meta_range_t>(fe_path / "bandwidth" / "range")
-        .set({FBX_DEFAULT_BANDWIDTH, FBX_DEFAULT_BANDWIDTH})
+        .set(meta_range_t(FBX_DEFAULT_BANDWIDTH, FBX_DEFAULT_BANDWIDTH))
         .set_coercer([](const meta_range_t&) {
             return meta_range_t(FBX_DEFAULT_BANDWIDTH, FBX_DEFAULT_BANDWIDTH);
         });

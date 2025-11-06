@@ -77,7 +77,8 @@ endinterface : RfnocBackendIf
 
 package PkgRfnocBlockCtrlBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgChdrBfm::*;
   import PkgCtrlIfaceBfm::*;
   import PkgChdrIfaceBfm::*;
@@ -216,11 +217,12 @@ package PkgRfnocBlockCtrlBfm;
 
   endclass : RfnocBlockCtrlBfmCtrlOnly
 
+
   // Control functionality plus streaming (the normal/default case)
   class RfnocBlockCtrlBfm #(CHDR_W = 64, ITEM_W = 32) extends RfnocBlockCtrlBfmCtrlOnly;
 
-    local ChdrIfaceBfm #(CHDR_W, ITEM_W) m_data[$];
-    local ChdrIfaceBfm #(CHDR_W, ITEM_W) s_data[$];
+    ChdrIfaceBfm #(CHDR_W, ITEM_W) m_data[$];
+    ChdrIfaceBfm #(CHDR_W, ITEM_W) s_data[$];
 
     typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
     typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
@@ -244,7 +246,7 @@ package PkgRfnocBlockCtrlBfm;
     endfunction : new
 
     // Add a master data port. This should connect to a DUT slave input.
-    // 
+    //
     //   m_chdr:             Virtual master interface to connect new port to.
     //   max_payload_length: Maximum payload length (in bytes) to create when
     //                       building packets from data.
@@ -256,14 +258,14 @@ package PkgRfnocBlockCtrlBfm;
       int max_payload_length = 2**$bits(chdr_length_t),
       int ticks_per_word     = CHDR_W/ITEM_W
     );
-      ChdrIfaceBfm #(CHDR_W, ITEM_W) bfm = 
+      ChdrIfaceBfm #(CHDR_W, ITEM_W) bfm =
         new(m_chdr, null, max_payload_length, ticks_per_word);
       m_data.push_back(bfm);
       return m_data.size() - 1;
     endfunction : add_master_data_port
 
     // Add a slave data port. This should connect to a DUT master output.
-    // 
+    //
     //   s_chdr: Virtual slave interface to connect new port to
     //
     function int add_slave_data_port(
@@ -274,8 +276,8 @@ package PkgRfnocBlockCtrlBfm;
       return s_data.size() - 1;
     endfunction : add_slave_data_port
 
-    // Add a master data port. This is equivalent to add_master_data_port() 
-    // except it accepts a port number and it waits until the preceding ports 
+    // Add a master data port. This is equivalent to add_master_data_port()
+    // except it accepts a port number and it waits until the preceding ports
     // are connected to ensure that ports are connected in the correct order.
     //
     //   port_num:           The port number to which m_chdr should be connected
@@ -291,14 +293,14 @@ package PkgRfnocBlockCtrlBfm;
       int max_payload_length = 2**$bits(chdr_length_t),
       int ticks_per_word     = CHDR_W/ITEM_W
     );
-      ChdrIfaceBfm #(CHDR_W, ITEM_W) bfm = 
+      ChdrIfaceBfm #(CHDR_W, ITEM_W) bfm =
         new(m_chdr, null, max_payload_length, ticks_per_word);
       wait (m_data.size() == port_num);
       m_data.push_back(bfm);
     endtask : connect_master_data_port
 
-    // Add a slave data port. This is equivalent to add_slave_data_port() 
-    // except it accepts a port number and it waits until the preceding ports 
+    // Add a slave data port. This is equivalent to add_slave_data_port()
+    // except it accepts a port number and it waits until the preceding ports
     // are connected to ensure that ports are connected in the correct order.
     //
     //   port_num:  The port number to which m_chdr should be connected
@@ -320,9 +322,9 @@ package PkgRfnocBlockCtrlBfm;
       end
       if (!running) begin
         ctrl.run();
-        foreach (m_data[i]) 
+        foreach (m_data[i])
           m_data[i].run();
-        foreach (s_data[i]) 
+        foreach (s_data[i])
           s_data[i].run();
         running = 1;
       end
@@ -349,7 +351,7 @@ package PkgRfnocBlockCtrlBfm;
       return s_data[port];
     endfunction : get_slave_data_bfm
 
-    // Set the maximum payload size for packets. This value is used to split 
+    // Set the maximum payload size for packets. This value is used to split
     // large send requests across multiple packets.
     //
     //   port:        Master port whose maximum length you want to set
@@ -362,7 +364,7 @@ package PkgRfnocBlockCtrlBfm;
       m_data[port].set_max_payload_length(max_length);
     endfunction
 
-    // Return the maximum payload size for packets. This value is used to split 
+    // Return the maximum payload size for packets. This value is used to split
     // large send requests across multiple packets.
     //
     //   port: Master port whose maximum length you want to get
@@ -397,7 +399,7 @@ package PkgRfnocBlockCtrlBfm;
       return m_data[port].get_ticks_per_word();
     endfunction
 
-    // Soft-Reset the CHDR path 
+    // Soft-Reset the CHDR path
     //
     //   rst_cyc: Number of cycles to wait for reset completion
     //
@@ -542,8 +544,8 @@ package PkgRfnocBlockCtrlBfm;
     //   data:       Data words to insert into the CHDR packets.
     //   data_bytes: Size of data in bytes. If omitted or -1, data_bytes will
     //               be calculated based on the number of words in data.
-    //   metadata:   Metadata words to insert into the CHDR packet(s). Omit 
-    //               this argument (or set to an empty array) to not include 
+    //   metadata:   Metadata words to insert into the CHDR packet(s). Omit
+    //               this argument (or set to an empty array) to not include
     //               metadata.
     //   pkt_info:   Data structure containing packet header information.
     //
@@ -573,8 +575,8 @@ package PkgRfnocBlockCtrlBfm;
     //
     //   port:       Port to send the CHDR packet(s) on.
     //   items:      Data items to insert into the payload of the CHDR packets.
-    //   metadata:   Metadata words to insert into the CHDR packet(s). Omit 
-    //               this argument (or set to an empty array) to not include 
+    //   metadata:   Metadata words to insert into the CHDR packet(s). Omit
+    //               this argument (or set to an empty array) to not include
     //               metadata.
     //   pkt_info:   Data structure containing packet header information.
     //
@@ -793,10 +795,10 @@ package PkgRfnocBlockCtrlBfm;
     endtask : put_chdr
 
 
-    // Receive a raw CHDR packet.
+    // Receive a raw CHDR packet. This task blocks until a packet is received.
     //
     //   port:    Port number on which to receive the packet
-    //   packet:  Data structure to store received packet
+    //   packet:  Object handle for the received packet
     //
     task get_chdr(
       input  int                  port,
@@ -813,10 +815,31 @@ package PkgRfnocBlockCtrlBfm;
     endtask : get_chdr
 
 
+    // Get the next packet if there's one available and return 1. Return 0 if
+    // there's no packet available.
+    //
+    //   port:    Port number on which to get the packet
+    //   packet:  Object handle for the received packet
+    //
+    function bit try_get_chdr(
+      input  int                  port,
+      output ChdrPacket #(CHDR_W) packet
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call try_get_chdr until RfnocBlockCtrlBfm is running");
+      end
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].try_get_chdr(packet);
+    endfunction : try_get_chdr
+
+
     // Receive a raw CHDR packet, but don't remove it from the receive queue.
     //
     //   port:    Port number on which to peek
-    //   packet:  Data structure to store received packet
+    //   packet:  Object handle for the received packet
     //
     task peek_chdr(
       input  int                  port,
@@ -833,7 +856,29 @@ package PkgRfnocBlockCtrlBfm;
     endtask : peek_chdr
 
 
-    // Return the number of packets available in the receive queue for the 
+    // Get the next packet if there's one available and return 1, but don't
+    // remove it from the receive queue. Return 0 if there's no packet
+    // available.
+    //
+    //   port:    Port number on which to peek
+    //   packet:  Object handle for the received packet
+    //
+    function bit try_peek_chdr(
+      input  int                  port,
+      output ChdrPacket #(CHDR_W) packet
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call try_peek_chdr until RfnocBlockCtrlBfm is running");
+      end
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].try_peek_chdr(packet);
+    endfunction : try_peek_chdr
+
+
+    // Return the number of packets available in the receive queue for the
     // given port.
     //
     //   port:  Port for which to get the number of received packets
@@ -850,8 +895,8 @@ package PkgRfnocBlockCtrlBfm;
     // Wait until packets have completed transmission.
     //
     //   port:  Port for which to wait
-    //   num:   Number of packets to wait for. Set to -1 or omit the argument 
-    //          to wait for all currently queued packets to complete 
+    //   num:   Number of packets to wait for. Set to -1 or omit the argument
+    //          to wait for all currently queued packets to complete
     //          transmission.
     //
     task wait_complete(int port, int num = -1);
@@ -892,6 +937,33 @@ package PkgRfnocBlockCtrlBfm;
 
       m_data[port].set_master_stall_prob(stall_prob);
     endfunction
+
+
+    // Get the stall probability for the indicated slave port.
+    //
+    //   port: Port for which to get the probability
+    //
+    function int get_slave_stall_prob(int port);
+      assert (port >= 0 && port < s_data.size()) else begin
+        $fatal(1, "Invalid slave port number");
+      end
+
+      return s_data[port].get_slave_stall_prob();
+    endfunction
+
+
+    // Get the stall probability for the indicated master port.
+    //
+    //   port: Port for which to get the probability
+    //
+    function int get_master_stall_prob(int port);
+      assert (port >= 0 && port < m_data.size()) else begin
+        $fatal(1, "Invalid master port number");
+      end
+
+      return m_data[port].get_master_stall_prob();
+    endfunction
+
 
     // Compare data vectors
     static function bit compare_data(

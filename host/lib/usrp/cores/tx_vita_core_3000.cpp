@@ -46,7 +46,7 @@ struct tx_vita_core_3000_impl : tx_vita_core_3000
 
     ~tx_vita_core_3000_impl(void) override
     {
-        UHD_SAFE_CALL(this->clear();)
+        UHD_SAFE_CALL(this->clear());
     }
 
     void clear(void) override

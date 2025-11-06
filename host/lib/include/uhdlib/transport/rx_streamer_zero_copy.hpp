@@ -216,7 +216,14 @@ public:
             if (!_stopped_due_to_overrun) {
                 // Packets were not available with zero timeout, wait for them
                 // to arrive using the specified timeout.
-                result = _get_aligned_buffs(std::max(1, timeout_ms));
+                // Note: If the specified timeout is also zero, then it's
+                // possible that an overrun or late occured, but we haven't
+                // been notified yet. That means recv() will return error code
+                // "timeout" instead of the appropriate error code, because it
+                // doesn't know the reason for the timeout.
+                // This is not a problem, because the user will call recv(),
+                // again, and the error code will be set correctly.
+                result = _get_aligned_buffs(timeout_ms);
             }
             if (result == get_aligned_buffs_t::TIMEOUT) {
                 if (_stopped_due_to_overrun) {

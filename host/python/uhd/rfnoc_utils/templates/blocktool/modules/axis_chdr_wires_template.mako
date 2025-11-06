@@ -26,12 +26,12 @@
   ${out_wire}wire [${num_ports}*CHDR_W-1:0]  ${ma_pre}${port}_chdr_tdata${term}
   ${out_wire}wire [${num_ports}-1:0]         ${ma_pre}${port}_chdr_tlast${term}
   ${out_wire}wire [${num_ports}-1:0]         ${ma_pre}${port}_chdr_tvalid${term}
-  ${in_wire}wire [${num_ports}-1:0]         ${ma_pre}${port}_chdr_tready${term if (term == ";") or (idx < num_inputs -1) or (num_outputs > 0) else ""}
+  ${in_wire}wire [${num_ports}-1:0]         ${ma_pre}${port}_chdr_tready${term}
 %else:
   ${out_wire}wire [CHDR_W-1:0]  ${ma_pre}${port}_chdr_tdata${term}
   ${out_wire}wire               ${ma_pre}${port}_chdr_tlast${term}
   ${out_wire}wire               ${ma_pre}${port}_chdr_tvalid${term}
-  ${in_wire}wire               ${ma_pre}${port}_chdr_tready${term if (term == ";") or (idx < num_inputs -1) or (num_outputs > 0) else ""}
+  ${in_wire}wire               ${ma_pre}${port}_chdr_tready${term}
 %endif
 %endfor
 %for idx, port in enumerate(config['data']['outputs']):
@@ -44,11 +44,11 @@
   ${in_wire}wire [${num_ports}*CHDR_W-1:0]  ${sl_pre}${port}_chdr_tdata${term}
   ${in_wire}wire [${num_ports}-1:0]         ${sl_pre}${port}_chdr_tlast${term}
   ${in_wire}wire [${num_ports}-1:0]         ${sl_pre}${port}_chdr_tvalid${term}
-  ${out_wire}wire [${num_ports}-1:0]         ${sl_pre}${port}_chdr_tready${term if (term == ";") or (idx < num_outputs -1) else ""}
+  ${out_wire}wire [${num_ports}-1:0]         ${sl_pre}${port}_chdr_tready${term}
 %else:
   ${in_wire}wire [CHDR_W-1:0]  ${sl_pre}${port}_chdr_tdata${term}
   ${in_wire}wire               ${sl_pre}${port}_chdr_tlast${term}
   ${in_wire}wire               ${sl_pre}${port}_chdr_tvalid${term}
-  ${out_wire}wire               ${sl_pre}${port}_chdr_tready${term if (term == ";") or (idx < num_outputs -1) else ""}
+  ${out_wire}wire               ${sl_pre}${port}_chdr_tready${term}
 %endif
 %endfor

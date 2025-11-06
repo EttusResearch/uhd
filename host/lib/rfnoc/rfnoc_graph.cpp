@@ -7,13 +7,13 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_make_args.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/graph_stream_manager.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
@@ -450,8 +450,11 @@ public:
         const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
+        auto args_copy  = args;
+        args_copy.args["__chdr_width"] =
+            std::to_string(chdr_w_to_bits(_device->get_mb_iface(0).get_chdr_w()));
         return std::make_shared<rfnoc_rx_streamer>(num_ports,
-            args,
+            args_copy,
             [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
@@ -459,8 +462,11 @@ public:
         const size_t num_ports, const uhd::stream_args_t& args) override
     {
         auto this_graph = shared_from_this();
+        auto args_copy  = args;
+        args_copy.args["__chdr_width"] =
+            std::to_string(chdr_w_to_bits(_device->get_mb_iface(0).get_chdr_w()));
         return std::make_shared<rfnoc_tx_streamer>(num_ports,
-            args,
+            args_copy,
             [this_graph](const std::string& id) { this_graph->disconnect(id); });
     }
 
@@ -589,6 +595,19 @@ public:
     std::string to_dot() override
     {
         return _graph->to_dot();
+    }
+
+    chdr_w_t get_chdr_width(const size_t mb_index) const override
+    {
+        UHD_ASSERT_THROW(mb_index < _num_mboards);
+        return _device->get_mb_iface(mb_index).get_chdr_w();
+    }
+
+    std::map<std::string, device_addr_t> get_chdr_xport_adapters(
+        size_t mb_index) const override
+    {
+        UHD_ASSERT_THROW(mb_index < _num_mboards);
+        return _device->get_mb_iface(mb_index).get_chdr_xport_adapters();
     }
 
 private:
@@ -1089,10 +1108,9 @@ rfnoc_graph::sptr make_rfnoc_graph(
 
     // Check if a graph was already created for this device
     std::lock_guard<std::mutex> lock(_map_mutex);
-    if (dev_to_graph.count(dev) and not dev_to_graph[dev].expired()) {
-        graph = dev_to_graph[dev].lock();
-        if (graph != nullptr) {
-            return graph;
+    if (dev_to_graph.count(dev)) {
+        if (rfnoc_graph::sptr p = dev_to_graph[dev].lock()) {
+            return p;
         }
     }
 

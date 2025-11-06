@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/nirio_resource_manager.h>
+#include <uhdlib/transport/nirio/nirio_resource_manager.h>
 
 // "push" and "pop" introduced in GCC 4.6; works with all clang
 #if defined(__clang__) || defined(__GNUC__) && (__GNUC__ > 3) && (__GNUC_MINOR__ > 5)

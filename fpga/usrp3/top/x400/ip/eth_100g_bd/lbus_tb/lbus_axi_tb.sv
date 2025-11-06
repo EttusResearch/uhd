@@ -7,7 +7,7 @@
 //
 // Description:
 //
-//   Testbench for eth_100g_lbus2axi.
+//   Testbench for eth_100g_lbus2axis.
 //
 
 module lbus_axi_tb #(
@@ -52,7 +52,7 @@ module lbus_axi_tb #(
   //----------------------------------------------------
   lbus_t lbus_in [NUM_SEG-1:0];
 
-  eth_100g_lbus2axi #(.FIFO_DEPTH(5),.NUM_SEG(NUM_SEG)) DUT (
+  eth_100g_lbus2axis DUT (
     .axis(axis),
     .lbus_in(lbus_in)
   );

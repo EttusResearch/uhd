@@ -1,10 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
 - name: knownHost
   type: string
 - name: toolset
@@ -27,15 +23,14 @@ parameters:
   type: string
 
 jobs:
-- job: uhd_devtest_${{ parameters.suiteName }}_${{ parameters.testOS }}
-  displayName:  uhd devtest ${{ parameters.suiteName }} ${{ parameters.testOS }}
+- job: uhd_devtest_${{ parameters.suiteName }}
+  displayName:  uhd devtest ${{ parameters.suiteName }}
   timeoutInMinutes: 90
   pool:
     name: de-dre-lab
     demands:
     - suiteName -equals ${{ parameters.suiteName }}
-    - testOS -equals ${{ parameters.testOS }}
-    - device -equals $(devAgent)
+    - device -equals $(devName)
   variables:
   - group: sdr-pipeline-vars
   strategy:
@@ -44,6 +39,9 @@ jobs:
     clean: outputs
 
   steps:
+  - checkout: ettus-rts
+    clean: true
+
   - checkout: self
     clean: true
 
@@ -53,6 +51,7 @@ jobs:
       knownHostsEntry: '${{ parameters.knownHost }}'
       sshPublicKey: '$(ettus_ssh_pubkey)'
       sshKeySecureFile: 'id_rsa.ettus'
+    condition: and(succeeded(), ne('${{ parameters.knownHost }}', ''))
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
@@ -65,26 +64,26 @@ jobs:
   - script: |
       if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
       else
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}"
       fi
     displayName: Set uhddev FPGA pipeline artifact location
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
-  - script: |
-      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
-        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
-    displayName: Cleanup from prior run
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200'))
+  #- script: |
+      #rm -rf $(uhd_fpga_artifact_directory)
+    #displayName: Cleanup from prior run
+    #condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200'))
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
       destinationFolder: $(Build.BinariesDirectory)
       cleanDestinationFolder: true
 
@@ -112,15 +111,18 @@ jobs:
     patterns: |
       usrp_$(devModel)*.bit
       usrp_$(devModel)*.dts
-      usrp_$(devModel)*.rpt
     displayName: Download FPGA artifacts
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
   - script: |
       mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images/
-      cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      cd $(uhd_fpga_artifact_directory)
+      echo "Moving files: "
+      find . -maxdepth 2 -name "*.bit" -o -name "*.dts"
+      mv `find . -maxdepth 2 -name "*.bit" -o -name "*.dts"` $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      ls -lR $(Build.BinariesDirectory)/uhddev/build/fpga_images/
     displayName: Copy FPGA images to expected directory
-    condition: and(succeeded(), and(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'), ne(variables.devType, 'b200')))
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.devType, 'b200')))
 
   - script: |
       cd $(Build.BinariesDirectory)/uhddev/build
@@ -132,23 +134,28 @@ jobs:
         python3 utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
           -b $(sdr-fileserver)
       fi
-    displayName: Download FPGA Images
-    condition: and(succeeded(), or(not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')), eq(variables.devType, 'b200')))
+    displayName: Download FPGA Images (uhd_images_downloader)
+    condition: and(succeeded(), or(not(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline')), eq(variables.devType, 'b200')))
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
+        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -157,19 +164,24 @@ jobs:
     displayName: Run n3xx devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig) \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
+        --sdimage_tftp $(devType),$(devModel),$(uhd_artifact_directory)/e320-images/$(devSDImage),$(uhd_artifact_directory)/e320-images/$(devInitramfsImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig) \
         --fpgas $(devFpga) \
         --sfp_addrs $(sfpAddrs) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -178,17 +190,22 @@ jobs:
     displayName: Run e320 devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        ${{ parameters.redisHost }} $(devName) \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args serial=$(devSerial)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_image_loader --args serial=$(devSerial),type=$(devType)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args serial=$(devSerial),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -197,17 +214,22 @@ jobs:
     displayName: Run b2xx devtest on $(devName)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
         --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
         --fpgas $(devFpga) \
-        ${{ parameters.redisHost }} $(devName) \
+        "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ${{ parameters.uhdSrcDir }}/host/tests/devtest/run_testsuite.py \
-          --src-dir ${{ parameters.uhdSrcDir }}/host/tests/devtest \
+        "python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
           --devtest-pattern $(devtestPattern) --args addr=$(devAddr),type=$(devType) \
           --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
           --python-interp python3 --xml"
@@ -223,7 +245,7 @@ jobs:
 
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/format_devtest_junitxml.py \
         $(Common.TestResultsDirectory)/devtest \
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
@@ -232,7 +254,7 @@ jobs:
 
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/format_devtest_junitxml.py \
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/format_devtest_junitxml.py \
         --fpgas $(devFpga) \
         $(Common.TestResultsDirectory)/devtest \
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml

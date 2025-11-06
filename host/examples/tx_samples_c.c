@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
     EXECUTE_OR_GOTO(
         free_tx_streamer, uhd_tx_streamer_max_num_samps(tx_streamer, &samps_per_buff))
     fprintf(stderr, "Buffer size in samples: %zu\n", samps_per_buff);
-    buff      = calloc(sizeof(float), samps_per_buff * 2);
+    buff      = calloc(samps_per_buff * 2, sizeof(float));
     buffs_ptr = (const void**)&buff;
     size_t i  = 0;
     for (i = 0; i < (samps_per_buff * 2); i += 2) {

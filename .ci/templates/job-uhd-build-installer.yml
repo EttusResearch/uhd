@@ -5,7 +5,6 @@ parameters:
   - fedora_rpm
   - make
   - msbuild
-  - msbuild_python
   - ubuntu_deb
 - name: 'installer'
   type: string
@@ -17,15 +16,24 @@ parameters:
 - name: releaseBinaries
   type: boolean
   default: false
+  # In this job, we always use uhd_images_downloader to get FPGA images, never
+  # the pipeline. This variable only controls if we use files.ettus.com or our
+  # internal server.
 - name: fpga_imgs_source
   type: string
   default: 'Internal'
+  values:
+  - 'Internal'
+  - 'files.ettus.com (Public)'
 
 jobs:
 - job: build_uhd_installer_${{ parameters.toolset }}
   displayName: ${{ parameters.toolset }} UHD installer
   dependsOn: get_latest_uhd_docker
-  timeoutInMinutes: 120
+  ${{ if contains(parameters.toolset, 'msbuild') }}:
+    timeoutInMinutes: 150
+  ${{ else }}:
+    timeoutInMinutes: 120
   variables:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
@@ -36,13 +44,16 @@ jobs:
     macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
     dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
     dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
-    dockerImageMatrixWinPythonBuild: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWinPythonBuild'] ]
   pool:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
       - docker
       - ${{ if contains(parameters.toolset, 'msbuild') }}:
         - Agent.OS -equals Windows_NT
+        - large_disk -equals 1
+        - high_disk_io -equals 1
+        - high_cpu_per_thread -equals 1
+        - cpu_host_type -equals Intel_x86-64-v4
       - ${{ if not(contains(parameters.toolset, 'msbuild')) }}:
         - Agent.OS -equals Linux
   workspace:
@@ -52,15 +63,13 @@ jobs:
       matrix: $[ variables.dockerImageMatrixLin ]
     ${{ if and(eq(parameters.toolset, 'msbuild'), eq(parameters.installer, 'nsis')) }}:
       matrix: $[ variables.dockerImageMatrixWin ]
-    ${{ if and(eq(parameters.toolset, 'msbuild_python'), eq(parameters.installer, 'nsis')) }}:
-      matrix: $[ variables.dockerImageMatrixWinPythonBuild ]
     ${{ if and(eq(parameters.toolset, 'ubuntu_deb'), eq(parameters.installer, 'deb')) }}:
       matrix: $[ variables.dockerImageMatrixUbuntuDeb ]
     ${{ if and(eq(parameters.toolset, 'fedora_rpm'), eq(parameters.installer, 'rpm')) }}:
       matrix: $[ variables.dockerImageMatrixFedoraRpm ]
   container:
     image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
-    ${{ if or(eq(parameters.toolset, 'msbuild'), eq(parameters.toolset, 'msbuild_python')) }}:
+    ${{ if eq(parameters.toolset, 'msbuild') }}:
         options: --cpu-count 6 --memory 12G
     ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
       endpoint: rnd-docker-niartifacts-ci-readonly
@@ -72,10 +81,8 @@ jobs:
   steps:
   - checkout: self
     clean: true
-    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804', 'fedora39')))
 
   - download: uhd_build_docker_container
-    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804', 'fedora39')))
   - ${{ if eq(parameters.toolset, 'fedora_rpm') }}:
     - template: steps-build-uhd-installer-fedora-rpm.yml
       parameters:
@@ -99,21 +106,6 @@ jobs:
         uhdImageDir: c:\uhd-images
         uhdVcpkgManifestDir: c:\uhd-vcpkg
         uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
-        ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
-          uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
-        cmakeCompiler: $(cmakeCompiler)
-        cmakeArch: $(cmakeArch)
-        vsArch: $(vsArch)
-        vsYear: $(vsYear)
-  - ${{ if and(eq(parameters.toolset, 'msbuild_python'), eq(parameters.installer, 'nsis')) }}:
-    - template: steps-build-uhd-installer-msbuild-nsis.yml
-      parameters:
-        uhdSrcDir: $(Build.SourcesDirectory)
-        uhdBuildDir: c:\uhddev\build
-        uhdInstallerDir: c:\uhddev-installer
-        uhdImageDir: c:\uhd-images
-        uhdVcpkgManifestDir: c:\uhd-vcpkg
-        uhdReleaseBinaries: ${{ parameters.releaseBinaries }}
         uhdBuildPythonAPI: True
         ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
           uhdImagesDownloaderExtraArgs: '-b $(InternalFileServerUrl)'
@@ -121,9 +113,9 @@ jobs:
         cmakeArch: $(cmakeArch)
         vsArch: $(vsArch)
         vsYear: $(vsYear)
+        cleanTargetFolder: False
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.BinariesDirectory)/uhddev-installer'
       artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
     displayName: Upload uhd installer artifact
-    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804', 'fedora39')))

@@ -503,7 +503,7 @@ void dboard_manager_impl::initialize_dboards(void)
 
 dboard_manager_impl::~dboard_manager_impl(void)
 {
-    UHD_SAFE_CALL(set_nice_dboard_if();)
+    UHD_SAFE_CALL(set_nice_dboard_if());
 }
 
 void dboard_manager_impl::set_nice_dboard_if(void)

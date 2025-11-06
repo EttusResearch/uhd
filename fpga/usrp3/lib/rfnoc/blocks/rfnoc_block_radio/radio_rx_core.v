@@ -100,6 +100,7 @@ module radio_rx_core #(
   //---------------------------------------------------------------------------
 
   reg                      reg_cmd_valid        = 0;  // Indicates when the CMD_FIFO has been written
+  wire                     cmd_fifo_ready;
   reg  [   RX_CMD_LEN-1:0] reg_cmd_word         = 0;  // Command to execute
   reg  [NUM_WORDS_LEN-1:0] reg_cmd_num_words    = 0;  // Number of words for the command
   reg  [             63:0] reg_cmd_time         = 0;  // Time for the command
@@ -111,10 +112,11 @@ module radio_rx_core #(
   reg  [             19:0] reg_error_addr       = 0;  // Address to use for error reporting
   reg                      reg_has_time         = 1;  // Whether or not to use timestamps on data
 
-  wire [15:0] cmd_fifo_space;   // Empty space in the command FIFO
-  reg         cmd_stop     = 0; // Indicates a full stop request
-  wire        cmd_stop_ack;     // Acknowledgment that a stop has completed
-  reg         clear_fifo   = 0; // Signal to clear the command FIFO
+  wire [15:0] cmd_fifo_space_fifo;   // Empty space in the command FIFO
+  wire [15:0] cmd_fifo_space_flop;   // Empty space in the command flop
+  reg         cmd_stop     = 0;      // Indicates a full stop request
+  wire        cmd_stop_ack;          // Acknowledgment that a stop has completed
+  reg         clear_fifo   = 0;      // Signal to clear the command FIFO
 
   assign m_axis_thas_time = reg_has_time;
 
@@ -138,21 +140,31 @@ module radio_rx_core #(
       // Default assignments
       s_ctrlport_resp_ack  <= 0;
       s_ctrlport_resp_data <= 0;
-      reg_cmd_valid        <= 0;
       clear_fifo           <= 0;
 
       // Clear stop register when we enter the STOP state
       if (cmd_stop_ack) cmd_stop <= 1'b0;
 
+      // send acknowledge when data is written into cmd fifo
+      if (reg_cmd_valid && cmd_fifo_ready) begin
+        s_ctrlport_resp_ack <= 1;
+        reg_cmd_valid <= 0;
+      end
+
       // Handle register writes
       if (s_ctrlport_req_wr) begin
         case (s_ctrlport_req_addr)
           REG_RX_CMD: begin
+            reg_cmd_word  <= s_ctrlport_req_data[RX_CMD_LEN-1:0];
+            reg_cmd_timed <= s_ctrlport_req_data[RX_CMD_TIMED_POS];
+
             // All commands go into the command FIFO except STOP
-            reg_cmd_valid       <= (s_ctrlport_req_data[RX_CMD_LEN-1:0] != RX_CMD_STOP);
-            reg_cmd_word        <=  s_ctrlport_req_data[RX_CMD_LEN-1:0];
-            reg_cmd_timed       <=  s_ctrlport_req_data[RX_CMD_TIMED_POS];
-            s_ctrlport_resp_ack <= 1;
+            if (s_ctrlport_req_data[RX_CMD_LEN-1:0] == RX_CMD_STOP) begin
+              s_ctrlport_resp_ack <= 1;
+            end else begin
+              // ack will be sent when the command is written into the FIFO (see code above)
+              reg_cmd_valid <= 1;
+            end
 
             // cmd_stop must remain asserted until it has completed
             if (!cmd_stop || cmd_stop_ack) begin
@@ -208,7 +220,8 @@ module radio_rx_core #(
         case (s_ctrlport_req_addr)
           REG_RX_STATUS: begin
             s_ctrlport_resp_data[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN]
-                                <= cmd_fifo_space[CMD_FIFO_SPACE_LEN-1:0];
+                                <= cmd_fifo_space_fifo[CMD_FIFO_SPACE_LEN-1:0] +
+                                   cmd_fifo_space_flop[CMD_FIFO_SPACE_LEN-1:0];
             s_ctrlport_resp_ack <= 1;
           end
           REG_RX_CMD: begin
@@ -278,9 +291,15 @@ module radio_rx_core #(
   wire                     cmd_valid;       // cmd_* is a valid command
   wire                     cmd_done;        // Command has completed and can be popped from FIFO
 
+  localparam CMD_FIFO_WIDTH = 64 + 1 + NUM_WORDS_LEN + 1;
+  wire cmd_flop_valid;
+  wire cmd_flop_ready;
+  wire [CMD_FIFO_WIDTH-1:0] cmd_flop_data;
+
+  // Ideally, this size will lead to an SRL-based FIFO
   axi_fifo #(
-    .WIDTH (64 + 1 + NUM_WORDS_LEN + 1),
-    .SIZE  (5)      // Ideally, this size will lead to an SRL-based FIFO
+    .WIDTH (CMD_FIFO_WIDTH),
+    .SIZE  (CMD_FIFO_SIZE_LOG2)
   ) cmd_fifo (
     .clk      (radio_clk),
     .reset    (radio_rst),
@@ -288,11 +307,29 @@ module radio_rx_core #(
     .i_tdata  ({ reg_cmd_time, reg_cmd_timed, reg_cmd_num_words,
                 (reg_cmd_word == RX_CMD_CONTINUOUS) }),
     .i_tvalid (reg_cmd_valid),
-    .i_tready (),
+    .i_tready (cmd_fifo_ready),
+    .o_tdata  (cmd_flop_data),
+    .o_tvalid (cmd_flop_valid),
+    .o_tready (cmd_flop_ready),
+    .space    (cmd_fifo_space_fifo),
+    .occupied ()
+  );
+
+  // output register to break critical path of FIFO data output
+  axi_fifo #(
+    .WIDTH (CMD_FIFO_WIDTH),
+    .SIZE  (CMD_FLOP_SIZE-1)
+  ) cmd_flop (
+    .clk      (radio_clk),
+    .reset    (radio_rst),
+    .clear    (clear_fifo),
+    .i_tdata  (cmd_flop_data),
+    .i_tvalid (cmd_flop_valid),
+    .i_tready (cmd_flop_ready),
     .o_tdata  ({ cmd_time, cmd_timed, cmd_num_words, cmd_continuous }),
     .o_tvalid (cmd_valid),
     .o_tready (cmd_done),
-    .space    (cmd_fifo_space),
+    .space    (cmd_fifo_space_flop),
     .occupied ()
   );
 
@@ -342,18 +379,18 @@ module radio_rx_core #(
 
   // FSM state values
   localparam ST_IDLE               = 0;
-  localparam ST_TIME_CHECK         = 1;
-  localparam ST_RUNNING            = 2;
-  localparam ST_STOP               = 3;
-  localparam ST_REPORT_ERR         = 4;
-  localparam ST_REPORT_ERR_WAIT    = 5;
+  localparam ST_ALIGN              = 1;
+  localparam ST_TIME_CHECK         = 2;
+  localparam ST_RUNNING            = 3;
+  localparam ST_STOP               = 4;
+  localparam ST_REPORT_ERR         = 5;
+  localparam ST_REPORT_ERR_WAIT    = 6;
 
   reg [              2:0] state   = ST_IDLE; // Current state
   reg [NUM_WORDS_LEN-1:0] words_left;        // Words left in current command
   reg [             31:0] words_left_pkt;    // Words left in current packet
   reg                     first_word = 1'b1; // Next word is first in packet
   reg [             15:0] seq_num = 0;       // Sequence number (packet count)
-  reg [             63:0] error_time;        // Time at which overflow occurred
   reg [ERR_RX_CODE_W-1:0] error_code;        // Error code register
 
   // Output FIFO signals
@@ -361,13 +398,14 @@ module radio_rx_core #(
   reg  [SAMP_W*NSPC-1:0] out_fifo_tdata;
   reg                    out_fifo_tlast;
   reg                    out_fifo_tvalid = 1'b0;
-  reg  [           63:0] out_fifo_timestamp;
   reg                    out_fifo_teob;
   reg                    out_fifo_almost_full;
 
-  reg time_now;    // Indicates when we've reached the requested timestamp
-  reg time_now_p1; // Indicates we've reached the requested timestamp plus 1
-  reg time_past;   // Indicates when we've passed the requested timestamp
+  reg [63:0] radio_time_d1 = 64'b0; // Register for radio time to avoid timing issues
+  reg [63:0] radio_time_first_word = 64'b0; // Timestamp of the first word in the packet
+  reg        time_now;    // Indicates when we've reached the requested timestamp
+  reg        time_now_p1; // Indicates we've reached the requested timestamp plus 1
+  reg        time_past;   // Indicates when we've passed the requested timestamp
 
   reg [SHIFT_W-1:0] radio_offset;
   reg               align_delay;
@@ -394,13 +432,13 @@ module radio_rx_core #(
       radio_offset        <= 'bX;
       align_delay         <= 'bX;
       error_code          <= 'bX;
-      error_time          <= 'bX;
       m_ctrlport_req_addr <= 'bX;
       m_ctrlport_req_data <= 'bX;
       m_ctrlport_req_time <= 'bX;
       time_now            <= 'bX;
       time_now_p1         <= 'bX;
       time_past           <= 'bX;
+      radio_time_d1       <= 64'bX;
       words_left          <= 'bX;
       words_left_pkt      <= 'bX;
     end else begin
@@ -412,21 +450,21 @@ module radio_rx_core #(
       align_cfg_en      <= 1'b0;
 
       if (NSPC > 1) begin
-        if (radio_rx_stb) begin
-          radio_offset <= radio_time[0+:SHIFT_W];
-        end
+        radio_offset <= radio_time_d1[0+:SHIFT_W];
       end else begin
         radio_offset <= 0;
       end
 
       if (radio_rx_stb) begin
         // Register time comparisons so they don't become the critical path.
-        // Add two to compensate for the pipeline delays of this comparison and
-        // its propagation through the state machine. This ensures that the
-        // timestamp in the packet matches the requested timestamp.
-        time_now    <= (radio_time[63:SHIFT_W]+2 == cmd_time[63:SHIFT_W]);
-        time_now_p1 <= time_now;
-        time_past   <= (radio_time[63:SHIFT_W]   >= cmd_time[63:SHIFT_W]);
+        // Add three / one to compensate for the pipeline delays of this
+        // comparison and its propagation through the state machine. This
+        // ensures that the timestamp in the packet matches the requested
+        // timestamp.
+        radio_time_d1 <= radio_time;
+        time_now      <= (radio_time_d1[63:SHIFT_W]+3 == cmd_time[63:SHIFT_W]);
+        time_now_p1   <= time_now;
+        time_past     <= (radio_time_d1[63:SHIFT_W]+1 >= cmd_time[63:SHIFT_W]);
       end
 
       case (state)
@@ -434,7 +472,7 @@ module radio_rx_core #(
           // Wait for a new command to arrive and a radio strobe to update the
           // time comparisons.
           if (cmd_valid && radio_rx_stb) begin
-            state <= ST_TIME_CHECK;
+            state <= (NSPC > 1) ? ST_ALIGN : ST_TIME_CHECK;
           end else if (cmd_stop) begin
             state <= ST_STOP;
           end
@@ -462,6 +500,15 @@ module radio_rx_core #(
           end
         end
 
+        ST_ALIGN : begin
+          // We need two cycles for the align_samples module to flush so that
+          // the first sample has the new alignment. The first cycle will be
+          // here and the second will be in ST_TIME_CHECK.
+          if (radio_rx_stb) begin
+            state <= ST_TIME_CHECK;
+          end
+        end
+
         ST_TIME_CHECK : begin
           if (cmd_stop) begin
             // Nothing to do but stop (timed STOP commands are not supported)
@@ -472,9 +519,11 @@ module radio_rx_core #(
             $display("WARNING: radio_rx_core: Late command error");
             //synthesis translate_on
             error_code <= ERR_RX_LATE_CMD;
-            error_time <= radio_time;
             state      <= ST_REPORT_ERR;
-          end else if (!cmd_timed ||
+          end else if (
+            // We check for radio_rx_stb here when it's not timed to give the
+            // align_samples core a second cycle to flush.
+            (radio_rx_stb && !cmd_timed) ||
             (radio_rx_stb && time_now    && (!align_delay || NSPC == 1)) ||
             (radio_rx_stb && time_now_p1 && ( align_delay && NSPC  > 1))
           ) begin
@@ -493,8 +542,8 @@ module radio_rx_core #(
             out_fifo_tvalid <= 1'b1;
             out_fifo_tdata  <= aligned_data;
             if (first_word) begin
-              out_fifo_timestamp <= radio_time - time_shift;
               first_word         <= 1'b0;
+              radio_time_first_word <= radio_time;
             end
 
             // Update word counters
@@ -525,7 +574,6 @@ module radio_rx_core #(
               out_fifo_tlast <= 1'b1;
               out_fifo_teob  <= 1'b1;
               seq_num        <= seq_num + 1;
-              error_time     <= radio_time;
               error_code     <= ERR_RX_OVERRUN;
               state          <= ST_REPORT_ERR;
             end
@@ -544,7 +592,7 @@ module radio_rx_core #(
           m_ctrlport_req_data                    <= 0;
           m_ctrlport_req_data[ERR_RX_CODE_W-1:0] <= error_code;
           m_ctrlport_req_addr                    <= reg_error_addr;
-          m_ctrlport_req_time                    <= error_time;
+          m_ctrlport_req_time                    <= radio_time_d1;
           state                                  <= ST_REPORT_ERR_WAIT;
         end
 
@@ -578,6 +626,9 @@ module radio_rx_core #(
   // detect overflows.
   //
   //---------------------------------------------------------------------------
+  wire [63:0] out_fifo_timestamp;
+  assign out_fifo_timestamp = radio_time_first_word - time_shift;
+
 
   axi_fifo #(
     .WIDTH (1+64+1+SAMP_W*NSPC),

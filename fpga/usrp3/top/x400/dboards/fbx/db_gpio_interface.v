@@ -420,7 +420,16 @@ endmodule
 //    </enumeratedtype>
 //  </group>
 //</regmap>
-
+//
+//<regmap name="DB_WINDOW_REGMAP" generatevhdl="false" generateverilog="false">
+//  <info>
+//    This is a dummy regmap to have a common name for DB specific window to refer to.
+//  </info>
+//  <group name="DB_WINDOW">
+//    <window name="FBX_WINDOW" offset="0x0" size="0x8000" targetregmap="FBX_CTRL_REGMAP"/>
+//  </group>
+//</regmap>
+//
 //<regmap name="FBX_CTRL_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
 //  <info>
 //    This map contains register windows for controlling the different sources
@@ -436,9 +445,15 @@ endmodule
 //    <window name="LED_ATR_REGS"     offset="0x4000"    size="0x2000" targetregmap="LED_ATR_REGMAP">
 //      <info>Control TX/RX LEDs based on the ATR state of the accessed radio</info>
 //    </window>
-//    <window name="SYNC_CLK_EN_REGS"  offset="0x6000"    size="0x2000" targetregmap="CLK_EN_REGMAP">
+//    <window name="SYNC_CLK_EN_REGS"  offset="0x6000"    size="0x2000" targetregmap="CLOCK_EN_REGMAP">
 //      <info>Clock enable register for SYNC INJECT 5 MHz clock</info>
 //    </window>
 //  </group>
+//</regmap>
+//
+//<regmap name="X4XX_DB_SPI_REGMAP" generateverilog="false">
+//  <info>
+//    There is no DB to reach via SPI in this variant of the X4xx.
+//  </info>
 //</regmap>
 //XmlParse xml_off

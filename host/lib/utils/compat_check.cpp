@@ -5,8 +5,8 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <boost/format.hpp>
 
 void uhd::assert_fpga_compat(const size_t uhd_major,

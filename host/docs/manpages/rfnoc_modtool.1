@@ -1,0 +1,112 @@
+.TH "rfnoc_modtool" 1 "4.8.0" UHD "User Commands"
+.SH NAME
+rfnoc_modtool - RFNoC OOT module management tool
+
+.SH DESCRIPTION
+Create and manage RFNoC OOT modules.
+
+
+.SH SYNOPSIS
+.B  rfnoc_modtool [COMMAND] [OPTIONS]
+
+.SH COMMANDS
+Run rfnoc_modtool COMMAND --help for more information on a specific command.
+
+.IP "create"
+Create a new RFNoC OOT module.
+.IP "add"
+Add a new block to an existing RFNoC OOT module.
+.IP "add-gr-oot"
+Add GNU Radio OOT Module.
+.IP "add-gr-block"
+Add GNU Radio block to an existing GNU Radio OOT module.
+.IP "add-grc"
+Add GNU Radio GRC bindings for an existing block in this RFNoC OOT module.
+.IP "make-yaml"
+YAML Creation Wizard -- Generate an RFNoC block YAML descriptor file based on user input.
+
+.SH CREATING NEW MODULES
+.sp
+When running rfnoc_modtool create, a new directory will be created that contains
+the necessary files for a new RFNoC OOT module. This directory will only contain
+boilerplate code, and the user will need to add their own blocks to the module.
+
+By calling 'rfnoc_modtool add-gr-oot', the user can add a GNU Radio OOT module
+inside the RFNoC OOT module.
+
+.SH ADDING BLOCKS
+.sp
+When running rfnoc_modtool add, a new block will be added to an existing RFNoC OOT module.
+This requires previously having run rfnoc_modtool create to create the module.
+
+Note that in order for 'rfnoc_modtool add' to succeed, the user must provide a
+block descriptor file in YAML format. This file describes the block and its parameters.
+The user can create this file manually, or use the YAML Creation Wizard by running
+rfnoc_modtool make-yaml. The wizard will prompt the user for the necessary information
+to create a valid YAML file.
+
+Once blocks have been created, the user can add native GNU Radio blocks to enable
+more precise control over RFNoC blocks from GNU Radio by running 'rfnoc_modtool add-gr-block'.
+
+To add GNU Radio GRC bindings for the blocks, call 'rfnoc_modtool add-grc'.
+
+
+.SH EXAMPLES
+
+.SS Create a new RFNoC OOT module called "filter"
+.EX
+rfnoc_modtool create filter
+cd rfnoc-filter
+.EE
+
+.SS Use the YAML Creation Wizard to create a block descriptor file
+.EX
+rfnoc_modtool make-yaml
+.EE
+
+.SS After editing the fir.yml file to describe the FIR filter block, add a block called "fir" to the "filter" module
+.EX
+rfnoc_modtool add fir
+.EE
+
+.SS Now add a GNU Radio OOT module
+.EX
+rfnoc_modtool add-gr-oot
+.EE
+
+.SS Add a GNU Radio block to the "filter" module to control the FIR RFNoC block (e.g., for better integration into the GNU Radio filter design tool)
+.EX
+rfnoc_modtool add-gr-block --gr-blockname rfnoc_fir fir
+.EE
+
+.SS Expose this new block into GRC
+.EX
+rfnoc_modtool add-grc --binding-type native fir
+.EE
+
+.fi
+
+.SH SEE ALSO
+UHD documentation:
+.B http://files.ettus.com/manual/
+.LP
+GR-UHD documentation:
+.B http://gnuradio.org/doc/doxygen/page_uhd.html
+.LP
+Other UHD programs:
+.sp
+rfnoc_image_builder(1)
+.SH AUTHOR
+This manual page was written by Martin Braun.
+.SH COPYRIGHT
+Copyright (c) 2015-2022 Ettus Research, A National Instruments Brand
+.LP
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+.LP
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.

@@ -11,12 +11,14 @@
 #include "x300_device_args.hpp"
 #include "x300_radio_mbc_iface.hpp"
 #include "x300_regs.hpp"
+#include <uhd/features/gps_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhdlib/features/discoverable_feature_registry.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_set>
+#include <memory>
 #include <string>
 
 namespace uhd { namespace rfnoc {
@@ -83,6 +85,11 @@ public:
         _radio_refs.push_back(radio);
     }
 
+    uhd::usrp::x300::x300_device_args_t get_mb_args() const
+    {
+        return _args;
+    }
+
     /**************************************************************************
      * Timekeeper API
      *************************************************************************/
@@ -138,6 +145,43 @@ public:
     std::vector<std::string> get_gpio_srcs(const std::string&) const override;
     std::vector<std::string> get_gpio_src(const std::string&) override;
     void set_gpio_src(const std::string&, const std::vector<std::string>&) override;
+
+    /**************************************************************************
+     * GPS Interface Feature
+     *************************************************************************/
+    class gps_iface : public uhd::features::gps_iface
+    {
+    public:
+        gps_iface(std::weak_ptr<uhd::gps_ctrl> gps) : _gps(gps) {}
+
+        std::vector<std::string> get_sensors() override
+        {
+            return g()->get_sensors();
+        }
+
+        uhd::sensor_value_t get_sensor(const std::string& key) override
+        {
+            return g()->get_sensor(key);
+        }
+
+        std::string send_cmd(const std::string& cmd) override
+        {
+            return g()->send_cmd(cmd);
+        }
+
+    private:
+        std::weak_ptr<uhd::gps_ctrl> _gps;
+
+        //! Return a valid reference to a gps_ctrl object
+        uhd::gps_ctrl::sptr g()
+        {
+            auto gps = _gps.lock();
+            if (!gps) {
+                throw uhd::runtime_error("GPS control has expired!");
+            }
+            return _gps.lock();
+        }
+    };
 
 private:
     //! Return a string X300::MB_CTRL#N
@@ -199,6 +243,9 @@ private:
     //! Reference to GPS control
     uhd::gps_ctrl::sptr _gps;
 
+    //! GPS interface for public feature
+    uhd::features::gps_iface::sptr _gps_iface;
+
     //! Reference to all callbacks to reset the ADCs/DACs
     std::vector<std::function<void(void)>> _reset_cbs;
 
@@ -212,7 +259,7 @@ private:
     std::vector<uhd::usrp::x300::x300_radio_mbc_iface*> _radio_refs;
 
     //! List of available sensors
-    std::unordered_set<std::string> _sensors{"ref_locked"};
+    std::unordered_set<std::string> _sensors{"ref_locked", "temp_fpga"};
 
     //! Flag to tell us if initialization is complete. Some functions behave
     // differently after initialization.

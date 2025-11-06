@@ -1,0 +1,81 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+
+help: |
+  Add GNU Radio OOT Module.
+
+  Note: Must be called from within a valid RFNoC OOT module directory. Use -C to
+  specify the module directory if necessary.
+
+  Requires an installation of GNU Radio. This command will use gr_modtool to
+  generate a new OOT module.
+
+# These get turned into command line arguments for this command. May not contain
+# variable references (they get evaluated later).
+args:
+  oot_name:
+    name_or_flags: "--oot-name"
+    type: str
+    help: Name of the new GNU Radio OOT module to add to the RFNoC module. Defaults to the current module's name (e.g., rfnoc-foo -> gr-rfnoc_foo). Do not specify the leading gr-!
+    default: ""
+  copyright_holder:
+    name_or_flags: "--copyright-holder"
+    default: "<author>"
+  license:
+    name_or_flags: "--license"
+    default: "SPDX-License-Identifier: GPL-3.0-or-later"
+
+variables:
+  groot_name: "${ 'rfnoc_' + MODULE_NAME if args.oot_name == '' else args.oot_name }"
+  groot_dir: "${ 'gr-' + groot_name }"
+
+
+# This tells us that templates come from the blocktool/ subdirectory
+template_namespace: blocktool
+
+steps:
+  - find_executable:
+      dst_var: gr_modtool_exe
+      name: gr_modtool
+      error_msg: "gr_modtool not found! Please install GNU Radio and ensure it is in your PATH."
+  - run_subprocess:
+      cmd: ["${ gr_modtool_exe }", "newmod", "${ groot_name }"]
+      error_msg: "Failed to create GNU Radio OOT module ${ groot_name }! Please check your GNU Radio installation."
+  - log:
+      msg: "Generated GNU Radio OOT module in ${ groot_dir }."
+  - search_and_replace:
+      file: "${ groot_dir }/CMakeLists.txt"
+      pattern: "find_package\\(Gnuradio .+ REQUIRED"
+      repl: "\\g<0> COMPONENTS uhd"
+  - insert_after:
+      file: "${ groot_dir }/CMakeLists.txt"
+      pattern: "find_package\\(Gnuradio [^)]+\\)"
+      text: |
+
+        find_package(UHD 4.8 REQUIRED)
+        find_package(rfnoc-${ MODULE_NAME } REQUIRED)
+  - search_and_replace:
+      file: "${ groot_dir }/lib/CMakeLists.txt"
+      pattern: "target_link_libraries\\(gnuradio-[^)]+\\)"
+      repl: |
+        target_link_libraries(
+            gnuradio-rfnoc_${ MODULE_NAME }
+            gnuradio::gnuradio-runtime
+            gnuradio::gnuradio-uhd
+            ${'$'}{UHD_LIBRARIES}
+            ${'$'}{RFNOC_${ MODULE_NAME.upper() }_LIBRARIES}
+            )
+  - search_and_replace:
+      file: "${ groot_dir }/lib/CMakeLists.txt"
+      pattern: "target_include_directories\\([^)]+\\)"
+      repl: |
+        target_include_directories(
+            gnuradio-rfnoc_${ MODULE_NAME }
+            PUBLIC $<BUILD_INTERFACE:${'$'}{CMAKE_CURRENT_SOURCE_DIR}/../include>
+            PUBLIC $<INSTALL_INTERFACE:include>
+            PRIVATE ${'$'}{UHD_INCLUDE_DIRS}
+            PRIVATE ${'$'}{RFNOC_${ MODULE_NAME.upper() }_INCLUDE_DIRS}
+        )

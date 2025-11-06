@@ -42,13 +42,6 @@ if(NOT PYTHONINTERP_FOUND)
     endif(Python3_Interpreter_FOUND)
 endif(NOT PYTHONINTERP_FOUND)
 
-if(NOT PYTHONINTERP_FOUND)
-    find_package(PythonInterp ${UHD_PYTHON_MIN_VERSION} QUIET)
-    if(PYTHONINTERP_FOUND)
-        set(PYTHON_VERSION ${PYTHON_VERSION_STRING})
-    endif(PYTHONINTERP_FOUND)
-endif(NOT PYTHONINTERP_FOUND)
-
 # If that fails, try using the build-in find program routine.
 if(NOT PYTHONINTERP_FOUND)
     message(STATUS "Attempting to find Python without CMake...")
@@ -69,6 +62,16 @@ print('{}.{}.{}'.format(
         OUTPUT_VARIABLE PYTHON_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 endif(NOT PYTHON_VERSION)
+
+string(REPLACE "." ";" PYTHON_VERSION_LIST "${PYTHON_VERSION}")
+list(LENGTH PYTHON_VERSION_LIST PYTHON_VERSION_LIST_LEN)
+if(PYTHON_VERSION_LIST_LEN GREATER 1)
+    list(GET PYTHON_VERSION_LIST 0 Python_VERSION_MAJOR)
+    list(GET PYTHON_VERSION_LIST 1 Python_VERSION_MINOR)
+else(PYTHON_VERSION_LIST_LEN GREATER 1)
+    set(Python_VERSION_MAJOR "UNKNOWN")
+    set(Python_VERSION_MINOR "UNKNOWN")
+endif(PYTHON_VERSION_LIST_LEN GREATER 1)
 
 # If we still haven't found a Python interpreter, then we're done.
 if(NOT PYTHONINTERP_FOUND)
@@ -244,67 +247,69 @@ endmacro()
 #              systems.
 # - MODULE: Name of module (e.g., 'uhd')
 macro(UHD_PYTHON_INSTALL_MODULE)
-    cmake_parse_arguments(
-        _py_install_mod
-        "" "LIBTARGET;MODULE" ""
-        ${ARGN}
-    )
-
-    # Check if we're in a virtual environment -- the rules are a bit different
-    # there.
-    UHD_PYTHON_CHECK_MODULE(
-        "virtual environment"
-        "sys"
-        "sys.prefix != sys.base_prefix"
-        HAVE_PYTHON_VIRTUALENV
-    )
-
-    if(HAVE_PYTHON_VIRTUALENV)
-        message(
-          STATUS
-          "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
-          # In virtualenvs, let setuptools do its thing
-          install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip.\")")
-          install(CODE
-            "execute_process(COMMAND pip3 install . --force-reinstall WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
-    else()
-        # Otherwise, use sysconfig to determine the correct relative path for Python
-        # packages, and install to our prefix
-        if(NOT DEFINED UHD_PYTHON_DIR)
-            execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
-                # Avoid the posix_local install scheme
-                "import os,sysconfig;\
-                install_scheme = 'posix_user';\
-                platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
-                prefix = sysconfig.get_config_var('prefix');\
-                print(os.path.relpath(platlib, prefix));"
-                OUTPUT_VARIABLE UHD_PYTHON_DIR
-                OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-        endif(NOT DEFINED UHD_PYTHON_DIR)
-        file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
-
-        message(
-            STATUS
-            "Installing '${_py_install_mod_MODULE}' Python module to: "
-            "${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
-        # We use sysconfig (above) to figure out the destination path, and then
-        # we simply copy this module recursively into its final destination.
-        install(DIRECTORY
-            ${CMAKE_CURRENT_BINARY_DIR}/${_py_install_mod_MODULE}
-            DESTINATION ${UHD_PYTHON_DIR}
-            COMPONENT pythonapi
+    if (NOT WIN32)
+        cmake_parse_arguments(
+            _py_install_mod
+            "" "LIBTARGET;MODULE" ""
+            ${ARGN}
         )
-        # On Linux/Unix systems, we must properly install the library file.
-        # install(DIRECTORY) will treat the .so file like any other file, which
-        # means it won't update its RPATH, and thus the RPATH would be stuck to the
-        # build directory.
-        if(UNIX AND _py_install_mod_LIBTARGET)
-            install(TARGETS ${_py_install_mod_LIBTARGET}
-                DESTINATION ${UHD_PYTHON_DIR}/${_py_install_mod_MODULE}
+
+        # Check if we're in a virtual environment -- the rules are a bit different
+        # there.
+        UHD_PYTHON_CHECK_MODULE(
+            "virtual environment"
+            "sys"
+            "sys.prefix != sys.base_prefix"
+            HAVE_PYTHON_VIRTUALENV
+        )
+
+        if(HAVE_PYTHON_VIRTUALENV)
+            message(
+            STATUS
+            "Python virtual environment detected -- Ignoring UHD_PYTHON_DIR.")
+            # In virtualenvs, let setuptools do its thing
+            install(CODE "message(\"Installing ${_py_install_mod_MODULE} Python module into venv via pip in '${CMAKE_CURRENT_BINARY_DIR}'.\")")
+            install(CODE
+                "execute_process(COMMAND pip3 install . WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})")
+        else()
+            # Otherwise, use sysconfig to determine the correct relative path for Python
+            # packages, and install to our prefix
+            if(NOT DEFINED UHD_PYTHON_DIR)
+                execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+                    # Avoid the posix_local install scheme
+                    "import os,sysconfig;\
+                    install_scheme = 'posix_user';\
+                    platlib = sysconfig.get_path('platlib', scheme=install_scheme);\
+                    prefix = sysconfig.get_config_var('prefix');\
+                    print(os.path.relpath(platlib, prefix));"
+                    OUTPUT_VARIABLE UHD_PYTHON_DIR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                )
+            endif(NOT DEFINED UHD_PYTHON_DIR)
+            file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
+
+            message(
+                STATUS
+                "Installing '${_py_install_mod_MODULE}' Python module to: "
+                "${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
+            # We use sysconfig (above) to figure out the destination path, and then
+            # we simply copy this module recursively into its final destination.
+            install(DIRECTORY
+                ${CMAKE_CURRENT_BINARY_DIR}/${_py_install_mod_MODULE}
+                DESTINATION ${UHD_PYTHON_DIR}
+                COMPONENT pythonapi
             )
-        endif()
-    endif(HAVE_PYTHON_VIRTUALENV)
+            # On Linux/Unix systems, we must properly install the library file.
+            # install(DIRECTORY) will treat the .so file like any other file, which
+            # means it won't update its RPATH, and thus the RPATH would be stuck to the
+            # build directory.
+            if(UNIX AND _py_install_mod_LIBTARGET)
+                install(TARGETS ${_py_install_mod_LIBTARGET}
+                    DESTINATION ${UHD_PYTHON_DIR}/${_py_install_mod_MODULE}
+                )
+            endif()
+        endif(HAVE_PYTHON_VIRTUALENV)
+    endif(NOT WIN32)
 endmacro()
 
 ###############################################################################
@@ -312,33 +317,24 @@ endmacro()
 ###############################################################################
 # The libraries must match the RUNTIME_PYTHON_EXECUTABLE's version.
 # - Figure out version
-# - See if Python3_LIBRARIES is already set (or Python2_LIBRARIES)
+# - See if Python3_LIBRARIES is already set
 if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
     message(STATUS "Finding Python Libraries...")
-    find_package(PythonLibs ${RUNTIME_PYTHON_VERSION} ${EXACT_ARGUMENT} QUIET)
-    if(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
-        if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-            find_package(Python3 ${RUNTIME_PYTHON_VERSION}
-                ${EXACT_ARGUMENT}
-                QUIET
-                COMPONENTS Interpreter Development)
-            if(Python3_Development_FOUND)
-                set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
-                set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
-            endif(Python3_Development_FOUND)
-        endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    else(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
-        if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-            find_package(Python2 ${RUNTIME_PYTHON_VERSION}
-                ${EXACT_ARGUMENT}
-                QUIET
-                COMPONENTS Interpreter Development)
-            if(Python2_Development_FOUND)
-                set(PYTHON_LIBRARIES ${Python2_LIBRARIES})
-                set(PYTHON_INCLUDE_DIRS ${Python2_INCLUDE_DIRS})
-            endif(Python2_Development_FOUND)
-        endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
-    endif(NOT RUNTIME_PYTHON_VERSION VERSION_LESS 3)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.14 AND DEFINED UHD_NUMPY_MIN_VERSION)
+      set(_findpython_numpy_component NumPy)
+    endif()
+    find_package(Python3 ${RUNTIME_PYTHON_VERSION}
+        ${EXACT_ARGUMENT}
+        QUIET
+        COMPONENTS Interpreter Development ${_findpython_numpy_component})
+    if(Python3_Development_FOUND)
+        set(PYTHON_LIBRARIES ${Python3_LIBRARIES})
+        if(Python3_NumPy_FOUND)
+            set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS} ${Python3_NumPy_INCLUDE_DIRS})
+        else()
+            set(PYTHON_INCLUDE_DIRS ${Python3_INCLUDE_DIRS})
+        endif()
+    endif(Python3_Development_FOUND)
     if(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)
         message(STATUS "Could not find Python Libraries.")
     endif(NOT PYTHON_LIBRARIES OR NOT PYTHON_INCLUDE_DIRS)

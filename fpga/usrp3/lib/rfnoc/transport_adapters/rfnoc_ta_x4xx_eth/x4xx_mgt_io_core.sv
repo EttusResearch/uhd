@@ -392,10 +392,21 @@ module x4xx_mgt_io_core #(
     identify_value  = mac_led_ctl[1];
   end
 
+  // relax timing by adding registers for pulse stretch input
+  logic pulse_stretch_reset = '1;
+  logic tx_data_transfer = '0, rx_data_transfer = '0, mgt_data_transfer = '0;
+
+  always_ff @(posedge mgt_clk) begin
+    pulse_stretch_reset <= mgt_rst | ~link_up_mgtclk;
+    tx_data_transfer    <= mgt_tx.tvalid & mgt_tx.tready;
+    rx_data_transfer    <= mgt_rx.tvalid & mgt_rx.tready;
+    mgt_data_transfer   <= tx_data_transfer | rx_data_transfer;
+  end
+
   pulse_stretch pulse_stretch_activity_i (
     .clk   (mgt_clk),
-    .rst   (mgt_rst | ~link_up_mgtclk),
-    .pulse ((mgt_tx.tvalid & mgt_tx.tready) | (mgt_rx.tvalid & mgt_rx.tready)),
+    .rst   (pulse_stretch_reset),
+    .pulse (mgt_data_transfer),
     .pulse_stretched (activity_mgtclk)
   );
 

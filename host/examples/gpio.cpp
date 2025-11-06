@@ -88,7 +88,6 @@ static const double GPIO_DEFAULT_RX_RATE         = 500e3;
 static const double GPIO_DEFAULT_TX_RATE         = 500e3;
 static const double GPIO_DEFAULT_DWELL_TIME      = 2.0;
 static const size_t GPIO_DEFAULT_NUM_BITS        = 12;
-static const std::string GPIO_DEFAULT_CTRL       = "0x0"; // all as user controlled
 static const std::string GPIO_DEFAULT_DDR        = "0x0"; // all as inputs
 static const std::string GPIO_DEFAULT_OUT        = "0x0";
 constexpr size_t GPIO_MIN_NUM_BITS               = 5;

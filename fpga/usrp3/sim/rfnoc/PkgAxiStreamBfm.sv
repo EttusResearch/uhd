@@ -85,8 +85,11 @@ package PkgAxiStreamBfm;
     // Type Definitions
     //------------------
 
+    // Round up width of TKEEP when TDATA is not a multiple of 8
+    localparam int KEEP_WIDTH = (DATA_WIDTH+7)/8;
+
     typedef logic [DATA_WIDTH-1:0]   data_t;  // Single bus TDATA word
-    typedef logic [DATA_WIDTH/8-1:0] keep_t;  // Single TKEEP word
+    typedef logic [KEEP_WIDTH-1:0]   keep_t;  // Single TKEEP word
     typedef logic [USER_WIDTH-1:0]   user_t;  // Single TUSER word
 
     typedef AxiStreamPacket #(DATA_WIDTH, USER_WIDTH) AxisPacket_t;
@@ -285,13 +288,15 @@ package PkgAxiStreamBfm;
     // Properties
     //------------
 
+    localparam int KEEP_WIDTH = AxisPacket_t::KEEP_WIDTH;
+
     // Default stall probability, as a percentage (0-100).
     local const int DEF_STALL_PROB = 38;
 
     // Default values to use for idle bus cycles
     local const AxisPacket_t::data_t IDLE_DATA = {DATA_WIDTH{1'bX}};
     local const AxisPacket_t::user_t IDLE_USER = {(USER_WIDTH > 1 ? USER_WIDTH : 1){1'bX}};
-    local const AxisPacket_t::keep_t IDLE_KEEP = {(DATA_WIDTH/8){1'bX}};
+    local const AxisPacket_t::keep_t IDLE_KEEP = {KEEP_WIDTH{1'bX}};
 
     // Virtual interfaces for master and slave connections to DUT
     local virtual AxiStreamIf #(DATA_WIDTH,USER_WIDTH,MAX_PACKET_BYTES,
@@ -458,21 +463,23 @@ package PkgAxiStreamBfm;
 
     // Get the probability (as a percentage, 0 to 100) of the master interface
     // stalling due to lack of data to send.
-    function int get_master_stall_prob(int stall_probability = DEF_STALL_PROB);
+    function int get_master_stall_prob();
       return master_stall_prob;
     endfunction
 
 
     // Get the probability (as a percentage, 0 to 100) of the slave interface
     // stalling due to lack of buffer space.
-    function int get_slave_stall_prob(int stall_probability = DEF_STALL_PROB);
+    function int get_slave_stall_prob();
       return slave_stall_prob;
     endfunction
+
 
     // Determine if the slave interface is doing a transfer this clock
     function logic slave_idle();
       return !slave.tvalid;
     endfunction
+
 
     // Create separate processes for driving the master and slave interfaces
     task run();

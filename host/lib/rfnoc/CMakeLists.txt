@@ -62,6 +62,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/switchboard_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vector_iir_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_control.cpp
+    # Helpers:
+    ${CMAKE_CURRENT_SOURCE_DIR}/dram/dram_helper.cpp
 )
 
 INCLUDE_SUBDIRECTORY(rf_control)

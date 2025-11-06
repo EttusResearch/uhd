@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: split_stream
+name: Split Stream
+description: |
+  The split stream block is used to duplicate data in RFNoC flow graphs.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

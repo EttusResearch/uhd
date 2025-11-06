@@ -82,7 +82,6 @@ struct object_ext {
 };
 
 
-#if !defined(MSGPACK_USE_CPP03)
 struct object;
 
 namespace adaptor {
@@ -105,7 +104,6 @@ public:
     static constexpr bool value = type::value;
 };
 
-#endif // !defined(MSGPACK_USE_CPP03)
 
 
 struct object {
@@ -129,20 +127,11 @@ struct object {
 
     bool is_nil() const { return type == clmdep_msgpack::type::NIL; }
 
-#if defined(MSGPACK_USE_CPP03)
-
-    template <typename T>
-    T as() const;
-
-#else  // defined(MSGPACK_USE_CPP03)
-
     template <typename T>
     typename std::enable_if<clmdep_msgpack::has_as<T>::value, T>::type as() const;
 
     template <typename T>
     typename std::enable_if<!clmdep_msgpack::has_as<T>::value, T>::type as() const;
-
-#endif // defined(MSGPACK_USE_CPP03)
 
     template <typename T>
     T& convert(T& v) const;

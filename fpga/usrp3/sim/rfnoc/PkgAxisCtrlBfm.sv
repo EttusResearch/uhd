@@ -13,7 +13,7 @@
 
 package PkgAxisCtrlBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
   import PkgAxiStreamBfm::*;
   export PkgAxiStreamBfm::*;
 

@@ -7,13 +7,12 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time.hpp>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/format.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
 #include <chrono>
@@ -64,21 +63,20 @@ private:
         boost::posix_time::time_duration age;
 
         if (wait_for_next) {
-            std::lock_guard<std::mutex> lock(cache_mutex);
             update_cache();
+            std::lock_guard<std::mutex> lock(cache_mutex);
             // mark sentence as touched
             if (sentences.find(which) != sentences.end())
                 std::get<2>(sentences[which]) = true;
         }
         while (1) {
             try {
-                std::lock_guard<std::mutex> lock(cache_mutex);
-
                 // update cache if older than a millisecond
                 if (now - _last_cache_update > milliseconds(1)) {
                     update_cache();
                 }
 
+                std::lock_guard<std::mutex> lock(cache_mutex);
                 if (sentences.find(which) == sentences.end()) {
                     age = milliseconds(max_age_ms);
                 } else {
@@ -129,13 +127,25 @@ private:
         return (string_crc == calculated_crc);
     }
 
-    void update_cache()
+    // Read all outstanding messages and put them in the cache
+    //
+    // Outside of the ctor, this is the only function that actually reads
+    // messages from the GPS. It will read all outstanding messages and put them
+    // into the sentences cache, together with a timestamp, so we know how old
+    // the messages are.
+    //
+    // To pull messages out of the cache, use get_sentence().
+    //
+    // \param msg_key_hint If not empty, this will be used as the key for the
+    //                    message in the cache. This is useful when we know that
+    //                    a message is arriving that does not conform to the
+    //                    message patterns for a SERVO or GP* message.
+    void update_cache(const std::string& msg_key_hint = "")
     {
         if (not gps_detected()) {
             return;
         }
 
-        const std::list<std::string> keys{"GPGGA", "GPRMC", "SERVO"};
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
         static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
@@ -161,21 +171,30 @@ private:
             // Look for SERVO message
             if (std::regex_search(
                     msg, servo_regex, std::regex_constants::match_continuous)) {
+                UHD_LOG_TRACE("GPS", "Received new SERVO message: " << msg);
                 msgs["SERVO"] = msg;
             } else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg)) {
+                UHD_LOG_TRACE(
+                    "GPS", "Received new " << msg.substr(1, 5) << " message: " << msg);
                 msgs[msg.substr(1, 5)] = msg;
             } else {
-                UHD_LOGGER_WARNING("GPS")
-                    << UHD_FUNCTION << "(): Malformed GPSDO string: " << msg;
+                if (!msg_key_hint.empty()) {
+                    UHD_LOG_DEBUG(
+                        "GPS", "Received " << msg_key_hint << " message: " << msg);
+                    msgs[msg_key_hint] = msg;
+                } else {
+                    UHD_LOGGER_WARNING("GPS") << "Unexpected GPSDO string: " << msg;
+                }
             }
         }
 
         boost::system_time time = boost::get_system_time();
 
         // Update sentences with newly read data
-        for (std::string key : keys) {
-            if (not msgs[key].empty()) {
-                sentences[key] = std::make_tuple(msgs[key], time, false);
+        for (auto& msg : msgs) {
+            if (!msg.second.empty()) {
+                std::lock_guard<std::mutex> lock(cache_mutex);
+                sentences[msg.first] = std::make_tuple(msg.second, time, false);
             }
         }
 
@@ -257,9 +276,7 @@ public:
     // return a list of supported sensors
     std::vector<std::string> get_sensors(void) override
     {
-        std::vector<std::string> ret{
-            "gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
-        return ret;
+        return {"gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
     }
 
     uhd::sensor_value_t get_sensor(std::string key) override
@@ -275,14 +292,36 @@ public:
         } else if (key == "gps_locked") {
             return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
         } else if (key == "gps_servo") {
-            return sensor_value_t(boost::to_upper_copy(key),
-                get_sentence(boost::to_upper_copy(key.substr(4, 8)),
-                    GPS_SERVO_FRESHNESS,
-                    GPS_TIMEOUT_DELAY_MS),
+            return sensor_value_t("GPS_SERVO",
+                get_sentence("SERVO", GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS),
                 "");
         } else {
             throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
         }
+    }
+
+    std::string send_cmd(std::string cmd) override
+    {
+        // Strip any end of line characters, then append them: This way we can
+        // be sure the command is terminated correctly.
+        erase_all(cmd, "\r");
+        erase_all(cmd, "\n");
+        const bool cmd_is_query = cmd.find("?") != std::string::npos;
+        _send(cmd + "\r\n");
+        if (!cmd_is_query) {
+            return "";
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(GPSDO_COMMAND_DELAY_MS));
+        update_cache(cmd);
+        try {
+            return get_sentence(cmd, GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS);
+        } catch (const std::exception& ex) {
+            UHD_LOGGER_WARNING("GPS")
+                << UHD_FUNCTION
+                << "(): Caught exception while attempting to parse response to command '"
+                << cmd << "': " << ex.what();
+        }
+        return "";
     }
 
 private:
@@ -292,11 +331,16 @@ private:
         // none of these should issue replies so we don't bother looking for them
         // we have to sleep between commands because the JL device, despite not
         // acking, takes considerable time to process each command.
-        const std::vector<std::string> init_cmds = {"SYST:COMM:SER:ECHO OFF\r\n",
+        const std::vector<std::string> init_cmds = {// Turn off serial echo
+            "SYST:COMM:SER:ECHO OFF\r\n",
             "SYST:COMM:SER:PRO OFF\r\n",
+            // Send NMEA string $GPGGA every 1 second
             "GPS:GPGGA 1\r\n",
+            // Do not send modified $GPGGA string
             "GPS:GGAST 0\r\n",
+            // Send NMEA string $GPRMC every 1 second
             "GPS:GPRMC 1\r\n",
+            // Send SERVO updates every 1 second
             "SERV:TRAC 1\r\n"};
 
         for (const auto& cmd : init_cmds) {
@@ -315,8 +359,7 @@ private:
         toked.assign(tok.begin(), tok.end());
 
         if (toked.size() <= offset) {
-            throw uhd::value_error(
-                str(boost::format("Invalid response \"%s\"") % sentence));
+            throw uhd::value_error(std::string("Invalid response \"") + sentence + "\"");
         }
         return toked[offset];
     }
@@ -336,7 +379,7 @@ private:
 
                 if (datestr.empty() or timestr.empty()) {
                     throw uhd::value_error(
-                        str(boost::format("Invalid response \"%s\"") % reply));
+                        std::string("Invalid response \"") + reply + "\"");
                 }
 
                 struct tm raw_date;

@@ -19,7 +19,6 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
@@ -29,7 +28,6 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The DBSRX constants
@@ -41,10 +39,10 @@ static const freq_range_t dbsrx_bandwidth_range(2.0 * 4.0e6, 2.0 * 33.0e6);
 
 static const freq_range_t dbsrx_pfd_freq_range(0.15e6, 2.01e6);
 
-static const std::vector<std::string> dbsrx_antennas = list_of("J3");
+static const std::vector<std::string> dbsrx_antennas{"J3"};
 
-static const uhd::dict<std::string, gain_range_t> dbsrx_gain_ranges =
-    map_list_of("GC1", gain_range_t(0, 56, 0.5))("GC2", gain_range_t(0, 24, 1));
+static const uhd::dict<std::string, gain_range_t> dbsrx_gain_ranges{
+    {"GC1", gain_range_t(0, 56, 0.5)}, {"GC2", gain_range_t(0, 24, 1)}};
 
 static const double usrp1_gpio_clock_rate_limit = 4e6;
 

@@ -33,7 +33,7 @@ public:
         const std::string& local_port,
         const link_params_t& params);
 
-    ~udp_dpdk_link();
+    virtual ~udp_dpdk_link() = default;
 
     /*!
      * Make a new dpdk link. Get port ID from routing table.

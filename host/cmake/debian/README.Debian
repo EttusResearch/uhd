@@ -45,6 +45,10 @@ python3-uhd:
  The python3-uhd package to access the library from Python 3.
  Python examples are included in the uhd-host package.
 
+uhd-rfnoc-dev:
+ HDL source files required for building FPGA bitfiles and developing out-of-tree
+ RFNoC blocks.
+
 
 UHD Firmware / FPGA images
 --------------------------

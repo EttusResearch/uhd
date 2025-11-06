@@ -5,10 +5,10 @@
 //
 
 #include <uhd/rfnoc/defaults.hpp>
-#include <uhd/utils/math.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <atomic>
+#include <numeric>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -40,6 +40,17 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
                 return;
             }
             _handle_tx_event_action(src, tx_event_action);
+        });
+
+    register_action_handler(ACTION_KEY_TUNE_REQUEST,
+        [this](const res_source_info& src, action_info::sptr action) {
+            tune_request_action_info::sptr tune_request_action =
+                std::dynamic_pointer_cast<tune_request_action_info>(action);
+            if (!tune_request_action) {
+                RFNOC_LOG_WARNING("Received invalid tune request action!");
+                return;
+            }
+            RFNOC_LOG_DEBUG("Received tune request on " << src.to_string());
         });
 
     // Initialize properties
@@ -106,6 +117,16 @@ size_t rfnoc_tx_streamer::get_num_output_ports() const
     return get_num_channels();
 }
 
+void rfnoc_tx_streamer::post_output_action(
+    const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port)
+{
+    if (port > get_num_channels()) {
+        throw uhd::runtime_error("Invalid channel. Please provide a valid channel");
+    }
+    const uhd::rfnoc::res_source_info info(res_source_info::OUTPUT_EDGE, port);
+    post_action(info, action);
+}
+
 const uhd::stream_args_t& rfnoc_tx_streamer::get_stream_args() const
 {
     return _stream_args;
@@ -142,11 +163,41 @@ void rfnoc_tx_streamer::connect_channel(
             if (has_tsf) {
                 md.time_spec = time_spec_t::from_ticks(tsf, get_tick_rate());
             }
-
             this->_async_msg_queue->enqueue(md);
+            if (_stream_args.args.cast<std::string>("transmit_policy", "default")
+                == "stop_on_seq_error") {
+                if ((event_code == async_metadata_t::EVENT_CODE_SEQ_ERROR)
+                    && !this->_sequence_error.load()) {
+                    RFNOC_LOG_DEBUG("Set sequence error on channel " << channel);
+                    this->_sequence_error = true;
+                }
+                if ((event_code == async_metadata_t::EVENT_CODE_OK)
+                    && this->_sequence_error.load()) {
+                    RFNOC_LOG_DEBUG("Clear sequence error.");
+                    this->_sequence_error = false;
+                }
+            }
         });
 
     tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));
+
+    const size_t bpi          = convert::get_bytes_per_item(_type_out[channel].get());
+    const size_t chdr_w_bytes = _stream_args.args.cast<size_t>("__chdr_width", 64) / 8;
+    const size_t chdr_w_items = chdr_w_bytes / bpi;
+    const size_t spp          = tx_streamer_impl<chdr_tx_data_xport>::get_max_num_samps();
+    const size_t misalignment = spp % chdr_w_items;
+    if (!_stream_args.args.has_key("spp")) {
+        // By default, find an spp value that is an integer multiple of the CHDR
+        // width. This has proven useful under some corner conditions, but still
+        // requires a root-cause analysis.
+        if (misalignment != 0) {
+            RFNOC_LOG_DEBUG("Reducing spp from "
+                            << spp << " to " << spp - misalignment
+                            << " to align with CHDR width of " << chdr_w_bytes
+                            << " bytes (= " << chdr_w_items << " samples).");
+            tx_streamer_impl<chdr_tx_data_xport>::set_max_num_samps(spp - misalignment);
+        }
+    }
 
     // Update MTU property based on xport limits. We need to do this after
     // connect_channel(), because that's where the chdr_tx_data_xport object
@@ -227,7 +278,7 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
             if (ais.is_valid()) {
                 const size_t bpi          = convert::get_bytes_per_item(type.get());
                 const size_t spp          = this->tx_streamer_impl::get_max_num_samps();
-                const size_t spp_multiple = uhd::math::lcm<size_t>(ais.get(), bpi) / bpi;
+                const size_t spp_multiple = std::lcm<size_t>(ais.get(), bpi) / bpi;
                 if (spp < spp_multiple) {
                     RFNOC_LOG_ERROR("Cannot resolve spp! Must be a multiple of "
                                     << spp_multiple << " but max value is " << spp);
@@ -236,8 +287,10 @@ void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& ot
                 }
                 const auto misalignment = spp % spp_multiple;
                 if (misalignment > 0) {
-                    RFNOC_LOG_TRACE("Reducing spp by "
-                                    << misalignment << " to align with atomic item size");
+                    RFNOC_LOG_DEBUG("Reducing spp from " << spp << " to "
+                                                         << spp - misalignment
+                                                         << " to align with atomic "
+                                                            "item size");
                     this->tx_streamer_impl::set_max_num_samps(spp - misalignment);
                 }
             }

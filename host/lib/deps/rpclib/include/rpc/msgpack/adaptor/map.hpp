@@ -36,9 +36,7 @@ namespace type {
 
 template <typename K, typename V, typename Compare = std::less<K>, typename Alloc = std::allocator<std::pair<K, V> > >
 class assoc_vector : public std::vector< std::pair<K, V>, Alloc > {
-#if !defined(MSGPACK_USE_CPP03)
     using std::vector<std::pair<K, V>, Alloc>::vector;
-#endif // !defined(MSGPACK_USE_CPP03)
 };
 
 namespace detail {
@@ -52,8 +50,6 @@ namespace detail {
 }  //namespace type
 
 namespace adaptor {
-
-#if !defined(MSGPACK_USE_CPP03)
 
 template <typename K, typename V, typename Compare, typename Alloc>
 struct as<
@@ -72,8 +68,6 @@ struct as<
         return v;
     }
 };
-
-#endif // !defined(MSGPACK_USE_CPP03)
 
 template <typename K, typename V, typename Compare, typename Alloc>
 struct convert<type::assoc_vector<K, V, Compare, Alloc> > {
@@ -132,8 +126,6 @@ struct object_with_zone<type::assoc_vector<K, V, Compare, Alloc> > {
     }
 };
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename K, typename V, typename Compare, typename Alloc>
 struct as<
     std::map<K, V, Compare, Alloc>,
@@ -150,8 +142,6 @@ struct as<
     }
 };
 
-#endif // !defined(MSGPACK_USE_CPP03)
-
 template <typename K, typename V, typename Compare, typename Alloc>
 struct convert<std::map<K, V, Compare, Alloc> > {
     clmdep_msgpack::object const& operator()(clmdep_msgpack::object const& o, std::map<K, V, Compare, Alloc>& v) const {
@@ -162,17 +152,9 @@ struct convert<std::map<K, V, Compare, Alloc> > {
         for (; p != pend; ++p) {
             K key;
             p->key.convert(key);
-#if __cplusplus >= 201103L
             p->val.convert(tmp[std::move(key)]);
-#else
-            p->val.convert(tmp[key]);
-#endif
         }
-#if __cplusplus >= 201103L
         v = std::move(tmp);
-#else
-        tmp.swap(v);
-#endif
         return o;
     }
 };
@@ -217,8 +199,6 @@ struct object_with_zone<std::map<K, V, Compare, Alloc> > {
     }
 };
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename K, typename V, typename Compare, typename Alloc>
 struct as<
     std::multimap<K, V, Compare, Alloc>,
@@ -235,8 +215,6 @@ struct as<
     }
 };
 
-#endif // !defined(MSGPACK_USE_CPP03)
-
 template <typename K, typename V, typename Compare, typename Alloc>
 struct convert<std::multimap<K, V, Compare, Alloc> > {
     clmdep_msgpack::object const& operator()(clmdep_msgpack::object const& o, std::multimap<K, V, Compare, Alloc>& v) const {
@@ -248,17 +226,9 @@ struct convert<std::multimap<K, V, Compare, Alloc> > {
             std::pair<K, V> value;
             p->key.convert(value.first);
             p->val.convert(value.second);
-#if __cplusplus >= 201103L
             tmp.insert(std::move(value));
-#else
-            tmp.insert(value);
-#endif
         }
-#if __cplusplus >= 201103L
         v = std::move(tmp);
-#else
-        tmp.swap(v);
-#endif
         return o;
     }
 };

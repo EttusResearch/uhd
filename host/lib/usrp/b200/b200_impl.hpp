@@ -19,10 +19,8 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
@@ -36,6 +34,7 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
+#include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_map>
 #include <boost/assign.hpp>
 #include <memory>
@@ -44,7 +43,7 @@
 static const uint8_t B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t B200_FW_COMPAT_NUM_MINOR = 0;
 static const uint16_t B200_FPGA_COMPAT_NUM    = 16;
-static const uint16_t B205_FPGA_COMPAT_NUM    = 7;
+static const uint16_t B205_FPGA_COMPAT_NUM    = 7; // applies to all B2xxminis
 static const double B200_BUS_CLOCK_RATE       = 100e6;
 static const uint32_t B200_GPSDO_ST_NONE      = 0x83;
 static constexpr double B200_MAX_RATE_USB2    = 53248000; // bytes/s
@@ -92,17 +91,18 @@ static const int B200_USB_DATA_MAX_RECV_FRAME_SIZE = 16360;
 /*
  * VID/PID pairs for all B2xx products
  */
-static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs =
-    boost::assign::list_of(uhd::transport::usb_device_handle::vid_pid_pair_t(
-        B200_VENDOR_ID, B200_PRODUCT_ID))(
-        uhd::transport::usb_device_handle::vid_pid_pair_t(
-            B200_VENDOR_ID, B200MINI_PRODUCT_ID))(
-        uhd::transport::usb_device_handle::vid_pid_pair_t(
-            B200_VENDOR_ID, B205MINI_PRODUCT_ID))(
-        uhd::transport::usb_device_handle::vid_pid_pair_t(
-            B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID))(
-        uhd::transport::usb_device_handle::vid_pid_pair_t(
-            B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID));
+static std::vector<uhd::transport::usb_device_handle::vid_pid_pair_t> b200_vid_pid_pairs{
+    uhd::transport::usb_device_handle::vid_pid_pair_t(B200_VENDOR_ID, B200_PRODUCT_ID),
+    uhd::transport::usb_device_handle::vid_pid_pair_t(
+        B200_VENDOR_ID, B200MINI_PRODUCT_ID),
+    uhd::transport::usb_device_handle::vid_pid_pair_t(
+        B200_VENDOR_ID, B205MINI_PRODUCT_ID),
+    uhd::transport::usb_device_handle::vid_pid_pair_t(
+        B200_VENDOR_ID, B206MINI_PRODUCT_ID),
+    uhd::transport::usb_device_handle::vid_pid_pair_t(
+        B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID),
+    uhd::transport::usb_device_handle::vid_pid_pair_t(
+        B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID)};
 
 b200_product_t get_b200_product(const uhd::transport::usb_device_handle::sptr& handle,
     const uhd::usrp::mboard_eeprom_t& mb_eeprom);

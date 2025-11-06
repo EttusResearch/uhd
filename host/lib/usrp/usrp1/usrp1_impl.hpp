@@ -18,7 +18,6 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <atomic>
 #include <complex>
 #include <memory>
@@ -119,7 +118,10 @@ private:
         const uhd::usrp::dboard_id_t&);
 
     // handle io stuff
-    UHD_PIMPL_DECL(io_impl) _io_impl;
+    struct io_impl;
+    // pimpl is shared_ptr because the implementation of the dtor doesn't know
+    // the type of the io_impl, so it can't call the dtor directly.
+    std::shared_ptr<io_impl> _io_impl;
     void io_init(void);
     void rx_stream_on_off(bool);
     void tx_stream_on_off(bool);

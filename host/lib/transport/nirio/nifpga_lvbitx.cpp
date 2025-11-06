@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/nifpga_lvbitx.h>
+#include <uhdlib/transport/nirio/nifpga_lvbitx.h>
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
 #include <fstream>

@@ -17,7 +17,6 @@
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread.hpp>
 #include <functional>
 #include <vector>
 

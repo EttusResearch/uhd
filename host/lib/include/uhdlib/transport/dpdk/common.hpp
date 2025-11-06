@@ -10,6 +10,16 @@
 #include <uhd/transport/frame_buff.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
+
+// DPDK is not fully compliant with more recent compilers and C++20
+#pragma GCC diagnostic push
+#ifdef UHD_HAVE_WDEPRECATED_VOLATILE
+#    pragma GCC diagnostic ignored "-Wdeprecated-volatile"
+#endif
+#ifdef UHD_HAVE_WVOLATILE
+#    pragma GCC diagnostic ignored "-Wvolatile"
+#endif
+
 #include <rte_arp.h>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
@@ -18,6 +28,9 @@
 #include <rte_mempool.h>
 #include <rte_spinlock.h>
 #include <rte_version.h>
+
+#pragma GCC diagnostic pop
+
 #include <unordered_map>
 #include <array>
 #include <atomic>
@@ -150,7 +163,7 @@ private:
  * structure.
  */
 constexpr size_t DPDK_MBUF_PRIV_SIZE =
-    RTE_ALIGN(sizeof(struct dpdk_frame_buff), RTE_MBUF_PRIV_ALIGN);
+    RTE_ALIGN(sizeof(class dpdk_frame_buff), RTE_MBUF_PRIV_ALIGN);
 
 /*!
  * Class representing a DPDK NIC port

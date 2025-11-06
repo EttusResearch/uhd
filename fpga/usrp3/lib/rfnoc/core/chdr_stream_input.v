@@ -6,7 +6,7 @@
 // Module: chdr_stream_input
 // Description:
 //   Implements the CHDR input port for a stream endpoint.
-//   The module accepts stream command and data packets and 
+//   The module accepts stream command and data packets and
 //   emits stream status packets. Flow control and error state
 //   is communicated using stream status packets. There are no
 //   external config interfaces because all configuration is done
@@ -203,29 +203,32 @@ module chdr_stream_input #(
 
   reg [2:0]   state = ST_IN_HDR;          // State of the input state machine
   reg         pkt_too_long = 1'b0;        // Error case. Packet is too long
-  reg         is_first_data_pkt = 1'b1;   // Is this the first data pkt after fc_enabled = 1?
   reg         is_first_strc_pkt = 1'b1;   // Is this the strm cmd data pkt after fc_enabled = 1?
   reg [15:0]  exp_data_seq_num = 16'd0;   // Expected sequence number for the next data pkt
   reg [15:0]  exp_strc_seq_num = 16'd0;   // Expected sequence number for the next stream cmd pkt
-  reg [15:0]  strc_dst_epid = 16'd0;      // EPID in CHDR header of STRC packet 
+  reg [15:0]  strc_dst_epid = 16'd0;      // EPID in CHDR header of STRC packet
+  reg [15:0]  last_strc_seq_num= 16'd0;      // Last sequence number of a stream command packet
+
+  reg         stop_on_seq_err_en = 1'b0;  // State configured from the host to terminate stream on sequence errors
+  reg         seq_error_occured = 1'b0;   // Kept after sequence error to terminate subsequent packets
 
   reg [FLUSH_TIMEOUT_W-1:0] flush_counter = {FLUSH_TIMEOUT_W{1'b0}};
 
   // Shortcuts
-  wire is_data_pkt = 
+  wire is_data_pkt =
     chdr_get_pkt_type(buff_tdata[63:0]) == CHDR_PKT_TYPE_DATA ||
     chdr_get_pkt_type(buff_tdata[63:0]) == CHDR_PKT_TYPE_DATA_TS;
   wire is_strc_pkt =
     chdr_get_pkt_type(buff_tdata[63:0]) == CHDR_PKT_TYPE_STRC;
 
   // Error Logic
-  wire data_seq_err_stb = (state == ST_IN_HDR) && is_data_pkt && !is_first_data_pkt &&
+  wire data_seq_err_stb = (state == ST_IN_HDR) && is_data_pkt &&
     (chdr_get_seq_num(buff_tdata[63:0]) != exp_data_seq_num);
   wire strc_seq_err_stb = (state == ST_IN_HDR) && is_strc_pkt && !is_first_strc_pkt &&
     (chdr_get_seq_num(buff_tdata[63:0]) != exp_strc_seq_num);
   wire seq_err_stb = (data_seq_err_stb || strc_seq_err_stb) && buff_tvalid && buff_tready;
 
-  wire route_err_stb = buff_tvalid && buff_tready && (state == ST_IN_HDR) && 
+  wire route_err_stb = buff_tvalid && buff_tready && (state == ST_IN_HDR) &&
     (chdr_get_dst_epid(buff_tdata[63:0]) != this_epid);
 
   // Break critical paths to response FIFO
@@ -242,8 +245,8 @@ module chdr_stream_input #(
         stream_err_status <= CHDR_STRS_STATUS_SEQERR;
         // The extended info has the packet type (to detect which stream
         // had an error), the expected and actual sequence number.
-        stream_err_info <= {13'h0, chdr_get_pkt_type(buff_tdata[63:0]),
-            data_seq_err_stb ? exp_data_seq_num : exp_strc_seq_num, 
+        stream_err_info <= {2'b0, seq_error_occured, stop_on_seq_err_en, 9'b0, chdr_get_pkt_type(buff_tdata[63:0]),
+            data_seq_err_stb ? exp_data_seq_num : exp_strc_seq_num,
             chdr_get_seq_num(buff_tdata[63:0])};
       end else if (route_err_stb) begin
         stream_err_status <= CHDR_STRS_STATUS_RTERR;
@@ -265,6 +268,7 @@ module chdr_stream_input #(
       state <= ST_IN_HDR;
       pkt_too_long <= 1'b0;
       fc_enabled <= 1'b0;
+      seq_error_occured <= 1'b0;
     end else begin
       case (state)
         ST_IN_HDR: begin
@@ -274,9 +278,17 @@ module chdr_stream_input #(
               if (is_strc_pkt) begin
                 // ...consume if it is a stream command or...
                 state <= ST_STRC_W0;
+                last_strc_seq_num <= chdr_get_seq_num(buff_tdata[63:0]);
               end else if (is_data_pkt) begin
+                // .. drop the packet if seq error occurred or occurs with this packet
+                // FIXME: Looks like there's a bug here where if the packet is a single cycle, then it won't get dropped because we only get here if !buff_tlast.
+                if (seq_error_occured || (data_seq_err_stb && stop_on_seq_err_en)) begin
+                  seq_error_occured <= stop_on_seq_err_en;
+                  state <= ST_DROP;
                 // ...pass to output if it is a data packet...
-                state <= ST_IN_DATA;
+                end else begin
+                  state <= ST_IN_DATA;
+                end
               end else begin
                 // ... otherwise drop.
                 state <= ST_DROP;
@@ -289,8 +301,10 @@ module chdr_stream_input #(
               strc_dst_epid <= chdr_get_dst_epid(buff_tdata[63:0]);
               exp_strc_seq_num <= chdr_get_seq_num(buff_tdata[63:0]) + 16'd1;
             end else if (is_data_pkt) begin
-              is_first_data_pkt <= 1'b0;
-              exp_data_seq_num <= chdr_get_seq_num(buff_tdata[63:0]) + 16'd1;
+              // stall the counter in error case when configured for reliable transmission
+              if (~stop_on_seq_err_en || (~data_seq_err_stb && ~seq_error_occured)) begin
+                exp_data_seq_num <= chdr_get_seq_num(buff_tdata[63:0]) + 16'd1;
+              end
             end
           end
         end
@@ -338,6 +352,9 @@ module chdr_stream_input #(
               // Flush the input
               state <= ST_FLUSH;
               flush_counter <= {FLUSH_TIMEOUT_W{1'b1}};
+              stop_on_seq_err_en <= strc_op_data[0];
+              seq_error_occured <= 1'b0;
+              exp_data_seq_num <= 16'd0;
             end
             CHDR_STRC_OPCODE_PING: begin
               // Ping can complete in 1 cycle
@@ -362,7 +379,6 @@ module chdr_stream_input #(
               // Done flushing. Re-arm flow control and reset packet
               // sequence check info.
               fc_enabled <= 1'b1;
-              is_first_data_pkt <= 1'b1;
               is_first_strc_pkt <= 1'b1;
               state <= ST_IN_HDR;
             end
@@ -400,11 +416,15 @@ module chdr_stream_input #(
     endcase
   end
 
+  // Figure out if we're dropping this packet due to a sequence error
+  wire going_to_drop = is_data_pkt &&
+    (seq_error_occured || (data_seq_err_stb && stop_on_seq_err_en));
+
   // Logic to drive output port
   assign m_axis_data_tdata  = buff_tdata;
   assign m_axis_data_tlast  = buff_tlast;
-  assign m_axis_data_tvalid = buff_tvalid && 
-    ((state == ST_IN_HDR && is_data_pkt) || state == ST_IN_DATA);
+  assign m_axis_data_tvalid = buff_tvalid &&
+    ((state == ST_IN_HDR && is_data_pkt && !going_to_drop) || state == ST_IN_DATA);
 
   // Logic to drive triggers
   assign fc_ping = (state == ST_STRC_EXEC) && (strc_op_code == CHDR_STRC_OPCODE_PING);
@@ -419,7 +439,7 @@ module chdr_stream_input #(
   reg         resp_i_tvalid = 1'b0;
 
   // Send a stream status packet for the following cases:
-  // - Immediately after initialization 
+  // - Immediately after initialization
   // - If a response is explicitly requested (ping)
   // - If a response is due i.e. we have exceeded the frequency
   // - If FC is resynchronized via a stream cmd
@@ -430,7 +450,10 @@ module chdr_stream_input #(
       resp_i_tdata  <= 52'h0;
     end else begin
       resp_i_tvalid <= fc_first_resp || fc_ping || fc_resp_due || fc_override_del || stream_err_stb;
-      resp_i_tdata  <= stream_err_stb ? {stream_err_info, stream_err_status} : {48'h0, CHDR_STRS_STATUS_OKAY};
+      resp_i_tdata  <= stream_err_stb ?
+        {stream_err_info, stream_err_status} :
+        {fc_resp_due, 1'b0, seq_error_occured, stop_on_seq_err_en, 12'b0,
+         exp_data_seq_num, last_strc_seq_num, CHDR_STRS_STATUS_OKAY};
     end
   end
 

@@ -129,3 +129,4 @@ from gpio_test import GpioTest
 from bitbang_test import BitbangTest
 from list_sensors_test import ListSensorsTest
 from test_messages_test import TestMessagesTest
+from rx_stream_cmds_test import RXStreamCommandsTest

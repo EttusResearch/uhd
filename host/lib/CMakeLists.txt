@@ -17,39 +17,39 @@ macro(LIBUHD_APPEND_LIBS)
 endmacro(LIBUHD_APPEND_LIBS)
 
 macro(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
-    #ensure that the directory exists for outfile
+    # Ensure that the directory exists for outfile
     get_filename_component(outfile_dir ${outfile} PATH)
     file(MAKE_DIRECTORY ${outfile_dir})
 
-    #make the outfile depend on the python script
+    # Make the outfile depend on the python script
     add_custom_command(
         OUTPUT ${outfile} DEPENDS ${pyfile} ${LIBUHD_PYTHON_GEN_SOURCE_DEPS}
         COMMAND ${PYTHON_EXECUTABLE} -B ${pyfile} ${outfile}
         COMMENT "Generating ${outfile}"
     )
 
-    #make libuhd depend on the outfile
+    # Make libuhd depend on the outfile
     LIBUHD_APPEND_SOURCES(${outfile})
 endmacro(LIBUHD_PYTHON_GEN_SOURCE)
 
 macro(INCLUDE_SUBDIRECTORY subdir)
-    #insert the current directories on the front of the list
+    # Insert the current directories on the front of the list
     list(INSERT _cmake_source_dirs 0 ${CMAKE_CURRENT_SOURCE_DIR})
     list(INSERT _cmake_binary_dirs 0 ${CMAKE_CURRENT_BINARY_DIR})
 
-    #set the current directories to the names of the subdirs
+    # Set the current directories to the names of the subdirs
     set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
     set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${subdir})
 
-    #include the subdirectory CMakeLists to run it
+    # Include the subdirectory CMakeLists to run it
     file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
-    #reset the value of the current directories
+    # Reset the value of the current directories
     list(GET _cmake_source_dirs 0 CMAKE_CURRENT_SOURCE_DIR)
     list(GET _cmake_binary_dirs 0 CMAKE_CURRENT_BINARY_DIR)
 
-    #pop the subdir names of the front of the list
+    # Pop the subdir names of the front of the list
     list(REMOVE_AT _cmake_source_dirs 0)
     list(REMOVE_AT _cmake_binary_dirs 0)
 endmacro(INCLUDE_SUBDIRECTORY)
@@ -60,7 +60,7 @@ endmacro(INCLUDE_SUBDIRECTORY)
 message(STATUS "")
 # Dependencies
 find_package(LIBUSB)
-find_package(DPDK 18.11...21.11)
+find_package(DPDK)
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
 # Devices
 LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
@@ -135,15 +135,14 @@ endif(ENABLE_C_API)
 
 ########################################################################
 # Add common resource compiler subdirectory
+# This will provide a new target (uhd_rc) which we need to link to later
 ########################################################################
 add_subdirectory(rc)
-LIBUHD_APPEND_LIBS(uhd_rc)
 
 ########################################################################
 # Add DLL resource file to Windows build
 ########################################################################
 if(MSVC)
-    math(EXPR RC_VERSION_MAJOR_API "${UHD_VERSION_MAJOR} * 1000 + ${UHD_VERSION_API}")
     set(RC_VERSION_PATCH ${UHD_VERSION_PATCH})
     if(UHD_VERSION_DEVEL)
         set(RC_VERSION_PATCH "999")
@@ -175,13 +174,41 @@ endif(MSVC)
 ########################################################################
 # Setup libuhd library
 ########################################################################
-if(ENABLE_MPMD)
-    include_directories(deps/rpclib/include)
-    add_subdirectory(deps)
-    list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
-endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
+target_link_libraries(uhd
+    PUBLIC
+    Boost::boost
+    Boost::chrono
+    Boost::date_time
+    Boost::filesystem
+    Boost::serialization
+    Boost::thread
+    ${libuhd_libs}
+    PRIVATE uhd_rc
+)
+
+function(UHD_LIB_ADD_RPCLIB uhd_lib_name)
+    target_include_directories(${uhd_lib_name} PRIVATE deps/rpclib/include)
+    target_sources(${uhd_lib_name} PRIVATE $<TARGET_OBJECTS:uhd_rpclib>)
+endfunction(UHD_LIB_ADD_RPCLIB)
+
+if(ENABLE_MPMD)
+    add_subdirectory(deps)
+    UHD_LIB_ADD_RPCLIB(uhd)
+endif()
+
+if(ENABLE_DPDK)
+    add_definitions(-DHAVE_DPDK)
+    # The compile flags DPDK_CFLAGS add the DPDK_INCLUDE_DIRS include
+    # directories and set the -march=native compiler flag.
+    target_compile_options(uhd PRIVATE ${DPDK_CFLAGS})
+    # The linker flags DPDK_LDFLAGS contains the list of DPDK libraries
+    # as well as the path where to find the libraries
+    target_link_options(uhd PUBLIC ${DPDK_LDFLAGS})
+    # explicitly link against the DPDK libraries, otherwise there are
+    # undefined references when linking libuhd
+    target_link_libraries(uhd PUBLIC ${DPDK_LIBRARIES})
+endif()
 if(APPLE)
     target_link_options(uhd PRIVATE "LINKER:-undefined,dynamic_lookup")
     target_link_options(uhd PRIVATE "-flat_namespace")
@@ -195,12 +222,12 @@ if(DEFINED LIBUHD_OUTPUT_NAME)
     set_target_properties(uhd PROPERTIES OUTPUT_NAME ${LIBUHD_OUTPUT_NAME})
 endif(DEFINED LIBUHD_OUTPUT_NAME)
 
-if(ENABLE_SIM)
+function(UHD_LIB_ADD_PYTHON uhd_lib_name)
     # Get python include dirs
-    # This contitional code somewhat duplicates logic also found in 
-    # ../python/CMakeLists.txt but omits user messages. This avoid 
-    # duplicate output, since SIM mode requires python support. 
-    include_directories(${PYTHON_INCLUDE_DIRS})
+    # This conditional code somewhat duplicates logic also found in
+    # ../python/CMakeLists.txt but omits user messages. This avoid
+    # duplicate output, since SIM mode requires python support.
+    target_include_directories(${uhd_lib_name} PRIVATE ${PYTHON_INCLUDE_DIRS})
     if(NOT pybind11_FOUND)
         set(PYBIND11_INCLUDE_DIR
             "${UHD_SOURCE_DIR}/lib/deps/pybind11/include"
@@ -209,31 +236,97 @@ if(ENABLE_SIM)
             "Location of PyBind11 includes"
         )
     endif()
-    include_directories(${PYBIND11_INCLUDE_DIR})
+    target_include_directories(${uhd_lib_name} PRIVATE ${PYBIND11_INCLUDE_DIR})
 
     # For PYUHD we don't link against the python libraries, but when calling
     # python instead of being called by it, we have to.
-    target_link_libraries(uhd ${PYTHON_LIBRARIES})
+    target_link_libraries(${uhd_lib_name} PUBLIC ${PYTHON_LIBRARIES})
+endfunction(UHD_LIB_ADD_PYTHON)
 
+if(ENABLE_SIM)
+    UHD_LIB_ADD_PYTHON(uhd)
 endif(ENABLE_SIM)
 
-if(NOT UHDHOST_PKG) #Syntax makes it unusable by UHD_INSTALL
-    install(TARGETS uhd
-        LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .so file
-        ARCHIVE DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .lib file
-        RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT libraries # .dll file
+if(NOT UHDHOST_PKG) # Syntax makes it unusable by UHD_INSTALL
+    install(
+        TARGETS uhd
+        EXPORT  uhdTargets
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .so file
+        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib/.a file
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT libraries # .dll file
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
     )
 endif(NOT UHDHOST_PKG)
 
 #######################################################
 # Setup libuhd library (static)
 #######################################################
-if(ENABLE_STATIC_LIBS)
+
+# Create a function so we have a separate variable scope for Boost_USE_STATIC_LIBS
+function(UHD_ADD_STATIC_LIB)
+    set(Boost_USE_STATIC_LIBS ON) # only find static libs
+    include(UHDBoost)
     add_library(uhd_static STATIC ${libuhd_sources} $<TARGET_OBJECTS:uhd_rc>)
     set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
     set_target_properties(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
-    target_link_libraries(uhd_static uhd_rc)
-    install(TARGETS uhd_static
-        ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
+    target_link_libraries(uhd_static
+        PUBLIC
+        Boost::boost
+        Boost::chrono
+        Boost::date_time
+        Boost::filesystem
+        Boost::serialization
+        Boost::system
+        Boost::thread
     )
+    target_include_directories(uhd_static
+        PRIVATE
+        ${CMRC_INCLUDE_DIR}
+    )
+    if(ENABLE_MPMD)
+        UHD_LIB_ADD_RPCLIB(uhd_static)
+    endif()
+    if(ENABLE_SIM)
+        UHD_LIB_ADD_PYTHON(uhd_static)
+    endif()
+    install(TARGETS uhd_static
+        EXPORT  uhdTargets
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries # .lib or .a file
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+    )
+endfunction(UHD_ADD_STATIC_LIB)
+
+if(ENABLE_STATIC_LIBS)
+    UHD_ADD_STATIC_LIB()
 endif(ENABLE_STATIC_LIBS)
+
+if(ENABLE_EXTEND_WIN_PACKAGING)
+    if(ENABLE_USB AND NOT ENABLE_STATIC_LIBS)
+        include(UHDLIBUSB)
+
+        if(DEFINED UHD_LIBUSBDLLPATH)
+            # UHD_INSTALL(FILES
+            #     ${UHD_LIBUSBDLLPATH}
+            #     DESTINATION ${CMAKE_INSTALL_BINDIR}
+            #     COMPONENT winlibusb)
+        install(FILES
+                ${UHD_LIBUSBDLLPATH}
+                DESTINATION ${CMAKE_INSTALL_BINDIR}
+                COMPONENT libraries)
+        else()
+            message(WARNING "Unable to locate libusb dynamic link library from LIBUSB_LIBRARIES: ${LIBUSB_LIBRARIES}")
+        endif(DEFINED UHD_LIBUSBDLLPATH)
+
+        # Variable LIBUSB_LICENSE_FILE is defined in top level CMakeLists.txt,
+        # and the files gets generated in the UHDLIBUSB module.
+        if(EXISTS ${UHD_LIBUSB_LICENSEFILE})
+            UHD_INSTALL(FILES
+                ${UHD_LIBUSB_LICENSEFILE}
+                DESTINATION ${PKG_DOC_DIR}
+                COMPONENT readme
+            )
+        else()
+            message(WARNING "Did not find generated libusb license files at ${UHD_LIBUSB_LICENSEFILE}")
+        endif(EXISTS ${UHD_LIBUSB_LICENSEFILE})
+    endif(ENABLE_USB AND NOT ENABLE_STATIC_LIBS)
+endif(ENABLE_EXTEND_WIN_PACKAGING)

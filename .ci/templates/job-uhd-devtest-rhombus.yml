@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -10,6 +6,7 @@ parameters:
   default: current
 - name: uhdFpgaArtifactSource
   type: string
+  default: current
 - name: fpga_imgs_source
   type: string
 - name: testDevices
@@ -20,7 +17,6 @@ jobs:
 - template: job-uhd-devtest.yml
   parameters:
     suiteName: 'rhombus'
-    testOS: '${{ parameters.testOS }}'
     knownHost: '|1|3et3xtaVaAtV98+6U+Tiu2wAX8I=|eEWBqjtPkxWfNR7hV/oQ+4QISlE= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKKCqeRQXnWgl+KZu54dJGjw90R07wHCLXzvnfR9PRZ8+yBFwaNhWQCKZVwhN0G9r3bJ5RSsX+CQespwpRMptds='
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
@@ -32,91 +28,72 @@ jobs:
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x3xx') }}:
         rhombus-x300-UBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x300'
           devName: 'rhombus-x300-UBX-0'
-          devSerial: '30A6019'
+          devSerial: $(x300_UBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.2'
+          devAddr: $(x300_UBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516350A6019'
+          jtagSerial: $(x300_UBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-UBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-UBX-0'
-          devSerial: '3138EF5'
+          devSerial: $(x310_UBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.3'
+          devAddr: $(x310_UBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '251635138E98'
-          jtagServer: 'nitest@sdr-rhombus'
-        rhombus-x310-CBX-0:
-          devAgent: x3xxb2xx
-          devType: 'x300'
-          devModel: 'x310'
-          devName: 'rhombus-x310-CBX-0'
-          devSerial: '30796C2'
-          devBus: 'ip'
-          devAddr: '192.168.40.4'
-          devFpga: 'HG,XG'
-          devtestPattern: 'x3x0'
-          jtagSerial: '2516350796C2'
+          jtagSerial: $(x310_UBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-WBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: 'rhombus-x310-WBX-0'
-          devSerial: '30C5BFF'
+          devSerial: $(x310_WBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.5'
+          devAddr: $(x310_WBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516350C5BFF'
+          jtagSerial: $(x310_WBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x310-TWINRX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x310'
           devName: rhombus-x310-TWINRX-0
-          devSerial: 'F43D13'
+          devSerial: $(x310_TWINRX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.6'
+          devAddr: $(x310_TWINRX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '251635F43D13'
+          jtagSerial: $(x310_TWINRX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
         rhombus-x300-SBX-0:
-          devAgent: x3xxb2xx
           devType: 'x300'
           devModel: 'x300'
           devName: rhombus-x300-SBX-0
-          devSerial: '32244AD'
+          devSerial: $(x300_SBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.7'
+          devAddr: $(x300_SBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '2516352244AD'
+          jtagSerial: $(x300_SBX_jtagSerial)
           jtagServer: 'nitest@sdr-rhombus'
 
       ${{ if contains(parameters.testDevices, 'b2xx') }}:
         rhombus-b210-0:
-          devAgent: x3xxb2xx
           devType: 'b200'
           devModel: 'b210'
           devName: rhombus-b210-0
-          devSerial: '3218D0E'
+          devSerial: $(b200_devSerial)
           devBus: 'usb'
           devtestPattern: 'b2xx'
 
       ${{ if contains(parameters.testDevices, 'n3xx') }}:
         rhombus-n310-0:
-          devAgent: rhombus-n310-0
           devType: 'n3xx'
           devModel: 'n310'
           devName: rhombus-n310-0
@@ -128,9 +105,8 @@ jobs:
           devFpga: 'HG,XG'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n310-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-n310-0.yml
         rhombus-n321-0:
-          devAgent: rhombus-n321-0
           devType: 'n3xx'
           devModel: 'n320'
           devName: rhombus-n321-0
@@ -142,11 +118,11 @@ jobs:
           devFpga: 'HG,XG,XQ'
           devtestPattern: 'n3x0'
           devSDImage: gnuradio-image-ni-sulfur-rev11-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-n321-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-n321-0.yml
 
-      ${{ if contains(parameters.testDevices, 'e320') }}:
+      # disabling e320 for now due to broken device
+      ${{ if contains(parameters.testDevices, 'e320_disabled') }}:
         rhombus-e320-0:
-          devAgent: rhombus-e320-0
           devType: 'e3xx'
           devModel: 'e320'
           devName: rhombus-e320-0
@@ -159,4 +135,4 @@ jobs:
           devtestPattern: 'e320'
           devInitramfsImage: fitImage-manufacturing
           devSDImage: gnuradio-image-ni-neon-rev2-mender.sdimg.bz2
-          devLabgridConfig: .ci/templates/tests/rhombus-labgrid/device-configs/rhombus-e320-0.yml
+          devLabgridConfig: config/labgrid/rhombus-labgrid/device-configs/rhombus-e320-0.yml

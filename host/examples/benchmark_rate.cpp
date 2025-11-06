@@ -7,6 +7,7 @@
 
 #include <uhd/convert.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/algorithm/string.hpp>
@@ -214,6 +215,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     std::atomic<bool>& burst_timer_elapsed,
     const start_time_type& start_time,
     const size_t spb,
+    const size_t sample_align,
     bool elevate_priority,
     double tx_delay,
     bool random_nsamps = false)
@@ -252,6 +254,10 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
         std::srand((unsigned int)time(NULL));
         while (not burst_timer_elapsed) {
             size_t num_samps = (rand() % spb) + 1;
+            if (sample_align) {
+                num_samps =
+                    std::max(sample_align, num_samps - (num_samps % sample_align));
+            }
             num_tx_samps += tx_stream->send(buffs, num_samps, md, timeout)
                             * tx_stream->get_num_channels();
             md.has_time_spec = false;
@@ -338,7 +344,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     bool random_nsamps = false;
     std::atomic<bool> burst_timer_elapsed(false);
     size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
-    size_t rx_spp, tx_spp, rx_spb, tx_spb, tx_align;
+    size_t rx_spp, tx_spp, rx_spb, tx_spb, tx_align = 0;
     double tx_delay, rx_delay, adjusted_tx_delay, adjusted_rx_delay;
     bool rx_stream_now = false;
     std::string priority;
@@ -503,11 +509,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = std::stoul(channel_strings[ch]);
+            const size_t chan = [&]() {
+                try {
+                    return uhd::cast::from_str<size_t>(channel_strings[ch]);
+                } catch (const uhd::runtime_error&) {
+                    throw uhd::runtime_error(
+                        "Unable to parse channel number(s) specified: "
+                        + rx_channel_list);
+                }
+            }();
             if (chan >= usrp->get_rx_num_channels()) {
-                throw std::runtime_error("Invalid channel(s) specified.");
+                throw uhd::runtime_error("Invalid channel(s) specified.");
             } else {
-                rx_channel_nums.push_back(std::stoul(channel_strings[ch]));
+                rx_channel_nums.push_back(chan);
             }
         }
     }
@@ -520,11 +534,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = std::stoul(channel_strings[ch]);
+            const size_t chan = [&]() {
+                try {
+                    return uhd::cast::from_str<size_t>(channel_strings[ch]);
+                } catch (const uhd::runtime_error&) {
+                    throw uhd::runtime_error(
+                        "Unable to parse channel number(s) specified: "
+                        + tx_channel_list);
+                }
+            }();
             if (chan >= usrp->get_tx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                tx_channel_nums.push_back(std::stoul(channel_strings[ch]));
+                tx_channel_nums.push_back(chan);
             }
         }
     }
@@ -564,7 +586,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         size_t spb = 0;
         if (vm.count("rx_spp")) {
-            std::cout << boost::format("Setting RX spp to %u\n") % rx_spp;
+            std::cout << "Setting RX samples per packet (spp) to " << rx_spp << std::endl;
             usrp->set_rx_spp(rx_spp);
             spb = rx_spp;
         }
@@ -637,22 +659,26 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
                 // create a transmit streamer
                 uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-                stream_args.channels             = this_streamer_channels;
-                stream_args.args                 = uhd::device_addr_t(tx_stream_args);
+                stream_args.channels = this_streamer_channels;
+                stream_args.args     = uhd::device_addr_t(tx_stream_args);
+                if (vm.count("tx_spp") && !stream_args.args.has_key("spp")) {
+                    stream_args.args["spp"] = std::to_string(tx_spp);
+                }
                 uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-                const size_t max_spp             = tx_stream->get_max_num_samps();
-                size_t spp                       = max_spp;
-                if (vm.count("tx_spp")) {
-                    spp = std::min(spp, tx_spp);
-                }
-                if (vm.count("tx_sample_align")) {
-                    spp = spp - (spp % tx_align);
-                }
-                size_t spb = spp;
+                std::cout << "Setting TX samples per packet (spp) to "
+                          << tx_stream->get_max_num_samps() << std::endl;
+                size_t spb = tx_stream->get_max_num_samps();
                 if (vm.count("tx_spb")) {
                     spb = tx_spb;
+                    if (vm.count("tx_sample_align") && (spb % tx_align) != 0) {
+                        std::cout << "WARNING: --tx_spb and --tx_sample_align have "
+                                     "conflicting values!"
+                                  << std::endl;
+                    }
+                } else if (vm.count("tx_sample_align")) {
+                    spb = spb - (spb % tx_align);
                 }
-                std::cout << boost::format("Setting TX spb to %u\n") % spb;
+                std::cout << "Setting TX samples per burst (spb) to " << spb << std::endl;
                 auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
                     benchmark_tx_rate(usrp,
                         tx_cpu,
@@ -660,6 +686,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         burst_timer_elapsed,
                         start_time,
                         spb,
+                        tx_align,
                         elevate_priority,
                         adjusted_tx_delay,
                         random_nsamps);
@@ -676,19 +703,26 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         } else {
             // create a transmit streamer
             uhd::stream_args_t stream_args(tx_cpu, tx_otw);
-            stream_args.channels             = tx_channel_nums;
-            stream_args.args                 = uhd::device_addr_t(tx_stream_args);
-            uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-            const size_t max_spp             = tx_stream->get_max_num_samps();
-            size_t spp                       = max_spp;
-            if (vm.count("tx_spp")) {
-                spp = std::min(spp, tx_spp);
+            stream_args.channels = tx_channel_nums;
+            stream_args.args     = uhd::device_addr_t(tx_stream_args);
+            if (vm.count("tx_spp") && !stream_args.args.has_key("spp")) {
+                stream_args.args["spp"] = std::to_string(tx_spp);
             }
-            size_t spb = spp;
+            uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+            std::cout << "Setting TX samples per packet (spp) to "
+                      << tx_stream->get_max_num_samps() << std::endl;
+            size_t spb = tx_stream->get_max_num_samps();
             if (vm.count("tx_spb")) {
                 spb = tx_spb;
+                if (vm.count("tx_sample_align") && (spb % tx_align) != 0) {
+                    std::cout << "WARNING: --tx_spb and --tx_sample_align have "
+                                 "conflicting values!"
+                              << std::endl;
+                }
+            } else if (vm.count("tx_sample_align")) {
+                spb = spb - (spb % tx_align);
             }
-            std::cout << boost::format("Setting TX spp to %u\n") % spp;
+            std::cout << "Setting TX samples per burst (spb) to " << spb << std::endl;
             auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
                 benchmark_tx_rate(usrp,
                     tx_cpu,
@@ -696,6 +730,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     burst_timer_elapsed,
                     start_time,
                     spb,
+                    tx_align,
                     elevate_priority,
                     adjusted_tx_delay,
                     random_nsamps);

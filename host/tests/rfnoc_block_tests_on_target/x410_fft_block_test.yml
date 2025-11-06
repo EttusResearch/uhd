@@ -1,0 +1,124 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args          # Identifier for the schema used to validate this file
+copyright: >-                            # Copyright information used in file headers
+  Copyright 2024 Ettus Research, a National Instruments Brand
+license: >-                              # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                           # File version
+chdr_width: 64                           # Bit width of the CHDR bus for this image
+device: 'x410'                           # USRP type
+image_core_name: 'x410_fft_block_test'   # Name to use for the generated output files
+default_target: 'X410'                   # Default make target
+inherit:
+  - '../../../fpga/usrp3/top/x400/yaml_include/x4xx_x4_base.yml'
+
+parameters:
+  RF_BW: 200
+  ENABLE_DRAM: False
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 16384              # Ingress buffer size for data
+  ep1:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+  ep2:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+  ep3:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+  ep4:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size_bytes: 16384              # Ingress buffer size for data
+  ep5:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+  ep6:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+  ep7:
+    ctrl: False
+    data: True
+    buff_size_bytes: 16384
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+ fft0:
+    block_desc: 'fft.yml'
+    parameters:
+      NIPC: 1
+      NUM_PORTS: 2
+      NUM_CORES: 1
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 1
+      MAX_CP_LIST_LEN_INS_LOG2: 5
+      MAX_CP_LIST_LEN_REM_LOG2: 5
+      CP_INSERTION_REPEAT: 1
+      CP_REMOVAL_REPEAT: 1
+      EN_FFT_BYPASS: 1
+      EN_FFT_ORDER: 1
+      EN_MAGNITUDE: 1
+      EN_MAGNITUDE_SQ: 1
+      USE_APPROX_MAG: 1
+ fft1:
+    block_desc: 'fft.yml'
+    parameters:
+      NIPC: 1
+      NUM_PORTS: 2
+      NUM_CORES: 1
+      MAX_FFT_SIZE_LOG2: 14
+      EN_CP_REMOVAL: 1
+      EN_CP_INSERTION: 1
+      MAX_CP_LIST_LEN_INS_LOG2: 5
+      MAX_CP_LIST_LEN_REM_LOG2: 5
+      CP_INSERTION_REPEAT: 1
+      CP_REMOVAL_REPEAT: 1
+      EN_FFT_BYPASS: 1
+      EN_FFT_ORDER: 1
+      EN_MAGNITUDE: 1
+      EN_MAGNITUDE_SQ: 1
+      USE_APPROX_MAG: 1
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  - { srcblk: ep0,      srcport: out0,  dstblk: fft0,     dstport: in_0   }
+  - { srcblk: ep1,      srcport: out0,  dstblk: fft0,     dstport: in_1   }
+  - { srcblk: fft0,     srcport: out_0, dstblk: ep2,      dstport: in0    }
+  - { srcblk: fft0,     srcport: out_1, dstblk: ep3,      dstport: in0    }
+  - { srcblk: ep4,      srcport: out0,  dstblk: fft1,     dstport: in_0   }
+  - { srcblk: ep5,      srcport: out0,  dstblk: fft1,     dstport: in_1   }
+  - { srcblk: fft1,     srcport: out_0, dstblk: ep6,      dstport: in0    }
+  - { srcblk: fft1,     srcport: out_1, dstblk: ep7,      dstport: in0    }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+#
+# Note that radio clocks are already defined in x410_radio_base.yml.
+clk_domains:
+  - { srcblk: _device_, srcport: radio_2x, dstblk: fft0,     dstport: ce    }
+  - { srcblk: _device_, srcport: radio_2x, dstblk: fft1,     dstport: ce    }

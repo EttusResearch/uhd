@@ -7,8 +7,8 @@
 #pragma once
 
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <cstdlib>
 #include <functional>
 #include <string>

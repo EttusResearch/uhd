@@ -8,7 +8,7 @@ install(PROGRAMS
     mpm_shell.py
     mpm_debug.py
     check-filesystem
-    DESTINATION ${RUNTIME_DIR}
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 set(eeprom_tool_sources)
@@ -41,7 +41,7 @@ endif(ENABLE_MYKONOS)
 foreach(eeprom_tool_source ${eeprom_tool_sources})
     get_filename_component(eeprom_tool ${eeprom_tool_source} NAME_WE)
     add_executable(${eeprom_tool} ${eeprom_tool_source} ${eeprom_tool_libs})
-    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${eeprom_tool} DESTINATION ${RUNTIME_DIR})
+    install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${eeprom_tool} DESTINATION ${CMAKE_INSTALL_BINDIR})
 endforeach(eeprom_tool_source ${eeprom_tool_sources})
 
 if(ENABLE_LIBMPM AND ENABLE_X400)

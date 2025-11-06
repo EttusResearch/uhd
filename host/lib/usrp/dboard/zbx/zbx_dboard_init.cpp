@@ -403,7 +403,7 @@ void zbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
         .set(ZBX_DEFAULT_BANDWIDTH)
         .set_coercer([](const double) { return ZBX_DEFAULT_BANDWIDTH; });
     subtree->create<meta_range_t>(fe_path / "bandwidth" / "range")
-        .set({ZBX_DEFAULT_BANDWIDTH, ZBX_DEFAULT_BANDWIDTH})
+        .set(meta_range_t(ZBX_DEFAULT_BANDWIDTH, ZBX_DEFAULT_BANDWIDTH))
         .set_coercer([](const meta_range_t&) {
             return meta_range_t(ZBX_DEFAULT_BANDWIDTH, ZBX_DEFAULT_BANDWIDTH);
         });

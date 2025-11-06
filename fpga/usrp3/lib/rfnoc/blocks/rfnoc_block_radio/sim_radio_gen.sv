@@ -74,7 +74,7 @@ module sim_radio_gen #(
     // Calculate the value of subsequent samples in the channel
     for (int ch_i = 0; ch_i < NUM_CHANNELS; ch_i++) begin
       sample = sample_t'((2.0 ** SAMP_W) / NUM_CHANNELS * ch_i + first_sample);
-      ret_val[ch_i] = radio_init(first_sample);
+      ret_val[ch_i] = radio_init(sample);
     end
 
     return ret_val;

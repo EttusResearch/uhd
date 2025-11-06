@@ -10,7 +10,6 @@
 ########################################################################
 set(example_sources
     benchmark_rate.cpp
-    network_relay.cpp
     rx_multi_samples.cpp
     rx_samples_to_file.cpp
     rx_samples_to_udp.cpp
@@ -33,7 +32,6 @@ set(example_sources
     rfnoc_rx_to_file.cpp
     rfnoc_radio_loopback.cpp
     rfnoc_replay_samples_from_file.cpp
-    #benchmark_streamer.cpp
 )
 
 if(ENABLE_OCTOCLOCK)
@@ -44,7 +42,8 @@ endif(ENABLE_OCTOCLOCK)
 foreach(example_source ${example_sources})
     get_filename_component(example_name ${example_source} NAME_WE)
     add_executable(${example_name} ${example_source})
-    target_link_libraries(${example_name} uhd ${Boost_LIBRARIES})
+    target_link_libraries(${example_name}
+        PUBLIC uhd Boost::program_options)
     UHD_INSTALL(TARGETS ${example_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 endforeach(example_source)
 
@@ -57,11 +56,13 @@ find_package(Curses)
 if(CURSES_FOUND)
     include_directories(${CURSES_INCLUDE_DIR})
     add_executable(rx_ascii_art_dft rx_ascii_art_dft.cpp)
-    target_link_libraries(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(rx_ascii_art_dft
+        PUBLIC uhd ${CURSES_LIBRARIES} Boost::program_options)
     UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 
     add_executable(twinrx_freq_hopping twinrx_freq_hopping.cpp)
-    target_link_libraries(twinrx_freq_hopping uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(twinrx_freq_hopping
+        PUBLIC uhd ${CURSES_LIBRARIES} Boost::program_options)
     UHD_INSTALL(TARGETS twinrx_freq_hopping RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 endif(CURSES_FOUND)
 

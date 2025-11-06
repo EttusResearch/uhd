@@ -71,6 +71,10 @@ UHD_API double from_str(const std::string& val);
 template <>
 UHD_API int from_str(const std::string& val);
 
+//! Specialization of `uhd::cast::from_str()` for size_t values
+template <>
+UHD_API size_t from_str(const std::string& val);
+
 //! Specialization of `uhd::cast::from_str()` for strings
 //
 //   This function simply returns the incoming string

@@ -1,0 +1,168 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building X300 and X310 FPGA.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+# X300 FPGA targets to build
+- name: x300_full_targets_matrix
+  type: object
+  default:
+    X300_HG:
+      image_core: x300_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_HG
+      target_name: X300_HG
+      artifact_name: X300_HG
+      timeout: 720
+      max_attempts: 2
+    X300_XG:
+      image_core: x300_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_XG
+      target_name: X300_XG
+      artifact_name: X300_XG
+      timeout: 720
+      max_attempts: 2
+- name: x300_reduced_targets_matrix
+  type: object
+  default:
+    X300_HG:
+      image_core: x300_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_HG
+      target_name: X300_HG
+      artifact_name: X300_HG
+      timeout: 720
+      max_attempts: 2
+    X300_XG:
+      image_core: x300_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x300_fpga_XG
+      target_name: X300_XG
+      artifact_name: X300_XG
+      timeout: 720
+      max_attempts: 2
+# X310 FPGA targets to build
+- name: x310_full_targets_matrix
+  type: object
+  default:
+    X310_HG:
+      image_core: x310_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_HG
+      target_name: X310_HG
+      artifact_name: X310_HG
+      timeout: 720
+      max_attempts: 2
+    X310_XG:
+      image_core: x310_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_XG
+      target_name: X310_XG
+      artifact_name: X310_XG
+      timeout: 720
+      max_attempts: 2
+- name: x310_reduced_targets_matrix
+  type: object
+  default:
+    X310_HG:
+      image_core: x310_HG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_HG
+      target_name: X310_HG
+      artifact_name: X310_HG
+      timeout: 720
+      max_attempts: 2
+    X310_XG:
+      image_core: x310_XG_rfnoc_image_core.yml
+      image_core_name: usrp_x310_fpga_XG
+      target_name: X310_XG
+      artifact_name: X310_XG
+      timeout: 720
+      max_attempts: 2
+
+
+stages:
+
+### START: X300 stages
+
+- stage: provide_x300_fpga_images_stage
+  displayName: Provide X300 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x3xx'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: x300
+      device_name: X300
+      ip_target: X300_IP
+      package_name: x3xx_x300_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/x300
+      target_full_matrix: ${{ parameters.x300_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.x300_reduced_targets_matrix }}
+
+- stage: provide_x310_fpga_images_stage
+  displayName: Provide X310 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x3xx'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: x310
+      device_name: X310
+      ip_target: X310_IP
+      package_name: x3xx_x310_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/x300
+      target_full_matrix: ${{ parameters.x310_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.x310_reduced_targets_matrix }}
+
+### END: X310 stages

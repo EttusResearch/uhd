@@ -130,7 +130,7 @@ def get_summary_string(stats, iterations, params):
             "| {:>8.1e} ".format(round(results.underruns, 1)) +
             "| {:>6} ".format(round(results.rx_timeouts, 1)) +
             "| {:>6} ".format(round(results.tx_timeouts, 1)) +
-            "| {:>4} ".format(round(results.late_cmds, 1))
+            "| {:>4} ".format(round(results.late_commands, 1))
         )
 
         return s + "|"
@@ -150,7 +150,7 @@ def get_summary_string(stats, iterations, params):
             "| {:>8} ".format(int(results.underruns)) +
             "| {:>6} ".format(int(results.rx_timeouts)) +
             "| {:>6} ".format(int(results.tx_timeouts)) +
-            "| {:>4} ".format(int(results.late_cmds))
+            "| {:>4} ".format(int(results.late_commands))
         )
 
         return s + "|"

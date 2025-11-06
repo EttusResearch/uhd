@@ -54,7 +54,7 @@ static double tune_rx_and_tx(
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     std::string args, subdev, serial;
-    double tx_wave_freq, tx_wave_ampl, rx_offset;
+    double tx_wave_freq, tx_wave_ampl, tx_gain, rx_offset;
     double freq_start, freq_stop, freq_step;
     size_t nsamps;
     double precision;
@@ -68,6 +68,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("subdev", po::value<std::string>(&subdev), "Subdevice specification (default: first subdevice, often 'A')")
         ("tx_wave_freq", po::value<double>(&tx_wave_freq)->default_value(507.123e3), "Transmit wave frequency in Hz")
         ("tx_wave_ampl", po::value<double>(&tx_wave_ampl)->default_value(0.7), "Transmit wave amplitude")
+        ("tx_gain", po::value<double>(&tx_gain), "Tx gain in dB (do not specify for default)")
         ("rx_offset", po::value<double>(&rx_offset)->default_value(.9344e6), "RX LO offset from the TX LO in Hz")
         ("freq_start", po::value<double>(&freq_start), "Frequency start in Hz (do not specify for default)")
         ("freq_stop", po::value<double>(&freq_stop), "Frequency stop in Hz (do not specify for default)")
@@ -109,9 +110,27 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create a transmitter thread
     std::atomic_flag transmit = ATOMIC_FLAG_INIT;
+    std::atomic<bool> transmit_started(false);
     transmit.test_and_set();
-    auto transmitter = std::thread(
-        std::bind(&tx_thread, &transmit, usrp, tx_stream, tx_wave_freq, tx_wave_ampl));
+    auto transmitter = std::thread(std::bind(&tx_thread,
+        &transmit,
+        usrp,
+        tx_stream,
+        tx_wave_freq,
+        tx_wave_ampl,
+        vm.count("tx_gain") ? std::optional<double>(tx_gain) : std::optional<double>(),
+        std::ref(transmit_started)));
+
+    // Wait for tx_thread to start transmitting
+    size_t iter = 0;
+    while (!transmit_started.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        if (++iter > 100) {
+            std::cerr << "TX thread did not start transmitting within 10 seconds."
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+    }
 
     // re-usable buffer for samples
     std::vector<samp_type> buff;

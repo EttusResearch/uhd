@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>

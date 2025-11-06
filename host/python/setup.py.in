@@ -29,7 +29,7 @@ setup(
     ],
     keywords="SDR UHD USRP",
     author="Ettus Research",
-    author_email="packages@ettus.com",
+    author_email="uhd.maintainer@emerson.com",
     url="https://www.ettus.com/",
     license="GPLv3",
     package_dir={"": r"${NATIVE_CURRENT_BINARY_DIR}"},
@@ -42,9 +42,5 @@ setup(
     zip_safe=False,
     packages=packages,
     install_requires=["numpy", "ruamel.yaml", "mako"],
-    entry_points={
-        "console_scripts": [
-            "rfnoc_modtool = uhd.rfnoc_utils.rfnoc_modtool:main",
-        ]
-    },
+    entry_points={"console_scripts": ["rfnoc_modtool = uhd.rfnoc_utils.rfnoc_modtool:main"]},
 )

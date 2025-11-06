@@ -138,7 +138,7 @@ package PkgComplex;
   function complex_t div(complex_t x, complex_t y);
     complex_t z;
     z.re = (x.re*y.re + x.im*y.im) / (y.re*y.re + y.im*y.im);
-    z.im = (x.im*y.re + x.re*y.im) / (y.re*y.re + y.im*y.im);
+    z.im = (x.im*y.re - x.re*y.im) / (y.re*y.re + y.im*y.im);
     return z;
   endfunction : div
 
@@ -177,6 +177,26 @@ package PkgComplex;
     return $atan2(x.im, x.re);
   endfunction : arg
 
+  // Convert complex to fixed point logic
+  virtual class complex #(int DATA_WIDTH=16, int FRAC_BITS=15);
+
+    // In this version, the sign bit is the MSB.
+    // The value range is [-2**(DATA_WIDTH-FRAC_BITS-1), 2**(DATA_WIDTH-FRAC_BITS-1)-1).
+    // Note that the largest positive integer value is excluded.
+    // The precision is 2**(-FRAC_BITS).
+    typedef struct packed {
+      logic signed [DATA_WIDTH-1:0] im;
+      logic signed [DATA_WIDTH-1:0] re;
+    } sc_t;
+
+    static function sc_t real_to_logic(complex_t sample);
+      sc_t iq_sample;
+      iq_sample.re = $rtoi(sample.re * (1 << FRAC_BITS));
+      iq_sample.im = $rtoi(sample.im * (1 << FRAC_BITS));
+      return iq_sample;
+    endfunction
+
+  endclass
 
   //---------------------------------------------------------------------------
   // Fixed-Point Complex Arithmetic

@@ -14,6 +14,8 @@ void export_paths(py::module& m)
     m.def("get_tmp_path", &uhd::get_tmp_path);
     m.def("get_lib_path", &uhd::get_lib_path);
     m.def("get_pkg_path", &uhd::get_pkg_path);
+    m.def("get_pkg_data_path", &uhd::get_pkg_data_path);
+    m.def("get_pkg_path", &uhd::get_pkg_path);
     m.def("get_cal_data_path", &uhd::get_cal_data_path);
     m.def("get_images_dir", &uhd::get_images_dir);
     m.def("find_image_path", &uhd::find_image_path);

@@ -1,0 +1,55 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Description:
+#
+#   This job guarantees the availability of FPGA artifacts for downstream jobs.
+#   If the artifacts are not available, they are downloaded from a different
+#   pipeline (declared by uhdFpgaArtifactSource) and published.
+#
+#   This job requires a variable "ArtifactsGenerated" to be set to "NotGenerated"
+#   or "Generated" to determine if the artifacts are already available.
+
+parameters:
+- name: id
+  default: ''
+  type: string
+- name: artifacts_matrix
+  default: []
+  type: object
+  # Identify a pipeline resource. This should never be "current", because this
+  # is for downloading artifacts from other pipelines!
+- name: uhdFpgaArtifactSource
+  type: string
+  default: uhd_mono_pipeline
+
+jobs:
+- job: check_artifact_availability_${{ parameters.id }}
+  variables:
+    - group: sdr-pipeline-vars
+  dependsOn: build_fpga
+  condition: ne(variables.BuildRequired, true)
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
+  displayName: 'Check FPGA artifacts availability for ${{ parameters.id }}'
+
+  steps:
+    - checkout: none
+    - ${{ each artifact in parameters.artifacts_matrix }}:
+      - download: ${{ parameters.uhdFpgaArtifactSource }}
+        artifact: ${{ artifact.key }}
+        displayName: 'Download ${{ artifact.value.artifact_name }}'
+        name: download_${{ artifact.key }}
+
+      - task: PublishPipelineArtifact@1
+        inputs:
+          targetPath: $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}/${{ artifact.key }}
+          artifact: ${{ artifact.key }}
+        displayName: 'Publish ${{ artifact.key }}'
+        # We continue on error, because the error means that the artifact already
+        # exists and we did something wrong elsewhere.
+        continueOnError: true

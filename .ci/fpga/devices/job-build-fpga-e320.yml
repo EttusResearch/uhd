@@ -1,0 +1,108 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building E320 FPGA targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+# E320 FPGA targets to build
+- name: e320_full_targets_matrix
+  type: object
+  default:
+    E320_1G:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_1G
+      artifact_name: E320_1G
+      image_core_name: usrp_e320_fpga_1G
+      timeout: 720
+      max_attempts: 2
+    E320_XG:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_XG
+      artifact_name: E320_XG
+      image_core_name: usrp_e320_fpga_XG
+      timeout: 720
+      max_attempts: 2
+    E320_AA:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_AA
+      artifact_name: E320_AA
+      image_core_name: usrp_e320_fpga_AA
+      timeout: 720
+      max_attempts: 2
+- name: e320_reduced_targets_matrix
+  type: object
+  default:
+    E320_XG:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_XG
+      artifact_name: E320_XG
+      image_core_name: usrp_e320_fpga_XG
+      timeout: 720
+      max_attempts: 2
+    E320_1G:
+      image_core: e320_rfnoc_image_core.yml
+      target_name: E320_1G
+      artifact_name: E320_1G
+      image_core_name: usrp_e320_fpga_1G
+      timeout: 720
+      max_attempts: 2
+
+stages:
+- stage: provide_e320_fpga_images_stage
+  displayName: Provide E320 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.e320'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: e320
+      device_name: E320
+      ip_target: E320_IP
+      package_name: e3xx_e320_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/e320
+      target_full_matrix: ${{ parameters.e320_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.e320_reduced_targets_matrix }}

@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" @package rfnoc
-Python UHD module containing the RFNoC API.
+
+""" @package rfnoc Python UHD module containing the RFNoC API.
 """
 
 from . import libpyuhd as lib

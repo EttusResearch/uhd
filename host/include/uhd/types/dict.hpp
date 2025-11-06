@@ -8,6 +8,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <initializer_list>
 #include <cstddef>
 #include <list>
 #include <map>
@@ -36,6 +37,8 @@ public:
      */
     template <typename InputIterator>
     dict(InputIterator first, InputIterator last);
+
+    dict(std::initializer_list<std::pair<Key, Val>> l);
 
     /*!
      * Get the number of elements in this dict.

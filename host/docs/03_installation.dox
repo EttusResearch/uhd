@@ -1,0 +1,8 @@
+/*! \page page_installation Software Installation
+
+
+\li \subpage page_install_binary "Installation of Binaries"
+\li \subpage page_build_guide "Installation from Source"
+
+*/
+// vim:ft=doxygen:

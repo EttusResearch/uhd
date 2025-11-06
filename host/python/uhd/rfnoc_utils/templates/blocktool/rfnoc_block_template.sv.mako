@@ -1,6 +1,3 @@
-<%!
-import math
-%>\
 <%namespace name="func" file="/functions.mako"/>\
 //
 // Copyright ${year} ${copyright_holder}
@@ -44,9 +41,6 @@ module rfnoc_block_${config['module_name']} #(
 %for clock in config['clocks']:
   input  wire                   ${clock['name']}_clk,
 %endfor
-  // RFNoC Backend Interface
-  input  wire [511:0]           rfnoc_core_config,
-  output wire [511:0]           rfnoc_core_status,
 %if has_inputs:
   // AXIS-CHDR Input Ports (from framework)
   input  wire [(${func.num_ports_in_str()})*CHDR_W-1:0] s_rfnoc_chdr_tdata,
@@ -70,7 +64,25 @@ module rfnoc_block_${config['module_name']} #(
   output wire [31:0]            m_rfnoc_ctrl_tdata,
   output wire                   m_rfnoc_ctrl_tlast,
   output wire                   m_rfnoc_ctrl_tvalid,
-  input  wire                   m_rfnoc_ctrl_tready
+  input  wire                   m_rfnoc_ctrl_tready,
+% for name, io_port in config.get("io_ports", {}).items():
+%   if loop.first:
+  // IO Ports
+%   endif
+  //   ${ name }
+%   for wire in io_port["wires"]:
+<%
+    # Note: the wire direction gets populated in expand_io_port_desc(), which
+    # flips the direction to make it compatible with the image core viewpoint.
+    # We therefore flip it back here.
+    direction = "input " if wire["direction"] == "output" else "output"
+%>\
+  ${ direction } wire ${ render_wire_width(wire.get("width", 1), 17) } ${ wire["name"] },
+%   endfor
+% endfor
+  // RFNoC Backend Interface
+  input  wire [511:0]           rfnoc_core_config,
+  output wire [511:0]           rfnoc_core_status
 );
 
   //---------------------------------------------------------------------------
@@ -258,6 +270,5 @@ module rfnoc_block_${config['module_name']} #(
 %endif
 
 endmodule // rfnoc_block_${config['module_name']}
-
 
 `default_nettype wire

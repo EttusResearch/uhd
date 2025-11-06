@@ -9,11 +9,11 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/asio.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
 #include <uhdlib/transport/link_base.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/transport/udp_common.hpp>
-#include <boost/asio.hpp>
 #include <memory>
 #include <vector>
 
@@ -146,7 +146,7 @@ private:
     std::vector<udp_boost_asio_frame_buff> _recv_buffs;
     std::vector<udp_boost_asio_frame_buff> _send_buffs;
 
-    boost::asio::io_service _io_service;
+    boost::asio::io_context _io_context;
     std::shared_ptr<boost::asio::ip::udp::socket> _socket;
     int _sock_fd;
     adapter_id_t _adapter_id;

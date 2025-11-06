@@ -1,0 +1,84 @@
+parameters:
+# A short identifier to create unique names
+- name: id
+  default: ''
+  type: string
+# The variable name of the Boolean that tells us if we need to build new artifacts
+# Device name, only used for pretty-printing
+- name: device_name
+  default: ''
+  type: string
+# IP target to build
+- name: ip_target
+  default: ''
+  type: string
+# Package name (e.g., e
+- name: package_name
+  type: string
+  default: ''
+- name: clean_ip_build
+  type: boolean
+  default: false
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+# Path to the top directory of the device (e.g., uhddev/fpga/usrp3/top/e31x)
+- name: top_dir
+  type: string
+  default: ''
+# Full matrix of FPGA targets to build
+- name: target_full_matrix
+  type: object
+# Reduced matrix of FPGA targets to build
+- name: target_reduced_matrix
+  type: object
+
+jobs:
+- template: job-build-ip.yml
+  parameters:
+    directory: ${{ parameters.top_dir }}
+    ip_target: ${{ parameters.ip_target }}
+    clean_build: ${{ parameters.clean_ip_build }}
+    num_jobs: ${{ parameters.num_ip_jobs }}
+- template: ../templates/job-build-fpga.yml
+  parameters:
+    ${{ if eq(parameters.package_and_publish_images, true) }}:
+      targets_matrix: ${{ parameters.target_full_matrix }}
+    ${{ else }}:
+      targets_matrix: ${{ parameters.target_reduced_matrix }}
+    ip_artifact: ${{ parameters.ip_target }}
+    top_dir: ${{ parameters.top_dir }}
+    publish_int_files: ${{ parameters.publish_int_files }}
+- template: ../templates/job-package-images.yml
+  parameters:
+    package_name: ${{ parameters.package_name }}
+    artifacts_matrix: ${{ parameters.target_full_matrix }}
+    build_directory: ${{ parameters.top_dir }}/build/
+    package_access: ${{ parameters.package_access }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+- template: job-guarantee-artifacts.yml
+  parameters:
+    id: ${{ parameters.id }}
+    artifacts_matrix: ${{ parameters.target_full_matrix }}
+    ${{ if eq(parameters.fpga_imgs_source,  'Mono Pipeline PR') }}:
+      uhdFpgaArtifactSource: uhd_mono_pipeline_pr
+    ${{ elseif eq(parameters.fpga_imgs_source,  'FPGA Pipeline') }}:
+      uhdFpgaArtifactSource: uhd_fpga_pipeline
+    ${{ else }}:
+      uhdFpgaArtifactSource: uhd_mono_pipeline

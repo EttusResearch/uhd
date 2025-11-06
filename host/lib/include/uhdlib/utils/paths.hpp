@@ -51,4 +51,17 @@ boost::filesystem::path get_xdg_config_home();
 // If no home directory can be found, an empty string is returned.
 boost::filesystem::path get_legacy_config_home();
 
+//! Return a list of paths to module.d/ directories.
+//
+// These directories contain files that are loaded by UHD at runtime. Every
+// file may contain a list of modules to load. Every line in each file is
+// the name or path of a library to load.
+std::vector<boost::filesystem::path> get_module_d_paths(void);
+
+//! Return the path to a UHD command.
+//
+// UHD commands are executables that typically get installed into a runtime
+// path, e.g., /usr/bin.
+std::string find_uhd_command(const std::string& command);
+
 } /* namespace uhd */

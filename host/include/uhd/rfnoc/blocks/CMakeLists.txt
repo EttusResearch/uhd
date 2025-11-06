@@ -10,5 +10,5 @@ file(GLOB yml_files "*.yml")
 UHD_INSTALL(
     FILES ${yml_files}
     DESTINATION ${PKG_DATA_DIR}/rfnoc/blocks
-    COMPONENT headers # TODO: Different component
+    COMPONENT rfnoc
 )

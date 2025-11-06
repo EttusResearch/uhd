@@ -27,4 +27,4 @@ private:
 };
 
 UHD_RFNOC_BLOCK_REGISTER_DIRECT(
-    ${blockname}_block_control, ${config["noc_id"]}, "Gain", CLOCK_KEY_GRAPH, "bus_clk")
+    ${blockname}_block_control, ${config["noc_id"]}, "${config["module_name"].capitalize()}", CLOCK_KEY_GRAPH, "bus_clk");

@@ -71,6 +71,9 @@
 //  </group>
 //</regmap>
 //<regmap name="PL_DMA_MASTER_REGMAP" readablestrobes="false" generatevhdl="true" generateverilog="false" ettusguidelines="true">
+//  <conflicts>
+//    <conflict>AXI_HPC0_WINDOW AXI_HPC1_WINDOW</conflict>
+//  </conflicts>
 //  <info>
 //    This is a regmap to document the different ports that have access to the PS system memory.
 //    Each port may have different restrictions on system memory. See the corresponding window
@@ -141,6 +144,12 @@
 //          db0_adc_seq_done is asserted.
 //        </info>
 //      </bitfield>
+//      <bitfield name="ADC_GEARBOX_RESET" range="6">
+//        <info>
+//          Write a '1' to this bit to trigger a reset for the ADC gearboxes.
+//          There is no done signal for this reset.
+//        </info>
+//      </bitfield>
 //      <bitfield name="DAC_RESET" range="8">
 //        <info>
 //          Write a '1' to this bit to trigger a reset for the
@@ -153,6 +162,12 @@
 //          Write a '1' to this bit to trigger the enable sequence for
 //          the daughterboard 0 DAC chain. Write a '0' once
 //          db0_dac_seq_done is asserted.
+//        </info>
+//      </bitfield>
+//      <bitfield name="DAC_GEARBOX_RESET" range="10">
+//        <info>
+//          Write a '1' to this bit to trigger a reset for the DAC gearboxes.
+//          There is no done signal for this reset.
 //        </info>
 //      </bitfield>
 //    </regtype>
@@ -383,126 +398,6 @@
 //        <info>Log2 of SPC value for TX connection (fabric into RFDC) for daughterboard 1.</info>
 //      </bitfield>
 //    </regtype>
-//
-//    <regtype name="ADC_TILEMAP_REGTYPE" size="32" writable="false">
-//      <info>
-//        This register describes how the ADCs map to the respective tiles. It
-//        lets us designate an ADC as channel 0, channel 1, etc. depending on
-//        how those channels are externally connected to the RFSoC.{BR/}
-//
-//        For every channel, this register stores the tile number and the block
-//        number of the converter. This can be used to then address the correct
-//        converter in the various Xilinx interfaces/APIs.
-//      </info>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN0_TILE"     range="1..0" initialvalue="0">
-//        <info>Tile number of the ADC for channel 0, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN0_BLOCK"     range="3..2" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 0, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN1_TILE"     range="5..4" initialvalue="0">
-//        <info>Tile number of the ADC for channel 1, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN1_BLOCK"     range="7..6" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 1, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN2_TILE"     range="9..8" initialvalue="0">
-//        <info>Tile number of the ADC for channel 2, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN2_BLOCK"     range="11..10" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 2, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN3_TILE"     range="13..12" initialvalue="0">
-//        <info>Tile number of the ADC for channel 3, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB0_CHAN3_BLOCK"     range="15..14" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 3, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN0_TILE"     range="17..16" initialvalue="0">
-//        <info>Tile number of the ADC for channel 0, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN0_BLOCK"     range="19..18" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 0, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN1_TILE"     range="21..20" initialvalue="0">
-//        <info>Tile number of the ADC for channel 1, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN1_BLOCK"     range="23..22" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 1, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN2_TILE"     range="25..24" initialvalue="0">
-//        <info>Tile number of the ADC for channel 2, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN2_BLOCK"     range="27..26" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 2, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN3_TILE"     range="29..28" initialvalue="0">
-//        <info>Tile number of the ADC for channel 3, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="ADC_TILEMAP_DB1_CHAN3_BLOCK"     range="31..30" initialvalue="0">
-//        <info>Block number (within the tile) of the ADC for channel 3, daughterboard 1.</info>
-//      </bitfield>
-//    </regtype>
-//    <regtype name="DAC_TILEMAP_REGTYPE" size="32" writable="false">
-//      <info>
-//        This register describes how the DACs map to the respective tiles. It
-//        lets us designate an DAC as channel 0, channel 1, etc. depending on
-//        how those channels are externally connected to the RFSoC.{BR/}
-//
-//        For every channel, this register stores the tile number and the block
-//        number of the converter. This can be used to then address the correct
-//        converter in the various Xilinx interfaces/APIs.
-//      </info>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN0_TILE"     range="1..0" initialvalue="0">
-//        <info>Tile number of the DAC for channel 0, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN0_BLOCK"     range="3..2" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 0, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN1_TILE"     range="5..4" initialvalue="0">
-//        <info>Tile number of the DAC for channel 1, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN1_BLOCK"     range="7..6" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 1, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN2_TILE"     range="9..8" initialvalue="0">
-//        <info>Tile number of the DAC for channel 2, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN2_BLOCK"     range="11..10" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 2, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN3_TILE"     range="13..12" initialvalue="0">
-//        <info>Tile number of the DAC for channel 3, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB0_CHAN3_BLOCK"     range="15..14" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 3, daughterboard 0.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN0_TILE"     range="17..16" initialvalue="0">
-//        <info>Tile number of the DAC for channel 0, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN0_BLOCK"     range="19..18" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 0, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN1_TILE"     range="21..20" initialvalue="0">
-//        <info>Tile number of the DAC for channel 1, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN1_BLOCK"     range="23..22" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 1, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN2_TILE"     range="25..24" initialvalue="0">
-//        <info>Tile number of the DAC for channel 2, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN2_BLOCK"     range="27..26" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 2, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN3_TILE"     range="29..28" initialvalue="0">
-//        <info>Tile number of the DAC for channel 3, daughterboard 1.</info>
-//      </bitfield>
-//      <bitfield name="DAC_TILEMAP_DB1_CHAN3_BLOCK"     range="31..30" initialvalue="0">
-//        <info>Block number (within the tile) of the DAC for channel 3, daughterboard 1.</info>
-//      </bitfield>
-//    </regtype>
-//
 //
 //  </group>
 //</regmap>

@@ -32,8 +32,6 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 
 namespace adaptor {
 
-#if !defined(MSGPACK_USE_CPP03)
-
 template <typename T, typename Alloc>
 struct as<std::vector<T, Alloc>, typename std::enable_if<clmdep_msgpack::has_as<T>::value>::type> {
     std::vector<T, Alloc> operator()(const clmdep_msgpack::object& o) const {
@@ -51,8 +49,6 @@ struct as<std::vector<T, Alloc>, typename std::enable_if<clmdep_msgpack::has_as<
         return v;
     }
 };
-
-#endif // !defined(MSGPACK_USE_CPP03)
 
 template <typename T, typename Alloc>
 struct convert<std::vector<T, Alloc> > {

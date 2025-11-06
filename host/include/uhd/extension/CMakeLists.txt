@@ -7,6 +7,6 @@
 UHD_INSTALL(FILES
     extension.hpp
 
-    DESTINATION ${INCLUDE_DIR}/uhd/extension
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/extension
     COMPONENT headers
 )

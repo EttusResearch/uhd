@@ -30,10 +30,8 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 struct container_size_overflow : public std::runtime_error {
     explicit container_size_overflow(const std::string& msg)
         :std::runtime_error(msg) {}
-#if !defined(MSGPACK_USE_CPP03)
     explicit container_size_overflow(const char* msg):
         std::runtime_error(msg) {}
-#endif // !defined(MSGPACK_USE_CPP03)
 };
 
 namespace detail {

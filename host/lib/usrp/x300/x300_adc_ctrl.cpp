@@ -121,7 +121,7 @@ public:
     ~x300_adc_ctrl_impl(void) override
     {
         _ads62p48_regs.power_down = ads62p48_regs_t::POWER_DOWN_GLOBAL;
-        UHD_SAFE_CALL(this->send_ads62p48_reg(0x40);)
+        UHD_SAFE_CALL(this->send_ads62p48_reg(0x40));
     }
 
 private:

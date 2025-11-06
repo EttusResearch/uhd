@@ -4,6 +4,10 @@
 schema: rfnoc_modtool_args
 transport_name: x4xx_eth
 version: "1.0"
+name: USRP X4xx Ethernet Transport Adapter
+description: |
+  The USRP X4xx devices must specify transport adapters explicitly for
+  connectivity. This is the transport adapter for 10 and 100 GbE Ethernet.
 
 parameters:
   # Same as RFNoC blocks, parameters get passed to the top-level Verilog.
@@ -74,6 +78,8 @@ constraints:
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_1.xdc" if parameters['port_type1'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_2.xdc" if parameters['port_type2'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
   - ${ f"constraints/pins/qsfp{parameters['qsfp_num']}_3.xdc" if parameters['port_type3'] not in (0, 'disabled') or parameters['port_type0'] in (5, '100GbE') else "" }
+  # placement constraints for 100GbE
+  - ${ f"$(LIB_DIR)/rfnoc/transport_adapters/rfnoc_ta_x4xx_eth/constraints/qsfp_100gbe_port{parameters['qsfp_num']}.xdc" if parameters['port_type0'] in (5, '100GbE') else "" }
 
 dts_includes:
   - |

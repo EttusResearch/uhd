@@ -1,0 +1,294 @@
+/*! \page page_general General Application Notes
+
+\tableofcontents
+
+\section general_tuning Tuning Notes
+
+\subsection general_tuning_process Two-stage tuning process
+
+A USRP device has two stages of tuning:
+
+- RF front-end: translates between RF and IF
+- DSP: translates between IF and baseband
+
+In a typical use-case, the user specifies an overall center frequency
+for the signal chain. The RF front-end will be tuned as close as
+possible to the center frequency, and the DSP will account for the error
+in tuning between target frequency and actual frequency. The user may
+also explicitly control both stages of tuning through through the
+uhd::tune_request_t object, which allows for more advanced tuning.
+
+In general, Using UHD software's advanced tuning is highly recommended
+as it makes it easy to move the DC component out of your
+band-of-interest. This can be done by passing your desired LO offset to
+the uhd::tune_request_t object, and letting the UHD software handle the
+rest.
+
+The uhd::tune_request_t object can also be used with certain
+daughterboards to use Integer-N tuning instead of the default fractional
+tuning, allowing for better spur performance. The daughterboards that
+support this functionality are:
+
+- WBX (all revisions)
+- WBX-120
+- SBX (all revisions)
+- SBX-120
+- CBX
+- CBX-120
+- UBX
+- UBX-160
+
+\subsubsection general_tuning_rxchain Tuning the receive chain:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+//tuning to a desired center frequency
+usrp->set_rx_freq(target_frequency_in_hz);
+
+--OR--
+
+//advanced tuning with tune_request_t uhd::tune_request_t
+tune_req(target_frequency_in_hz, desired_lo_offset);
+tune_req.args = uhd::device_addr_t("mode_n=integer"); //to use Int-N tuning
+//fill in any additional/optional tune request fields...
+usrp->set_rx_freq(tune_req);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+More information can be found in uhd::tune_request_t.
+
+\subsection general_tuning_dsp DSP Tuning
+
+As mentioned above, a tune request (regardless of whether or not the actual
+uhd::tune_request_t object is used) is split into an RF tune (i.e., tuning the
+local oscillator) and a frequency shift that is performed in DSP (typically on
+the FPGA). For example, when integer-N tuning is requested, UHD will
+automatically pick an LO frequency that is closest to the desired RF frequency,
+and tune the rest digitally. The BasicRX board, on the other hand, has no LO
+so all tuning will be handled by the FPGA. In many cases, the actual DSP tuning
+is pretty low, because many LO synthesizers have a good resolution not operating
+in integer-N mode.
+
+When using hand-crafted tune requests, it is necessary to observe sampling
+theory. If the LO offset of a tune request exceeds the sampling rate, the
+actual DSP frequency will wrap around. For example, if a B210 is used at a
+master clock rate of 20 MHz, and the RF frequency is set to 100 MHz, the digital
+tuning range is 90 MHz to 110 MHz. Now, if an LO offset of 12 MHz is selected,
+it will wrap and become an LO offset of -8 MHz, and the final frequency will
+become 92 MHz. However, if there is no anti-aliasing filter enabled, there will
+be an alias at 112 MHz, as requested.
+
+Most USRPs do have anti-aliasing filters, so this does not always work (the
+BasicTX and BasicRX are a notable exception here). For the same reason, it is
+typically recommended to not use DSP tuning to get too close to the edge of the
+Nyquist zone. In the example above, if the signal bandwidth is 2 MHz, the LO
+offset should not exceed 9 MHz, or the signal would wrap around the edges of
+the Nyquist zone. In fact, it is recommended to avoid the outer 20% of the
+Nyquist zone due to analog anti-aliasing filter influences.
+
+\subsection general_tuning_dsp_sign Sign of DSP frequency on TX vs. RX tuning
+
+Please note that the meaning of the sign of uhd::tune_request_t::dsp_freq
+differs between TX and RX tuning. See also uhd::tune_request::dsp_freq.
+
+\subsection general_tuning_rfsettling RF front-end settling time
+
+After tuning, the RF front-end will need time to settle into a usable
+state. Typically, this means that the local oscillators must be given
+time to lock before streaming begins. Lock time is not consistent; it
+varies depending upon the device and requested settings. After tuning
+and before streaming, the user should wait for the **lo_locked** sensor
+to become true or sleep for a conservative amount of time (perhaps a
+second).
+
+\subsubsection general_tuning_waitcode Pseudo-code for dealing with settling time after tuning on receive:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+    usrp->set_rx_freq(...);
+    sleep(1);
+    usrp->issue_stream_command(...);
+
+    --OR--
+
+    usrp->set_rx_freq(...);
+    while (not usrp->get_rx_sensor("lo_locked").to_bool()){
+        //sleep for a short time in milliseconds
+    }
+    usrp->issue_stream_command(...);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsection general_tuning_multiplechannels Tuning multiple channels using a shared LO
+For devices like N300/N310 which share only one LO per daughter board (DB), per TX/RX, 
+respectively, which supports two channels it is recommended to use the LO offset parameter 
+of the uhd::tune_request_t object. <br>
+Subsequent example shows a configuration of two Tx channels where channel 0 is set to a 
+frequency of 806 MHz and channel 1 to a frequency of 796 MHz. For channel 0 the LO is 
+shifted by an offset of -5 MHz and for channel 1 the LO is shifted by an offset of +5 MHz, 
+which leads to a common LO frequency of 801 MHz. This allows the signal chain to process 
+the two streams at different frequencies using the same LO frequency. 
+(Depending on the device type, same can be done also for the Rx path)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+// Channel 0 configuration
+uhd::tune_request_t tune_request_ch0(806e6, -5e6);
+usrp->set_tx_freq(tune_request_ch0, 0);
+// Channel 1 configuration
+uhd::tune_request_t tune_request_ch1(796e6, 5e6);
+usrp->set_tx_freq(tune_request_ch1, 1);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Note: If not specifying the LO offset in this particular scenario the Tx frequency of 
+channel 0 will be re-tuned to the same Tx frequency of channel 1. This can be verified by using
+the uhd::usrp::multi_usrp::get_tx_freq() Multi USRP API call.
+
+\section general_sampleratenotes Sample rate notes
+
+Sample rates as delivered to the host computer for USRP devices are constrained to follow several important rules.
+
+It is important to understand that strictly-integer <b>decimation</b> and <b>interpolation</b> are used within USRP
+hardware to meet the requested sample-rate requirements of the application at hand.  That means that the desired
+sample rate must meet the requirement that master-clock-rate/desired-sample-rate be an integer ratio.  Further, it is
+strongly desirable for that ratio to be <b>even</b>.
+
+There are further constraints on the desired sample rate, such that if the required decimation or interpolation exceeds 128,
+then the resulting decimation <b>must</b> be evenly divisible by 2, and that if the required decimation exceeds 256, the
+resulting decimation \b must be evenly divisible by 4.
+
+For USRP devices with fixed master clocks (notably: USRP1, USRP2, N2xx), there are fewer effective sample rates available than
+on USRP hardware that provides some flexibility in selecting a master clock.  Several USRP devices support flexible master
+clock selection, allowing a broader range of sample rate selections by applications. See the individual devices' manual
+pages for more details.
+
+In many cases using USRPs with flexible master-clock rates, it is possible to achieve lower sample rates without running into
+the constraints of higher decimation rates, simply by choosing a lower master-clock rate to keep required decimation below 128.
+
+\subsection general_sampleratenotes_automatic Automatic master-clock selection
+
+In recent versions of UHD software (3.8.5 and newer), and on some devices (currently: B2xx and E3xx series),
+the master clock rate is chosen automatically (unless specified by the user).
+UHD will select a master clock rate that is consistent with the desired sample rate indicated by the application.
+
+\subsection general_sampleratenotes_nyquist Master clock rate and Nyquist
+
+In selecting a master clock rate on certain USRP hardware (X3xx and B1xx), it is important to select a rate that still provides
+correct alias suppression by the analog hardware.  For daughtercards with a 40 MHz analog bandwidth, this means the clock rate 
+must be <b>at least</b> 40 MHz, with better performance to be expected with a higher clock rate.  For daughtercards
+with 160 MHz bandwidth, it must be <b>at least</b> 160 MHz, again, better performance is to expected with a higher clock rate.
+
+For hardware with fixed master clock rates, of course, this isn't a consideration.
+
+For B2xx and E3xx hardware, the alias suppression is handled differently by the AD936x RFIC, and master clock rate
+is significantly more flexible as a result.
+
+\section general_ounotes Overflow/Underflow Notes
+
+<b>Note:</b> The following overflow/underflow notes do not apply to USRP1,
+which does not support the advanced features available in newer
+products.
+
+\subsection general_ounotes_overflow Overflow notes
+
+When receiving, the device produces samples at a constant rate.
+Overflows occurs when the host does not consume data fast enough. When
+UHD software detects the overflow, it prints an "O" or "D" to stdout,
+and pushes an inline message packet into the receive stream.
+
+<b>Network-based devices</b>: The host does not back-pressure the receive
+stream. When the kernel's socket buffer becomes full, it will drop
+subsequent packets. UHD software detects the overflow as a discontinuity
+in the packet's sequence numbers, and pushes an inline message packet
+into the receive stream. In this case the character "D" is printed to
+stdout as an indication.
+
+<b>Other devices</b>: The host back-pressures the receive stream.
+Therefore, overflows always occur in the device itself. When the
+device's internal buffers become full, streaming is shut off, and an
+inline message packet is sent to the host. In this case the character
+"O" is printed to stdout as an indication. If the device was in
+continuous streaming mode, the UHD software will automatically restart
+streaming when the buffer has space again.
+
+\subsection general_ounotes_underrun Underrun notes
+
+When transmitting, the device consumes samples at a constant rate.
+Underflow occurs when the host does not produce data fast enough. When
+UHD software detects the underflow, it prints a "U" to stdout, and
+pushes a message packet into the async message stream.
+
+Some underruns may be mitigated by buffering data in DRAM using the Replay
+block.  The Replay block is only available in devices that support RFNoC.  Some
+RFNoC devices include the Replay block in the default FPGA image.  Use the
+'uhd_usrp_probe' utility and look for the "RFNoC blocks on this device:"
+section of the output to check if the Replay block is present.  If using
+the multi_usrp API, simply add the stream argument "streamer=replay_buffered"
+to enable the buffering.  This buffering adds latency and will likely not work
+at the highest streaming rates.  A limited number of buffers can be stored
+in the Replay block, so larger buffers supplied to the tx_streamer::send()
+call will produce the best results.  Buffers that are too small will result
+in gaps in the transmitted signal.
+
+<b>Note:</b> "O" and "U" message are generally harmless, and just mean the host
+machine can't keep up with the requested rates.
+
+\section general_threading Threading Notes
+
+\subsection general_threading_safety Thread safety notes
+
+For the most part, UHD software is thread-safe. Please observe the
+following limitations:
+
+<b>Fast-path thread requirements:</b> There are three fast-path methods for
+a device: uhd::tx_streamer::send(), uhd::rx_streamer::recv(), and
+uhd::tx_streamer::recv_async_msg().
+It is safe to call all three methods from different threads, and that may even
+be advantageous from a performance perspective in the user application.
+It is not safe, however, to call `recv()` or `send()` on the same streamer from
+different threads (for example, it is not allowed to have a multi-producer
+software architecture, and share access to the `send()` call without serializing
+its access).
+These methods can also be used in a non-blocking fashion by using a timeout of
+zero.
+
+<b>Slow-path thread requirements:</b> It is safe to change multiple
+settings simultaneously. However, this could leave the settings for a
+device in an uncertain state. This is because changing one setting could
+have an impact on how a call affects other settings. Example: setting
+the channel mapping affects how the antennas are set. It is recommended
+to use at most one thread context for manipulating device settings.
+
+\subsection general_threading_prio Thread priority scheduling
+
+When UHD software spawns a new thread, it may try to boost the thread's
+scheduling priority. If setting the new priority fails, the UHD software
+prints a warning to the console, as shown below. This warning is harmless;
+it simply means that the thread will retain a normal or default scheduling priority.
+
+    UHD Warning:
+        Unable to set the thread priority. Performance may be negatively affected.
+        Please see the general application notes in the manual for instructions.
+        EnvironmentError: OSError: error in pthread_setschedparam
+
+<b>Linux Notes:</b>
+
+Non-privileged users need special permission to change the scheduling
+priority. Add the following line to the file `/etc/security/limits.conf`:
+
+    @GROUP    - rtprio    99
+
+Replace `GROUP` with a group in which your user is a member. You may need
+to log out and log back into the account for the settings to take effect.
+In most Linux distributions, a list of groups and group members can be found in the file `/etc/group`.
+
+\section general_misc Miscellaneous Notes
+
+\subsection general_misc_dynamic Support for dynamically loadable modules
+
+For a module to be loaded at runtime, it must be:
+
+- found in the `UHD_MODULE_PATH` environment variable,
+- installed into the `\<install-path\>/share/uhd/modules` directory,
+- or installed into `/usr/share/uhd/modules` directory (UNIX only).
+
+\subsection general_misc_prints Disabling or redirecting prints to stdout
+
+UHD will never print to stdout (this was changed in the 3.11.0.0 release).
+To find out more about configuring UHD logging, see \ref page_logging.
+
+*/
+// vim:ft=doxygen:

@@ -1,0 +1,39 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: testLength
+  type: string
+- name: dpdkDirs
+  type: object
+  default:
+  - '/opt/dpdk-19.11'
+  - '/opt/dpdk-23.11'
+
+jobs:
+- template: job-uhd-streaming-tests.yml
+  parameters:
+    suiteName: 'sdr_s175_tests'
+    testLength: '${{ parameters.testLength }}'
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    dpdkDirs: '${{ parameters.dpdkDirs }}'
+    dutMatrix:
+      sdr-s175-streaming-tests-B206-0:
+        dutName: 'sdr_s175_tests-b206-0'
+        dutFamily: 'b2xx'
+        dutType: 'B206'
+        dutAddr: ''
+        dutSecondAddr: ''
+        dutFPGA: ''
+        dutNameId: 'B206i'
+        dutNumRecvFrames: '256'
+        dutNumSendFrames: '256'
+        dutGetFpgaImagesMethod: 'uhd_images_downloader'

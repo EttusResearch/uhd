@@ -1,0 +1,37 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+
+jobs:
+- template: job-uhd-devtest.yml
+  parameters:
+    suiteName: 'osmium_test'
+    knownHost: '|1|fXrCI8rzcCEjieIibSPqR7VuyvM=|KZb3VgbbOzY8Jf9RZzR2d9eHB4A= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg='
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    redisHost: 'sdr-osmium-test'
+    vivado_dir: '/opt/Xilinx/Vivado_Lab/2023.2/'
+    dutMatrix:
+        x310-OBX:
+          devAgent: osmium
+          devType: 'x300'
+          devModel: 'x310'
+          devName: 'x310-OBX'
+          devSerial: '3138E8D'
+          devBus: 'ip'
+          devAddr: '192.168.40.2'
+          devFpga: 'HG,XG'
+          devtestPattern: 'x3x0'
+          jtagSerial: '251635138E8D'
+          jtagServer: 'nitest@sdr-osmium-test'

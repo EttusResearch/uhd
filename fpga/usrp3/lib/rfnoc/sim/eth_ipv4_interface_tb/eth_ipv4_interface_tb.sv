@@ -43,7 +43,8 @@ module eth_ipv4_interface_tb #(
   `include "../../xport_sv/eth_regs.vh"
 
   import PkgTestExec::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgChdrIfaceBfm::*;
   import PkgAxiStreamBfm::*;
   import PkgChdrBfm::*;

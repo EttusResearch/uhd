@@ -6,14 +6,14 @@
 
 #pragma once
 
-#include <boost/noncopyable.hpp>
+#include <mpm/noncopyable.hpp>
 #include <memory>
 
 namespace mpm { namespace types {
 
 /*! Interface to a register reader/writer interface
  */
-class regs_iface : public boost::noncopyable
+class regs_iface : public mpm::noncopyable
 {
 public:
     using sptr = std::shared_ptr<regs_iface>;

@@ -10,7 +10,7 @@
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhdlib/utils/compat_check.hpp>
+#include <uhd/utils/compat_check.hpp>
 
 using namespace uhd::rfnoc;
 

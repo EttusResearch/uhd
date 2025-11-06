@@ -51,6 +51,12 @@ public:
     void enable_rx_timestamps(const bool enable, const size_t chan) override;
 
     /**************************************************************************
+     * Tune related API calls
+     *************************************************************************/
+    void _tune_request_action_handler(
+        tune_request_action_info::sptr tune_request_action, const res_source_info& src);
+
+    /**************************************************************************
      * Rate-Related API Calls
      *************************************************************************/
     double set_rate(const double rate) override;
@@ -362,6 +368,18 @@ private:
     // \param bytes Number of bytes we can fill with samples (excluding bytes
     //              required for CHDR headers!)
     int get_max_spp(const size_t bytes);
+
+    //! Calculates and apply the RF tune frequencies
+    //
+    // Calculates the target frequency based on the incoming tune request.
+    // Sets the RF frequency and updates the tune request action info.
+    //
+    // \param tune_request_action shared pointer to tune_request_action_info
+    // \param set_rf_freq Lambda function to set the frequency
+    // \param get_rf_freq Lambda function to get the current frequency
+    void apply_and_update_tune_request(tune_request_action_info::sptr tune_request_action,
+        std::function<void(double)> set_rf_freq,
+        std::function<double()> get_rf_freq);
 
     //! FPGA compat number
     const uint32_t _fpga_compat;

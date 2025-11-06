@@ -76,6 +76,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         and tx_name.find("CBX") == std::string::npos
         and tx_name.find("RFX") == std::string::npos
         and tx_name.find("UBX") == std::string::npos
+        and tx_name.find("OBX") == std::string::npos
         and tx_name.find("Rhodium") == std::string::npos) {
         throw std::runtime_error(
             std::string("self-calibration is not supported for this TX dboard :")
@@ -89,6 +90,7 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         and rx_name.find("CBX") == std::string::npos
         and rx_name.find("RFX") == std::string::npos
         and rx_name.find("UBX") == std::string::npos
+        and rx_name.find("OBX") == std::string::npos
         and rx_name.find("Rhodium") == std::string::npos) {
         throw std::runtime_error(
             std::string("self-calibration is not supported for this RX dboard :")
@@ -354,13 +356,24 @@ static void tx_thread(std::atomic_flag* transmit,
     uhd::usrp::multi_usrp::sptr usrp,
     uhd::tx_streamer::sptr tx_stream,
     const double tx_wave_freq,
-    const double tx_wave_ampl)
+    const double tx_wave_ampl,
+    const std::optional<double> tx_gain,
+    std::atomic<bool>& transmit_started)
 {
     // increase thread priority for TX to prevent underruns
     uhd::set_thread_priority_safe();
 
-    // set max TX gain
-    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
+    constexpr size_t chan = 0;
+    const auto tx_info    = usrp->get_usrp_tx_info(chan);
+
+    if (tx_gain.has_value()) {
+        usrp->set_tx_gain(tx_gain.value());
+    } else if (tx_info.has_key("tx_default_cal_gain")) {
+        usrp->set_tx_gain(std::stod(tx_info["tx_default_cal_gain"]));
+    } else {
+        // set max TX gain
+        usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
+    }
 
     // setup variables
     uhd::tx_metadata_t md;
@@ -398,6 +411,7 @@ static void tx_thread(std::atomic_flag* transmit,
     while (transmit->test_and_set()) {
         // send calls are aligned to the frame size for optimal performance
         tx_stream->send(&buff[index], frame_size, md);
+        transmit_started.store(true);
 
         // increment index
         index += frame_size;

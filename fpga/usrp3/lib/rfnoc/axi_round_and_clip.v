@@ -31,22 +31,32 @@ module axi_round_and_clip
   output [WIDTH_OUT-1:0] o_tdata, output o_tlast, output o_tvalid, input o_tready
 );
 
-  wire [WIDTH_OUT+CLIP_BITS-1:0] int_tdata;
+  // When rounding and clipping is needed, the input data is sign extended by 1
+  // bit. This enables a simpler rounding operation at the cost of one extra
+  // bit to clip in the second stage.
+  localparam WIDTH_INT = (CLIP_BITS) ? WIDTH_OUT + CLIP_BITS + 1 : WIDTH_OUT;
+  localparam WIDTH_IN_EXT = (CLIP_BITS) ? WIDTH_IN + 1 : WIDTH_IN;
+
+  // sign extend the input data if needed
+  wire [WIDTH_IN_EXT-1:0] extended_i_tdata;
+  assign extended_i_tdata = (CLIP_BITS) ? {i_tdata[WIDTH_IN-1], i_tdata} : i_tdata;
+
+  wire [WIDTH_INT-1:0] int_tdata;
   wire int_tlast, int_tvalid, int_tready;
 
   generate
     if (WIDTH_IN == WIDTH_OUT+CLIP_BITS) begin
-       assign int_tdata    = i_tdata;
+       assign int_tdata    = extended_i_tdata;
        assign int_tlast    = i_tlast;
        assign int_tvalid   = i_tvalid;
        assign i_tready     = int_tready;
     end else begin
       axi_round #(
-        .WIDTH_IN(WIDTH_IN), .WIDTH_OUT(WIDTH_OUT+CLIP_BITS),
-        .round_to_nearest(1), .FIFOSIZE(FIFOSIZE))
+        .WIDTH_IN(WIDTH_IN_EXT), .WIDTH_OUT(WIDTH_INT),
+        .round_to_nearest(1), .FIFOSIZE(FIFOSIZE), .USE_SAFE_ROUND(CLIP_BITS == 0))
       axi_round (
         .clk(clk), .reset(reset),
-        .i_tdata(i_tdata), .i_tlast(i_tlast), .i_tvalid(i_tvalid), .i_tready(i_tready),
+        .i_tdata(extended_i_tdata), .i_tlast(i_tlast), .i_tvalid(i_tvalid), .i_tready(i_tready),
         .o_tdata(int_tdata), .o_tlast(int_tlast), .o_tvalid(int_tvalid), .o_tready(int_tready));
     end
 
@@ -57,7 +67,7 @@ module axi_round_and_clip
       assign int_tready = o_tready;
     end else begin
       axi_clip #(
-        .WIDTH_IN(WIDTH_OUT+CLIP_BITS), .WIDTH_OUT(WIDTH_OUT),
+        .WIDTH_IN(WIDTH_INT), .WIDTH_OUT(WIDTH_OUT),
         .FIFOSIZE(FIFOSIZE))
       axi_clip (
         .clk(clk), .reset(reset),
@@ -66,4 +76,4 @@ module axi_round_and_clip
     end
   endgenerate
 
-endmodule // round_and_clip
+endmodule // axi_round_and_clip

@@ -7,12 +7,12 @@ steps:
     src: "${ SOURCE_DIR }"
     dst: "${ DEST_DIR }"
     ignore_globs:
-    - "*.hpp"
+    - "*block*.hpp"
     - "apps/*.cpp"
     - "build"
     - "examples/*.py"
-    - "fpga/gain/ip"
-    - "fpga/gain/rfnoc_block_gain"
+    - "rfnoc/fpga/gain/ip"
+    - "rfnoc/fpga/gain/rfnoc_block_gain"
     - "icores/*.yml"
     - "lib/*.cpp"
     - "gr-*"
@@ -39,20 +39,20 @@ steps:
     pattern: "^    .+py$"
     repl: "    # Insert your example sources here if you want them to be installed"
 - comment_out:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     range: [9, 13]
 - search_and_replace:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     pattern: "add_subdirectory\\(([a-z0-9_]+)\\)"
     repl: "#add_subdirectory(rfnoc_block_myblock)"
 - insert_before:
-    file: fpga/newmod/CMakeLists.txt
+    file: rfnoc/fpga/newmod/CMakeLists.txt
     pattern: "# IP gets"
     text: "# Uncomment the following lines to add your own IP:\n"
 - search_and_replace:
     file: icores/CMakeLists.txt
     pattern: "RFNOC_REGISTER.*$"
-    repl: "# Add one line for every image core here:\n#RFNOC_REGISTER_BLOCK(SRC my_image_core)"
+    repl: "# Add one line for every image core here:\n#RFNOC_REGISTER_IMAGE_CORE(SRC my_image_core)"
 - search_and_replace:
     file: include/rfnoc/newmod/CMakeLists.txt
     pattern: "gain_block_control.hpp"
@@ -100,10 +100,22 @@ steps:
 - search_and_replace:
     files:
     - CMakeLists.txt
+    - cmake/Modules/rfnoc-newmodConfig.cmake
     - include/rfnoc/newmod/CMakeLists.txt
     - lib/CMakeLists.txt
     - python/pyrfnoc-newmod.cpp
     - python/setup.py.in
-    - README.md
+    - rfnoc/CMakeLists.txt
     pattern: "gain"
     repl: "newmod"
+- search_and_replace:
+    files:
+    - README.md
+    pattern: r"(?<!a)gain"
+    repl: "newmod"
+- search_and_replace:
+    files:
+    - lib/CMakeLists.txt
+    - include/rfnoc/newmod/config.hpp
+    pattern: "GAIN"
+    repl: "NEWMOD"

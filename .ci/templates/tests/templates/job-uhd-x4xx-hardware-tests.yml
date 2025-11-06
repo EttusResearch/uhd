@@ -1,22 +1,23 @@
 parameters:
 - name: suiteName
   type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu1804
-    - ubuntu2004
-    - ubuntu2204
 - name: toolset
   type: string
   values:
     - make
 - name: runPyTest
   type: boolean
+  default: false
+- name: runPyTestNonRF
+  type: boolean
+  default: false
 - name: runSystemImageTest
   type: boolean
 - name: runDevTest
   type: boolean
+- name: runRfnocBlockTest
+  type: boolean
+  default: false
 - name: master_clock_rate
   type: string
   default: ''
@@ -27,10 +28,14 @@ parameters:
   default: current
 - name: uhdFpgaArtifactSource
   type: string
+  default: current
+  # For embedded devices, this controls whether we use default FPGA images
+  # (built into the filesystem), or if we download them from the pipeline.
 - name: fpga_imgs_source
   type: string
-- name: xilinxLocation
-  type: string
+  values:
+    - 'Filesystem'
+    - 'Pipeline'
 - name: extra_rf_test_args
   type: string
   default: ''
@@ -57,8 +62,11 @@ jobs:
 
   steps:
   - checkout: self
+    clean: True
   - checkout: meta-ettus
+    clean: True
   - checkout: ettus-rts
+    clean: True
 
   - script: |
       if [ "${{ parameters.uhdArtifactSource }}" = "current" ]; then
@@ -71,18 +79,17 @@ jobs:
   - script: |
       if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
       else
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}"
       fi
     displayName: Set uhddev FPGA pipeline artifact location
 
   - script: |
       rm -rf $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
-      rm -rf $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-      rm -rf $(uhd_artifact_directory)/gnuradio-${{ parameters.testOS }}-${{ parameters.toolset }}
-      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
-        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
+      rm -rf $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
+      rm -rf $(uhd_artifact_directory)/gnuradio-$(testOS)-${{ parameters.toolset }}
     displayName: Cleanup from prior run
 
   - download: ${{ parameters.uhdArtifactSource }}
@@ -95,7 +102,7 @@ jobs:
       usrp_$(pytestDUT)_fpga_$(dutFPGA).dts
       usrp_$(pytestDUT)_fpga_$(dutFPGA).rpt
     displayName: Download FPGA pipeline artifacts
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - task: ExtractFiles@1
     inputs:
@@ -106,28 +113,28 @@ jobs:
     displayName: Extract JTAG artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract gnuradio-grettus artifact
 
   - script: |
       cd $(Agent.TempDirectory)
@@ -142,7 +149,6 @@ jobs:
     displayName: Create usrp_emb venv
 
   - script: |
-      source ${{ parameters.xilinxLocation }}/settings64.sh
       source $USRP_EMB_VENV/bin/activate
       usrp_emb_x4xx_flash_emmc
     displayName: Flash eMMC
@@ -172,6 +178,7 @@ jobs:
 
   - script: |
         sleep 60
+        dig -x $USRP_EMB_TARGET_IP +short
     displayName: Wait for device to finish booting
 
   - script: |
@@ -179,37 +186,54 @@ jobs:
         scp -o StrictHostKeyChecking=no $(uhd_fpga_artifact_directory)/*/usrp_$(pytestDUT)_* root@$USRP_EMB_TARGET_IP:/usr/share/uhd/images/
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).bit.md5"
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "md5sum /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(pytestDUT)_fpga_$(dutFPGA).dts.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm /lib/firmware/x4*.* && systemctl stop usrp-hwd.service"
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "umount /mnt/db*_flash || true && systemctl start usrp-hwd.service"
     displayName: Copy FPGA pipeline images to device
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - script: |
+        set -e
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
         ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
-        EXITCODE=$?
+        # clear the usrp-hwd log from before the FPGA update
+        # Reason: the usrp-hwd status test as part of system image embedded subsystems
+        # tests checks for errors and may fail
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "systemctl stop usrp-hwd.service && journalctl --rotate --vacuum-time=1s && systemctl start usrp-hwd.service"
         sleep 60
-        exit $EXITCODE
+    displayName: Flash FPGA $(dutFPGA), clear MPM log
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
+
+  - script: |
+        set -e
+        ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
+        ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+        sleep 60
     displayName: Flash FPGA $(dutFPGA)
+    condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   # When MPM reboots, the sfp0 address is reset to default
   # Since rebooting MPM was added for clocking re-config we need
   # to change sfp0 default on the device
   # after the DUT responds to pings, give the device additional time for
   # things like the RPC server to come up too
+  # Step gets excluded if sfp0ip is not defined for test node
   - script: |
       source $USRP_EMB_VENV/bin/activate
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "sed -i 's/192.168.10.2/$(sfp0ip)/g' /data/network/sfp0.network"
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "reboot"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "sed -i 's/^Address=.*/Address=$(sfp0ip)/g' /data/network/sfp0.network"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "systemctl restart systemd-networkd"
       timeout=240
       echo "Waiting ${timeout}s for sfp0 at ip $(sfp0ip) to be reachable from host..."
       wait_counter=0 ; until $(ping -c 1 -W 1 $(sfp0ip) &>/dev/null) ; do if [ $wait_counter -eq $timeout ]; then echo "Device with ip $(sfp0ip) did not start up within $timeout seconds!" ;break; fi; wait_counter=$((wait_counter+1)); done
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "ifconfig sfp0"
       sleep 90
+      dig -x $(sfp0ip) +short
+      dig -x $USRP_EMB_TARGET_IP +short
     displayName: Set sfp0 IP
-    condition: and(succeeded(), ${{ parameters.runPyTest }})
-
+    condition: and(succeeded(), or( and(${{ parameters.runDevTest }}, ne(variables.sfp0ip, '')), ${{ parameters.runPyTest }}))
 
   - script: |
+      dig -x $USRP_EMB_TARGET_IP +short
       mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
       cd $(Common.TestResultsDirectory)/sysimg_tests/sysimg_subsystem_tests
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
@@ -224,6 +248,7 @@ jobs:
     condition: and(succeeded(), ${{ parameters.runSystemImageTest }})
 
   - script: |
+      dig -x $USRP_EMB_TARGET_IP +short
       mkdir -p $(Common.TestResultsDirectory)/mpm/mpm_unit_tests
       cd $(Common.TestResultsDirectory)/mpm/mpm_unit_tests
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
@@ -235,8 +260,14 @@ jobs:
     displayName: Run MPM unit tests
     continueOnError: true
 
+  # Most devtests have no strong requirement on the streaming interface
+  # bandwidth, except for the benchmark rate mimo_fast test.
+  # Retain support for using USRP_EMB_TARGET_IP with max. 1Gbps bandwidth.
+  # This should be the exception rather than the rule.
   - script: |
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
+      dig -x $(sfp0ip) +short
+      dig -x $USRP_EMB_TARGET_IP +short
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
@@ -246,16 +277,21 @@ jobs:
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
       if [ -z "$(master_clock_rate)" ]; then
-        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType)"
+        args="addr=$(sfp0ip),type=$(dutType)"
       else
-        args="addr=$USRP_EMB_TARGET_IP,type=$(dutType),master_clock_rate=$(master_clock_rate)"
+        args="addr=$(sfp0ip),type=$(dutType),master_clock_rate=$(master_clock_rate)"
       fi
       echo $args
       uhd_usrp_probe --args $args
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      cd $(Common.TestResultsDirectory)/devtest
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
         --src-dir $(Build.SourcesDirectory)/uhddev/host/tests/devtest \
         --devtest-pattern $(devtestPattern) --args $args \
-        --build-dir $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build \
+        --build-dir $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build \
         --build-type Release --python-interp python3 --xml
     displayName: Run devtest
     continueOnError: true
@@ -276,61 +312,59 @@ jobs:
     displayName: cat devtest log
     condition: and(succeeded(), ${{ parameters.runDevTest }})
 
-  # warmUpAfterBoot optional parameter added to allow device to warm up before running tests
-  # For example, the phase test pass/fail requirements are based on declared specs measured after a warm up to 23 deg C
-  # https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html#d668e1387
+  - template: step-uhd-run-pytest-on-host.yml
+    parameters:
+      runPyTest: ${{ parameters.runPyTest }}
+      displayString: 'RF pytest'
+      testFolder: 'pytests'
+      testLength: ${{ parameters.testLength }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      warmUpAfterBoot: ${{ parameters.warmUpAfterBoot }}
+      toolset: ${{ parameters.toolset }}
+
+  - template: step-uhd-run-pytest-on-host.yml
+    parameters:
+      runPyTest: ${{ parameters.runPyTestNonRF }}
+      displayString: 'Non-RF pytest'
+      testFolder: 'pytests_non_rf'
+      testLength: ${{ parameters.testLength }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      warmUpAfterBoot: ${{ parameters.warmUpAfterBoot }}
+      toolset: ${{ parameters.toolset }}
+
+  # TODO: remove version pinning once pytest is working again with higher versions
+  # TODO: use requirements.txt to install pytest dependencies
   - script: |
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
-      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
-      export PATH=$UHD_INSTALL_PATH/bin:$PATH
-      export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
-      export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
-
-      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
-        export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
-        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
-        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
-        export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
-        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/python3/dist-packages:$PYTHONPATH
-      else
-        export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
-        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
-        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
-        export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
-        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
-      fi
-
-      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
-      if [ ${{ parameters.warmUpAfterBoot }} > 0 ]; then
-        echo 'sleeping ${{ parameters.warmUpAfterBoot }} seconds before testing...'
-        sleep ${{ parameters.warmUpAfterBoot }}
-      fi
-      uhd_find_devices --args type=$(dutType)
-      uhd_usrp_probe --args addr=$USRP_EMB_TARGET_IP,type=$(dutType)
-      python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
-    displayName: Run pytest on host
-    continueOnError: true
-    condition: and(succeeded(), ${{ parameters.runPyTest }})
-
-  - script: |
+      dig -x $(sfp0ip) +short
+      dig -x $USRP_EMB_TARGET_IP +short
       mkdir -p $(Common.TestResultsDirectory)/pytest/embedded
       cd $(Common.TestResultsDirectory)/pytest/embedded
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade pytest pytest-helpers-namespace pytest-tempdir pytest-salt"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade 'pytest<8.4.0' pytest-helpers-namespace pytest-tempdir pytest-salt"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests/pytests && \
-        python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --test_selector test_gnuradio_sanity.py --run_embedded"
+        python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --run_vars_overrides 'mgmt_addr=$(USRP_EMB_TARGET_IP)' --test_selector test_gnuradio_sanity.py --run_embedded"
       EXITCODE=$?
-      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest .
+      scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_pytest/remote/python_tests/pytests/*.xml .
       exit $EXITCODE
     displayName: Run pytest on embedded
     continueOnError: true
     condition: and(succeeded(), ${{ parameters.runPyTest }})
 
+  - ${{ if parameters.runRfnocBlockTest }}:
+    - template: ../../steps-rfnoc-block-test.yml
+      parameters:
+        dutType: $(pytestDUT)
+        uhdInstallPath: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+        uhdArgs: type=$(dutType),addr=$(USRP_EMB_TARGET_IP)
+
   # Run the mender tests last because they
   # modify the flashed image on the device
   - script: |
+      dig -x $USRP_EMB_TARGET_IP +short
       source $USRP_EMB_VENV/bin/activate
       mkdir -p $(Common.TestResultsDirectory)/sysimg_tests/sysimg_mender_tests
       cd $(Common.TestResultsDirectory)/sysimg_tests/sysimg_mender_tests
@@ -374,7 +408,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/host/**/*.xml'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/host/*.xml'
       testRunTitle: $(dutName) host pytests
       mergeTestResults: true
       failTaskOnFailedTests: true
@@ -384,7 +418,7 @@ jobs:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/embedded/**/*.xml'
+      testResultsFiles: '$(Common.TestResultsDirectory)/pytest/embedded/*.xml'
       testRunTitle: $(dutName) embedded pytests
       mergeTestResults: true
       failTaskOnFailedTests: true

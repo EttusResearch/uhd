@@ -151,14 +151,8 @@ private:
 
         return true;
     }
-#if defined(MSGPACK_USE_CPP03)
-private:
-    zbuffer(const zbuffer&);
-    zbuffer& operator=(const zbuffer&);
-#else  // defined(MSGPACK_USE_CPP03)
     zbuffer(const zbuffer&) = delete;
     zbuffer& operator=(const zbuffer&) = delete;
-#endif // defined(MSGPACK_USE_CPP03)
 
 private:
     z_stream m_stream;

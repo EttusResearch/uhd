@@ -6,5 +6,5 @@
 install(FILES
     adi_ctrl.hpp
     ad937x_ctrl.hpp
-    DESTINATION ${INCLUDE_DIR}/mpm/mykonos
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/mykonos
 )

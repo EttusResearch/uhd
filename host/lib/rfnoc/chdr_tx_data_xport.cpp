@@ -33,9 +33,11 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     const uhd::rfnoc::sep_id_pair_t& epids,
     const size_t num_send_frames,
     const fc_params_t fc_params,
+    const chdr::strc_payload& strc_pyld,
     disconnect_callback_t disconnect)
     : _fc_state(fc_params.buff_capacity)
     , _mtu(send_link->get_send_frame_size())
+    , _strc_pyld(strc_pyld)
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
@@ -49,6 +51,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     _send_header.set_dst_epid(epids.second);
     _send_packet = pkt_factory.make_generic();
     _recv_packet = pkt_factory.make_generic();
+    _strc_packet = pkt_factory.make_strc();
 
     // Calculate header length
     _hdr_len = _send_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
@@ -92,18 +95,28 @@ chdr_tx_data_xport::~chdr_tx_data_xport()
  * then repeat this (now that we know the buffer size) to configure the flow
  * control frequency. To avoid having this logic within the data packet
  * processing flow, we use temporary send and recv I/O instances with
- * simple callbacks here.
+ * simple callbacks here. Returns a pair of fc_params_t containing the
+ * buffer capacity and the flow control frequency parameters.
  */
-static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_srv,
+static std::pair<chdr_tx_data_xport::fc_params_t, chdr::strc_payload> configure_flow_ctrl(
+    io_service::sptr io_srv,
     recv_link_if::sptr recv_link,
     send_link_if::sptr send_link,
     const chdr::chdr_packet_factory& pkt_factory,
     const sep_id_pair_t epids,
+    const uhd::device_addr_t& xport_args,
     const double fc_freq_ratio,
     const double fc_headroom_ratio)
 {
     chdr::chdr_strc_packet::uptr strc_packet   = pkt_factory.make_strc();
     chdr::chdr_packet_writer::uptr recv_packet = pkt_factory.make_generic();
+    bool enable_stop_on_seq_error =
+        xport_args.cast<std::string>("transmit_policy", "default") == "stop_on_seq_error";
+
+    chdr::strc_payload strc_pyld;
+    strc_pyld.src_epid = epids.first;
+    strc_pyld.op_code  = chdr::STRC_INIT;
+    strc_pyld.op_data  = enable_stop_on_seq_error ? 1 : 0;
 
     // No flow control at initialization, just release all send buffs
     auto send_cb = [](frame_buff::uptr buff, send_link_if* send_link) {
@@ -144,7 +157,7 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
         fc_cb);
 
     // Function to send a strc init
-    auto send_strc_init = [&send_io, epids, &strc_packet](
+    auto send_strc_init = [&send_io, epids, &strc_packet, &strc_pyld](
                               const stream_buff_params_t fc_freq = {0, 0}) {
         frame_buff::uptr buff = send_io->get_send_buff(0);
 
@@ -158,9 +171,6 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
         header.set_seq_num(0);
         header.set_dst_epid(epids.second);
 
-        chdr::strc_payload strc_pyld;
-        strc_pyld.src_epid  = epids.first;
-        strc_pyld.op_code   = chdr::STRC_INIT;
         strc_pyld.num_bytes = fc_freq.bytes;
         strc_pyld.num_pkts  = fc_freq.packets;
         strc_packet->refresh(buff->data(), header, strc_pyld);
@@ -171,7 +181,8 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
     };
 
     // Function to receive a strs, returns buffer capacity
-    auto recv_strs = [&recv_io, &recv_packet]() -> stream_buff_params_t {
+    auto recv_strs =
+        [&recv_io, &recv_packet, &enable_stop_on_seq_error]() -> stream_buff_params_t {
         frame_buff::uptr buff = recv_io->get_recv_buff(200);
 
         if (!buff) {
@@ -188,6 +199,23 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
             recv_packet->conv_to_host<uint64_t>());
 
         recv_io->release_recv_buff(std::move(buff));
+
+
+        if (enable_stop_on_seq_error
+            && (!strs.status_info.status.stop_on_seq_error_enabled)) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                "XPORT::TX_DATA_XPORT",
+                "Requested 'stop on sequence error' stream mode but FPGA does not "
+                "report that this mode is enabled. Please check whether the FPGA image "
+                "supports this mode.");
+        }
+        if (!enable_stop_on_seq_error
+            && (strs.status_info.status.stop_on_seq_error_enabled)) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                "XPORT::TX_DATA_XPORT",
+                "FPGA reports to stop on sequence error, but this mode was not"
+                "requested.");
+        }
 
         return {strs.capacity_bytes, static_cast<uint32_t>(strs.capacity_pkts)};
     };
@@ -220,10 +248,11 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
     send_io.reset();
     recv_io.reset();
 
-    return {capacity};
+    return {{capacity}, strc_pyld};
 }
 
-chdr_tx_data_xport::fc_params_t chdr_tx_data_xport::configure_sep(io_service::sptr io_srv,
+std::pair<chdr_tx_data_xport::fc_params_t, chdr::strc_payload>
+chdr_tx_data_xport::configure_sep(io_service::sptr io_srv,
     recv_link_if::sptr recv_link,
     send_link_if::sptr send_link,
     const chdr::chdr_packet_factory& pkt_factory,
@@ -231,6 +260,7 @@ chdr_tx_data_xport::fc_params_t chdr_tx_data_xport::configure_sep(io_service::sp
     const sep_id_pair_t& epids,
     const sw_buff_t pyld_buff_fmt,
     const sw_buff_t mdata_buff_fmt,
+    const uhd::device_addr_t& xport_args,
     const double fc_freq_ratio,
     const double fc_headroom_ratio,
     disconnect_callback_t disconnect)
@@ -260,6 +290,7 @@ chdr_tx_data_xport::fc_params_t chdr_tx_data_xport::configure_sep(io_service::sp
         send_link,
         pkt_factory,
         epids,
+        xport_args,
         fc_freq_ratio,
         fc_headroom_ratio);
 }

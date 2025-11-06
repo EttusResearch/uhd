@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
-#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
 

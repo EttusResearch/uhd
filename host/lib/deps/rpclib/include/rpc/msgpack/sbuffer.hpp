@@ -51,7 +51,6 @@ public:
         ::free(m_data);
     }
 
-#if !defined(MSGPACK_USE_CPP03)
     sbuffer(const sbuffer&) = delete;
     sbuffer& operator=(const sbuffer&) = delete;
 
@@ -75,7 +74,6 @@ public:
 
         return *this;
     }
-#endif // !defined(MSGPACK_USE_CPP03)
 
     void write(const char* buf, size_t len)
     {
@@ -138,12 +136,6 @@ private:
         m_data = static_cast<char*>(tmp);
         m_alloc = nsize;
     }
-
-#if defined(MSGPACK_USE_CPP03)
-private:
-    sbuffer(const sbuffer&);
-    sbuffer& operator=(const sbuffer&);
-#endif  // defined(MSGPACK_USE_CPP03)
 
 private:
     size_t m_size;

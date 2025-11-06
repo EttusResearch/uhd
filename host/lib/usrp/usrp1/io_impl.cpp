@@ -152,7 +152,7 @@ struct usrp1_impl::io_impl
     ~io_impl(void)
     {
         vandal_loop_exit = true;
-        UHD_SAFE_CALL(flush_send_buff();)
+        UHD_SAFE_CALL(flush_send_buff());
     }
 
     zero_copy_if::sptr data_transport;
@@ -236,7 +236,7 @@ void usrp1_impl::io_impl::flush_send_buff(void)
  **********************************************************************/
 void usrp1_impl::io_init(void)
 {
-    _io_impl = UHD_PIMPL_MAKE(io_impl, (_data_transport));
+    _io_impl = std::make_shared<io_impl>(_data_transport);
 
     // init as disabled, then call the real function (uses restore)
     this->enable_rx(false);
@@ -368,6 +368,13 @@ public:
         _stc->issue_stream_cmd(stream_cmd);
     }
 
+    void post_input_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error(
+            "post_input_action is currently not implemented here!");
+    }
+
 private:
     size_t _max_num_samps;
     soft_time_ctrl::sptr _stc;
@@ -429,6 +436,13 @@ public:
     bool recv_async_msg(async_metadata_t& async_metadata, double timeout = 0.1) override
     {
         return _stc->get_async_queue().pop_with_timed_wait(async_metadata, timeout);
+    }
+
+    void post_output_action(
+        const std::shared_ptr<uhd::rfnoc::action_info>&, const size_t) override
+    {
+        throw uhd::not_implemented_error(
+            "post_output_action is currently not implemented here!");
     }
 
 private:
@@ -626,7 +640,6 @@ double usrp1_impl::update_tx_dsp_freq(const size_t dspno, const double freq)
  **********************************************************************/
 bool usrp1_impl::recv_async_msg(async_metadata_t& async_metadata, double timeout)
 {
-    boost::this_thread::disable_interruption di; // disable because the wait can throw
     return _soft_time_ctrl->get_async_queue().pop_with_timed_wait(
         async_metadata, timeout);
 }

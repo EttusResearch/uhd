@@ -22,9 +22,11 @@ struct dboard_base::impl
 
 dboard_base::dboard_base(ctor_args_t args)
 {
-    _impl       = UHD_PIMPL_MAKE(impl, ());
+    _impl       = std::make_unique<impl>();
     _impl->args = dboard_ctor_args_t::cast(args);
 }
+
+dboard_base::~dboard_base() = default;
 
 std::string dboard_base::get_subdev_name(void)
 {

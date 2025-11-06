@@ -56,24 +56,24 @@ SETUP_AND_LAUNCH_SIMULATION = \
 	$(TOOLS_DIR)/scripts/launch_vivado.sh -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_sim_project.tcl) -log xsim.log -nojournal
 
 # -------------------------------------------------------------------
-# Usage: SETUP_AND_LAUNCH_VLINT
+# Usage: SETUP_AND_LAUNCH_VCOM
 # Args: N/A
 # -------------------------------------------------------------------
 
-SETUP_AND_LAUNCH_VLINT = \
+SETUP_AND_LAUNCH_VCOM = \
 	@ \
-	export VLINT_PROJ_DIR=$(MODELSIM_PROJ_DIR); \
-	export VLINT_DESIGN_SRCS=$(EXP_DESIGN_SRCS); \
-	export VLINT_SIM_SRCS=$(EXP_SIM_SRCS); \
-	export VLINT_INC_SRCS=$(EXP_INC_SRCS); \
-	export VLINT_SVLOG_ARGS="$(SVLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
-	export VLINT_VLOG_ARGS="$(VLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
-	export VLINT_VHDL_ARGS="$(VHDL_ARGS)"; \
-	export VLINT_MODELSIM_INI="$(MODELSIM_INI)"; \
-	$(TOOLS_DIR)/scripts/launch_vlint.sh
+	export VCOM_PROJ_DIR=$(MODELSIM_PROJ_DIR); \
+	export VCOM_DESIGN_SRCS=$(EXP_DESIGN_SRCS); \
+	export VCOM_SIM_SRCS=$(EXP_SIM_SRCS); \
+	export VCOM_INC_SRCS=$(EXP_INC_SRCS); \
+	export VCOM_SVLOG_ARGS="$(SVLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
+	export VCOM_VLOG_ARGS="$(VLOG_ARGS) +define+UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
+	export VCOM_VHDL_ARGS="$(VHDL_ARGS)"; \
+	export VCOM_MODELSIM_INI="$(MODELSIM_INI)"; \
+	$(TOOLS_DIR)/scripts/launch_vcom.sh
 
 # -------------------------------------------------------------------
-# Usage: SETUP_AND_LAUNCH_VLINT
+# Usage: SETUP_AND_LAUNCH_MODELSIM
 # Args: N/A
 # -------------------------------------------------------------------
 
@@ -85,6 +85,24 @@ SETUP_AND_LAUNCH_MODELSIM = \
 	export MSIM_LIBS="$(MODELSIM_LIBS)"; \
 	export MSIM_MODE=$(VIVADO_MODE); \
 	export MSIM_MODELSIM_INI="$(MODELSIM_INI)"; \
+	export MSIM_VARIANT=legacy; \
+	$(TOOLS_DIR)/scripts/launch_modelsim.sh
+
+# -------------------------------------------------------------------
+# Usage: SETUP_AND_LAUNCH_QUESTASIM
+# Args: N/A
+# -------------------------------------------------------------------
+
+SETUP_AND_LAUNCH_QUESTASIM = \
+	@ \
+	export MSIM_GUI=visualizer; \
+	export MSIM_PROJ_DIR=$(MODELSIM_PROJ_DIR); \
+	export MSIM_SIM_TOP="$(SIM_TOP)"; \
+	export MSIM_ARGS="$(MODELSIM_ARGS)"; \
+	export MSIM_LIBS="$(MODELSIM_LIBS)"; \
+	export MSIM_MODE=$(VIVADO_MODE); \
+	export MSIM_MODELSIM_INI="$(MODELSIM_INI)"; \
+	export MSIM_VARIANT=questa; \
 	$(TOOLS_DIR)/scripts/launch_modelsim.sh
 
 .SECONDEXPANSION:
@@ -106,22 +124,32 @@ xclean:
 	@rm -f xvlog.pb
 	@rm -f vivado_pid*.str
 
-##vsim:       Run the simulation using ModelSim (via vivado)
+##vsim:       Run the simulation using ModelSim from inside Vivado
 vsim: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
 	$(call SETUP_AND_LAUNCH_SIMULATION,Modelsim)
 
-##modelsim:   Run the simulation using Modelsim (natively)
-modelsim: .check_tool vlint
+##qsim:       Run the simulation using Questa
+qsim: .check_tool vlint
+	$(call SETUP_AND_LAUNCH_QUESTASIM)
+
+##msim:       Run the simulation using ModelSim
+msim: .check_tool vlint
 	$(call SETUP_AND_LAUNCH_MODELSIM)
+
+# Alias for msim (for backwards compatibility)
+modelsim: msim
 
 # NOTE: VHDL files require a correct compile order.  This script compiles files
 #       in the order they are defined in $(DESIGN_SRC), then $SIM_SRC)
 
-##vlint:      Run ModelSim compiler to lint files
-vlint: .check_tool $(COMPLIBDIR) $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
-	$(call SETUP_AND_LAUNCH_VLINT)
-   
-##vclean:     Cleanup ModelSim intermediate files
+##vcom:       Run ModelSim/Questa compiler to compile HDL files
+vcom: .check_tool $(DESIGN_SRCS) $(SIM_SRCS) $(INC_SRCS)
+	$(call SETUP_AND_LAUNCH_VCOM)
+
+# Alias for vcom (for backwards compatibility)
+vlint: vcom
+
+##vclean:     Cleanup ModelSim/Questa intermediate files
 vclean:
 	@rm -f modelsim*.log
 	@rm -rf $(MODELSIM_PROJ_DIR)

@@ -12,6 +12,7 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhd/types/tune_request.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <functional>
 #include <memory>

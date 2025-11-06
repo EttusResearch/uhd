@@ -4,13 +4,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "../rfnoc_graph_mock_nodes.hpp"
 #include "ferrum_radio_mock.hpp"
 #include "x4xx_fbx_mpm_mock.hpp"
+#include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/mock_nodes.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <boost/test/unit_test.hpp>
 #include <cstddef>
 #include <iostream>
@@ -18,6 +18,7 @@
 
 using namespace uhd;
 using namespace uhd::rfnoc;
+using namespace uhd::rfnoc::test;
 using namespace std::chrono_literals;
 using namespace uhd::usrp::fbx;
 using namespace uhd::experts;

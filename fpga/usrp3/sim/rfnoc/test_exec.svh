@@ -100,7 +100,7 @@ timeprecision 1ps;
 `define ASSERT_INFO(EXPR, MESSAGE)                                   \
   begin                                                              \
     assert (EXPR) else begin                                         \
-      $info(MESSAGE)                                                 \
+      $info(MESSAGE);                                                \
     end                                                              \
   end
 

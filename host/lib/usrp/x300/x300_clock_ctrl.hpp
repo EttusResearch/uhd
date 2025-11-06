@@ -37,7 +37,8 @@ public:
         const size_t hw_rev,
         const double master_clock_rate,
         const double dboard_clock_rate,
-        const double system_ref_rate);
+        const double system_ref_rate,
+        const bool user_specified_dboard_clock_rate);
 
     /*! Get the master clock rate of the device.
      * \return the clock frequency in Hz
@@ -65,6 +66,11 @@ public:
      * \return the clock rate in Hz
      */
     virtual double get_dboard_rate(const x300_clock_which_t which) = 0;
+
+    /*! Lock the clock rate on the given daughterboard clock.
+     * \param which which clock
+     */
+    virtual void lock_dboard_rate(const x300_clock_which_t which) = 0;
 
     /*! Get a list of possible daughterboard clock rates.
      * \return a list of clock rates in Hz

@@ -20,8 +20,8 @@ import subprocess
 import sys
 import tarfile
 
-supported_ubuntu_releases = ["bionic", "focal", "jammy", "noble"]
-tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='./fpga' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
+supported_ubuntu_releases = ["focal", "jammy", "noble", "plucky"]
+tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='./fpga/usrp1' --exclude='./fpga/usrp2' --exclude='./fpga/usrp3/top/b200' --exclude='./fpga/usrp3/top/b2xxmini' --exclude='./fpga/usrp3/lib/*_200' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
 debuild_command = "debuild -S -i -sa"
 debuild_nosign = " -uc -us"
 
@@ -73,6 +73,9 @@ def main(args):
 
     # Copy debian build files to build folder
     shutil.copytree("host/cmake/debian", uhd_deb_build_path / "debian")
+    # Copy version specific files (e.g. debian/control.noble to debian/control)
+    for version_specific_file in pathlib.Path(uhd_deb_build_path / "debian").glob(f"*.{args.release}"):
+        shutil.copy2(version_specific_file, version_specific_file.with_suffix(""))
     shutil.copy2("host/utils/uhd-usrp.rules",
                  uhd_deb_build_path / "debian/uhd-host.udev")
     with open(uhd_deb_build_path / "debian/uhd-host.manpages", "w") as man_file:

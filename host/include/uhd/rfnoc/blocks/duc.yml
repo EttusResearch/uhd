@@ -1,5 +1,10 @@
 schema: rfnoc_modtool_args
 module_name: duc
+name: Digital Upconverter
+description: |
+  This block combines an integer resampler (interpolator) with a frequency
+  shifter. It is often used directly before the radio block of a USRP to adapt
+  center frequency (e.g., to provide an LO offset) and sampling rate.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
@@ -39,7 +44,6 @@ data:
       info_fifo_depth: 32
       payload_fifo_depth: 32
       format: sc16
-      mdata_sig: ~
   outputs:
     out:
       num_ports: NUM_PORTS
@@ -49,7 +53,6 @@ data:
       payload_fifo_depth: 2**MTU
       sideband_at_end: True
       format: sc16
-      mdata_sig: ~
 
 fpga_includes:
   - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_duc/Makefile.srcs"

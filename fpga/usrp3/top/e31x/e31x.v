@@ -841,7 +841,7 @@ module e31x (
 
   gpio_atr_io #(.WIDTH(FP_GPIO_WIDTH)) fp_gpio_atr_inst (
     .clk(radio_clk), .gpio_pins(PL_GPIO),
-    .gpio_ddr(fp_gpio_tri), .gpio_out(fp_gpio_out), .gpio_in(fp_gpio_in)
+    .gpio_ddr(~fp_gpio_tri), .gpio_out(fp_gpio_out), .gpio_in(fp_gpio_in)
   );
 
   /////////////////////////////////////////////////////////////////////

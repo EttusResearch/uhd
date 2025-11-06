@@ -20,6 +20,7 @@ UHD_INSTALL(FILES
     lc_block_control.hpp
     logpwr_block_control.hpp
     mock_block.hpp
+    mock_nodes.hpp
     moving_average_block_control.hpp
     null_block_control.hpp
     radio_control.hpp
@@ -46,6 +47,7 @@ UHD_INSTALL(FILES
     noc_block_make_args.hpp
     node.hpp
     node.ipp
+    node_accessor.hpp
     property.hpp
     property.ipp
     radio_control.hpp
@@ -56,12 +58,13 @@ UHD_INSTALL(FILES
     rfnoc_types.hpp
     traffic_counter.hpp
 
-    DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/rfnoc
     COMPONENT headers
 )
 
 add_subdirectory(blocks)
 add_subdirectory(core)
+add_subdirectory(detail)
 add_subdirectory(modules)
 add_subdirectory(transport_adapters)
 add_subdirectory(rf_control)

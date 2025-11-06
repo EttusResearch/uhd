@@ -1,0 +1,472 @@
+/*! \page page_build_guide Building and Installing UHD from source
+
+\tableofcontents
+
+\section build_dependencies Build Dependencies
+
+<b>Linux Notes:</b>
+This is dependent on the distribution you are using, but most, if not all, of
+the dependencies should be available in the package repositories for your
+package manager.
+
+<b>Mac OS X Notes:</b>
+Install the Xcode app to get the build tools (GCC and Make).
+Use MacPorts to get the Boost and Mako dependencies.
+Other dependencies can be downloaded as DMG installers from the web
+or installed via MacPorts.
+See the UHD OS X build instructions for more information: \ref build_instructions_osx
+
+<b>Windows Notes:</b>
+The dependencies can be acquired through installable EXE files.
+Usually, the Windows installer can be found on the project's website.
+Some projects do not host Windows installers, and if this is the case,
+follow the auxiliary download URL for the Windows installer (below).
+
+### C++ Compiler
+
+The following compilers are known to work and officially supported:
+
+- GCC >= @UHD_GCC_MIN_VERSION@
+- Clang >= @UHD_CLANG_MIN_VERSION@
+- MSVC >= @UHD_MSVC_MIN_VERSION_READABLE@; the free, community edition is sufficient. During execution of the "Visual Studio Installer", users need to select the "Desktop Development with C++" Workload for Visual Studio. On an already installed Visual Studio for Windows, it can be found and added under: Tools -> Get Tools and Features... -> Workloads -> Windows
+
+Other compilers (or lower versions) may work, but are not tested.
+
+### CMake
+
+- **Purpose:** generates project build files
+- **Minimum Version:** @UHD_CMAKE_MIN_VERSION@
+- **Usage:** build time (required)
+- **Download URL:** http://www.cmake.org/cmake/resources/software.html
+
+For Windows users, copy the CMake file to Program Files, e.g. `C:\Program Files\cmake-3.13.4-win32-x86`. The CMake path, e.g. `C:\Program Files\cmake-3.13.4-win32-x86\bin` needs to be added to the environment variables. <br>
+Note: The MSI version of the CMake installer will guide you through these steps.
+
+### Boost
+
+- **Purpose:** C++ library
+- **Minimum Version:** @UHD_BOOST_MIN_VERSION@
+- **Usage:** build time + runtime (required)
+- **Download URL:** http://www.boost.org/users/download/
+- **Download URL (Windows installer):** http://sourceforge.net/projects/boost/files/boost-binaries/
+
+The Boost binary installer must be selected to match the architecture of Windows + installed MSVC toolset version and being run. <br>
+Note: The MSVC toolset version is v140 for Visual Studio 2015, v141 for 2017, v142 for 2019, and v143 for 2022.
+
+### LibUSB
+
+- **Purpose:** USB-based hardware support
+- **Minimum Version:** 1.0
+- **Usage:** build time + runtime (optional)
+- **Download URL:** http://sourceforge.net/projects/libusb/files/libusb-1.0/
+- **Download URL (Windows):** https://github.com/libusb/libusb
+
+The directory to which you extract libusb must not contain spaces. This is to say that `C:\local\lib usb-1.0.22` will cause compile issues moving forward.
+
+### Python
+
+- **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
+- **Minimum Version:** @UHD_PYTHON_MIN_VERSION@
+- **Usage:** build time + runtime utility scripts (required)
+- **Download URL:** http://www.python.org/download/
+- **Comments for Windows Users:**
+  - The Python binary installer must be selected to match the system processor. Although, the 32-bit Python version can be used with 32-bit or 64-bit Windows system, it is recommended to match between Python and Windows installers. If the system is occupied with 64-bit Windows and x64-based processor, the `Windows x86-64 MSI Installer -> python-version.amd64.msi` needs to be used.
+  - The Python path needs to be added to the environment variables.
+  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `%%LocalAppData%\Programs\Python\Python310\Scripts`, and execute the following commands to install requests and numpy packages, respectively:
+
+    pip3 install requests \n
+    pip3 install numpy \n
+    pip3 install ruamel.yaml \n
+    pip3 install setuptools \n
+    pip3 install poetry
+
+  - For curses package installation (optional):
+    - Download URL: https://github.com/cgohlke/python-curses-build/releases
+    - Download a package that is similar to the Python version, Windows System, and system processor and copy it to Python scripts folder. For example, for Python 3.10, 64-bit Windows, and x64-based processor, download the `python_curses-2.2.3-cp310-cp310-win_amd64.whl`.
+    - Install the package dependency, wheel package:
+
+    pip3 install wheel
+
+    - Install the curses package and include it to Python scripts:
+
+    python3 -m pip3 install python_curses-2.2.3-cp310-cp310-win_amd64.whl
+
+
+### Pybind11
+
+<b>Note:</b> Pybind11 is shipped with UHD, and if no version of Pybind11 is
+found in the usual paths, the in-tree version will be used. For compatibility
+with other software that also uses Pybind11 (e.g., GNU Radio) it is generally
+recommended to use the system version, but it is no requirement for UHD in
+general.
+
+- **Purpose:** Used to build the UHD Python API
+- **Minimum Version:** @UHD_PYBIND11_MIN_VERSION@
+- **Usage:** build time (for Python API only)
+- **Download URL:** https://github.com/pybind/pybind11
+- **Alternative method:** As mentioned above, you don't have to install Pybind11
+  yourself to enable the Python API. On most Linux distributions, it can be
+  installed through the package manager.
+
+
+### Mako
+
+- **Purpose:** source code generation
+- **Minimum Version:** @UHD_PY_MAKO_MIN_VERSION@
+- **Usage:** build time (required), RFNoC image builder (runtime)
+- **Download URL:** http://www.makotemplates.org/download.html
+- **Alternative method:** You can use `pip3` or `easy_install` to install Mako from PyPi. To install it using 'pip3' on Windows, navigate to Python scripts folder, e.g. `%%LocalAppData%\Programs\Python\Python310\Scripts`, and run the following command:
+
+    pip3 install mako
+
+### Doxygen
+
+- **Purpose:** generates HTML API documentation
+- **Minimum Recommended Version:** 1.8
+- **Usage:** build time (optional)
+- **Download URL:** http://www.doxygen.nl/download.html
+
+- **Alternate method:** Install **setuptools**, and use the **easy_install** command to install Docutils. http://pypi.python.org/pypi/setuptools
+
+### NSIS
+
+- **Purpose:** create Windows installers. It is used to create binary packages of UHD enabling easy distribution and installation of UHD, associated utilities, and examples.
+- **Recommended Version:** 3.04
+- **Usage:** build time (optional)
+- **Download URL (Windows):** https://nsis.sourceforge.io/Download
+
+### Git
+
+Required to check out the repository (not necessary if building from tarballs).
+
+On Windows, install Cygwin from https://www.cygwin.com/ with Git support to checkout the repository
+or install msysGit from http://code.google.com/p/msysgit/downloads/list.
+
+\subsection build_dependencies_ubuntu Setting up the dependencies on Ubuntu
+
+You can install all the dependencies through the package manager:
+
+    sudo apt-get install autoconf automake build-essential ccache cmake cpufrequtils doxygen ethtool \
+    g++ git inetutils-tools libboost-all-dev libncurses5 libncurses5-dev libusb-1.0-0 libusb-1.0-0-dev \
+    libusb-dev python3-dev python3-mako python3-numpy python3-requests python3-scipy python3-setuptools \
+    python3-ruamel.yaml 
+    
+Your actual command may differ.
+
+\subsection build_dependencies_fedora Setting up the dependencies on Fedora
+
+You can install all the dependencies through the package manager:
+
+    sudo yum -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel-yaml python3-setuptools cmake make gcc gcc-c++
+
+or
+
+    sudo dnf -y install boost-devel libusb1-devel doxygen python3-docutils python3-mako python3-numpy python3-requests python3-ruamel-yaml python3-setuptools cmake make gcc gcc-c++
+
+Your actual command may differ.
+
+\section build_get_source Getting the source code
+
+The UHD source is stored in a git repository. To download it, follow these
+instructions:
+
+    git clone https://github.com/EttusResearch/uhd.git
+
+Our source code repository contains of the following branches:
+
+- \b master: This is the main development branch, with updated new features and
+  bug fixes.
+- \b UHD-*: These branches are created from master upon a release or release
+  candidate. They are used to create releases within a stable release cycle, and
+  usually only receive bugfixes. For example, all 3.14.* releases are taken from
+  the same branch (UHD-3.14). These branches usually no longer receive updates
+  once the following major release branch is created (for example, when the
+  UHD-3.14 branch was created, the UHD-3.13 branch would only receive updates
+  under special circumstances).
+- \b UHD-*.LTS: These are long-term support branches. They serve the same purpose
+  as the other UHD-* branches, but generally receive bugfixes for much longer.
+
+We might also be publishing experimental feature branches which can then be found in the same repository.
+All of our versioned releases are associated with tags in the repository.
+
+\li <a href="https://github.com/EttusResearch/UHD/tags">Source archives for release tags</a>
+
+\section build_pybombs Using PyBOMBS
+
+PyBOMBS is a command-line tool for Linuxes (and some Unixes) from the GNU Radio ecosystem and will do a source build of UHD, including setting up prerequisites/dependencies (regardless of the distribution). Assuming you have PyBOMBS set up, you can install UHD with the following command:
+
+    $ pybombs install uhd
+
+Head to the <a href="https://github.com/gnuradio/pybombs/#installation">PyBOMBS Homepage</a> for more instructions. PyBOMBS can install UHD (as well as GNU Radio or similar projects) both into system directories as well as into user's home directories, omitting the requirement for superuser access.
+
+\section build_instructions_unix Build Instructions (Unix)
+
+\subsection generate_unix Generate Makefiles with CMake
+
+    cd <uhd-repo-path>/host
+    mkdir build
+    cd build
+    cmake ../
+
+Additionally, configuration variables can be passed into CMake via the command line.
+The following common-use configuration variables are listed below:
+
+- For a custom install prefix: `-DCMAKE_INSTALL_PREFIX=<install-path>`
+
+Example usage:
+
+    cmake -DCMAKE_INSTALL_PREFIX=/opt/uhd ../
+
+<b>Ubuntu 20.04 note:</b> When building for Ubuntu 20.04, you may run into
+errors such as this during CMake's generation stage:
+
+    CMake Error in python/CMakeLists.txt:
+    Imported target "Boost::chrono" includes non-existent path
+
+    "/include"
+
+    in its INTERFACE_INCLUDE_DIRECTORIES.  Possible reasons include:
+
+    * The path was deleted, renamed, or moved to another location.
+
+    * An install or uninstall procedure did not complete successfully.
+
+    * The installation package was faulty and references files it does not
+      provide.
+
+These errors occur when CMake finds filesystem items by following the `/bin`
+symlink to `/usr/bin` and thus incorrectly calculating the root path for
+various directories needed by the build.
+
+If you encounter this issue, ensure that `/usr/bin` appears before `/bin` in
+the PATH environment variable of the process executing CMake. Alternatively,
+you can pass the `CMAKE_FIND_ROOT_PATH` configuration variable to CMake
+with a value of `/usr` to point it to the right starting directory for
+filesystem item searches.
+
+Example usage:
+
+    cmake -DCMAKE_FIND_ROOT_PATH=/usr ../
+
+\subsection build_install_unix Build and install
+
+    make
+    make test # This step is optional
+    sudo make install
+
+\subsection libpath_linux Setup the library path (Linux)
+
+Make sure that `libuhd.so` is in your `LD_LIBRARY_PATH`,
+or add it to `/etc/ld.so.conf` and make sure to run:
+
+    sudo ldconfig
+
+\subsection build_instructions_unix_arm Compiling for ARM platforms
+
+When compiling for ARM platforms, the assumption is made that NEON extensions
+are available if the arm_neon.h header is found. However, this might not be
+true, e.g., when cross-compiling for an arm7l target (e.g., the Odroid XU4)
+using a standard SDK. In this case, it's necessary to tell CMake to disable NEON
+extensions:
+
+    cmake -DNEON_SIMD_ENABLE=OFF [...]
+
+
+\section build_instructions_windows Build Instructions (Windows)
+
+\subsection cmake_win Generate the project with CMake
+
+- Make sure you have installed build dependecies for Windows listed above
+- Make sure the version of Python that CMake detects matches the version you
+  want it to be (check the PYTHON_VERSION variable)
+- Open the CMake GUI.
+- Set the path to the source code: `<uhd-repo-path>/host`.
+- Set the path to the build directory (this may require creating the folder \\build\\): `<uhd-repo-path>\host\build`.
+- Make sure that the paths do not contain spaces.
+- Check the Advanced checkbox.
+- Click "Configure".
+  - Set "Visual Studio 17 2022" as the compiler. Select the latest MSVC that is available on the machine. Leave other settings as default.
+  - Click “Finish” and allow CMake to Generate
+- Set or add the build variables with type PATH
+  - `Boost_INCLUDE_DIR` should point to the `PATH` where the Boost .hpp files are, e.g. `C:\local\boost_version\`
+  - `Boost_LIBRARY_DIR` should point to the pre-built libraries, e.g. `C:\local\boost_version\lib64-msvc-14.3`)
+- If a release UHD build is required:
+  - Click on "Generate", and a project file will be created in the build directory.
+- If a debug UHD build is required:
+  - Click on Grouped
+  - Click on `CMAKE`
+  - Look for the parameter `CMAKE_BUILD_TYPE: Release` and change it to `CMAKE_BUILD_TYPE: Debug`.
+  - Click on "Generate", and a project file will be created in the build directory.
+- If Python API is needed
+  - Set ENABLE_PYTHON_API to TRUE
+  - Double check that the PYTHON_EXECUTABLE variable points to the correct Python version (e.g. `%%LocalAppData%\Programs\Python\Python310\python.exe`)
+
+\subsection libusb_notes LibUSB notes
+
+On Windows, CMake does not have the advantage of `pkg-config`,
+so we must manually tell CMake how to locate the LibUSB header and lib.
+
+- From the CMake GUI, select "Advanced View".
+- Set or add the following entry with type PATH `LIBUSB_INCLUDE_DIRS` to the directory for `libusb.h`, e.g. `C:\local\libusb-1.0.22\include\libusb-1.0`.
+- Set or add the following entry with type FILEPATH `LIBUSB_LIBRARIES` to the full path for `libusb-1.0.lib`, e.g. `C:\local\libusb-1.0.22\MS64\dll\libusb-1.0.lib`.
+- Recommend the static `libusb-1.0.lib` to simplify runtime dependencies.
+- Check the box to enable USB support, click "Configure" and "Generate".
+
+<b>Note:</b> On Windows, LibUSB v1.0.19 is required to use most USB3 controllers.
+
+\subsection build_in_msvc Build the project in Visual Studio
+- Open the generated project file in MSVC, e.g. `<uhd-repo-path>\host\build\UHD.sln` by clicking "Open Project" in the CMake GUI
+- Change the build type from "Debug" to "Release".
+- Note: If you did not specify a custom, standard user writable installation path via `CMAKE_INSTALL_PREFIX`, you must close Visual Studio, run it again with Administrator Privileges, and open `UHD.sln`.
+- Select the **ALL_BUILD** target, right-click, and choose "Build".
+- Right click on the **INSTALL** project in the project explorer, generate it. Watch the output console for errors.
+
+<b>Note:</b>
+You may not have permission to build the install target.
+You need to be an administrator or to run MSVC as administrator.
+
+\subsection build_msvc_cmd_line Build the project in MSVC (command line)
+Open the Visual Studio Command Prompt Shorcut:
+
+    cd <uhd-repo-path>\host\build
+    DevEnv uhd.sln /build Release /project ALL_BUILD
+    DevEnv uhd.sln /build Release /project INSTALL
+
+\subsection compile_binary_installer_mscv Compiling a binary installer
+- Building the "PACKAGE" project will produce a binary installer if NSIS is installed. This installer will be for either 64 bit or 32 bit as chosen during the CMake step.
+- Select the "PACKAGE" project in the Solution Explorer, right-click, and choose "Build".
+
+\subsection path_env Setup the PATH environment variable
+* Add the UHD bin path to `%PATH%` (usually `C:\Program Files\UHD\bin`)
+
+<b>Note:</b>
+The default interface for editing environment variable paths in Windows is very poor.
+We recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the default editor.
+
+\section build_instructions_osx Build Instructions (Mac OS X)
+
+### X11/XQuartz or Terminal
+
+For the purposes of building and using UHD, you can use Apple's Terminal.app if you so choose, no matter how you install UHD.
+
+That said, running almost any graphical interface (GUI) will require downloading and installing X11/XQuartz first. Through OSX 10.8, Apple provided a means to install X11.app, but XQuartz has always been more up to date. Staring in 10.9, Apple no longer provides a full working version of X11.app. Hence, just use XQuartz from the get-go. Note that unless you experiment with using the Quartz interface to various graphical toolkits (e.g., GTK), you must use X11 as the terminal interface for any GUI applications.
+
+### Xcode
+
+Apple provides a fully integrated development environment via their Xcode toolkit, which can be downloaded either via the App store or directly from Apple's Developer area depending on the version of OSX in use. Xcode provides the compilers and related development tools needed to build or execute UHD and its dependencies.
+
+Once Xcode is installed, you must still install the Command Line Tools, which can be accomplished by running Xcode.app, then going to Preferences... -> Downloads and making sure Command Line Tools is selected/enabled [feel free to select other downloads too]. You might be able to install the Command Line Tools in a terminal using
+
+    xcode-select --install
+
+but this command will not work with every OSX / Xcode combination (e.g., does not work with OSX 10.8 and Xcode 5, but does work with OSX 10.9 and Xcode 5).
+
+Once the Command Line Tools are installed, UHD and other projects can be installed either from source or, preferably, via MacPorts.
+
+### Background Dependencies
+
+There are a number of background libraries and applications that must be installed from source or binary in order to compile or execute UHD; for a full list, see \ref build_dependencies. These can be obtained by using <a href="http://www.macports.org/">MacPorts</a>, <a href="http://fink.sourceforge.net/">Fink</a>, <a href="http://brew.sh/">HomeBrew</a>, and/or from source / scratch. MacPorts tends to be more up-to-date with respect to new releases, which can be both a blessing and a curse since sometimes new released are untested and result in build or runtime errors. MacPorts, HomeBrew, and Fink offer thousands of ready-to-install libraries and applications, and hence they are highly recommended to use instead of installing from source / scratch.
+
+Many UHD developers first install UHD using MacPorts in order to get all of the necessary background dependencies installed, then remove just UHD via
+
+    sudo port install uhd
+    sudo port uninstall uhd
+
+\b NOTE: We highly recommended that all dependencies be installed via the same package manager! When issues arise, they are much easier to track down, and updating to newer versions of UHD as well as dependencies is much easier.
+
+\b NOTE: Other package managers (e.g., Fink, HomeBrew) will require different commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
+
+#### Compiling UHD from Source
+
+Installing UHD from source follows the standard cmake method as found in many places, with a few arguments to make sure cmake always finds the correct version of Python, and uses the desired compiler. First, download the source code either via a release or via GIT.
+
+For example, on OSX 10.8+ and using Xcode's legacy Apple GCC (via llvm), MacPorts installed into /opt/local (the default), and for Python 2.7 as installed by MacPorts, issue the following commands from within the UHD source directory:
+
+    $ mkdir build
+    $ cd build
+    $ CC=/usr/bin/llvm-gcc CXX=/usr/bin/llvm-g++ cmake -DCMAKE_INSTALL_PREFIX=/opt/local -DPYTHON_EXECUTABLE=/opt/local/bin/python2.7 -DPYTHON_INCLUDE_DIR=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Headers -DPYTHON_LIBRARY=/opt/local/Library/Frameworks/Python.framework/Versions/2.7/Python ../host
+    $ make
+
+If make succeeds, then you can test the build for errors via
+
+    $ make test
+
+To install the build, issue
+
+    $ sudo make install
+
+Selecting another compiler is as simple as changing the CC and CXX pre-arguments to the cmake command. Similarly, one can change the install prefix by changing the setting of the variable CMAKE_INSTALL_PREFIX.
+
+\b NOTE: All of the PYTHON defines must point to the same install of Python, otherwise runtime errors are likely to occur.
+
+\b NOTE: When using some other package manager (e.g., Fink, HomeBrew), the actual variable settings (-D...=...) will be different than those above. Please consult the specific package manager in use for how to do these settings properly; they will not be covered here.
+
+\section post_install_tasks Post-Install Tasks
+
+- After installing, you might want to download the FPGA images packages by running
+  `uhd_images_downloader` on the command line, or one of these executables (the actual path may differ based on your installation):
+  + Linux: /usr/local/lib/uhd/utils/uhd_images_downloader.py
+  + Windows: C:\\Program Files\\share\\uhd\\utils\\uhd_images_downloader.py
+  + Mac OS X: In MacPorts, when UHD is installed the images are automatically downloaded and installed into their proper location. For any other package manager or install method, you should execute the uhd_images_downloader.py script to get the images installed appropriately.
+
+- For USB-Based devices, make sure to read \ref transport_usb for platform-specific post-installation tasks.
+
+\section build_pymod_only Only building Python utilities
+
+In order to build FPGA bitfiles for RFNoC-based devices, the `rfnoc_image_builder`
+is a required tool, and it will be installed with UHD. However, if a dedicated
+system is being used to build bitfiles (this includes building bitfiles within
+a continuous integration system), only the Python utilities are required. To
+skip the full build and installation of UHD and only install these utilities,
+cmake can be configured as follows (in this example, the manual and any other
+documentation is also not built):
+
+    cmake -DENABLE_LIBUHD=OFF -DENABLE_PYMOD_UTILS=ON \ # Skip UHD library, install utilities
+          -DUHD_BOOST_REQUIRED=OFF \ # Don't even check for Boost
+          -DENABLE_DOXYGEN=OFF -DENABLE_MAN_PAGES=OFF -DENABLE_MANUAL=OFF # Skip all documentation
+
+Building and installation of UHD with these options will take less than a
+minute, and will have a minimal footprint on the installed system.
+
+\section build_apps Building applications that require UHD using CMake
+
+If your application uses CMake as a build system, the following command
+will setup up your build environment to link against UHD:
+
+\code{.cmake}
+find_package(UHD 4.7.0)
+\endcode
+
+This will set the CMake variable `UHD_INCLUDE_DIRS` and `UHD_LIBRARIES`
+accordingly.
+
+See the example in `examples/init_usrp` for more details, as well as
+the UHDConfig.cmake file that gets installed along with the UHD libraries.
+
+\section build_static Static Builds
+
+Using CMake, UHD can be built as a static library by switching on
+`ENABLE_STATIC_LIBS`.
+
+    cmake -DENABLE_STATIC_LIBS=ON <path to UHD source>
+
+When linking the static library, you must ensure that the library
+is loaded in its entirety, otherwise global objects aren't initialized
+at load-time and it will always fail to detect any devices.
+Also, \b all UHD dependencies for UHD must be provided unless your
+linker has other ways of resolving library dependencies.
+
+With the GNU ld linker (e.g. on Linux platforms), this is done using
+the `--whole-archive` switch. Using the GNU C++ compiler, the correct
+command line is:
+
+    g++ your_uhd_app.cpp -Wl,-whole-archive <path to UHD libs>/libuhd.a -Wl,-no-whole-archive -ldl -lpthread -l<all other libraries>
+
+Note that `--whole-archive` is disabled after including `libuhd.a`.
+The exact list of libraries depends on your UHD build. When using `UHDConfig.cmake`
+(see \ref build_apps), the path to `libuhd.a` is saved into `UHD_LIBRARIES`,
+and `UHD_STATIC_LIB_DEPS` lists the required dependencies. See `UHDConfig.cmake`
+for details.
+
+*/
+// vim:ft=doxygen:

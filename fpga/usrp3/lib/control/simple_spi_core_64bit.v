@@ -68,7 +68,7 @@ module simple_spi_core_64bit
 
     //spi interface, slave selects, clock, data in, data out
     output [WIDTH-1:0] sen,
-    output reg sclk,
+    output reg sclk = CLK_IDLE,
     output reg mosi,
     input miso,
 
@@ -111,14 +111,14 @@ module simple_spi_core_64bit
   localparam POST_IDLE = 4;
   localparam IDLE_SEN = 5;
 
-  reg [2:0] state;
+  reg [2:0] state = WAIT_TRIG;
 
   reg ready_reg;
   assign ready = ready_reg && ~trigger_spi;
 
   //serial clock either idles or is in one of two clock states
   //One pipeline stage to align output data with clock edge.
-  reg sclk_reg;
+  reg sclk_reg = CLK_IDLE;
   always @(posedge clock) begin
     sclk <= sclk_reg;
   end

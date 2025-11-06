@@ -458,6 +458,8 @@ public:
             tx_streamer = std::make_shared<rfnoc_tx_streamer_replay_buffered>(
                 args.channels.size(), args, disconnect, replay_configs);
         } else {
+            args.args["__chdr_width"] =
+                std::to_string(chdr_w_to_bits(_graph->get_chdr_width()));
             tx_streamer = std::make_shared<rfnoc_tx_streamer>(
                 args.channels.size(), args, disconnect);
         }
@@ -599,6 +601,19 @@ public:
 
         if (tx_chain.extension) {
             usrp_info["tx_extension"] = tx_chain.extension->get_name();
+        }
+
+        if (tx_chain.radio->get_tree()->exists("dboard/tx_frontends"
+                                               / tx_chain.radio->get_dboard_fe_from_chan(
+                                                   tx_chain.block_chan, uhd::TX_DIRECTION)
+                                               / "default_cal_gain")) {
+            usrp_info["tx_default_cal_gain"] = std::to_string(
+                tx_chain.radio->get_tree()
+                    ->access<double>("dboard/tx_frontends"
+                                     / tx_chain.radio->get_dboard_fe_from_chan(
+                                         tx_chain.block_chan, uhd::TX_DIRECTION)
+                                     / "default_cal_gain")
+                    .get());
         }
 
         return usrp_info;
@@ -2876,10 +2891,9 @@ multi_usrp::sptr make_rfnoc_device(
 
     // Check if a multi_usrp was already created for this device
     std::lock_guard<std::mutex> lock(_map_mutex);
-    if (graph_to_musrp.count(graph) and not graph_to_musrp[graph].expired()) {
-        musrp = graph_to_musrp[graph].lock();
-        if (musrp) {
-            return musrp;
+    if (graph_to_musrp.count(graph)) {
+        if (multi_usrp::sptr p = graph_to_musrp[graph].lock()) {
+            return p;
         }
     }
 

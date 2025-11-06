@@ -132,7 +132,7 @@ struct syntax_error : exception
 #define MPM_THROW_SITE_INFO(what)                                                     \
     std::string(std::string(what) + "\n" + "  in " + std::string(__PRETTY_FUNCTION__) \
                 + "\n" + "  at " + std::string(__FILE__) + ":"                        \
-                + BOOST_STRINGIZE(__LINE__) + "\n")
+                + std::to_string(__LINE__) + "\n")
 
 /*!
  * Throws an invalid code path exception with throw-site information.

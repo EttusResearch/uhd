@@ -63,8 +63,7 @@ except ImportError:
 _USERNAME_VARIABLE        = "UHD_IMAGES_USER"
 _PASSWORD_VARIABLE        = "UHD_IMAGES_PASSWORD"
 _DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
-_BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
-_DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
+_DEFAULT_INSTALL_PATH     = os.path.join("@CONFIG_PATH@", "images")
 _DEFAULT_BASE_URL         = "https://files.ettus.com/binaries/cache/"
 _INVENTORY_FILENAME       = "inventory.json"
 _DEFAULT_BUFFER_SIZE      = 8192

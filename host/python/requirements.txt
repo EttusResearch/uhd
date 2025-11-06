@@ -1,0 +1,16 @@
+# Python packages required to build UHD with Python support
+
+# Process yaml files, e.g. for RFNoC image builder
+ruamel.yaml
+
+# Numpy is used to generate or process IQ data
+numpy<2.0.0
+
+# Mako is needed for generate source stubs (e.g. register maps)
+mako
+
+# Needed for the image downloader
+requests
+
+# Needed to build the Python bindings for UHD
+setuptools

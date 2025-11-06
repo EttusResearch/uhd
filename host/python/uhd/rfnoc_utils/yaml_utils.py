@@ -9,6 +9,7 @@ files for RFNoC. This includes knowledge about paths, specific contents, and
 RFNoC-specific extensions.
 """
 
+import io
 import json
 import logging
 import os
@@ -419,3 +420,23 @@ def write_yaml(config, destination):
         rt_yaml.default_flow_style = False
         rt_yaml.indent(mapping=4)
         rt_yaml.dump(config, out_file)
+
+
+def read_yaml(yml_file):
+    """Read a YAML file."""
+    with open(yml_file, encoding="utf-8") as stream:
+        rt_yaml = yaml.YAML(typ="rt")
+        return rt_yaml.load(stream)
+
+
+def reload_dict(cfg_object):
+    """Save a dictionary to a YAML file and reload it."""
+    # dump to string
+    rt_yaml = yaml.YAML(typ="rt")
+    rt_yaml.default_flow_style = False
+    rt_yaml.indent(mapping=4)
+    strdump = io.StringIO()
+    rt_yaml.dump(cfg_object, strdump)
+    # load from string
+    strdump.seek(0)
+    return rt_yaml.load(strdump)

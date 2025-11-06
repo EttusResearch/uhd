@@ -1,0 +1,153 @@
+#
+# Copyright 2024 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building E31X FPGA targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+# E310 FPGA targets to build
+- name: e31x_sg1_full_targets_matrix
+  type: object
+  default:
+    E310_SG1:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1
+      image_core_name: usrp_e310_sg1_fpga
+      artifact_name: E310_SG1
+      timeout: 720
+      max_attempts: 2
+    E310_SG1_IDLE:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1_IDLE
+      image_core_name: usrp_e310_sg1_idle_fpga
+      artifact_name: E310_SG1_IDLE
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg1_reduced_targets_matrix
+  type: object
+  default:
+    E310_SG1:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG1
+      image_core_name: usrp_e310_sg1_fpga
+      artifact_name: E310_SG1
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg3_full_targets_matrix
+  type: object
+  default:
+    E310_SG3:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3
+      image_core_name: usrp_e310_sg3_fpga
+      artifact_name: E310_SG3
+      timeout: 720
+      max_attempts: 2
+    E310_SG3_IDLE:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3_IDLE
+      artifact_name: E310_SG3_IDLE
+      image_core_name: usrp_e310_sg3_idle_fpga
+      timeout: 720
+      max_attempts: 2
+- name: e31x_sg3_reduced_targets_matrix
+  type: object
+  default:
+    E310_SG3:
+      image_core: e310_rfnoc_image_core.yml
+      target_name: E310_SG3
+      image_core_name: usrp_e310_sg3_fpga
+      artifact_name: E310_SG3
+      timeout: 720
+      max_attempts: 2
+
+
+stages:
+
+### START: E310 stages
+
+- stage: provide_e31x_sg1_fpga_images_stage
+  displayName: Provide E310 SG1 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.e31x'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: e31x_sg1
+      device_name: E310 SG1
+      ip_target: E310_SG1_IP
+      package_name: e3xx_e310_sg1_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/e31x
+      target_full_matrix: ${{ parameters.e31x_sg1_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.e31x_sg1_reduced_targets_matrix }}
+
+- stage: provide_e31x_sg3_fpga_images_stage
+  displayName: Provide E310 SG3 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.e31x'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: e31x_sg3
+      device_name: E310 SG3
+      ip_target: E310_SG3_IP
+      package_name: e3xx_e310_sg3_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/e31x
+      target_full_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.e31x_sg3_reduced_targets_matrix }}
+
+### END: E310 stages

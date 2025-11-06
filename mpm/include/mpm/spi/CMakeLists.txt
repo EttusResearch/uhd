@@ -7,5 +7,5 @@
 install(FILES
   spi_iface.hpp
   spi_regs_iface.hpp
-  DESTINATION ${INCLUDE_DIR}/mpm/spi
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/spi
 )

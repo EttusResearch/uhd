@@ -8,9 +8,12 @@
 
 #include "../adi/t_mykonos.h"
 #include "ad937x_fir.hpp"
-#include <boost/noncopyable.hpp>
+#include <mpm/noncopyable.hpp>
+#include <cstddef>
+#include <cstdint>
+
 // Allocates and links the entire mykonos config struct in a single class
-class ad937x_config_t : public boost::noncopyable
+class ad937x_config_t : public mpm::noncopyable
 {
 public:
     ad937x_config_t(spiSettings_t* sps, const size_t deserializer_lane_xbar);

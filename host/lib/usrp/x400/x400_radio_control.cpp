@@ -280,7 +280,10 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                         }
                     }
                     if (num_calibrations > 0) {
-                        RFNOC_LOG_INFO("Calibrated " << num_calibrations << " channels.");
+                        RFNOC_LOG_INFO(
+                            "Calibrated "
+                            << num_calibrations
+                            << (num_calibrations > 1 ? " channels." : " channel."));
                     } else {
                         RFNOC_LOG_WARNING("Did not find any channels to calibrate!");
                     }

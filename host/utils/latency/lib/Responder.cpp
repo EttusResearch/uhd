@@ -65,7 +65,7 @@ void Responder::FLUSH_SCREEN()
 void Responder::FLUSH_SCREEN_NL()
 {
     do {
-        int y, x;
+        int UHD_UNUSED(y), x;
         getyx(_window, y, x);
         if (x > 0) {
             printw("\n");

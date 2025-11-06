@@ -57,6 +57,19 @@ end x410_rf_reset_controller;
 
 architecture RTL of x410_rf_reset_controller is
 
+  component pulse_synchronizer
+    generic (
+      MODE   : string := "PULSE";
+      STAGES : integer := 2);
+    port (
+      clk_a   : in  std_logic;
+      rst_a   : in  std_logic;
+      pulse_a : in  std_logic;
+      busy_a  : out std_logic;
+      clk_b   : in  std_logic;
+      pulse_b : out std_logic);
+  end component;
+
   -- POR value for all resets are high.
   signal cTriggerAdcReset     : std_logic := '1';
   signal cTriggerAdcResetDlyd : std_logic := '1';
@@ -86,13 +99,21 @@ architecture RTL of x410_rf_reset_controller is
   attribute ASYNC_REG of cTriggerAdcResetDone_ms : signal is "TRUE";
   attribute ASYNC_REG of cTriggerDacResetDone_ms : signal is "TRUE";
 
+  signal cTriggerAdcGearboxReset : std_logic;
+  signal cTriggerDacGearboxReset : std_logic;
+
+  signal dTriggerAdcGearboxReset : std_logic;
+  signal dTriggerDacGearboxReset : std_logic;
+
 begin
 
   -- rAdcEnableData is set to '1' as we don't control the flow of RX data.
   rAdcEnableData <= '1';
 
-  cTriggerAdcReset <= cSoftwareControl(kADC_RESET);
-  cTriggerDacReset <= cSoftwareControl(kDAC_RESET);
+  cTriggerAdcReset        <= cSoftwareControl(kADC_RESET);
+  cTriggerDacReset        <= cSoftwareControl(kDAC_RESET);
+  cTriggerAdcGearboxReset <= cSoftwareControl(kADC_GEARBOX_RESET);
+  cTriggerDacGearboxReset <= cSoftwareControl(kDAC_GEARBOX_RESET);
 
   cSoftwareStatus <= (
                        kADC_SEQ_DONE => cAdcResetDoneSticky,
@@ -170,6 +191,37 @@ begin
   end process SwDacResetDone;
 
   -----------------------------------------------------------------------------
+  -- transfer posedge gearbox triggers to DataClk domain
+  -----------------------------------------------------------------------------
+  adc_gearbox_reset_pulse_sync : pulse_synchronizer
+    generic map (
+      MODE   => "POSEDGE",
+      STAGES => 2
+    )
+    port map (
+      clk_a   => ConfigClk,
+      rst_a   => '0',
+      pulse_a => cTriggerAdcGearboxReset,
+      busy_a  => open,
+      clk_b   => DataClk,
+      pulse_b => dTriggerAdcGearboxReset
+    );
+
+  dac_gearbox_reset_pulse_sync : pulse_synchronizer
+    generic map (
+      MODE   => "POSEDGE",
+      STAGES => 2
+    )
+    port map (
+      clk_a   => ConfigClk,
+      rst_a   => '0',
+      pulse_a => cTriggerDacGearboxReset,
+      busy_a  => open,
+      clk_b   => DataClk,
+      pulse_b => dTriggerDacGearboxReset
+    );
+
+  -----------------------------------------------------------------------------
   -- rf_reset Instances
   -----------------------------------------------------------------------------
 
@@ -180,7 +232,7 @@ begin
       RfClk       => RfClk,
       RfClk2x     => RfClk2x,
       DataClk2x   => DataClk2x,
-      dTimedReset => dAdcResetPulse,
+      dTimedReset => (dAdcResetPulse or dTriggerAdcGearboxReset),
       dSwReset    => dTriggerAdcReset,
       dReset_n    => dAdcDataOutReset_n,
       d2Reset_n   => open,
@@ -196,7 +248,7 @@ begin
       RfClk       => RfClk,
       RfClk2x     => RfClk2x,
       DataClk2x   => DataClk2x,
-      dTimedReset => dDacResetPulse,
+      dTimedReset => (dDacResetPulse or dTriggerDacGearboxReset),
       dSwReset    => dTriggerDacReset,
       dReset_n    => dDacDataInReset_n,
       d2Reset_n   => d2DacFirReset_n,

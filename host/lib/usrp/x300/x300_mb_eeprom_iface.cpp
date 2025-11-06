@@ -26,7 +26,6 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/platform.hpp>
-#include <boost/thread.hpp>
 #include <memory>
 
 using namespace uhd;

@@ -14,7 +14,7 @@
 //   NIPC             : Number of radio samples per radio clock cycle
 //   ITEM_W           : Radio sample width
 //   NUM_PORTS        : Number of radio channels (RX/TX pairs)
-//   MTU              : Maximum transmission unit (i.e., maximum packet size) 
+//   MTU              : Maximum transmission unit (i.e., maximum packet size)
 //                      in CHDR words is 2**MTU.
 //   PERIPH_BASE_ADDR : CTRL port peripheral window base address
 //   PERIPH_ADDR_W    : CTRL port peripheral address space = 2**PERIPH_ADDR_W
@@ -252,9 +252,9 @@ module rfnoc_block_radio #(
   // Decode Control Port Addresses
   //---------------------------------------------------------------------------
   //
-  // This block splits the NoC shell's single master control port interface 
-  // into three masters, connected to the shared registers, radio cores, and 
-  // the external CTRL port peripheral interface. The responses from each of 
+  // This block splits the NoC shell's single master control port interface
+  // into three masters, connected to the shared registers, radio cores, and
+  // the external CTRL port peripheral interface. The responses from each of
   // these are merged into a single response and sent back to the NoC shell.
   //
   //---------------------------------------------------------------------------
@@ -375,7 +375,7 @@ module rfnoc_block_radio #(
   // Merge Control Port Interfaces
   //---------------------------------------------------------------------------
   //
-  // This block merges the master control port interfaces of all radio_cores 
+  // This block merges the master control port interfaces of all radio_cores
   // into a single master for the NoC shell.
   //
   //---------------------------------------------------------------------------
@@ -588,3 +588,28 @@ module rfnoc_block_radio #(
     end
   endgenerate
 endmodule
+
+//XmlParse xml_on
+//
+//<regmap name="RFNOC_RADIO_REGMAP" readablestrobes="false" generatevhdl="false" generateverilog="false">
+//  <group name="RFNOC_RADIO_WINDOWS">
+//    <info>
+//      RFNoC control requests are distributed across the following windows.
+//      The shared and periphial windows are capable of handling timed requests.
+//    </info>
+//    <window name="SHARED_WINDOW" offset="0x00000" size="0x010">
+//      <info>Provides read access to the timestamp of the radio block.</info>
+//    </window>
+//    <window name="RFDC_TIMING_WINDOW" offset="0x1000" size="0x0200">
+//      <info>
+//        Provides access to the respective radio cores. Actual size depends on the number of radio
+//        cores.
+//      </info>
+//    </window>
+//    <window name="PERIPH_WINDOW" offset="0x80000" size="0x80000" targetregmap="RADIO_CTRLPORT_REGMAP">
+//      <info>Accessing the peripherals of the radio.</info>
+//    </window>
+//  </group>
+//</regmap>
+//
+//XmlParse xml_off

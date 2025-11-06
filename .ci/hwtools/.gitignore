@@ -1,0 +1,4 @@
+# Ignore objects/ directory created by hwtools
+objects/
+# Ignore Python bytecode cache files
+__pycache__/

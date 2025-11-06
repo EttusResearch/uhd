@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
 #include <process.h>
 
 #define NIRIO_IOCTL_MAP_MEMORY    \

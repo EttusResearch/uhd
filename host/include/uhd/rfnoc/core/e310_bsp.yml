@@ -1,6 +1,17 @@
 type: e31x
 type_id: E310
 family: 7SERIES
+
+parameters:
+  RADIO_NIPC: 1
+
+checks:
+  - condition: ${ parameters['RADIO_NIPC'] == 1 }
+    message: |
+      The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
+      be correct, so please remove the RADIO_NIPC parameter from the image core file.
+    severity: error
+
 transports:
   - name: dma
     type: dma

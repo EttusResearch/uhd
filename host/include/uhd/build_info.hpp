@@ -37,4 +37,10 @@ UHD_API const std::string install_prefix();
 
 //! Return the version of libusb this build was built with.
 UHD_API const std::string libusb_version();
+
+//! Return the version of DPDK this build was built with.
+UHD_API const std::string dpdk_version();
+
+//! Return the value of PKG_DATA_DIR at build time (e.g., "share/uhd").
+UHD_API const std::string pkg_data_dir();
 }} // namespace uhd::build_info

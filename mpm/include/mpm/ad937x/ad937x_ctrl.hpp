@@ -11,13 +11,17 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <mpm/exception.hpp>
+#include <mpm/noncopyable.hpp>
 #include <mpm/spi/spi_iface.hpp>
-#include <boost/noncopyable.hpp>
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <future>
 #include <memory>
 #include <mutex>
 #include <set>
+#include <string>
+#include <vector>
 
 namespace mpm { namespace chips {
 
@@ -38,7 +42,7 @@ namespace mpm { namespace chips {
  * certain functions affect more than one channel due to the limitations of
  * the AD9371.
  */
-class ad937x_ctrl : public boost::noncopyable
+class ad937x_ctrl : public mpm::noncopyable
 {
 public:
     typedef std::shared_ptr<ad937x_ctrl> sptr;

@@ -270,14 +270,8 @@ public:
         m_tail = m_array;
     }
 
-#if defined(MSGPACK_USE_CPP03)
-private:
-    vrefbuffer(const vrefbuffer&);
-    vrefbuffer& operator=(const vrefbuffer&);
-#else  // defined(MSGPACK_USE_CPP03)
     vrefbuffer(const vrefbuffer&) = delete;
     vrefbuffer& operator=(const vrefbuffer&) = delete;
-#endif // defined(MSGPACK_USE_CPP03)
 
 private:
     iovec* m_tail;

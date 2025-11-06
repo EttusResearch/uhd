@@ -16,6 +16,10 @@
 ###############################################################################
 # HOST CHANGES (UHD)
 ###############################################################################
+- re: host/examples/rfnoc-gain|host/tests/test_modtool.py
+  add:
+    - uhd.build.linux
+    - uhd.rfnoc_modtool.all
 # If only a unit test changed, then we need to re-run unit tests, but no HW tests
 - re: ^host/tests/[^/]+(cpp|py)$|^host/tests/CMakeLists.txt
   add:
@@ -25,6 +29,22 @@
 - re: ^host/docs/
   add:
     - uhd.docs
+# If a comment in a public header changed, then most likely the documentation
+# changed, but we still want to run other tests, too
+- re: ^host/include/uhd/.+\.hpp$
+  add:
+    - uhd.docs
+  include_content: comments
+  stop: False
+# Image builder
+# Note the FPGA pipelines have their own rules around the image builder. For
+# UHD, we just run a build to make sure the package is not in a weird state.
+- re: ^host/python/uhd/rfnoc_utils/grc.py
+  add:
+    - uhd.build.linux
+- re: ^host/python/uhd/rfnoc_utils/
+  add:
+    - uhd.build.linux
 # Device-specific changes. These should trigger HW tests only on those devices
 # they affect. We start with daughterboard rules, then motherboard rules.
 - re: host/lib/usrp/dboard/zbx/
@@ -55,6 +75,12 @@
     - uhd.build.all
     - hw.rf.x310.twinrx
     - hw.rf.x300.twinrx
+- re: host/lib/usrp/dboard/obx|host/lib/include/uhdlib/usrp/dboard/obx
+  add:
+    - uhd.build.all
+    - hw.rf.x3xx
+    - devtest.x3xx
+    - hw.streaming.x3xx
 - re: host/lib/usrp/dboard/.*CMakeLists.txt
   add:
     - uhd.build.all
@@ -116,20 +142,21 @@
     - hw.rf.all
     - devtest.all
 # Catchall rule for UHD changes
-- re: host/.+cpp$|host/.+CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
+- re: host/.+cpp$|host/.*CMakeLists.txt|host/.+hpp$|host/.+ipp$|host/.+c$|host/.+h$|host/.+py$
   add:
     - uhd.build.all
     - uhd.utest.all
     - hw.streaming.all
     - hw.rf.all
     - devtest.all
+  stop: False
 
 ###############################################################################
 # MPM CHANGES
 ###############################################################################
 # When any code file changes, we want to run the unit tests, but run the
 # other tests, too
-- re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.+CMakeLists.txt$
+- re: ^mpm/.+hpp$|^mpm/.+cpp$|^mpm/.+py$|^mpm/.+/tests/|^mpm/.*CMakeLists.txt$
   add:
     - uhd.build.linux
     - mpm.utest.all
@@ -194,9 +221,189 @@
     - devtest.all
 
 ###############################################################################
+# FPGA CHANGES
+###############################################################################
+# build targets:
+# - fpga.usrp3.$PLATFORM: Build FPGA images for given platforms.
+
+- re: fpga/usrp3/
+  add:
+    - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+  stop: False
+
+# library changes
+- re: fpga/usrp3/lib
+  add:
+    - fpga.usrp3.all
+    - uhd.rfnoc_modtool.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
+
+# image builder changes
+- re: host/utils/rfnoc_image_builder.py
+  add:
+    - fpga.usrp3.all
+# only trigger on .py files, exclude modtools_commands and templates
+- re: host/python/uhd/rfnoc_utils/[^/]+py$
+  add:
+    - fpga.usrp3.all
+# RFNoC blocks
+- re: host/include/uhd/rfnoc/blocks/.*\.yml
+  add:
+    - fpga.usrp3.all
+# RFNoC core (the device-specific BSP files are checked below)
+- re: host/include/uhd/rfnoc/core/rfnoc_imagebuilder_args\.json
+  add:
+    - fpga.usrp3.all
+# RFNoC modules
+- re: host/include/uhd/rfnoc/modules/.*\.yml
+  add:
+    - fpga.usrp3.all
+# RFNoC transport adapters (only relevant for x4xx)
+- re: host/include/uhd/rfnoc/transport_adapters/.*\.yml
+  add:
+    - fpga.usrp3.x4xx
+
+# Device-specific changes.
+- re: fpga/usrp3/top/x400
+  add:
+    - fpga.usrp3.x4xx
+- re: host/include/uhd/rfnoc/core/x4.._bsp.yml
+  add:
+    - fpga.usrp3.x4xx
+- re: fpga/usrp3/top/x300
+  add:
+    - fpga.usrp3.x3xx
+- re: host/include/uhd/rfnoc/core/x3.._bsp.yml
+  add:
+    - fpga.usrp3.x3xx
+- re: fpga/usrp3/top/e31x
+  add:
+    - fpga.usrp3.e31x
+- re: host/include/uhd/rfnoc/core/e310_bsp.yml
+  add:
+    - fpga.usrp3.e31x
+- re: fpga/usrp3/top/e320
+  add:
+    - fpga.usrp3.e320
+- re: host/include/uhd/rfnoc/core/e320_bsp.yml
+  add:
+    - fpga.usrp3.e320
+- re: fpga/usrp3/top/n3xx
+  add:
+    - fpga.usrp3.n3xx
+- re: host/include/uhd/rfnoc/core/n3.._bsp.yml
+  add:
+    - fpga.usrp3.n3xx
+
+# CPLD related changes
+- re: fpga/usrp3/top/x400/cpld
+  add:
+    - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x400/dboards
+  add:
+    - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x400/constraints/timing/shared_constants.sdc
+  add:
+    - fpga.usrp3.cpld.x4xx
+- re: fpga/usrp3/top/x300/dboards
+  add:
+    - fpga.usrp3.cpld.x3xx
+
+###############################################################################
 # CI CHANGES
 ###############################################################################
-- re: .ci/templates/tests/templates/job-uhd-x4xx-hardware-tests.yml
+# Changes to pipeline infrastructure or build jobs -> build and test all
+- re: .ci/templates/stages-.*.yml
+  add:
+    - uhd.build.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+- re: .ci/templates/.*-build.*.yml
+  add:
+    - uhd.build.all
+    - hw.streaming.all
+    - hw.rf.all
+    - devtest.all
+# Devtest
+- re: .ci/templates/.*-devtest.*.yml
+  add:
+    - uhd.build.linux
+    - devtest.all
+# RF Test
+- re: .ci/templates/.*-rf-tests.*.yml
+  add:
+    - uhd.build.linux
+    - hw.rf.all
+# Streaming Test
+- re: .ci/templates/.*-streaming.*.yml
+  add:
+    - uhd.build.linux
+    - hw.streaming.all
+# RF Test x4xx
+- re: .ci/templates/tests/.*.yml
   add:
     - uhd.build.linux
     - hw.rf.x4xx
+- re: .ci/templates/.*rfnoc_modtool.*.yml
+  add:
+    - uhd.build.linux
+    - uhd.rfnoc_modtool.all
+
+
+- re: .ci/fpga/templates
+  add:
+    - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
+    - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+- re: .ci/fpga/scripts
+  add:
+    - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
+    - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+- re: .ci/hwtools
+  add:
+    - fpga.usrp3.all
+    - fpga.usrp3.cpld.x4xx
+    - fpga.usrp3.cpld.x3xx
+    - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+# Device-specific pipeline changes.
+- re: .ci/fpga/devices/job-build-x400.yml
+  add:
+    - fpga.usrp3.x4xx
+- re: .ci/fpga/devices/job-build-x300.yml
+  add:
+    - fpga.usrp3.x3xx
+- re: .ci/fpga/devices/job-build-e31x.yml
+  add:
+    - fpga.usrp3.e31x
+- re: .ci/fpga/devices/job-build-e320.yml
+  add:
+    - fpga.usrp3.e320
+- re: .ci/fpga/devices/job-build-n3xx.yml
+  add:
+    - fpga.usrp3.n3xx
+
+###############################################################################
+# LABEL-BASED RULES
+###############################################################################
+- label: ci:skip_devtests
+  remove_re:
+    - "^devtest"
+# Need to escape the dot for the regex by using a backslash: \.
+# Have to use double backslashes in order to make the yaml parser happy
+- label: ci:skip_rf_tests
+  remove_re:
+    - "^hw\\.rf"
+
+- label: ci:skip_streaming_tests
+  remove_re:
+    - "^hw\\.streaming"
+

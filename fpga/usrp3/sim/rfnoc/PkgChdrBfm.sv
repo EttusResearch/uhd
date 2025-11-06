@@ -12,8 +12,19 @@
 
 package PkgChdrBfm;
 
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgAxiStreamBfm::*;
+
+
+  //---------------------------------------------------------------------------
+  // CHDR Management Packet
+  //---------------------------------------------------------------------------
+
+  typedef struct {
+    chdr_mgmt_header_t  header;
+    chdr_mgmt_op_t      ops[$];
+  } chdr_mgmt_t;
 
 
   //---------------------------------------------------------------------------
@@ -195,7 +206,7 @@ package PkgChdrBfm;
     str = {str, $sformatf("ChdrPacket:\n")};
     str = {str, $sformatf("- header: %p\n", header) };
     if (header.pkt_type == CHDR_DATA_WITH_TS) begin
-      str = {str, $sformatf("- timestamp: %0d\n", timestamp) };
+      str = {str, $sformatf("- timestamp: %0d (0x%X)\n", timestamp, timestamp) };
     end
     if (header.num_mdata != '0) begin
       str = {str, $sformatf("- metadata:\n") };

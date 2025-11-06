@@ -44,6 +44,7 @@ simple_spi_core.v \
 simple_spi_core_64bit.v \
 synchronizer_impl.v \
 synchronizer.v \
+synchronizer_sync_in.sv \
 pulse_synchronizer.v \
 user_settings.v \
 axil_regport_master.v \
@@ -62,6 +63,7 @@ map/kv_map.v \
 map/axis_muxed_kv_map.v \
 axil_ctrlport_master.v\
 handshake.v\
+handshake_latch.sv\
 ctrlport_to_regport.v \
 glitch_free_mux.v \
 regport_if.sv \

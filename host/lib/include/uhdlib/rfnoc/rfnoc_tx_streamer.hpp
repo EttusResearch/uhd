@@ -68,6 +68,14 @@ public:
      */
     const uhd::stream_args_t& get_stream_args() const;
 
+    /*! Implementation of a generic action request
+     *
+     * \param action shared pointer to the corresponding action_info request
+     * \param port the port to which to post action
+     */
+    void post_output_action(const std::shared_ptr<uhd::rfnoc::action_info>& action,
+        const size_t port) override;
+
     /*! Check that all streamer ports are connected to blocks
      *
      * Overrides node_t to ensure there are no unconnected ports.

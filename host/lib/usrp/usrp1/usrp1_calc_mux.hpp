@@ -10,7 +10,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <string>
 #include <utility>
@@ -41,20 +40,23 @@ static int calc_rx_mux_pair(int adc_for_i, int adc_for_q)
  */
 static uint32_t calc_rx_mux(const std::vector<mapping_pair_t>& mapping)
 {
+    // clang-format off
     // create look-up-table for mapping dboard name and connection type to ADC flags
-    static const int ADC0 = 0, ADC1 = 1, ADC2 = 2, ADC3 = 3;
-    static const uhd::dict<std::string, uhd::dict<std::string, int>>
-        name_to_conn_to_flag = boost::assign::map_list_of("A",
-            boost::assign::map_list_of("IQ", calc_rx_mux_pair(ADC0, ADC1)) // I and Q
-            ("QI", calc_rx_mux_pair(ADC1, ADC0)) // I and Q
-            ("I", calc_rx_mux_pair(ADC0, ADC0)) // I and Q (Q identical but ignored Z=1)
-            ("Q", calc_rx_mux_pair(ADC1, ADC1)) // I and Q (Q identical but ignored Z=1)
-            )("B",
-            boost::assign::map_list_of("IQ", calc_rx_mux_pair(ADC2, ADC3)) // I and Q
-            ("QI", calc_rx_mux_pair(ADC3, ADC2)) // I and Q
-            ("I", calc_rx_mux_pair(ADC2, ADC2)) // I and Q (Q identical but ignored Z=1)
-            ("Q", calc_rx_mux_pair(ADC3, ADC3)) // I and Q (Q identical but ignored Z=1)
-        );
+    constexpr int ADC0 = 0, ADC1 = 1, ADC2 = 2, ADC3 = 3;
+    static const uhd::dict<std::string, uhd::dict<std::string, int>> name_to_conn_to_flag{
+        {"A", {
+            {"IQ", calc_rx_mux_pair(ADC0, ADC1)}, // I and Q
+            {"QI", calc_rx_mux_pair(ADC1, ADC0)}, // I and Q
+            {"I",  calc_rx_mux_pair(ADC0, ADC0)}, // I and Q (Q identical but ignored Z=1)
+            {"Q",  calc_rx_mux_pair(ADC1, ADC1)}} // I and Q (Q identical but ignored Z=1)
+        },
+        {"B", {
+            {"IQ", calc_rx_mux_pair(ADC2, ADC3)}, // I and Q
+            {"QI", calc_rx_mux_pair(ADC3, ADC2)}, // I and Q
+            {"I",  calc_rx_mux_pair(ADC2, ADC2)}, // I and Q (Q identical but ignored Z=1)
+            {"Q",  calc_rx_mux_pair(ADC3, ADC3)}} // I and Q (Q identical but ignored Z=1)
+        }};
+    // clang-format on
 
     // extract the number of channels
     const size_t nchan = mapping.size();
@@ -104,28 +106,28 @@ static int calc_tx_mux_pair(int chn_for_i, int chn_for_q)
  */
 static uint32_t calc_tx_mux(const std::vector<mapping_pair_t>& mapping)
 {
+    // clang-format off
     // create look-up-table for mapping channel number and connection type to flags
-    static const int ENB = 1 << 3, CHAN_I0 = 0, CHAN_Q0 = 1, CHAN_I1 = 2, CHAN_Q1 = 3;
-    static const uhd::dict<size_t, uhd::dict<std::string, int>> chan_to_conn_to_flag =
-        boost::assign::map_list_of(0,
-            boost::assign::map_list_of(
-                "IQ", calc_tx_mux_pair(CHAN_I0 | ENB, CHAN_Q0 | ENB))(
-                "QI", calc_tx_mux_pair(CHAN_Q0 | ENB, CHAN_I0 | ENB))(
-                "I", calc_tx_mux_pair(CHAN_I0 | ENB, 0))(
-                "Q", calc_tx_mux_pair(0, CHAN_I0 | ENB)))(1,
-            boost::assign::map_list_of(
-                "IQ", calc_tx_mux_pair(CHAN_I1 | ENB, CHAN_Q1 | ENB))(
-                "QI", calc_tx_mux_pair(CHAN_Q1 | ENB, CHAN_I1 | ENB))(
-                "I", calc_tx_mux_pair(CHAN_I1 | ENB, 0))(
-                "Q", calc_tx_mux_pair(0, CHAN_I1 | ENB)));
+    constexpr int ENB = 1 << 3, CHAN_I0 = 0, CHAN_Q0 = 1, CHAN_I1 = 2, CHAN_Q1 = 3;
+    static const uhd::dict<size_t, uhd::dict<std::string, int>> chan_to_conn_to_flag{
+        {0, {
+            {"IQ", calc_tx_mux_pair(CHAN_I0 | ENB, CHAN_Q0 | ENB)},
+            {"QI", calc_tx_mux_pair(CHAN_Q0 | ENB, CHAN_I0 | ENB)},
+            {"I",  calc_tx_mux_pair(CHAN_I0 | ENB, 0            )},
+            {"Q",  calc_tx_mux_pair(0,             CHAN_I0 | ENB)}}},
+        {1, {
+            {"IQ", calc_tx_mux_pair(CHAN_I1 | ENB, CHAN_Q1 | ENB)},
+            {"QI", calc_tx_mux_pair(CHAN_Q1 | ENB, CHAN_I1 | ENB)},
+            {"I",  calc_tx_mux_pair(CHAN_I1 | ENB, 0            )},
+            {"Q",  calc_tx_mux_pair(0,             CHAN_I1 | ENB)}}}};
+    // clang-format on
 
     // extract the number of channels
     size_t nchan = mapping.size();
 
     // calculate the channel flags
     int channel_flags = 0, chan = 0;
-    uhd::dict<std::string, int> slot_to_chan_count =
-        boost::assign::map_list_of("A", 0)("B", 0);
+    uhd::dict<std::string, int> slot_to_chan_count{{"A", 0}, {"B", 0}};
     for (const mapping_pair_t& pair : mapping) {
         const std::string name = pair.first, conn = pair.second;
 

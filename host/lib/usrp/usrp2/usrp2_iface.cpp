@@ -16,8 +16,8 @@
 #include <uhd/utils/platform.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <boost/asio.hpp> //used for htonl and ntohl
-#include <boost/assign/list_of.hpp>
+#include <uhdlib/asio.hpp> //used for htonl and ntohl
+#include <uhdlib/utils/paths.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
@@ -79,7 +79,7 @@ public:
 
     ~usrp2_iface_impl(void) override
     {
-        UHD_SAFE_CALL(this->lock_device(false);)
+        UHD_SAFE_CALL(this->lock_device(false));
     }
 
     /***********************************************************************
@@ -192,9 +192,9 @@ public:
         size_t num_bits,
         bool readback) override
     {
-        static const uhd::dict<spi_config_t::edge_t, int> spi_edge_to_otw =
-            boost::assign::map_list_of(spi_config_t::EDGE_RISE, USRP2_CLK_EDGE_RISE)(
-                spi_config_t::EDGE_FALL, USRP2_CLK_EDGE_FALL);
+        static const uhd::dict<spi_config_t::edge_t, int> spi_edge_to_otw{
+            {spi_config_t::EDGE_RISE, USRP2_CLK_EDGE_RISE},
+            {spi_config_t::EDGE_FALL, USRP2_CLK_EDGE_FALL}};
 
         // setup the out data
         usrp2_ctrl_data_t out_data       = usrp2_ctrl_data_t();
@@ -448,7 +448,7 @@ public:
         } else {
             const std::string addr = _ctrl_transport->get_recv_addr();
             const std::string image_loader_path =
-                (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+                uhd::find_uhd_command("uhd_image_loader");
             const std::string image_loader_cmd =
                 str(boost::format(" \"%s\" %s--args=\"type=usrp2,addr=%s\"")
                     % image_loader_path % ml % addr);

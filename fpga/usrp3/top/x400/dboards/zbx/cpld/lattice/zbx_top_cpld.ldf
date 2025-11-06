@@ -33,9 +33,6 @@
         <Source name="../../../ctrlport_byte_deserializer.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
-        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_splitter.v" type="Verilog" type_short="Verilog">
-            <Options/>
-        </Source>
         <Source name="../../../../../../lib/wb_spi/rtl/verilog/spi_clgen.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
@@ -49,9 +46,6 @@
             <Options/>
         </Source>
         <Source name="../../../../cpld/common/spi_slave_to_ctrlport_master.v" type="Verilog" type_short="Verilog">
-            <Options/>
-        </Source>
-        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_window.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
         <Source name="../register_endpoints/atr_controller.v" type="Verilog" type_short="Verilog">
@@ -75,11 +69,35 @@
         <Source name="../register_endpoints/switch_control.v" type="Verilog" type_short="Verilog">
             <Options/>
         </Source>
-        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_clk_cross.v" type="Verilog" type_short="Verilog">
-            <Options/>
+        <Source name="../../../../../../lib/rfnoc/core/ctrlport_pkg.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
         </Source>
-        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_combiner.v" type="Verilog" type_short="Verilog">
-            <Options/>
+        <Source name="../../../../../../lib/rfnoc/core/ctrlport_if.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_clk_cross.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_if_clk_cross.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_combiner.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_if_combiner.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_splitter.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_if_splitter.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_window.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
+        </Source>
+        <Source name="../../../../../../lib/rfnoc/utils/ctrlport_if_window.sv" type="Verilog" type_short="Verilog">
+            <Options VerilogStandard="System Verilog"/>
         </Source>
         <Source name="ip/pll/pll.ipx" type="IPX_Module" type_short="IPX">
             <Options/>

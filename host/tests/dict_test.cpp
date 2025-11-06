@@ -33,6 +33,19 @@ BOOST_AUTO_TEST_CASE(test_dict_assign)
     BOOST_CHECK_EQUAL(d[-1], 3);
 }
 
+BOOST_AUTO_TEST_CASE(test_dict_init_list)
+{
+    uhd::dict<int, int> d{{-1, 3}, {0, 4}, {1, 5}};
+    BOOST_CHECK(d.has_key(0));
+    BOOST_CHECK(not d.has_key(2));
+    BOOST_CHECK(d.keys()[1] == 0);
+    BOOST_CHECK(d.vals()[1] == 4);
+    BOOST_CHECK_EQUAL(d[-1], 3);
+
+    uhd::dict<int, int> d2 = boost::assign::map_list_of(-1, 3)(0, 4)(1, 5);
+    BOOST_CHECK(d == d2);
+}
+
 BOOST_AUTO_TEST_CASE(test_const_dict)
 {
     const uhd::dict<int, int> d = boost::assign::map_list_of(-1, 3)(0, 4)(1, 5);

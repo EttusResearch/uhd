@@ -237,7 +237,7 @@ freq_range_t fbx_dboard_impl::_get_lo_freq_range(
     const std::string& name, const size_t /*chan*/) const
 {
     _validate_lo_name(name, "_get_lo_freq_range");
-    return freq_range_t{0.0, _rfdc_rate};
+    return freq_range_t(0.0, _rfdc_rate);
 }
 
 void fbx_dboard_impl::_validate_lo_name(

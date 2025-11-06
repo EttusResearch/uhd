@@ -517,12 +517,12 @@ endmodule
 //        All registers of the MB CPLD (PL part).
 //      </info>
 //    </window>
-//    <window name="DB0_CPLD" offset="0x10000" size="0x8000">
+//    <window name="DB0_CPLD" offset="0x10000" size="0x8000" targetregmap="X4XX_DB_SPI_REGMAP">
 //      <info>
 //        All registers of the first DB CPLD. Register map will be added later on.
 //      </info>
 //    </window>
-//    <window name="DB1_CPLD" offset="0x18000" size="0x8000">
+//    <window name="DB1_CPLD" offset="0x18000" size="0x8000" targetregmap="X4XX_DB_SPI_REGMAP">
 //      <info>
 //        All registers of the second DB CPLD. Register map will be added later on.
 //      </info>

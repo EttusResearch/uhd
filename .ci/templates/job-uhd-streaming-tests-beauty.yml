@@ -1,8 +1,4 @@
 parameters:
-- name: testOS
-  type: string
-  values:
-    - ubuntu2004
 - name: uhdSrcDir
   type: string
 - name: uhdArtifactSource
@@ -10,23 +6,25 @@ parameters:
   default: current
 - name: uhdFpgaArtifactSource
   type: string
-- name: fpga_imgs_source
-  type: string
+  default: current
 - name: testLength
   type: string
+- name: dpdkDirs
+  type: object
+  default:
+  - '/opt/dpdk-19.11'
+  - '/opt/dpdk-23.11'
 
 jobs:
 - template: job-uhd-streaming-tests.yml
   parameters:
     suiteName: 'beauty'
-    testOS: '${{ parameters.testOS }}'
     testLength: '${{ parameters.testLength }}'
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
-    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
-    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-    xilinxLocation: /opt/Xilinx/Vivado_Lab/2019.1
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    dpdkDirs: '${{ parameters.dpdkDirs }}'
     dutMatrix:
       # beauty-N320-0 XG:
       #   dutName: 'beauty-N320-0'
@@ -39,56 +37,59 @@ jobs:
       #   dutNumSendFrames: ''
       beauty-X310-0:
         dutName: 'beauty-X310-0'
-        dutType: 'X310'
-        dutAddr: '192.168.10.3'
-        dutSecondAddr: '192.168.20.3'
+        dutType: 'x310'
+        dutAddr: '$(x310_dutAddr)'
+        dutSecondAddr: '$(x310_dutSecondAddr)'
         dutFPGA: 'XG'
         dutNameId: ''
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
-        jtagSerial: '251635138E94'
-        sfpInt0: 'ens4f0'
-        sfpInt1: 'ens4f1'
+        jtagSerial: '$(x310_jtagSerial)'
+        sfpInt0: '$(x310_sfpInt0)'
+        sfpInt1: '$(x310_sfpInt1)'
       # beauty-X410-0 X4_200:
       #   dutName: 'beauty-X410-0'
       #   dutFamily: 'x4xx'
       #   dutType: 'x410'
-      #   dutAddr: '192.168.10.2'
-      #   dutSecondAddr: '192.168.20.2'
+      #   dutAddr: '$(x410_dutAddr)'
+      #   dutSecondAddr: '$(x410_dutSecondAddr)'
       #   dutFPGA:'X4_200'
       #   dutNameId: ''
+      #   dutEmbeddedImagesArtifact: 'x4xx-images'
+      #   uartSerial: '$(x410_uartSerial)'
       #   dutNumRecvFrames: ''
       #   dutNumSendFrames: ''
-      #   sfpInt0: 'ens6f0'
-      #   sfpInt1: 'ens6f1'
+      #   sfpInt0: '$(x410_sfpInt0)'
+      #   sfpInt1: '$(x410_sfpInt1)'
       beauty-X410-0 CG_400:
         dutName: 'beauty-X410-0'
         dutFamily: 'x4xx'
         dutType: 'x410'
-        dutAddr: '192.168.110.2'
-        dutSecondAddr: '192.168.120.2'
+        dutAddr: '$(x410_dutAddr)'
+        dutSecondAddr: '$(x410_dutSecondAddr)'
         dutFPGA: 'CG_400'
         dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '2516351E2C9A'
+        uartSerial: '$(x410_uartSerial)'
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
-        sfpInt0: 'ens6f0'
-        sfpInt1: 'ens6f1'
+        sfpInt0: '$(x410_sfpInt0)'
+        sfpInt1: '$(x410_sfpInt1)'
       beauty-X410-0 UC_200:
         dutName: 'beauty-X410-0'
         dutFamily: 'x4xx'
         dutType: 'x410'
-        dutAddr: '192.168.120.2'
-        dutSecondAddr: '192.168.120.2'
+        # UC image: device is reachable only via dutSecondAddr
+        dutAddr: '$(x410_dutSecondAddr)'
+        dutSecondAddr: '$(x410_dutSecondAddr)'
         dutFPGA: 'UC_200'
         dutNameId: ''
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '2516351E2C9A'
+        uartSerial: '$(x410_uartSerial)'
         dutNumRecvFrames: ''
         dutNumSendFrames: ''
-        sfpInt0: 'ens6f0'
-        sfpInt1: 'ens6f1'
+        sfpInt0: '$(x410_sfpInt0)'
+        sfpInt1: '$(x410_sfpInt1)'
       # beauty-E320-0:
       #   dutName: 'beauty-E320-0'
       #   dutType: 'E320'
@@ -120,6 +121,7 @@ jobs:
       #   sfpInt1: 'ens4f1'
       beauty-B210-0:
         dutName: 'beauty-B210-0'
+        dutFamily: 'b2xx'
         dutType: 'B210'
         dutAddr: ''
         dutSecondAddr: ''
@@ -127,4 +129,5 @@ jobs:
         dutNameId: 'MyB210'
         dutNumRecvFrames: '256'
         dutNumSendFrames: '256'
+        dutGetFpgaImagesMethod: 'uhd_images_downloader'
 

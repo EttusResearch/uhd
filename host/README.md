@@ -29,4 +29,4 @@ Note that you must be *subscribed* to the list in order to post a message to the
 list. This is to prevent spammers from just sending garbage messages out over
 the listserve.
 
-* [Ettus Research USRP-Users Mailing List](http://lists.ettus.com/mailman/listinfo/usrp-users_lists.ettus.com)
+* [Ettus Research USRP-Users Mailing List](https://lists.ettus.com/list/usrp-users.lists.ettus.com)

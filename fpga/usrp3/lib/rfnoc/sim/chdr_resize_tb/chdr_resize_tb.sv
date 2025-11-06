@@ -29,7 +29,8 @@ module chdr_resize_tb #(
   `define DIV_CEIL(N, D) (((N)+(D)-1)/(D))    // ceiling(N/D)
 
   import PkgTestExec::*;
-  import PkgChdrUtils::*;
+  import rfnoc_chdr_utils_pkg::*;
+  import PkgChdrData::*;
   import PkgChdrBfm::*;
   import PkgRandom::*;
 

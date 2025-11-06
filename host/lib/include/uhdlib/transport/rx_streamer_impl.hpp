@@ -281,7 +281,7 @@ private:
         const size_t buffer_offset_bytes = 0)
     {
         // A request to read zero samples should effectively be a no-op.
-        // However, in 2af10ee9, a change was made to increase the probability
+        // However, in a2f10ee, a change was made to increase the probability
         // but not guarantee that calling recv() after a radio overflow event
         // would return the overflow condition to the user. That change
         // introduced a side effect that a read of zero samples (assuming there
@@ -289,23 +289,22 @@ private:
         // timeout period and then return ERROR_CODE_TIMEOUT in the RX metadata
         // for the read. (Prior to this change, there was an explicit check for
         // a read of zero samples, which would return to the caller
-        // immediately.) This of course is undesirable--a request to read zero
-        // samples should always be fulfilled immediately, regardless of the
-        // availability of samples. Furthermore, reading zero samples is
-        // conventionally used to surface any stream errors, and it's that
-        // behavior we would like to preserve.
+        // immediately).
         //
-        // This change to call get_recv_buffs() with a zero timeout when
-        // nsamps_per_buff is zero is an attempt to achieve the best of both
-        // worlds. The call to get_recv_buffs() will surface any stream errors,
-        // but using a timeout of 0 means that we'll return as quickly as
-        // possible (with a maximum latency of 1ms; see
-        // rx_streamer_zero_copy.hpp, line 219 or so). If there's any stream
-        // error, it'll be returned in the metadata. However, if the stream
-        // error is ERROR_CODE_TIMEOUT, we'll simply swallow the error, thus
-        // preserving the old behavior.
+        // Now, if nsamps_per_buff is zero, we still honour the timeout, but
+        // will not process any outstanding packets, nor will we return an
+        // ERROR_CODE_TIMEOUT. If we did get a timeout, we make it look like
+        // an ERROR_CODE_NONE.
+        //
+        // The reason we still honour the timeout (even if we don't want to
+        // consume any streaming data) is to allow the user to detect stream
+        // errors. It is also fine to call recv() with a timeout of zero and
+        // nsamps_per_buff also set to zero, but then it's possible that we
+        // return ERROR_CODE_NONE because we just miss the stream error. If the
+        // application is polling recv(), then that is the expected behavior.
         if (nsamps_per_buff == 0) {
-            _zero_copy_streamer.get_recv_buffs(_in_buffs, metadata, eov_positions, 0);
+            _zero_copy_streamer.get_recv_buffs(
+                _in_buffs, metadata, eov_positions, timeout_ms);
             if (metadata.error_code == rx_metadata_t::ERROR_CODE_TIMEOUT) {
                 metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
             }

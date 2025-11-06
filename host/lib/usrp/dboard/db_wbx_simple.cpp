@@ -17,20 +17,19 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
+#include <boost/format.hpp>
 #include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 
 /***********************************************************************
  * The WBX Simple dboard constants
  **********************************************************************/
-static const std::vector<std::string> wbx_tx_antennas = list_of("TX/RX")("CAL");
+static const std::vector<std::string> wbx_tx_antennas{"TX/RX", "CAL"};
 
-static const std::vector<std::string> wbx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
+static const std::vector<std::string> wbx_rx_antennas{"TX/RX", "RX2", "CAL"};
 
 /***********************************************************************
  * The WBX simple implementation

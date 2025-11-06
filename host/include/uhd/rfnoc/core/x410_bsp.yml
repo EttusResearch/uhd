@@ -8,6 +8,7 @@ parameters:
   NUM_DRAM_BANKS: 1
   NUM_DRAM_CHANS: 4
   DRAM_WIDTH: 64
+  RADIO_NIPC: "${ {100: 1, 200: 2, 400: 4 }[parameters['RF_BW']] if parameters['RF_BW'] in [100, 200, 400] else 0 }"
 
 checks:
   - condition: ${int(parameters['RF_BW'] in [100, 200, 400])}
@@ -49,6 +50,11 @@ checks:
       connections:
         - {srcblk: eth_qsfp0, srcport: qsfp,       dstblk: _device_, dstport: qsfp0   }
     severity: warning
+  - condition: "${ parameters['RADIO_NIPC'] in (1, 2, 4) and {100: 1, 200: 2, 400: 4}[parameters['RF_BW']] == parameters['RADIO_NIPC'] }"
+    message: |
+      The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
+      be correct, so please remove the RADIO_NIPC parameter from the image core file.
+    severity: error
 
 make_defs:
   - RF_BW=${parameters['RF_BW']}
@@ -110,7 +116,7 @@ io_ports:
     type: radio
     drive: master
     parameters:
-      spc: 4
+      spc: ${ config.device.parameters['RADIO_NIPC'] }
       num_ports: 2
     rename:
       pattern: (.*)
@@ -119,7 +125,7 @@ io_ports:
     type: radio
     drive: master
     parameters:
-      spc: 4
+      spc: ${ config.device.parameters['RADIO_NIPC'] }
       num_ports: 2
     rename:
       pattern: (.*)

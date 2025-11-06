@@ -198,18 +198,11 @@ endif()
 file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
 string(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
 
-string(REGEX MATCH ".*/.*" SLASH "${LIB_SUFFIX}")
-if(SLASH STREQUAL "")
-    set(UHD_LIB_DIR "lib${LIB_SUFFIX}")
-else()
-    set(UHD_LIB_DIR "lib")
-endif(SLASH STREQUAL "")
-
 set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
     PROPERTIES COMPILE_DEFINITIONS
-    "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
+    "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${CMAKE_INSTALL_LIBDIR}\""
 )
 
 ########################################################################

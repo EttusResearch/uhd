@@ -14,6 +14,7 @@ UHD_INSTALL(FILES
     byteswap.hpp
     byteswap.ipp
     cast.hpp
+    compat_check.hpp
     csv.hpp
     dirty_tracked.hpp
     fp_compare_delta.ipp
@@ -37,7 +38,7 @@ UHD_INSTALL(FILES
     tasks.hpp
     thread_priority.hpp
     thread.hpp
-    DESTINATION ${INCLUDE_DIR}/uhd/utils
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/utils
     COMPONENT headers
 )
 
@@ -45,7 +46,7 @@ if(ENABLE_C_API)
     UHD_INSTALL(FILES
         thread_priority.h
         log.h
-        DESTINATION ${INCLUDE_DIR}/uhd/utils
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/utils
         COMPONENT headers
     )
 endif(ENABLE_C_API)

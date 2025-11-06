@@ -105,7 +105,7 @@ steps:
   displayName: Build init_usrp
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
 
-- task: CopyFiles@2
+- task: CopyFiles@2.246.0
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: '**'

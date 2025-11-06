@@ -3,15 +3,15 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Code to run the discovery port
+"""Code to run the discovery port.
 """
 
-from multiprocessing import Process
 import socket
-from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
+from multiprocessing import Process, current_process
+
 from usrp_mpm.mpmlog import get_main_logger
-from usrp_mpm.mpmutils import to_binary_str
+from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
+from usrp_mpm.mpmutils import to_binary_str, set_proc_title
 
 RESPONSE_PREAMBLE = b"USRP-MPM"
 RESPONSE_SEP = b";"
@@ -23,39 +23,42 @@ MAX_SOCK_BUFSIZ = 9000
 IP_MTU_DISCOVER = 10
 IP_PMTUDISC_DO = 2
 
-def spawn_discovery_process(shared_state, discovery_addr):
-    """
-    Returns a process that contains the device discovery.
 
-    Arguments:
-    shared_state -- Shared state of device (is it claimed, etc.). Is a
-                    SharedState() object.
-    discovery_addr -- Discovery will listen on this address(es)
+def spawn_discovery_process(shared_state, discovery_addr):
+    """Returns a process that contains the device discovery.
+
+    :param shared_state: Shared state of device (is it claimed, etc.).
+            Is a SharedState() object.
+    :param discovery_addr: Discovery will listen on this address(es)
     """
-    proc = Process(
-        target=_discovery_process,
-        args=(shared_state, discovery_addr)
-    )
+    proc = Process(target=_discovery_process, name="Discovery", args=(shared_state, discovery_addr))
     proc.start()
     return proc
 
 
 def _discovery_process(state, discovery_addr):
+    """The actual process for device discovery.
+
+    Is spawned by spawn_discovery_process().
     """
-    The actual process for device discovery. Is spawned by
-    spawn_discovery_process().
-    """
-    log = get_main_logger().getChild('discovery')
+    log = get_main_logger().getChild("discovery")
+    set_proc_title(current_process().name, log)
+
     def create_response_string(state):
-        " Generate the string that gets sent back to the requester. "
+        """Generate the string that gets sent back to the requester.
+
+        Uses state to generate a human-readable string that describes the
+        device.
+        :param state: The shared state of the device.
+        """
         return RESPONSE_SEP.join(
-            [RESPONSE_PREAMBLE] + \
-            [b"type="+state.dev_type.value] + \
-            [b"product="+state.dev_product.value] + \
-            [b"serial="+state.dev_serial.value] + \
-            [b"name="+state.dev_name.value] + \
-            [b"fpga="+state.dev_fpga_type.value] + \
-            [RESPONSE_CLAIMED_KEY+to_binary_str("={}".format(state.claim_status.value))]
+            [RESPONSE_PREAMBLE]
+            + [b"type=" + state.dev_type.value]
+            + [b"product=" + state.dev_product.value]
+            + [b"serial=" + state.dev_serial.value]
+            + [b"name=" + state.dev_name.value]
+            + [b"fpga=" + state.dev_fpga_type.value]
+            + [RESPONSE_CLAIMED_KEY + to_binary_str("={}".format(state.claim_status.value))]
         )
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -65,9 +68,9 @@ def _discovery_process(state, discovery_addr):
     sock.setsockopt(socket.IPPROTO_IP, IP_MTU_DISCOVER, IP_PMTUDISC_DO)
 
     # TODO yeah I know that's not how you do this
-    discovery_addr_prefix = discovery_addr.replace('.255', '')
-    if discovery_addr == '0.0.0.0':
-        discovery_addr_prefix = ''
+    discovery_addr_prefix = discovery_addr.replace(".255", "")
+    if discovery_addr == "0.0.0.0":
+        discovery_addr_prefix = ""
 
     try:
         while True:
@@ -77,15 +80,17 @@ def _discovery_process(state, discovery_addr):
             if not sender[0].startswith(discovery_addr_prefix):
                 continue
             if data.strip(b"\0") == b"MPM-DISC":
-                log.debug("Sending discovery response to %s port: %d",
-                          sender[0], sender[1])
+                log.debug("Sending discovery response to %s port: %d", sender[0], sender[1])
                 resp_str = create_response_string(state)
                 send_data = resp_str
                 log.trace("Return data: %s", send_data)
                 sock.sendto(send_data, sender)
             elif data.startswith(b"MPM-ECHO"):
-                log.debug("Received echo request ({len} bytes) from {sender}"
-                          .format(len=len(data), sender=sender[0]))
+                log.debug(
+                    "Received echo request ({len} bytes) from {sender}".format(
+                        len=len(data), sender=sender[0]
+                    )
+                )
                 send_data = data
                 try:
                     sock.sendto(send_data, sender)

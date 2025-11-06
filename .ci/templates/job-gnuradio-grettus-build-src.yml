@@ -57,18 +57,9 @@ jobs:
   - checkout: gnuradio
     clean: true
     submodules: recursive
-    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
   - checkout: volk
     clean: true
     submodules: true
-    condition: and(succeeded(), not(in(variables.buildOSName, 'ubuntu1804')))
-  - checkout: gnuradio-3-8
-    clean: true
-    submodules: recursive
-    condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
-  - checkout: gr-ettus
-    clean: true
-    condition: and(succeeded(), in(variables.buildOSName, 'ubuntu1804'))
 
   - task: DeleteFiles@1
     inputs:
@@ -106,16 +97,7 @@ jobs:
         volkInstalledArtifactPath: $(Build.BinariesDirectory)/volk/build-installed
         uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
 
-  - ${{ if eq(parameters.toolset, 'make') }}:
-    - template: steps-build-gr-ettus-make.yml
-      parameters:
-        grettusSrcDir: $(Build.SourcesDirectory)/gr-ettusdev
-        grettusBuildDir: $(Build.BinariesDirectory)/gr-ettusdev/build
-        grettusInstallPath: $(Build.BinariesDirectory)/gnuradio/build-installed
-        uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
-        gnuradioInstalledArtifactPath: $(Build.BinariesDirectory)/gnuradio/build-installed
-
-  - task: CopyFiles@2
+  - task: CopyFiles@2.246.0
     inputs:
       sourceFolder: $(Build.BinariesDirectory)
       targetFolder: $(Build.BinariesDirectory)/artifacts
@@ -133,7 +115,7 @@ jobs:
       replaceExistingArchive: true
     displayName: Compress build files
 
-  - task: CopyFiles@2
+  - task: CopyFiles@2.246.0
     inputs:
       sourceFolder: $(Pipeline.Workspace)/uhd_build_docker_container/$(UHDPipelineDockerImageArtifactName)
       targetFolder: $(Build.ArtifactStagingDirectory)

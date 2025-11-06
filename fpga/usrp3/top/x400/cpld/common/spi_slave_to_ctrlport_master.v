@@ -151,7 +151,6 @@ module spi_slave_to_ctrlport_master #(
       end
 
       // Detect complete request
-      request_received <= 1'b0;
       if (data_out_valid) begin
         if (write_request && (num_bytes_received == NUM_BYTES_WRITE_REQUEST_PAYLOAD-1)) begin
           request_received <= 1'b1;
@@ -159,7 +158,11 @@ module spi_slave_to_ctrlport_master #(
         end else if (~write_request && (num_bytes_received == NUM_BYTES_READ_REQUEST_PAYLOAD-1)) begin
           request_received <= 1'b1;
           provide_response <= 1'b1;
+        end else begin
+          request_received <= 1'b0;
         end
+      end else begin
+        request_received <= 1'b0;
       end
 
       // Detect end of response on last received byte

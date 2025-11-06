@@ -37,6 +37,10 @@ if(ENABLE_X300)
         ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_experts.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_gain_tables.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/db_twinrx.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/obx/obx_cpld_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/obx/obx_expert.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/obx/obx_gpio_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/db_obx.cpp
     )
 endif(ENABLE_X300)
 

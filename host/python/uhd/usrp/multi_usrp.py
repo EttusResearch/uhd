@@ -115,8 +115,18 @@ class MultiUSRP(lib.usrp.multi_usrp):
         samps = 0
         # Now stream
         _start_stream(streamer)
+        timeout = 0.1
+        if start_time:
+            # If start_time is far in the future (acutally bigger that the default
+            # timeout of 0.1s we define above) we have to increase the initial
+            # timout by that time interval to ensure we do not timeout because
+            # the transmission did not start yet.
+            diff = start_time.get_real_secs() - self.get_time_now().get_real_secs()
+            if diff > 0:
+                timeout += diff
         while recv_samps < num_samps:
-            samps = streamer.recv(recv_buffer, metadata)
+            samps = streamer.recv(recv_buffer, metadata, timeout)
+            timeout = 0.1
             if metadata.error_code != lib.types.rx_metadata_error_code.none:
                 print(metadata.strerror())
             if samps:

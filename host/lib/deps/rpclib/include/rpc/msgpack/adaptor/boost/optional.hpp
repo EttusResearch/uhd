@@ -42,7 +42,6 @@ MSGPACK_API_VERSION_NAMESPACE(v1) {
 
 namespace adaptor {
 
-#if !defined (MSGPACK_USE_CPP03)
 
 template <typename T>
 struct as<boost::optional<T>, typename std::enable_if<clmdep_msgpack::has_as<T>::value>::type> {
@@ -51,8 +50,6 @@ struct as<boost::optional<T>, typename std::enable_if<clmdep_msgpack::has_as<T>:
         return o.as<T>();
     }
 };
-
-#endif // !defined (MSGPACK_USE_CPP03)
 
 template <typename T>
 struct convert<boost::optional<T> > {

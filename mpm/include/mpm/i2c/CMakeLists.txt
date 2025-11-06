@@ -7,5 +7,5 @@
 install(FILES
   i2c_iface.hpp
   i2c_regs_iface.hpp
-  DESTINATION ${INCLUDE_DIR}/mpm/i2c
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mpm/i2c
 )

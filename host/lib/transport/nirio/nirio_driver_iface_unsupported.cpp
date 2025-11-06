@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-#include <uhd/transport/nirio/nirio_driver_iface.h>
+#include <uhdlib/transport/nirio/nirio_driver_iface.h>
 
 namespace nirio_driver_iface {
 

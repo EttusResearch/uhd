@@ -23,6 +23,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
@@ -33,7 +34,6 @@
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/cores/xport_adapter_ctrl.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <unordered_set>
 #include <atomic>
 #include <functional>

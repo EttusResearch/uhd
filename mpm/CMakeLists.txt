@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 project(MPM C CXX) # Also has Python, but CMake can take care of that later
 # Set the default value for CMAKE_INSTALL_PREFIX to /usr
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -27,7 +27,8 @@ list(INSERT CMAKE_MODULE_PATH 0 ${UHD_SOURCE_DIR}/cmake/Modules)
 # We don't need to support older versions of Python, since we will always
 # deploy this on devices where we control the Python version.
 # MPM might work with future versions of Python, but we make no guarantees.
-set(PYTHON_MIN_VERSION 3.5)
+set(UHD_PYTHON_MIN_VERSION    "3.7" )
+set(UHD_PYBIND11_MIN_VERSION  "2.7" )
 
 # search the Python interpreter, modules and include directories
 include(UHDPython)
@@ -106,21 +107,12 @@ message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 # Install Dirs
 ########################################################################
-set(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
-set(RUNTIME_DIR bin)
-set(LIBRARY_DIR lib${LIB_SUFFIX})
-set(INCLUDE_DIR include)
-set(PKG_DATA_DIR share/mpm)
-if(NOT DEFINED PKG_LIB_DIR)
-    set(PKG_LIB_DIR ${LIBRARY_DIR}/mpm)
-endif()
-set(PKG_DOC_DIR share/doc/mpm)
-set(PKG_MAN_DIR share/man/man1)
+include(GNUInstallDirs)
 
 ########################################################################
 # Setup library configuration
 ########################################################################
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wno-psabi" _has_no_psabi)
 # -Wno-psabi lets us know if the gcc ABI changed and would cause binaries
@@ -182,7 +174,7 @@ if(NOT ENABLE_SIM)
         ${DEVICE_LIBRARIES}
     )
 
-    install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
+    install(TARGETS usrp-periphs LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries)
 
     # TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
     # though... we're the only ones linking against that.

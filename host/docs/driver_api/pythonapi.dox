@@ -1,0 +1,165 @@
+/*! \page page_python Python API
+
+UHD supports a Python API, in case the C++ or C APIs are not the right solution
+for your application.
+
+\section python_install Installing the Python API
+
+In order to install the Python API when building UHD from source, make sure you
+have the CMake variable `ENABLE_PYTHON_API` set to ON (e.g., by running
+`cmake -DENABLE_PYTHON_API=ON`).
+UHD requires Python header files in order to compile the Python API. On most
+Linux systems, there are packages called "python3-dev" or "python3-devel" that
+provide that functionality. On Windows, these headers always get installed when
+using the binary installers provided on https://www.python.org/downloads/windows/.
+
+If CMake can't find the Python headers or library, specify
+the `PYTHON_INCLUDE_DIR` and/or `PYTHON_LIBRARY` CMake variables manually.
+
+Note that since UHD version 4.0.0.0, Python 2 is no longer supported.
+
+\subsection python_install_windows Installing on Windows
+
+Static linking is unsupported on Windows. Otherwise, compiling the Python API
+on Windows is no different from other operating systems. Only the build output
+differs. On Windows the Python API is built using poetry tooling as a Python 
+binary distribution package (wheel). It is located in the `dist` directory of
+the build output. 
+The preferred way to install the Python Package is using poetry install command,
+assuming \<python\> as the Python executable in your specific Python Environment
+where poetry is available.
+
+    cd <build directory>\python
+    <python> -m poetry install
+
+Alternatively, you can install the Python package using the pip install command. 
+For example:
+
+    <python> -m pip install <build directory>\python\dist\uhd-4.x.x-cp3xx-cp3xx-win_amd64.whl
+
+For installation of the Python API package from the Python Package Index (PyPI)
+please refer to section \ref install_win_python under page \ref page_install_binary.
+
+<b>Python 3.8 Note:</b> If you receive an error similar to this when running
+`import uhd` in Python 3.8 and above on Windows:
+
+    ImportError: DLL load failed while importing libpyuhd: The specified module could not be found.
+
+this indicates a problem finding one or more of the DLLs that the UHD Python
+module depends on to load correctly.
+
+Python 3.8
+<a href="https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew">includes
+a change</a> to the paths Windows searches when attempting to find a module's
+dependent DLLs. The UHD python package attempts using 
+<a href="https://docs.python.org/3/library/os.html#os.add_dll_directory">os.add_dll_directory</a> 
+to add the directory for uhd.dll to the DLL search path. First, it will try based on the UHD_PKG_PATH environment 
+variable that will be created by the NSIS Windows installer, and if that fails, it will try to use a variable configured
+by CMake based on the CMAKE_INSTALL_PREFIX variable. If both fail, you will need to use
+os.add_dll_directory to add the path of uhd.dll to the DLL search path. Please also consider the
+troubleshooting notes in section \ref install_win_python.
+
+If UHD was built with USB support, you will need to add the path of libusb-1.0.dll to the DLL search path
+before importing the UHD package. You can do this by copying the libusb-1.0.dll to the same directory as the uhd.dll. 
+Alternatively, you can add the DLL to the search path by using os.add_dll_directory in your python script.
+
+\subsection python_install_adv Advanced Usage Notes
+
+UHD uses the PyBind11 library to generate its Python bindings. UHD ships its own
+copy of PyBind11, in order to facilitate the access to that library, as it is
+not packaged for many operating systems, but also to lock down its version. For
+the purpose of experimentation, it is, however possible to replace the version
+of PyBind11 shipped with UHD by overriding the `PYBIND11_INCLUDE_DIR` CMake
+variable.
+
+
+\section python_usage Using the Python API
+
+The Python API mirrors the C++ API, so the C++ reference manual can be used to
+understand the behaviour of the Python API as well.
+
+Names in the Python API have been modified to follow a PEP8-compatible naming
+convention, for example, uhd::usrp::multi_usrp in C++ corresponds to
+uhd.usrp.MultiUSRP in Python (this makes UHD/Python code implicitly compatible
+with most linters, but it also has the side-effect of hiding symbols that get
+imported from the C++ domain).
+The following two snippets are equivalent. First the C++ version:
+~~~{.cpp}
+#include <uhd/usrp/multi_usrp.hpp>
+
+// ...
+
+auto usrp = uhd::usrp::multi_usrp::make("type=b200");
+usrp->set_rx_freq(100e6);
+~~~
+
+Now the Python version:
+~~~{.py}
+import uhd
+
+# ...
+
+usrp = uhd.usrp.MultiUSRP("type=b200")
+usrp.set_rx_freq(100e6)
+~~~
+
+Not all API calls from the C++ API are also supported in the Python API, and
+the Python API has some additional functions that are not available in C++, but
+for the most part, the uhd::usrp::multi_usrp API is identical.
+
+\section python_usage_oneoff One-off transmit/receive applications
+
+A common type of Python-based SDR applications are those which produce or
+consume a limited number of samples. For example, an application could receive a
+second's worth of samples, then do offline processing, print the result, and
+exit. For this case, convenience API calls were added to the Python API. The
+following snippet is an example of how to store 1 second of samples acquired at
+1 Msps:
+
+~~~{.py}
+import uhd
+
+def recv_to_file():
+    """RX samples and write to file"""
+    usrp = uhd.usrp.MultiUSRP("type=b200")
+    num_samps = 1e6
+    if not isinstance(args.channels, list):
+        args.channels = [args.channels]
+    samps = usrp.recv_num_samps(
+        1e6, # Number of samples
+	2.4e9, # Frequency in Hz
+	1e6, # Sampling rate
+	[0], # Receive on channel 0
+	80, # 80 dB of RX gain
+    )
+    samps.tofile('samples.dat')
+~~~
+
+This kind of API is particularly useful in combination with Jupyter Notebooks or
+similar interactive environments.
+
+\section python_usage_gil Thread Safety and the Python Global Interpreter Lock
+
+From the <a href="https://wiki.python.org/moin/GlobalInterpreterLock">Python wiki page on the GIL:</a>
+> In CPython, the global interpreter lock, or GIL, is a mutex that protects
+> access to Python objects, preventing multiple threads from executing Python
+> bytecodes at once.
+
+During some performance-critical function calls, the UHD Python API releases the
+GIL, during which Python objects have their contents modified. The functions
+calls which do so are uhd::rx_streamer::recv, uhd::tx_streamer::send,
+uhd::tx_streamer::recv_async_msg and uhd::find. To be clear, the streamer functions
+listed here violate the expected contract set out by the GIL by accessing
+Python objects (from C++) without holding the GIL. This is necessary to achieve
+rates similar to what the C++ API can provide.
+
+To this end, users must ensure that the Python objects accessed by the listed
+functions are handled with care. In simple, single threaded applications, this
+won't require any extra work. However, in more complicated and/or multi-
+threaded applications, steps must be taken to avoid thread-unsafe behavior. For
+example, if an application needs to call recv() in one thread, and access the
+sample buffer from another thread, a synchronization method (ie. a mutex) must
+be used to safeguard access to that buffer.
+
+*/
+// vim:ft=doxygen:

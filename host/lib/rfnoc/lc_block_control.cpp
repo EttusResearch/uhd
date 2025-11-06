@@ -9,8 +9,8 @@
 #include <uhd/rfnoc/lc_block_control.hpp>
 #include <uhd/rfnoc/registry.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/utils/compat_check.hpp>
 #include <algorithm>
 #include <regex>
 #include <set>

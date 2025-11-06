@@ -11,7 +11,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/asio.hpp> //htonl
+#include <uhdlib/asio.hpp> //htonl
 #include <mutex>
 
 using namespace uhd;
@@ -47,8 +47,7 @@ public:
     {
         _timeout = ACK_TIMEOUT; // reset timeout to something small
         UHD_SAFE_CALL(
-            this->peek32(0); // dummy peek with the purpose of ack'ing all packets
-        )
+            this->peek32(0)); // dummy peek with the purpose of ack'ing all packets
     }
 
     /*******************************************************************

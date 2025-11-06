@@ -8,7 +8,7 @@
 #define INCLUDED_X300_DEFAULTS_HPP
 
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include <uhdlib/utils/compat_check.hpp>
+#include <uhd/utils/compat_check.hpp>
 #include <string>
 #include <vector>
 

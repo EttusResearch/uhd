@@ -7,8 +7,8 @@
 //
 // Description:
 //
-// A radio core for RFNoC. This core contains all logic in the radio clock 
-// domain for interfacing to a single RX/TX radio. It includes registers shared 
+// A radio core for RFNoC. This core contains all logic in the radio clock
+// domain for interfacing to a single RX/TX radio. It includes registers shared
 // by both Rx and Tx logic and instantiates Rx and Tx interface cores.
 //
 // Parameters:
@@ -100,9 +100,9 @@ module radio_core #(
   // Split Control Port Interface
   //---------------------------------------------------------------------------
   //
-  // This block splits the single slave interface of the radio core into 
-  // multiple interfaces, one for each subcomponent. The responses from each 
-  // subcomponent are merged into a single response and sent back out the slave 
+  // This block splits the single slave interface of the radio core into
+  // multiple interfaces, one for each subcomponent. The responses from each
+  // subcomponent are merged into a single response and sent back out the slave
   // interface.
   //
   //---------------------------------------------------------------------------
@@ -175,11 +175,11 @@ module radio_core #(
   // Merge Control Port Interfaces
   //---------------------------------------------------------------------------
   //
-  // This block merges the master control port interfaces of the Rx and Tx 
-  // cores into a single master control port interface. Both the Rx and Tx 
-  // cores support error reporting by writing to a control port interface. This 
-  // block arbitrates the requests between the Rx and Tx cores. Rx and Tx only 
-  // support writes for error reporting, not reads. Time and byte enables are 
+  // This block merges the master control port interfaces of the Rx and Tx
+  // cores into a single master control port interface. Both the Rx and Tx
+  // cores support error reporting by writing to a control port interface. This
+  // block arbitrates the requests between the Rx and Tx cores. Rx and Tx only
+  // support writes for error reporting, not reads. Time and byte enables are
   // also not needed. Hence, several ports are unconnected.
   //
   //---------------------------------------------------------------------------
@@ -283,11 +283,19 @@ module radio_core #(
   // Tx to Rx Loopback
   //---------------------------------------------------------------------------
 
+  reg  [SAMP_W*NSPC-1:0] radio_tx_data_to_rx;
+  reg                    radio_tx_stb_to_rx;
   wire [SAMP_W*NSPC-1:0] radio_rx_data_mux;
   wire                   radio_rx_stb_mux;
 
-  assign radio_rx_data_mux = reg_loopback_en ? radio_tx_data : radio_rx_data;
-  assign radio_rx_stb_mux  = reg_loopback_en ? radio_tx_stb  : radio_rx_stb;
+  // Create register without reset on TX to RX loopback path to avoid timing failures.
+  always @(posedge radio_clk) begin
+    radio_tx_data_to_rx <= radio_tx_data;
+    radio_tx_stb_to_rx  <= radio_tx_stb;
+  end
+
+  assign radio_rx_data_mux = reg_loopback_en ? radio_tx_data_to_rx : radio_rx_data;
+  assign radio_rx_stb_mux  = reg_loopback_en ? radio_tx_stb_to_rx  : radio_rx_stb;
 
 
   //---------------------------------------------------------------------------

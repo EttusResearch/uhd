@@ -79,6 +79,15 @@ public:
      * If there is a single LO in this radio, and we're doing direct conversion,
      * then this is the LO frequency.
      *
+     * Note that unlike the uhd::usrp::multi_usrp::set_tx_freq() API, this does
+     * not attempt to tune any attached digital frequency shifter, unless it is
+     * part of the radio. That is why this API only returns a double value (the
+     * actual frequency) instead of a uhd::tune_result_t. If a combined tuning
+     * of digital frequency correction and LO tuning is desired (the same way
+     * that uhd::usrp::multi_usrp does by default), then the caller has to
+     * either also call uhd::rfnoc::dc_block_control::set_freq() with the
+     * residual frequency, or tune through the graph.
+     *
      * \param freq Frequency in Hz
      * \param chan Channel to tune
      *
@@ -110,13 +119,22 @@ public:
      * If there is a single LO in this radio, and we're doing direct conversion,
      * then this is the LO frequency.
      *
+     * Note that unlike the uhd::usrp::multi_usrp::set_rx_freq() API, this does
+     * not attempt to tune any attached digital frequency shifter, unless it is
+     * part of the radio. That is why this API only returns a double value (the
+     * actual frequency) instead of a uhd::tune_result_t. If a combined tuning
+     * of digital frequency correction and LO tuning is desired (the same way
+     * that uhd::usrp::multi_usrp does by default), then the caller has to
+     * either also call uhd::rfnoc::ddc_block_control::set_freq() with the
+     * residual frequency, or tune through the graph.
+     *
      * \param freq Requested frequency
      * \param chan Channel number.
      * \return The actual frequency.
      */
     virtual double set_rx_frequency(const double freq, const size_t chan) = 0;
 
-    /*! Set the TX tune args, if supported by the hardware.
+    /*! Set the RX tune args, if supported by the hardware.
      */
     virtual void set_rx_tune_args(const uhd::device_addr_t& args, const size_t chan) = 0;
 

@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: device_dna
+name: Device DNA Module
+description: |
+  Exposes the FPGA's device DNA as a data bus.
 version: "1.0"
 
 parameters:

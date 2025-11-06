@@ -7,6 +7,6 @@
 UHD_INSTALL(FILES
     chdr_packet.hpp
     chdr_packet.ipp
-    DESTINATION ${INCLUDE_DIR}/uhd/utils/chdr
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/utils/chdr
     COMPONENT headers
 )

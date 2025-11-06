@@ -442,8 +442,6 @@ def main():
     if args.vivado_command is None:
         if which("vivado"):
             args.vivado_command = "vivado"
-        elif which("vivado_lab"):
-            args.vivado_command = "vivado_lab"
         else:
             print("Cannot find Vivado executable!")
             return False

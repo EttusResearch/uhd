@@ -43,29 +43,12 @@ function print_color {
 # Launch ModelSim
 #------------------------------------------
 
-# Using -voptargs=+acc makes everything visible in the simulator for GUI mode
-# and avoids some cases where simulation mismatch could otherwise occur.
-# Setting -onfinish to "stop" prevents the simulator from immediately trying to
-# exit when finish() is called. This is annoying in the GUI and important for
-# error detection in batch mode.
-MSIM_DEFAULT="-voptargs=+acc -quiet -L unisims_ver -onfinish stop"
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
 
-# DO file to execute in batch mode. This script runs the simulation and adds
-# detection of error/failure assertions so that non-zero values are returned by
-# ModelSim when the testbench doesn't pass. Calling std.env.finish() or
-# $finish() will return 0. Detecting $fatal() requires that -onfinish be set to
-# stop so the simulator doesn't quit before the DO file finishes.
-DO_SCRIPT="\
-quietly set BreakOnAssertion 2                           ;\
-quietly set SIM_ERROR 0                                  ;\
-onbreak {                                                ;\
-    quietly set FINISH [lindex [runStatus -full] 2]      ;\
-    if {\$FINISH eq \"unknown\"} { set SIM_ERROR 255 }   ;\
-}                                                        ;\
-onerror { set SIM_ERROR 255 }                            ;\
-run -all                                                 ;\
-quit -force -code \$SIM_ERROR                            ;\
-"
+# Setting -onfinish to "final" ensures final blocks run and prevents the
+# simulator from trying to exit immediately when $finish() is called, which is
+# not desirable in the GUI.
+MSIM_DEFAULT="-quiet -L unisims_ver -onfinish final"
 
 # Use specified modelsim.ini, if set
 if [[ -z $MSIM_MODELSIM_INI ]]; then
@@ -84,15 +67,30 @@ do
 done
 
 if [ $MSIM_MODE == "gui" ]; then
-    echo "* Launching ModelSim"
-    vsim $MSIM_DEFAULT $MODELSIMINI_ARG $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    if [ $MSIM_VARIANT == "questa" ]; then
+        echo "* Launching Visualizer GUI"
+        MSIM_DEFAULT+=" -voptargs=\"-debug,events,livesim +designfile\" -visualizer -qwavedb=+signal+memory+vhdlvariable+class"
+    else
+        echo "* Launching classic GUI"
+        MSIM_DEFAULT+=" -voptargs=+acc"
+    fi
+    # Use stdbuf to line buffer the pipe and avoid long block buffering delays
+    stdbuf -oL -eL vsim $MSIM_DEFAULT $MODELSIMINI_ARG $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}
     if [ ${exit_status} -ne 0 ]; then exit ${exit_status}; fi
 elif [ $MSIM_MODE == "batch" ]; then
-    echo "* Launching ModelSim"
-    vsim -batch -do "$DO_SCRIPT" $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
+    if [ $MSIM_VARIANT == "questa" ]; then
+        echo "* Launching Questa batch mode"
+    else
+        echo "* Launching ModelSim batch mode"
+        # Using +acc for GUI and batch sim ensures we get the same behavior in
+        # both, with the downside that simulation might be slower.
+        MSIM_DEFAULT+=" -voptargs=+acc"
+    fi
+    # Use stdbuf to line buffer the pipe and avoid long block buffering delays
+    stdbuf -oL -eL vsim -batch -do $SCRIPT_DIR/modelsim.do $MODELSIMINI_ARG $MSIM_DEFAULT $MSIM_ARGS $MSIM_LIB_ARGS $MSIM_SIM_TOP 2>&1 | while IFS= read -r line; do
         print_color $line
     done
     exit_status=${PIPESTATUS[0]}

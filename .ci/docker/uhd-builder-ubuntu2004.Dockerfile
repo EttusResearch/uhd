@@ -4,6 +4,8 @@
 FROM ubuntu:20.04
 LABEL maintainer="Ettus Research"
 
+ARG PIP_INDEX_HOST
+ARG PIP_INDEX_URL
 # This will make apt-get install without question
 ARG DEBIAN_FRONTEND=noninteractive
 
@@ -71,6 +73,14 @@ RUN apt-get update && \
         && \
     rm -rf /var/lib/apt/lists/*
 
+# Optionally use cached index.
+RUN if [[ -n "$PIP_INDEX_URL" ]]; then \
+        python3 -m pip config --global set global.index-url $PIP_INDEX_URL && \
+        python3 -m pip config --global set global.trusted-host $PIP_INDEX_HOST; \
+    fi
+
+RUN python3 -m pip config list
+RUN python3 -m pip install --upgrade pip
 # Required for running pbuilder to build debs in docker on Ubuntu 20.04
 # because of this bug: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=968927
 RUN wget https://launchpad.net/ubuntu/+archive/primary/+files/debootstrap_1.0.124_all.deb && \

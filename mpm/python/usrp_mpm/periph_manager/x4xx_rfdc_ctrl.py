@@ -351,6 +351,13 @@ class X4xxRfdcCtrl:
             self._rfdc_regs.log_status()
 
     @no_rpc
+    def reset_gearboxes(self):
+        """"
+        Resets the ADC and DAC gearboxes.
+        """
+        self._rfdc_regs.reset_gearboxes()
+
+    @no_rpc
     def reset_tiles(self):
         """
         This resets all ADC/DAC tiles.  All existing register settings are

@@ -1,0 +1,108 @@
+#
+# Copyright 2022 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template shall be used to package images.
+#
+#   See description for the parameters below.
+#
+
+parameters:
+### Required parameters
+# Package name for identification purposes
+- name: package_name
+  type: string
+# FPGA artifacts to be downloaded to "build_directory"
+# Note that the value for each key is not used in this job.
+# E.g.
+#   targets_matrix:
+#     X410_XG_100:
+#       target: X410_XG_100
+#       timeout: 480
+#     X410_X4_200:
+#       target: X410_X4_200
+#       timeout: 480
+- name: artifacts_matrix
+  type: object
+# PATH to device's build directory (where artifacts will be copied and
+# packaging utility will be run)
+- name: build_directory
+  type: string
+- name: package_and_publish_images
+  type: boolean
+### Optional parameters
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+
+
+jobs:
+- job: ${{ parameters.package_name }}
+  displayName: 'Package & Publish ${{ parameters.package_name }}'
+  timeoutInMinutes: 10
+  dependsOn: build_fpga
+  condition: and(succeeded(), eq(variables.BuildRequired, true), eq('${{ parameters.package_and_publish_images }}', 'true'))
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - Agent.OS -equals Linux
+  variables:
+    - group: sdr-pipeline-vars
+  steps:
+    - checkout: self
+      clean: true
+
+    - ${{ each artifact in parameters.artifacts_matrix }}:
+      - download: current
+        artifact: ${{ artifact.value.artifact_name }}
+        displayName: 'Download ${{ artifact.value.artifact_name }}'
+
+    - ${{ each artifact in parameters.artifacts_matrix }}:
+      - bash: |
+          mkdir -p ${{ parameters.build_directory }}
+          cp $(Pipeline.Workspace)/${{ artifact.value.artifact_name }}/* \
+             ${{ parameters.build_directory }}/
+          rm -rf $(Pipeline.Workspace)/${{ artifact.value.artifact_name }}/
+        displayName: 'Populate ${{ artifact.value.artifact_name }} artifacts'
+
+    - bash: |
+        OSS_REPO_HASH="$(git rev-parse --verify HEAD --short=7 2>/dev/null)"
+        echo "##vso[task.setvariable variable=OSS_REPO_HASH]$OSS_REPO_HASH"
+        echo "OSS Repo hash: $OSS_REPO_HASH"
+        python3 $(Build.SourcesDirectory)/fpga/usrp3/tools/utils/package_images.py \
+          --manifest $(Build.SourcesDirectory)/images/manifest.txt \
+          --githash "uhd-$OSS_REPO_HASH"
+        git diff --patch $(Build.SourcesDirectory)/images/manifest.txt > \
+          ${{ parameters.package_name }}-g$OSS_REPO_HASH.patch
+        git restore $(Build.SourcesDirectory)/images/manifest.txt
+        rm -f *.bit *.dts *.rpt *.md5
+      workingDirectory: ${{ parameters.build_directory }}
+      displayName: 'Run package_images.py'
+
+    # Publish the final result only if all previous steps passed
+    - publish: ${{ parameters.build_directory }}
+      artifact: '${{ parameters.package_name }}-g$(OSS_REPO_HASH)'
+      displayName: 'Publish package to AzDO'
+
+    - bash: |
+        if [[ "${{ parameters.package_access }}" == *"Public"* ]]; then
+          echo "##vso[task.setvariable variable=publish_path]$(sdr-public-binaries)";
+        else
+          echo "##vso[task.setvariable variable=publish_path]$(sdr-internal-binaries)";
+        fi
+      workingDirectory: ${{ parameters.build_directory }}
+      displayName: 'Determine SDR server publishing path'
+
+    - task: CopyFilesOverSSH@0
+      inputs:
+        sshEndpoint: 'sdr-server-ssh'
+        sourceFolder: '${{ parameters.build_directory }}'
+        contents: 'cache/*/**'
+        targetFolder: $(publish_path)
+        readyTimeout: '20000'
+        failOnEmptySource: true
+      displayName: 'Publish package to SDR server'

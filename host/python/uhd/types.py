@@ -3,12 +3,12 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" @package types
-Python UHD module containing types to be used with a MultiUSRP object
+"""Python UHD module containing types to be used with a MultiUSRP object.
+
+@package types
 """
 
 from . import libpyuhd as lib
-
 
 StreamMode = lib.types.stream_mode
 StreamCMD = lib.types.stream_cmd

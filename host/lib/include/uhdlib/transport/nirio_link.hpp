@@ -8,13 +8,13 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/nirio/niriok_proxy.h>
-#include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/transport/adapter_info.hpp>
 #include <uhdlib/transport/link_base.hpp>
 #include <uhdlib/transport/links.hpp>
+#include <uhdlib/transport/nirio/nirio_fifo.h>
+#include <uhdlib/transport/nirio/niriok_proxy.h>
+#include <uhdlib/transport/nirio/niusrprio_session.h>
 #include <memory>
 #include <vector>
 
@@ -84,6 +84,7 @@ public:
      */
     static sptr make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         const uint32_t instance,
+        std::function<void(uint32_t)>&& release_cb,
         const link_params_t& params,
         const uhd::device_addr_t& hints,
         size_t& recv_buff_size,
@@ -133,6 +134,7 @@ private:
 
     nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         uint32_t instance,
+        std::function<void(uint32_t)>&& release_cb,
         const link_params_t& params);
 
     /**************************************************************************
@@ -212,6 +214,7 @@ private:
     niusrprio::niusrprio_session::sptr _fpga_session;
     //! DMA channel index
     const uint32_t _fifo_instance;
+    std::function<void(uint32_t)> _release_cb;
     //! Recv and send FIFO objects
     uhd::niusrprio::nirio_fifo<fifo_data_t>::sptr _recv_fifo, _send_fifo;
 

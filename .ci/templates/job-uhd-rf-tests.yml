@@ -1,10 +1,4 @@
 parameters:
-- name: suiteName
-  type: string
-- name: testOS
-  type: string
-  values:
-    - ubuntu1804
 - name: toolset
   type: string
   values:
@@ -21,6 +15,9 @@ parameters:
   type: string
 - name: dutMatrix
   type: object
+- name: vivado_dir
+  type: string
+  default: ''
 - name: extra_rf_test_args
   type: string
   default: ''
@@ -33,9 +30,7 @@ jobs:
     matrix: ${{ parameters.dutMatrix }}
   pool:
     name: 'de-dre-lab'
-    demands:
-    - suiteName -equals ${{ parameters.suiteName }}
-    - testOS -equals ${{ parameters.testOS }}
+    demands: uhd_ats -equals $(pipelineAgent)
   variables:
   - group: sdr-pipeline-vars
   workspace:
@@ -55,46 +50,46 @@ jobs:
         echo '##vso[task.setvariable variable=uhd_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdArtifactSource }}
       fi
     displayName: Set uhddev pipeline artifact location
-  
+
   - script: |
       if [ "${{ parameters.uhdFpgaArtifactSource }}" = "current" ]; then
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)"
       else
         echo '##vso[task.setvariable variable=uhd_fpga_artifact_directory]'$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
+        echo "uhd_fpga_artifact_directory=$(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}"
       fi
     displayName: Set uhddev FPGA pipeline artifact location
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
-  - script: |
-      if [ ! -z "${{ parameters.uhdFpgaArtifactSource }}" ]; then
-        rm -rf $(Agent.BuildDirectory)/${{ parameters.uhdFpgaArtifactSource }}
-      fi
-    displayName: Cleanup from prior run
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+  #- script: |
+      #rm -rf $(uhd_fpga_artifact_directory)
+    #displayName: Cleanup from prior run
+    #condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: uhddev-$(testOS)-${{ parameters.toolset }}
+    displayName: Download uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract uhddev-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract uhddev-$(testOS)-${{ parameters.toolset }} artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
-    artifact: gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
-    displayName: Download gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    artifact: gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
+    displayName: Download gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}.tar.gz
-      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}
+      archiveFilePatterns: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}.tar.gz
+      destinationFolder: $(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}
       cleanDestinationFolder: false
       overwriteExistingFiles: true
-    displayName: Extract gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }} artifact
+    displayName: Extract gnuradio-grettus-$(testOS)-${{ parameters.toolset }} artifact
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: $(devType)-images
@@ -110,37 +105,102 @@ jobs:
     patterns: |
       usrp_$(devModel)*.bit
       usrp_$(devModel)*.dts
-      usrp_$(devModel)*.rpt
     displayName: Download FPGA artifacts
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
   - script: |
       mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images/
-      cp $(uhd_fpga_artifact_directory)/*/* $(Build.BinariesDirectory)/uhddev/build/fpga_images/
+      cd $(uhd_fpga_artifact_directory)
+      mv `find . -maxdepth 2 -name "*.bit" -o -name "*.dts"` $(Build.BinariesDirectory)/uhddev/build/fpga_images/
     displayName: Copy FPGA images to expected directory
-    condition: and(succeeded(), in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR'))
+    condition: and(succeeded(), contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
 
   - script: |
       mkdir -p $(Build.BinariesDirectory)/uhddev/build/fpga_images
       cd $(Build.BinariesDirectory)/uhddev/build
       rm -rf fpga_images/*
-      python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build/utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
+      python3 $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build/utils/uhd_images_downloader.py -t $(devModel) -i fpga_images \
         -b $(sdr-fileserver)
       if [ "$(devType)" = "b200" ]; then
-        python3 $(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
+        python3 $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/utils/uhd_images_downloader.py -t b2xx_common -i fpga_images \
           -b $(sdr-fileserver)
       fi
     displayName: Download FPGA Images
-    condition: and(succeeded(), not(in('${{ parameters.fpga_imgs_source }}', 'FPGA Pipeline', 'FPGA Pipeline PR')))
+    condition: and(succeeded(), not(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline')))
 
+
+  - script: |
+        export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        export PATH=$UHD_INSTALL_PATH/bin:$PATH
+        if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        else
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_dc_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_dc_offset..."
+          uhd_cal_tx_dc_offset --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_iq_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_iq_balance..."
+          uhd_cal_tx_iq_balance --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/rx_iq_$(db0Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_rx_iq_balance..."
+          uhd_cal_rx_iq_balance --args addr=$(devAddr) --subdev A:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+    displayName: Run corrections utilities for DB0
+    condition: and(eq(variables.supportsCorrections, true), ne(variables.db0Serial, ''))
+
+  - script: |
+        export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        export PATH=$UHD_INSTALL_PATH/bin:$PATH
+        if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        else
+          export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_dc_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_dc_offset..."
+          uhd_cal_tx_dc_offset --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/tx_iq_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_tx_iq_balance..."
+          uhd_cal_tx_iq_balance --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+        CAL_FILE="${HOME}/.local/share/uhd/cal/rx_iq_$(db1Serial).cal"
+        if [ ! -f $CAL_FILE ]; then
+          echo "$CAL_FILE not found. Running uhd_cal_rx_iq_balance..."
+          uhd_cal_rx_iq_balance --args addr=$(devAddr) --subdev B:0
+        else
+          echo "$CAL_FILE already exists. Skipping calibration."
+        fi
+    displayName: Run corrections utilities for DB1
+    condition: and(eq(variables.supportsCorrections, true), ne(variables.db1Serial, ''))
 
   - script: |
       mkdir -p $(Common.TestResultsDirectory)/pytest
       cd $(Common.TestResultsDirectory)/pytest
 
-      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-${{ parameters.testOS }}-${{ parameters.toolset }}/uhddev/build-installed
-      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-${{ parameters.testOS }}-${{ parameters.toolset }}/gnuradio/build-installed
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio/build-installed
+      export GNURADIO_GRETTUS_VOLK_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/volk/build-installed
       export PATH=$UHD_INSTALL_PATH/bin:$PATH
       export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
       export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
@@ -150,27 +210,45 @@ jobs:
         export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
         export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
-        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/python3/dist-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
       else
         export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
         export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
         export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib:$LD_LIBRARY_PATH
         export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
-        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/python3/dist-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
       fi
 
-      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
-        --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),${{ parameters.uhdSrcDir }}/$(devLabgridConfig),$(devHostname) \
-        --fpgas $(devFpga) \
-        --sfp_addrs $(sfpAddrs) \
-        --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
-        ${{ parameters.redisHost }} $(devName) \
-        "uhd_usrp_probe --args addr=$(devAddr)" \
-        "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
-          --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      source $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/setup_venv.sh
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements_312.txt
+
+      if [ "$(devType)" = "n3xx" ]; then
+        python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+          --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
+          --fpgas $(devFpga) \
+          --sfp_addrs $(sfpAddrs) \
+          --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
+          "${{ parameters.redisHost }}" "$(devName)" \
+          "uhd_usrp_probe --args addr=$(devAddr)" \
+          "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+            --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      elif [ "$(devType)" = "x300" ]; then
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
+        python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
+          --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
+          --fpgas $(devFpga) \
+          --sfp_addrs $(sfpAddrs) \
+          --working_dir "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests/" \
+          "${{ parameters.redisHost }}" "$(devName)" \
+          "uhd_usrp_probe --args addr=$(devAddr)" \
+          "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+            --results_path $(Common.TestResultsDirectory)/pytest/{fpga} ${{ parameters.extra_rf_test_args }}"
+      fi
     continueOnError: true
-    condition: and(succeeded(), eq(variables.devType, 'n3xx'), eq(variables.devBus, 'ip'))
+    condition: succeeded()
     displayName: Run pytests on $(devName)
 
   - script: |
@@ -181,7 +259,7 @@ jobs:
         $(Common.TestResultsDirectory)/pytest/pytestresults.xml
     continueOnError: true
     displayName: Format devtest xml
-    condition: and(always(), eq(variables.devType, 'n3xx'))
+    condition: always()
 
   - task: PublishTestResults@2
     inputs:

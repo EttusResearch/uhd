@@ -1,0 +1,75 @@
+parameters:
+- name: runPyTest
+  type: boolean
+  default: false
+- name: displayString
+  type: string
+  default: 'Run PyTest on host'
+- name: testFolder
+  type: string
+- name: extra_rf_test_args
+  type: string
+  default: ''
+- name: testLength
+  type: string
+  default: 'smoke'
+- name: warmUpAfterBoot
+  type: number
+  default: 0
+- name: toolset
+  type: string
+  values:
+    - make
+
+# warmUpAfterBoot optional parameter added to allow device to warm up before running tests
+# For example, the phase test pass/fail requirements are based on declared specs measured after a warm up to 23 deg C
+# https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html#d668e1387
+steps:
+  - script: |
+      dig -x $(sfp0ip) +short
+      dig -x $USRP_EMB_TARGET_IP +short
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+      export GNURADIO_GRETTUS_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/gnuradio/build-installed
+      export GNURADIO_GRETTUS_VOLK_INSTALL_PATH=$(uhd_artifact_directory)/gnuradio-grettus-$(testOS)-${{ parameters.toolset }}/volk/build-installed
+      export PATH=$UHD_INSTALL_PATH/bin:$PATH
+      export PATH=$GNURADIO_GRETTUS_INSTALL_PATH/bin:$PATH
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python' + str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+
+      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+        export PATH=$UHD_INSTALL_PATH/lib64/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
+      else
+        export PATH=$UHD_INSTALL_PATH/lib/uhd/examples:$PATH
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export LD_LIBRARY_PATH=$GNURADIO_GRETTUS_VOLK_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        export PYTHONPATH=$GNURADIO_GRETTUS_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
+      fi
+      if [ ${{ parameters.warmUpAfterBoot }} > 0 ]; then
+        echo 'sleeping ${{ parameters.warmUpAfterBoot }} seconds before testing...'
+        sleep ${{ parameters.warmUpAfterBoot }}
+      fi
+      uhd_find_devices --args type=$(dutType)
+      uhd_usrp_probe --args addr=$USRP_EMB_TARGET_IP,type=$(dutType)
+
+      if [ $? -ne 0 ]; then
+        echo "Could not locate device with IP $USRP_EMB_TARGET_IP"
+        echo "##[group]Printing Environment"
+        printenv
+        echo "##[endgroup]"
+        exit 1
+      fi
+
+      # setup venv for pytest
+      source $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/setup_venv.sh
+
+      cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/${{ parameters.testFolder }}
+      python3 ../automated_main.py --test_selector . --ats_config $(pytestAtsConfig) --dut $(pytestDUT) --run_vars_overrides 'mgmt_addr=$(USRP_EMB_TARGET_IP)' --results_path '$(Common.TestResultsDirectory)/pytest/host' --test_length ${{ parameters.testLength }} ${{ parameters.extra_rf_test_args }}
+    displayName: Run ${{ parameters.displayString }} on host
+    continueOnError: true
+    condition: and(succeeded(), ${{ parameters.runPyTest }})

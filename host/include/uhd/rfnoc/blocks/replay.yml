@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: replay
+name: DRAM Replay/Capture
+description: |
+  This block is used to capture data into DRAM and play it back from there.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
@@ -40,7 +43,6 @@ data:
       info_fifo_depth: 32
       payload_fifo_depth: 32
       format: int32
-      mdata_sig: ~
   outputs:
     out:
       num_ports: NUM_PORTS
@@ -50,7 +52,6 @@ data:
       payload_fifo_depth: 2**MTU
       sideband_at_end: True
       format: int32
-      mdata_sig: ~
 
 io_ports:
   axi_ram:

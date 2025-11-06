@@ -19,11 +19,14 @@ find_package(Git QUIET)
 #     release)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
-set(UHD_VERSION_MAJOR 4)
-set(UHD_VERSION_API   7)
-set(UHD_VERSION_ABI   0)
-set(UHD_VERSION_PATCH 0)
-set(UHD_VERSION_DEVEL TRUE)
+set(UHD_VERSION_MAJOR      4)
+set(UHD_VERSION_API        9)
+set(UHD_VERSION_ABI        0)
+set(UHD_VERSION_PATCH      0)
+#TODO add a version tag variable which allows to store additional 
+#     branch information instead of overwriting the patch version.
+set(UHD_VERSION_PATCH_ORIG ${UHD_VERSION_PATCH})
+set(UHD_VERSION_DEVEL      TRUE)
 
 ########################################################################
 # If we're on a development branch, we skip the patch version
@@ -141,10 +144,23 @@ if(UHD_RELEASE_MODE)
     )
 endif()
 
+# extract the current tag, if any
+set(UHD_GIT_TAG "" CACHE STRING "GIT tag associated with the current code")
+if(GIT_FOUND)
+    execute_process(
+        WORKING_DIRECTORY ${UHD_SOURCE_DIR}
+        COMMAND ${GIT_EXECUTABLE} describe --exact-match --tags
+        OUTPUT_VARIABLE UHD_GIT_TAG OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE _uhd_git_tag_result
+    )
+    if (NOT _uhd_git_tag_result EQUAL 0)
+        set(UHD_GIT_TAG "")
+    endif()
+endif()
 
 ########################################################################
 # Define the derived version variables:
-if(DEFINED UHD_VERSION)
+if(UHD_VERSION)
     set(UHD_VERSION "${UHD_VERSION}" CACHE STRING "Set UHD_VERSION to a custom value")
 elseif(TRIM_UHD_VERSION STREQUAL "True")
     set(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")

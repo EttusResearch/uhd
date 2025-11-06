@@ -59,7 +59,7 @@ strs_payload populate_strs_payload()
     pyld.xfer_count_bytes = rand64();
     pyld.xfer_count_pkts  = rand64() & 0xFFFFFFFFFF;
     pyld.buff_info        = rand64() & 0xFFFF;
-    pyld.status_info      = rand64() & 0xFFFFFFFFFFFF;
+    pyld.status_info.info = rand64() & 0xFFFFFFFFFFFF;
     return pyld;
 }
 

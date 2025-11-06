@@ -18,8 +18,6 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
 #include <memory>
 //#include <fstream>    //Needed for _expert->to_dot() below
 

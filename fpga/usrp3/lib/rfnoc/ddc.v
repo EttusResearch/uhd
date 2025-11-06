@@ -67,7 +67,11 @@ module ddc #(
   wire phase_tvalid, phase_tready, phase_tlast;
   wire dds_out_tlast;
   wire dds_out_tvalid;
+  wire dds_out_tready;
   wire [15:0] dds_input_fifo_space, dds_input_fifo_occupied;  
+
+  wire clip_out_tlast;
+  wire clip_out_tvalid;
 
   wire [17:0] scale_factor;
   wire last_cic;
@@ -271,17 +275,30 @@ module ddc #(
     /* IQ output */
     .m_axis_dout_tlast(dds_out_tlast),
     .m_axis_dout_tvalid(dds_out_tvalid),
-    .m_axis_dout_tready(ddc_chain_tready), 
+    .m_axis_dout_tready(dds_out_tready),
     .m_axis_dout_tdata({dds_out_q_tdata, dds_out_i_tdata})
-        
   );
 
-   //48 = WIDTH*2
-  //chop off top byte because it's not actually used and we want to match expected gain/bit use found in freq shift
-  assign i_dds_clip = {dds_out_i_tdata[15:0],8'h00};
-  assign q_dds_clip = {dds_out_q_tdata[15:0],8'h00};
-  assign strobe_dds_clip = dds_out_tvalid & sample_out_tready;
-  assign last_cic_decimate_in = dds_out_tlast;
+  // Drop MSBs to match expected gain/bit use found in freq shift
+  axi_clip_complex #(
+    .WIDTH_IN  (WIDTH),
+    .WIDTH_OUT (WIDTH-8),
+    .FIFOSIZE  (0))
+  axi_clip_complex_post_dds (
+    .clk(clk),
+    .reset(reset | clear),
+    .i_tdata({dds_out_i_tdata, dds_out_q_tdata}),
+    .i_tlast(dds_out_tlast),
+    .i_tvalid(dds_out_tvalid),
+    .i_tready(dds_out_tready),
+    .o_tdata({i_dds_clip[WIDTH-1:8], q_dds_clip[WIDTH-1:8]}),
+    .o_tlast(clip_out_tlast),
+    .o_tvalid(clip_out_tvalid),
+    .o_tready(ddc_chain_tready));
+  assign last_cic_decimate_in = clip_out_tlast;
+  assign strobe_dds_clip = clip_out_tvalid & sample_out_tready;
+  assign i_dds_clip[7:0] = 8'h00;
+  assign q_dds_clip[7:0] = 8'h00;
   
   /** CIC DECIMATE **/
   cic_decimate #(.WIDTH(WIDTH), .N(4), .MAX_RATE(CIC_MAX_DECIM)) cic_decimate_i (

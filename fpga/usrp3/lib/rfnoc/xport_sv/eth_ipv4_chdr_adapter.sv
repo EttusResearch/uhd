@@ -385,6 +385,11 @@ module eth_ipv4_chdr_adapter #(
   end else begin : gen_c2e_width_match
     always_comb begin : c2e1_assign
       `AXI4S_ASSIGN(c2e1,c2eD)
+      // c2e1 uses trailing bytes in tuser instead of tkeep, so do the
+      // conversion here, if necessary.
+      if (!c2eD.TUSER) begin
+        c2e1.tuser = c2eD.keep2trailing(c2eD.tkeep);
+      end
     end
   end
 
@@ -500,7 +505,7 @@ module eth_ipv4_chdr_adapter #(
     c2e3.tready    = c2e3_tready;
   end
   axi_mux #(
-    .SIZE(2), .PRIO(0), .WIDTH(ENET_W+ENET_USER_W), .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(1)
+    .SIZE(2), .PRIO(0), .WIDTH(ENET_W+ENET_USER_W), .PRE_FIFO_SIZE(1), .POST_FIFO_SIZE(1)
   ) eth_mux_i (
     .clk(eth_rx.clk), .reset(eth_rx.rst), .clear(1'b0),
     .i_tdata({c2e3.tuser, c2e3.tdata, v2e3.tuser, v2e3.tdata}), .i_tlast({c2e3.tlast, v2e3.tlast}),

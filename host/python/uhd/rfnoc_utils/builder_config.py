@@ -11,19 +11,14 @@ that is passed to the templates.
 import copy
 import logging
 import os
-import re
 import sys
 
 import numpy as np
 
-from . import yaml_utils
+from . import connections, yaml_utils
+from .common import DEVICE_NAME, RFNOC_PROTO_VERSION
 from .utils import find_include_file, generate_edge_table, merge_dicts, resolve
-
-# Supported protocol version
-RFNOC_PROTO_VERSION = "1.0"
-
-DEVICE_NAME = "_device_"
-NONE_PORT = "_none_"
+from .template import render_wire_width
 
 
 class ImageBuilderConfig:
@@ -89,7 +84,7 @@ class ImageBuilderConfig:
         self._collect_noc_ports()
         self._collect_io_ports()
         self._collect_clocks()
-        self._check_connections()
+        connections.check_and_sanitize(self)
         self._check_resets()
         self._check_clk_domains()
         self._annotate_modules()
@@ -110,6 +105,14 @@ class ImageBuilderConfig:
         failure = ""
         # Check blocks outside of secure image core if they are allowed to be there
         for name, block in self.noc_blocks.items():
+            if block["block_desc"] not in block_defs:
+                error_msg = (
+                    f"Invalid configuration: The block {name} has an "
+                    f"unknown block description: {block['block_desc']}."
+                )
+                self.log.error(error_msg)
+                failure += error_msg + "\n"
+                continue
             desc = block_defs[block["block_desc"]]
             if getattr(desc, "secure_core", None):
                 error_msg = (
@@ -195,8 +198,8 @@ class ImageBuilderConfig:
         # Also set parameters for the device
         default_params = getattr(self.device, "parameters", {})
         self.parameters = {
-            **default_params,
-            **{k: v for k, v in self.parameters.items() if k in default_params},
+            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in default_params.items()},
+            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in self.parameters.items() if k in default_params},
         }
         invalid_keys = [k for k in self.parameters if k not in default_params]
         if invalid_keys:
@@ -253,13 +256,11 @@ class ImageBuilderConfig:
                 )
 
     def _resolve_parameters(self):
-        """Expand block/module parameters."""
-        module_types = ["noc_blocks", "modules", "transport_adapters"]
-        for module_type in module_types:
-            for _, module in getattr(self, module_type).items():
-                module["parameters"] = {
-                    k: resolve(v, **module) for k, v in module.get("parameters", {}).items()
-                }
+        """Expand block/module/device parameters."""
+        for module in self.get_module_list("nodevice").values():
+            module["parameters"] = {
+                k: resolve(v, **module, config=self) for k, v in module.get("parameters", {}).items()
+            }
 
     def _check_deprecated_signatures(self):
         """Check if the configuration uses deprecated IO signatures or block descriptions."""
@@ -293,7 +294,7 @@ class ImageBuilderConfig:
         self.log.debug("Running checks on the current configuration...")
         failures = []
         if not any(bool(sep["ctrl"]) for sep in self.stream_endpoints.values()):
-            failures = "At least one streaming endpoint needs to have ctrl enabled"
+            failures += ["At least one streaming endpoint needs to have ctrl enabled"]
         # Check RFNoC protocol version. Use latest if it was not specified.
         requested_version = self.rfnoc_version
         [requested_major, requested_minor, *_] = requested_version.split(".")
@@ -666,45 +667,7 @@ class ImageBuilderConfig:
                 if not data_ports:
                     self.log.debug("Block %s has no data %s.", block.desc.module_name, direction)
                 for port_name, port_info in data_ports:
-                    num_ports = 1
-                    if "num_ports" in port_info:
-                        parameter = port_info["num_ports"]
-                        num_ports = parameter
-
-                    # If num_ports isn't an integer, it could be an expression
-                    # using values from the parameters section (e.g.,
-                    # NUM_PORTS*NUM_BRANCHES for a stream-splitting block).
-                    # If the parameter doesn't resolve to an integer, treat it
-                    # as an expression that needs to be evaluated, hopefully to
-                    # an integer.
-                    if not isinstance(num_ports, int):
-                        # Create a regex to find identifiers.
-                        regex_ident = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
-
-                        # Get a list of all identifiers in the num_ports
-                        # expression and iterate over them all
-                        idents = re.finditer(regex_ident, num_ports)
-                        for ident in idents:
-                            # If the identifier represents a valid parameter
-                            # in the block, replace the identifier text with
-                            # the value of the parameter. If no matching
-                            # parameter is found, just leave the text in
-                            # place. That may result in an exception being
-                            # thrown from eval(), but we'll catch it and
-                            # report an error a bit later on.
-                            if ident[0] in block["parameters"]:
-                                val = str(block["parameters"][ident[0]])
-                                num_ports = re.sub(ident[0], val, num_ports)
-
-                        # Now, with identifiers resolved to parameter values,
-                        # attempt to evaluate the expression. If eval() fails,
-                        # we'll catch the exception, num_ports will remain non-
-                        # integral, and the if statement after the exception
-                        # is caught will inform the user.
-                        try:
-                            num_ports = eval(num_ports)
-                        except:
-                            pass
+                    num_ports = connections.get_num_ports_from_data_port(port_info, block)
 
                     # Make sure the parameter resolved to a number
                     if not isinstance(num_ports, int):
@@ -844,95 +807,115 @@ class ImageBuilderConfig:
                 clk_index = min_clk_index + 1
                 self.log.debug("Assigning clock index %d to clock %s.", clk_index, clock_id)
             clk_indices[clk_index] = clock_id
+            return clk_index
 
-        # Collect clocks from block definitions
-        for name, block in self.noc_blocks.items():
-            block_clocks = getattr(block.desc, "clocks", {})
-            for clock in block_clocks:
-                clock_id = name + "." + clock["name"]
-                # Sanitize the direction field: Block clocks are by default inputs
-                if "direction" not in clock:
-                    clock["direction"] = "in"
-                self.clocks[clock_id] = clock
-        # Collect clocks from device BSP
-        for bsp_clk in getattr(self.device, "clocks", {}):
-            clock_id = "_device_." + bsp_clk["name"]
+        # Go through clocks from device BSP
+        setattr(self.device, "clocks", getattr(self.device, "clocks", {}))
+        for clock in self.device.clocks:
             # Sanitize the direction field: BSP clocks are by default outputs
-            if "direction" not in bsp_clk:
-                bsp_clk["direction"] = "out"
-            self.clocks[clock_id] = bsp_clk
-            register_clk_index(clock_id, bsp_clk)
-        # Collect clocks from generic modules
-        for name, module in self.modules.items():
-            mod_clocks = getattr(module.desc, "clocks", {})
-            for clock in mod_clocks:
-                clock_id = name + "." + clock["name"]
+            if "direction" not in clock:
+                clock["direction"] = "out"
+            clock["index"] = register_clk_index("_device_." + clock["name"], clock)
+        # Go through clocks from blocks, modules, and transport adapters
+        for name, block in self.get_module_list("nodevice").items():
+            setattr(block, "clocks", getattr(block.desc, "clocks", {}))
+            for clock in block.clocks:
                 # Sanitize the direction field: Block clocks are by default inputs
                 if "direction" not in clock:
                     clock["direction"] = "in"
-                self.clocks[clock_id] = clock
-        # Some clocks always have to be present. If the BSP does not define them,
-        # then we do it for them.
-        for required_bsp_clock in "rfnoc_ctrl", "rfnoc_chdr":
-            clock_id = "_device_." + required_bsp_clock
-            if clock_id not in self.clocks:
-                self.log.debug("Adding required clock not present in BSP: %s", required_bsp_clock)
-                self.clocks[clock_id] = {
-                    "name": required_bsp_clock,
-                    # For the index, we do a reverse lookup from clk_indices
-                    "index": {
-                        clk_id: idx
-                        for idx, clk_id in clk_indices.items()
-                        if clk_id.startswith("_device_.")
-                    }[clock_id],
-                }
+                if clock["direction"] == "out":
+                    clock["index"] = register_clk_index(name + "." + clock["name"], clock)
 
     def _check_clk_domains(self):
         """Check/sanitize clock domain connections.
 
         - Check every clock domain connection for validity
-        - Add unconnected clocks if they provide a default clock domain
+        - Auto-connect unconnected clocks if they provide a default clock domain,
+          or warn if they don't
         """
-        failure = ""
-        connected_clk_inputs = []
-        # Check the given clock domains are valid
+        # Check the given clock connections are valid
         for clk_domain in self.clk_domains:
-            clk_src = clk_domain["srcblk"] + "." + clk_domain["srcport"]
-            clk_dst = clk_domain["dstblk"] + "." + clk_domain["dstport"]
-            if not (clk_src in self.clocks and clk_dst in self.clocks):
-                failure += f"Invalid clock domain connection: " f"{clk_src} → {clk_dst}\n"
+            srcblk = self.get_module(clk_domain["srcblk"])
+            dstblk = self.get_module(clk_domain["dstblk"])
+            if not srcblk:
+                self.log.error(
+                    "Invalid clock domain connection: %s (source block is not defined)",
+                    connections.con2str(clk_domain),
+                )
                 continue
-            connected_clk_inputs.append(clk_dst)
-        # Check if there are unconnected clocks
-        for clk, clk_info in self.clocks.items():
-            clk_blk, clk_port = clk.split(".", 2)
+            if not dstblk:
+                self.log.error(
+                    "Invalid clock domain connection: %s (destination block is not defined)",
+                    connections.con2str(clk_domain),
+                )
+                continue
             if (
-                clk_blk != DEVICE_NAME
-                and clk_port not in self.DEFAULT_CLK_NAMES
-                and clk not in connected_clk_inputs
-                and clk_info["direction"] == "in"
+                clk_domain["srcblk"] == DEVICE_NAME
+                and clk_domain["srcport"] in self.DEFAULT_CLK_NAMES
             ):
-                if "default" in clk_info:
-                    srcclk_blk, srcclk_port = clk_info["default"].split(".", 2)
-                    self.clk_domains.append(
-                        {
-                            "srcblk": srcclk_blk,
-                            "srcport": srcclk_port,
-                            "dstblk": clk_blk,
-                            "dstport": clk_port,
-                        }
-                    )
-                else:
-                    failure += f"Unconnected clock domain: {clk}"
-        if failure:
-            self.log.error("Clock domains have invalid configuration:\n%s", failure)
-            sys.exit(1)
-        # Annotate the list of clock connections
-        for clk_i, clk_domain in enumerate(self.clk_domains):
-            clk_src = clk_domain["srcblk"] + "." + clk_domain["srcport"]
-            clk_dst = clk_domain["dstblk"] + "." + clk_domain["dstport"]
-            self.clk_domains[clk_i]["srcport"] = self.clocks[clk_src]["name"]
-            self.clk_domains[clk_i]["dstport"] = self.clocks[clk_dst]["name"]
+                continue
+            src_clk = [c for c in srcblk.clocks if c["name"] == clk_domain["srcport"]]
+            dst_clk = [c for c in dstblk.clocks if c["name"] == clk_domain["dstport"]]
+            if not src_clk or src_clk[0]["direction"] != "out":
+                self.log.error(
+                    "Invalid clock domain connection: %s (%s is not a clock output)",
+                    connections.con2str(clk_domain),
+                    clk_domain["srcport"],
+                )
+                continue
+            if not dst_clk or dst_clk[0]["direction"] != "in":
+                self.log.error(
+                    "Invalid clock domain connection: %s (%s is not a clock input)",
+                    connections.con2str(clk_domain),
+                    clk_domain["dstport"],
+                )
+                continue
+        # Go through all modules and check that their input clocks are connected
+        for module_name, module in self.get_module_list("all").items():
+            for clk_info in module.clocks:
+                if clk_info["direction"] == "in":
+                    if (
+                        not any(
+                            c["dstblk"] == module_name and c["dstport"] == clk_info["name"]
+                            for c in self.clk_domains
+                        )
+                        and clk_info["name"] not in self.DEFAULT_CLK_NAMES
+                    ):
+                        if "default" in clk_info:
+                            # If the clock provided a default, then we can infer
+                            # the connection.
+                            self.clk_domains.append(
+                                {
+                                    "srcblk": clk_info["default"].split(".")[0],
+                                    "srcport": clk_info["default"].split(".")[1],
+                                    "dstblk": module_name,
+                                    "dstport": clk_info["name"],
+                                }
+                            )
+                            self.log.debug(
+                                "Inferring clock connection: %s",
+                                connections.con2str(self.clk_domains[-1]),
+                            )
+                        else:
+                            # Otherwise, we warn.
+                            self.log.warning(
+                                "Unconnected clock input: %s.%s", module_name, clk_info["name"]
+                            )
+        # Check ctrl and timebase clocks
+        for block_name, block in self.get_module_list("noc_blocks").items():
+            for clk_type in ("ctrl_clock", "timebase_clock"):
+                clk = block.get(clk_type)
+                if clk:
+                    if "." not in clk:
+                        clk = "_device_." + clk
+                    srcblk, clk_name = clk.split(".", 1)
+                    if not [c for c in self.get_module(srcblk).clocks if c["name"] == clk_name]:
+                        self.log.error(
+                            "Invalid %s for block %s: %s",
+                            clk_type,
+                            block_name,
+                            clk,
+                        )
 
     def _get_available_ports(self, io_port):
         """Return a list of available ports for an unconnected IO port.
@@ -972,166 +955,6 @@ class ImageBuilderConfig:
                 )
             ]
         return candidates
-
-    def _check_connections(self):
-        """Check/sanitize connection list.
-
-        - Validate the list of connections
-        - Add annotations to the connections about domain, type, and IO signature
-        - Provide error messages is not valid
-        """
-        failure = ""
-
-        def sanitize_port(con, s_d, failure):
-            """Unpack port names (separate slice from port name)."""
-            port_match = re.match(r"^([a-z0-9_]+)(?:\[([^]])\])?$", con[f"{s_d}port"])
-            if not port_match:
-                failure += f"Invalid port name: {con[f'{s_d}port']}\n"
-                return con
-            con[f"{s_d}port"], con[f"{s_d}slice"] = port_match.groups()
-            return con
-
-        ## Phase 1: We go through the list of connections and provide annotations
-        for conn_idx, con in enumerate(self.connections):
-            for s_d in ("src", "dst"):
-                con = sanitize_port(con, s_d, failure)
-            src_blk = self.get_module(con["srcblk"])
-            dst_blk = self.get_module(con["dstblk"])
-            if (con["srcblk"], con["srcport"], "output") in self.block_ports and (
-                con["dstblk"],
-                con["dstport"],
-                "input",
-            ) in self.block_ports:
-                con["srctype"] = "output"
-                con["dsttype"] = "input"
-            elif (
-                src_blk.io_ports.get(con["srcport"], {}).get("drive") == "master"
-                and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "slave"
-            ) or (
-                src_blk.io_ports.get(con["srcport"], {}).get("drive") == "broadcaster"
-                and dst_blk.io_ports.get(con["dstport"], {}).get("drive") == "listener"
-            ):
-                # TODO: Check IO port compatibility (e.g. wire widths)
-                con["srctype"] = src_blk.io_ports[con["srcport"]]["drive"]
-                con["dsttype"] = dst_blk.io_ports[con["dstport"]]["drive"]
-                con["src_iosig"] = copy.deepcopy(src_blk.io_ports[con["srcport"]])
-                con["dst_iosig"] = copy.deepcopy(dst_blk.io_ports[con["dstport"]])
-                if con["src_iosig"].get("type") != con["dst_iosig"].get("type"):
-                    failure += (
-                        f"IO port type mismatch: {con['srcblk']}.{con['srcport']} "
-                        f"(type: {con['src_iosig'].get('type')}) → "
-                        f"{con['dstblk']}.{con['dstport']} "
-                        f"(type: {con['dst_iosig'].get('type')})\n"
-                    )
-            elif con["srcport"] == NONE_PORT or con["dstport"] == NONE_PORT:
-                pass
-            else:
-                failure += (
-                    f"Unresolved connection: "
-                    f"{con['srcblk']}:{con['srcport']} → "
-                    f"{con['dstblk']}:{con['dstport']}\n"
-                )
-            self.connections[conn_idx] = con
-
-        # Go through all the modules and check IO ports are connected
-        for module_name, module in self.get_module_list("all").items():
-            for io_port_name, io_port in module.io_ports.items():
-                required = io_port.get("required")
-                if required:
-                    is_connected = any(
-                        con["srcblk"] == module_name
-                        and con["srcport"] == io_port_name
-                        or con["dstblk"] == module_name
-                        and con["dstport"] == io_port_name
-                        for con in self.connections
-                    )
-                    if not is_connected:
-                        available_ports = self._get_available_ports(io_port)
-                        msg = f"IO port {module_name}.{io_port_name} is not connected. "
-                        if len(available_ports) == 1:
-                            msg += (
-                                f"Suggested connection: "
-                                f"{available_ports[0][0]}.{available_ports[0][1]}\n"
-                            )
-                            msg += (
-                                f"Add the following connection to the image core file to "
-                                f"use this connection:\n"
-                            )
-                            if available_ports[0][2] == "src":
-                                msg += (
-                                    f"{{ srcblk: {available_ports[0][0]}, "
-                                    f"srcport: {available_ports[0][1]}, dstblk: "
-                                    f"{module_name}, dstport: {io_port_name} }}"
-                                )
-                            else:
-                                msg += (
-                                    f"{{ srcblk: {module_name}, srcport: {io_port_name}, "
-                                    f"dstblk: {available_ports[0][0]}, dstport: "
-                                    f"{available_ports[0][1]} }}"
-                                )
-                        elif len(available_ports) > 1:
-                            msg += f"Available connections:\n"
-                            for port in available_ports:
-                                msg += f"    {port[0]}.{port[1]}\n"
-                            msg += (
-                                "Add a connection line to the image core file to enable "
-                                "this connection:\n"
-                            )
-                            if available_ports[0][2] == "src":
-                                msg += (
-                                    f"{{ srcblk: ..., srcport: ..., dstblk: "
-                                    f"{module_name}, dstport: {io_port_name} }}"
-                                )
-                            else:
-                                msg += (
-                                    f"{{ srcblk: {module_name}, srcport: {io_port_name}, "
-                                    f"dstblk: ..., dstport: ... }}"
-                                )
-                        else:
-                            msg += f"No available IO ports found!"
-                        if required == "recommended":
-                            self.log.warning(msg)
-                        else:
-                            failure += msg
-        # Go through blocks and check all ports are connected
-        for block_name, block in self.noc_blocks.items():
-            for direction in ("inputs", "outputs"):
-                for port_name in block["data"][direction]:
-                    if not any(
-                        con["srcblk"] == block_name
-                        and con["srcport"] == port_name
-                        or con["dstblk"] == block_name
-                        and con["dstport"] == port_name
-                        for con in self.connections
-                    ):
-                        self.log.warning("Block port %s.%s is not connected", block_name, port_name)
-        # Drop empty connections
-        self.connections = [
-            c for c in self.connections if c["srcport"] != NONE_PORT and c["dstport"] != NONE_PORT
-        ]
-
-        if failure:
-            self.log.error(
-                "There are errors in the image core file's connection settings:\n" + failure
-            )
-            self.log.info("    Make sure block ports are connected output " "(src) to input (dst)")
-            self.log.info("    Available block ports for connections:")
-            for block in self.block_ports:
-                self.log.info("        %s", (block,))
-            self.log.info(
-                "    Make sure io ports are connected master      " "(src) to slave    (dst)"
-            )
-            self.log.info(
-                "                                  or broadcaster " "(src) to listener (dst)"
-            )
-            self.log.info("    Available IO ports for connections:")
-            for mod_list in (self.noc_blocks, self.modules):
-                for module_name, module in mod_list.items():
-                    for io_name, io_port in module.io_ports.items():
-                        self.log.info("        %s.%s (%s)", module_name, io_name, io_port["type"])
-            for io_name, io_port in self.device.io_ports.items():
-                self.log.info("        %s.%s (%s)", DEVICE_NAME, io_name, io_port["type"])
-            sys.exit(1)
 
     def _check_resets(self):
         """Check and sanitize reset connections.
@@ -1210,6 +1033,7 @@ class ImageBuilderConfig:
           case this function will expand them to absolute paths using include_paths.
         """
         dtsi_include_paths = include_paths + [os.path.join(self.device.top_dir, "dts")]
+        constraints_include_paths = include_paths + [self.device.top_dir]
         for module_name, module in self.get_module_list("all").items():
             for make_arg_type in ("make_defs", "constraints", "dts_includes"):
                 for arg in getattr(module.desc, make_arg_type, []):
@@ -1227,10 +1051,23 @@ class ImageBuilderConfig:
                             # Create log entry for all missing dts include files
                             # except for files ending in 'version-info.dtsi',
                             # as these are dynamically generated.
-                            if not arg.endswith('version-info.dtsi'):
+                            if not arg.endswith("version-info.dtsi"):
                                 self.log.error(
-                                    "Error evaluating %s: Could not find DTS file %s!", module_name, arg
-                                    )
+                                    "Error evaluating %s: Could not find DTS file %s! Searched in %s",
+                                    module_name,
+                                    arg,
+                                    ":".join(dtsi_include_paths)
+                                )
+                    elif make_arg_type == "constraints":
+                        try:
+                            arg = find_include_file(arg, constraints_include_paths)
+                        except FileNotFoundError:
+                            self.log.error(
+                                "Error evaluating %s: Could not find constraints file %s! Searched in %s",
+                                module_name,
+                                arg,
+                                ":".join(constraints_include_paths)
+                            )
                     getattr(self, make_arg_type).append(arg)
 
         def remove_dupes(lst):
@@ -1307,11 +1144,19 @@ class ImageBuilderConfig:
         """Return module dictionary.
 
         Arguments:
-        mod_type: One of 'noc_blocks', 'transport_adapters', 'modules'.
+        mod_type: One of 'noc_blocks', 'transport_adapters', 'modules',
+                 'device', 'nodevice', 'all'.
         domain: One of 'all', 'secure_core', 'top'.
         """
         assert domain in ("top", "all", "secure_core")
-        assert mod_type in ("noc_blocks", "transport_adapters", "modules", "device", "all")
+        assert mod_type in (
+            "noc_blocks",
+            "transport_adapters",
+            "modules",
+            "device",
+            "nodevice",
+            "all",
+        )
         if mod_type == "all":
             # Ensure that device related entries are included first which, most importantly,
             # includes the loading of the FPGA bitfile. If the order is violated, the kernel tries
@@ -1319,6 +1164,12 @@ class ImageBuilderConfig:
             # behavior and kernel crashes.
             return {
                 **self.get_module_list("device", domain),
+                **self.get_module_list("transport_adapters", domain),
+                **self.get_module_list("modules", domain),
+                **self.get_module_list("noc_blocks", domain),
+            }
+        if mod_type == "nodevice":
+            return {
                 **self.get_module_list("transport_adapters", domain),
                 **self.get_module_list("modules", domain),
                 **self.get_module_list("noc_blocks", domain),
@@ -1337,14 +1188,7 @@ class ImageBuilderConfig:
     def render_wire_width(self, wire, pad=8):
         """Render a wire's width ([7:0])."""
         width = wire.get("width", 1)
-        if isinstance(width, int):
-            start_idx = width - 1
-        else:
-            start_idx = f"{width}-1"
-        if start_idx == 0:
-            return "".rjust(pad)
-        range_str = f"{start_idx}:0".rjust(pad - 2)
-        return f"[{range_str}]"
+        return render_wire_width(width, pad)
 
     def get_secure_core_def(self):
         """Return the secure image core dictionary."""
@@ -1397,3 +1241,14 @@ class ImageBuilderConfig:
                 }
             )
         return result
+
+    def get_clock_index(self, clk_name):
+        """Return the integer clock index given a clock name."""
+        if not clk_name:
+            return None
+        if "." not in clk_name:
+            clk_name = "_device_." + clk_name
+        srcblk, clk_name = clk_name.split(".", 1)
+        clk_info = [c for c in self.get_module(srcblk).clocks if c["name"] == clk_name]
+        assert clk_info # We checked timebase clocks are valid earlier
+        return clk_info[0].get("index")

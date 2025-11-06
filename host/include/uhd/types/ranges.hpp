@@ -8,6 +8,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <initializer_list>
 #include <type_traits>
 #include <string>
 #include <vector>
@@ -67,9 +68,13 @@ struct UHD_API meta_range_t : public std::vector<range_t>
     //! A default constructor for an empty meta-range
     meta_range_t(void);
 
-    /*!
-     * Input iterator constructor:
-     * Makes boost::assign::list_of work.
+    /*! Input iterator constructor
+     *
+     * Allows initializing this object from iterators:
+     * ```cpp
+     * meta_range_t r(other_range.begin(), other_range.end());
+     * ```
+     *
      * \param first the begin iterator
      * \param last the end iterator
      */
@@ -83,6 +88,41 @@ struct UHD_API meta_range_t : public std::vector<range_t>
         // but actually calls this constructor.
         static_assert(!std::is_integral<typename std::decay<InputIterator>::type>::value,
             "You can't pass integers to meta_range_t's constructor!");
+    }
+
+    //! Initializer list constructor
+    //
+    // For backward-compatibility reasons, we allow the user to initialize
+    // a range like this:
+    // ```cpp
+    // meta_range_t r1{0.0, 2.0};
+    // // Same as:
+    // meta_range_t r2(0.0, 2.0);
+    // ```
+    // Note that for longer initializer lists, this creates a list of ranges:
+    // ```cpp
+    // meta_range_t r1{0.0, 1.0, 2.0, 3.0};
+    // // Same as:
+    // meta_range_t r2{range_t(0.0), range_t(1.0), range_t(2.0), range_t(3.0)};
+    // ```
+    meta_range_t(std::initializer_list<double> il);
+
+    //! Initializer list constructor
+    //
+    // This can be used to create a meta_range_t object from a list of ranges
+    // by using initializer list notation:
+    // ```cpp
+    // meta_range_t mr{range_t(0.0, 1.0), range_t(2.0), range_t(3.0, 4.0)};
+    // ```
+    //
+    // A double-braced initializer list is also allowed, but is only recommended
+    // when it is really clear what is meant:
+    // ```cpp
+    // meta_range_t mr{{0.0, 1.0}, range_t(2.0), {3.0, 4.0}};
+    // ```
+    meta_range_t(std::initializer_list<range_t> il) : std::vector<range_t>(il)
+    {
+        /* NOP */
     }
 
     /*!

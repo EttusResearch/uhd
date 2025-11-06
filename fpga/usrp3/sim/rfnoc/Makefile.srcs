@@ -5,17 +5,18 @@
 #
 
 ##################################################
-# Dependencies for AXI BFMS
+# Dependencies for BFMs
 ##################################################
 
 SIM_RFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/, \
 axi4lite_sv/PkgAxiLite.sv \
 axi4lite_sv/AxiLiteIf.sv \
 axi4s_sv/AxiStreamIf.sv \
+rfnoc/core/ctrlport_pkg.sv \
 ))
 
 ##################################################
-# Simulation Libraries/Headers for AXI based interfaces
+# Simulation Libraries/Headers for various interfaces
 ##################################################
 
 SIM_RFNOC_SRCS += $(abspath $(addprefix $(BASE_DIR)/../sim/rfnoc/, \
@@ -26,11 +27,13 @@ PkgAxiStreamBfm.sv \
 PkgAxiLiteBfm.sv \
 PkgEthernet.sv \
 PkgChdrData.sv \
-PkgChdrUtils.sv \
+../../lib/rfnoc/core/rfnoc_chdr_utils_pkg.sv \
 PkgChdrBfm.sv \
+PkgChdrUtils.sv \
 PkgAxisCtrlBfm.sv \
 PkgRfnocItemUtils.sv \
 PkgCtrlIfaceBfm.sv \
 PkgChdrIfaceBfm.sv \
 PkgRfnocBlockCtrlBfm.sv \
+ctrlport_bfm_pkg.sv \
 ))
