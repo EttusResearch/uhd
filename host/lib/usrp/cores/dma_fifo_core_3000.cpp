@@ -328,7 +328,7 @@ public:
         _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
         _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
 
-        _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKTS, (2 ^ 18) - 1);
+        _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKTS, (1 << 18) - 1);
         _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKT_SIZE, 8000);
         _bist_cfg_reg.set(bist_cfg_reg_t::PKT_SIZE_RAMP, 0);
         _bist_cfg_reg.flush();
