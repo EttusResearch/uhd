@@ -15,6 +15,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
 #include <algorithm>
 #include <cmath>

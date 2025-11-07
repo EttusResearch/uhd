@@ -19,6 +19,8 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
 #include <boost/thread.hpp>
 
 using namespace uhd;

@@ -12,6 +12,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/format.hpp>
+#include <cstdint>
 
 using namespace uhd;
 using namespace uhd::usrp;

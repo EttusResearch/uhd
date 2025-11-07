@@ -13,6 +13,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
 
 using namespace uhd;
 

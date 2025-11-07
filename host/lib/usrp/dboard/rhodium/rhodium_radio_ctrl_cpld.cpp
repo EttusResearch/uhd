@@ -8,6 +8,7 @@
 #include "rhodium_cpld_ctrl.hpp"
 #include "rhodium_radio_ctrl_impl.hpp"
 #include <uhd/utils/log.hpp>
+#include <cstdint>
 
 using namespace uhd;
 using namespace uhd::usrp;
