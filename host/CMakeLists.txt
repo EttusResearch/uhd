@@ -313,7 +313,7 @@ include(UHDPython)
 
 PYTHON_CHECK_MODULE(
     "Python version ${PYTHON_MIN_VERSION} or greater"
-    "platform" "platform.python_version() >= '${PYTHON_MIN_VERSION}'"
+    "platform" "LooseVersion(platform.python_version()) >= LooseVersion('${PYTHON_MIN_VERSION}')"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
