@@ -32,6 +32,9 @@ io_ports:
   time:
     type: timekeeper
     drive: broadcaster
+  pps:
+    type: pps
+    drive: broadcaster
   radio:
     type: radio
     drive: master

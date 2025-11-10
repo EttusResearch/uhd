@@ -897,6 +897,7 @@ module e31x_core #(
     .m_ctrlport_resp_status  (2'b0),
     .m_ctrlport_resp_data    (m_ctrlport_resp_data   ),
     .radio_time              (radio_time             ),
+    .pps                     (pps_radioclk           ),
     .radio_rx_stb            ({rx_stb[1],     rx_stb[0]    }),
     .radio_rx_data           ({rx_data[1],    rx_data[0]   }),
     .radio_rx_running        ({rx_running[1], rx_running[0]}),

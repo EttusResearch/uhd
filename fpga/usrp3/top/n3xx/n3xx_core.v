@@ -1263,6 +1263,7 @@ module n3xx_core #(
     .m_axi_rvalid   ({dram_axi_rvalid  [3], dram_axi_rvalid  [2], dram_axi_rvalid  [1], dram_axi_rvalid  [0]}),
     .m_axi_rready   ({dram_axi_rready  [3], dram_axi_rready  [2], dram_axi_rready  [1], dram_axi_rready  [0]}),
     .radio_time                     (radio_time      ),
+    .pps                            (pps             ),
   `ifdef N320
     .radio_rx_stb_radio0            (                rx_stb [0]    ),
     .radio_rx_data_radio0           (                rx_data[0]    ),
