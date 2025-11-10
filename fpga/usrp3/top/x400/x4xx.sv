@@ -921,10 +921,10 @@ module x4xx (
   assign PL_CPLD_JTAGEN = gpio_0_tri_o[1];
 
   // propagate db GPIO direction and output control
-  assign ps_gpio_ddr_a = gpio_0_tri_t[43:32];
+  assign ps_gpio_ddr_a = ~gpio_0_tri_t[43:32];
   assign ps_gpio_out_a = gpio_0_tri_o[43:32];
 
-  assign ps_gpio_ddr_b = gpio_0_tri_t[55:44];
+  assign ps_gpio_ddr_b = ~gpio_0_tri_t[55:44];
   assign ps_gpio_out_b = gpio_0_tri_o[55:44];
 
   `ifdef X410
