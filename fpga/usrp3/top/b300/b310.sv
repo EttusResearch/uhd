@@ -575,22 +575,22 @@ module b310
   //----------------------------------------
 
   //vhook_e b310_jesd204b b310_jesd204b_i
-  //vhook_a bclk_rst                        radio_rst
-  //vhook_a bus_clk                         radio_clk
+  //vhook_a rclk_rst                        radio_rst
+  //vhook_a reg_clk                         radio_clk
   //vhook_a sample_clk_1x                   radio_clk
   //vhook_a sample_clk_2x                   radio_clk_2x
-  //vhook_a bclk_fpga_clocks_stable         bclk_radio_clk_gen_locked
-  //vhook_a bclk_jesd_ref_clk_present       {}
+  //vhook_a rclk_fpga_clocks_stable         bclk_radio_clk_gen_locked
+  //vhook_a rclk_jesd_ref_clk_present       {}
   //vhook_a jesd_ref_clk_p                  JESD_CLK_P
   //vhook_a jesd_ref_clk_n                  JESD_CLK_N
   //vhook_a adc_rx_p                        JESD_RX_P
   //vhook_a adc_rx_n                        JESD_RX_N
   //vhook_a dac_tx_p                        JESD_TX_P
   //vhook_a dac_tx_n                        JESD_TX_N
-  //vhook_a bclk_ctrlport_req_time          m_radio_jesd_ctrlport.req.timestamp
-  //vhook_a {^bclk_ctrlport_req_rem(.*)}    m_radio_jesd_ctrlport.req.remote$1
-  //vhook_a {^bclk_ctrlport_req_(.*)}       m_radio_jesd_ctrlport.req.$1
-  //vhook_a {^bclk_ctrlport_resp_(.*)}      m_radio_jesd_ctrlport.resp.$1
+  //vhook_a rclk_ctrlport_req_time          m_radio_jesd_ctrlport.req.timestamp
+  //vhook_a {^rclk_ctrlport_req_rem(.*)}    m_radio_jesd_ctrlport.req.remote$1
+  //vhook_a {^rclk_ctrlport_req_(.*)}       m_radio_jesd_ctrlport.req.$1
+  //vhook_a {^rclk_ctrlport_resp_(.*)}      m_radio_jesd_ctrlport.resp.$1
   //vhook_a sysref_in_p                     SYSREF_P
   //vhook_a sysref_in_n                     SYSREF_N
   //vhook_a capture_sysref_clk              radio_clk
@@ -604,29 +604,29 @@ module b310
   //vhook_a dac_sync_in_n                   dac_sync_b
   //vhook_a *c_sync_out                     {}
   b310_jesd204b b310_jesd204b_i (
-    .bclk_rst                    (radio_rst),                                //in  std_logic
-    .bus_clk                     (radio_clk),                                //in  std_logic
+    .rclk_rst                    (radio_rst),                                //in  std_logic
+    .reg_clk                     (radio_clk),                                //in  std_logic
     .clk_40mhz                   (clk_40mhz),                                //in  std_logic
     .sample_clk_1x               (radio_clk),                                //in  std_logic
     .sample_clk_2x               (radio_clk_2x),                             //in  std_logic
-    .bclk_fpga_clocks_stable     (bclk_radio_clk_gen_locked),                //in  std_logic
+    .rclk_fpga_clocks_stable     (bclk_radio_clk_gen_locked),                //in  std_logic
     .jesd_ref_clk_p              (JESD_CLK_P),                               //in  std_logic
     .jesd_ref_clk_n              (JESD_CLK_N),                               //in  std_logic
-    .bclk_jesd_ref_clk_present   (),                                         //out std_logic
+    .rclk_jesd_ref_clk_present   (),                                         //out std_logic
     .lmk_sync                    (),                                         //out std_logic
-    .bclk_ctrlport_req_wr        (m_radio_jesd_ctrlport.req.wr),             //in  std_logic
-    .bclk_ctrlport_req_rd        (m_radio_jesd_ctrlport.req.rd),             //in  std_logic
-    .bclk_ctrlport_req_addr      (m_radio_jesd_ctrlport.req.addr),           //in  std_logic_vector(19:0)
-    .bclk_ctrlport_req_port_id   (m_radio_jesd_ctrlport.req.port_id),        //in  std_logic_vector(9:0)
-    .bclk_ctrlport_req_rem_epid  (m_radio_jesd_ctrlport.req.remote_epid),    //in  std_logic_vector(15:0)
-    .bclk_ctrlport_req_rem_portid(m_radio_jesd_ctrlport.req.remote_portid),  //in  std_logic_vector(9:0)
-    .bclk_ctrlport_req_data      (m_radio_jesd_ctrlport.req.data),           //in  std_logic_vector(31:0)
-    .bclk_ctrlport_req_byte_en   (m_radio_jesd_ctrlport.req.byte_en),        //in  std_logic_vector(3:0)
-    .bclk_ctrlport_req_has_time  (m_radio_jesd_ctrlport.req.has_time),       //in  std_logic
-    .bclk_ctrlport_req_time      (m_radio_jesd_ctrlport.req.timestamp),      //in  std_logic_vector(63:0)
-    .bclk_ctrlport_resp_ack      (m_radio_jesd_ctrlport.resp.ack),           //out std_logic
-    .bclk_ctrlport_resp_status   (m_radio_jesd_ctrlport.resp.status),        //out std_logic_vector(1:0)
-    .bclk_ctrlport_resp_data     (m_radio_jesd_ctrlport.resp.data),          //out std_logic_vector(31:0)
+    .rclk_ctrlport_req_wr        (m_radio_jesd_ctrlport.req.wr),             //in  std_logic
+    .rclk_ctrlport_req_rd        (m_radio_jesd_ctrlport.req.rd),             //in  std_logic
+    .rclk_ctrlport_req_addr      (m_radio_jesd_ctrlport.req.addr),           //in  std_logic_vector(19:0)
+    .rclk_ctrlport_req_port_id   (m_radio_jesd_ctrlport.req.port_id),        //in  std_logic_vector(9:0)
+    .rclk_ctrlport_req_rem_epid  (m_radio_jesd_ctrlport.req.remote_epid),    //in  std_logic_vector(15:0)
+    .rclk_ctrlport_req_rem_portid(m_radio_jesd_ctrlport.req.remote_portid),  //in  std_logic_vector(9:0)
+    .rclk_ctrlport_req_data      (m_radio_jesd_ctrlport.req.data),           //in  std_logic_vector(31:0)
+    .rclk_ctrlport_req_byte_en   (m_radio_jesd_ctrlport.req.byte_en),        //in  std_logic_vector(3:0)
+    .rclk_ctrlport_req_has_time  (m_radio_jesd_ctrlport.req.has_time),       //in  std_logic
+    .rclk_ctrlport_req_time      (m_radio_jesd_ctrlport.req.timestamp),      //in  std_logic_vector(63:0)
+    .rclk_ctrlport_resp_ack      (m_radio_jesd_ctrlport.resp.ack),           //out std_logic
+    .rclk_ctrlport_resp_status   (m_radio_jesd_ctrlport.resp.status),        //out std_logic_vector(1:0)
+    .rclk_ctrlport_resp_data     (m_radio_jesd_ctrlport.resp.data),          //out std_logic_vector(31:0)
     .capture_sysref_clk          (radio_clk),                                //in  std_logic
     .sysref_in_p                 (SYSREF_P),                                 //in  std_logic
     .sysref_in_n                 (SYSREF_N),                                 //in  std_logic
