@@ -572,21 +572,23 @@ indicates that each QSFP port has a single 100 GbE, respectively
 
 As of UHD 4.5, the following USRP X410 images flavors are shipped with UHD:
 
-| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
-|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|--------------------------|
-| X4_200            | 4 (2 per ZBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | Yes (4 GiB, 4-Ch Replay) |
-| UC_200            | 4 (2 per ZBX)         | 200 MHz                  | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay) |
-| CG_400            | 4 (2 per ZBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                       |
+| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                       |
+|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|----------------------------|
+| X4_200            | 4 (2 per ZBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | Yes (4 GiB, 4-Ch Replay)   |
+| UC_200            | 4 (2 per ZBX)         | 200 MHz                  | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay)   |
+| CG_400            | 4 (2 per ZBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                         |
 
 As of UHD 4.6, the following USRP X440 images flavors are shipped with UHD:
 
-| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                     |
-|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|--------------------------|
-| X4_200            | 8 (4 per FBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | No                       |
-| X4_400            | 8 (4 per FBX)         | 400 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 8-Ch Replay) |
-| CG_400            | 8 (4 per FBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                       |
-| X4_1600           | 2 (1 per FBX)         | 1600 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay) |
-| CG_1600           | 2 (1 per FBX)         | 1600 MHz                 | 100 GbE                 | 100 GbE                 | No      | No                       |
+| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                      |
+|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|---------------------------|
+| X4_200            | 8 (4 per FBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | No                        |
+| X4_400            | 8 (4 per FBX)         | 400 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 8-Ch Replay*) |
+| CG_400            | 8 (4 per FBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                        |
+| X4_1600           | 2 (1 per FBX)         | 1600 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay)  |
+| CG_1600           | 2 (1 per FBX)         | 1600 MHz                 | 100 GbE                 | 100 GbE                 | No      | No                        |
+
+* (Implemented as two separate 4-Ch Replay blocks)
 
 The following list shows some potential use-cases for different FPGA images:
 
@@ -604,6 +606,11 @@ The following list shows some potential use-cases for different FPGA images:
   DRAM using the RFNoC Record/Replay block. Up to 4 x 10 GbE connections may be
   used to access the DRAM from an external host computer. Note that 10 GbE is
   not fast enough for continuous full-rate streaming at this rate.
+  The replay feature is implemented as two, equally sized RFNoC Record/Replay
+  blocks. Record/Replay block 0 is connected to Radio block 0 (i.e., all RF
+  channels on daughterboard 0) and Record/Replay block 1 is connected to Radio
+  block 1. Cross-connections Record/Replay0 <-> Radio1 and Record/Replay1 <->
+  Radio0 are not supported by default.
   (For USRP X410 this design is available as source, and not shipped as precompiled bitfile)
 - `CG_1600` (USRP X440 only): Highest bandwidth streaming between the X440 and 
   an external host computer. Streaming requires one 100 GbE connections per 
