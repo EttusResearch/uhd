@@ -523,6 +523,31 @@ endmodule
 //          alt="Front-Panel Programmable GPIOs"/></br>
 //      Make sure the GPIO lines between FPGA and GPIO board are not driven by
 //      two drivers. Set the DIO registers in @.PS_CPLD_BASE_REGMAP appropriately.
+//      <p>
+//        Important note on the bit ordering inside the DIO_PORT_A and DIO_PORT_B
+//        bitfields of all DIO-registers:
+//        <ul>
+//          <li>
+//            Starting from FPGA compat number 10.1, the bit order matches the pin
+//            order of the "DIO" signals on the frontpanel connectors (which is the
+//            same order as the HDMI pin numbering with ground pins and pin 14
+//            (HEC/ARC) left out):
+//            <pre>
+//+----------------------------------------+
+//| 11  --  09  08  --  05  04  --  01  00 |
+//\   --  10  --  07  06  --  03  02  --   /
+// +--------------------------------------+</pre>
+//          </li>
+//          <li>
+//            Up until FPGA compat number 10.0, the the bit order did not match the
+//            actual pin order on the frontpanel connectors. To compensate for this,
+//            the software had to apply a mapping table for the values in bitfield
+//            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
+//            mapping table for the values in bitfield DIO_PORT_B (see parameter
+//            'MAPPED_PIN_DIO_B' in x4xx.sv).
+//          </li>
+//        </ul>
+//      </p>
 //    </info>
 //
 //    <regtype name="DIO_CONTROL_REG" size="32">

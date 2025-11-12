@@ -8973,6 +8973,31 @@ Set of configuration registers for the supported slaves.
           alt="Front-Panel Programmable GPIOs"/></br>
       Make sure the GPIO lines between FPGA and GPIO board are not driven by
       two drivers. Set the DIO registers in <a href="#PS_CPLD_BASE_REGMAP">PS_CPLD_BASE_REGMAP</a> appropriately.
+      <p>
+        Important note on the bit ordering inside the DIO_PORT_A and DIO_PORT_B
+        bitfields of all DIO-registers:
+        <ul>
+          <li>
+            Starting from FPGA compat number 10.1, the bit order matches the pin
+            order of the "DIO" signals on the frontpanel connectors (which is the
+            same order as the HDMI pin numbering with ground pins and pin 14
+            (HEC/ARC) left out):
+            <pre>
++----------------------------------------+
+| 11  --  09  08  --  05  04  --  01  00 |
+\   --  10  --  07  06  --  03  02  --   /
+ +--------------------------------------+</pre>
+          </li>
+          <li>
+            Up until FPGA compat number 10.0, the the bit order did not match the
+            actual pin order on the frontpanel connectors. To compensate for this,
+            the software had to apply a mapping table for the values in bitfield
+            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
+            mapping table for the values in bitfield DIO_PORT_B (see parameter
+            'MAPPED_PIN_DIO_B' in x4xx.sv).
+          </li>
+        </ul>
+      </p>
         
             
     <section class="register">
@@ -32823,19 +32848,6 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
-                                    FPGA_CURRENT_VERSION_MINOR
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">0</td>
-                            <td class="l">0x00000000</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_BUILD"></a>
                                     FPGA_CURRENT_VERSION_BUILD
                                 </p>
@@ -32849,8 +32861,8 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
-                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD"></a>
+                                    FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
                                 </p>
                                 
                             </td>
@@ -32858,12 +32870,25 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">0</td>
-                            <td class="l">0x00000000</td>
+                        <td class="value">1</td>
+                            <td class="l">0x00000001</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD"></a>
-                                    FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
+                                    FPGA_CURRENT_VERSION_MINOR
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">1</td>
+                            <td class="l">0x00000001</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
+                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
                                 </p>
                                 
                             </td>
@@ -32897,8 +32922,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">620958473</td>
-                            <td class="l">0x25031309</td>
+                        <td class="value">621938963</td>
+                            <td class="l">0x25120913</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME"></a>

@@ -2632,6 +2632,8 @@ module x4xx (
   wire [             NUM_CHANNELS-1:0] rx_stb;
   wire [32*RADIO_SPC*NUM_CHANNELS-1:0] tx_data_iq, tx_data_qi;
   wire [             NUM_CHANNELS-1:0] tx_stb;
+  wire [                         11:0] gpio_in_a;
+  wire [                         11:0] gpio_in_b;
   wire [                         11:0] gpio_out_a;
   wire [                         11:0] gpio_out_b;
   wire [                         11:0] gpio_en_a;
@@ -2695,11 +2697,21 @@ module x4xx (
   // always provides valid data when the rf_core is ready to receive.
   assign dac_data_in_tvalid = {NUM_CHANNELS{1'b1}};
 
+  // The bit positions in the DIOA_FPGA IO port (according to the constraints file which is
+  // aligned with the schematics) do not match the pin order of the DIO signals on the HDMI
+  // frontpanel connector (which is the same order as the HDMI pin numbering with ground pins
+  // and pin 14 (HEC/ARC) left out). Apply the following mapping to compensate for this:
+  localparam int MAPPED_PIN_DIO_A [12] = '{1, 0, 2, 3, 5, 4, 6, 7, 9, 8, 10, 11};
+  // The same is true for the DIOB_FPGA IO port. However, a different mapping is required:
+  localparam int MAPPED_PIN_DIO_B [12] = '{11, 10, 8, 9, 7, 6, 4, 5, 3, 2, 0, 1};
+
   // DIO tristate buffers
   genvar dio_i;
   generate for ( dio_i = 0; dio_i < 12; dio_i = dio_i + 1) begin: dio_tristate_gen
-    assign DIOA_FPGA[dio_i] = (gpio_en_a[dio_i]) ? gpio_out_a[dio_i] : 1'bz;
-    assign DIOB_FPGA[dio_i] = (gpio_en_b[dio_i]) ? gpio_out_b[dio_i] : 1'bz;
+    assign DIOA_FPGA[MAPPED_PIN_DIO_A[dio_i]] = (gpio_en_a[dio_i]) ? gpio_out_a[dio_i] : 1'bz;
+    assign gpio_in_a[dio_i] = DIOA_FPGA[MAPPED_PIN_DIO_A[dio_i]];
+    assign DIOB_FPGA[MAPPED_PIN_DIO_B[dio_i]] = (gpio_en_b[dio_i]) ? gpio_out_b[dio_i] : 1'bz;
+    assign gpio_in_b[dio_i] = DIOB_FPGA[MAPPED_PIN_DIO_B[dio_i]];
   end endgenerate
 
   // The RFNoC HDL assumes the data to be ordered with I in the MSBs and Q in
@@ -2979,8 +2991,8 @@ module x4xx (
     .s_dma_tlast                   (e2v_dma_tlast),
     .s_dma_tvalid                  (e2v_dma_tvalid),
     .s_dma_tready                  (e2v_dma_tready),
-    .gpio_in_a                     (DIOA_FPGA),
-    .gpio_in_b                     (DIOB_FPGA),
+    .gpio_in_a                     (gpio_in_a),
+    .gpio_in_b                     (gpio_in_b),
     .gpio_out_a                    (gpio_out_a),
     .gpio_out_b                    (gpio_out_b),
     .gpio_en_a                     (gpio_en_a),
@@ -3125,12 +3137,12 @@ endmodule
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="10"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="0"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="1"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="10"/>
-//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
+//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="1"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x25031309"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x25120913"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>
