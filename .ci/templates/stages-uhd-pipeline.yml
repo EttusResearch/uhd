@@ -28,7 +28,7 @@ parameters:
   default: 'smoke'
 - name: create_sbom
   type: boolean
-  displayName: Create SBOM for filesystem images
+  displayName: Create SBOMs
   default: true
 - name: build_sdk
   type: boolean
@@ -481,6 +481,7 @@ stages:
         toolset: ubuntu_deb
         installer: deb
         cmake_args: ${{ parameters.cmake_args }}
+        create_sbom: ${{ parameters.create_sbom }}
 
 - stage: build_uhd_installer_stage_fedora
   displayName: Build UHD Installers Fedora
@@ -493,6 +494,7 @@ stages:
         installer: rpm
         cmake_args: ${{ parameters.cmake_args }}
         releaseBinaries: ${{ parameters.release_binaries }}
+        create_sbom: ${{ parameters.create_sbom }}
 
 - stage: build_uhd_installer_stage_win
   displayName: Build UHD Installers Windows
@@ -516,6 +518,7 @@ stages:
           fpga_imgs_source: 'files.ettus.com'
         ${{ else }}:
           fpga_imgs_source: 'Internal'
+        create_sbom: ${{ parameters.create_sbom }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
