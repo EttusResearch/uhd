@@ -162,7 +162,7 @@ bool check_rb_values(const uint32_t rb,
 {
     if (loopback_num_bits) {
         const uint32_t lb_mask = (1 << loopback_num_bits) - 1;
-        expected |= ((expected & lb_mask) << GPIO_MIN_NUM_BITS);
+        expected |= ((expected & lb_mask) << loopback_num_bits);
     }
     if ((rb & expected) != expected) {
         std::cout << "fail:" << std::endl;
@@ -402,12 +402,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
     if (vm.count("check_loopback")) {
-        // For a proper test, we need at least 5 pins (4xATR + 1xGPIO). That
-        // means we also want at *most* 5 pins to be looped back for this test.
-        if (num_bits <= GPIO_MIN_NUM_BITS) {
+        // For a proper test, we need at least 5 pins (4xATR + 1xGPIO). Only execute
+        // loopback test if at least 5 pins are available
+        if ((num_bits / 2) < GPIO_MIN_NUM_BITS) {
             loopback_num_bits = 0;
         } else {
-            loopback_num_bits = std::min(GPIO_MIN_NUM_BITS, num_bits - GPIO_MIN_NUM_BITS);
+            loopback_num_bits = num_bits / 2;
         }
         std::cout << "Checking external GPIO loopback! Expecting the following external "
                      "connections: "
