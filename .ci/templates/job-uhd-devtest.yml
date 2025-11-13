@@ -22,6 +22,7 @@ parameters:
   type: object
 - name: vivado_dir
   type: string
+  default: ''
 
 jobs:
 - job: uhd_devtest_${{ parameters.suiteName }}
