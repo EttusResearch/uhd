@@ -185,8 +185,8 @@ parameters:
       image_core_name: usrp_x440_fpga_CG_400
       target_name: X440
       artifact_name: X440_CG_400
-      timeout: 720
-      attempt_timeout: 360
+      timeout: 1080
+      attempt_timeout: 540 # successfull runs can take longer than default 6h
       max_attempts: 2
     X440_X4_1600:
       image_core: x440_X4_1600_rfnoc_image_core.yml
@@ -201,8 +201,8 @@ parameters:
       image_core_name: usrp_x440_fpga_X4_400
       target_name: X440
       artifact_name: X440_X4_400
-      timeout: 720
-      attempt_timeout: 360
+      timeout: 1080
+      attempt_timeout: 540 # successfull runs can take longer than default 6h
       max_attempts: 2
     X440_X4_200:
       image_core: x440_X4_200_rfnoc_image_core.yml
