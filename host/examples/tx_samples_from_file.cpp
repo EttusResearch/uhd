@@ -30,23 +30,24 @@ void sig_int_handler(int)
 }
 
 template <typename samp_type>
-void send_from_file(
-    uhd::tx_streamer::sptr tx_stream, const std::string& file, size_t samps_per_buff)
+void send_from_file(uhd::tx_streamer::sptr tx_stream,
+    std::ifstream& infile,
+    size_t samps_per_buff,
+    bool is_end_of_burst)
 {
     uhd::tx_metadata_t md;
     md.start_of_burst = false;
     md.end_of_burst   = false;
+
     std::vector<samp_type> buff(samps_per_buff);
     std::vector<samp_type*> buffs(tx_stream->get_num_channels(), &buff.front());
-    std::ifstream infile(file.c_str(), std::ifstream::binary);
 
-    // loop until the entire file has been read
-
-    while (not md.end_of_burst and not stop_signal_called) {
+    // send whole file
+    while (not infile.eof() and not stop_signal_called) {
         infile.read((char*)&buff.front(), buff.size() * sizeof(samp_type));
         size_t num_tx_samps = size_t(infile.gcount() / sizeof(samp_type));
 
-        md.end_of_burst = infile.eof();
+        md.end_of_burst = (infile.eof() and is_end_of_burst);
 
         const size_t samples_sent = tx_stream->send(buffs, num_tx_samps, md);
         if (samples_sent != num_tx_samps) {
@@ -56,8 +57,12 @@ void send_from_file(
             return;
         }
     }
-
-    infile.close();
+    // if stop_signal_called is true and end of burst has not already been sent.
+    if (stop_signal_called and not md.end_of_burst) {
+        // send mini EOB packet
+        md.end_of_burst = true;
+        tx_stream->send("", 0, md);
+    }
 }
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
@@ -73,9 +78,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         "                              [--channel CHANNEL] [--channels CHANNELS]\n"
         "                              [--repeat] [--int-n]"
         "\n\n"
-        "This example demonstrates how to transmit samples from a binary file using\n"
-        "the UHD multi_usrp API. It allows you to play back pre-recorded or\n"
-        "arbitrary baseband data through a multiple TX channels and multiple USRP\n"
+        "This example demonstrates how to transmit samples from a binary file\n"
+        "using the UHD multi_usrp API.\n"
+        "It allows you to play back pre-recorded or arbitrary baseband data\n"
+        "through multiple TX channels and multiple USRP devices.\n"
+        "The same data is played back for all configured channels and USRP\n"
         "devices.\n"
         "\n"
         "Key features:\n"
@@ -116,9 +123,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         "                           --type float --repeat --delay 1.0\n"
         " 3. Transmit IQ samples for four channels from a file using two USRPs,\n"
         "    each with two channels, at a sample rate of 10 MHz:\n"
-        "      tx_waveforms --args \"addr0=192.168.10.2,addr1=192.168.10.3\"\n"
-        "                   --freq 2.4e9 --rate 10e6 --channels \"0,1,2,3\"\n"
-        "                   --file \"iq_data_4chan_fc32.bin\" --type float\n";
+        "      tx_samples_from_file --args \"addr0=192.168.10.2,addr1=192.168.10.3\"\n"
+        "                           --freq 2.4e9 --rate 10e6 --channels \"0,1,2,3\"\n"
+        "                           --file \"iq_data_4chan_fc32.bin\" --type float\n";
 
     // variables to be set by po
     std::string args, file, type, ant, subdev, ref, otw, channels;
@@ -142,20 +149,22 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
             "\nIf not specified, UHD connects to the first available device.")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "Name of the raw binary "
-            "file to read and transmit data from. The file must use the data format indicated by the --type argument.")
-        ("type", po::value<std::string>(&type)->default_value("short"), "Specifies the data format of the "
-            "file specified by the --file option. The file must contain interleaved IQ samples in order I0_Ch0, Q0_Ch0, "
-            "I0_Ch1, Q0_Ch1, ..., I0_ChN, Q0_ChN, I1_Ch0, Q1_Ch0, ... and in one of the following numeric formats: "
-            "'double' (64-bit float, fc64), 'float' (32-bit float, fc32), or 'short' (16-bit integer, sc16, scaled to "
-            "int16 range -32768 to 32767).")
+            "file to read and transmit data from. The file must contain interleaved IQ samples in order I0, Q0, I1, Q1, "
+            "... in the numeric data format indicated by the --type argument.")
+        ("type", po::value<std::string>(&type)->default_value("short"), "Specifies the numeric data format of "
+            "the binary file specified by the --file option. The following formats are supported: 'double' (64-bit float, "
+            "fc64), 'float' (32-bit float, fc32), or 'short' (16-bit integer, sc16, scaled to int16 range -32768 to "
+            "32767).")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "Size of the host data buffer that is "
             "allocated for each Tx channel."
-            "\nLarger values may improve throughput. Typical value is between 1,000 and 10,000 samples.")
-        ("rate", po::value<double>(&rate), "TX sample rate in samples/second. Note that each USRP device only "
-            "supports a set of discrete sample rates, which depend on the hardware model and configuration. If you "
-            "request a rate that is not supported, the USRP device will automatically select and use the closest "
-            "available rate.")
-        ("freq", po::value<double>(&freq), "RF center frequency in Hz.")
+            "\nLarger values can improve throughput but may increase latency."
+            "\nTypical values range from 1,000 to 10,000 samples, but optimal values depend on device, transport, and "
+            "application requirements.")
+        ("rate,r", po::value<double>(&rate)->required(), "TX sample rate in samples/second. Note that each "
+            "USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("freq,f", po::value<double>(&freq)->required(), "RF center frequency in Hz.")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
             "LO offset for the frontend in Hz.")
         ("gain", po::value<double>(&gain), "Gain for the RF chain in dB. Will be ignored, if --power is "
@@ -395,13 +404,28 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cerr << "ERROR: File not found: " << file << std::endl;
         return EXIT_FAILURE;
     }
+
+    // open the file for reading
+    std::ifstream infile(file, std::ios::binary);
+    if (!infile) {
+        std::cerr << "ERROR: Could not open file: " << file << std::endl;
+        return EXIT_FAILURE;
+    }
+    infile.seekg(0, std::ios::beg);
+    // send the file contents (repeatedly)
+    bool is_continuous_repeat = repeat && delay == 0.0;
     do {
+        infile.clear();
+        infile.seekg(0);
         if (type == "double")
-            send_from_file<std::complex<double>>(tx_stream, file, spb);
+            send_from_file<std::complex<double>>(
+                tx_stream, infile, spb, !is_continuous_repeat);
         else if (type == "float")
-            send_from_file<std::complex<float>>(tx_stream, file, spb);
+            send_from_file<std::complex<float>>(
+                tx_stream, infile, spb, !is_continuous_repeat);
         else if (type == "short")
-            send_from_file<std::complex<short>>(tx_stream, file, spb);
+            send_from_file<std::complex<short>>(
+                tx_stream, infile, spb, !is_continuous_repeat);
         else
             throw std::runtime_error("Unknown type " + type);
 
@@ -409,6 +433,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(delay * 1000)));
         }
     } while (repeat and not stop_signal_called);
+    // close the file
+    infile.close();
 
     // finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
