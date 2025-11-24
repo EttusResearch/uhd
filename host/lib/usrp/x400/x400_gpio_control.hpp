@@ -9,25 +9,12 @@
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
-#include <uhdlib/usrp/cores/gpio_port_mapper.hpp>
 #include <vector>
 
 namespace uhd { namespace rfnoc { namespace x400 {
 
 // The name of the X400's GPIO bank
 extern const char* GPIO_BANK_NAME;
-
-class x400_gpio_port_mapping : public uhd::mapper::gpio_port_mapper
-{
-public:
-    x400_gpio_port_mapping(){};
-
-    virtual ~x400_gpio_port_mapping() = default;
-
-    uint32_t map_value(const uint32_t& value) override;
-
-    uint32_t unmap_value(const uint32_t& value) override;
-};
 
 /*! Abstract X400's GPIO control to match the "gpio_attr" control scheme.
  *
@@ -100,8 +87,6 @@ private:
 
     // There are two GPIOs, one for each channel. These two are set in unison.
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpios;
-
-    x400_gpio_port_mapping _mapper;
 };
 
 }}} // namespace uhd::rfnoc::x400

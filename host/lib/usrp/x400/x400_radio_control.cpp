@@ -204,9 +204,6 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
         _gpios = std::make_shared<x400::gpio_control>(
             _rpcc, _mb_control, RFNOC_MAKE_WB_IFACE(regmap::PERIPH_BASE + 0xC000, 0));
 
-        auto gpio_port_mapper = std::shared_ptr<uhd::mapper::gpio_port_mapper>(
-            new uhd::rfnoc::x400::x400_gpio_port_mapping);
-
         // Check if SPI is available as GPIO source, otherwise don't register
         // SPI_GETTER_IFace
         auto gpio_srcs = _mb_control->get_gpio_srcs("GPIO0");
@@ -222,8 +219,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 x400_regs::SPI_TRANSACTION_CFG_REG,
                 x400_regs::SPI_TRANSACTION_GO_REG,
                 x400_regs::SPI_STATUS_REG,
-                x400_regs::SPI_CONTROLLER_INFO_REG,
-                gpio_port_mapper);
+                x400_regs::SPI_CONTROLLER_INFO_REG);
 
             _spi_getter_iface = std::make_shared<x400_spi_getter>(spicore);
             register_feature(_spi_getter_iface);
