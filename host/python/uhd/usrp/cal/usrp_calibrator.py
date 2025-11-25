@@ -419,10 +419,10 @@ class E3XXCalibrator(USRPCalibratorBase):
     # Choosing 4 MHz: It is a small rate, but carries enough bandwidth to receive
     # a tone. Compatible with the default MCR of 16 MHz.
     default_rate = 4e6
-    # Choosing an LO offset of 8 MHz: At 4 Msps, the LO will never be within
+    # Choosing an LO offset of 5 MHz: At 4 Msps, the LO will never be within
     # our estimate. E3XX generally has good DC offset / IQ balance performance,
     # but we still try and avoid DC as much as possible.
-    lo_offset = 8e6
+    lo_offset = 5e6
     tune_settling_time = 0.01  # Probably not needed??
 
     def __init__(self, usrp, meas_dev, direction, **kwargs):
