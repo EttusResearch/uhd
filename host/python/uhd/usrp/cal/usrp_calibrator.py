@@ -299,7 +299,9 @@ class USRPCalibratorBase:
                 self.log(
                     "Adapting input power to: {:+.2f} dBm.".format(usrp_input_power + power_delta)
                 )
-                usrp_input_power = self._meas_dev.set_power(usrp_input_power + power_delta)
+                usrp_input_power = self._meas_dev.set_power(
+                    min(usrp_input_power + power_delta, self.max_input_power)
+                )
                 self.log("New input power is: {:+.2f} dBm".format(usrp_input_power))
                 # And then of course, measure again
                 recvd_power = get_usrp_power(self._streamer)
