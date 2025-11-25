@@ -51,6 +51,11 @@ the device arguments for the transport associated with the stream.
   - Default value (X3x0 and MPMD):
        20 ms of data at the link rate
        (X3x0: <b>OR</b> 64 1472-byte packets, whichever is larger)
+- `mtu`
+  - Default value: Identical to the `recv_frame_size` or `send_frame_size`
+  - This value overrides the MTU value that is reported in the RFNoC graph.
+    Useful for remote transports (see \ref stream_remote_rfnoc). Works independent
+    of the underlying link type.
 
 <b>Note:</b> Be aware that values may be further limited due to platform-
 specific restrictions. See the platform-specific notes below for more

@@ -176,6 +176,9 @@ usrp = uhd.usrp.MultiUSRP("type=x4xx")
 stream_args = uhd.usrp.StreamArgs("fc32", "sc16")
 # Here, we program the remote computer's IP address and a destination UDP port:
 stream_args.args = "dest_addr=192.168.40.5,dest_port=1234"
+# If we have this information, we may provide the actual path MTU for the remote
+# link (it may differ from the path MTU between USRP and UHD host):
+stream_args.args["mtu"] = "8000"
 rx_streamer = usrp.get_rx_stream(stream_args)
 rx_metadata = uhd.types.RXMetadata()
 stream_cmd = uhd.types.StreamCMD(uhd.types.StreamMode.start_cont)
@@ -205,7 +208,7 @@ The streamer objects accepts the following arguments:
 - `adapter`: The adapter that is used to stream data out of. The adapter names
   match the interface names as listed on the command line (e.g., `sfp0`, `sfp1`).
   This allows connecting to one interface and streaming out of another. It also
-  allows running UHD on the device itself (for MPM devices, i.e. X410, E320,
+  allows running UHD on the device itself (for MPM devices, i.e., X4xx, E3xx,
   N3xx series) and streaming to a remote destination at a high rate.
   Note that for X3x0, the available adapter names are hardcoded as `sfp0` and
   `sfp1`, respectively.
@@ -218,6 +221,11 @@ The streamer objects accepts the following arguments:
   In that case, `stream_mode` must also be set to `full_packet` in order to be
   able to handle flow control responses. See the following section for more
   information.
+- `mtu`: This is not specific to remote streaming, but it is useful because for
+  remote streaming, UHD is unable to do automatic MTU detection. Note that this
+  argument is independent of the underlying link type (regular UDP, DPDK, ...)
+  and will always be respected by RFNoC, but if it is incorrectly chosen, it
+  may cause packet fragmentation and data loss.
 
 \subsubsection stream_remote_rfnoc_fc Flow Control
 

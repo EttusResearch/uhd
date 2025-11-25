@@ -21,10 +21,12 @@ Change Log for Releases
         enabling this feature for all 8 RX and TX channels necessitated
         restricting the existing crossbar connections between the replay
         blocks and the radio blocks. As a result, only blocks with the same
-        indicies can be connected (e.g. replay0<->radio0 and replay1<->radio1
+        indices can be connected (e.g. replay0<->radio0 and replay1<->radio1
         only) when using this pre-built USRP FPGA image.
-    - Add names and descriptions for block's and module's YAML files, so
-      that other tools may read information about those in an automated fashion
+    - Add names and descriptions for block's and module's YAML files, so that
+      other tools may read information about those in an automated fashion
+    - Allow `mtu` stream argument, which overrides the MTU value that is
+      derived from the link information.
 * API Changes
   - meta_range_t and uhd::dict can now be initialized from initializer lists
 * Bug Fixes

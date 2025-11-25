@@ -190,14 +190,26 @@ void rfnoc_rx_streamer::connect_channel(
 {
     UHD_ASSERT_THROW(channel < _mtu_in.size());
     // Stash away the MTU before we lose access to xports
-    const size_t mtu = xport->get_mtu();
+    const size_t xport_mtu = xport->get_mtu();
 
     rx_streamer_impl<chdr_rx_data_xport>::connect_channel(channel, std::move(xport));
 
-    // Update MTU property based on xport limits. We need to do this after
-    // connect_channel(), because that's where the chdr_rx_data_xport object
-    // learns its header size.
-    set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::INPUT_EDGE, channel});
+    // Update MTU property. We need to do this after connect_channel(), because
+    // that's where the chdr_rx_data_xport object learns its header size.
+    // Note that rx_streamer_impl has the option to override the MTU value based
+    // on stream args. We therefore see what the rx_streamer_impl is using as
+    // an MTU value, and compare it with the xport MTU so we can log a warning.
+    // Logging a warning in rx_streamer_impl is less useful, because we can't
+    // use a Noc-ID there.
+    if (xport_mtu < rx_streamer_impl::get_mtu()) {
+        RFNOC_LOG_WARNING("Using MTU value "
+                          << rx_streamer_impl::get_mtu()
+                          << " bytes, but transport reports an MTU of " << xport_mtu
+                          << " bytes. This may cause packet fragmentation!");
+    }
+    set_property<size_t>(PROP_KEY_MTU,
+        rx_streamer_impl::get_mtu(),
+        {res_source_info::INPUT_EDGE, channel});
 }
 
 void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& otw_format)
@@ -211,8 +223,8 @@ void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& ot
         property_t<double>(PROP_KEY_TICK_RATE, {res_source_info::INPUT_EDGE, chan}));
     _type_in.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::INPUT_EDGE, chan}));
-    _mtu_in.emplace_back(
-        property_t<size_t>(PROP_KEY_MTU, get_mtu(), {res_source_info::INPUT_EDGE, chan}));
+    _mtu_in.emplace_back(property_t<size_t>(
+        PROP_KEY_MTU, rx_streamer_impl::get_mtu(), {res_source_info::INPUT_EDGE, chan}));
     _atomic_item_size_in.emplace_back(property_t<size_t>(
         PROP_KEY_ATOMIC_ITEM_SIZE, 1, {res_source_info::INPUT_EDGE, chan}));
 
