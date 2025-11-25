@@ -1,12 +1,12 @@
-# Generation 3 USRP Build Documentation
+\page gen3_fpga_build Build Documentation
 
-## Dependencies and Requirements
+# Dependencies and Requirements
 
-### Dependencies
+## Dependencies
 
 The USRP FPGA build system requires a UNIX-like environment with the following dependencies:
 
-- [Xilinx Vivado ML Enterprise 2021.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/2021-1.html) (For 7 Series and SoCs)
+- [Xilinx Vivado ML Enterprise 2021.1](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive.html) (For 7 Series and SoCs)
   + [AR76780 Patch for Vivado 2021.1](https://support.xilinx.com/s/article/76780?language=en_US)
 - [Xilinx ISE Design Suite 14.7](https://www.xilinx.com/support/download/index.html/content/xilinx/en/downloadNav/vivado-design-tools/archive-ise.html) (For all other FPGAs)
 - [GNU Make 3.6+](https://www.gnu.org/software/make/)
@@ -20,7 +20,7 @@ the full licensed versions:
 - USRP B200/B200mini (ISE WebPACK)
 - USRP E310/E312/E313 (Vivado ML Standard)
 
-### System Requirements
+## System Requirements
 
 In general, a high-performance PC with a lot of disk space and memory is
 recommended for building FPGA images. For USRP FPGA builds, the following
@@ -37,9 +37,9 @@ For other system requirements related to the Xilinx tools, see the appropriate
 Xilinx documentation for the build tool required by your FPGA type.
 
 - [Xilinx Vivado Release Notes](https://www.xilinx.com/content/dam/xilinx/support/documents/sw_manuals/xilinx2021_1/ug973-vivado-release-notes-install-license.pdf)
-- [Xilinx ISE Platform Requirements](http://www.xilinx.com/support/documentation/sw_manuals/xilinx14_7/irn.pdf)
+- [Xilinx ISE Platform Requirements](https://docs.amd.com/v/u/en-US/irn)
 
-### What FPGA does my USRP have?
+## What FPGA does my USRP have?
 
 | USRP           | FPGA                                          | Design Tool       |
 | -------------- | --------------------------------------------- | ----------------- |
@@ -58,9 +58,9 @@ Xilinx documentation for the build tool required by your FPGA type.
 
 Note: The Xilinx installation must include support for the specified FPGA family. You can save disk space and installation time by only installing support for the FPGAs you intend to use.
 
-## Build Environment Setup
+# Build Environment Setup
 
-### Download and Install Xilinx Tools
+## Download and Install Xilinx Tools
 
 Download and install Xilinx Vivado or Xilinx ISE based on the target USRP.
 - The recommended installation directory is `/opt/Xilinx/` for Linux and `C:\Xilinx` in Windows.
@@ -68,7 +68,7 @@ Download and install Xilinx Vivado or Xilinx ISE based on the target USRP.
 - You may need to acquire a synthesis and implementation license from Xilinx to build some USRP designs.
 - You may need to acquire a simulation license from Xilinx to run some testbenches.
 
-### Download and Install ModelSim (Optional)
+## Download and Install ModelSim (Optional)
 
 If you prefer to use ModelSim, download and install Mentor ModelSim using the
 link above.
@@ -76,7 +76,7 @@ link above.
 - Supported versions are PE, DE, SE, DE-64 and SE-64
 - You may need to acquire a license from Mentor Graphics to run ModelSim
 
-### Setting up build dependencies on Ubuntu and Fedora
+## Setting up build dependencies on Ubuntu and Fedora
 
 For building any RFNoC-capable device (out of the list above, that is all devices
 except for the B200 series USRPs), the `rfnoc_image_builder` utility must be
@@ -94,7 +94,7 @@ To only install dependencies for building B200 images, use the package manager:
 
 Your actual command may differ.
 
-### Setting up build dependencies on Windows (using Cygwin)
+## Setting up build dependencies on Windows (using Cygwin)
 
 **NOTE**: Windows is only supported with Vivado. The build system does not support Xilinx ISE in Windows.
 
@@ -104,12 +104,12 @@ The following additional packages are also required and can be selected in the G
 
     python3 patch patchutils bash make gcc-core doxygen
 
-## Build Instructions (Xilinx Vivado only)
+# Build Instructions (Xilinx Vivado only)
 
 **Important**: Starting with UHD 4.7, all RFNoC capable targets must be built
 using `rfnoc_image_builder`, which is installed as part of UHD.
 
-### Makefile based Builder
+## Makefile based Builder
 
 - Navigate to `<repo>/fpga/usrp3/top/{project}` where `{project}` is:
   + `x300`: For USRP X300 and USRP X310
@@ -142,15 +142,15 @@ Notes:
 
   first, before calling make.
 
-### Environment Utilities
+## Environment Utilities
 
 The build environment also defines many ease-of-use utilities. Please use
-the \subpage md_usrp3_vivado_env_utils "Vivado Utility Reference" page for
+the \ref gen3_vivado_env_utils "Vivado Utility Reference" page for
 a list and usage information.
 
-### Known Issues
+## Known Issues
 
-#### N2rt13HDRTExceptionE in Vivado 2021.1
+### N2rt13HDRTExceptionE in Vivado 2021.1
 
 **Problem:**
 
@@ -167,7 +167,7 @@ Use a different Git hash or make a non-functional source code change to the HDL 
 
 According to [Xilinx Support](https://support.xilinx.com/s/question/0D52E00006zHvfcSAC/router-crashes-after-a-second-routedesign-call?language=en_US), this issue will be fixed in a future version of Vivado.
 
-#### Error During cs_server Initialization in Vivado 2021.1
+### Error During cs_server Initialization in Vivado 2021.1
 
 **Problem:**
 
@@ -187,9 +187,9 @@ to connect to the hardware:
 
     set_param labtools.override_cs_server_version_check 1
 
-## Build Instructions (Xilinx ISE only, for B200 series)
+# Build Instructions (Xilinx ISE only, for B200 series)
 
-### Makefile Based Builder
+## Makefile Based Builder
 
 - To add xtclsh to the PATH and to setup up the Xilinx build environment run
   + `source <install_dir>/Xilinx/14.7/ISE_DS/settings64.sh` (64-bit platform)
@@ -206,35 +206,35 @@ to connect to the hardware:
 - The build output will be specific to the product and will be located in the
   `<repo>/fpga/usrp3/top/{project}/build` directory. Run `make help` for more information.
 
-## Targets and Outputs
+# Targets and Outputs
 
-### B2x0 Targets and Outputs
+## B2x0 Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 - B200:  Builds the USRP B200 design.
 - B210:  Builds the USRP B210 design.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.bin` : Configuration bitstream without header
 - `build/usrp_<product>_fpga.syr` : Xilinx system report
 - `build/usrp_<product>_fpga.twr` : Xilinx timing report
 
-### B2xx-mini Targets and Outputs
+## B2xx-mini Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 - B200mini:  Builds the USRP B200-mini design.
 - B205mini:  Builds the USRP B205-mini design.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.bin` : Configuration bitstream without header
 - `build/usrp_<product>_fpga.syr` : Xilinx system report
 - `build/usrp_<product>_fpga.twr` : Xilinx timing report
 
-### X3x0 Targets and Outputs
+## X3x0 Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 
 Use `make help` to produce a list of valid targets, as well as how to build them
 using `rfnoc_image_builder`.
@@ -250,15 +250,15 @@ using `rfnoc_image_builder`.
 - X310_XA:  USRP X310. 10GigE on SFP+ Port0, Aurora on SFP+ Port1.
 - X300_XA:  USRP X300. 10GigE on SFP+ Port0, Aurora on SFP+ Port1.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga_<image_type>.bit` :    Configuration bitstream with header
 - `build/usrp_<product>_fpga_<image_type>.bin` :    Configuration bitstream without header
 - `build/usrp_<product>_fpga_<image_type>.lvbitx` : Configuration bitstream for PCIe (NI-RIO)
 - `build/usrp_<product>_fpga_<image_type>.rpt` :    System, utilization and timing summary report
 
-### E310 Targets and Outputs
+## E310 Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 
 Use `make help` to produce a list of valid targets, as well as how to build them
 using `rfnoc_image_builder`.
@@ -268,14 +268,14 @@ using `rfnoc_image_builder`.
 - E310_SG1_IDLE:  Builds the USRP E310 idle design (speed grade 1).
 - E310_SG3_IDLE:  Builds the USRP E310 idle design (speed grade 3).
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.dts` : Device tree overlay
 - `build/usrp_<product>_fpga.rpt` : System, utilization and timing summary report
 
-### E320 Targets and Outputs
+## E320 Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 Use `make help` to produce a list of valid targets, as well as how to build them
 using `rfnoc_image_builder`.
 
@@ -283,14 +283,14 @@ using `rfnoc_image_builder`.
 - E320_XG: 10GigE on SFP+ Port.
 - E320_AA: Aurora on SFP+ Port.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.dts` : Device tree overlay
 - `build/usrp_<product>_fpga.rpt` : System, utilization and timing summary report
 
-### N3xx Targets and Outputs
+## N3xx Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 
 The targets depend on the actual hardware the FPGA image is being deployed to.
 Unlike the X300 Series, the daughterboards are an integral part of the module
@@ -321,14 +321,14 @@ using `rfnoc_image_builder`.
 
 For the N320 targets see also the N320 manual page on the UHD manual.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.dts` : Device tree overlay
 - `build/usrp_<product>_fpga.rpt` : System, utilization and timing summary report
 
-### X4x0 Targets and Outputs
+## X4x0 Targets and Outputs
 
-#### Supported Targets
+### Supported Targets
 
 Unlike other USRPs, the target types do not only describe the connector
 configuration, but also the available master clock rates. For example, the FPGA
@@ -344,12 +344,12 @@ Run `make help` in the `<repo>/fpga/usrp3/top/x400/` directory to see
 the complete list of options available. It will list targets for both X410 and
 X440.
 
-#### Outputs
+### Outputs
 - `build/usrp_<product>_fpga.bit` : Configuration bitstream with header
 - `build/usrp_<product>_fpga.dts` : Device tree overlay
 - `build/usrp_<product>_fpga.rpt` : System, utilization and timing summary report
 
-### Additional Build Options
+## Additional Build Options
 
 It is possible to make a target and specify additional options in the form `VAR=VALUE` in
 the command. For example:
@@ -358,14 +358,14 @@ the command. For example:
 
 The options available are described in the following subsections.
 
-#### Xilinx Vivado Make Options
+### Xilinx Vivado Make Options
 
 - `GUI=1` : Run the Vivado build in GUI mode instead of batch mode. After the build is complete, Vivado provides an option to save the fully configured project for customization
 - `CHECK=1` : Run elaboration only to check HDL syntax
 - `SYNTH=1` : Run synthesis only
 - `TOP=<module>` : Specify an alternate top-level module for syntax checking
 
-#### Xilinx ISE Make Options
+### Xilinx ISE Make Options
 
 - `PROJECT_ONLY=1` : Only create a Xilinx project for the specified target(s). Useful for use with the ISE GUI.
 - `EXPORT_ONLY=1` :  Export build targets from a GUI build to the build directory. Requires the project in build-\*_\* to be built.

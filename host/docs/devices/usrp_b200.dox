@@ -123,7 +123,7 @@ images:
 The FPGA image is provided in source code and can thus be modified and rebuilt
 to serve custom purposes. For example, additional filtering or other DSP
 operations can be inserted into the FPGA before or after the DAC or ADC stages,
-respectively. Refer to the \ref md_fpga "FPGA Manual" for further information on
+respectively. Refer to the \ref page_fpga "FPGA Manual" for further information on
 how to rebuild the FPGA.
 
 To control user-defined IP, the `USER_SETTINGS` parameter for the `radio_legacy`

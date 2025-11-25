@@ -97,30 +97,35 @@ parameters:
       image_core_name: usrp_x410_fpga_X4_400
       artifact_name: X410_X4_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_UC_200:
       image_core: x410_UC_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_UC_200
       artifact_name: X410_UC_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_X4_200:
       image_core: x410_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_X4_200
       artifact_name: X410_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_CG_400:
       image_core: x410_CG_400_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_CG_400
       artifact_name: X410_CG_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_FFT_BLOCK_TEST:
       image_core: ../../../../host/tests/rfnoc_block_tests_on_target/x410_fft_block_test.yml
       image_core_name: usrp_x410_fpga_fft_block_test
       artifact_name: X410_FFT_BLOCK_TEST
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 # Requested X440 targets
 - name: x440_targets_matrix
@@ -131,30 +136,35 @@ parameters:
       image_core_name: usrp_x440_fpga_CG_1600
       artifact_name: X440_CG_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_CG_400:
       image_core: x440_CG_400_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_CG_400
       artifact_name: X440_CG_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_1600:
       image_core: x440_X4_1600_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_1600
       artifact_name: X440_X4_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_400:
       image_core: x440_X4_400_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_400
       artifact_name: X440_X4_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_200:
       image_core: x440_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_200
       artifact_name: X440_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 
 variables:

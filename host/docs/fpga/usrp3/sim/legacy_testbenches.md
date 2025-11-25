@@ -1,4 +1,4 @@
-# Legacy Testbenches
+\page usrp3_sim_legacy_testbenches Legacy Testbenches
 
 Some existing testbenches use the following testbench style and infrastructure.
 This documentation is from UHD 3.x but is included here due to its continued
@@ -97,7 +97,7 @@ Below is a sample legacy SystemVerilog testbench.
 
 Each testbench should have the following basic components:
 
-## Timescale Defines and Includes
+# Timescale Defines and Includes
 
     `timescale 1ns/1ps
     `define NS_PER_TICK     1
@@ -113,7 +113,7 @@ nanoseconds per simulator tick. This can be a floating point number.
 
 In addition to the timescale, you may include any Verilog/SystemVerilog headers here.
 
-## Main Module Definition
+# Main Module Definition
 
     `include "sim_exec_report.vh"
 
@@ -158,7 +158,7 @@ For the sake of convention it should be called ``tb_main``. *All test cases must
 have other initial block but they must not call macros from ``sim_exec_report.vh`` because the code
 there is not thread-safe.
 
-## Test Cases
+# Test Cases
 
 A test case in this context is defined as an independent entity that validates an aspect of the DUT behavior
 and which is independent from other test cases i.e. the result of one test case should ideally not affect others.

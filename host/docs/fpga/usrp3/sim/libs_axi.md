@@ -1,14 +1,14 @@
-# Legacy AXI Interface Libraries
+\page usrp3_sim_libs_axi Legacy AXI Interface Libraries
 
 This document describes legacy AXI interface libraries used by some
 testbenches. They are included here due to their continued use.
 
-## AXI4 Stream (sim\_axis\_lib.vh)
+# AXI4 Stream (sim\_axis\_lib.svh)
 
 Defines ``axis_t``, an AXI Stream bus interface that implements several tasks to send and 
 receive data on the bus.
 
-### Definition
+## Definition
 
     interface axis_t #(parameter DWIDTH = 64)
                       (input clk);
@@ -21,20 +21,20 @@ receive data on the bus.
     modport slave (input tdata, input tvalid, input tlast, output tready);
 
 
-### Operations
+## Operations
 
-#### push\_word
+### push\_word
 
     // Push a word onto the AXI-Stream bus and wait for it to transfer
     // Args:
     // - word: The data to push onto the bus
     // - eop (optional): End of packet (asserts tlast)
 
-#### push\_bubble
+### push\_bubble
 
     // Push a bubble cycle onto the AXI-Stream bus
 
-#### pull\_word
+### pull\_word
 
     // Wait for a sample to be transferred on the AXI Stream
     // bus and return the data and last
@@ -42,21 +42,21 @@ receive data on the bus.
     // - word: The data pulled from the bus
     // - eop: End of packet (tlast)
 
-#### wait\_for\_bubble
+### wait\_for\_bubble
 
     // Wait for a bubble cycle on the AXI Stream bus
 
-#### wait\_for\_pkt
+### wait\_for\_pkt
 
     // Wait for a packet to finish on the bus
 
-#### push\_rand\_pkt
+### push\_rand\_pkt
 
     // Push a packet with random data onto to the AXI Stream bus
     // Args:
     // - num_samps: Packet size.
 
-#### push\_ramp\_pkt
+### push\_ramp\_pkt
 
     // Push a packet with a ramp on to the AXI Stream bus
     // Args:
@@ -64,15 +64,14 @@ receive data on the bus.
     // - ramp_start: Start value for the ramp
     // - ramp_inc: Increment per clock cycle
 
-## Compressed VITA (sim\_chdr\_lib.vh)
+# Compressed VITA (sim\_cvita\_lib.svh)
 
-Note: This section describes legacy CHDR in 3.x and earlier. As of UHD 4.0,
-the CHDR protocol and format has changed.
+**Note: This section describes legacy CHDR in 3.x and earlier. As of UHD 4.0, the CHDR protocol and format has changed.**
 
 Defines ``cvita_stream_t``, an AXI Stream bus interface that implements the CHDR protocol and 
 several tasks to send and receive data on the bus.
 
-### CHDR
+## CHDR
 
     typedef enum logic [1:0] {
       DATA=2'b00, FC=2'b01, CMD=2'b10, RESP=2'b11
@@ -88,37 +87,37 @@ several tasks to send and receive data on the bus.
       logic [63:0]  timestamp;
     } cvita_hdr_t;
 
-#### Operations
+### Operations
 
  - ``flatten_chdr_no_ts``: Flatten header struct to a 64-bit bus. No timestamp.
  - ``unflatten_chdr_no_ts``: Decode a 64-bit header and populate the ``cvita_hdr_t`` struct. No timestamp.
  - ``unflatten_chdr``: Decode a 64-bit header and populate the ``cvita_hdr_t`` struct. Timestamp supported.
 
-### CVITA Stream Type
+## CVITA Stream Type
 
-#### Definition
+### Definition
 
     interface cvita_stream_t (input clk);
       axis_t #(.DWIDTH(64)) axis (.clk(clk));
 
-#### push\_hdr
+### push\_hdr
 
     // Push a CVITA header into the stream
     // Args:
     // - hdr: The header to push
   
-#### push\_data
+### push\_data
 
     // Push a word onto the AXI-Stream bus and wait for it to transfer
     // Args:
     // - word: The data to push onto the bus
     // - eop: End of packet (asserts tlast)
 
-#### push\_bubble
+### push\_bubble
 
     // Push a bubble cycle on the AXI-Stream bus
 
-#### pull\_word
+### pull\_word
 
     // Wait for a sample to be transferred on the AXI Stream
     // bus and return the data and last
@@ -126,15 +125,15 @@ several tasks to send and receive data on the bus.
     // - word: The data pulled from the bus
     // - eop: End of packet (tlast)
 
-#### wait\_for\_bubble
+### wait\_for\_bubble
 
     // Wait for a bubble cycle on the AXI Stream bus
 
-#### wait\_for\_pkt
+### wait\_for\_pkt
 
     // Wait for a packet to finish on the bus
 
-#### wait\_for\_pkt\_get\_info
+### wait\_for\_pkt\_get\_info
 
     // Wait for a packet to finish on the bus and extract the header and payload statistics.
     
@@ -146,7 +145,7 @@ several tasks to send and receive data on the bus.
       logic [63:0]  crc;
     } cvita_stats_t;
 
-#### push\_rand\_pkt
+### push\_rand\_pkt
 
     // Push a packet with random data onto to the AXI Stream bus
     // Args:
@@ -154,7 +153,7 @@ several tasks to send and receive data on the bus.
     // - hdr: Header to attach to packet (length will be ignored)
     // - timestamp: Optional timestamp
 
-#### push\_ramp\_pkt
+### push\_ramp\_pkt
 
     // Push a packet with a ramp on to the AXI Stream bus
     // Args:
@@ -164,12 +163,12 @@ several tasks to send and receive data on the bus.
     // - hdr: Header to attach to packet (length will be ignored)
     // - timestamp: Optional timestamp
 
-## Memory Mapped AXI4 (sim\_axi4\_lib.vh)
+# Memory Mapped AXI4 (sim\_axi4\_lib.svh)
 
 Defines the following interfaces to group signals in the AXI4 bus.
 WIP: No functions or tasks implemented yet.
 
-#### Address
+## Address
 
     interface axi4_addr_t #(parameter AWIDTH=32, parameter IDWIDTH=4)
                            (input clk);
@@ -193,7 +192,7 @@ WIP: No functions or tasks implemented yet.
     
     endinterface
     
-#### Write Data
+## Write Data
 
     interface axi4_wdata_t #(parameter DWIDTH=64)
                            (input clk);
@@ -210,7 +209,7 @@ WIP: No functions or tasks implemented yet.
     
     endinterface
 
-#### Write Response
+## Write Response
 
     interface axi4_resp_t #(parameter IDWIDTH=4)
                            (input clk);
@@ -226,7 +225,7 @@ WIP: No functions or tasks implemented yet.
     
     endinterface
 
-#### Read Data
+## Read Data
 
     interface axi4_rdata_t #(parameter DWIDTH=64, parameter IDWIDTH=4)
                            (input clk);
@@ -244,7 +243,7 @@ WIP: No functions or tasks implemented yet.
     
     endinterface
 
-#### Meta: AXI4 Writer
+## Meta: AXI4 Writer
 
     interface axi4_wr_t #(parameter DWIDTH=64, parameter AWIDTH=32, parameter IDWIDTH=4)
                          (input clk);
@@ -258,7 +257,7 @@ WIP: No functions or tasks implemented yet.
     
     endinterface
     
-#### Meta: AXI4 Reader
+## Meta: AXI4 Reader
 
     interface axi4_rd_t #(parameter DWIDTH=64, parameter AWIDTH=32, parameter IDWIDTH=4)
                          (input clk);

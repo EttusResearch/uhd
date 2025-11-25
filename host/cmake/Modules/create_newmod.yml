@@ -102,7 +102,6 @@ steps:
     - CMakeLists.txt
     - cmake/Modules/rfnoc-newmodConfig.cmake
     - include/rfnoc/newmod/CMakeLists.txt
-    - include/rfnoc/newmod/config.hpp
     - lib/CMakeLists.txt
     - python/pyrfnoc-newmod.cpp
     - python/setup.py.in
