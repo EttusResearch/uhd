@@ -5,6 +5,7 @@
 \li \subpage page_gsg_devices
 \li \subpage page_gsg_uhd
 \li \subpage page_gsg_rfnoc
+\li \subpage page_gsg_examples
 
 
 */
