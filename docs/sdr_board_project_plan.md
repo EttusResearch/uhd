@@ -1,20 +1,21 @@
 # Custom SDR Board Project Plan
-## X410 Clone with MPSoC Architecture
+## X410 Clone with MPSoC + QDMA Architecture
 
 ---
 
 # Project Overview
 
 ## Goal
-X410 기반 Custom SDR 보드 개발
+X410 기반 Custom SDR 보드 개발 (PCIe QDMA 인터페이스)
 
 ## Key Differences from X410
 | Feature | X410 | Custom Board |
 |---------|------|--------------|
-| SoC | RF-SoC (ZU28DR) | MPSoC |
+| SoC | RF-SoC (ZU28DR) | **MPSoC (ZU19EG)** |
 | ADC/DAC | Integrated | External (TI AFE) |
-| Host Interface | Ethernet | PCIe |
+| Host Interface | Ethernet (DPDK) | **PCIe (QDMA)** |
 | PLL | LMK04832 | Renesas 8A34001 |
+| Transport | UDP/DPDK | **QDMA DMA** |
 
 ---
 
@@ -24,10 +25,10 @@ X410 기반 Custom SDR 보드 개발
 flowchart TB
     subgraph HOST["Host x86 System"]
         OAI["OAI-UE<br/>(gNB/UE)"]
-        DPDK["DPDK<br/>(Ethernet)"]
+        DPDK["DPDK<br/>(Packet Processing)"]
         subgraph UHD["Custom UHD Driver"]
-            XDMA_IF["PCIe XDMA Interface"]
-            DMA_BUF["DMA Buffer Management"]
+            QDMA_TRANS["QDMA Transport Layer"]
+            DMA_BUF["Zero-copy Buffer Mgmt"]
             RFNOC_INT["RFNoC Integration"]
         end
         OAI <--> UHD
@@ -35,14 +36,14 @@ flowchart TB
     end
 
     subgraph SDR["Custom SDR Board"]
-        subgraph MPSOC["Xilinx MPSoC"]
+        subgraph MPSOC["Xilinx ZU19EG MPSoC"]
             subgraph PS["ARM Cortex A53 (PS)"]
-                LINUX["Linux"]
-                MPM["MPM"]
+                LINUX["Embedded Linux"]
+                MPM["MPM Daemon"]
             end
             subgraph PL["Programmable Logic"]
                 RFNOC["RFNoC Core"]
-                PCIE_DMA["PCIe DMA Core<br/>(XDMA/QDMA)"]
+                QDMA_IP["QDMA IP Core"]
                 JESD["JESD204B/C<br/>Interface"]
             end
         end
@@ -62,8 +63,8 @@ flowchart TB
         end
     end
 
-    UHD <-->|"PCIe Gen3/4 x8"| PCIE_DMA
-    PCIE_DMA <--> RFNOC
+    UHD <-->|"PCIe Gen3/4 x8<br/>QDMA"| QDMA_IP
+    QDMA_IP <--> RFNOC
     RFNOC <--> JESD
     JESD <--> AFE
     ADC0 <--> RX0
@@ -74,41 +75,118 @@ flowchart TB
 
 ---
 
-# MPSoC Selection
+# X410 DPDK Architecture Reference
 
-## Recommended Devices
+## DPDK Transport Layer (X410)
+
+X410의 DPDK 구현을 참고하여 QDMA 기반으로 포팅
 
 ```mermaid
-graph LR
-    subgraph Options["MPSoC Options"]
-        ZU7["ZU7EV<br/>Balanced"]
-        ZU9["ZU9EG<br/>High Performance"]
-        ZU15["ZU15EG<br/>Maximum"]
+flowchart TB
+    subgraph X410_ARCH["X410 DPDK Architecture (Reference)"]
+        direction TB
+        subgraph IO_SERVICE["dpdk_io_service (I/O Thread)"]
+            RX_BURST["RX Burst<br/>(16 packets/cycle)"]
+            TX_BURST["TX Burst<br/>(16 packets/cycle)"]
+            FLOW_TABLE["IPv4 5-tuple<br/>Flow Table"]
+        end
+
+        subgraph TRANSPORT["udp_dpdk_link"]
+            MBUF_POOL["rte_mbuf Pool"]
+            SEND_QUEUE["Send Queue<br/>(rte_ring)"]
+            RECV_QUEUE["Recv Queue<br/>(rte_ring)"]
+        end
+
+        subgraph OFFLOAD["HW Offload"]
+            CKSUM["IPv4 Checksum"]
+            JUMBO["Jumbo Frames<br/>(MTU 9000)"]
+        end
     end
 
-    ZU7 --> |"504K LUTs<br/>16 GTY"| SPEC1["Good for 2T2R"]
-    ZU9 --> |"599K LUTs<br/>24 GTY"| SPEC2["Recommended for 4T4R"]
-    ZU15 --> |"747K LUTs<br/>32 GTY"| SPEC3["Future Expansion"]
+    subgraph CUSTOM_ARCH["Custom Board QDMA Architecture"]
+        direction TB
+        subgraph QDMA_SERVICE["qdma_io_service (I/O Thread)"]
+            QDMA_RX["H2C DMA<br/>(TX to Device)"]
+            QDMA_TX["C2H DMA<br/>(RX from Device)"]
+            QUEUE_MAP["Queue ID<br/>Mapping"]
+        end
+
+        subgraph QDMA_TRANSPORT["qdma_link"]
+            DESC_RING["Descriptor Ring"]
+            CMPL_RING["Completion Ring"]
+            BUFF_POOL["Buffer Pool"]
+        end
+
+        subgraph QDMA_OFFLOAD["QDMA Features"]
+            ST_MODE["Streaming Mode"]
+            MM_MODE["Memory Mapped"]
+        end
+    end
+
+    X410_ARCH -->|"Port to"| CUSTOM_ARCH
 ```
 
-### Option 1: ZU9EG (High Performance) - Recommended
-- **PL Logic Cells**: 599K
-- **Block RAM**: 32.1 Mb
-- **GTY Transceivers**: 24
-- **DSP Slices**: 2,520
-- **PS DDR4**: Up to 2400 MT/s
+## Key DPDK Parameters (from X410)
 
-### Option 2: ZU7EV (Balanced)
-- **PL Logic Cells**: 504K
-- **Block RAM**: 26.1 Mb
-- **GTY Transceivers**: 16
-- **DSP Slices**: 1,728
+| Parameter | X410 Value | Custom Board (QDMA) |
+|-----------|------------|---------------------|
+| Burst Size | 16 packets | 16-32 descriptors |
+| MTU | 9000 bytes | N/A (DMA) |
+| Queue Depth | 4096 | 4096 |
+| Buffer Cache | 64 per CPU | Per-queue pools |
+| Max Flows | 128 | Queue-based routing |
 
-### Option 3: ZU15EG (Maximum Performance)
-- **PL Logic Cells**: 747K
-- **Block RAM**: 38.9 Mb
-- **GTY Transceivers**: 32
-- **DSP Slices**: 3,528
+## Reference Code Paths
+- `host/lib/transport/uhd-dpdk/dpdk_io_service.cpp` - I/O thread main loop
+- `host/lib/transport/udp_dpdk_link.cpp` - Buffer management
+- `host/lib/usrp/mpmd/mpmd_link_if_ctrl_udp.cpp` - DPDK integration
+
+---
+
+# MPSoC Selection
+
+## ZU19EG (Selected)
+
+```mermaid
+graph TB
+    subgraph ZU19EG["Xilinx Zynq UltraScale+ ZU19EG"]
+        direction TB
+        PS_BLOCK["Processing System (PS)"]
+        PL_BLOCK["Programmable Logic (PL)"]
+        GTY_BLOCK["GTY Transceivers"]
+
+        PS_BLOCK --> |"AXI"| PL_BLOCK
+        PL_BLOCK --> GTY_BLOCK
+    end
+
+    subgraph SPECS["Specifications"]
+        LOGIC["1,143K Logic Cells"]
+        BRAM["70.6 Mb Block RAM"]
+        URAM["36.0 Mb UltraRAM"]
+        GTY["32 GTY (16.3 Gbps)"]
+        DSP["1,968 DSP Slices"]
+        PCIE["PCIe Gen3/4 x16"]
+    end
+
+    ZU19EG --> SPECS
+```
+
+### ZU19EG Specifications
+| Parameter | Value |
+|-----------|-------|
+| Logic Cells | 1,143K |
+| Block RAM | 70.6 Mb |
+| UltraRAM | 36.0 Mb |
+| GTY Transceivers | 32 (16.3 Gbps each) |
+| DSP Slices | 1,968 |
+| PCIe Support | Gen3/4 x16 |
+| PS DDR4 | Up to 2400 MT/s |
+
+### Why ZU19EG?
+- **More Logic**: 1,143K vs 599K (ZU9EG) - 더 많은 RFNoC 블록 가능
+- **More GTY**: 32개 - JESD204C + PCIe 동시 지원
+- **UltraRAM**: 36 Mb - 대용량 버퍼링
+- **PCIe Gen4**: 최대 x16 레인 지원
 
 ---
 
@@ -156,16 +234,6 @@ flowchart LR
 | DAC Sample Rate | 9 GSPS |
 | RF Bandwidth | 400 MHz |
 | Interface | JESD204C |
-
-### Features
-- Direct RF sampling up to 8 GHz
-- Integrated NCO per channel
-- On-chip DSP (DDC/DUC)
-- Internal LO synthesis
-
-## Alternatives
-- **AFE7903**: 2T2R, lower cost
-- **AFE7920**: 4T4R, higher integration
 
 ---
 
@@ -221,52 +289,93 @@ flowchart TB
 
 ---
 
-# PCIe Interface Design
+# QDMA Interface Design
 
-## XDMA Architecture
+## QDMA vs XDMA Comparison
+
+| Feature | XDMA | QDMA |
+|---------|------|------|
+| Queues | 4 H2C + 4 C2H | **2048 H2C + 2048 C2H** |
+| Mode | Memory Mapped | **Streaming + MM** |
+| Descriptors | Ring | **Ring + Completion** |
+| Interrupt | MSI/MSI-X | **MSI-X (2048 vectors)** |
+| Performance | Good | **Better (lower latency)** |
+
+## QDMA Architecture
 
 ```mermaid
 flowchart TB
     subgraph HOST["Host System"]
         CPU["x86 CPU"]
         MEM["System Memory"]
+        QDMA_DRV["QDMA Driver<br/>/dev/qdma*"]
         CPU <--> MEM
+        MEM <--> QDMA_DRV
     end
 
     subgraph PCIE["PCIe Gen3/4 x8"]
-        PCIE_IF["PCIe Interface<br/>7.88-15.75 GB/s"]
+        PCIE_IF["PCIe Interface<br/>15.75 GB/s (Gen4)"]
     end
 
-    subgraph XDMA["Xilinx XDMA Core"]
+    subgraph QDMA_IP["Xilinx QDMA IP Core"]
         direction TB
-        H2C["H2C DMA<br/>(TX Path)"]
-        C2H["C2H DMA<br/>(RX Path)"]
-        AXI_LITE["AXI-Lite<br/>Control"]
 
-        subgraph DESC["Descriptor Engine"]
-            H2C_DESC["H2C Descriptors<br/>Ring Buffer"]
-            C2H_DESC["C2H Descriptors<br/>Ring Buffer"]
+        subgraph H2C["H2C Engine (Host to Card)"]
+            H2C_DESC["Descriptor<br/>Fetch"]
+            H2C_DATA["Data<br/>Mover"]
+            H2C_WB["Writeback<br/>Engine"]
+        end
+
+        subgraph C2H["C2H Engine (Card to Host)"]
+            C2H_DESC["Descriptor<br/>Fetch"]
+            C2H_DATA["Data<br/>Mover"]
+            C2H_CMPL["Completion<br/>Engine"]
+        end
+
+        subgraph QUEUES["Queue Management"]
+            Q_SEL["Queue<br/>Selector"]
+            Q_CTX["Queue<br/>Context"]
         end
     end
 
-    subgraph AXI["AXI Interconnect"]
-        RFNOC_CORE["RFNoC Core"]
-        DDR4["DDR4 Controller"]
-        REGS["Registers<br/>(GPIO, CLK)"]
+    subgraph AXI["AXI Interface"]
+        AXI_ST["AXI4-Stream<br/>(Streaming Mode)"]
+        AXI_MM["AXI4-MM<br/>(Register Access)"]
     end
 
-    CPU <--> PCIE_IF
-    PCIE_IF <--> H2C
-    PCIE_IF <--> C2H
-    PCIE_IF <--> AXI_LITE
+    QDMA_DRV <--> PCIE_IF
+    PCIE_IF <--> QDMA_IP
+    H2C --> AXI_ST
+    C2H --> AXI_ST
+    QUEUES --> AXI_MM
 
-    H2C --> H2C_DESC
-    C2H --> C2H_DESC
+    AXI_ST --> RFNOC["RFNoC Core"]
+    AXI_MM --> REGS["Registers"]
+```
 
-    H2C --> RFNOC_CORE
-    C2H --> RFNOC_CORE
-    AXI_LITE --> DDR4
-    AXI_LITE --> REGS
+## QDMA Queue Configuration
+
+```mermaid
+flowchart LR
+    subgraph QUEUE_MAPPING["Queue Mapping"]
+        Q0["Queue 0<br/>Radio 0 TX"]
+        Q1["Queue 1<br/>Radio 0 RX"]
+        Q2["Queue 2<br/>Radio 1 TX"]
+        Q3["Queue 3<br/>Radio 1 RX"]
+        Q_CTRL["Queue N<br/>Control/Status"]
+    end
+
+    subgraph RFNOC_EP["RFNoC Endpoints"]
+        EP0["SEP 0<br/>(Radio 0)"]
+        EP1["SEP 1<br/>(Radio 1)"]
+        EP_CTRL["Control EP"]
+    end
+
+    Q0 --> EP0
+    Q1 --> EP0
+    Q2 --> EP1
+    Q3 --> EP1
+    Q_CTRL --> EP_CTRL
 ```
 
 ## Performance Targets
@@ -274,13 +383,14 @@ flowchart TB
 |--------|---------|---------|
 | Theoretical BW | 7.88 GB/s | 15.75 GB/s |
 | Effective BW | ~6.5 GB/s | ~13 GB/s |
-| Latency | < 10 μs | < 5 μs |
+| Latency | < 5 μs | < 3 μs |
+| Queue Depth | 4096 | 4096 |
 
 ---
 
 # Software Architecture
 
-## Custom UHD Driver Stack
+## Custom UHD Driver Stack (QDMA-based)
 
 ```mermaid
 flowchart TB
@@ -291,32 +401,31 @@ flowchart TB
 
     subgraph UHD["Custom UHD Implementation"]
         direction TB
-        DISC["Device Discovery<br/>(PCIe Enumeration + Sysfs)"]
+        DISC["Device Discovery<br/>(PCIe Enumeration)"]
+
+        subgraph QDMA_TRANS["QDMA Transport (like DPDK)"]
+            IO_SVC["qdma_io_service<br/>(I/O Thread)"]
+            QDMA_LINK["qdma_link<br/>(Buffer Mgmt)"]
+            FLOW_CTRL["Flow Control<br/>(Queue Mapping)"]
+        end
 
         subgraph RADIO["Radio Control Block"]
             FREQ["Frequency Control"]
             GAIN["Gain Control"]
             RATE["Sample Rate Config"]
-            ANT["Antenna Selection"]
-        end
-
-        subgraph DMA["DMA Manager"]
-            XDMA_DEV["XDMA Char Device"]
-            ZERO["Zero-copy Buffers"]
-            SG["Scatter-Gather DMA"]
         end
     end
 
     subgraph KERNEL["Kernel Driver Layer"]
-        subgraph XDMA_MOD["XDMA Kernel Module"]
-            H2C_DEV["/dev/xdma0_h2c_0<br/>(Host to Card)"]
-            C2H_DEV["/dev/xdma0_c2h_0<br/>(Card to Host)"]
-            USER_DEV["/dev/xdma0_user<br/>(Registers)"]
+        subgraph QDMA_MOD["QDMA Kernel Module"]
+            H2C_DEV["/dev/qdma*-H2C-*"]
+            C2H_DEV["/dev/qdma*-C2H-*"]
+            CTRL_DEV["/dev/qdma*-ctrl"]
         end
     end
 
     subgraph HW["Hardware"]
-        FPGA["FPGA<br/>(XDMA + RFNoC)"]
+        FPGA["FPGA<br/>(QDMA + RFNoC)"]
     end
 
     OAI --> UHD
@@ -324,7 +433,28 @@ flowchart TB
     UHD --> KERNEL
     H2C_DEV --> FPGA
     C2H_DEV --> FPGA
-    USER_DEV --> FPGA
+    CTRL_DEV --> FPGA
+```
+
+## QDMA I/O Service (Porting from DPDK)
+
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant IO as qdma_io_service
+    participant Q as QDMA Queue
+    participant HW as FPGA
+
+    loop I/O Thread Main Loop
+        IO->>Q: Poll C2H Completion Ring
+        Q-->>IO: Completed Descriptors
+        IO->>App: Deliver RX Buffers
+
+        App->>IO: Submit TX Buffers
+        IO->>Q: Post H2C Descriptors
+        Q->>HW: DMA Transfer
+        HW-->>Q: Completion Status
+    end
 ```
 
 ---
@@ -335,15 +465,16 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    subgraph PL["MPSoC FPGA (PL)"]
+    subgraph PL["ZU19EG FPGA (PL)"]
         PCIE_HARD["PCIe Hard Block<br/>(Gen3/4 x8)"]
 
-        subgraph XDMA["XDMA Core"]
-            DMA_ENGINE["DMA/Bridge<br/>Subsystem"]
+        subgraph QDMA["QDMA IP Core"]
+            DMA_ENGINE["DMA Engine<br/>(H2C + C2H)"]
+            QUEUE_MGMT["Queue<br/>Management"]
         end
 
         subgraph RFNOC["RFNoC Framework"]
-            TRANSPORT["Transport<br/>Adapter"]
+            TRANSPORT["Transport<br/>Adapter<br/>(QDMA)"]
             CHDR["CHDR<br/>Crossbar"]
             CTRL["Control<br/>Interface"]
 
@@ -390,7 +521,7 @@ flowchart TB
 
 | Component | Part Number | Qty | Description |
 |-----------|-------------|-----|-------------|
-| MPSoC | XCZU9EG-2FFVB1156I | 1 | Zynq UltraScale+ |
+| MPSoC | **XCZU19EG-2FFVC1760I** | 1 | Zynq UltraScale+ |
 | AFE | AFE7950 | 1 | RF Transceiver |
 | PLL | 8A34001 | 1 | Clock Generator |
 | DDR4 (PS) | MT40A512M16TB | 2 | 16Gb DDR4 SDRAM |
@@ -415,7 +546,7 @@ flowchart TB
 
     subgraph PMIC["TPS650861 PMIC"]
         direction LR
-        VCC_INT["0.85V<br/>VCC_INT<br/>(30A)"]
+        VCC_INT["0.85V<br/>VCC_INT<br/>(35A)"]
         VCC_AUX["1.8V<br/>VCC_AUX<br/>(3A)"]
         VCC_IO["3.3V<br/>VCC_IO<br/>(2A)"]
         DDR4_V["1.2V<br/>DDR4<br/>(5A)"]
@@ -442,76 +573,91 @@ flowchart TB
     PCIe_12V --> AFE_PWR
 ```
 
-### Power Budget
+### Power Budget (ZU19EG)
 | Rail | Current | Power |
 |------|---------|-------|
-| MPSoC Core (0.85V) | 30A | 25.5W |
+| MPSoC Core (0.85V) | 35A | 29.75W |
 | MPSoC Aux (1.8V) | 3A | 5.4W |
 | DDR4 (1.2V) | 5A | 6W |
 | AFE Total | - | 15W |
-| **Total** | - | **~55W** |
+| **Total** | - | **~60W** |
 
 ---
 
-# Development Phases
+# Development Schedule
 
-## Project Timeline
+## Project Timeline (PCB 완료 기준)
 
 ```mermaid
 gantt
-    title SDR Board Development Timeline
+    title SDR Board Porting Schedule
     dateFormat  YYYY-MM
 
-    section Phase 1: PoC
-    MPSoC Dev Board Eval     :p1a, 2024-01, 1M
-    TI AFE EVM Testing       :p1b, 2024-01, 2M
-    JESD204C IP Validation   :p1c, 2024-02, 2M
-    Basic XDMA Driver        :p1d, 2024-02, 2M
+    section Phase 1: PL Development
+    QDMA IP Integration      :p1a, 2024-01, 6w
+    RFNoC Transport Adapter  :p1b, 2024-02, 4w
+    JESD204C Core Integration:p1c, 2024-02, 6w
+    RFNoC Block Porting      :p1d, 2024-03, 4w
+    Timing Closure           :p1e, 2024-04, 4w
 
-    section Phase 2: PCB
-    Schematic Capture        :p2a, 2024-04, 2M
-    PCB Layout (16L)         :p2b, 2024-05, 2M
-    SI/PI Simulation         :p2c, 2024-06, 1M
-    Prototype Fabrication    :p2d, 2024-07, 1M
+    section Phase 2: PS Development
+    PetaLinux BSP Creation   :p2a, 2024-02, 3w
+    MPM Daemon Porting       :p2b, 2024-03, 4w
+    Device Tree Configuration:p2c, 2024-03, 2w
+    Boot Image Generation    :p2d, 2024-04, 2w
 
-    section Phase 3: FPGA
-    RFNoC Port to XDMA       :p3a, 2024-08, 2M
-    JESD204C Integration     :p3b, 2024-09, 2M
-    Clock Distribution       :p3c, 2024-10, 1M
-    Timing Closure           :p3d, 2024-11, 2M
+    section Phase 3: UHD Driver
+    QDMA Transport Layer     :p3a, 2024-03, 6w
+    qdma_io_service Implementation :p3b, 2024-04, 4w
+    Radio Control Porting    :p3c, 2024-04, 3w
+    RFNoC Integration        :p3d, 2024-05, 3w
 
-    section Phase 4: Software
-    Custom UHD Driver        :p4a, 2025-01, 2M
-    XDMA Kernel Adaptation   :p4b, 2025-01, 1M
-    OAI-UE Integration       :p4c, 2025-02, 2M
-    System Testing           :p4d, 2025-03, 1M
+    section Phase 4: AFE Porting
+    AFE7950 Driver Development :p4a, 2024-04, 4w
+    JESD204C Link Training   :p4b, 2024-05, 3w
+    RF Calibration           :p4c, 2024-05, 3w
+
+    section Phase 5: Integration
+    System Integration       :p5a, 2024-06, 3w
+    OAI-UE Testing          :p5b, 2024-06, 3w
+    Performance Optimization :p5c, 2024-07, 2w
 ```
 
 ## Phase Details
 
-### Phase 1: Proof of Concept
-- [ ] MPSoC development board evaluation
-- [ ] TI AFE evaluation module testing
-- [ ] JESD204B/C IP core validation
-- [ ] Basic XDMA driver development
+### Phase 1: PL (Programmable Logic) Development - 6 weeks
+- [ ] QDMA IP Core Integration (PCIe Gen3/4 x8)
+- [ ] RFNoC Transport Adapter for QDMA
+- [ ] JESD204C TX/RX Core Integration
+- [ ] RFNoC Block Porting (Radio, DDC, DUC, Replay)
+- [ ] Timing Closure & Bitstream Generation
 
-### Phase 2: Schematic & PCB
-- [ ] Schematic capture (Altium/OrCAD)
-- [ ] PCB layout (16+ layers)
-- [ ] SI/PI simulation
-- [ ] BOM optimization
+### Phase 2: PS (Processing System) Development - 4 weeks
+- [ ] PetaLinux BSP Creation for ZU19EG
+- [ ] MPM Daemon Porting from X410
+- [ ] Device Tree Configuration
+- [ ] Boot Image (BOOT.BIN) Generation
 
-### Phase 3: FPGA Development
-- [ ] RFNoC port to XDMA
-- [ ] JESD204C integration
-- [ ] Clock distribution logic
-- [ ] Timing closure
+### Phase 3: UHD Driver Development - 6 weeks
+- [ ] QDMA Transport Layer (porting from DPDK)
+- [ ] `qdma_io_service` Implementation (I/O thread)
+- [ ] `qdma_link` Buffer Management
+- [ ] Radio Control Block Porting
+- [ ] RFNoC Graph Integration
 
-### Phase 4: Software Development
-- [ ] Custom UHD driver (PCIe backend)
-- [ ] XDMA kernel module adaptation
-- [ ] MPM porting (if needed)
-- [ ] OAI-UE integration testing
+### Phase 4: AFE Porting - 4 weeks
+- [ ] TI AFE7950 Driver Development
+- [ ] JESD204C Link Training & Verification
+- [ ] NCO/DDC/DUC Configuration
+- [ ] RF Calibration Routines
+
+### Phase 5: Integration & Testing - 3 weeks
+- [ ] Full System Integration
+- [ ] OAI-UE End-to-End Testing
+- [ ] Performance Optimization
+- [ ] Documentation
+
+**Total Duration: ~6 months**
 
 ---
 
@@ -530,72 +676,67 @@ quadrantChart
     quadrant-4 Medium Priority
 
     JESD204C Timing: [0.8, 0.7]
-    Power Integrity: [0.75, 0.5]
-    Thermal: [0.6, 0.6]
-    Driver Complexity: [0.5, 0.4]
-    Component Supply: [0.4, 0.5]
-    Documentation: [0.2, 0.3]
+    QDMA Integration: [0.7, 0.5]
+    Thermal: [0.6, 0.4]
+    Driver Complexity: [0.5, 0.5]
+    AFE Bring-up: [0.6, 0.4]
 ```
 
 ## Risk Details
 
 | Risk | Impact | Probability | Mitigation |
 |------|--------|-------------|------------|
-| JESD204C timing | High | High | Early validation on eval kit |
-| Power integrity | High | Medium | Extensive SI/PI simulation |
-| Thermal management | Medium | Medium | Proper heatsink design |
-| UHD driver complexity | Medium | Medium | Modular approach |
-| Component availability | Medium | Medium | Second source planning |
-| Documentation gaps | Low | Low | Regular documentation |
+| JESD204C timing | High | High | Early validation, eye diagram analysis |
+| QDMA integration | High | Medium | Reference Xilinx examples, incremental testing |
+| UHD driver complexity | Medium | Medium | Reuse DPDK patterns, modular design |
+| AFE bring-up | Medium | Medium | Use TI EVM for parallel development |
+| Thermal management | Medium | Low | Monitor with existing PCB design |
 
 ---
 
 # Cost Estimate
 
-## Cost Breakdown
+## Development Costs (One-time)
 
 ```mermaid
 pie showData
     title Development Cost Distribution
-    "Engineering Labor" : 200000
-    "PCB Prototype" : 15000
-    "MPSoC Dev Kit" : 5000
+    "Engineering Labor" : 150000
+    "MPSoC Dev Kit" : 8000
     "Vivado License" : 3500
     "TI AFE EVM" : 3000
-    "Other" : 3500
+    "Other" : 5500
 ```
-
-## Development Costs (One-time)
 
 | Category | Cost (USD) |
 |----------|------------|
-| MPSoC Dev Kit | $5,000 |
+| MPSoC Dev Kit (ZCU106) | $8,000 |
 | TI AFE EVM | $3,000 |
 | Vivado License | $3,500/yr |
-| PCB Prototype (5 units) | $15,000 |
-| Engineering Labor | $200,000 |
-| **Total Development** | **~$230,000** |
+| Engineering Labor (6 months) | $150,000 |
+| Test Equipment | $5,000 |
+| **Total Development** | **~$170,000** |
 
 ## Unit Cost (Production)
 
 ```mermaid
 pie showData
-    title Unit Cost Breakdown ($4,400)
-    "MPSoC (ZU9EG)" : 2500
+    title Unit Cost Breakdown ($5,200)
+    "MPSoC (ZU19EG)" : 3200
     "TI AFE" : 800
-    "PCB + Assembly" : 500
+    "PCB + Assembly" : 600
     "Other Components" : 400
     "DDR4 Memory" : 200
 ```
 
 | Component | Cost (USD) |
 |-----------|------------|
-| MPSoC (ZU9EG) | $2,500 |
+| MPSoC (ZU19EG) | $3,200 |
 | TI AFE | $800 |
 | DDR4 Memory | $200 |
-| PCB + Assembly | $500 |
+| PCB + Assembly | $600 |
 | Other Components | $400 |
-| **Total Unit Cost** | **~$4,400** |
+| **Total Unit Cost** | **~$5,200** |
 
 ---
 
@@ -606,7 +747,7 @@ flowchart LR
     subgraph X410["X410 (Ettus)"]
         direction TB
         X_SOC["RF-SoC<br/>ZU28DR"]
-        X_IF["2x QSFP28<br/>100GbE"]
+        X_IF["2x QSFP28<br/>100GbE + DPDK"]
         X_ADC["Integrated<br/>ADC/DAC"]
         X_PLL["LMK04832"]
         X_PWR["~100W"]
@@ -615,12 +756,12 @@ flowchart LR
 
     subgraph CUSTOM["Custom Board"]
         direction TB
-        C_SOC["MPSoC<br/>ZU9EG"]
-        C_IF["PCIe<br/>Gen3/4 x8"]
+        C_SOC["MPSoC<br/>ZU19EG"]
+        C_IF["PCIe Gen4 x8<br/>QDMA"]
         C_ADC["External<br/>TI AFE"]
         C_PLL["Renesas<br/>8A34001"]
-        C_PWR["~75W"]
-        C_PRICE["~$4,400"]
+        C_PWR["~60W"]
+        C_PRICE["~$5,200"]
     end
 
     X410 ---|"vs"| CUSTOM
@@ -630,114 +771,101 @@ flowchart LR
 
 | Feature | X410 | Custom Board |
 |---------|------|--------------|
-| SoC Type | RF-SoC (ZU28DR) | MPSoC (ZU9EG) |
+| SoC Type | RF-SoC (ZU28DR) | MPSoC (ZU19EG) |
+| Logic Cells | 930K | **1,143K** |
 | ADC/DAC | Integrated | External (TI AFE) |
-| Host Interface | 2x QSFP28 (100GbE) | PCIe Gen3/4 x8 |
-| Latency | ~1ms (Network) | **~10μs (PCIe)** |
+| Host Interface | 2x QSFP28 (DPDK) | **PCIe Gen4 x8 (QDMA)** |
+| Latency | ~100μs (Network) | **~3-5μs (PCIe)** |
 | Bandwidth | 200 Gbps | 15.75 GB/s |
 | PLL | LMK04832 | Renesas 8A34001 |
 | RF Bandwidth | 400 MHz | 400 MHz |
-| Channels | 4T4R | 4T4R (or 2T2R) |
-| Power | ~100W | ~75W (PCIe limit) |
+| Channels | 4T4R | 4T4R |
+| Power | ~100W | **~60W** |
 | Form Factor | Standalone | PCIe Card |
-| Price | ~$15,000 | **~$4,400** |
+| Price | ~$15,000 | **~$5,200** |
 
 ---
 
-# Target Applications
+# DPDK to QDMA Porting Guide
 
-## Use Case Diagram
+## Key Mapping
+
+| DPDK Component | QDMA Equivalent |
+|----------------|-----------------|
+| `rte_eth_rx_burst()` | `qdma_queue_c2h_read()` |
+| `rte_eth_tx_burst()` | `qdma_queue_h2c_write()` |
+| `rte_mbuf` | QDMA descriptor + buffer |
+| `rte_ring` | QDMA completion ring |
+| `dpdk_io_service` | `qdma_io_service` |
+| `udp_dpdk_link` | `qdma_link` |
+| IPv4 5-tuple routing | Queue ID routing |
+| ARP resolution | Not needed (direct DMA) |
+
+## Implementation Priority
 
 ```mermaid
-flowchart TB
-    SDR["Custom SDR Board"]
-
-    subgraph 5G["5G NR Development"]
-        OAI_GNB["OAI gNB"]
-        OAI_UE["OAI UE"]
-        DPDK_APP["DPDK Apps"]
+flowchart LR
+    subgraph P1["Priority 1"]
+        QDMA_LINK["qdma_link<br/>(Buffer Mgmt)"]
+        DESC_RING["Descriptor Ring<br/>Management"]
     end
 
-    subgraph RESEARCH["Research & Academia"]
-        PHY["Custom PHY"]
-        MIMO["MIMO Experiments"]
-        SPECTRUM["Spectrum Sensing"]
+    subgraph P2["Priority 2"]
+        IO_SVC["qdma_io_service<br/>(I/O Thread)"]
+        POLL_LOOP["Poll-based<br/>Main Loop"]
     end
 
-    subgraph PRIVATE["Private Networks"]
-        IOT["Industrial IoT"]
-        FACTORY["Smart Factory"]
-        CAMPUS["Campus Networks"]
+    subgraph P3["Priority 3"]
+        RFNOC_ADAPT["RFNoC<br/>Adapter"]
+        FLOW_CTRL["Flow Control"]
     end
 
-    SDR --> 5G
-    SDR --> RESEARCH
-    SDR --> PRIVATE
+    P1 --> P2 --> P3
 ```
-
-## Primary Use Cases
-
-### 5G NR Development
-- OAI gNB/UE testing
-- Low-latency requirements (<10μs)
-- DPDK integration for packet processing
-
-### Research & Academia
-- Custom PHY algorithms
-- MIMO experiments
-- Spectrum sensing
-
-### Private Networks
-- Industrial IoT
-- Smart factory
-- Campus networks
 
 ---
 
 # Next Steps
 
-## Action Items
+## Immediate Actions
 
 ```mermaid
 flowchart LR
-    subgraph PROCUREMENT["1. Procurement"]
-        P1["Order ZCU106/ZCU111"]
-        P2["Order AFE79xx EVM"]
-        P3["Get 8A34001 Samples"]
+    subgraph WEEK1["Week 1-2"]
+        A1["Setup Vivado Project"]
+        A2["QDMA IP Configuration"]
+        A3["PetaLinux BSP Init"]
     end
 
-    subgraph VALIDATION["2. Technical Validation"]
-        V1["JESD204C Link Bring-up"]
-        V2["XDMA Loopback Test"]
-        V3["Clock Jitter Measurement"]
+    subgraph WEEK3["Week 3-4"]
+        B1["QDMA Loopback Test"]
+        B2["RFNoC Transport Design"]
+        B3["MPM Daemon Analysis"]
     end
 
-    subgraph DESIGN["3. Design Kickoff"]
-        D1["Create Git Repository"]
-        D2["Define Register Map"]
-        D3["Start Schematic"]
+    subgraph WEEK5["Week 5-6"]
+        C1["JESD204C Integration"]
+        C2["UHD Driver Skeleton"]
+        C3["AFE SPI Interface"]
     end
 
-    PROCUREMENT --> VALIDATION
-    VALIDATION --> DESIGN
+    WEEK1 --> WEEK3 --> WEEK5
 ```
 
-## Immediate Actions
+1. **PL Development Setup**
+   - Create Vivado project for ZU19EG
+   - Configure QDMA IP (Gen3/4 x8, Streaming mode)
+   - Integrate RFNoC framework
 
-1. **Procurement**
-   - Order MPSoC evaluation kit (ZCU106/ZCU111)
-   - Order TI AFE79xx EVM
-   - Obtain Renesas 8A34001 samples
+2. **PS Development Setup**
+   - Create PetaLinux BSP
+   - Port MPM daemon from X410
+   - Configure boot sequence
 
-2. **Technical Validation**
-   - JESD204C link bring-up
-   - XDMA loopback testing
-   - Clock jitter measurement
-
-3. **Design Kickoff**
-   - Create project repository
-   - Define register map
-   - Start schematic design
+3. **Host Driver Setup**
+   - Clone UHD repository
+   - Create QDMA transport branch
+   - Setup development environment
 
 ---
 
@@ -747,12 +875,13 @@ flowchart LR
 - **UHD Repository**: github.com/EttusResearch/uhd
 - **X410 Documentation**: files.ettus.com/manual
 - **TI AFE Resources**: ti.com/product/AFE7950
+- **QDMA Guide**: Xilinx PG302
 
-## References
-- X410 Hardware Manual
-- JESD204B/C Specification
-- Xilinx XDMA Product Guide (PG195)
-- Renesas 8A34001 Datasheet
+## Key Reference Files
+- `host/lib/transport/uhd-dpdk/dpdk_io_service.cpp`
+- `host/lib/transport/udp_dpdk_link.cpp`
+- `host/lib/usrp/x400/x400_radio_control.cpp`
+- `mpm/python/usrp_mpm/periph_manager/x4xx.py`
 
 ---
 
@@ -763,16 +892,16 @@ flowchart LR
 ```mermaid
 flowchart LR
     HOST["Host x86"]
-    PCIe["PCIe"]
-    MPSOC["MPSoC"]
+    QDMA["QDMA"]
+    MPSOC["ZU19EG"]
     AFE["TI AFE"]
     RF["RF"]
 
-    HOST <-->|"Custom UHD"| PCIe
-    PCIe <-->|"XDMA"| MPSOC
+    HOST <-->|"Custom UHD"| QDMA
+    QDMA <-->|"PCIe Gen4"| MPSOC
     MPSOC <-->|"JESD204C"| AFE
     AFE <-->|"Analog"| RF
 ```
 
 ### Custom SDR Board Project
-### X410 Clone with MPSoC Architecture
+### X410 Clone with MPSoC + QDMA Architecture
