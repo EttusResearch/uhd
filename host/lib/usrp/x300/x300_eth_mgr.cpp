@@ -44,6 +44,8 @@ namespace asio = boost::asio;
 
 namespace {
 
+constexpr char LOG_ID[] = "X300";
+
 constexpr size_t XGE_DATA_FRAME_SEND_SIZE = x300::DATA_FRAME_MAX_SIZE;
 constexpr size_t XGE_DATA_FRAME_RECV_SIZE = x300::DATA_FRAME_MAX_SIZE;
 constexpr size_t GE_DATA_FRAME_SEND_SIZE  = 1472;
@@ -190,6 +192,10 @@ eth_manager::eth_manager(
         if (key.find("send") != std::string::npos)
             send_args[key] = dev_addr[key];
     }
+    if (args.enable_force_mtu()) {
+        recv_args["force_mtu"] = dev_addr["force_mtu"];
+        send_args["force_mtu"] = dev_addr["force_mtu"];
+    }
 
     // Initially store only the first address provided to setup communication
     // Once we read the EEPROM, we use it to map IP to its interface
@@ -323,13 +329,10 @@ void eth_manager::init_link(
      * 'determine_max_frame_size' function are actually frame sizes. */
     frame_size_t req_max_frame_size;
     req_max_frame_size.recv_frame_size =
-        (recv_args.has_key("recv_frame_size"))
-            ? boost::lexical_cast<size_t>(recv_args["recv_frame_size"])
-            : x300::DATA_FRAME_MAX_SIZE;
+        recv_args.cast<size_t>("recv_frame_size", x300::DATA_FRAME_MAX_SIZE);
     req_max_frame_size.send_frame_size =
-        (send_args.has_key("send_frame_size"))
-            ? boost::lexical_cast<size_t>(send_args["send_frame_size"])
-            : x300::DATA_FRAME_MAX_SIZE;
+        send_args.cast<size_t>("send_frame_size", x300::DATA_FRAME_MAX_SIZE);
+
 
 #if defined UHD_PLATFORM_LINUX
     const std::string mtu_tool("ip link");
@@ -339,55 +342,65 @@ void eth_manager::init_link(
     const std::string mtu_tool("ifconfig");
 #endif
 
-    // Detect the frame size on the path to the USRP
-    try {
-        frame_size_t pri_frame_sizes =
-            determine_max_frame_size(get_pri_eth().addr, req_max_frame_size);
+    if (recv_args.has_key("force_mtu")) {
+        _max_frame_sizes.recv_frame_size =
+            recv_args.cast<size_t>("force_mtu", req_max_frame_size.recv_frame_size);
+        _max_frame_sizes.send_frame_size =
+            send_args.cast<size_t>("force_mtu", req_max_frame_size.send_frame_size);
+        UHD_LOG_INFO(LOG_ID,
+            "Using manual override to set MTU to: "
+                << _max_frame_sizes.recv_frame_size
+                << " bytes. Note this may cause issues if Ethernet link is not "
+                   "configured correspondingly.");
+    } else {
+        // Detect the frame size on the path to the USRP
+        try {
+            frame_size_t pri_frame_sizes =
+                determine_max_frame_size(get_pri_eth().addr, req_max_frame_size);
 
-        _max_frame_sizes = pri_frame_sizes;
-        if (_local_device_ids.size() > 1) {
-            frame_size_t sec_frame_sizes = determine_max_frame_size(
-                eth_conns.at(_local_device_ids.at(1)).addr, req_max_frame_size);
+            _max_frame_sizes = pri_frame_sizes;
+            if (_local_device_ids.size() > 1) {
+                frame_size_t sec_frame_sizes = determine_max_frame_size(
+                    eth_conns.at(_local_device_ids.at(1)).addr, req_max_frame_size);
 
-            // Choose the minimum of the max frame sizes
-            // to ensure we don't exceed any one of the links' MTU
-            _max_frame_sizes.recv_frame_size = std::min(
-                pri_frame_sizes.recv_frame_size, sec_frame_sizes.recv_frame_size);
+                // Choose the minimum of the max frame sizes
+                // to ensure we don't exceed any one of the links' MTU
+                _max_frame_sizes.recv_frame_size = std::min(
+                    pri_frame_sizes.recv_frame_size, sec_frame_sizes.recv_frame_size);
 
-            _max_frame_sizes.send_frame_size = std::min(
-                pri_frame_sizes.send_frame_size, sec_frame_sizes.send_frame_size);
+                _max_frame_sizes.send_frame_size = std::min(
+                    pri_frame_sizes.send_frame_size, sec_frame_sizes.send_frame_size);
+            }
+        } catch (std::exception& e) {
+            UHD_LOGGER_ERROR("X300") << e.what();
         }
-    } catch (std::exception& e) {
-        UHD_LOGGER_ERROR("X300") << e.what();
     }
 
     // Check actual frame sizes against user-requested frame sizes, and print
     // warnings if they don't match
     if ((recv_args.has_key("recv_frame_size"))
         && (req_max_frame_size.recv_frame_size > _max_frame_sizes.recv_frame_size)) {
-        UHD_LOGGER_WARNING("X300")
-            << boost::format("You requested a receive frame size of (%lu) but your "
-                             "NIC's max frame size is (%lu).")
-                   % req_max_frame_size.recv_frame_size % _max_frame_sizes.recv_frame_size
-            << boost::format("Please verify your NIC's MTU setting using '%s' or set "
-                             "the recv_frame_size argument appropriately.")
-                   % mtu_tool
-            << "UHD will use the auto-detected max frame size for this connection.";
+        UHD_LOG_WARNING(LOG_ID,
+            "Requested receive frame size of "
+                << req_max_frame_size.recv_frame_size << " but MTU is "
+                << _max_frame_sizes.recv_frame_size << ". "
+                << "Please verify your MTU setting using '" << mtu_tool
+                << "' or set the recv_frame_size argument appropriately. "
+                   "UHD will use the MTU size for this connection.");
     }
 
     if ((send_args.has_key("send_frame_size"))
         && (req_max_frame_size.send_frame_size > _max_frame_sizes.send_frame_size)) {
-        UHD_LOGGER_WARNING("X300")
-            << boost::format("You requested a send frame size of (%lu) but your "
-                             "NIC's max frame size is (%lu).")
-                   % req_max_frame_size.send_frame_size % _max_frame_sizes.send_frame_size
-            << boost::format("Please verify your NIC's MTU setting using '%s' or set "
-                             "the send_frame_size argument appropriately.")
-                   % mtu_tool
-            << "UHD will use the auto-detected max frame size for this connection.";
+        UHD_LOG_WARNING(LOG_ID,
+            "Requested send frame size of "
+                << req_max_frame_size.send_frame_size << " but MTU is "
+                << _max_frame_sizes.send_frame_size << ". "
+                << "Please verify your MTU setting using '" << mtu_tool
+                << "' or set the send_frame_size argument appropriately. "
+                   "UHD will use the MTU size for this connection.");
     }
 
-    // Check actual frame sizes against detected frame sizes, and print
+    // Check actual frame sizes against recommended frame sizes, and print
     // warnings if they don't match
     for (auto conn_pair : eth_conns) {
         auto conn                  = conn_pair.second;
@@ -398,28 +411,29 @@ void eth_manager::init_link(
                                          ? GE_DATA_FRAME_RECV_SIZE
                                          : XGE_DATA_FRAME_RECV_SIZE;
 
-        if (_max_frame_sizes.send_frame_size < rec_send_frame_size) {
-            UHD_LOGGER_WARNING("X300")
-                << boost::format("For the %s connection, UHD recommends a send frame "
-                                 "size of at least %lu for best\nperformance, but "
-                                 "your configuration will only allow %lu.")
-                       % conn.addr % rec_send_frame_size
-                       % _max_frame_sizes.send_frame_size
-                << "This may negatively impact your maximum achievable sample "
-                   "rate.\nCheck the MTU on the interface and/or the send_frame_size "
-                   "argument.";
-        }
-
         if (_max_frame_sizes.recv_frame_size < rec_recv_frame_size) {
-            UHD_LOGGER_WARNING("X300")
-                << boost::format("For the %s connection, UHD recommends a receive "
-                                 "frame size of at least %lu for best\nperformance, "
-                                 "but your configuration will only allow %lu.")
-                       % conn.addr % rec_recv_frame_size
-                       % _max_frame_sizes.recv_frame_size
-                << "This may negatively impact your maximum achievable sample "
-                   "rate.\nCheck the MTU on the interface and/or the recv_frame_size "
-                   "argument.";
+            UHD_LOG_WARNING(LOG_ID,
+                "For the "
+                    << conn.addr
+                    << " connection, UHD recommends a recv frame size of at least "
+                    << rec_recv_frame_size
+                    << " for best\nperformance, but your configuration will only allow "
+                    << _max_frame_sizes.recv_frame_size
+                    << ". This may negatively impact your maximum achievable sample "
+                       "rate.\nCheck the MTU on the interface and/or the recv_frame_size "
+                       "argument.");
+        }
+        if (_max_frame_sizes.send_frame_size < rec_send_frame_size) {
+            UHD_LOG_WARNING(LOG_ID,
+                "For the "
+                    << conn.addr
+                    << " connection, UHD recommends a send frame size of at least "
+                    << rec_send_frame_size
+                    << " for best\nperformance, but your configuration will only allow "
+                    << _max_frame_sizes.send_frame_size
+                    << ". This may negatively impact your maximum achievable sample "
+                       "rate.\nCheck the MTU on the interface and/or the send_frame_size "
+                       "argument.");
         }
     }
 }

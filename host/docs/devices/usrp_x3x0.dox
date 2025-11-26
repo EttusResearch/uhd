@@ -140,6 +140,7 @@ For a list of which arguments can be passed into make(), see Section
  use_dpdk              | Use DPDK (see \ref page_dpdk)                                    |  use_dpdk=1
  fpga                  | Choose FPGA image to run (only works over PCIe)                  |  fpga=/path/to/bitfile.lvbitx
  fw                    | Load custom firmware image                                       |  fw=/path/to/hw.bin
+ force_mtu             | Skips MTU detection and manually sets a network MTU.             | force_mtu=8000
 
 \section x3x0_hw Hardware Setup
 
