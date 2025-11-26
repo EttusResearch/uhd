@@ -488,6 +488,7 @@ For a list of which arguments can be passed into make(), see Section
  rx_gain_profile       | Initialize device with a specific RX gain profile.                           | N310              | rx_gain_profile=manual
  tx_band_map           | Semicolon-separated list of TX band edges.                                   | N310              | tx_band_map=0.0;723.18e6;1623.18e6;3323.18e6
  rx_band_map           | Semicolon-separated list of RX band edges.                                   | N310              | rx_band_map=0.0;431e6;601e6;1051e6;1601e6;2101e6;2701e6
+ force_mtu             | Skips MTU detection and manually sets a network MTU.                         | All N3xx          | force_mtu=8000
 
 \subsection n3xx_usage_init Device Initialization
 

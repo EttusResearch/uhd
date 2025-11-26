@@ -38,6 +38,13 @@ options available not listed here.
  recover_mb_eeprom   | Disable version checks. Can damage hardware. Only recommended for recovering devices with corrupted EEPROMs. | X3x0 | recover_mb_eeprom=1
  serialize_init      | Force serial initialization of motherboards (default is parallel)            | X3x0, all MPM devices | serialize_init=1
  force_reinit        | Force reinitialization of device                                             | N3x0, X4x0         | force_reinit=1
+ force_mtu           | Skip MTU detection and use this value instead. Warning: can cause issues if MTU value is not valid! | X3x0, E3x0, N3x0, X4x0 | force_mtu=8000
+
+Notes:
+- The `force_mtu` argument is only recommended in rare cases where
+  auto-detection of the MTU fails because of a restrictive network
+  configuration. Note that it is generally preferable to set a per-link MTU
+  using the `mtu` stream argument (see \ref page_transport for details).
 
 In addition, many of the streaming-related options can be set per-device at configuration time.
 See \ref config_stream_args and \ref page_transport for more details.
@@ -243,6 +250,10 @@ The following parameters are supported:
   the FPGA state to reenable transmission. Note this mode is only useful
   for non time critical transmission (e.g. sending samples to the replay
   block).
+- `mtu` (applies to RFNoC devices only): Overrides the MTU value for this
+  streamer, ignoring limits from the underlying link.
+
+
 \subsubsection config_stream_args_transport Transport-related Stream Arguments
 
 The following arguments that alter the behavior of the underlying transport
