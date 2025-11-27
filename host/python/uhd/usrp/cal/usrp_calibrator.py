@@ -423,7 +423,7 @@ class E3XXCalibrator(USRPCalibratorBase):
     # our estimate. E3XX generally has good DC offset / IQ balance performance,
     # but we still try and avoid DC as much as possible.
     lo_offset = 5e6
-    tune_settling_time = 0.01  # Probably not needed??
+    tune_settling_time = 0.1  # Probably not needed??
 
     def __init__(self, usrp, meas_dev, direction, **kwargs):
         """Initialize."""
