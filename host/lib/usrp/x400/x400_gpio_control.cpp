@@ -38,9 +38,11 @@ constexpr size_t NUM_PINS_PER_PORT = 12;
 // Start of Port B pin numbers relative to Port A:
 constexpr size_t PORT_NUMBER_OFFSET = 16;
 
-// These values should match the values in MPM's x4xx_periphs.py "DIO_PORT_MAP"
-constexpr uint32_t PORTA_MAPPING[12] = {1, 0, 2, 3, 5, 4, 6, 7, 9, 8, 10, 11};
-constexpr uint32_t PORTB_MAPPING[12] = {10, 11, 9, 8, 6, 7, 5, 4, 2, 3, 1, 0};
+// masks for converting bitmap in user form to/from raw form
+constexpr uint32_t PORT_A_MASK      = (1 << NUM_PINS_PER_PORT) - 1;
+constexpr uint32_t PORT_B_MASK_USER = PORT_A_MASK << NUM_PINS_PER_PORT;
+constexpr uint32_t PORT_B_MASK_RAW  = PORT_A_MASK << PORT_NUMBER_OFFSET;
+
 } // namespace
 
 const char* uhd::rfnoc::x400::GPIO_BANK_NAME = "GPIO";
@@ -149,29 +151,14 @@ bool gpio_control::is_atr_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr)
 
 uint32_t gpio_control::unmap_dio(const uint32_t raw_form)
 {
-    uint32_t result = 0;
-    for (size_t i = 0; i < NUM_PINS_PER_PORT; i++) {
-        if ((raw_form & (1 << i)) != 0) {
-            result |= 1 << _mapper.unmap_value(i);
-        }
-    }
-    for (size_t i = PORT_NUMBER_OFFSET; i < PORT_NUMBER_OFFSET + NUM_PINS_PER_PORT; i++) {
-        if ((raw_form & (1 << i)) != 0) {
-            result |= 1 << _mapper.unmap_value(i);
-        }
-    }
-    return result;
+    return ((raw_form & PORT_B_MASK_RAW) >> (PORT_NUMBER_OFFSET - NUM_PINS_PER_PORT))
+           | (raw_form & PORT_A_MASK);
 }
 
 uint32_t gpio_control::map_dio(const uint32_t user_form)
 {
-    uint32_t result = 0;
-    for (size_t i = 0; i < NUM_PORTS * NUM_PINS_PER_PORT; i++) {
-        if ((user_form & (1 << i)) != 0) {
-            result |= 1 << _mapper.map_value(i);
-        }
-    }
-    return result;
+    return ((user_form & PORT_B_MASK_USER) << (PORT_NUMBER_OFFSET - NUM_PINS_PER_PORT))
+           | (user_form & PORT_A_MASK);
 }
 
 uint32_t gpio_control::get_gpio_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr)
@@ -195,28 +182,4 @@ uint32_t gpio_control::get_gpio_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr
 
     const uint32_t raw_value = _gpios[0]->get_attr_reg(attr);
     return unmap_dio(raw_value);
-}
-
-uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::map_value(const uint32_t& value)
-{
-    const uint32_t bank           = value >= NUM_PINS_PER_PORT ? 1 : 0;
-    uint32_t pin_intern           = value % NUM_PINS_PER_PORT;
-    const uint32_t* const mapping = bank == 1 ? PORTB_MAPPING : PORTA_MAPPING;
-    for (size_t i = 0; i < NUM_PINS_PER_PORT; i++) {
-        if (mapping[i] == pin_intern) {
-            return i + (bank * PORT_NUMBER_OFFSET);
-        }
-    }
-    throw uhd::lookup_error(
-        std::string("Could not find corresponding GPIO pin number for given SPI pin ")
-        + std::to_string(value));
-}
-
-uint32_t uhd::rfnoc::x400::x400_gpio_port_mapping::unmap_value(const uint32_t& value)
-{
-    const uint32_t bank           = value >= PORT_NUMBER_OFFSET ? 1 : 0;
-    uint32_t pin_number           = value % PORT_NUMBER_OFFSET;
-    const uint32_t* const mapping = bank == 1 ? PORTB_MAPPING : PORTA_MAPPING;
-    UHD_ASSERT_THROW(pin_number < NUM_PINS_PER_PORT);
-    return mapping[pin_number] + (bank * NUM_PINS_PER_PORT);
 }
