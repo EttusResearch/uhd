@@ -289,6 +289,26 @@ endmodule
 //  <group name="GPIO_ATR_REGS">
 //    <info>
 //      Describes the behavior of GPIO lines when controlled by the ATR state.
+//      <p>
+//        Important note on the bit ordering inside the (...)_A and (...)_B
+//        bitfields of all ATR-registers:
+//        <ul>
+//          <li>
+//            Starting from FPGA compat number 10.1, the bit order matches the pin
+//            order of the "DIO" signals on the frontpanel connectors (which is the
+//            same order as the HDMI pin numbering with ground pins and pin 14
+//            (HEC/ARC) left out).
+//          </li>
+//          <li>
+//            Up until FPGA compat number 10.0, the the bit order did not match the
+//            actual pin order on the frontpanel connectors. To compensate for this,
+//            the software had to apply a mapping table for the values in bitfield
+//            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
+//            mapping table for the values in bitfield DIO_PORT_B (see parameter
+//            'MAPPED_PIN_DIO_B' in x4xx.sv).
+//          </li>
+//        </ul>
+//      </p>
 //    </info>
 //
 //    <regtype name="GPIO_ATR_STATE" size="32">
