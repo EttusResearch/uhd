@@ -50,7 +50,6 @@ The user can interact with RFNoC ModTool using a GUI or using the CLI and specif
 The following is a description (and example) of the input YAML format.
 
 ```yaml
----
 # General parameters
 # -----------------------------------------
 schema: rfnoc_modtool_args      # Name of the schema used to validate this file
@@ -59,6 +58,24 @@ version: "1.0"                  # Format version of this file
 rfnoc_version: "1.0"            # Version of RFNoC
 chdr_width: 256                 # Bit width of the CHDR bus
 noc_id: 0xDEADBEEF              # NoC ID for this block
+
+
+# Block-specific parameters
+# -------------------------
+# Optional section, use this if the block is parametrizable.
+# Specify these as key/value pairs. Mako expressions are allowed.
+parameters:
+  keyname: "${ 1 + 1 }"
+
+# HDL Parameters (Generics)
+# -------------------------
+# Optional section. If this section is not given, the previous section
+# (parameters) is made available as HDL parameters. Mako expressions are
+# allowed, and may reference parameters. When the HDL code for the RFNoC
+# block is generated, these are used to generate module parameters for
+# the block.
+hdl_parameters:
+  MY_GENERIC: "${ parameters['keyname'] }"
 
 # A list of all clocks needed by this block
 # -----------------------------------------
@@ -77,9 +94,9 @@ clocks:
 control:
   sw_iface: nocscript           # Software controller implementation: {nocscript, c++}
   fpga_iface: axis_ctrl         # Type of FPGA interface: {axis_ctrl, ctrlport}
-  interface_direction: slave    # Direction of control endpoint: 
+  interface_direction: slave    # Direction of control endpoint:
                                 #   {slave, master_slave, remote_master_slave}
-  fifo_depth: 32                # Number of 32-bit words in input buffer: [32, 4096] 
+  fifo_depth: 32                # Number of 32-bit words in input buffer: [32, 4096]
   clk_domain: rfnoc_ctrl        # Clock domain for ctrl interface: {<Choose from "clocks">}
   ctrlport:                     # ctrlport specific options
     byte_mode: True             # Instantiate a byte enable: {True, False}
@@ -91,7 +108,7 @@ control:
 # Options for the data interface
 # ------------------------------
 data:
-  fpga_iface: axis_pyld_ctxt    # Type of FPGA interface: 
+  fpga_iface: axis_pyld_ctxt    # Type of FPGA interface:
                                 #   {axis_chdr, axis_pyld_ctxt, axis_data}
   clk_domain: user0             # Clock domain for data interface: {<Choose from "clocks">}
   # A list of all input ports for this block:
@@ -134,7 +151,7 @@ data:
 
 # A list of all IO ports for this block
 # -------------------------------------
-io_port:
+io_ports:
   time:                       # Name of IO port
     type: timekeeper          # Descriptor for the IO signature of this port
     drive: listener           # Drive mode for port: {master, slave, listener, broadcaster}
@@ -142,28 +159,47 @@ io_port:
     type: my_iface_sic
     drive: slave
 
-# A list of all registers in the block
-# ------------------------------------
-registers:
-  - user_reg_0:                 # Register name
-      offset: 0x0000            # Byte offset of the register in the block memory space
-  - user_reg_1:
-      offset: 0x0004
+# A list of files that need to be included for the build process
+# --------------------------------------------------------------
+fpga_includes:
+  # $(LIB_DIR) points to the main RFNoC library, where all the core files
+  # are stored. This is generally not used for out-of-tree blocks, unless
+  # they need to include modules from the main RFNoC source tree. This line
+  # will include the Makefile.srcs file into the build process, which may
+  # provide additional variables or file paths.
+  - include: "$(LIB_DIR)/rfnoc/blocks/rfnoc_block_my_block/Makefile.srcs"
+    # This variable is defined in the Makefile.srcs file referenced above.
+    make_var: "$(RFNOC_BLOCK_MY_BLOCK_SRCS)"
+  # If the block is defined in an out-of-tree module, relative filenames
+  # are preferred. The build process will then search for the file.
+  - include: fpga/my_module/rfnoc_block_my_mblock/Makefile.srcs
+    make_var: "$(RFNOC_BLOCK_MY_BLOCK_SRCS)"
+  # Mako expressions are allowed:
+    # Assumption is that 'my_block_mako_expression' evaluates to a path
+  - include: "${ my_block_mako_expression }"
+    make_var: "$(RFNOC_BLOCK_MY_BLOCK_SRCS)"
 
-# A list of all user properties for the block
-# (Edge properties not supported in nocscript)
-# --------------------------------------------
-properties:
-  - user_arg_0:                                 # Name of argument 
-    type: uint32_t                            # C++ data-type of argument
-    nocscript: 'REG_WRITE(user_reg_0, $val)'  # NoC script code to execute when set
-  - user_arg_1:
-    type: string
-    nocscript: 'REG_WRITE(user_reg_1, $val)'
-  - user_arg_2:
-    type: int32_t
-    nocscript: ''
-...
+# A list of constraint files that need to be included for the build process
+# -------------------------------------------------------------------------
+# Optional. Use this if the Vivado build requires special constraint files.
+constraints:
+  # List one file per list entry. Mako expressions are allowed.
+  - constraints/timing/my_block_timing.xdc
+
+# A list of DTS files that become part of the device tree overlay
+# ---------------------------------------------------------------
+# Optional. Only for embedded devices (e.g., X4xx, N3xx, E3xx).
+# List one file per list entry. Mako expressions are allowed.
+dts_includes:
+  - path/to/device_tree_info.dts
+
+# Custom io_signatures only relevant for this block
+# -------------------------------------------------
+# Optional. Use if you have io_ports with a custom signature.
+io_signatures:
+  my_iface_sic:
+    type: master-slave
+    ports: [] # List ports here, with name/type/width
 ```
 
 # RFNoC Image Builder
