@@ -593,21 +593,43 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // Check Ref and LO Lock detect
     std::vector<std::string> tx_sensor_names, rx_sensor_names;
-    tx_sensor_names = tx_usrp->get_tx_sensor_names(0);
-    if (std::find(tx_sensor_names.begin(), tx_sensor_names.end(), "lo_locked")
-        != tx_sensor_names.end()) {
-        uhd::sensor_value_t lo_locked = tx_usrp->get_tx_sensor("lo_locked", 0);
-        std::cout << boost::format("Checking TX: %s ...") % lo_locked.to_pp_string()
-                  << std::endl;
-        UHD_ASSERT_THROW(lo_locked.to_bool());
+    for (size_t ch = 0; ch < tx_channel_nums.size(); ch++) {
+        size_t channel  = tx_channel_nums[ch];
+        tx_sensor_names = tx_usrp->get_tx_sensor_names(channel);
+        if (std::find(tx_sensor_names.begin(), tx_sensor_names.end(), "lo_locked")
+            != tx_sensor_names.end()) {
+            uhd::sensor_value_t lo_locked = tx_usrp->get_tx_sensor("lo_locked", channel);
+            std::cout << boost::format("Checking TX Channel %d: %s ...") % channel
+                             % lo_locked.to_pp_string()
+                      << std::endl;
+            if (!lo_locked.to_bool()) {
+                throw uhd::runtime_error(
+                    "ERROR: LO is not locked for TX channel " + std::to_string(channel)
+                    + ". Ensure frequency is supported, check cabling for external "
+                      "reference clock if applicable, try increasing settling time, "
+                      "verify that TX/RX frequencies match for shared LO "
+                      "daughterboards.");
+            }
+        }
     }
-    rx_sensor_names = rx_usrp->get_rx_sensor_names(0);
-    if (std::find(rx_sensor_names.begin(), rx_sensor_names.end(), "lo_locked")
-        != rx_sensor_names.end()) {
-        uhd::sensor_value_t lo_locked = rx_usrp->get_rx_sensor("lo_locked", 0);
-        std::cout << boost::format("Checking RX: %s ...") % lo_locked.to_pp_string()
-                  << std::endl;
-        UHD_ASSERT_THROW(lo_locked.to_bool());
+    for (size_t ch = 0; ch < rx_channel_nums.size(); ch++) {
+        size_t channel  = rx_channel_nums[ch];
+        rx_sensor_names = rx_usrp->get_rx_sensor_names(channel);
+        if (std::find(rx_sensor_names.begin(), rx_sensor_names.end(), "lo_locked")
+            != rx_sensor_names.end()) {
+            uhd::sensor_value_t lo_locked = rx_usrp->get_rx_sensor("lo_locked", channel);
+            std::cout << boost::format("Checking RX Channel %d: %s ...") % channel
+                             % lo_locked.to_pp_string()
+                      << std::endl;
+            if (!lo_locked.to_bool()) {
+                throw uhd::runtime_error(
+                    "ERROR: LO is not locked for RX channel " + std::to_string(channel)
+                    + ". Ensure frequency is supported, check cabling for external "
+                      "reference clock if applicable, try increasing settling time, "
+                      "verify that TX/RX frequencies match for shared LO "
+                      "daughterboards.");
+            }
+        }
     }
 
     tx_sensor_names = tx_usrp->get_mboard_sensor_names(0);
