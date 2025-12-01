@@ -61,7 +61,8 @@ class TxTriggerTest(UHDPythonTestCase):
 
         # Compare the received waveform to the transmitted waveform
         # This constant is dictated by the radio_core trigger implementation
-        offset_cycles = 3
+        # Offset cycles to compensate for loopback delay and complex gain latency
+        offset_cycles = 9
         sample_offset = offset_cycles * radio.get_spc()
         expected = np.concatenate(
             [
