@@ -28,7 +28,7 @@ jobs:
     dutMatrix:
       sdr-s175-streaming-tests-B206-0:
         dutName: 'sdr_s175_tests-b206-0'
-        dutFamily: 'b2xx'
+        dutFamily: 'b200'
         dutType: 'B206'
         dutAddr: ''
         dutSecondAddr: ''
