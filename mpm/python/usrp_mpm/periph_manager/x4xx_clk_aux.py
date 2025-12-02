@@ -13,8 +13,8 @@ from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.chips import LMK05318
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev, get_eeprom_paths_by_symbol
 
 # DAC AD5338R provides V_out = V_ref * gain (tune_word / 2^N)
@@ -36,7 +36,7 @@ def _check_i2c_bus():
     Assert that the I2C connection to the clocking board is available in the
     device tree.
     """
-    i2c_bus = i2c_dev.dt_symbol_get_i2c_bus(X400_CLKAUX_I2C_LABEL)
+    i2c_bus = dt_symbol_get_i2c_device_node(X400_CLKAUX_I2C_LABEL)
     if i2c_bus is None:
         raise RuntimeError("ClockingAuxBrdControl I2C bus not found")
 
@@ -175,7 +175,7 @@ class ClockingAuxBrdControl:
         Initializes i2c bus to communicate with the DAC and configures the
         tuning word for both voltage outputs
         """
-        dac_i2c_bus = i2c_dev.dt_symbol_get_i2c_bus(X400_CLKAUX_I2C_LABEL)
+        dac_i2c_bus = dt_symbol_get_i2c_device_node(X400_CLKAUX_I2C_LABEL)
         self._dac_i2c_iface = lib.i2c.make_i2cdev(
             dac_i2c_bus, 0xC, False, 100  # addr  # ten_bit_addr
         )

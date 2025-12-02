@@ -14,8 +14,8 @@ from statistics import mean
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.periph_manager.common import MboardRegsCommon
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
 from usrp_mpm.sys_utils.uio import UIO
@@ -651,7 +651,7 @@ class QSFPModule:
         self.modprs = Gpio(gpio_modprs, Gpio.INPUT, 0)
 
         # resolve device node name for I2C communication
-        devname = i2c_dev.dt_symbol_get_i2c_bus(devsymbol)
+        devname = dt_symbol_get_i2c_device_node(devsymbol)
 
         # create an object to access I2C register interface
         self.qsfp_regs = lib.i2c.make_i2cdev_regs_iface(

@@ -23,6 +23,7 @@ from usrp_mpm.dboard_manager.rh_periphs import (
     RhCPLD,
 )
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_bus
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.user_eeprom import BfrfsEEPROM
 
@@ -146,8 +147,6 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
     # See DboardManagerBase for documentation on these fields
     #########################################################################
     pids = [0x152]
-    # file system path to i2c-adapter/mux
-    base_i2c_adapter = "/sys/class/i2c-adapter"
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {
         "cpld": 0,
@@ -227,25 +226,21 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         """
         Initialize power and peripherals that don't need user-settings
         """
-
-        def _get_i2c_dev():
-            "Return the I2C path for this daughterboard"
-            import pyudev
-
-            context = pyudev.Context()
-            i2c_dev_path = os.path.join(self.base_i2c_adapter, self.i2c_chan_map[self.slot_idx])
-            return pyudev.Devices.from_sys_path(context, i2c_dev_path)
-
         def _init_spi_devices():
             "Returns abstraction layers to all the SPI devices"
             self.log.trace("Loading SPI interfaces...")
-            return {key: self.spi_factories[key](self._spi_nodes[key]) for key in self._spi_nodes}
-
-        self._port_expander = TCA6408(_get_i2c_dev())
+            return {
+                key: self.spi_factories[key](self._spi_nodes[key])
+                for key in self._spi_nodes
+            }
+        i2c_bus = dt_symbol_get_i2c_bus(f"usrpio_i2c{self.slot_idx}")
+        if i2c_bus is None:
+            raise RuntimeError("Failed to resolve I2C bus")
+        self._port_expander = TCA6408(i2c_bus)
         self._daughterboard_gpio = FPGAtoDbGPIO(self.slot_idx)
-        if FPGAtoLoDist.lo_dist_present(_get_i2c_dev()):
+        if FPGAtoLoDist.lo_dist_present(i2c_bus):
             self.log.info("Enabling LO distribution board")
-            self._lo_dist = FPGAtoLoDist(_get_i2c_dev())
+            self._lo_dist = FPGAtoLoDist(i2c_bus)
         else:
             self.log.debug("No LO distribution board detected")
         self.log.debug("Turning on Module and RF power supplies")

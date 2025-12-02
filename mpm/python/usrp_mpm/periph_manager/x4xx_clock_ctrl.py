@@ -22,8 +22,8 @@ from usrp_mpm.periph_manager.x4xx_clock_types import (
 from usrp_mpm.periph_manager.x4xx_periphs import MboardRegsControl
 from usrp_mpm.periph_manager.x4xx_reference_pll import LMK03328X4xx
 from usrp_mpm.periph_manager.x4xx_sample_pll import LMK04832X4xx
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 
 X400_RPLL_I2C_LABEL = "rpll_i2c"
@@ -67,17 +67,21 @@ class X4xxClockCtrl:
         """
         # Create SPI and I2C interfaces to the LMK registers
         spll_spi_node = dt_symbol_get_spidev("spll")
+        # pylint: disable=bad-whitespace
+        # fmt: off
         sample_lmk_regs_iface = lib.spi.make_spidev_regs_iface(
             spll_spi_node,
-            1000000,  # Speed (Hz)
-            0x3,  # SPI mode
-            8,  # Addr shift
-            0,  # Data shift
-            1 << 23,  # Read flag
-            0,  # Write flag
+            1000000,    # Speed (Hz)
+            0x3,        # SPI mode
+            8,          # Addr shift
+            0,          # Data shift
+            1 << 23,    # Read flag
+            0,          # Write flag
         )
+        # pylint: enable=bad-whitespace
+        # fmt: on
         # Initialize I2C connection to RPLL
-        rpll_i2c_bus = i2c_dev.dt_symbol_get_i2c_bus(X400_RPLL_I2C_LABEL)
+        rpll_i2c_bus = dt_symbol_get_i2c_device_node(X400_RPLL_I2C_LABEL)
         if rpll_i2c_bus is None:
             raise RuntimeError("RPLL I2C bus could not be found")
         self.log.trace("Using RPLL I2C bus: %s", str(rpll_i2c_bus))

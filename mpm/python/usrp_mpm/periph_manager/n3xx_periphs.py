@@ -11,7 +11,6 @@ N3xx peripherals
 from usrp_mpm import lib
 from usrp_mpm.chips.ds125df410 import DS125DF410
 from usrp_mpm.periph_manager.common import MboardRegsCommon
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank, SysFSGPIO
 
 # Map register values to SFP transport types

@@ -18,6 +18,7 @@ from usrp_mpm.dboard_manager.mg_init import MagnesiumInitManager
 from usrp_mpm.dboard_manager.mg_periphs import TCA6408, DboardClockControl, MgCPLD
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.mpmutils import async_exec
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_bus
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.user_eeprom import BfrfsEEPROM
 
@@ -101,10 +102,6 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         "lmk": create_spidev_iface_lmk,
         "phase_dac": create_spidev_iface_phasedac,
     }
-    # file system path to i2c-adapter/mux
-    base_i2c_adapter = "/sys/class/i2c-adapter"
-    # Map I2C channel to slot index
-    i2c_chan_map = {0: "i2c-9", 1: "i2c-10"}
     # This map describes how the user data is stored in EEPROM. If a dboard rev
     # changes the way the EEPROM is used, we add a new entry. If a dboard rev
     # is not found in the map, then we go backward until we find a suitable rev
@@ -155,7 +152,10 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         """
         Initialize power and peripherals that don't need user-settings
         """
-        self._port_expander = TCA6408(self._get_i2c_dev(self.slot_idx))
+        i2c_bus = dt_symbol_get_i2c_bus(f"usrpio_i2c{self.slot_idx}")
+        if i2c_bus is None:
+            raise RuntimeError("Failed to resolve I2C bus")
+        self._port_expander = TCA6408(i2c_bus)
         self._power_on()
         self.log.debug("Loading C++ drivers...")
 
@@ -203,14 +203,6 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         self._port_expander.reset("PWR-EN-1.5V")
         self._port_expander.reset("PWR-EN-5.5V")
         self._port_expander.reset("LED")
-
-    def _get_i2c_dev(self, slot_idx):
-        "Return the I2C path for this daughterboard"
-        import pyudev
-
-        context = pyudev.Context()
-        i2c_dev_path = os.path.join(self.base_i2c_adapter, self.i2c_chan_map[slot_idx])
-        return pyudev.Devices.from_sys_path(context, i2c_dev_path)
 
     def _init_myk_api(self, myk):
         """

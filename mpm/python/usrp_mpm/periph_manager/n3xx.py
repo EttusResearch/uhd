@@ -28,7 +28,8 @@ from usrp_mpm.periph_manager.n3xx_periphs import (
     RetimerQSFP,
 )
 from usrp_mpm.rpc_utils import get_map_for_rpc, no_rpc
-from usrp_mpm.sys_utils import dtoverlay, i2c_dev
+from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
 from usrp_mpm.xports import XportMgrUDP
 
@@ -40,7 +41,7 @@ N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N32X_DEFAULT_QSFP_RATE_PRESET = "Ethernet"
 N32X_DEFAULT_QSFP_DRIVER_PRESET = "Optical"
-N32X_QSFP_I2C_LABEL = "qsfp-i2c"
+N32X_QSFP_I2C_SYMBOL = "qsfp_i2c"
 N3XX_FPGA_COMPAT = (8, 1)
 N3XX_REMOTE_STREAMING_COMPAT = (8, 1)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0  # seconds
@@ -368,7 +369,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # Init GPSd iface and GPS sensors
         self._init_gps_sensors()
         # Init QSFP board (if available)
-        qsfp_i2c = i2c_dev.of_get_i2c_adapter(N32X_QSFP_I2C_LABEL)
+        qsfp_i2c = dt_symbol_get_i2c_device_node(N32X_QSFP_I2C_SYMBOL)
         if qsfp_i2c:
             self.log.debug("Creating QSFP Retimer control object...")
             self._qsfp_retimer = RetimerQSFP(qsfp_i2c)

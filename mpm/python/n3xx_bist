@@ -399,9 +399,8 @@ class N3XXBIST(bist.UsrpBIST):
         if self.args.dry_run:
             return True, bist.get_sfp_bist_defaults()
         from usrp_mpm.periph_manager import n3xx
-        from usrp_mpm.sys_utils import i2c_dev
-
-        qsfp_i2c = i2c_dev.of_get_i2c_adapter(n3xx.N32X_QSFP_I2C_LABEL)
+        from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_bus
+        qsfp_i2c = dt_symbol_get_i2c_bus(n3xx.N32X_QSFP_I2C_SYMBOL)
         if qsfp_i2c is None:
             raise RuntimeError("Could not find QSFP board!")
         qsfp_port = int(self.args.option.get("qsfp_port", "0"))
