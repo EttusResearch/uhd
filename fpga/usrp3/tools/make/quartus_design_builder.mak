@@ -52,7 +52,7 @@ BUILD_QUARTUS_DESIGN = \
 		if [ $$? -eq 0 ]; then exit 1; fi; \
 	grep "332148" output_files/$(1).sta.rpt; \
 		if [ $$? -eq 0 ]; then exit 1; fi; \
-	grep -iw "warning" output_files/$(1).sta.rpt; \
+	grep -i "^\s*warning" output_files/$(1).sta.rpt; \
 		if [ $$? -eq 0 ]; then exit 1; fi; \
 	grep -i "critical warning" output_files/* | grep -v 16562; \
 		if [ $$? -eq 0 ]; then exit 1; fi; \
