@@ -364,4 +364,7 @@ endmodule
 //    </enumeratedtype>
 //  </group>
 //</regmap>
+//
+//<regmap name="RF_CORE_REGMAP" generateverilog="false" generatesv="false" />
+//
 //XmlParse xml_off
