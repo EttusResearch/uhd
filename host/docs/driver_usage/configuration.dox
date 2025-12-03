@@ -29,10 +29,9 @@ options available not listed here.
  ignore-cal-file     | Ignores existing device calibration files                                    | All Devices with cal-file support| See \ref ignore_cal_file
  master_clock_rate   | Master Clock Rate in Hz                                                      | X3x0, X4x0, B2x0, B1x0, E3xx, E1x0, N3xx | master_clock_rate=16e6
  dboard_clock_rate   | Daughterboard clock rate in Hz                                               | X3x0               | dboard_clock_rate=50e6
- system_ref_rate     | Frequency of external reference                                              | X3x0               | system_ref_rate=11.52e6
+ system_ref_rate     | Frequency of external reference in Hz                                        | X3x0               | system_ref_rate=11.52e6
  mcr                 | Override master clock rate settings (see \ref usrp1_hw_extclk)               | USRP1              | mcr=52e6
  niusrprpc_port      | RPC Port for NI USRP RIO                                                     | X3x0               | niusrprpc_port=5445
- system_ref_rate     | Reference Clock Rate in Hz                                                   | X3x0               | system_ref_rate=10e6
  self_cal_adc_delay  | Run ADC transfer delay self-calibration.                                     | X3x0               | self_cal_adc_delay=1
  ext_adc_self_test   | Run an extended ADC self test (more than the usual)                          | X3x0               | ext_adc_self_test=1
  recover_mb_eeprom   | Disable version checks. Can damage hardware. Only recommended for recovering devices with corrupted EEPROMs. | X3x0 | recover_mb_eeprom=1
