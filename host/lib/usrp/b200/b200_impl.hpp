@@ -36,7 +36,7 @@
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
 #include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_map>
-#include <boost/assign.hpp>
+#include <boost/optional.hpp>
 #include <memory>
 #include <mutex>
 

@@ -9,7 +9,6 @@
 #include <uhd/image_loader.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <boost/assign.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <csignal>

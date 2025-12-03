@@ -13,7 +13,6 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>

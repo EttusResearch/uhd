@@ -13,7 +13,6 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign.hpp>
 #include <boost/lexical_cast.hpp>
 
 using namespace uhd;
