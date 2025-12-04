@@ -26,8 +26,8 @@ computer.
 \subsection dpdk_installation DPDK Installation Instructions
 
 As a new and developing technology, the DPDK APIs are unstable. UHD requires
-version 18.11(deprecated), 19.11, 20.11 or 21.11. Adjacent non-LTS releases of
-DPDK may work, but are not recommended.
+version 19.11 or a later LTS version. Adjacent non-LTS releases of DPDK may
+work, but are not recommended.
 
 On Ubuntu 20.04, Fedora 33-36, or Debian Bullseye/Buster (via backports),
 DPDK is available in your distribution's repositories. For example, on Debian
