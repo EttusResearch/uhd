@@ -14,6 +14,9 @@
 # Bank 128 (Quad X0Y1, Lanes X0Y4-X0Y7)
 # Lane 1 (X0Y5)
 
+# Remove existing constraints for this MGT so we can apply those below
+set_property -quiet LOC {} [get_cells -quiet -hierarchical -filter { LOC == "GTYE4_CHANNEL_X0Y5"}]
+
 set_property PACKAGE_PIN W38  [get_ports {QSFP1_1_RX_P}]
 set_property PACKAGE_PIN W39  [get_ports {QSFP1_1_RX_N}]
 
