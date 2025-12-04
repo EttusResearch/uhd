@@ -272,6 +272,11 @@ jobs:
     condition: always()
     displayName: Upload pytest results
 
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-rf-hardware-$(devName)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()
+
   - script: |
       echo "A previous step failed. See steps with warnings."
       echo "Marking the overall build status as a failure."
