@@ -362,12 +362,7 @@ public:
         _compute_and_set_vco_cal(fVCO_actual);
 
         // 7. Set amplitude on enabled outputs
-        if (_get_output_enabled(RF_OUTPUT_A)) {
-            _find_and_set_lo_power(actual_freq, RF_OUTPUT_A);
-        }
-        if (_get_output_enabled(RF_OUTPUT_B)) {
-            _find_and_set_lo_power(actual_freq, RF_OUTPUT_B);
-        }
+        // Callers are responsible for finding and setting the right LO power themselves.
 
         return actual_freq;
     }
@@ -501,10 +496,10 @@ private:
         // If we're using the output divider, map it to the corresponding output
         // mux. Otherwise, connect the VCO directly to the mux.
         const mux_in_t input = (out_D > 1) ? mux_in_t::DIVIDER : mux_in_t::VCO;
-        if (_get_output_enabled(RF_OUTPUT_A)) {
+        if (get_output_enabled(RF_OUTPUT_A)) {
             set_mux_input(RF_OUTPUT_A, input);
         }
-        if (_get_output_enabled(RF_OUTPUT_B)) {
+        if (get_output_enabled(RF_OUTPUT_B)) {
             set_mux_input(RF_OUTPUT_B, input);
         }
 
@@ -512,7 +507,7 @@ private:
     }
 
     //! Returns the output enabled status of output
-    bool _get_output_enabled(const output_t output)
+    bool get_output_enabled(const output_t output)
     {
         if (output == RF_OUTPUT_A) {
             return _regs.outa_pd == lmx2572_regs_t::outa_pd_t::OUTA_PD_NORMAL_OPERATION;
@@ -562,41 +557,6 @@ private:
         }
         _regs.mash_seed_upper = uhd::narrow_cast<uint16_t>(mash_seed >> 16);
         _regs.mash_seed_lower = uhd::narrow_cast<uint16_t>(mash_seed);
-    }
-
-    void _find_and_set_lo_power(const double freq, const output_t output)
-    {
-        if (freq < 3e9) {
-            set_output_power(output, 25);
-        } else if (3e9 <= freq && freq < 4e9) {
-            constexpr double slope         = 5.0;
-            constexpr double segment_range = 1e9;
-            constexpr int power_base       = 25;
-            const double offset            = freq - 3e9;
-            const uint8_t power =
-                std::round<uint8_t>(power_base + ((offset / segment_range) * slope));
-            set_output_power(output, power);
-        } else if (4e9 <= freq && freq < 5e9) {
-            constexpr double slope         = 10.0;
-            constexpr double segment_range = 1e9;
-            constexpr int power_base       = 30;
-            const double offset            = freq - 4e9;
-            const uint8_t power =
-                std::round<uint8_t>(power_base + ((offset / segment_range) * slope));
-            set_output_power(output, power);
-        } else if (5e9 <= freq && freq < 6.4e9) {
-            constexpr double slope         = 5 / 1.4;
-            constexpr double segment_range = 1.4e9;
-            constexpr int power_base       = 40;
-            const double offset            = freq - 5e9;
-            const uint8_t power =
-                std::round<uint8_t>(power_base + ((offset / segment_range) * slope));
-            set_output_power(output, power);
-        } else if (freq >= 6.4e9) {
-            set_output_power(output, 45);
-        } else {
-            UHD_THROW_INVALID_CODE_PATH();
-        }
     }
 
     //! Sets the FCAL_HPFD_ADJ value based on fPD
