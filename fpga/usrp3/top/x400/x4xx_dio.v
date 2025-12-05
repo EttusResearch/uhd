@@ -63,12 +63,16 @@ module x4xx_dio #(
 
   // PS GPIO Control from Block Design (async)
   input wire [31:0] ps_gpio_out,
+  // Note: the ddr (direction) signal is not actually used,
+  // see comment on direction control below
   input wire [31:0] ps_gpio_ddr,
 
   // Digital Interface Control (ctrlport_clk)
   input wire [31:0] digital_ifc_gpio_out_radio0,
-  input wire [31:0] digital_ifc_gpio_ddr_radio0,
   input wire [31:0] digital_ifc_gpio_out_radio1,
+  // Note: the ddr (direction) signal is not actually used,
+  // see comment on direction control below
+  input wire [31:0] digital_ifc_gpio_ddr_radio0,
   input wire [31:0] digital_ifc_gpio_ddr_radio1,
 
   // GPIO to user application (async)
@@ -331,6 +335,8 @@ module x4xx_dio #(
       end
 
       // 2) Select which radio drives the direction
+      // Note: the direction signal is not actually used, see comment on direction control
+      // below
       always @ (posedge ctrlport_clk) begin
         if (ctrlport_rst) begin
           atr_gpio_src_ddr_a_reg <= 1'b0;
@@ -344,8 +350,6 @@ module x4xx_dio #(
       // Select between the Digital Interface in each radio(INTERFACE_DIO_SELECT)
       wire dio_interface_mux_out_a;
       wire dio_interface_mux_out_b;
-      wire dio_interface_mux_ddr_a;
-      wire dio_interface_mux_ddr_b;
 
       glitch_free_mux glitch_free_interface_out_mux_dio_a (
         .select       (dio_interface_a[i]),
@@ -361,26 +365,9 @@ module x4xx_dio #(
         .muxed_signal (dio_interface_mux_out_b)
       );
 
-      glitch_free_mux glitch_free_interface_ddr_mux_dio_a (
-        .select       (dio_interface_a[i]),
-        .signal0      (digital_ifc_gpio_ddr_radio0[DIO_PORT_A + i]),
-        .signal1      (digital_ifc_gpio_ddr_radio1[DIO_PORT_A + i]),
-        .muxed_signal (dio_interface_mux_ddr_a)
-      );
-
-      glitch_free_mux glitch_free_interface_ddr_mux_dio_b (
-        .select       (dio_interface_b[i]),
-        .signal0      (digital_ifc_gpio_ddr_radio0[DIO_PORT_B + i]),
-        .signal1      (digital_ifc_gpio_ddr_radio1[DIO_PORT_B + i]),
-        .muxed_signal (dio_interface_mux_ddr_b)
-      );
-
-
       // Select between ATR or Digital control(DIO_OVERRIDE)
       wire dio_override_mux_out_a;
       wire dio_override_mux_out_b;
-      wire dio_override_mux_ddr_a;
-      wire dio_override_mux_ddr_b;
 
       glitch_free_mux glitch_free_override_out_mux_dio_a (
         .select       (dio_override_a[i]),
@@ -396,28 +383,11 @@ module x4xx_dio #(
         .muxed_signal (dio_override_mux_out_b)
       );
 
-      glitch_free_mux glitch_free_override_ddr_mux_dio_a (
-        .select       (dio_override_a[i]),
-        .signal0      (atr_gpio_src_ddr_a_reg),
-        .signal1      (dio_interface_mux_ddr_a),
-        .muxed_signal (dio_override_mux_ddr_a)
-      );
-
-      glitch_free_mux glitch_free_override_ddr_mux_dio_b (
-        .select       (dio_override_b[i]),
-        .signal0      (atr_gpio_src_ddr_b_reg),
-        .signal1      (dio_interface_mux_ddr_b),
-        .muxed_signal (dio_override_mux_ddr_b)
-      );
-
-
       // SW source select
       // SW_DIO_CONTROL, select between PS and local register
 
       wire dio_sw_control_mux_out_a;
       wire dio_sw_control_mux_out_b;
-      wire dio_sw_control_mux_ddr_a;
-      wire dio_sw_control_mux_ddr_b;
 
       glitch_free_mux glitch_free_sw_control_out_mux_dio_a (
         .select       (dio_sw_ctrl_a[i]),
@@ -433,29 +403,6 @@ module x4xx_dio #(
         .muxed_signal (dio_sw_control_mux_out_b)
       );
 
-      glitch_free_mux glitch_free_sw_control_ddr_mux_dio_a (
-        .select       (dio_sw_ctrl_a[i]),
-        .signal0      (dio_direction_a[i]),
-        .signal1      (ps_gpio_ddr[DIO_PORT_A + i]),
-        .muxed_signal (dio_sw_control_mux_ddr_a)
-      );
-
-      glitch_free_mux glitch_free_sw_control_ddr_mux_dio_b (
-        .select       (dio_sw_ctrl_b[i]),
-        .signal0      (dio_direction_b[i]),
-        .signal1      (ps_gpio_ddr[DIO_PORT_B + i]),
-        .muxed_signal (dio_sw_control_mux_ddr_b)
-      );
-
-
-      // DIO_MASTER_REGISTER Mux, select between SW_DIO_CONTROL
-      // and user application
-      // User application relies on the local direction register
-      // for GPIO direction control. For this reason, we skip
-      // a mux to select between the user application and the
-      // local register direction control in the mux chain, and
-      // propagate their shared direction(from the local register)
-      // to the remainder of the mux chain.
       glitch_free_mux glitch_free_master_mux_dio_a (
         .select       (dio_master_a[i]),
         .signal0      (user_app_out_a[i]),
@@ -486,23 +433,22 @@ module x4xx_dio #(
         .muxed_signal (gpio_out_b[i])
       );
 
-      // Direction control
-      glitch_free_mux glitch_free_dir_mux_dio_a (
-        .select       (dio_source_a[i]),
-        .signal0      (dio_sw_control_mux_ddr_a),
-        .signal1      (dio_override_mux_ddr_a),
-        .muxed_signal (gpio_en_a[i])
-      );
-
-      glitch_free_mux glitch_free_dir_mux_dio_b (
-        .select       (dio_source_b[i]),
-        .signal0      (dio_sw_control_mux_ddr_b),
-        .signal1      (dio_override_mux_ddr_b),
-        .muxed_signal (gpio_en_b[i])
-      );
     end
 
   endgenerate
+
+  // Direction control
+  //
+  // On X4XX, the DIO pins are driven by a driver chip which is controlled
+  // by the MB CPLD. Therefore software side (=MPM) has to ensure that the
+  // direction which is set by the FPGA is in sync with the direction that
+  // is configured in the CPLD. This is given for the DIO_DIRECTION
+  // register. Using other sources would be unsave because it could happen
+  // that there are 2 drivers on the GPIO line. Consequently, use the
+  // DIO_DIRECTION register in all cases and do not use the other
+  // direction sources (PS, ATR states, digital interface).
+  assign gpio_en_a = dio_direction_a;
+  assign gpio_en_b = dio_direction_b;
 
 endmodule
 
