@@ -876,6 +876,3 @@ stages:
   - provide_x410_fpga_images_stage
   jobs:
   - template: job-uhd-usrp-tests-uhdlvtest.yml
-    parameters:
-      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}

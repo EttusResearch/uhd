@@ -1,8 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: uhdSrcDir
-  type: string
 - name: uhdArtifactSource
   type: string
 - name: uhdFpgaArtifactSource
@@ -50,6 +48,12 @@ jobs:
   - checkout: labview-usrp-examples
     clean: true
 
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
+    patterns: |
+      usrp_$(dutModel)*.bit
+      usrp_$(dutModel)*.dts
+    displayName: Download FPGA artifacts
+
   - script: |
       if "${{ parameters.uhdArtifactSource }}" == "current" (
         echo ##vso[task.setvariable variable=uhd_artifact_directory]%Agent_BuildDirectory%
@@ -60,11 +64,11 @@ jobs:
 
   - script: |
       if "${{ parameters.uhdFpgaArtifactSource }}" == "current" (
-        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent.BuildDirectory%
-        echo uhd_fpga_artifact_directory=%Agent.BuildDirectory%
+        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent_BuildDirectory%
+        echo uhd_fpga_artifact_directory=%Agent_BuildDirectory%
       ) else (
-        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent.BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
-        echo uhd_fpga_artifact_directory=%Agent.BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
+        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent_BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
+        echo uhd_fpga_artifact_directory=%Agent_BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
       )
     displayName: Set uhddev FPGA pipeline artifact location
 
@@ -156,9 +160,12 @@ jobs:
         set USRP_EMB_TARGET_NAME=ni-$(dutType)-$(dutSerial)
         ssh-keygen -f %userprofile%\.ssh\known_hosts -R %USRP_EMB_TARGET_NAME%
         ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
-        ping 127.0.0.1 -n 60 > nul
     displayName: Flash FPGA $(dutFPGA)
     condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.dutType, 'b200')))
+
+  - script: |
+        %uhd_installation_dir%\bin\uhd_usrp_probe --args type=$(dutType),addr=$(dutAddr)
+    displayName: Probe device
 
   # TODO make this work for all python versions we support (3.10 + 3.12)
   - script: |
