@@ -120,7 +120,9 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
                 return;
             }
-            post_action({res_source_info::OUTPUT_EDGE, port}, stream_cmd_action);
+            post_action({res_source_info::OUTPUT_EDGE, port},
+                stream_cmd_action,
+                action_mode_t::ASYNC);
         });
 
     register_action_handler(ACTION_KEY_TUNE_REQUEST,
@@ -1194,7 +1196,7 @@ void radio_control_impl::_tune_request_action_handler(
 
     RFNOC_LOG_TRACE("Sending tune_request to " << src.to_string()
                                                << ", id==" << tune_request_action->id);
-    post_action(src, tune_request_action);
+    post_action(src, tune_request_action, action_mode_t::ASYNC);
 }
 
 /******************************************************************************
@@ -1292,7 +1294,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     UHD_LOG_FASTPATH("U");
                     RFNOC_LOG_TRACE("Posting underrun event action message.");
                     break;
@@ -1301,7 +1304,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_TIME_ERROR, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     UHD_LOG_FASTPATH("L");
                     RFNOC_LOG_TRACE("Posting late data event action message.");
                     break;
@@ -1310,7 +1314,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_BURST_ACK, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     RFNOC_LOG_TRACE("Posting burst ack event action message.");
                     break;
                 }
@@ -1333,7 +1338,8 @@ void radio_control_impl::async_message_handler(
                     rx_event_action->args["cont_mode"] = std::to_string(cont_mode);
                     RFNOC_LOG_TRACE("Posting overrun event action message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
-                        rx_event_action);
+                        rx_event_action,
+                        action_mode_t::ASYNC);
                     break;
                 }
                 case err_codes::ERR_RX_LATE_CMD:
@@ -1342,7 +1348,8 @@ void radio_control_impl::async_message_handler(
                         uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND);
                     RFNOC_LOG_TRACE("Posting RX late command message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
-                        rx_event_action);
+                        rx_event_action,
+                        action_mode_t::ASYNC);
                     break;
             }
             break;
