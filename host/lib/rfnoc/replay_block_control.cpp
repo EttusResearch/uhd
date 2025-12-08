@@ -22,7 +22,7 @@ using namespace uhd::rfnoc;
 
 // Block compatability version
 const uint16_t replay_block_control::MAJOR_COMPAT = 1;
-const uint16_t replay_block_control::MINOR_COMPAT = 2;
+const uint16_t replay_block_control::MINOR_COMPAT = 3;
 
 // NoC block address space
 const uint32_t replay_block_control::REPLAY_ADDR_W = 8;
@@ -62,18 +62,22 @@ const uint32_t replay_block_control::PLAY_CMD_FINITE     = 1;
 const uint32_t replay_block_control::PLAY_CMD_CONTINUOUS = 2;
 
 // Mask bits
-constexpr uint32_t PLAY_COMMAND_TIMED_BIT   = 31;
-constexpr uint32_t PLAY_COMMAND_TIMED_MASK  = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
-constexpr uint32_t PLAY_COMMAND_NO_EOB_BIT  = 30;
-constexpr uint32_t PLAY_COMMAND_NO_EOB_MASK = uint32_t(1) << PLAY_COMMAND_NO_EOB_BIT;
-constexpr uint32_t PLAY_COMMAND_MASK        = 3;
+constexpr uint32_t PLAY_COMMAND_TIMED_BIT        = 31;
+constexpr uint32_t PLAY_COMMAND_TIMED_MASK       = uint32_t(1) << PLAY_COMMAND_TIMED_BIT;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_BIT       = 30;
+constexpr uint32_t PLAY_COMMAND_NO_EOB_MASK      = uint32_t(1) << PLAY_COMMAND_NO_EOB_BIT;
+constexpr uint32_t PLAY_COMMAND_FOLLOW_MODE_BIT  = 29;
+constexpr uint32_t PLAY_COMMAND_FOLLOW_MODE_MASK = uint32_t(1)
+                                                   << PLAY_COMMAND_FOLLOW_MODE_BIT;
+constexpr uint32_t PLAY_COMMAND_MASK = 3;
 
 // User property names
-const char* const PROP_KEY_RECORD_OFFSET = "record_offset";
-const char* const PROP_KEY_RECORD_SIZE   = "record_size";
-const char* const PROP_KEY_PLAY_OFFSET   = "play_offset";
-const char* const PROP_KEY_PLAY_SIZE     = "play_size";
-const char* const PROP_KEY_PYLD_SIZE     = "payload_size";
+const char* const PROP_KEY_RECORD_OFFSET    = "record_offset";
+const char* const PROP_KEY_RECORD_SIZE      = "record_size";
+const char* const PROP_KEY_PLAY_OFFSET      = "play_offset";
+const char* const PROP_KEY_PLAY_SIZE        = "play_size";
+const char* const PROP_KEY_PLAY_FOLLOW_MODE = "play_follow_mode";
+const char* const PROP_KEY_PYLD_SIZE        = "payload_size";
 
 // Depth of the async message queues
 constexpr size_t ASYNC_MSG_QUEUE_SIZE = 128;
@@ -190,6 +194,7 @@ public:
         _play_type.reserve(_num_output_ports);
         _play_offset.reserve(_num_output_ports);
         _play_size.reserve(_num_output_ports);
+        _play_follow_mode.reserve(_num_output_ports);
         _payload_size.reserve(_num_output_ports);
         _atomic_item_size_out.reserve(_num_output_ports);
         for (size_t port = 0; port < _num_output_ports; port++) {
@@ -388,13 +393,17 @@ public:
     /**************************************************************************
      * Advanced Playback Control API
      **************************************************************************/
-    void config_play(
-        const uint64_t offset, const uint64_t size, const size_t port) override
+    void config_play(const uint64_t offset,
+        const uint64_t size,
+        const size_t port,
+        const bool follow_mode = false) override
     {
         set_property<uint64_t>(
             PROP_KEY_PLAY_OFFSET, offset, {res_source_info::USER, port});
         set_property<uint64_t>(PROP_KEY_PLAY_SIZE, size, {res_source_info::USER, port});
         _validate_play_buffer(port);
+        set_property<bool>(
+            PROP_KEY_PLAY_FOLLOW_MODE, follow_mode, {res_source_info::USER, port});
     }
 
     void set_play_type(const io_type_t type, const size_t port) override
@@ -451,6 +460,23 @@ public:
             }
         }
 
+        // Check the conditions for follow mode
+        if (_play_follow_mode.at(port).get()) {
+            if (play_cmd == PLAY_CMD_CONTINUOUS) {
+                throw uhd::value_error(
+                    "Follow mode cannot be used with continuous playback.");
+            }
+            if (get_record_size(port) < get_play_size(port)) {
+                throw uhd::value_error("Follow mode cannot be used when play size is "
+                                       "larger than record size.");
+            }
+            if (get_record_offset(port) != get_play_offset(port)) {
+                throw uhd::value_error("Follow mode cannot be used when play offset and "
+                                       "record offset are not equal.");
+            }
+        }
+
+
         // Calculate the number of words to transfer in NUM_SAMPS mode
         if (play_cmd == PLAY_CMD_FINITE) {
             uint64_t num_words =
@@ -464,6 +490,8 @@ public:
             (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE)
                 ? PLAY_COMMAND_NO_EOB_MASK
                 : 0;
+        const uint32_t follow_mode_flag =
+            (_play_follow_mode.at(port).get()) ? PLAY_COMMAND_FOLLOW_MODE_MASK : 0;
         if (!stream_cmd.stream_now) {
             const double tick_rate = get_tick_rate();
             UHD_LOG_DEBUG("REPLAY",
@@ -473,7 +501,8 @@ public:
         }
 
         // Issue the stream command
-        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag | no_eob_flag;
+        uint32_t command_word = (play_cmd & PLAY_COMMAND_MASK) | timed_flag | no_eob_flag
+                                | follow_mode_flag;
         _replay_reg_iface.poke32(REG_PLAY_CMD_ADDR, command_word, port);
 
         // The register to get the command FIFO space was added in v1.1
@@ -567,6 +596,7 @@ private:
         const io_type_t default_type = IO_TYPE_SC16;
         const uint64_t play_offset   = 0;
         const uint64_t play_size     = _mem_size;
+        const bool play_follow_mode  = false;
         const uint32_t max_payload =
             get_max_payload_size({res_source_info::OUTPUT_EDGE, port});
         const uint32_t payload_size = max_payload - (max_payload % DEFAULT_MULT);
@@ -578,6 +608,8 @@ private:
             PROP_KEY_PLAY_OFFSET, play_offset, {res_source_info::USER, port}));
         _play_size.push_back(property_t<uint64_t>(
             PROP_KEY_PLAY_SIZE, play_size, {res_source_info::USER, port}));
+        _play_follow_mode.push_back(property_t<bool>(
+            PROP_KEY_PLAY_FOLLOW_MODE, play_follow_mode, {res_source_info::USER, port}));
         _payload_size.push_back(property_t<uint32_t>(
             PROP_KEY_PYLD_SIZE, payload_size, {res_source_info::USER, port}));
         _atomic_item_size_out.push_back(property_t<size_t>(
@@ -585,6 +617,7 @@ private:
         UHD_ASSERT_THROW(_play_type.size() == port + 1);
         UHD_ASSERT_THROW(_play_offset.size() == port + 1);
         UHD_ASSERT_THROW(_play_size.size() == port + 1);
+        UHD_ASSERT_THROW(_play_follow_mode.size() == port + 1);
         UHD_ASSERT_THROW(_payload_size.size() == port + 1);
         UHD_ASSERT_THROW(_atomic_item_size_out.size() == port + 1);
 
@@ -592,6 +625,7 @@ private:
         register_property(&_play_type.at(port));
         register_property(&_play_offset.at(port));
         register_property(&_play_size.at(port));
+        register_property(&_play_follow_mode.at(port));
         register_property(&_payload_size.at(port));
         register_property(&_atomic_item_size_out.at(port));
 
@@ -790,6 +824,7 @@ private:
     std::vector<property_t<std::string>> _play_type;
     std::vector<property_t<uint64_t>> _play_offset;
     std::vector<property_t<uint64_t>> _play_size;
+    std::vector<property_t<bool>> _play_follow_mode;
     std::vector<property_t<uint32_t>> _payload_size;
     std::vector<property_t<size_t>> _atomic_item_size_in;
     std::vector<property_t<size_t>> _atomic_item_size_out;

@@ -611,7 +611,7 @@ class DramReceiver:
                 mem_regions[self.replay_ports[idx]] = mem_region
         return mem_regions
 
-    def _download(self, waveform, mem_start, mem_size):
+    def _download(self, waveform, mem_start, mem_size, follow_mode=False):
         """Download helper function.
 
         Arguments:
@@ -620,6 +620,7 @@ class DramReceiver:
         mem_start: Memory address where the data should be downloaded from
         mem_size: Amount of available memory. This is the maximum length that
                   a captured waveform can have.
+        follow_mode: If True, the replay block will be configured in follow mode.
         """
         # Sanitize parameters
         assert (
@@ -642,7 +643,7 @@ class DramReceiver:
         stream_cmd = StreamCMD(StreamMode.num_done)
         stream_cmd.num_samps = num_items
         stream_cmd.time_spec = TimeSpec(0.0)
-        self.replay_blocks[0].config_play(mem_start, num_bytes, out_port)
+        self.replay_blocks[0].config_play(mem_start, num_bytes, out_port, follow_mode)
         self.rx_streamer.issue_stream_cmd(stream_cmd)
 
         if not self.receive_metadata:
@@ -654,7 +655,7 @@ class DramReceiver:
             return 0
         return num_items
 
-    def download(self, waveform, ports=None, mem_regions=None):
+    def download(self, waveform, ports=None, mem_regions=None, follow_mode=False):
         """Download a waveform from memory to host.
 
         Arguments:
@@ -671,6 +672,10 @@ class DramReceiver:
                      and this class cannot know how many samples are available
                      for a given port. Therefore, use this argument to
                      deliberately override where sample data should be read from.
+        follow_mode: If True the replay will be executed in follow mode. This
+                     enables the transfer of data that is still being recorded.
+                     This is only working if the same port index is used for
+                     recording and playback.
 
         If port is not specified, download from all ports.
         """
@@ -692,12 +697,12 @@ class DramReceiver:
         # basis. Otherwise we will walk through the mem_regions that we have put
         # together above.
         if len(waveform.shape) == 1:
-            bytes_downloaded = self._download(waveform, *mem_regions[0])
+            bytes_downloaded = self._download(waveform, *mem_regions[0], follow_mode)
             self.download_size[ports[0]] = bytes_downloaded
         else:
             for region_idx, mem_region in enumerate(mem_regions):
                 if ports is None or region_idx < len(self.radio_chan_pairs):
-                    bytes_downloaded = self._download(waveform[region_idx], *mem_region)
+                    bytes_downloaded = self._download(waveform[region_idx], *mem_region, False)
                     if ports:
                         self.download_size[ports[region_idx]] = bytes_downloaded
 
@@ -775,7 +780,7 @@ class DramReceiver:
             ):
                 raise RuntimeError("Timeout while loading replay buffer!")
 
-    def recv(self, data, metadata, timeout=0.1):
+    def recv(self, data, metadata, timeout=0.1, follow_mode=False):
         """Recv substitute.
 
         This is a wrapper around download() that can be used to use this class
@@ -795,12 +800,15 @@ class DramReceiver:
 
         The timeout parameter is unused, it is only there to retain the call
         signature compatibility. Time specs are pulled from the RX metadata object.
+
+        The follow_mode parameter enables follow mode for the replay block
+        playback, which allows downloading data that is still being recorded.
         """
         num_chans = len(self.radio_chan_pairs)
         self.receive_metadata = metadata
         if num_chans == 1:
-            self.download(data, self.replay_ports[0])
+            self.download(data, self.replay_ports[0], follow_mode=follow_mode)
         else:
             for idx, _ in enumerate(self.radio_chan_pairs):
-                self.download(data[idx], self.replay_ports[idx])
+                self.download(data[idx], self.replay_ports[idx], follow_mode=False)
         return min(self.download_size)

@@ -466,10 +466,18 @@ public:
      * size of the memory word and item size. Use get_word_size() to get the
      * memory word size and get_output_item_size() to get the item size.
      * \param port Which output port of the replay block to use
+     * \param follow_mode Enables follow mode. In this mode the playback engine is limited
+     * by the record engine position of the same port. This way the DRAM is used as a
+     * buffer between record and playback. When the playback engine reaches the record
+     * engine position it will wait until new data is recorded.
+     * \note follow_mode requires that both record and playback are done on the same port.
+     * Recording is not allowed to be restarted while playback is active in follow mode.
      * \throws uhd::value_error if offset+size exceeds the available memory.
      */
-    virtual void config_play(
-        const uint64_t offset, const uint64_t size, const size_t port = 0) = 0;
+    virtual void config_play(const uint64_t offset,
+        const uint64_t size,
+        const size_t port      = 0,
+        const bool follow_mode = false) = 0;
 
     /*! Explicitly set the current play data type
      *

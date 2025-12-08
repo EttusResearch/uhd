@@ -71,7 +71,14 @@ void export_replay_block_control(py::module& m)
             },
             py::arg("timeout") = 0.1)
         .def("set_record_type", &replay_block_control::set_record_type)
-        .def("config_play", &replay_block_control::config_play)
+        .def("config_play",
+            (void(replay_block_control::*)(
+                const uint64_t, const uint64_t, const size_t, const bool))
+                & replay_block_control::config_play,
+            py::arg("offset"),
+            py::arg("size"),
+            py::arg("port"),
+            py::arg("follow_mode") = false)
         .def("set_play_type", &replay_block_control::set_play_type)
         .def("set_max_items_per_packet", &replay_block_control::set_max_items_per_packet)
         .def("set_max_packet_size", &replay_block_control::set_max_packet_size)
