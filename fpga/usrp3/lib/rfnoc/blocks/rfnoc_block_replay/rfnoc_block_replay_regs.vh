@@ -156,6 +156,9 @@ localparam REG_CMD_TIME_LEN = 64;
 //   [30] : No EOB flag. Indicates if EOB should be set at the end of the
 //          command execution (0) or not (1).
 //
+//   [29] : Follow mode flag. Indicates if playback should follow the record
+//          position (1) or not (0).
+//
 //   [1:0] : Command field. The command indicates what you want the playback to
 //           do. It can be one of the following:
 //
@@ -170,6 +173,9 @@ localparam REG_PLAY_TIMED_LEN =  1;
 //
 localparam REG_PLAY_NO_EOB_POS = 30;
 localparam REG_PLAY_NO_EOB_LEN =  1;
+//
+localparam REG_PLAY_FOLLOW_REC_POS = 29;
+localparam REG_PLAY_FOLLOW_REC_LEN =  1;
 //
 localparam REG_PLAY_CMD_POS = 0;
 localparam REG_PLAY_CMD_LEN = 2;

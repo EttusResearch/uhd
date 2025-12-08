@@ -1708,7 +1708,7 @@ module rfnoc_block_replay_tb#(
     // Send one additional packet to ensure the position does not advance
     send_items = gen_test_data(num_items, num_packets*num_items);
     blk_ctrl.send_items(port, send_items);
-  
+
     // Give extra time for the last packet
     #(CHDR_CLK_PER * num_items * 20);
 
@@ -1838,8 +1838,8 @@ module rfnoc_block_replay_tb#(
       // Verify the last word
       send_items = gen_test_data(MEM_WORD_SIZE/ITEM_SIZE, 0);
       blk_ctrl.recv_items(port, recv_items);
-      $display("received: %p", recv_items);
-      $display("expected: %p", send_items);
+      // $display("received: %p", recv_items);
+      // $display("expected: %p", send_items);
       `ASSERT_ERROR(
        ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
        "Playback data did not match on last word"
@@ -1867,6 +1867,65 @@ module rfnoc_block_replay_tb#(
     end
   endtask : test_full_memory
 
+  //---------------------------------------------------------------------------
+  // Follow mode testing
+  //---------------------------------------------------------------------------
+  //
+  // In this test we configure the buffers to use the entire memory.
+  // Then we send and receive data in follow mode to verify correct operation.
+  //
+  //---------------------------------------------------------------------------
+
+  task test_follow_mode(int port = 0, int seed = 0);
+    // This test can take a long time, so we only run it if enabled by the
+    // parameter.
+    if (TEST_FULL) begin
+      item_t           send_items[$];
+      item_t           recv_items[$];
+      int              num_items, num_packets;
+      longint unsigned mem_size;
+      logic [63:0]     val64;
+
+      test.start_test("Test follow mode", 2ms);
+
+      mem_size    = 2**MEM_ADDR_W;    // Memory size in bytes
+      num_items   = 2**$clog2(SPP);   // Pick a power of 2 near SPP
+      num_packets = mem_size / ITEM_SIZE / num_items;
+
+      // Set up entire memory as the record/playback buffer
+      write_reg_64(port, REG_REC_BASE_ADDR_LO,    0);
+      write_reg_64(port, REG_REC_BUFFER_SIZE_LO,  mem_size);
+      write_reg_64(port, REG_PLAY_BASE_ADDR_LO,   0);
+      write_reg_64(port, REG_PLAY_BUFFER_SIZE_LO, mem_size);
+      write_reg   (port, REG_PLAY_WORDS_PER_PKT,  num_items * ITEM_SIZE / MEM_WORD_SIZE);
+      write_reg   (port, REG_REC_RESTART,         0);
+
+      // Send enough data to fill the buffer
+      for (int i = 0; i < num_packets; i++) begin
+        // Send a different random sequence for each packet
+        send_items = gen_test_data(num_items, i*num_items + seed);
+        blk_ctrl.send_items(port, send_items);
+      end
+
+      // Play back the entire memory
+      write_reg_64(port, REG_PLAY_CMD_NUM_WORDS_LO, mem_size / MEM_WORD_SIZE);
+      write_reg(port, REG_PLAY_CMD, PLAY_CMD_FINITE + (1 << REG_PLAY_FOLLOW_REC_POS));
+      for (int i = 0; i < num_packets; i++) begin
+        // Regenerate the same sequence of test data
+        send_items = gen_test_data(num_items, i*num_items + seed);
+        blk_ctrl.recv_items(port, recv_items);
+        `ASSERT_ERROR(
+          ChdrData#(CHDR_W, ITEM_W)::item_equal(send_items, recv_items),
+          "Playback data did not match"
+        );
+      end
+
+      // Make sure there are no more packets
+      check_rx_idle(port);
+
+      test.end_test();
+    end
+  endtask : test_follow_mode
 
   //---------------------------------------------------------------------------
   // Main Test Process
@@ -1930,6 +1989,9 @@ module rfnoc_block_replay_tb#(
     test_timed_playback();
     test_position();
     test_full_memory();
+    // check follow mode twice to ensure proper operation on reconfiguration of record part
+    test_follow_mode(0, 0);
+    test_follow_mode(0, 1);
 
     //--------------------------------
     // Finish Up

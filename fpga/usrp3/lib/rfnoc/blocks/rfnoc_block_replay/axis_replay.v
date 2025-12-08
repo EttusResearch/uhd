@@ -27,7 +27,13 @@
 //
 //   PLAYBACK
 //
-//   Playback is completely independent of recording. The playback buffer is
+//   The playback can operate in two modes (see details in descriptions below):
+//   (1) In normal mode, playback reads data from the configured playback buffer
+//   independently of the recording.
+//   (2) In follow mode the playback follows the recording.
+//   The two modes are described below.
+//
+//   (1) Playback is completely independent of recording. The playback buffer is
 //   configured similarly using its own registers. Playback is started by
 //   writing a command to the REG_PLAY_CMD register. The play command indicates
 //   if it should play a fixed number of words then stop (PLAY_CMD_FINITE),
@@ -48,6 +54,17 @@
 //   continue playing data. The last packet of playback will always have the
 //   EOB flag set (e.g., after REG_PLAY_CMD_NUM_WORDS have been played back or
 //   after PLAY_CMD_STOP has been issued).
+//
+//   (2) The follow mode enables the replay which is limited by the available
+//   words in the record buffer. In this mode, playback will start at the
+//   beginning of the record buffer and will continue to play back data until it
+//   reaches the current record position. If playback reaches the record
+//   position, it will pause until more data is recorded. This mode is enabled
+//   by setting the REG_PLAY_FOLLOW_REC_POS bit as part of the command write.
+//   The recording must not be restarted while playback is active in follow
+//   mode. This is needed to compare the playback position to the record
+//   position correctly.
+//
 //
 //   MEMORY SHARING
 //
@@ -149,7 +166,7 @@ module axis_replay #(
   //---------------------------------------------------------------------------
 
   localparam [REG_MAJOR_LEN-1:0] COMPAT_MAJOR = 1;
-  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 2;
+  localparam [REG_MINOR_LEN-1:0] COMPAT_MINOR = 3;
 
   localparam [REG_ITEM_SIZE_LEN-1:0] DEFAULT_ITEM_SIZE = 4;  // 4 bytes for sc16
 
@@ -253,6 +270,7 @@ module axis_replay #(
   reg             [CMD_W-1:0] reg_play_cmd;
   reg                         reg_play_cmd_timed;
   reg                         reg_play_cmd_no_eob;
+  reg                         reg_play_cmd_follow_rec;
   reg                         reg_play_cmd_valid;
   wire                        reg_play_cmd_ready;
   reg                         play_cmd_stop;
@@ -300,6 +318,7 @@ module axis_replay #(
       reg_play_cmd           <= 'bX;
       reg_play_cmd_timed     <= 'bX;
       reg_play_cmd_no_eob    <= 'bX;
+      reg_play_cmd_follow_rec <= 'bX;
       reg_play_cmd_valid     <= 0;
       s_ctrlport_resp_data   <= 'bX;
       s_ctrlport_resp_ack    <= 0;
@@ -476,6 +495,7 @@ module axis_replay #(
             reg_play_cmd       <= s_ctrlport_req_data[REG_PLAY_CMD_POS+:REG_PLAY_CMD_LEN];
             reg_play_cmd_timed <= s_ctrlport_req_data[REG_PLAY_TIMED_POS];
             reg_play_cmd_no_eob <= s_ctrlport_req_data[REG_PLAY_NO_EOB_POS];
+            reg_play_cmd_follow_rec <= s_ctrlport_req_data[REG_PLAY_FOLLOW_REC_POS];
             reg_play_cmd_valid <= 1'b1;
             if (!play_cmd_stop && s_ctrlport_req_data[REG_PLAY_CMD_LEN-1:0] == PLAY_CMD_STOP) begin
               play_cmd_stop  <= 1;
@@ -519,6 +539,7 @@ module axis_replay #(
   wire      [CMD_W-1:0]  cmd_cf;
   wire                   cmd_timed_cf;
   wire                   cmd_no_eob_cf;
+  wire                   cmd_follow_rec_cf;
   wire [NUM_WORDS_W-1:0] cmd_num_words_cf;
   wire      [TIME_W-1:0] cmd_time_cf;
   wire  [MEM_ADDR_W-1:0] cmd_base_addr_cf;
@@ -527,15 +548,15 @@ module axis_replay #(
   reg                    cmd_fifo_ready;
 
   axi_fifo_short #(
-    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 2 + CMD_W + NUM_WORDS_W + TIME_W)
+    .WIDTH (MEM_ADDR_W + MEM_SIZE_W + 3 + CMD_W + NUM_WORDS_W + TIME_W)
   ) command_fifo (
     .clk      (clk),
     .reset    (rst),
     .clear    (clear_cmd_fifo),
-    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd_no_eob, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
+    .i_tdata  ({play_base_addr_sr, play_buffer_size_sr, reg_play_cmd_timed, reg_play_cmd_no_eob, reg_play_cmd_follow_rec, reg_play_cmd, reg_play_cmd_num_words, reg_play_cmd_time}),
     .i_tvalid (reg_play_cmd_valid),
     .i_tready (reg_play_cmd_ready),
-    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_no_eob_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
+    .o_tdata  ({cmd_base_addr_cf, cmd_buffer_size_cf, cmd_timed_cf, cmd_no_eob_cf, cmd_follow_rec_cf, cmd_cf, cmd_num_words_cf, cmd_time_cf}),
     .o_tvalid (cmd_fifo_valid),
     .o_tready (cmd_fifo_ready),
     .occupied (),
@@ -773,7 +794,6 @@ module axis_replay #(
   reg [MEM_ADDR_W-1:0] play_addr;         // Current byte offset into record buffer
   reg [  MEM_ADDR_W:0] play_addr_0;       // Pipeline stage for computing play_addr.
                                           // One bit larger to detect address wrapping.
-  reg [MEM_ADDR_W-1:0] play_addr_1;       // Pipeline stage for computing play_addr
   reg [MEM_SIZE_W-1:0] play_buffer_end;   // Address of location after end of buffer
   reg [MEM_ADDR_W-1:0] max_read_size;     // Maximum size of next transfer, in words
   reg [MEM_ADDR_W-1:0] next_read_size;    // Actual size of next transfer, in words
@@ -782,6 +802,7 @@ module axis_replay #(
   reg [NUM_WORDS_W-1:0] play_words_remaining; // Number of words left for playback command
   reg       [CMD_W-1:0] cmd;                  // Copy of cmd_cf from last command
   reg                   cmd_eob;              // Inverse copy of cmd_no_eob_cf from last command
+  reg                   cmd_follow_rec;       // Copy of cmd_follow_rec_cf from last command
   reg  [MEM_ADDR_W-1:0] cmd_base_addr;        // Copy of cmd_base_addr_cf from last command
   reg  [MEM_SIZE_W-1:0] cmd_buffer_size;      // Copy of cmd_buffer_size_cf from last command
   reg                   last_trans;           // Is this the last read transaction for the command?
@@ -796,6 +817,7 @@ module axis_replay #(
 
   reg [MEM_SIZE_W-1:0] play_buffer_avail;   // Number of words left to read in record buffer
   reg [MEM_SIZE_W-1:0] play_buffer_avail_0; // Pipeline stage for computing play_buffer_avail
+  reg [MEM_SIZE_W-1:0] play_buffer_avail_rec;   // Number of words left as per rec pointer
 
   reg pause_data_transfer;
 
@@ -815,6 +837,7 @@ module axis_replay #(
       read_ctrl_valid           <= 1'bX;
       cmd                       <= {CMD_W{1'bX}};
       cmd_eob                   <= 1'bX;
+      cmd_follow_rec            <= 1'bX;
       cmd_base_addr             <= {MEM_ADDR_W{1'bX}};
       cmd_buffer_size           <= {MEM_SIZE_W{1'bX}};
       play_buffer_avail         <= {MEM_SIZE_W{1'bX}};
@@ -829,16 +852,21 @@ module axis_replay #(
       read_addr                 <= {MEM_ADDR_W{1'bX}};
       play_addr_0               <= {MEM_ADDR_W+1{1'bX}};
       play_buffer_avail_0       <= {MEM_SIZE_W{1'bX}};
-      play_addr_1               <= {MEM_ADDR_W{1'bX}};
+      play_buffer_avail_rec     <= {MEM_SIZE_W{1'bX}};
       play_buffer_zero          <= 1'bX;
       num_words_zero            <= 1'bX;
 
     end else begin
 
       // Calculate how many words are left to read from the record buffer
-      play_full_burst_avail     <= (play_buffer_avail >= MEM_BURST_LEN);
+      play_full_burst_avail <=
+        (cmd_follow_rec ? play_buffer_avail_rec : play_buffer_avail) >= MEM_BURST_LEN;
 
       play_size_aligned <= AXI_ALIGNMENT - ((play_addr/BYTES_PER_WORD) & (AXI_ALIGNMENT-1));
+
+      // Both addresses are aligned to word boundaries.
+      // The division by a power of two is optimized during synthesis.
+      play_buffer_avail_rec <= (rec_addr - play_addr) / BYTES_PER_WORD;
 
       // Default values
       cmd_fifo_ready    <= 1'b0;
@@ -853,6 +881,7 @@ module axis_replay #(
           // Save needed command info
           cmd             <= cmd_cf;
           cmd_eob         <= ~cmd_no_eob_cf;
+          cmd_follow_rec  <= cmd_follow_rec_cf;
           cmd_base_addr   <= cmd_base_addr_cf;
           cmd_buffer_size <= cmd_buffer_size_cf  / BYTES_PER_WORD;
 
@@ -867,6 +896,7 @@ module axis_replay #(
           play_buffer_avail     <= cmd_buffer_size_cf / BYTES_PER_WORD;
           play_buffer_end       <= {1'b0, cmd_base_addr_cf} + cmd_buffer_size_cf;
           play_buffer_zero      <= (cmd_buffer_size_cf == 0);
+          play_buffer_avail_rec <= 0;
 
           // Wait until we receive a command
           if (play_cmd_stop) begin
@@ -894,7 +924,8 @@ module axis_replay #(
 
         PLAY_WAIT_DATA_READY : begin
           // Save the maximum size we can read from RAM
-          max_read_size <= play_full_burst_avail ? MEM_BURST_LEN : play_buffer_avail;
+          max_read_size <= play_full_burst_avail ? MEM_BURST_LEN :
+                           (cmd_follow_rec ? play_buffer_avail_rec : play_buffer_avail);
 
           // Wait for output FIFO to empty sufficiently so we can read an
           // entire burst at once. This may be more space than needed, but we
@@ -910,7 +941,14 @@ module axis_replay #(
           // this automatically (boo again).
           next_read_size <= max_read_size > play_size_aligned ?
                             play_size_aligned : max_read_size;
-          play_state <= PLAY_SIZE_CALC;
+
+          // In follow mode the maximum read size may be calculated to zero when read and write
+          // pointers are equal. In that case we need to wait for more data by going one step back.
+          if (max_read_size) begin
+            play_state <= PLAY_SIZE_CALC;
+          end else begin
+            play_state <= PLAY_WAIT_DATA_READY;
+          end
         end
 
         PLAY_SIZE_CALC : begin
@@ -976,16 +1014,16 @@ module axis_replay #(
           if (read_ctrl_ready) begin
             // Check if this is the last transaction.
             if (last_trans) begin
-              play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
+              play_addr       <= play_addr_0[MEM_ADDR_W-1:0];
               play_buffer_avail <= 0;
 
             // Check if we need to wrap the address for the next transaction.
             end else if (play_addr_0 >= play_buffer_end) begin
-              play_addr_1       <= cmd_base_addr;
+              play_addr       <= cmd_base_addr;
               play_buffer_avail <= cmd_buffer_size;
 
             end else begin
-              play_addr_1       <= play_addr_0[MEM_ADDR_W-1:0];
+              play_addr       <= play_addr_0[MEM_ADDR_W-1:0];
               play_buffer_avail <= play_buffer_avail_0;
             end
 
@@ -994,14 +1032,18 @@ module axis_replay #(
         end
 
         PLAY_DONE_CHECK : begin
-          play_addr <= play_addr_1;
-
           // Check if we have more data to transfer for this command
           if (cmd == PLAY_CMD_CONTINUOUS && !last_trans) begin
             play_words_remaining <= MEM_BURST_LEN;
             play_state           <= PLAY_WAIT_DATA_READY;
           end else if (play_words_remaining && !last_trans) begin
-            play_state <= PLAY_WAIT_DATA_READY;
+            if (cmd_follow_rec) begin
+              // In follow mode one more cycle for processing is needed to calculate the available
+              // memory words.
+              play_state <= PLAY_CHECK_SIZES;
+            end else begin
+              play_state <= PLAY_WAIT_DATA_READY;
+            end
           end else begin
             play_state <= PLAY_IDLE;
           end
