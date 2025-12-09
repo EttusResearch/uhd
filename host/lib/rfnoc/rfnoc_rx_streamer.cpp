@@ -181,7 +181,8 @@ void rfnoc_rx_streamer::_handle_overrun()
     if (_overrun_handling_mode && !_last_stream_cmd_stop) {
         RFNOC_LOG_TRACE("Requesting restart from overrun-reporting node...");
         post_action({res_source_info::INPUT_EDGE, _overrun_channel},
-            action_info::make(ACTION_KEY_RX_RESTART_REQ));
+            action_info::make(ACTION_KEY_RX_RESTART_REQ),
+            action_mode_t::ASYNC);
     }
 }
 
@@ -314,7 +315,8 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
         // Reminder: Delivery of all of these actions is deferred until this
         // action handler is complete.
         for (size_t i = 0; i < get_num_input_ports(); ++i) {
-            post_action({res_source_info::INPUT_EDGE, i}, stop_action);
+            post_action(
+                {res_source_info::INPUT_EDGE, i}, stop_action, action_mode_t::ASYNC);
         }
         if (!rx_event_action->args.cast<bool>("cont_mode", false)
             || _last_stream_cmd_stop) {
@@ -342,7 +344,7 @@ void rfnoc_rx_streamer::_handle_stream_cmd_action(
         stream_cmd_action_info::make(stream_cmd_action->stream_cmd.stream_mode);
     start_action->stream_cmd = stream_cmd_action->stream_cmd;
     for (size_t i = 0; i < get_num_input_ports(); ++i) {
-        post_action({res_source_info::INPUT_EDGE, i}, start_action);
+        post_action({res_source_info::INPUT_EDGE, i}, start_action, action_mode_t::ASYNC);
     }
     if (_overrun_handling_mode.exchange(false)) {
         RFNOC_LOG_TRACE("Leaving overrun handling mode.");
