@@ -50,7 +50,9 @@ module timed_complex_gain_tb #(
   localparam int MIN_COMPONENT_VALUE = -2**(ITEM_W/2-1);
 
   localparam int NUM_TESTS = 100;  // Number of tests to run
-  localparam int MAX_QUEUE_ITEMS = 2 ** QUEUE_DEPTH;
+  // The timestamp queue can hold 2^QUEUE_DEPTH entries and one extra for the
+  // output register.
+  localparam int MAX_QUEUE_ITEMS = 2 ** QUEUE_DEPTH + 1;
 
   localparam int VERBOSE = 0;  // Verbosity level for debug prints
 

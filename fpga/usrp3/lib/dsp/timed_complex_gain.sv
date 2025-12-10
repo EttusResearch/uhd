@@ -138,7 +138,6 @@ import rfnoc_chdr_utils_pkg::*;
   logic                         queue_ready_in;
   logic                         queue_valid_out;
   logic                         queue_ready_out;
-  logic [                 15:0] queue_occupied;
   logic [    COEFFICIENT_W-1:0] real_coeff_queue_data_out;
   logic [    COEFFICIENT_W-1:0] imag_coeff_queue_data_out;
   logic [ CHDR_TIMESTAMP_W-1:0] timestamp_queue_data_out;
@@ -146,23 +145,44 @@ import rfnoc_chdr_utils_pkg::*;
   //----------------------------------------------------------------------------
   // Timed command queue
   //----------------------------------------------------------------------------
+  localparam int TS_QUEUE_WIDTH = 2 * COEFFICIENT_W + CHDR_TIMESTAMP_W;
+  logic [TS_QUEUE_WIDTH - 1:0] ts_queue_int_data;
+  logic ts_queue_int_valid, ts_queue_int_ready;
+
   axi_fifo #(
-    .WIDTH(2 * COEFFICIENT_W + CHDR_TIMESTAMP_W),
+    .WIDTH(TS_QUEUE_WIDTH),
     .SIZE (QUEUE_DEPTH)
-  ) coeff_ts_queue_i (
+  ) coeff_ts_queue_short_fifo (
     .clk      (clk),
     .reset    (rst),
     .clear    (),
     .i_tdata  ({reg_queue_coeff_in, reg_timestamp_in}),
     .i_tvalid (queue_valid_in),
     .i_tready (queue_ready_in),
+    .o_tdata  (ts_queue_int_data),
+    .o_tvalid (ts_queue_int_valid),
+    .o_tready (ts_queue_int_ready),
+    .space    (),
+    .occupied ()
+  );
+
+  axi_fifo #(
+    .WIDTH(TS_QUEUE_WIDTH),
+    .SIZE (0)
+  ) coeff_ts_queue_out_reg (
+    .clk      (clk),
+    .reset    (rst),
+    .clear    (),
+    .i_tdata  (ts_queue_int_data),
+    .i_tvalid (ts_queue_int_valid),
+    .i_tready (ts_queue_int_ready),
     .o_tdata  ({real_coeff_queue_data_out,
               imag_coeff_queue_data_out,
               timestamp_queue_data_out}),
     .o_tvalid (queue_valid_out),
     .o_tready (queue_ready_out && data_in_stb),
     .space    (),
-    .occupied(queue_occupied)
+    .occupied ()
   );
 
 
