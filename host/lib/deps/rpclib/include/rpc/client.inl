@@ -3,7 +3,7 @@
 namespace rpc {
 
 template <typename... Args>
-RPCLIB_MSGPACK::object_handle client::call(std::string const& func_name, Args... args)
+RPCLIB_MSGPACK::object_handle client::call(std::string const& func_name, Args&&... args)
 {
     RPCLIB_CREATE_LOG_CHANNEL(client)
     auto future      = async_call(func_name, std::forward<Args>(args)...);
@@ -18,7 +18,7 @@ RPCLIB_MSGPACK::object_handle client::call(std::string const& func_name, Args...
 
 template <typename... Args>
 std::future<RPCLIB_MSGPACK::object_handle> client::async_call(
-    std::string const& func_name, Args... args)
+    std::string const& func_name, Args&&... args)
 {
     RPCLIB_CREATE_LOG_CHANNEL(client)
     wait_conn();
@@ -50,7 +50,7 @@ std::future<RPCLIB_MSGPACK::object_handle> client::async_call(
 //! socket.
 //! \tparam Args THe types of the arguments.
 template <typename... Args>
-void client::send(std::string const& func_name, Args... args)
+void client::send(std::string const& func_name, Args&&... args)
 {
     RPCLIB_CREATE_LOG_CHANNEL(client)
     LOG_DEBUG("Sending notification {}", func_name);

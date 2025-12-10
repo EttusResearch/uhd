@@ -57,7 +57,7 @@ public:
     //!
     //! \throws rpc::rpc_error if the server responds with an error.
     template <typename... Args>
-    RPCLIB_MSGPACK::object_handle call(std::string const& func_name, Args... args);
+    RPCLIB_MSGPACK::object_handle call(std::string const& func_name, Args&&... args);
 
     //! \brief Calls a function asynchronously with the given name and
     //! arguments.
@@ -77,7 +77,7 @@ public:
     //! (which is a RPCLIB_MSGPACK::object).
     template <typename... Args>
     std::future<RPCLIB_MSGPACK::object_handle> async_call(
-        std::string const& func_name, Args... args);
+        std::string const& func_name, Args&&... args);
 
     //! \brief Sends a notification with the given name and arguments (if any).
     //!
@@ -92,7 +92,7 @@ public:
     //! \note This function returns immediately (possibly before the
     //! notification is written to the socket).
     template <typename... Args>
-    void send(std::string const& func_name, Args... args);
+    void send(std::string const& func_name, Args&&... args);
 
     //! \brief Returns the timeout setting of this client in milliseconds.
     //!
