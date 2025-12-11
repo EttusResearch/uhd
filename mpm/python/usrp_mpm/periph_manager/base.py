@@ -607,10 +607,14 @@ class PeriphManagerBase:
                     ",".join(str(x) for x in override_dboard_pids)
                 )
             )
+            if len(override_dboard_pids) < len(dboard_infos):
+                self.log.warning("--override-db-pids is going to skip dboards.")
+                dboard_infos = dboard_infos[: len(override_dboard_pids)]
+            for idx, new_pid in enumerate(override_dboard_pids):
+                if idx >= len(dboard_infos):
+                    break
+                dboard_infos[idx]["pid"] = new_pid
         assert len(dboard_infos) <= self.max_num_dboards
-        if override_dboard_pids and len(override_dboard_pids) < len(dboard_infos):
-            self.log.warning("--override-db-pids is going to skip dboards.")
-            dboard_infos = dboard_infos[: len(override_dboard_pids)]
         for dboard_idx, dboard_info in enumerate(dboard_infos):
             self.log.debug("Initializing dboard %d...", dboard_idx)
             db_pid = dboard_info.get("pid")
