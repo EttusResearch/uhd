@@ -14,6 +14,11 @@
 //   NIPC             : Number of radio samples per radio clock cycle
 //   ITEM_W           : Radio sample width
 //   NUM_PORTS        : Number of radio channels (RX/TX pairs)
+//   EN_COMP_GAIN_TX  : Enable complex gain feature for TX path
+//   EN_COMP_GAIN_RX  : Enable complex gain feature for RX path
+//   EN_FIFO_OUT_REG  : Enable output register on shift register based FIFOs
+//                      to enable higher clock frequencies. Requires more
+//                      resources.
 //   MTU              : Maximum transmission unit (i.e., maximum packet size)
 //                      in CHDR words is 2**MTU.
 //   PERIPH_BASE_ADDR : CTRL port peripheral window base address
@@ -29,6 +34,7 @@ module rfnoc_block_radio #(
   parameter NUM_PORTS             = 2,
   parameter EN_COMP_GAIN_TX       = 0,
   parameter EN_COMP_GAIN_RX       = 0,
+  parameter EN_FIFO_OUT_REG       = 0,
   parameter MTU                   = 10,
   parameter PERIPH_BASE_ADDR      = 20'h80000,
   parameter PERIPH_ADDR_W         = 19,
@@ -540,7 +546,8 @@ module rfnoc_block_radio #(
         .SAMP_W          (ITEM_W),
         .NSPC            (NIPC),
         .EN_COMP_GAIN_TX (EN_COMP_GAIN_TX),
-        .EN_COMP_GAIN_RX (EN_COMP_GAIN_RX)
+        .EN_COMP_GAIN_RX (EN_COMP_GAIN_RX),
+        .EN_FIFO_OUT_REG (EN_FIFO_OUT_REG)
       ) radio_core_i (
         .radio_clk                 (radio_clk),
         .radio_rst                 (radio_rst),

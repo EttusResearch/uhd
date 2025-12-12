@@ -112,9 +112,8 @@ localparam CMD_FIFO_SPACE_LEN = 6;    // Length of the FIFO_SPACE field
 // The total size is the sum of both parts.
 localparam CMD_FIFO_SIZE_LOG2 = 5;   // Log2 of size of the command FIFO (in words)
                                      // Choose a value 2 <= x <= 5 to infer a SRL-based FIFO.
-localparam CMD_FLOP_SIZE =  1;       // Number of words which can be stored in the output register
-                                     // Values allowed to generate a flop are 1 and 2.
-localparam CMD_FIFO_SPACE_MAX = 2**CMD_FIFO_SIZE_LOG2 + CMD_FLOP_SIZE;
+localparam CMD_FLOP_SIZE =  1;       // Number of words which can be stored in the optional output
+                                     // register. Values allowed to generate a flop are 1 and 2.
 
 // REG_TX_ERROR_POLICY bit fields
 localparam TX_ERR_POLICY_LEN  = 2; // Length of error policy bit field

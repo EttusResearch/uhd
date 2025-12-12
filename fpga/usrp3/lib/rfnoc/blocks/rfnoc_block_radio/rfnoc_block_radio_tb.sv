@@ -18,7 +18,8 @@ module rfnoc_block_radio_tb #(
     parameter int STB_PROB        = 80,   // Probability of radio STB asserting
     parameter bit TEST_REGS       = 1,    // Do register tests
     parameter bit EN_COMP_GAIN_TX = 0,    // Enable TX gain compensation
-    parameter bit EN_COMP_GAIN_RX = 0     // Enable RX gain compensation
+    parameter bit EN_COMP_GAIN_RX = 0,    // Enable RX gain compensation
+    parameter bit EN_FIFO_OUT_REG = 0     // Add output register after SRL FIFOs
 );
 
   // Include macros and time declarations for use with PkgTestExec
@@ -111,6 +112,11 @@ module rfnoc_block_radio_tb #(
   localparam logic [COMPLEX_GAIN_COEFF_W-1:0] DEFAULT_GAIN_FXP =
     {coeff_component_t'(1 << GAIN_FXP_FRACT_W),  // Real = 1.0
      coeff_component_t'(0)};                     // Imag = 0.0
+
+  // FIFO size calculation
+  localparam int CMD_FIFO_SPACE_MAX = 2**CMD_FIFO_SIZE_LOG2 +
+                                      (EN_FIFO_OUT_REG ? CMD_FLOP_SIZE : 0);
+
 
   //---------------------------------------------------------------------------
   // Clocks and Resets
@@ -236,7 +242,8 @@ module rfnoc_block_radio_tb #(
     .NUM_PORTS        (NUM_PORTS),
     .MTU              (MTU),
     .EN_COMP_GAIN_TX  (EN_COMP_GAIN_TX),
-    .EN_COMP_GAIN_RX  (EN_COMP_GAIN_RX)
+    .EN_COMP_GAIN_RX  (EN_COMP_GAIN_RX),
+    .EN_FIFO_OUT_REG  (EN_FIFO_OUT_REG)
   ) rfnoc_block_radio_i (
     .rfnoc_chdr_clk          (backend.chdr_clk),
     .s_rfnoc_chdr_tdata      (s_rfnoc_chdr_tdata_flat),

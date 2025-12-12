@@ -17,7 +17,8 @@ module timed_complex_gain_tb_all;
       .NIPC(1),
       .COEFF_W(16),
       .COEFF_FRAC_BITS(14),
-      .STB_STALL_PROB(20)
+      .STB_STALL_PROB(20),
+      .EN_FIFO_OUT_REG(0)
   ) tb_0 ();
 
   timed_complex_gain_tb #(
@@ -25,7 +26,8 @@ module timed_complex_gain_tb_all;
       .NIPC(1),
       .COEFF_W(16),
       .COEFF_FRAC_BITS(8),
-      .STB_STALL_PROB(60)
+      .STB_STALL_PROB(60),
+      .EN_FIFO_OUT_REG(1)
   ) tb_1 ();
 
   timed_complex_gain_tb #(  // COEFF_W 16, COEFF_FRAC_BITS = 12
@@ -33,7 +35,8 @@ module timed_complex_gain_tb_all;
       .NIPC(1),
       .COEFF_W(16),
       .COEFF_FRAC_BITS(12),
-      .STB_STALL_PROB(20)
+      .STB_STALL_PROB(20),
+      .EN_FIFO_OUT_REG(1)
   ) tb_2 ();
 
   timed_complex_gain_tb #(  // COEFF_W 8, COEFF_FRAC_BITS = 4
@@ -41,7 +44,8 @@ module timed_complex_gain_tb_all;
       .NIPC(1),
       .COEFF_W(8),
       .COEFF_FRAC_BITS(4),
-      .STB_STALL_PROB(20)
+      .STB_STALL_PROB(20),
+      .EN_FIFO_OUT_REG(0)
   ) tb_3 ();
 
   timed_complex_gain_tb #(  // ITEM_W = 16 (sc8 data)
@@ -49,6 +53,7 @@ module timed_complex_gain_tb_all;
       .NIPC(1),
       .COEFF_W(16),
       .COEFF_FRAC_BITS(14),
-      .STB_STALL_PROB(20)
+      .STB_STALL_PROB(20),
+      .EN_FIFO_OUT_REG(1)
   ) tb_4 ();
 endmodule

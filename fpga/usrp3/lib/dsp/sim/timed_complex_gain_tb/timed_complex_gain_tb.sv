@@ -15,7 +15,8 @@ module timed_complex_gain_tb #(
   parameter int NIPC = 2,
   parameter int COEFF_W = 20,
   parameter int COEFF_FRAC_BITS = 16,
-  parameter int STB_STALL_PROB = 20
+  parameter int STB_STALL_PROB = 20,
+  parameter bit EN_FIFO_OUT_REG = 0
 );
 
   // Include testbench utilities and time declarations
@@ -52,7 +53,7 @@ module timed_complex_gain_tb #(
   localparam int NUM_TESTS = 100;  // Number of tests to run
   // The timestamp queue can hold 2^QUEUE_DEPTH entries and one extra for the
   // output register.
-  localparam int MAX_QUEUE_ITEMS = 2 ** QUEUE_DEPTH + 1;
+  localparam int MAX_QUEUE_ITEMS = 2 ** QUEUE_DEPTH + (EN_FIFO_OUT_REG ? 1 : 0);
 
   localparam int VERBOSE = 0;  // Verbosity level for debug prints
 
@@ -143,7 +144,8 @@ module timed_complex_gain_tb #(
     .COEFFICIENT_W      (COEFF_W),
     .COEFF_FRAC_BITS    (COEFF_FRAC_BITS),
     .QUEUE_DEPTH        (QUEUE_DEPTH),
-    .TS_SHIFT_REG_DEPTH (TS_SHIFT_REG_DEPTH)
+    .TS_SHIFT_REG_DEPTH (TS_SHIFT_REG_DEPTH),
+    .EN_FIFO_OUT_REG    (EN_FIFO_OUT_REG)
   ) dut (
     .clk                    (strobe_clk),
     .rst                    (strobe_rst),
@@ -580,7 +582,7 @@ module timed_complex_gain_tb #(
       test_set_coefficients();
     end
     test.end_test();
-    test.start_test("Set Coefficients with Timestamp", 200us);
+    test.start_test("Set Coefficients with Timestamp", 250us);
     repeat (NUM_TESTS) begin
       test_set_coefficients(0);
     end

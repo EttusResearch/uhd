@@ -24,15 +24,19 @@
 //
 // Parameters:
 //
-//   SAMP_W    : Width of a radio sample
-//   NSPC      : Number of radio samples per radio clock cycle
+//   SAMP_W           : Width of a radio sample
+//   NSPC             : Number of radio samples per radio clock cycle
+//   EN_FIFO_OUT_REG  : Enable output register on shift register based FIFOs
+//                      to enable higher clock frequencies. Requires more
+//                      resources.
 //
 `default_nettype none
 
 
 module radio_rx_core #(
-  parameter SAMP_W    = 32,
-  parameter NSPC      = 1
+  parameter SAMP_W          = 32,
+  parameter NSPC            = 1,
+  parameter EN_FIFO_OUT_REG = 0
 ) (
   input wire radio_clk,
   input wire radio_rst,
@@ -326,7 +330,7 @@ module radio_rx_core #(
   // output register to break critical path of FIFO data output
   axi_fifo #(
     .WIDTH (CMD_FIFO_WIDTH),
-    .SIZE  (CMD_FLOP_SIZE-1)
+    .SIZE  (EN_FIFO_OUT_REG ? CMD_FLOP_SIZE-1 : -1)
   ) cmd_flop (
     .clk      (radio_clk),
     .reset    (radio_rst),

@@ -13,10 +13,13 @@
 //
 // Parameters:
 //
-//   BASE_ADDR    : Base address for this radio block instance
-//   SAMP_W       : Width of a radio sample
-//   NSPC         : Number of radio samples per radio clock cycle
-//   EN_COMP_GAIN : Enable complex gain functionality
+//   SAMP_W           : Width of a radio sample
+//   NSPC             : Number of radio samples per radio clock cycle
+//   EN_COMP_GAIN_TX  : Enable complex gain feature for TX path
+//   EN_COMP_GAIN_RX  : Enable complex gain feature for RX path
+//   EN_FIFO_OUT_REG  : Enable output register on shift register based FIFOs
+//                      to enable higher clock frequencies. Requires more
+//                      resources.
 //
 
 
@@ -24,7 +27,8 @@ module radio_core #(
   parameter SAMP_W          = 32,
   parameter NSPC            = 1,
   parameter EN_COMP_GAIN_TX = 1,
-  parameter EN_COMP_GAIN_RX = 1
+  parameter EN_COMP_GAIN_RX = 1,
+  parameter EN_FIFO_OUT_REG = 0
 ) (
   input wire radio_clk,
   input wire radio_rst,
@@ -439,9 +443,10 @@ module radio_core #(
     assign radio_tx_running = post_gain_tx_running_shift_reg[COMP_GAIN_LATENCY-1];
 
     timed_complex_gain #(
-      .ITEM_W(SAMP_W),
-      .NIPC  (NSPC),
-      .BASE_ADDR(REG_CGAIN_TX_OFFSET)
+      .ITEM_W          (SAMP_W),
+      .NIPC            (NSPC),
+      .BASE_ADDR       (REG_CGAIN_TX_OFFSET),
+      .EN_FIFO_OUT_REG (EN_FIFO_OUT_REG)
     ) timed_complex_gain_tx_i (
       .clk                     (radio_clk),
       .rst                     (radio_rst),
@@ -513,9 +518,10 @@ module radio_core #(
   if(EN_COMP_GAIN_RX) begin : gen_comp_gain_rx
 
   timed_complex_gain #(
-    .ITEM_W(SAMP_W),
-    .NIPC  (NSPC),
-    .BASE_ADDR(REG_CGAIN_RX_OFFSET)
+    .ITEM_W          (SAMP_W),
+    .NIPC            (NSPC),
+    .BASE_ADDR       (REG_CGAIN_RX_OFFSET),
+    .EN_FIFO_OUT_REG (EN_FIFO_OUT_REG)
   ) timed_complex_gain_rx_i (
     .clk                     (radio_clk),
     .rst                     (radio_rst),
@@ -543,8 +549,9 @@ module radio_core #(
   //---------------------------------------------------------------------------
 
   radio_rx_core #(
-    .SAMP_W    (SAMP_W),
-    .NSPC      (NSPC)
+    .SAMP_W          (SAMP_W),
+    .NSPC            (NSPC),
+    .EN_FIFO_OUT_REG (EN_FIFO_OUT_REG)
   ) radio_rx_core_i (
     .radio_clk                 (radio_clk),
     .radio_rst                 (radio_rst),

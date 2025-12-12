@@ -52,7 +52,8 @@ import rfnoc_chdr_utils_pkg::*;
   parameter int COEFFICIENT_W      = 16,
   parameter int COEFF_FRAC_BITS    = 14,
   parameter int QUEUE_DEPTH        = 5,
-  parameter int TS_SHIFT_REG_DEPTH = 1
+  parameter int TS_SHIFT_REG_DEPTH = 1,
+  parameter bit EN_FIFO_OUT_REG    = 0
 ) (
   input wire clk,
   input wire rst,
@@ -168,7 +169,7 @@ import rfnoc_chdr_utils_pkg::*;
 
   axi_fifo #(
     .WIDTH(TS_QUEUE_WIDTH),
-    .SIZE (0)
+    .SIZE (EN_FIFO_OUT_REG ? 0 : -1)
   ) coeff_ts_queue_out_reg (
     .clk      (clk),
     .reset    (rst),
