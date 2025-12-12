@@ -32,37 +32,37 @@ public:
 
     template <typename... Args>
     void trace(const char *channel, const char *file, const char *func,
-               std::size_t line, const char *msg, Args... args) {
+               std::size_t line, const char *msg, Args&&... args) {
         (void)func;
         basic_log("TRACE", channel,
                   RPCLIB_FMT::format("{} ({}:{})",
-                                     RPCLIB_FMT::format(msg, args...), file,
+                                     RPCLIB_FMT::format(msg, std::forward<Args>(args)...), file,
                                      line));
     }
 
     template <typename... Args>
     void debug(const char *channel, const char *file, const char *func,
-               std::size_t line, const char *msg, Args... args) {
+               std::size_t line, const char *msg, Args&&... args) {
         (void)func;
         basic_log("DEBUG", channel,
                   RPCLIB_FMT::format("{} ({}:{})",
-                                     RPCLIB_FMT::format(msg, args...), file,
+                                     RPCLIB_FMT::format(msg, std::forward<Args>(args)...), file,
                                      line));
     }
 
     template <typename... Args>
-    void warn(const char *channel, const char *msg, Args... args) {
-        basic_log("WARN", channel, RPCLIB_FMT::format(msg, args...));
+    void warn(const char *channel, const char *msg, Args&&... args) {
+        basic_log("WARN", channel, RPCLIB_FMT::format(msg, std::forward<Args>(args)...));
     }
 
     template <typename... Args>
-    void error(const char *channel, const char *msg, Args... args) {
-        basic_log("ERROR", channel, RPCLIB_FMT::format(msg, args...));
+    void error(const char *channel, const char *msg, Args&&... args) {
+        basic_log("ERROR", channel, RPCLIB_FMT::format(msg, std::forward<Args>(args)...));
     }
 
     template <typename... Args>
-    void info(const char *channel, const char *msg, Args... args) {
-        basic_log("INFO", channel, RPCLIB_FMT::format(msg, args...));
+    void info(const char *channel, const char *msg, Args&&... args) {
+        basic_log("INFO", channel, RPCLIB_FMT::format(msg, std::forward<Args>(args)...));
     }
 
 private:
