@@ -42,6 +42,12 @@ jobs:
         clean: true
         fetchDepth: 1000000000
         fetchTags: false
+        persistCredentials: true
+      - bash: |
+          git fetch origin +$PIPELINE_SOURCE_COMMIT
+        displayName: Git fetch source commit
+        env:
+          PIPELINE_SOURCE_COMMIT: $(resources.pipeline.${{ parameters.reference_pipeline_name }}.sourceCommit)
       - bash: |
           python3 -m venv $AGENT_TEMPDIRECTORY/ac_venv
           source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
@@ -50,7 +56,6 @@ jobs:
         displayName: setup venv
       - bash: |
           source $AGENT_TEMPDIRECTORY/ac_venv/bin/activate
-          git branch
           set -e
           set -o xtrace
           if [ "$BUILD_REASON" == "PullRequest" ]; then
