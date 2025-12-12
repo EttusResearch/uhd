@@ -27,7 +27,7 @@ auto call(Functor f, Arg &&arg)
 template <typename Functor, typename... Args, std::size_t... I>
 decltype(auto) call_helper(Functor func, std::tuple<Args...> &&params,
                            std::index_sequence<I...>) {
-    return func(std::get<I>(params)...);
+    return func(std::forward<Args>(std::get<I>(params))...);
 }
 
 //! \brief Calls a functor with arguments provided as a tuple
@@ -50,7 +50,7 @@ struct call_helper
             std::tuple<ArgsT...>& args_t,
             ArgsF&&... args_f)
     -> decltype(call_helper<N-1>::call(
-                f, args_t, std::get<N-1>(args_t),
+                f, args_t, std::move(std::get<N-1>(args_t)),
                 std::forward<ArgsF>(args_f)...))
     {
         return call_helper<N-1>::call(

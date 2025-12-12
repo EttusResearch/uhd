@@ -84,7 +84,7 @@ namespace type {
 
     template <class... Args>
     inline tuple<Args...> make_tuple(Args&&... args) {
-        return tuple<Args...>(args...);
+        return tuple<Args...>(std::forward<Args>(args)...);
     }
 
     template<class... Args>
