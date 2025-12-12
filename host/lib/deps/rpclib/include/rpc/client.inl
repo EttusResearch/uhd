@@ -22,11 +22,11 @@ client::async_call(std::string const &func_name, Args... args) {
     using RPCLIB_MSGPACK::object;
     LOG_DEBUG("Calling {}", func_name);
 
-    auto args_obj = std::make_tuple(args...);
+    auto args_obj = std::make_tuple(std::forward<Args>(args)...);
     const int idx = get_next_call_idx();
     auto call_obj =
         std::make_tuple(static_cast<uint8_t>(client::request_type::call), idx,
-                        func_name, args_obj);
+                        func_name, std::move(args_obj));
 
     auto buffer = std::make_shared<RPCLIB_MSGPACK::sbuffer>();
     RPCLIB_MSGPACK::pack(*buffer, call_obj);
@@ -52,10 +52,10 @@ void client::send(std::string const &func_name, Args... args) {
     RPCLIB_CREATE_LOG_CHANNEL(client)
     LOG_DEBUG("Sending notification {}", func_name);
 
-    auto args_obj = std::make_tuple(args...);
+    auto args_obj = std::make_tuple(std::forward<Args>(args)...);
     auto call_obj = std::make_tuple(
         static_cast<uint8_t>(client::request_type::notification), func_name,
-        args_obj);
+        std::move(args_obj));
 
     auto buffer = new RPCLIB_MSGPACK::sbuffer;
     RPCLIB_MSGPACK::pack(*buffer, call_obj);
