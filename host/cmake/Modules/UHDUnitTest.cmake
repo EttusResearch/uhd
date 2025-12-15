@@ -8,12 +8,21 @@
 
 ########################################################################
 # Add a unit test and setup the environment for a unit test.
-# Takes the same arguments as the ADD_TEST function.
+# Arguments:
+#   test_name - Name of the test
+#   MODULE_PATH - Optional module path to set UHD_MODULE_PATH environment variable.
+#                 Accepts generator expressions.
+#   All other arguments are passed to the test executable
 ########################################################################
 function(UHD_ADD_TEST test_name)
+    # Parse arguments
+    cmake_parse_arguments(UHD_ADD_TEST "" "MODULE_PATH" "" ${ARGN})
+
+    # Remaining unparsed arguments are the test executable and its arguments
+    set(test_args ${UHD_ADD_TEST_UNPARSED_ARGUMENTS})
 
         #Ensure that the build exe also appears in the PATH.
-        list(APPEND UHD_TEST_TARGET_DEPS ${ARGN})
+        list(APPEND UHD_TEST_TARGET_DEPS ${test_args})
 
         #We need to put the directory with the .so/.dll file in the
         #appropriate environment variable, as well as the test
@@ -42,7 +51,7 @@ function(UHD_ADD_TEST test_name)
 
     if(ENABLE_QEMU_UNITTESTS)
         # use QEMU emulator for executing test
-        add_test(${test_name} ${QEMU_EXECUTABLE} -L ${QEMU_SYSROOT} ${test_name})
+        add_test(${test_name} ${QEMU_EXECUTABLE} -L ${QEMU_SYSROOT} ${test_args})
     elseif(UNIX)
         set(LD_PATH_VAR "LD_LIBRARY_PATH")
         if(APPLE)
@@ -56,23 +65,30 @@ function(UHD_ADD_TEST test_name)
         string(REPLACE ";" ":" libpath "${libpath}")
         list(APPEND environs "PATH=\"${binpath}\"" "${LD_PATH_VAR}=\"${libpath}\"")
 
-        #generate a bat file that sets the environment and runs the test
+        # Add UHD_MODULE_PATH if MODULE_PATH is specified
+        if(UHD_ADD_TEST_MODULE_PATH)
+            list(APPEND environs "UHD_MODULE_PATH=\"${UHD_ADD_TEST_MODULE_PATH}\"")
+        endif()
+
+        #generate a shell file that sets the environment and runs the test
         if (CMAKE_CROSSCOMPILING)
                 set(SHELL "/bin/sh")
         else(CMAKE_CROSSCOMPILING)
                 find_program(SHELL sh)
         endif(CMAKE_CROSSCOMPILING)
         set(sh_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.sh)
-        file(WRITE ${sh_file} "#!${SHELL}\n")
-        #each line sets an environment variable
+
+        # Use file(GENERATE) to properly handle generator expressions
+        set(sh_content "#!${SHELL}\n")
         foreach(environ ${environs})
-            file(APPEND ${sh_file} "export ${environ}\n")
+            set(sh_content "${sh_content}export ${environ}\n")
         endforeach(environ)
-        #load the command to run with its arguments
-        foreach(arg ${ARGN})
-            file(APPEND ${sh_file} "${arg} ")
+        foreach(arg ${test_args})
+            set(sh_content "${sh_content}${arg} ")
         endforeach(arg)
-        file(APPEND ${sh_file} "\n")
+        set(sh_content "${sh_content}\n")
+
+        file(GENERATE OUTPUT ${sh_file} CONTENT ${sh_content})
 
         #make the shell file executable
         execute_process(COMMAND chmod +x ${sh_file})
@@ -88,18 +104,25 @@ function(UHD_ADD_TEST test_name)
         string(REPLACE ";" "\\;" libpath "${libpath}")
         list(APPEND environs "PATH=${libpath}")
 
+        # Add UHD_MODULE_PATH if MODULE_PATH is specified
+        if(UHD_ADD_TEST_MODULE_PATH)
+            list(APPEND environs "UHD_MODULE_PATH=${UHD_ADD_TEST_MODULE_PATH}")
+        endif()
+
         #generate a bat file that sets the environment and runs the test
         set(bat_file ${CMAKE_CURRENT_BINARY_DIR}/${test_name}_test.bat)
-        file(WRITE ${bat_file} "@echo off\n")
-        #each line sets an environment variable
+
+        # Use file(GENERATE) to properly handle generator expressions
+        set(bat_content "@echo off\n")
         foreach(environ ${environs})
-            file(APPEND ${bat_file} "SET ${environ}\n")
+            set(bat_content "${bat_content}SET ${environ}\n")
         endforeach(environ)
-        #load the command to run with its arguments
-        foreach(arg ${ARGN})
-            file(APPEND ${bat_file} "${arg} ")
+        foreach(arg ${test_args})
+            set(bat_content "${bat_content}${arg} ")
         endforeach(arg)
-        file(APPEND ${bat_file} "\n")
+        set(bat_content "${bat_content}\n")
+
+        file(GENERATE OUTPUT ${bat_file} CONTENT "${bat_content}")
 
         add_test(${test_name} ${bat_file})
     endif(WIN32)
@@ -108,8 +131,13 @@ endfunction(UHD_ADD_TEST)
 
 ########################################################################
 # Add a Python unit test
+# Arguments:
+#   test_name - Name of the test
+#   MODULE_PATH - Optional module path to set UHD_MODULE_PATH environment variable
 ########################################################################
 function(UHD_ADD_PYTEST test_name)
+    # Parse arguments
+    cmake_parse_arguments(UHD_ADD_PYTEST "" "MODULE_PATH" "" ${ARGN})
     if(ENABLE_QEMU_UNITTESTS)
         # use QEMU emulator for executing test
         add_test(NAME ${test_name}
@@ -130,20 +158,32 @@ function(UHD_ADD_PYTEST test_name)
     endif(ENABLE_QEMU_UNITTESTS)
     # Include ${UHD_BINARY_DIR}/utils/ for testing the python utils
     if(APPLE)
+        set(env_vars "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
+        if(UHD_ADD_PYTEST_MODULE_PATH)
+            set(env_vars "${env_vars};UHD_MODULE_PATH=${UHD_ADD_PYTEST_MODULE_PATH}")
+        endif()
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "DYLD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
+            "${env_vars}")
     elseif(MSVC)
         string(REPLACE ";" "\\;" WIN_PATH "$ENV{PATH}")
     # MSVC is a multi-config generator in CMake, so we must specify the config value
+        set(env_vars "PATH=${WIN_PATH}\\;${UHD_BINARY_DIR}\\lib\\$<CONFIG>\\;${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}\\python\\$<CONFIG>\\;${UHD_SOURCE_DIR}\\tests\\common\\;${UHD_BINARY_DIR}\\utils")
+        if(UHD_ADD_PYTEST_MODULE_PATH)
+            set(env_vars "${env_vars};UHD_MODULE_PATH=${UHD_ADD_PYTEST_MODULE_PATH}")
+        endif()
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "PATH=${WIN_PATH}\\;${UHD_BINARY_DIR}\\lib\\$<CONFIG>\\;${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}\\python\\$<CONFIG>\\;${UHD_SOURCE_DIR}\\tests\\common\\;${UHD_BINARY_DIR}\\utils"
+            "${env_vars}"
             )
     else()
+        set(env_vars "LD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/")
+        if(UHD_ADD_PYTEST_MODULE_PATH)
+            set(env_vars "${env_vars};UHD_MODULE_PATH=${UHD_ADD_PYTEST_MODULE_PATH}")
+        endif()
         set_tests_properties(${test_name} PROPERTIES
             ENVIRONMENT
-            "LD_LIBRARY_PATH=${UHD_BINARY_DIR}/lib/:${Boost_LIBRARY_DIRS};PYTHONPATH=${UHD_BINARY_DIR}/python:${UHD_SOURCE_DIR}/tests/common:${UHD_BINARY_DIR}/utils/"
+            "${env_vars}"
             )
     endif()
 endfunction(UHD_ADD_PYTEST)
