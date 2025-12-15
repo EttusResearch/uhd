@@ -175,8 +175,8 @@ uint32_t gpio_control::get_gpio_attr(const uhd::usrp::gpio_atr::gpio_attr_t attr
 
         // Grab the values for each channel
         const uint32_t rf0_atr = unmap_dio(_gpios[0]->get_attr_reg(attr));
-        const uint32_t rf1_atr = unmap_dio(
-            _gpios[atr_attr_index(attr)]->get_attr_reg(uhd::usrp::gpio_atr::GPIO_ATR_0X));
+        const uint32_t rf1_atr =
+            unmap_dio(_gpios[atr_attr_index(attr)]->get_attr_reg(attr));
         return (rf0_atr & ~rf1_mask) | (rf1_atr & rf1_mask);
     }
 
