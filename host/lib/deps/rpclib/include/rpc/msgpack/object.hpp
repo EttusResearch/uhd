@@ -52,6 +52,14 @@ public:
     object_handle(clmdep_msgpack::object const& obj, std::unique_ptr<clmdep_msgpack::zone> z) :
         m_obj(obj), m_zone(std::move(z)) { }
 
+    // Copy constructor and assignment declared here, defined after clone() below
+    object_handle(const object_handle& other);
+    object_handle& operator=(const object_handle& other);
+
+    // Default move semantics
+    object_handle(object_handle&& other) noexcept = default;
+    object_handle& operator=(object_handle&& other) noexcept = default;
+
     // obsolete
     void set(clmdep_msgpack::object const& obj)
         { m_obj = obj; }
@@ -133,6 +141,28 @@ inline object_handle clone(clmdep_msgpack::object const& obj) {
     std::unique_ptr<clmdep_msgpack::zone> z(size == 0 ? nullptr : new clmdep_msgpack::zone(size));
     clmdep_msgpack::object newobj = z.get() ? clmdep_msgpack::object(obj, *z) : obj;
     return object_handle(newobj, std::move(z));
+}
+
+// Define object_handle copy constructor and assignment after clone is declared
+inline object_handle::object_handle(const object_handle& other) {
+    if (other.m_zone) {
+        *this = clmdep_msgpack::clone(other.m_obj);
+    } else {
+        m_obj = other.m_obj;
+        m_zone.reset();
+    }
+}
+
+inline object_handle& object_handle::operator=(const object_handle& other) {
+    if (this != &other) {
+        if (other.m_zone) {
+            *this = clmdep_msgpack::clone(other.m_obj);
+        } else {
+            m_obj = other.m_obj;
+            m_zone.reset();
+        }
+    }
+    return *this;
 }
 
 struct object::implicit_type {
