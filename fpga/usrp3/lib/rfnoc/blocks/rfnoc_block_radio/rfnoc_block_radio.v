@@ -116,7 +116,11 @@ module rfnoc_block_radio #(
   // Radio Tx interface
   output wire [(ITEM_W*NIPC)*NUM_PORTS-1:0] radio_tx_data,
   input  wire [              NUM_PORTS-1:0] radio_tx_stb,
-  output wire [              NUM_PORTS-1:0] radio_tx_running
+  output wire [              NUM_PORTS-1:0] radio_tx_running,
+
+  // Radio states
+  output wire [              NUM_PORTS-1:0] radio_state_rx_running,
+  output wire [              NUM_PORTS-1:0] radio_state_tx_running
 );
 
   `include "rfnoc_block_radio_regs.vh"
@@ -605,6 +609,10 @@ module rfnoc_block_radio #(
       );
     end
   endgenerate
+
+  assign radio_state_rx_running = radio_rx_running;
+  assign radio_state_tx_running = radio_tx_running;
+
 endmodule
 
 //XmlParse xml_on

@@ -87,6 +87,11 @@ io_ports:
       spc: "${parameters['NIPC']}"
       num_ports: "${parameters['NUM_PORTS']}"
     required: true # Definitely required!
+  radio_state:
+    type: radio_state
+    drive: broadcaster
+    parameters:
+      num_ports: "${parameters['NUM_PORTS']}"
 
 # This section helps the make process find the source files for the block. If
 # this section is absent, the FPGA build process will fail as it won't be able

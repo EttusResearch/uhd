@@ -246,3 +246,14 @@ gpio:
   - name: gpio_in
     type: to-master
     width: "${parameters['width']}"
+
+radio_state:
+  parameters:
+    num_ports: ${ config.device.parameters['NUM_PORTS_PER_RADIO'] }
+  type:
+    broadcaster-listener
+  ports:
+  - name: radio_state_rx_running
+    width: "${parameters['num_ports']}"
+  - name: radio_state_tx_running
+    width: "${parameters['num_ports']}"
