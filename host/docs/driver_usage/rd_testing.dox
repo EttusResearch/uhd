@@ -277,7 +277,7 @@ debugging: https://kb.ettus.com/Debugging_FPGA_images
 This procedure tests the DDC and DUC signal quality and the block's capability
 to change sample rate while streaming.
 
-#### RX testing
+\subsubsection  rdtesting_fpgadspverif_manual_rx RX testing
 
 1. Run calibration on device, if applicable
 2. Using a signal generator, inject a sine tone into RX channel 0 at 915.5 MHz @
@@ -314,7 +314,7 @@ to change sample rate while streaming.
     - Sequence number errors 'S'
     - Timeouts
 
-#### TX testing
+\subsubsection  rdtesting_fpgadspverif_manual_tx TX testing
 
 1. Run calibration on device, if applicable
 2. Using `uhd_siggen_gui`, generate a sine tone TX channel 0 at 915.5 MHz:
@@ -405,7 +405,7 @@ rates and channel configurations without any data flow issues.
   - X3x0: `benchmark_rate --tx_rate 1e6 --rx_rate 1e6 --channels 0,1 --duration 120`
   - E3xx: `benchmark_rate --args="master_clock_rate=10e6" --tx_rate 1e6 --rx_rate 1e6 --channels 0,1 --duration 120`
 
-#### USRP X3x0: 10 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_X3x0_10GE USRP X3x0: 10 GigE Interface
 
 - Required images to test: X310 HG
 - Optional images to test: X310 XG, X300 HG, X300 XG
@@ -424,7 +424,7 @@ rates and channel configurations without any data flow issues.
 | 1x RX & 1x TX | 200e6                    | 600      | Use channel 1      |
 | 2x RX & 2x TX | 100e6                    | 600      |                    |
 
-#### USRP X3x0: 1 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_X3x0_1GE USRP X3x0: 1 GigE Interface
 
 - Required images to test: None
 - Optional images to test: X310 HG, X310 XG, X300 HG, X300 XG
@@ -439,7 +439,7 @@ rates and channel configurations without any data flow issues.
 | 1x RX & 1x TX | 1e6, 10e6, 25e6         | 60       |
 | 2x RX & 2x TX | 1e6, 10e6               | 60       |
 
-#### USRP X3x0: PCIe Interface
+\subsubsection rdtesting_fpgafuncverif_manual_X3x0_PCIe USRP X3x0: PCIe Interface
 
 - Required images to test: None
 - Optional images to test: X310 HG, X310 XG, X300 HG, X300 XG
@@ -457,7 +457,7 @@ rates and channel configurations without any data flow issues.
 
 Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
-#### USRP E3xx Device (Embedded Mode)
+\subsubsection rdtesting_fpgafuncverif_manual_E3xx USRP E3xx Device (Embedded Mode)
 
 - E320 and E310 SG3 are required tests, E310 SG1 is optional
 
@@ -478,7 +478,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 30.72e6                 | 3.84e6      | 600      | Use channel 0      |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 600      |                    |
 
-#### USRP E320: 1 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_E320_1GE USRP E320: 1 GigE Interface
 
 | Channels      | Master Clock Rate       | Sample Rate | Duration | Notes              |
 |---------------|-------------------------|-------------|----------|--------------------|
@@ -497,7 +497,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 30.72e6                 | 3.84e6      | 600      | Use channel 0      |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 600      |                    |
 
-#### USRP E320: 10 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_E320_10GE USRP E320: 10 GigE Interface
 
 | Channels      | Master Clock Rate       | Sample Rate          | Duration | Notes              |
 |---------------|-------------------------|----------------------|----------|--------------------|
@@ -510,7 +510,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 61.44e6                 | 1.92e6, 30.72e6      | 600      | Use channel 0      |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6, 30.72e6      | 600      |                    |
 
-#### USRP N300/N310: 1 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_N310_1GE USRP N300/N310: 1 GigE Interface
 
 - Required images to test: HG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
@@ -534,7 +534,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 4x RX & 4x TX | 122.88e6          | 1.2288e6                | 60       | Drop to 2 channels for N300
 | 4x RX & 4x TX | 153e6             | 1.536e6                 | 60       | Drop to 2 channels for N300
 
-#### USRP N300/N310: 10 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_N310_10GE USRP N300/N310: 10 GigE Interface
 
 - Required images to test: N310 HG + XG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
@@ -574,7 +574,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N300 XG only
 | 2x RX & 2x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N300 XG only
 
-#### USRP N320/N321: 1 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_N320_1GE USRP N320/N321: 1 GigE Interface
 
 - Required images to test: HG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
@@ -599,7 +599,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 245.76e6          | 2.4576e6                | 60       |                                   |
 | 2x RX & 2x TX | 200e6             | 2e6                     | 60       |                                   |
 
-#### USRP N320/N321: 10 GigE Interface
+\subsubsection rdtesting_fpgafuncverif_manual_N320_10GE USRP N320/N321: 10 GigE Interface
 
 - Required images to test: N320 HG + XG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test

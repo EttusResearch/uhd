@@ -22,6 +22,8 @@ Usually, the Windows installer can be found on the project's website.
 Some projects do not host Windows installers, and if this is the case,
 follow the auxiliary download URL for the Windows installer (below).
 
+## List of Dependencies
+
 ### C++ Compiler
 
 The following compilers are known to work and officially supported:
@@ -345,13 +347,13 @@ We recommend using "Rapid Environment Editor" (http://www.rapidee.com) over the 
 
 \section build_instructions_osx Build Instructions (Mac OS X)
 
-### X11/XQuartz or Terminal
+## X11/XQuartz or Terminal
 
 For the purposes of building and using UHD, you can use Apple's Terminal.app if you so choose, no matter how you install UHD.
 
 That said, running almost any graphical interface (GUI) will require downloading and installing X11/XQuartz first. Through OSX 10.8, Apple provided a means to install X11.app, but XQuartz has always been more up to date. Staring in 10.9, Apple no longer provides a full working version of X11.app. Hence, just use XQuartz from the get-go. Note that unless you experiment with using the Quartz interface to various graphical toolkits (e.g., GTK), you must use X11 as the terminal interface for any GUI applications.
 
-### Xcode
+## Xcode
 
 Apple provides a fully integrated development environment via their Xcode toolkit, which can be downloaded either via the App store or directly from Apple's Developer area depending on the version of OSX in use. Xcode provides the compilers and related development tools needed to build or execute UHD and its dependencies.
 
@@ -363,7 +365,7 @@ but this command will not work with every OSX / Xcode combination (e.g., does no
 
 Once the Command Line Tools are installed, UHD and other projects can be installed either from source or, preferably, via MacPorts.
 
-### Background Dependencies
+## Background Dependencies
 
 There are a number of background libraries and applications that must be installed from source or binary in order to compile or execute UHD; for a full list, see \ref build_dependencies. These can be obtained by using <a href="http://www.macports.org/">MacPorts</a>, <a href="http://fink.sourceforge.net/">Fink</a>, <a href="http://brew.sh/">HomeBrew</a>, and/or from source / scratch. MacPorts tends to be more up-to-date with respect to new releases, which can be both a blessing and a curse since sometimes new released are untested and result in build or runtime errors. MacPorts, HomeBrew, and Fink offer thousands of ready-to-install libraries and applications, and hence they are highly recommended to use instead of installing from source / scratch.
 
@@ -376,7 +378,7 @@ Many UHD developers first install UHD using MacPorts in order to get all of the 
 
 \b NOTE: Other package managers (e.g., Fink, HomeBrew) will require different commands than the above to install all dependencies and then remove the UHD install. Please consult the specific package manager in use for how to do these commands properly; they will not be covered here.
 
-#### Compiling UHD from Source
+## Compiling UHD from Source
 
 Installing UHD from source follows the standard cmake method as found in many places, with a few arguments to make sure cmake always finds the correct version of Python, and uses the desired compiler. First, download the source code either via a release or via GIT.
 

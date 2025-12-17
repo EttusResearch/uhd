@@ -172,7 +172,7 @@ issues, set the governor to "performance".
 2.  Edit `/etc/init.d/cpufrequtils` and set `GOVERNOR="performance"` on the
     appropriate line (run as root):
 
-    `sed s/^GOVERNOR=.*$/GOVERNOR=\"performance\"/g /etc/init.d/cpufrequtils > /etc/init.d/cpufrequtils`
+    `sed -i s/^GOVERNOR=.*$/GOVERNOR="performance"/g /etc/init.d/cpufrequtils > /etc/init.d/cpufrequtils`
 
 3.  Restart cpufrequtils:
 

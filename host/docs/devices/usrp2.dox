@@ -155,7 +155,7 @@ You may need to change the USRP2's IP address for several reasons:
 -   to use multiple USRP2s on the same host computer
 -   to set a known IP address into USRP2 (in case you forgot)
 
-#### Method 1
+\subsubsection usrp2_network_changeip_method_1 Method 1
 
 To change the USRP2's IP address, you must know the
 current address of the USRP2, and the network must be setup properly as
@@ -164,7 +164,7 @@ described above. Run the following commands: :
     cd <install-path>/lib/uhd/utils
     ./usrp_burn_mb_eeprom --args=<optional device args> --values="ip-addr=192.168.10.3"
 
-#### Method 2 (Linux Only)
+\subsubsection usrp2_network_changeip_method_2 Method 2 (Linux Only)
 
 This method assumes that you do not know the
 IP address of your USRP2. It uses raw Ethernet packets to bypass the
