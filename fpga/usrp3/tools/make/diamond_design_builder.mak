@@ -65,6 +65,8 @@ BUILD_DIAMOND_DESIGN = \
 			exit 1; \
 		fi; \
 	echo "BUILDER: Generating bitfile..."; \
-	ddtcmd -oft -svfsingle -if $(5)/$(1)_$(5).jed			 	\
-		-dev $(2) -op "FLASH Erase,Program,Verify" -revd	\
-		-of $(5)/$(1)_$(5).svf;
+	ddtcmd -oft -svfsingle -if $(5)/$(1)_$(5).jed			 	 \
+		-dev $(2) -op "FLASH Erase,Program,Verify" -revd	 \
+		-of $(5)/$(1)_$(5).svf >> $(1)_log.txt; \
+	python3 $(TOOLS_DIR)/scripts/diamond_program_security.py $(5)/$(1)_$(5).svf \
+	  >> $(1)_log.txt;
