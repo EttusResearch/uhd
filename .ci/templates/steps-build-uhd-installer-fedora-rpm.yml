@@ -31,7 +31,7 @@ steps:
       $UHD_CI_CMAKE_OPTIONS \
       -DUNDERSCORE_UHD_VERSION=ON \
       -DENABLE_DPDK=OFF \
-      {{ parameters.cmake_args }} \
+      ${{ parameters.cmake_args }} \
       -G "Unix Makefiles" \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake rpm
