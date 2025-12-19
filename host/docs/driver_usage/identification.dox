@@ -112,5 +112,29 @@ Example with the find devices utility:
 
     uhd_find_devices --args="type=usrp1, name=lab1_xcvr"
 
+\subsection id_mpm_reachability Discovery of MPM devices
+
+By default MPM devices will be checked for reachability. To do this, the
+MPM finder routine will try to open an RPC connection to each of the IP
+addresses that the devices report. This will take some time as a TCP/IP
+connection needs to be established. Also, some IPs might not be reachable
+from each host in the network (e.g. for direct cabled QSFP connections).
+Then the check would run into a timeout which also delays the overall find.
+
+You can set an `mpm_check_reachability` flag to control whether this reachability
+check should be performed or not. If performed, the find operation takes
+significantly more time to execute but it ensures that all reported IP addresses
+can be used to establish a connection to the devices. If the check is skipped,
+find executes much faster but can make no guarantee whether the host can
+open a connection to the reported IPs. The flag can be either given with the
+`args` option, like so
+
+    uhd_find_devices --args mpm_check_reachability=no
+
+or as a setting in your `Global` section of your
+\ref configfiles_uhd_session "uhd.conf" file.
+
+The default value for `mpm_check_reachability` is true. The `--args` option
+overwrites the value of the `uhd.conf` file.
 */
 // vim:ft=doxygen:

@@ -50,14 +50,20 @@ same as those for the device args (see \ref config_devaddr).
 \section configfiles_uhd_session Configuring UHD Sessions
 
 For settings that are not specific to a device, but rather to the UHD session,
-there is the `Global` section. At the time of writing this, there is only one
-setting available in this section which is the `guided_mode` which supports
-the user on X440 devices. For turning it off, the following can be added to the
+there is the `Global` section. The available settings are
+
+- `guided_mode` Provide more log information about the Nyquist zone in which
+  the chosen frequency of an X440 is located. These additional info logs are
+  enabled by default.
+- `mpm_check_reachability`
+  \ref id_mpm_reachability "Run reachability check on MPM devices".
+
 config file:
 
 ~~~~{.ini}
 [Global]
 guided_mode=false
+mpm_check_reachability=false
 ~~~~
 
 \section configfiles_usrps_dpdk Configuring DPDK
