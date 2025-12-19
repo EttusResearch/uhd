@@ -2328,10 +2328,10 @@ public:
                                      + " to a radio block controller.");
         }();
 
-        const std::string normalized_bank = [radio, bank]() {
+        const std::string normalized_bank = [radio, bank, slot_name]() {
             auto radio_banks = radio->get_gpio_banks();
             for (auto& radio_bank : radio_banks) {
-                if (bank.find(radio_bank) == 0) {
+                if (radio_bank + slot_name == bank) {
                     return radio_bank;
                 }
             }
