@@ -164,7 +164,9 @@ connections:
   - { srcblk: radio1, srcport: out_3, dstblk: ddc1,   dstport: in_3 }
   - { srcblk: ddc1,   srcport: out_3, dstblk: ep7,    dstport: in0  }
   #
-  # BSP connections are inherited from YAML include files
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio0 }
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio1 }
+  # Other BSP connections are inherited from YAML include files
 
 # A list of all clock domain connections in design
 # ------------------------------------------------

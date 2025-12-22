@@ -106,6 +106,7 @@ connections:
   - { srcblk: _device_, srcport: radio1,   dstblk: radio1,   dstport: radio           }
   - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
   - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
+  - { srcblk: _device_, srcport: _none_,   dstblk: _device_, dstport: fp_gpio         }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------
