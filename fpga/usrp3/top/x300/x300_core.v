@@ -23,7 +23,7 @@ module x300_core #(
    // Radio 0
    input [31:0] rx0, output [31:0] tx0,
    input [31:0] db0_gpio_in, output [31:0] db0_gpio_out, output [31:0] db0_gpio_ddr,
-   input [31:0] fp_gpio_in, output reg [31:0] fp_gpio_out, output reg [31:0] fp_gpio_ddr,
+   input [11:0] fp_gpio_in, output [11:0] fp_gpio_out, output [11:0] fp_gpio_ddr,
    output [7:0] sen0, output sclk0, output mosi0, input miso0,
    output [2:0] radio_led0,
    output reg [31:0] radio0_misc_out, input [31:0] radio0_misc_in,
@@ -629,6 +629,9 @@ module x300_core #(
       .clk(radio_clk), .rst(radio_rst), .in(sr_fp_gpio_src), .out(fp_gpio_src)
    );
 
+   reg [11:0] radio_gpio_src_out;
+   reg [11:0] radio_gpio_src_ddr;
+
    // For each bit in the front-panel GPIO, mux the output and the direction
    // control bit based on the fp_gpio_src register. The fp_gpio_src register
    // holds 2 bits per GPIO pin, which selects which source to use for GPIO
@@ -636,10 +639,13 @@ module x300_core #(
    // supported.
    for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin : gen_fp_gpio_mux
       always @(posedge radio_clk) begin
-         fp_gpio_out[i] <= fp_gpio_r_out[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
-         fp_gpio_ddr[i] <= fp_gpio_r_ddr[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
+         radio_gpio_src_out[i] <= fp_gpio_r_out[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
+         radio_gpio_src_ddr[i] <= fp_gpio_r_ddr[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
       end
    end
+
+   assign fp_gpio_out = radio_gpio_src_out;
+   assign fp_gpio_ddr = radio_gpio_src_ddr;
 
    // Front-panel GPIO inputs are routed to all daughter boards
    for (i=0; i<NUM_DBOARDS; i=i+1) begin : gen_fp_gpio_inputs

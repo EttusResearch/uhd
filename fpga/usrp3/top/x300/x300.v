@@ -1291,7 +1291,7 @@ module x300
 
    wire [31:0] db0_gpio_in, db0_gpio_out, db0_gpio_ddr;
    wire [31:0] db1_gpio_in, db1_gpio_out, db1_gpio_ddr;
-   wire [31:0] fp_gpio_in, fp_gpio_out, fp_gpio_ddr;
+   wire [11:0] fp_gpio_in, fp_gpio_out, fp_gpio_ddr;
    wire        debug_txd, debug_rxd;
 
    gpio_atr_io #(.WIDTH(32)) gpio_atr_db0_inst (
@@ -1318,7 +1318,6 @@ module x300
    );
    assign debug_rxd = 1'b0;
 `endif
-   assign fp_gpio_in[31:12] = 20'h0;
 
    ///////////////////////////////////////////////////////////////////////////////////
    //
