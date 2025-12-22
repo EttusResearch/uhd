@@ -263,6 +263,13 @@ module x300_core #(
    );
 
    /////////////////////////////////////////////////////////////////////////////////
+   // Front-panel GPIO driven by user logic
+   /////////////////////////////////////////////////////////////////////////////////
+   wire [11:0] user_fp_gpio_out;
+   wire [11:0] user_fp_gpio_ddr;
+   wire [11:0] user_fp_gpio_in;
+
+   /////////////////////////////////////////////////////////////////////////////////
    // Bus Int containing soft CPU control, routing fabric
    /////////////////////////////////////////////////////////////////////////////////
 
@@ -317,6 +324,10 @@ module x300_core #(
       .SFPP1_RS0(SFPP1_RS0), .SFPP1_RS1(SFPP1_RS1),
       // Front-panel GPIO source
       .fp_gpio_src(sr_fp_gpio_src),
+      // Front panel GPIO driven by user logic in fabric
+      .user_fp_gpio_in(user_fp_gpio_in),
+      .user_fp_gpio_out(user_fp_gpio_out),
+      .user_fp_gpio_ddr(user_fp_gpio_ddr),
       //clocky locky misc
       .clock_status({misc_clock_status, pps_detect, LMK_Holdover, LMK_Lock, LMK_Status}),
       .clock_control({1'b0, clock_misc_opt[1:0], pps_out_enb, pps_select[1:0], clock_ref_sel[1:0]}),
@@ -635,22 +646,59 @@ module x300_core #(
    // For each bit in the front-panel GPIO, mux the output and the direction
    // control bit based on the fp_gpio_src register. The fp_gpio_src register
    // holds 2 bits per GPIO pin, which selects which source to use for GPIO
-   // control. Currently, only daughter board 0 and daughter board 1 are
-   // supported.
+   // control.
+   // 0b00: ATR from daughter board 0 (RFA) drives the GPIO
+   // 0b01: ATR from daughter board 1 (RFB) drives the GPIO
+   // 0b1X: User logic drives the GPIO
+   //
+   //                               1. Radio source mux
+   //                               +------+
+   //  ATR for pin i from ----------| 0    |
+   //  daughter board 0 (RFA)       |      |
+   //                               |      |----+
+   //  ATR for pin i from ----------| 1    |    |
+   //  daughter board 1 (RFB)       +------+    |
+   //                                 |         |   2. User
+   //  fp_gpio_src[2*i]---------------+         |   logic mux
+   //                                           |   +------+
+   //                                           +---| 0    |
+   //                                               |      |--- GPIO pin i
+   //  User logic for pin i ------------------------| 1    |
+   //                                               +------+
+   //                                                  |
+   //  fp_gpio_src[2*i+1]------------------------------+
+   //
    for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin : gen_fp_gpio_mux
-      always @(posedge radio_clk) begin
-         radio_gpio_src_out[i] <= fp_gpio_r_out[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
-         radio_gpio_src_ddr[i] <= fp_gpio_r_ddr[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
-      end
-   end
 
-   assign fp_gpio_out = radio_gpio_src_out;
-   assign fp_gpio_ddr = radio_gpio_src_ddr;
+      // First part of the mux: select radio ATR state from daughter board 0
+      // ("RFA") or daughter board 1 ("RFB")
+      always @ (posedge radio_clk) begin
+        radio_gpio_src_out[i] <= fp_gpio_r_out[fp_gpio_src[2*i]][i];
+        radio_gpio_src_ddr[i] <= fp_gpio_r_ddr[fp_gpio_src[2*i]][i];
+      end
+
+      // Second part of the mux: select radio ATR (first part of the mux)
+      // or user logic
+      glitch_free_mux glitch_free_mux_user_mux_out(
+        .select       (fp_gpio_src[2*i+1]),
+        .signal0      (radio_gpio_src_out[i]),
+        .signal1      (user_fp_gpio_out[i]),
+        .muxed_signal (fp_gpio_out[i])
+      );
+      glitch_free_mux glitch_free_mux_user_mux_tri(
+        .select       (fp_gpio_src[2*i+1]),
+        .signal0      (radio_gpio_src_ddr[i]),
+        .signal1      (user_fp_gpio_ddr[i]),
+        .muxed_signal (fp_gpio_ddr[i])
+      );
+   end
 
    // Front-panel GPIO inputs are routed to all daughter boards
    for (i=0; i<NUM_DBOARDS; i=i+1) begin : gen_fp_gpio_inputs
       assign fp_gpio_r_in[i] = fp_gpio_in;
    end
+   // Front-panel GPIO inputs are also routed to user logic
+   assign user_fp_gpio_in = fp_gpio_in;
 
    //------------------------------------
    // Radio to ADC,DAC and IO Mapping

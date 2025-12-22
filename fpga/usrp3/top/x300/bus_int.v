@@ -48,6 +48,10 @@ module bus_int #(
     input SFPP1_ModAbs, input SFPP1_TxFault, input SFPP1_RxLOS, inout SFPP1_RS0, inout SFPP1_RS1,
     // Front-panel GPIO source
     output [23:0] fp_gpio_src,
+    // User logic access to front-panel GPIO
+    input  [11:0] user_fp_gpio_in,
+    output [11:0] user_fp_gpio_out,
+    output [11:0] user_fp_gpio_ddr,
     // Clock control and status
     input [7:0] clock_status, output [7:0] clock_control, output [31:0] ref_freq, output ref_freq_changed,
     // SFP+ 0 data stream
@@ -899,6 +903,9 @@ module bus_int #(
     .m_pcie_tvalid           (c2p_tvalid),
     .m_pcie_tready           (c2p_tready)
   );
+
+  assign user_fp_gpio_out = 12'h0;
+  assign user_fp_gpio_ddr = 12'h0;
 
   //---------------------------------------------------------------------------
   // Convert Control Port to Settings Bus
