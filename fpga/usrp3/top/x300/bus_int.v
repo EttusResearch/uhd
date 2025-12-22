@@ -901,11 +901,12 @@ module bus_int #(
     .m_pcie_tdata            (c2p_tdata ),
     .m_pcie_tlast            (c2p_tlast ),
     .m_pcie_tvalid           (c2p_tvalid),
-    .m_pcie_tready           (c2p_tready)
+    .m_pcie_tready           (c2p_tready),
+    // Front-panel GPIO
+    .fp_gpio_out             (user_fp_gpio_out),
+    .fp_gpio_ddr             (user_fp_gpio_ddr),
+    .fp_gpio_in              (user_fp_gpio_in)
   );
-
-  assign user_fp_gpio_out = 12'h0;
-  assign user_fp_gpio_ddr = 12'h0;
 
   //---------------------------------------------------------------------------
   // Convert Control Port to Settings Bus
