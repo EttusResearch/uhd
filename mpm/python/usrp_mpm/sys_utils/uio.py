@@ -63,7 +63,8 @@ def get_uio_map_info(uio_dev, map_num):
         UIO_SYSFS_BASE_DIR, uio_dev, 'maps', 'map{0}'.format(map_num)
     )
     for info_file in os.listdir(map_info_path):
-        map_info_value = open(os.path.join(map_info_path, info_file), 'r').read().strip()
+        with open(os.path.join(map_info_path, info_file), "r") as f:
+            map_info_value = f.read().strip()
         try:
             map_info[info_file] = int(map_info_value, 0)
         except ValueError:

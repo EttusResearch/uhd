@@ -71,7 +71,9 @@ class BfrfsEEPROM(object):
         self.log.trace("Selected EEPROM path: `{}'".format(eeprom_path))
         user_eeprom_offset = eeprom_info.get('offset', 0)
         self.log.trace("Selected EEPROM offset: %d", user_eeprom_offset)
-        user_eeprom_data = open(eeprom_path, 'rb').read()[user_eeprom_offset:]
+        with open(eeprom_path, 'rb') as f:
+            data = f.read()
+        user_eeprom_data = data[user_eeprom_offset:]
         self.log.trace("Total EEPROM size is: %d bytes", len(user_eeprom_data))
         return BufferFS(
             user_eeprom_data,

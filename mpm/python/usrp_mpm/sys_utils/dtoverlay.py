@@ -22,9 +22,8 @@ def get_overlay_attrs(overlay_name):
     attrs = {}
     for attr_name in os.listdir(overlay_path):
         try:
-            attr_val = open(
-                os.path.join(overlay_path, attr_name), 'r'
-            ).read().strip()
+            with open(os.path.join(overlay_path, attr_name), 'r') as f:
+                attr_val = f.read().strip()
         except OSError:
             pass
         if len(attr_val):
@@ -36,9 +35,10 @@ def is_applied(overlay_name):
     Returns True if the overlay is already applied, False if not.
     """
     try:
-        return open(
-            os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'status')
-        ).read().strip() == 'applied'
+        with open(
+            os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'status'), 'r'
+        ) as f:
+            return f.read().strip() == 'applied'
     except IOError:
         return False
 
@@ -77,9 +77,10 @@ def apply_overlay(overlay_name):
     overlay_path = os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name)
     if not os.path.exists(overlay_path):
         os.mkdir(overlay_path)
-    open(
+    with open(
         os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'path'), 'w'
-    ).write("{}.dtbo".format(overlay_name))
+    ) as f:
+        f.write("{}.dtbo".format(overlay_name))
 
 def apply_overlay_safe(overlay_name):
     """

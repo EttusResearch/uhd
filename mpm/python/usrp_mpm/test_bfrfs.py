@@ -19,13 +19,15 @@ print(len(B0.buffer))
 LOG.warn('next foo')
 
 
-new_buf = open('eeprom.dat', 'rb').read()
+with open('eeprom.dat', 'rb') as f:
+    new_buf = f.read()
 B1 = bfrfs.BufferFS(new_buf, 256, 16, log=LOG)
 print(B1.get_blob('foo'))
 print(B1.get_blob('baz'))
 LOG.warn('next foo')
 B1.set_blob('baz', b'asdfalskdfjalksdfasdfkasdfkjh')
 B1.set_blob('foo', b'asdfalskdfjalksdfasdfkasdfkjh2')
-open('eeprom.dat', 'wb').write(B1.buffer)
+with open('eeprom.dat', 'wb') as f:
+    f.write(B1.buffer)
 
 print(B1.get_blob('foo'))
