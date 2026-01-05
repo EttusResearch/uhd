@@ -164,7 +164,7 @@ jobs:
       replaceExistingArchive: true
     displayName: Compress build files
 
-  - task: CopyFiles@2.246.0
+  - task: CopyFiles@2
     inputs:
       sourceFolder: $(Pipeline.Workspace)/uhd_build_docker_container/$(UHDPipelineDockerImageArtifactName)
       targetFolder: $(Build.ArtifactStagingDirectory)
@@ -184,7 +184,7 @@ jobs:
     condition: in(variables['Agent.JobStatus'],  'Succeeded')
     displayName: Upload uhd build artifacts
 
-  - task: CopyFiles@2.246.0
+  - task: CopyFiles@2
     inputs:
       sourceFolder: $(Build.BinariesDirectory)/uhddev/
       contents: build/Testing/**

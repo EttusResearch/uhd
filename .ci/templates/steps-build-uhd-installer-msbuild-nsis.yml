@@ -97,7 +97,7 @@ steps:
     msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild package
 
-- task: CopyFiles@2.246.0
+- task: CopyFiles@2
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd_*.exe'
@@ -105,7 +105,7 @@ steps:
     cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
   displayName: Copy msbuild installer
 - ${{if parameters.uhdBuildPythonAPI }}:
-  - task: CopyFiles@2.246.0
+  - task: CopyFiles@2
     inputs:
       sourceFolder: ${{ parameters.uhdBuildDir }}
       contents: '**/dist/uhd-*.whl'
@@ -113,7 +113,7 @@ steps:
       flattenFolders: True
       cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
     displayName: Copy Built Distribution (wheel) from Poetry build
-  - task: CopyFiles@2.246.0
+  - task: CopyFiles@2
     inputs:
       sourceFolder: ${{ parameters.uhdBuildDir }}
       contents: '**/dist/uhd-*.tar.gz'
