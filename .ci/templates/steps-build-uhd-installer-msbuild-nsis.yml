@@ -101,7 +101,7 @@ steps:
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd_*.exe'
-    targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+    targetFolder: '${{ parameters.uhdInstallerDir }}'
     cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
   displayName: Copy msbuild installer
 - ${{if parameters.uhdBuildPythonAPI }}:
@@ -109,7 +109,7 @@ steps:
     inputs:
       sourceFolder: ${{ parameters.uhdBuildDir }}
       contents: '**/dist/uhd-*.whl'
-      targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+      targetFolder: '${{ parameters.uhdInstallerDir }}'
       flattenFolders: True
       cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
     displayName: Copy Built Distribution (wheel) from Poetry build
@@ -117,7 +117,7 @@ steps:
     inputs:
       sourceFolder: ${{ parameters.uhdBuildDir }}
       contents: '**/dist/uhd-*.tar.gz'
-      targetFolder: '$(Build.BinariesDirectory)/uhddev-installer'
+      targetFolder: '${{ parameters.uhdInstallerDir }}'
       flattenFolders: True
       cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
     displayName: Copy Source Distribution (tar.gz) from Poetry build
