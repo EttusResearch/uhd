@@ -12,6 +12,18 @@ from pathlib import Path
 from hwtools.api import vapi, pathapi, cmd
 
 
+# Revert changes that only update the year in copyright statements for the given file
+def revert_year_only_changes(file_path):
+    cmd.run("git", "diff", "--unified=0", file_path, raise_on_err=False)
+    lines = cmd.stdout.splitlines()
+    if lines:
+        # skip the unified header of 5 lines
+        lines = lines[5:]
+        remaining_lines = [line for line in lines if not "Copyright" in line]
+        if not remaining_lines:
+            cmd.run("git", "checkout", file_path, raise_on_err=False)
+
+
 def update_xmlparse_files():
     if vapi.is_xmlparse():
         # copy the register map to the correct location
@@ -25,6 +37,7 @@ def update_xmlparse_files():
             f"fpga/usrp3/top/x400/doc/{variant}/{project_name}.htm", base="repo"
         )
         shutil.copy(src_file, dest_file)
+        revert_year_only_changes(dest_file)
 
         # get the directory of generated files and check each file in it
         xmlparse_hdl_dir = Path(pathapi.get_abs_path("pri1/hdl", base="xmlparse"))
@@ -50,12 +63,4 @@ def update_xmlparse_files():
                     if "not implemented" not in line:
                         file.write(line)
 
-            # revert the file if the year is the only change
-            cmd.run("git", "diff", "--unified=0", existing_files[0], raise_on_err=False)
-            lines = cmd.stdout.splitlines()
-            if lines:
-                # skip the unified header of 5 lines
-                lines = lines[5:]
-                remaining_lines = [line for line in lines if not "Copyright" in line]
-                if not remaining_lines:
-                    cmd.run("git", "checkout", existing_files[0], raise_on_err=False)
+            revert_year_only_changes(existing_files[0])
