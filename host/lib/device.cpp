@@ -132,7 +132,8 @@ find_filtered_devices_with_makers(
             and (not hint.has_key("serial")
                  or utils::serial_numbers_match(
                      hint["serial"], discovered_addr["serial"]))
-            and (not hint.has_key("type") or hint["type"] == discovered_addr["type"])
+            and (not hint.has_key("type") or hint["type"] == discovered_addr["type"]
+                 or hint["type"] == "sim") // special case for simulator
             and (not hint.has_key("product") or not discovered_addr.has_key("product")
                  or hint["product"] == discovered_addr["product"])) {
             UHD_LOG_DEBUG("Device FIND",

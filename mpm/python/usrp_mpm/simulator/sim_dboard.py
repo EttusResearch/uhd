@@ -66,6 +66,19 @@ class SimulatedDboardBase(DboardManagerBase):
 class SimulatedCatalinaDboard(SimulatedDboardBase):
     pids = [0x0110]
 
+    # Sensor callback maps (matching neon.py)
+    rx_sensor_callback_map = {
+        'ad9361_temperature': 'get_catalina_temp_sensor',
+        'rssi': 'get_rssi_sensor',
+        'lo_lock': 'get_rx_lo_lock_sensor',
+        'lo_locked': 'get_rx_lo_lock_sensor',
+    }
+    tx_sensor_callback_map = {
+        'ad9361_temperature': 'get_catalina_temp_sensor',
+        'lo_lock': 'get_tx_lo_lock_sensor',
+        'lo_locked': 'get_tx_lo_lock_sensor',
+    }
+
     extra_methods = [
         ("set_gain", lambda target, gain: gain),
         ("catalina_tune", lambda which, freq: freq),
@@ -89,5 +102,42 @@ class SimulatedCatalinaDboard(SimulatedDboardBase):
     def set_catalina_clock_rate(self, rate):
         self.clock_rate_cb(rate)
         return rate
+
+    # Sensor implementations
+    def get_catalina_temp_sensor(self, _):
+        """Return simulated AD9361 temperature sensor"""
+        return {
+            'name': 'ad9361_temperature',
+            'type': 'REALNUM',
+            'unit': 'C',
+            'value': '35.0'  # Simulated temperature
+        }
+
+    def get_rssi_sensor(self, chan):
+        """Return simulated RSSI sensor"""
+        return {
+            'name': 'rssi',
+            'type': 'REALNUM',
+            'unit': 'dB',
+            'value': '-50.0'  # Simulated RSSI
+        }
+
+    def get_rx_lo_lock_sensor(self, chan):
+        """Return simulated RX LO lock sensor"""
+        return {
+            'name': 'lo_locked',
+            'type': 'BOOLEAN',
+            'unit': '',
+            'value': 'true'  # Always locked in simulation
+        }
+
+    def get_tx_lo_lock_sensor(self, chan):
+        """Return simulated TX LO lock sensor"""
+        return {
+            'name': 'lo_locked',
+            'type': 'BOOLEAN',
+            'unit': '',
+            'value': 'true'  # Always locked in simulation
+        }
 
 register_dboard_class(SimulatedCatalinaDboard)

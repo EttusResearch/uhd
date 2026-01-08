@@ -11,8 +11,12 @@ import os
 from contextlib import contextmanager
 from builtins import object
 import pyudev
-import usrp_mpm.libpyusrp_periphs as lib
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm import __simulated__
+
+# Conditionally import C++ library - not available in simulator mode
+if not __simulated__:
+    import usrp_mpm.libpyusrp_periphs as lib
 
 UIO_SYSFS_BASE_DIR = '/sys/class/uio'
 UIO_DEV_BASE_DIR = '/dev'
@@ -90,6 +94,35 @@ def find_uio_device(label, logger=None):
     return None, None
 
 
+class _UIOStub:
+    """
+    Stub implementation for UIO when C++ library is not available (simulator mode).
+    Provides no-op implementations of the UIO interface to prevent crashes.
+    """
+    def __init__(self, path, logger):
+        self.path = path
+        self.log = logger
+        self.log.debug(f"Using UIO stub for {path} (simulator mode)")
+
+    def open(self):
+        """No-op open for simulator"""
+        pass
+
+    def close(self):
+        """No-op close for simulator"""
+        pass
+
+    def peek32(self, addr):
+        """Return 0 for all reads in simulator mode"""
+        self.log.trace(f"UIO stub peek32 at 0x{addr:08X} returning 0")
+        return 0
+
+    def poke32(self, addr, val):
+        """No-op write for simulator mode"""
+        self.log.trace(f"UIO stub poke32 at 0x{addr:08X} with value 0x{val:08X} - ignored")
+        pass
+
+
 class UIO(object):
     """
     Provides peek/poke interfaces for uio-mapped memory.
@@ -155,8 +188,12 @@ class UIO(object):
             "only" if read_only else "write"))
         self._read_only = read_only
         # Our UIO objects are managed in C++ land, which gives us more granular control over
-        # opening and closing
-        self._uio = lib.types.mmap_regs_iface(self._path, length, offset, self._read_only, False)
+        # opening and closing. In simulator mode, use a stub implementation.
+        if not __simulated__:
+            self._uio = lib.types.mmap_regs_iface(self._path, length, offset, self._read_only, False)
+        else:
+            # Simulator mode: create a stub that won't crash but will log warnings
+            self._uio = _UIOStub(self._path, self.log)
         # Reference counter for safely __enter__ and __exit__-ing
         self._ref_count = 0
 
