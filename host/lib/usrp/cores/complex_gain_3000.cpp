@@ -40,8 +40,7 @@ complex_gain_3000::complex_gain_3000(poke32_fn_t&& poke32_fn,
     const double tick_rate,
     const uhd::direction_t trx,
     const size_t nipc)
-    : _trx(trx)
-    , _poke32(std::move(poke32_fn))
+    : _poke32(std::move(poke32_fn))
     , _peek32(peek32_fn)
     , _latency(calc_latency(tick_rate, trx, nipc))
 {

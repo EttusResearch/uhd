@@ -56,7 +56,6 @@ public:
     std::complex<double> get_gain_coeff(const size_t chan);
 
 private:
-    const uhd::direction_t _trx;
     //! Writing to 32-bit coefficient register with
     // [31:16]  : Real part
     // [15:0]   : Imaginary part

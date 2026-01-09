@@ -141,9 +141,11 @@ BOOST_FIXTURE_TEST_CASE(timed_complex_gain_test, complex_gain_fixture)
 {
     std::vector<std::complex<double>> gain_list = {
         std::complex<double>(0.5, 0.5), std::complex<double>(0.5, -1.5)};
-    std::complex<double> default_gain(1.0, 0.0);
-    const uint32_t default_gain_value = ((1 << COEFF_FRAC_BITS) << COEFF_WIDTH)
-                                        | ((0 << COEFF_FRAC_BITS) & 0x0FFFF);
+    constexpr uint32_t DEFAULT_GAIN_I = 1;
+    constexpr uint32_t DEFAULT_GAIN_Q = 0;
+    const uint32_t default_gain_value =
+        ((DEFAULT_GAIN_I << COEFF_FRAC_BITS) << COEFF_WIDTH)
+        | ((DEFAULT_GAIN_Q << COEFF_FRAC_BITS) & 0x0FFFF);
     for (size_t i = 0; i < gain_list.size(); i++) {
         int16_t real_coeff         = gain_list[i].real() * (1 << COEFF_FRAC_BITS);
         int16_t imag_coeff         = gain_list[i].imag() * (1 << COEFF_FRAC_BITS);

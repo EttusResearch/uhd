@@ -32,8 +32,8 @@ constexpr uint32_t DIO_DIRECTION_REG = 0x4;
 } // namespace gpio_regmap
 
 // There are two ports, each with 12 pins
-constexpr size_t NUM_PORTS         = 2;
-constexpr size_t NUM_PINS_PER_PORT = 12;
+[[maybe_unused]] constexpr size_t NUM_PORTS = 2;
+constexpr size_t NUM_PINS_PER_PORT          = 12;
 
 // Start of Port B pin numbers relative to Port A:
 constexpr size_t PORT_NUMBER_OFFSET = 16;
