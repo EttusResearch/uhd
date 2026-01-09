@@ -11,7 +11,7 @@
 #include "common.h"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/thread.hpp>
+#include <chrono>
 #include <string>
 #include <vector>
 
@@ -40,7 +40,7 @@ private:
     std::string _rxbuff;
     uint32_t _sequence;
     uint32_t _proto_ver;
-    boost::system_time _last_cache_update;
+    std::chrono::time_point<std::chrono::steady_clock> _last_cache_update;
 
     void _update_cache();
     char _getchar();

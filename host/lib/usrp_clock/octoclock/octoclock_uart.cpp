@@ -13,20 +13,18 @@
 #include <uhdlib/asio.hpp>
 #include <stdint.h>
 #include <string.h>
-#include <boost/algorithm/string.hpp>
-#include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
 #include <chrono>
 #include <string>
 #include <thread>
 
-namespace asio = boost::asio;
 using namespace uhd::transport;
+using namespace std::chrono_literals;
 
 #define NUM_WRAPS_EQUAL (_state.num_wraps == _device_state.num_wraps)
 #define POS_EQUAL       (_state.pos == _device_state.pos)
 #define STATES_EQUAL    (NUM_WRAPS_EQUAL && POS_EQUAL)
-#define MAX_CACHE_AGE   256 // seconds
+
+constexpr auto MAX_CACHE_AGE = 256s;
 
 namespace uhd {
 octoclock_uart_iface::octoclock_uart_iface(udp_simple::sptr udp, uint32_t proto_ver)
@@ -114,9 +112,8 @@ void octoclock_uart_iface::_update_cache()
         reinterpret_cast<octoclock_packet_t*>(octoclock_data);
 
     if (STATES_EQUAL) {
-        boost::system_time time              = boost::get_system_time();
-        boost::posix_time::time_duration age = time - _last_cache_update;
-        bool cache_expired = (age > boost::posix_time::seconds(MAX_CACHE_AGE));
+        const auto now           = std::chrono::steady_clock::now();
+        const bool cache_expired = (now > _last_cache_update + MAX_CACHE_AGE);
 
         pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
         UHD_OCTOCLOCK_SEND_AND_RECV(
@@ -124,7 +121,7 @@ void octoclock_uart_iface::_update_cache()
         if (UHD_OCTOCLOCK_PACKET_MATCHES(SEND_GPSDO_CACHE_ACK, pkt_out, pkt_in, len)) {
             memcpy(&_cache[0], pkt_in->data, _poolsize);
             _device_state      = pkt_in->state;
-            _last_cache_update = time;
+            _last_cache_update = now;
         }
 
         uint8_t delta_wraps = (_device_state.num_wraps - _state.num_wraps);

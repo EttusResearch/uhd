@@ -8,6 +8,7 @@
 #include "octoclock_impl.hpp"
 #include "common.h"
 #include "octoclock_uart.hpp"
+#include <uhd/config.hpp>
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/if_addrs.hpp>
@@ -22,15 +23,12 @@
 #include <uhdlib/asio.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <stdint.h>
-#include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <filesystem>
 
 using namespace uhd;
 using namespace uhd::usrp_clock;
 using namespace uhd::transport;
-namespace asio = boost::asio;
-namespace fs   = std::filesystem;
+namespace fs = std::filesystem;
 
 /***********************************************************************
  * Discovery
@@ -45,10 +43,8 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
         for (const device_addr_t& hint_i : hints) {
             device_addrs_t found_devices_i = octoclock_find(hint_i);
             if (found_devices_i.size() != 1)
-                error_msg +=
-                    str(boost::format(
-                            "Could not resolve device hint \"%s\" to a single device.")
-                        % hint_i.to_string());
+                error_msg += "Could not resolve device hint \"" + hint_i.to_string()
+                             + "\" to a single device.\n";
             else
                 found_devices.push_back(found_devices_i[0]);
         }
@@ -95,15 +91,15 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
     }
 
     // Create a UDP transport to communicate
-    udp_simple::sptr udp_transport = udp_simple::make_broadcast(
-        _hint["addr"], BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
+    udp_simple::sptr udp_transport =
+        udp_simple::make_broadcast(_hint["addr"], STR(OCTOCLOCK_UDP_CTRL_PORT));
 
     // Send a query packet
     auto pkt_out = make_octoclock_packet();
     pkt_out.len  = 0;
     pkt_out.code = OCTOCLOCK_QUERY_CMD;
     try {
-        udp_transport->send(boost::asio::buffer(&pkt_out, sizeof(pkt_out)));
+        udp_transport->send(asio::buffer(&pkt_out, sizeof(pkt_out)));
     } catch (const std::exception& ex) {
         UHD_LOGGER_ERROR("OCTOCLOCK")
             << "OctoClock network discovery error - " << ex.what();
@@ -123,7 +119,7 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
 
             // Attempt direct communication with OctoClock
             udp_simple::sptr ctrl_xport = udp_simple::make_connected(
-                new_addr["addr"], BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
+                new_addr["addr"], STR(OCTOCLOCK_UDP_CTRL_PORT));
             UHD_OCTOCLOCK_SEND_AND_RECV(ctrl_xport,
                 OCTOCLOCK_FW_COMPAT_NUM,
                 OCTOCLOCK_QUERY_CMD,
@@ -220,13 +216,12 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
         // Can't make a device out of an OctoClock in bootloader state
         if (device_args_i["type"] == "octoclock-bootloader") {
             throw uhd::runtime_error(
-                str(boost::format("\n\nThis device is in its bootloader state and cannot "
-                                  "be used by UHD.\n"
-                                  "This may mean the firmware on the device has been "
-                                  "corrupted and will\n"
-                                  "need to be burned again.\n\n"
-                                  "%s\n")
-                    % _get_images_help_message(addr)));
+                std::string("\n\nThis device is in its bootloader state and cannot "
+                            "be used by UHD.\n"
+                            "This may mean the firmware on the device has been "
+                            "corrupted and will\n"
+                            "need to be burned again.\n\n")
+                + _get_images_help_message(addr) + "\n");
         }
 
         const std::string oc = std::to_string(oci);
@@ -235,9 +230,9 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
         // Set up UDP transports
         ////////////////////////////////////////////////////////////////////
         _oc_dict[oc].ctrl_xport =
-            udp_simple::make_connected(addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
+            udp_simple::make_connected(addr, STR(OCTOCLOCK_UDP_CTRL_PORT));
         _oc_dict[oc].gpsdo_xport =
-            udp_simple::make_connected(addr, BOOST_STRINGIZE(OCTOCLOCK_UDP_GPSDO_PORT));
+            udp_simple::make_connected(addr, STR(OCTOCLOCK_UDP_GPSDO_PORT));
 
         const fs_path oc_path = "/mboards/" + oc;
         _tree->create<std::string>(oc_path / "name").set("OctoClock");
@@ -248,14 +243,15 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
         _proto_ver = _get_fw_version(oc);
         if (_proto_ver < OCTOCLOCK_FW_MIN_COMPAT_NUM
             or _proto_ver > OCTOCLOCK_FW_COMPAT_NUM) {
-            throw uhd::runtime_error(str(
-                boost::format(
-                    "\n\nPlease update your OctoClock's firmware.\n"
-                    "Expected firmware compatibility number %d, but got %d:\n"
-                    "The firmware build is not compatible with the host code build.\n\n"
-                    "%s\n")
-                % int(OCTOCLOCK_FW_COMPAT_NUM) % int(_proto_ver)
-                % _get_images_help_message(addr)));
+            UHD_LOG_THROW(uhd::runtime_error,
+                "OCTOCLOCK",
+                "Please update your OctoClock's firmware.\n"
+                "Expected firmware compatibility number "
+                    << int(OCTOCLOCK_FW_COMPAT_NUM) << ", but got " << int(_proto_ver)
+                    << ":\n"
+                       "The firmware build is not compatible with the host code "
+                       "build.\n\n"
+                    << _get_images_help_message(addr));
         }
         _tree->create<std::string>(oc_path / "fw_version")
             .set(std::to_string(int(_proto_ver)));
@@ -294,8 +290,7 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
         if (device_args.size() > 1) {
             UHD_LOGGER_INFO("OCTOCLOCK") << "Checking status of " << addr;
         }
-        UHD_LOGGER_INFO("OCTOCLOCK")
-            << boost::format("%sDetecting internal GPSDO...") % asterisk;
+        UHD_LOGGER_INFO("OCTOCLOCK") << asterisk << "Detecting internal GPSDO...";
 
         _get_state(oc);
         if (_oc_dict[oc].state.gps_detected) {
@@ -322,19 +317,17 @@ octoclock_impl::octoclock_impl(const device_addr_t& _device_addr)
             }
         } else
             UHD_LOGGER_INFO("OCTOCLOCK") << "No GPSDO found";
+        UHD_LOGGER_INFO("OCTOCLOCK") << asterisk << "Detecting external reference..."
+                                     << _ext_ref_detected(oc).value;
         UHD_LOGGER_INFO("OCTOCLOCK")
-            << boost::format("%sDetecting external reference...%s") % asterisk
-                   % _ext_ref_detected(oc).value;
-        UHD_LOGGER_INFO("OCTOCLOCK") << boost::format("%sDetecting switch position...%s")
-                                            % asterisk % _switch_pos(oc).value;
-        std::string ref = _which_ref(oc).value;
+            << asterisk << "Detecting switch position..." << _switch_pos(oc).value;
+        const std::string ref = _which_ref(oc).value;
         if (ref == "none")
             UHD_LOGGER_INFO("OCTOCLOCK")
-                << boost::format("%sDevice is not using any reference") % asterisk;
+                << asterisk << "Device is not using any reference";
         else
             UHD_LOGGER_INFO("OCTOCLOCK")
-                << boost::format("%sDevice is using %s reference") % asterisk
-                       % _which_ref(oc).value;
+                << asterisk << "Device is using " << ref << " reference";
     }
 }
 
@@ -480,8 +473,8 @@ std::string octoclock_impl::_get_images_help_message(const std::string& addr)
     try {
         image_location = uhd::find_image_path(image_name);
     } catch (const std::exception&) {
-        return str(boost::format("Could not find %s in your images path.\n%s")
-                   % image_name % uhd::print_utility_error("uhd_images_downloader.py"));
+        return std::string("Could not find ") + image_name + " in your images path.\n"
+               + uhd::print_utility_error("uhd_images_downloader.py");
     }
 
 // Get escape character
@@ -493,8 +486,6 @@ std::string octoclock_impl::_get_images_help_message(const std::string& addr)
 
     // Get burner command
     const std::string burner_path = uhd::find_uhd_command("uhd_image_loader");
-    const std::string burner_cmd =
-        str(boost::format("%s %s--addr=\"%s\"") % burner_path % ml % addr);
-    return str(boost::format("%s\n%s")
-               % uhd::print_utility_error("uhd_images_downloader.py") % burner_cmd);
+    const std::string burner_cmd  = burner_path + " " + ml + "--addr=\"" + addr + "\"";
+    return uhd::print_utility_error("uhd_images_downloader.py") + "\n" + burner_cmd;
 }
