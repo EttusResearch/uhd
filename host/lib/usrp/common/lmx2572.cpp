@@ -507,7 +507,7 @@ private:
     }
 
     //! Returns the output enabled status of output
-    bool get_output_enabled(const output_t output)
+    bool get_output_enabled(const output_t output) override
     {
         if (output == RF_OUTPUT_A) {
             return _regs.outa_pd == lmx2572_regs_t::outa_pd_t::OUTA_PD_NORMAL_OPERATION;
