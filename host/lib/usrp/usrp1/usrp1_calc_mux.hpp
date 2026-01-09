@@ -10,7 +10,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/format.hpp>
 #include <string>
 #include <utility>
 #include <vector>
@@ -79,9 +78,9 @@ static uint32_t calc_rx_mux(const std::vector<mapping_pair_t>& mapping)
     //    for mixed sources: warning + Z = 0
     int Z = (num_quads > 0) ? 0 : 1;
     if (num_quads != 0 and num_reals != 0)
-        UHD_LOGGER_WARNING("USRP1") << boost::format(
-            "Mixing real and quadrature rx subdevices is not supported.\n"
-            "The Q input to the real source(s) will be non-zero.\n");
+        UHD_LOGGER_WARNING("USRP1")
+            << "Mixing real and quadrature rx subdevices is not supported.\n"
+               "The Q input to the real source(s) will be non-zero.\n";
 
     // calculate the rx mux value
     return ((channel_flags & 0xffff) << 4) | ((Z & 0x1) << 3) | ((nchan & 0x7) << 0);

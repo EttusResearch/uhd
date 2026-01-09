@@ -18,7 +18,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -178,7 +177,7 @@ struct usrp1_impl::io_impl
 
     std::atomic<bool> vandal_loop_exit;
     task::sptr vandal_task;
-    boost::system_time last_send_time;
+    std::chrono::time_point<std::chrono::steady_clock> last_send_time;
 };
 
 /*!
@@ -261,7 +260,7 @@ void usrp1_impl::rx_stream_on_off(bool enb)
 
 void usrp1_impl::tx_stream_on_off(bool enb)
 {
-    _io_impl->last_send_time = boost::get_system_time();
+    _io_impl->last_send_time = std::chrono::steady_clock::now();
     if (_tx_enabled and not enb)
         _io_impl->flush_send_buff();
     this->restore_tx(enb);
@@ -293,8 +292,8 @@ void usrp1_impl::vandal_conquest_loop(std::atomic<bool>& exit_loop)
 
             // shutoff transmit if it has been too long since send() was called
             if (_tx_enabled
-                and (boost::get_system_time() - _io_impl->last_send_time)
-                        > boost::posix_time::milliseconds(100)) {
+                and (std::chrono::steady_clock::now() - _io_impl->last_send_time
+                     > std::chrono::milliseconds(100))) {
                 this->tx_stream_on_off(false);
             }
 

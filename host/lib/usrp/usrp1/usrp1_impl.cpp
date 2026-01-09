@@ -13,9 +13,6 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -76,8 +73,8 @@ static device_addrs_t usrp1_find(const device_addr_t& hint)
             usrp1_fw_image = find_image_path(hint.get("fw", "usrp1_fw.ihx"));
         } catch (...) {
             UHD_LOGGER_WARNING("USRP1")
-                << boost::format("Could not locate USRP1 firmware. %s")
-                       % print_utility_error("uhd_images_downloader.py");
+                << "Could not locate USRP1 firmware. "
+                << print_utility_error("uhd_images_downloader.py");
         }
         UHD_LOGGER_DEBUG("USRP1") << "USRP1 firmware image: " << usrp1_fw_image;
 
@@ -248,8 +245,8 @@ usrp1_impl::usrp1_impl(const device_addr_t& device_addr)
                 << "Error parsing FPGA clock rate from EEPROM: " << e.what();
         }
     }
-    UHD_LOGGER_INFO("USRP1") << boost::format("Using FPGA clock rate of %fMHz...")
-                                    % (_master_clock_rate / 1e6);
+    UHD_LOGGER_INFO("USRP1") << "Using FPGA clock rate of " << (_master_clock_rate / 1e6)
+                             << "MHz...";
     _tree->create<double>(mb_path / "tick_rate")
         .add_coerced_subscriber(
             std::bind(&usrp1_impl::update_tick_rate, this, std::placeholders::_1))
@@ -316,7 +313,7 @@ usrp1_impl::usrp1_impl(const device_addr_t& device_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<int>(mb_path / "rx_dsps"); // dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++) {
-        fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
+        fs_path rx_dsp_path = mb_path / "rx_dsps" / dspno;
         _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
             .set_publisher(std::bind(&usrp1_impl::get_rx_dsp_host_rates, this));
         _tree->create<double>(rx_dsp_path / "rate/value")
@@ -344,7 +341,7 @@ usrp1_impl::usrp1_impl(const device_addr_t& device_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<int>(mb_path / "tx_dsps"); // dummy in case we have none
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++) {
-        fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
+        fs_path tx_dsp_path = mb_path / "tx_dsps" / dspno;
         _tree->create<meta_range_t>(tx_dsp_path / "rate/range")
             .set_publisher(std::bind(&usrp1_impl::get_tx_dsp_host_rates, this));
         _tree->create<double>(tx_dsp_path / "rate/value")
