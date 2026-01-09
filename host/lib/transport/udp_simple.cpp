@@ -12,6 +12,7 @@
 #    include <mstcpip.h>
 #    include <winsock2.h>
 #endif
+#include <chrono>
 
 using namespace uhd::transport;
 namespace asio = boost::asio;
@@ -132,7 +133,6 @@ udp_simple::sptr udp_simple::make_broadcast(
 /***********************************************************************
  * Simple UART over UDP
  **********************************************************************/
-#include <boost/thread/thread.hpp>
 class udp_simple_uart_impl : public uhd::uart_iface
 {
 public:
@@ -152,9 +152,8 @@ public:
     std::string read_uart(double timeout) override
     {
         std::string line;
-        const boost::system_time exit_time =
-            boost::get_system_time()
-            + boost::posix_time::milliseconds(long(timeout * 1000));
+        const auto exit_time = std::chrono::steady_clock::now()
+                               + std::chrono::milliseconds(int64_t(timeout * 1000));
         do {
             // drain anything in current buffer
             while (_off < _len) {
@@ -168,8 +167,9 @@ public:
 
             // recv a new packet into the buffer
             _len = _udp->recv(asio::buffer(_buf),
-                std::max(
-                    (exit_time - boost::get_system_time()).total_milliseconds() / 1000.,
+                std::max(std::chrono::duration<double>(
+                             exit_time - std::chrono::steady_clock::now())
+                             .count(),
                     0.0));
             _off = 0;
 
