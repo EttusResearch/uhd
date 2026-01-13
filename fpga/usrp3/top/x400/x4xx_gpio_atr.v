@@ -300,7 +300,7 @@ endmodule
 //            (HEC/ARC) left out).
 //          </li>
 //          <li>
-//            Up until FPGA compat number 10.0, the the bit order did not match the
+//            Up until FPGA compat number 10.0, the bit order did not match the
 //            actual pin order on the frontpanel connectors. To compensate for this,
 //            the software had to apply a mapping table for the values in bitfield
 //            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
