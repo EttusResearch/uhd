@@ -15,14 +15,27 @@
 
 namespace uhd { namespace rfnoc { namespace chdr {
 
+
 //----------------------------------------------------
 // Generic CHDR Packet Container
 //----------------------------------------------------
 
-//! A container class that wraps a generic buffer that contains a CHDR packet. The
-//  container provides a high level API to read and write the header, metadata and payload
-//  of the packet. The payload can be accessed as a generic buffer using this interface.
+//! A container class that wraps a generic buffer that contains a CHDR packet.
 //
+// The container provides a high level API to read and write the header,
+// metadata and payload of the packet. The payload can be accessed as a generic
+// buffer using this interface, making it suitable for data packets.
+//
+// Note that this class does not own or free the packet buffer, it only allows
+// interpreting the packet buffer as a CHDR packet. Care must be taken not to
+// use this class once the buffer pointer has been invalidated. For this reason,
+// a single chdr_packet_writer instance may be reused for multiple CHDR packets.
+//
+// This class is designed to be low-overhead and is suitable for usage in
+// high-performance code sections.
+//
+// To obtain an instance of a chdr_packet_writer, use
+// uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
 class chdr_packet_writer
 {
 public:
@@ -174,11 +187,23 @@ public:
 // Container for specific CHDR Packets
 //----------------------------------------------------
 
-//! A container class that wraps a generic buffer that contains a CHDR packet. The
-//  container provides a high level API to read and write the header, metadata and payload
-//  of the packet. The payload can be accessed as a specific type that will be serialized
-//  and deserialized appropriately.
+//! A container class that wraps a generic buffer that contains a CHDR packet.
 //
+// The container provides a high level API to read and write the header,
+// metadata and payload of the packet. The payload can be accessed as
+// a specific type that will be serialized and deserialized appropriately. This
+// makes it suitable for control, stream status/command, and management packets.
+//
+// Note that this class does not own or free the packet buffer, it only allows
+// interpreting the packet buffer as a CHDR packet. Care must be taken not to
+// use this class once the buffer pointer has been invalidated. For this reason,
+// a single chdr_packet_writer instance may be reused for multiple CHDR packets.
+//
+// This class is designed to be low-overhead and is suitable for usage in
+// high-performance code sections.
+//
+// To obtain an instance of a chdr_packet_writer, use
+// uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
 template <typename payload_t>
 class chdr_packet_writer_specific
 {
@@ -263,9 +288,10 @@ typedef chdr_packet_writer_specific<mgmt_payload> chdr_mgmt_packet;
 // CHDR packet factory
 //----------------------------------------------------
 
-//! A copyable and movable factory class that is capable of generating generic and
-//! specific CHDR packet containers.
+//! Factory class for CHDR packet containers.
 //
+// A copyable and movable factory class that is capable of generating generic
+// and specific CHDR packet containers.
 class chdr_packet_factory
 {
 public:
