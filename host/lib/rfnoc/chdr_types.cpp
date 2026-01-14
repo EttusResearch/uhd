@@ -31,6 +31,22 @@ static inline constexpr field_t get_field_u64(
 }
 
 //----------------------------------------------------
+// CHDR Header
+//----------------------------------------------------
+const std::string chdr_header::to_string() const
+{
+    // The static_casts are because vc and num_mdata are uint8_t -> unsigned char
+    // For some reason, despite the %u meaning unsigned int, boost still formats them
+    // as chars
+    return str(boost::format("chdr_header{vc:%u, eob:%c, eov:%c, pkt_type:%u, "
+                             "num_mdata:%u, seq_num:%u, length:%u, dst_epid:%u}\n")
+               % static_cast<uint16_t>(get_vc()) % (get_eob() ? 'Y' : 'N')
+               % (get_eov() ? 'Y' : 'N') % get_pkt_type()
+               % static_cast<uint16_t>(get_num_mdata()) % get_seq_num() % get_length()
+               % get_dst_epid());
+}
+
+//----------------------------------------------------
 // CHDR Control Payload
 //----------------------------------------------------
 
@@ -60,16 +76,15 @@ size_t ctrl_payload::serialize(uint64_t* buff,
         | ((static_cast<uint64_t>(data_vtr.size()) & mask_u64(NUM_DATA_WIDTH))
             << NUM_DATA_OFFSET)
         | ((static_cast<uint64_t>(seq_num) & mask_u64(SEQ_NUM_WIDTH)) << SEQ_NUM_OFFSET)
-        | ((static_cast<uint64_t>(timestamp.is_initialized() ? 1 : 0)
-               & mask_u64(HAS_TIME_WIDTH))
+        | ((static_cast<uint64_t>(bool(timestamp) ? 1 : 0) & mask_u64(HAS_TIME_WIDTH))
             << HAS_TIME_OFFSET)
         | ((static_cast<uint64_t>(is_ack) & mask_u64(IS_ACK_WIDTH)) << IS_ACK_OFFSET)
         | ((static_cast<uint64_t>(src_epid) & mask_u64(SRC_EPID_WIDTH))
             << SRC_EPID_OFFSET));
 
     // Populate optional timestamp
-    if (timestamp.is_initialized()) {
-        buff[ptr++] = conv_byte_order(timestamp.get());
+    if (bool(timestamp)) {
+        buff[ptr++] = conv_byte_order(*timestamp);
     }
 
     // Populate control operation word
@@ -119,7 +134,7 @@ void ctrl_payload::deserialize(const uint64_t* buff,
     if (get_field_u64<bool>(ctrl_header, HAS_TIME_OFFSET, HAS_TIME_WIDTH)) {
         timestamp = conv_byte_order(buff[ptr++]);
     } else {
-        timestamp = boost::none;
+        timestamp = {};
     }
 
     // Read control operation word
@@ -157,9 +172,7 @@ size_t ctrl_payload::get_length() const
 bool ctrl_payload::operator==(const ctrl_payload& rhs) const
 {
     return (dst_port == rhs.dst_port) && (src_port == rhs.src_port)
-           && (seq_num == rhs.seq_num)
-           && (timestamp.is_initialized() == rhs.timestamp.is_initialized())
-           && ((!timestamp.is_initialized()) || (timestamp.get() == rhs.timestamp.get()))
+           && (seq_num == rhs.seq_num) && (timestamp == rhs.timestamp)
            && (is_ack == rhs.is_ack) && (src_epid == rhs.src_epid)
            && (address == rhs.address) && (data_vtr == rhs.data_vtr)
            && (byte_enable == rhs.byte_enable) && (op_code == rhs.op_code)
@@ -173,8 +186,8 @@ std::string ctrl_payload::to_string() const
                       "is_ack:%s, src_epid:%d, address:0x%05x, byte_enable:0x%x, "
                       "op_code:%d, status:%d, data[0]:0x%08x}\n")
         % dst_port % src_port % int(seq_num)
-        % (timestamp.is_initialized() ? str(boost::format("0x%016x") % timestamp.get())
-                                      : std::string("<not present>"))
+        % (timestamp.has_value() ? str(boost::format("0x%016x") % *timestamp)
+                                 : std::string("<not present>"))
         % (is_ack ? "true" : "false") % src_epid % address % int(byte_enable) % op_code
         % status % data_vtr[0]);
 }

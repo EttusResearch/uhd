@@ -15,6 +15,7 @@
 #include <deque>
 #include <mutex>
 #include <numeric>
+#include <optional>
 #include <set>
 
 using namespace uhd;
@@ -125,12 +126,12 @@ public:
             }
         }
         // Send request and wait for an ACK
-        boost::optional<ctrl_payload> response;
+        std::optional<ctrl_payload> response;
         std::tie(std::ignore, response) =
             send_request_packet(OP_READ, addr, {uint32_t(0)}, timestamp);
         UHD_ASSERT_THROW(bool(response));
-        UHD_ASSERT_THROW(!response.get().data_vtr.empty());
-        return response.get().data_vtr[0];
+        UHD_ASSERT_THROW(!response.value().data_vtr.empty());
+        return response.value().data_vtr[0];
     }
 
     std::vector<uint32_t> block_peek32(uint32_t first_addr,
@@ -146,13 +147,13 @@ public:
 
         /* TODO: Uncomment when the atomic block peek is implemented in the FPGA
         // Send request and wait for an ACK
-        boost::optional<ctrl_payload> response;
+        std::optional<ctrl_payload> response;
         std::tie(std::ignore, response) = send_request_packet(OP_READ,
             first_addr,
             std::vector<uint32_t>(length, 0),
             timestamp);
 
-        return response.get().data_vtr;
+        return response.value().data_vtr;
         */
     }
 
@@ -196,6 +197,18 @@ public:
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _handle_async_msg = callback_f;
+    }
+
+    // Backward-compatible, legacy version
+    void register_async_msg_handler(async_msg_callback_legacy_t callback_f) override
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _handle_async_msg = [callback_f](uint32_t addr,
+                                const std::vector<uint32_t>& data,
+                                std::optional<uint64_t> timestamp) {
+            return callback_f(
+                addr, data, bool(timestamp) ? *timestamp : boost::optional<uint64_t>{});
+        };
     }
 
     void set_policy(const std::string& name, const uhd::device_addr_t& args) override
@@ -397,7 +410,7 @@ private:
     //! Returns the length of the control payload in 32-bit words
     inline static size_t get_payload_size(const ctrl_payload& payload)
     {
-        return 2 + (payload.timestamp.is_initialized() ? 2 : 0) + payload.data_vtr.size();
+        return 2 + (payload.timestamp.has_value() ? 2 : 0) + payload.data_vtr.size();
     }
 
     //! Marks the start of a timeout for an operation and returns the expiration time
@@ -419,7 +432,7 @@ private:
 
     //! Sends a request control packet to a remote device, optionally waiting
     // for an ACK, and returns any response if applicable
-    const std::pair<ctrl_payload, boost::optional<ctrl_payload>> send_request_packet(
+    const std::pair<ctrl_payload, std::optional<ctrl_payload>> send_request_packet(
         ctrl_opcode_t op_code,
         uint32_t address,
         const std::vector<uint32_t>& data_vtr,
@@ -431,7 +444,7 @@ private:
         }
 
         // Convert from uhd::time_spec to timestamp
-        boost::optional<uint64_t> timestamp;
+        std::optional<uint64_t> timestamp;
         if (time_spec != time_spec_t::ASAP) {
             if (!_timebase_clk.is_running()) {
                 throw uhd::system_error("Timebase clock is not running");

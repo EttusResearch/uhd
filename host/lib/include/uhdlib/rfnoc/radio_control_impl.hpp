@@ -15,6 +15,7 @@
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <unordered_map>
 #include <mutex>
+#include <optional>
 
 #define RFNOC_RADIO_CONSTRUCTOR(CLASS_NAME) \
     CLASS_NAME##_impl(make_args_ptr make_args) : radio_control_impl(std::move(make_args))
@@ -413,7 +414,7 @@ private:
     // - Late data packets
     void async_message_handler(uint32_t addr,
         const std::vector<uint32_t>& data,
-        boost::optional<uint64_t> timestamp);
+        std::optional<uint64_t> timestamp);
 
     //! Return the maximum samples per packet of size \p bytes
     //

@@ -11,6 +11,7 @@
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <limits>
+#include <optional>
 
 namespace uhd { namespace rfnoc { namespace chdr {
 
@@ -63,9 +64,9 @@ public:
 
     /*! Returns the timestamp in the packet as an optional value
      *
-     * \return A boost::optional which if initialized has the timestamp
+     * \return A std::optional which if initialized has the timestamp
      */
-    virtual boost::optional<uint64_t> get_timestamp() const = 0;
+    virtual std::optional<uint64_t> get_timestamp() const = 0;
 
     /*! Returns the endianness of the metadata and payload buffers
      *

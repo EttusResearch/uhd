@@ -44,7 +44,7 @@ ctrl_payload populate_ctrl_payload()
     if (rand64() % 2 == 0) {
         pyld.timestamp = rand64();
     } else {
-        pyld.timestamp = boost::none;
+        pyld.timestamp = {};
     }
     return pyld;
 }

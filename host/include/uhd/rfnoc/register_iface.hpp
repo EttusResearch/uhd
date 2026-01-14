@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace uhd { namespace rfnoc {
@@ -67,6 +68,13 @@ public:
      *  by calling the async message validator callback.
      */
     using async_msg_callback_t = std::function<void(
+        uint32_t addr, const std::vector<uint32_t>& data, std::optional<uint64_t>)>;
+
+    /*! Legacy (Boost-based) callback function.
+     *
+     * Prefer async_msg_callback_t instead.
+     */
+    using async_msg_callback_legacy_t = std::function<void(
         uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t>)>;
 
     /*! Write a 32-bit register implemented in the NoC block.
@@ -303,6 +311,16 @@ public:
      * \param callback_f The function to call when an asynchronous message is received.
      */
     virtual void register_async_msg_handler(async_msg_callback_t callback_f) = 0;
+
+    /*! Register a callback function to validate a received async message (legacy version)
+     *
+     * This is a backward-compatible version of register_async_msg_handler that
+     * allows the usage of boost::optional instead of std::optional.
+     *
+     * \param callback_f The function to call when an asynchronous message is received.
+     */
+    [[deprecated("Prefer std::optional over boost::optional.")]] virtual void
+    register_async_msg_handler(async_msg_callback_legacy_t callback_f) = 0;
 
     /*! Set a policy that governs the operational parameters of this register bus.
      *  Policies can be used to make tradeoffs between performance, resilience, latency,

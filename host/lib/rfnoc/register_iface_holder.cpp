@@ -68,6 +68,11 @@ public:
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
+    void register_async_msg_handler(async_msg_callback_legacy_t) override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+    }
+
     void register_async_msg_validator(async_msg_validator_t) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");

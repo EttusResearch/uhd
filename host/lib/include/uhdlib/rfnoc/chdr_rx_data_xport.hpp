@@ -391,7 +391,7 @@ private:
         packet_info_t info;
         info.eob           = header.get_eob();
         info.eov           = header.get_eov();
-        info.has_tsf       = optional_time.is_initialized();
+        info.has_tsf       = optional_time.has_value();
         info.tsf           = optional_time ? *optional_time : 0;
         info.payload_bytes = _recv_packet->get_payload_size();
         info.payload       = _recv_packet->get_payload_const_ptr();

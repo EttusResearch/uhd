@@ -116,6 +116,11 @@ public:
         // nop
     }
 
+    void register_async_msg_handler(async_msg_callback_legacy_t /*callback_f*/) override
+    {
+        // nop
+    }
+
     void set_policy(const std::string& name, const uhd::device_addr_t& args) override
     {
         UHD_LOG_INFO("MOCK_REG_IFACE",

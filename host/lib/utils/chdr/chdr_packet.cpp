@@ -103,10 +103,7 @@ chdr_util::chdr_packet chdr_util::chdr_packet::deserialize_ptr(
     packet_writer->refresh(start);
 
     chdr_rfnoc::chdr_header header    = packet_writer->get_chdr_header();
-    std::optional<uint64_t> timestamp{};
-    if (bool(packet_writer->get_timestamp())) {
-        timestamp = *packet_writer->get_timestamp();
-    }
+    std::optional<uint64_t> timestamp = packet_writer->get_timestamp();
 
     const size_t mdata_size_words = packet_writer->get_mdata_size() / 8;
     const uint64_t* mdata_src_begin =

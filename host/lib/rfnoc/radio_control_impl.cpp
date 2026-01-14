@@ -321,7 +321,7 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         });
     regs().register_async_msg_handler([this](uint32_t addr,
                                           const std::vector<uint32_t>& data,
-                                          boost::optional<uint64_t> timestamp) {
+                                          std::optional<uint64_t> timestamp) {
         this->async_message_handler(addr, data, timestamp);
     });
 
@@ -1249,7 +1249,7 @@ bool radio_control_impl::async_message_validator(
 }
 
 void radio_control_impl::async_message_handler(
-    uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t> timestamp)
+    uint32_t addr, const std::vector<uint32_t>& data, std::optional<uint64_t> timestamp)
 {
     if (data.empty()) {
         RFNOC_LOG_WARNING(
@@ -1279,8 +1279,7 @@ void radio_control_impl::async_message_handler(
             % addr % data.size() % (addr_base == regmap::SWREG_TX_ERR ? "TX" : "RX")
             % chan % addr_offset % int(bool(timestamp))));
     if (timestamp) {
-        RFNOC_LOG_TRACE(
-            str(boost::format("Async message timestamp: %ul") % timestamp.get()));
+        RFNOC_LOG_TRACE("Async message timestamp: " << *timestamp);
     }
     switch (addr_base + addr_offset) {
         case regmap::SWREG_TX_ERR: {

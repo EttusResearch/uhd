@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -100,11 +101,22 @@ public:
 
     //! Factory function
     static sptr make(uhd::async_metadata_t::event_code_t event_code,
+        const std::optional<uint64_t>& tsf);
+
+    //! Factory function
+    //
+    // Required to avoid ambiguity between boost and std versions when using
+    // timestamp directly.
+    static sptr make(uhd::async_metadata_t::event_code_t event_code, uint64_t tsf);
+
+    //! Factory function (legacy, to support boost::optional)
+    [[deprecated("Prefer std::optional over boost::optional.")]] static sptr make(
+        uhd::async_metadata_t::event_code_t event_code,
         const boost::optional<uint64_t>& tsf);
 
 protected:
     tx_event_action_info(uhd::async_metadata_t::event_code_t event_code,
-        const boost::optional<uint64_t>& tsf);
+        const std::optional<uint64_t>& tsf);
 };
 
 //! Action object for graph-based tuning

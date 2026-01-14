@@ -69,14 +69,14 @@ public:
         return chdr_header(u64_to_host(_pkt_buff[0]));
     }
 
-    boost::optional<uint64_t> get_timestamp() const override
+    std::optional<uint64_t> get_timestamp() const override
     {
         if (_has_timestamp(get_chdr_header())) {
             // In a unit64_t buffer, the timestamp is always immediately after the header
             // regardless of chdr_w.
             return u64_to_host(_pkt_buff[1]);
         } else {
-            return boost::none;
+            return {};
         }
     }
 

@@ -72,28 +72,41 @@ rx_event_action_info::sptr rx_event_action_info::make(
 
 /*** TX Metadata Action Info *************************************************/
 tx_event_action_info::tx_event_action_info(
-    uhd::async_metadata_t::event_code_t event_code_,
-    const boost::optional<uint64_t>& tsf_)
-    : action_info(ACTION_KEY_TX_EVENT), event_code(event_code_), has_tsf(tsf_)
+    uhd::async_metadata_t::event_code_t event_code_, const std::optional<uint64_t>& tsf_)
+    : action_info(ACTION_KEY_TX_EVENT), event_code(event_code_), has_tsf(bool(tsf_))
 {
     if (has_tsf) {
-        tsf = tsf_.get();
+        tsf = tsf_.value();
     }
 }
 
 tx_event_action_info::sptr tx_event_action_info::make(
-    uhd::async_metadata_t::event_code_t event_code, const boost::optional<uint64_t>& tsf)
+    uhd::async_metadata_t::event_code_t event_code, const std::optional<uint64_t>& tsf)
 {
     struct tx_event_action_info_make_shared : public tx_event_action_info
     {
         tx_event_action_info_make_shared(uhd::async_metadata_t::event_code_t event_code,
-            const boost::optional<uint64_t>& tsf)
+            const std::optional<uint64_t>& tsf)
             : tx_event_action_info(event_code, tsf)
         {
         }
     };
     return std::make_shared<tx_event_action_info_make_shared>(event_code, tsf);
 }
+
+tx_event_action_info::sptr tx_event_action_info::make(
+    uhd::async_metadata_t::event_code_t event_code, uint64_t tsf)
+{
+    return tx_event_action_info::make(event_code, std::optional<uint64_t>{tsf});
+}
+
+tx_event_action_info::sptr tx_event_action_info::make(
+    uhd::async_metadata_t::event_code_t event_code, const boost::optional<uint64_t>& tsf)
+{
+    return tx_event_action_info::make(event_code,
+        bool(tsf) ? std::optional<uint64_t>(*tsf) : std::optional<uint64_t>{});
+}
+
 
 /*** Tune Request Metadata Action Info *************************************************/
 tune_request_action_info::tune_request_action_info(
