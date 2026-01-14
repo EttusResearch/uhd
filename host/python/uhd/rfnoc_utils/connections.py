@@ -46,10 +46,13 @@ def _check_duplicate_connections(config):
             def port_match(c):
                 return con[f"{s_d}blk"] == c[f"{s_d}blk"] and con[f"{s_d}port"] == c[f"{s_d}port"]
 
+            def valid_types(c):
+                return con[f"{s_d}type"] is not None and c[f"{s_d}type"] is not None
+
             dupes = [
                 other
                 for other in config.connections[con_idx + 1 :]
-                if port_match(other) and not is_broadcast(other)
+                if valid_types(other) and port_match(other) and not is_broadcast(other)
             ]
             if dupes:
                 error = (
@@ -133,6 +136,8 @@ def check_and_sanitize(config):
 
     ## Phase 1: We go through the list of connections and provide annotations
     for conn_idx, con in enumerate(config.connections):
+        con["srctype"] = None
+        con["dsttype"] = None
         for s_d in ("src", "dst"):
             con, failure = sanitize_port(con, s_d, failure)
         src_blk = config.get_module(con["srcblk"])
