@@ -173,7 +173,7 @@ chdr_util::chdr_packet make_data_packet0()
     header.set_length(8000);
     header.set_dst_epid(3);
     header.set_seq_num(1);
-    boost::optional<uint64_t> timestamp(0x7C40C83);
+    std::optional<uint64_t> timestamp(0x7C40C83);
     uint8_t* data_src;
     size_t data_len;
     std::tie(data_src, data_len) = data_packet::peer1[9];
@@ -190,7 +190,7 @@ chdr_util::chdr_packet make_data_packet1()
     header.set_dst_epid(3);
     header.set_eob(true);
     header.set_seq_num(1716);
-    boost::optional<uint64_t> timestamp(0x21452B97);
+    std::optional<uint64_t> timestamp(0x21452B97);
     uint8_t* data_src;
     size_t data_len;
     std::tie(data_src, data_len) = data_packet::eob_packet_data;

@@ -16,7 +16,7 @@ template <typename payload_t>
 chdr_packet::chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
     chdr_rfnoc::chdr_header header,
     payload_t payload,
-    boost::optional<uint64_t> timestamp,
+    std::optional<uint64_t> timestamp,
     std::vector<uint64_t> metadata)
     : chdr_packet(chdr_w, header, std::vector<uint8_t>(), timestamp, std::move(metadata))
 {

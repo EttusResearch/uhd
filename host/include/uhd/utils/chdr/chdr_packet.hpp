@@ -10,10 +10,9 @@
 #include <uhd/rfnoc/chdr_types.hpp>
 #include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/types/endianness.hpp>
-#include <boost/none.hpp>
-#include <boost/optional.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -21,31 +20,57 @@ namespace uhd { namespace utils { namespace chdr {
 
 /*! A Generic class that represents a CHDR Packet
  *
- * Whether the packet has a specific type of payload is not specified
+ * This class is not used by UHD, it is a helper class for writing tests or
+ * other types of utilities. The class has the capability of representing any
+ * CHDR packet, and serializing this class into a CHDR packet (or deserializing
+ * from a buffer to populate this class). It is not optimized for high
+ * performance.
+ * For example, this is used in UHD unit tests, and in the USRP simulator to
+ * provide an easy way to generate CHDR packets from Python.
+ *
+ * Whether the packet has a specific type of payload is not specified, but of
+ * course the CHDR header can be set as desired, and a payload can be provided
+ * to the constructor.
  */
 class UHD_API chdr_packet
 {
 public:
     /*! Constructs a CHDR Packet from a header and a payload
      *
-     * timestamp and metadata are optional and will be empty if omitted
+     * This is commonly used to create a non-data packet (e.g., control,
+     * stream status, etc.).
+     *
+     * \param chdr_w CHDR width
+     * \param header CHDR header
+     * \param payload The payload object (e.g., a chdr_rfnoc::ctrl_payload if
+     *                that's the type of payload_t).
+     * \param timestamp Timestamp, defaults to no timestamp in the header.
+     * \param metadata Metadata, defaults to no metadata.
      */
     template <typename payload_t>
     chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
         uhd::rfnoc::chdr::chdr_header header,
         payload_t payload,
-        boost::optional<uint64_t> timestamp = boost::none,
-        std::vector<uint64_t> metadata      = {});
+        std::optional<uint64_t> timestamp = {},
+        std::vector<uint64_t> metadata    = {});
 
     /*! Construct a CHDR Packet from a header and raw payload words
      *
-     * timestamp and metadata are optional and will be empty if omitted
+     * This is the typical way to construct data packets, or to manually
+     * construct non-data packets by bypassing the corresponding payload types.
+     *
+     * \param chdr_w CHDR width
+     * \param header CHDR header
+     * \param payload_data The payload data as bytes, i.e., whatever follows
+     *                     the CHDR header.
+     * \param timestamp Timestamp, defaults to no timestamp in the header.
+     * \param metadata Metadata, defaults to no metadata.
      */
     chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
         uhd::rfnoc::chdr::chdr_header header,
         std::vector<uint8_t> payload_data,
-        boost::optional<uint64_t> timestamp = boost::none,
-        std::vector<uint64_t> mdata         = {});
+        std::optional<uint64_t> timestamp = {},
+        std::vector<uint64_t> metadata    = {});
 
     /*! Returns the contents of the CHDR header
      *
@@ -61,15 +86,16 @@ public:
 
     /*! Returns the timestamp in the packet as an optional value
      *
-     * \return A boost::optional which if initialized has the timestamp
+     * \return A std::optional which if initialized has the timestamp
      */
-    boost::optional<uint64_t> get_timestamp() const;
+    std::optional<uint64_t> get_timestamp() const;
 
     /*! Sets the timestamp in the packet
      *
-     * \param timestamp the timestamp to set, or boost::none for no timestamp
+     * \param timestamp the timestamp to set, or an empty optional for no
+     *                  timestamp
      */
-    void set_timestamp(boost::optional<uint64_t> timestamp);
+    void set_timestamp(std::optional<uint64_t> timestamp);
 
     /*! Returns a const reference to the metadata
      *
@@ -162,19 +188,22 @@ public:
 
 private:
     void serialize_ptr(endianness_t endianness, void* start, void* end) const;
+
     static chdr_packet deserialize_ptr(uhd::rfnoc::chdr_w_t chdr_w,
         endianness_t endianness,
         const void* start,
         const void* end);
+
     inline void set_header_lengths()
     {
         _header.set_num_mdata(_mdata.size() / (uhd::rfnoc::chdr_w_to_bits(_chdr_w) / 64));
         _header.set_length(get_packet_len());
     }
+
     uhd::rfnoc::chdr_w_t _chdr_w;
     uhd::rfnoc::chdr::chdr_header _header;
     std::vector<uint8_t> _payload;
-    boost::optional<uint64_t> _timestamp;
+    std::optional<uint64_t> _timestamp;
     std::vector<uint64_t> _mdata;
 };
 

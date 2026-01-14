@@ -15,7 +15,7 @@ using namespace uhd;
 chdr_util::chdr_packet::chdr_packet(uhd::rfnoc::chdr_w_t chdr_w,
     chdr_rfnoc::chdr_header header,
     std::vector<uint8_t> payload,
-    boost::optional<uint64_t> timestamp,
+    std::optional<uint64_t> timestamp,
     std::vector<uint64_t> mdata)
     : _chdr_w(chdr_w)
     , _header(header)
@@ -49,12 +49,12 @@ void chdr_util::chdr_packet::set_header(chdr_rfnoc::chdr_header header)
     set_header_lengths();
 }
 
-boost::optional<uint64_t> chdr_util::chdr_packet::get_timestamp() const
+std::optional<uint64_t> chdr_util::chdr_packet::get_timestamp() const
 {
     return this->_timestamp;
 }
 
-void chdr_util::chdr_packet::set_timestamp(boost::optional<uint64_t> timestamp)
+void chdr_util::chdr_packet::set_timestamp(std::optional<uint64_t> timestamp)
 {
     _timestamp = timestamp;
     set_header_lengths();
@@ -102,8 +102,11 @@ chdr_util::chdr_packet chdr_util::chdr_packet::deserialize_ptr(
         factory.make_generic(std::numeric_limits<size_t>::max());
     packet_writer->refresh(start);
 
-    chdr_rfnoc::chdr_header header      = packet_writer->get_chdr_header();
-    boost::optional<uint64_t> timestamp = packet_writer->get_timestamp();
+    chdr_rfnoc::chdr_header header    = packet_writer->get_chdr_header();
+    std::optional<uint64_t> timestamp{};
+    if (bool(packet_writer->get_timestamp())) {
+        timestamp = *packet_writer->get_timestamp();
+    }
 
     const size_t mdata_size_words = packet_writer->get_mdata_size() / 8;
     const uint64_t* mdata_src_begin =
@@ -142,10 +145,10 @@ const std::vector<uint64_t>& chdr_util::chdr_packet::get_metadata() const
 size_t chdr_util::chdr_packet::get_packet_len() const
 {
     size_t chdr_w_bytes = uhd::rfnoc::chdr_w_to_bits(_chdr_w) / 8;
-    // The timestamp and header take up 2 chdr_w lengths only when CHDR_W = 64 bits and
-    // there is a timestamp (RFNoC Specifcation section 2.2.1)
+    // The timestamp and header take up 2 chdr_w lengths only when CHDR_W = 64
+    // bits and there is a timestamp (RFNoC Specification section 2.2.1)
     return _payload.size() * sizeof(uint8_t) + _mdata.size() * sizeof(uint64_t)
-           + ((_timestamp != boost::none && _chdr_w == uhd::rfnoc::CHDR_W_64) ? 2 : 1)
+           + ((bool(_timestamp) && _chdr_w == uhd::rfnoc::CHDR_W_64) ? 2 : 1)
                  * chdr_w_bytes;
 }
 

@@ -30,14 +30,14 @@ void export_utils_with_payload(
         .def(py::init([](uhd::rfnoc::chdr_w_t chdr_w,
                           chdr_rfnoc::chdr_header header,
                           payload_t payload,
-                          boost::optional<uint64_t> timestamp,
+                          std::optional<uint64_t> timestamp,
                           std::vector<uint64_t> metadata) {
             return chdr_packet(chdr_w, header, payload, timestamp, metadata);
         }),
             py::arg("chdr_w"),
             py::arg("header"),
             py::arg("payload"),
-            py::arg("timestamp") = boost::optional<uint64_t>(),
+            py::arg("timestamp") = std::optional<uint64_t>(),
             py::arg("metadata")  = std::vector<uint64_t>())
         .def(get_payload_name.c_str(),
             &chdr_packet::get_payload<payload_t>,
@@ -68,7 +68,7 @@ void export_utils(py::module& m)
             .def(py::init([](uhd::rfnoc::chdr_w_t chdr_w,
                               chdr_rfnoc::chdr_header header,
                               py::bytes& payload,
-                              boost::optional<uint64_t> timestamp,
+                              std::optional<uint64_t> timestamp,
                               py::bytes& metadata) {
                 return chdr_packet(chdr_w,
                     header,
@@ -79,7 +79,7 @@ void export_utils(py::module& m)
                 py::arg("chdr_w"),
                 py::arg("header"),
                 py::arg("payload"),
-                py::arg("timestamp") = boost::optional<uint64_t>(),
+                py::arg("timestamp") = std::optional<uint64_t>(),
                 py::arg("metadata")  = py::bytes())
             // Methods
             .def("__str__", &chdr_packet::to_string)
