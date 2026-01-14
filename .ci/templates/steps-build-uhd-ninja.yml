@@ -9,6 +9,9 @@ parameters:
 - name: uhdCxxFlags
   type: string
   default: ""
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 - script: |
@@ -19,7 +22,10 @@ steps:
       export CXXFLAGS="-Werror -Wno-error=maybe-uninitialized $CXXFLAGS"
     fi
     export CXXFLAGS="${{ parameters.uhdCxxFlags }} $CXXFLAGS"
-    cmake -G Ninja ${{ parameters.uhdSrcDir }}/host
+    if [[ "${{ parameters.cmake_args }}" != " " ]]; then
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    fi
+    cmake -G Ninja ${{ parameters.cmake_args }} ${{ parameters.uhdSrcDir }}/host
   displayName: cmake ninja UHD
 - script: |
     cd ${{ parameters.uhdBuildDir }}

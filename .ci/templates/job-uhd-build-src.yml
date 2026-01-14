@@ -115,6 +115,7 @@ jobs:
       parameters:
         uhdSrcDir: $(Build.SourcesDirectory)
         uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+        cmake_args: ${{ parameters.cmake_args }}
 
   - ${{ if eq(parameters.toolset, 'msbuild') }}:
     - template: steps-build-uhd-msbuild.yml
