@@ -38,6 +38,7 @@ public:
      * \param my_epid The local EPID for this transport
      * \param num_send_frames Number of frames to reserve for TX
      * \param num_recv_frames Number of frames to reserve for RX
+     * \param send_frame_size MTU of send frames (max number of bytes per frame)
      * \param disconnect Callback function to disconnect the links
      */
     static sptr make(io_service::sptr io_srv,

@@ -157,7 +157,11 @@ static std::pair<chdr_tx_data_xport::fc_params_t, chdr::strc_payload> configure_
         fc_cb);
 
     // Function to send a strc init
-    auto send_strc_init = [&send_io, epids, &strc_packet, &strc_pyld](
+    auto send_strc_init = [&send_io,
+                              epids,
+                              &strc_packet,
+                              &strc_pyld,
+                              frame_size = send_link->get_send_frame_size()](
                               const stream_buff_params_t fc_freq = {0, 0}) {
         frame_buff::uptr buff = send_io->get_send_buff(0);
 
@@ -173,7 +177,7 @@ static std::pair<chdr_tx_data_xport::fc_params_t, chdr::strc_payload> configure_
 
         strc_pyld.num_bytes = fc_freq.bytes;
         strc_pyld.num_pkts  = fc_freq.packets;
-        strc_packet->refresh(buff->data(), header, strc_pyld);
+        strc_packet->refresh(buff->data(), frame_size, header, strc_pyld);
 
         const size_t size = header.get_length();
         buff->set_packet_size(size);

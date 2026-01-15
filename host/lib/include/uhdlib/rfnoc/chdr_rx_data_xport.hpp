@@ -60,7 +60,8 @@ public:
         fc_payload.xfer_count_bytes = counts.bytes;
         fc_payload.xfer_count_pkts  = counts.packets;
 
-        _fc_packet->refresh(buff->data(), header, fc_payload);
+        _fc_packet->refresh(
+            buff->data(), send_link->get_send_frame_size(), header, fc_payload);
         const size_t size = header.get_length();
 
         buff->set_packet_size(size);

@@ -1123,7 +1123,8 @@ private: // Functions
                 LOG_ID, "Timed out getting send buff for management transaction");
             throw uhd::io_error("Timed out getting send buff for management transaction");
         }
-        _send_pkt->refresh(send_buff->data(), header, payload);
+        _send_pkt->refresh(
+            send_buff->data(), xport.get_send_frame_size(), header, payload);
         send_buff->set_packet_size(header.get_length());
         xport.release_send_buff(std::move(send_buff));
     }

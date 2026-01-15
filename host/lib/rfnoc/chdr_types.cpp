@@ -108,7 +108,7 @@ size_t ctrl_payload::serialize(uint64_t* buff,
     }
 
     // This really should be impossible but we'll leave it for safety's sake
-    UHD_ASSERT_THROW(ptr <= max_size_bytes);
+    UHD_ASSERT_THROW(ptr * sizeof(uint64_t) <= max_size_bytes);
     // Return bytes written
     return (ptr * sizeof(uint64_t));
 }
@@ -508,6 +508,7 @@ size_t mgmt_payload::serialize(uint64_t* buff,
     const std::function<uint64_t(uint64_t)>& conv_byte_order) const
 {
     std::vector<uint64_t> target;
+    target.reserve(_padding_size + 1);
     // Insert header
     target.push_back(conv_byte_order(
         (static_cast<uint64_t>(_protover) << 48)
@@ -524,7 +525,7 @@ size_t mgmt_payload::serialize(uint64_t* buff,
     for (const auto& hop : _hops) {
         hop.serialize(target, conv_byte_order, _padding_size);
     }
-    UHD_ASSERT_THROW(target.size() <= max_size_bytes);
+    UHD_ASSERT_THROW(target.size() * sizeof(uint64_t) <= max_size_bytes);
 
     // We use a vector and copy just for ease of implementation
     // These transactions are not performance critical

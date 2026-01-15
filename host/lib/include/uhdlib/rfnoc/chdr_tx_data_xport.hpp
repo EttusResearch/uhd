@@ -62,7 +62,8 @@ public:
         fc_payload.num_bytes = counts.bytes;
         fc_payload.num_pkts  = counts.packets;
 
-        _fc_packet->refresh(buff->data(), header, fc_payload);
+        _fc_packet->refresh(
+            buff->data(), send_link->get_send_frame_size(), header, fc_payload);
         const size_t size = header.get_length();
 
         buff->set_packet_size(size);
@@ -274,7 +275,7 @@ public:
         header.set_seq_num(_data_seq_num);
         header.set_dst_epid(_send_header.get_dst_epid());
 
-        _strc_packet->refresh(buff->data(), header, _strc_pyld);
+        _strc_packet->refresh(buff->data(), _frame_size, header, _strc_pyld);
         const size_t size = header.get_length();
 
         buff->set_packet_size(size);

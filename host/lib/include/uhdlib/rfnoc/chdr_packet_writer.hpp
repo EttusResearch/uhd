@@ -10,7 +10,10 @@
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <cstdint>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <optional>
 
 namespace uhd { namespace rfnoc { namespace chdr {
@@ -75,6 +78,12 @@ public:
      */
     virtual chdr_header get_chdr_header() const = 0;
 
+    /*! Returns the size of the CHDR header in bytes
+     *
+     * \return The size in bytes
+     */
+    virtual size_t get_header_size() const = 0;
+
     /*! Returns the timestamp in the packet as an optional value
      *
      * \return A std::optional which if initialized has the timestamp
@@ -86,12 +95,6 @@ public:
      * \return The byte order as a uhd::endianness_t
      */
     virtual endianness_t get_byte_order() const = 0;
-
-    /*! Returns the maximum transfer unit in bytes
-     *
-     * \return The maximum transfer unit in bytes
-     */
-    virtual size_t get_mtu_bytes() const = 0;
 
     /*! Returns the metadata size in bytes
      *
@@ -229,12 +232,22 @@ public:
 
     //! Updates the underlying storage of this packet, and populates it with the specified
     //  arguments. This is a non-const method and is useful for read-write access.
-    inline void refresh(void* pkt_buff, chdr_header& header, const payload_t& payload)
+    //
+    // \param pkt_buff Pointer to a buffer that should be populated with the CHDR packet
+    // \param pkt_buff_size Maximum size of the buffer in bytes
+    // \param header The CHDR header to fill into the CHDR packet
+    // \param payload The payload to fill into the CHDR packet
+    inline void refresh(void* pkt_buff,
+        size_t pkt_buff_size,
+        chdr_header& header,
+        const payload_t& payload)
     {
         payload.populate_header(header);
         _chdr_pkt->refresh(pkt_buff, header);
         size_t bytes_copied = payload.serialize(_chdr_pkt->get_payload_ptr_as<uint64_t>(),
-            _chdr_pkt->get_mtu_bytes(),
+            (pkt_buff_size > _chdr_pkt->get_header_size())
+                ? pkt_buff_size - _chdr_pkt->get_header_size()
+                : 0,
             _chdr_pkt->conv_from_host<uint64_t>());
         _chdr_pkt->update_payload_size(bytes_copied);
         header = _chdr_pkt->get_chdr_header();
@@ -308,24 +321,18 @@ public:
     chdr_packet_factory(chdr_packet_factory&& rhs)      = default;
 
     //! Makes a generic CHDR packet and transfers ownership to the client
-    chdr_packet_writer::uptr make_generic(
-        size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
+    chdr_packet_writer::uptr make_generic() const;
 
     //! Makes a CHDR control packet and transfers ownership to the client
-    chdr_ctrl_packet::uptr make_ctrl(
-        size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
-
+    chdr_ctrl_packet::uptr make_ctrl() const;
     //! Makes a CHDR stream status packet and transfers ownership to the client
-    chdr_strs_packet::uptr make_strs(
-        size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
+    chdr_strs_packet::uptr make_strs() const;
 
     //! Makes a CHDR stream cmd packet and transfers ownership to the client
-    chdr_strc_packet::uptr make_strc(
-        size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
+    chdr_strc_packet::uptr make_strc() const;
 
     //! Makes a CHDR management packet and transfers ownership to the client
-    chdr_mgmt_packet::uptr make_mgmt(
-        size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
+    chdr_mgmt_packet::uptr make_mgmt() const;
 
     //! Get the CHDR width
     inline chdr_w_t get_chdr_w() const

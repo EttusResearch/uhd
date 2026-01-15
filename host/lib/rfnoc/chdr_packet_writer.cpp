@@ -23,8 +23,7 @@ template <size_t chdr_w, endianness_t endianness>
 class chdr_packet_impl : public chdr_packet_writer
 {
 public:
-    chdr_packet_impl() = delete;
-    chdr_packet_impl(size_t mtu_bytes) : _mtu_bytes(mtu_bytes) {}
+    chdr_packet_impl() {}
     ~chdr_packet_impl() override = default;
 
     void refresh(const void* pkt_buff) const override
@@ -58,15 +57,15 @@ public:
         return endianness;
     }
 
-    size_t get_mtu_bytes() const override
-    {
-        return _mtu_bytes;
-    }
-
     chdr_header get_chdr_header() const override
     {
         assert(_pkt_buff);
         return chdr_header(u64_to_host(_pkt_buff[0]));
+    }
+
+    size_t get_header_size() const override
+    {
+        return chdr_w_bytes * _mdata_offset;
     }
 
     std::optional<uint64_t> get_timestamp() const override
@@ -155,8 +154,8 @@ private:
     static const size_t chdr_w_stride = (chdr_w / 64);
 
     // Packet state
-    const size_t _mtu_bytes      = 0;
-    mutable uint64_t* _pkt_buff  = nullptr;
+    mutable uint64_t* _pkt_buff = nullptr;
+    //! Offset (in chdr_w units) to the start of the metadata
     mutable size_t _mdata_offset = 0;
 };
 
@@ -165,35 +164,31 @@ chdr_packet_factory::chdr_packet_factory(chdr_w_t chdr_w, endianness_t endiannes
 {
 }
 
-chdr_packet_writer::uptr chdr_packet_factory::make_generic(size_t mtu_bytes) const
+chdr_packet_writer::uptr chdr_packet_factory::make_generic() const
 {
     if (_endianness == ENDIANNESS_BIG) {
         switch (_chdr_w) {
             case CHDR_W_512:
-                return std::make_unique<chdr_packet_impl<512, ENDIANNESS_BIG>>(mtu_bytes);
+                return std::make_unique<chdr_packet_impl<512, ENDIANNESS_BIG>>();
             case CHDR_W_256:
-                return std::make_unique<chdr_packet_impl<256, ENDIANNESS_BIG>>(mtu_bytes);
+                return std::make_unique<chdr_packet_impl<256, ENDIANNESS_BIG>>();
             case CHDR_W_128:
-                return std::make_unique<chdr_packet_impl<128, ENDIANNESS_BIG>>(mtu_bytes);
+                return std::make_unique<chdr_packet_impl<128, ENDIANNESS_BIG>>();
             case CHDR_W_64:
-                return std::make_unique<chdr_packet_impl<64, ENDIANNESS_BIG>>(mtu_bytes);
+                return std::make_unique<chdr_packet_impl<64, ENDIANNESS_BIG>>();
             default:
                 assert(0);
         }
     } else {
         switch (_chdr_w) {
             case CHDR_W_512:
-                return std::make_unique<chdr_packet_impl<512, ENDIANNESS_LITTLE>>(
-                    mtu_bytes);
+                return std::make_unique<chdr_packet_impl<512, ENDIANNESS_LITTLE>>();
             case CHDR_W_256:
-                return std::make_unique<chdr_packet_impl<256, ENDIANNESS_LITTLE>>(
-                    mtu_bytes);
+                return std::make_unique<chdr_packet_impl<256, ENDIANNESS_LITTLE>>();
             case CHDR_W_128:
-                return std::make_unique<chdr_packet_impl<128, ENDIANNESS_LITTLE>>(
-                    mtu_bytes);
+                return std::make_unique<chdr_packet_impl<128, ENDIANNESS_LITTLE>>();
             case CHDR_W_64:
-                return std::make_unique<chdr_packet_impl<64, ENDIANNESS_LITTLE>>(
-                    mtu_bytes);
+                return std::make_unique<chdr_packet_impl<64, ENDIANNESS_LITTLE>>();
             default:
                 assert(0);
         }
@@ -201,22 +196,22 @@ chdr_packet_writer::uptr chdr_packet_factory::make_generic(size_t mtu_bytes) con
     return chdr_packet_writer::uptr();
 }
 
-chdr_ctrl_packet::uptr chdr_packet_factory::make_ctrl(size_t mtu_bytes) const
+chdr_ctrl_packet::uptr chdr_packet_factory::make_ctrl() const
 {
-    return std::make_unique<chdr_ctrl_packet>(make_generic(mtu_bytes));
+    return std::make_unique<chdr_ctrl_packet>(make_generic());
 }
 
-chdr_strs_packet::uptr chdr_packet_factory::make_strs(size_t mtu_bytes) const
+chdr_strs_packet::uptr chdr_packet_factory::make_strs() const
 {
-    return std::make_unique<chdr_strs_packet>(make_generic(mtu_bytes));
+    return std::make_unique<chdr_strs_packet>(make_generic());
 }
 
-chdr_strc_packet::uptr chdr_packet_factory::make_strc(size_t mtu_bytes) const
+chdr_strc_packet::uptr chdr_packet_factory::make_strc() const
 {
-    return std::make_unique<chdr_strc_packet>(make_generic(mtu_bytes));
+    return std::make_unique<chdr_strc_packet>(make_generic());
 }
 
-chdr_mgmt_packet::uptr chdr_packet_factory::make_mgmt(size_t mtu_bytes) const
+chdr_mgmt_packet::uptr chdr_packet_factory::make_mgmt() const
 {
-    return std::make_unique<chdr_mgmt_packet>(make_generic(mtu_bytes));
+    return std::make_unique<chdr_mgmt_packet>(make_generic());
 }

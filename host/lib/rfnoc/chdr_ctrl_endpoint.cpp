@@ -90,7 +90,8 @@ public:
             // Acquire send buffer and send the packet
             std::lock_guard<std::mutex> lock(_send_mutex);
             auto send_buff = _xport->get_send_buff(timeout * 1000);
-            _send_pkt->refresh(send_buff->data(), header, payload);
+            _send_pkt->refresh(
+                send_buff->data(), _xport->get_send_frame_size(), header, payload);
             send_buff->set_packet_size(header.get_length());
             _xport->release_send_buff(std::move(send_buff));
         };

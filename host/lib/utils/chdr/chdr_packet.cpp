@@ -74,9 +74,8 @@ void chdr_util::chdr_packet::serialize_ptr(
     size_t len = static_cast<uint8_t*>(end) - static_cast<uint8_t*>(start);
     UHD_ASSERT_THROW(get_packet_len() <= len);
     chdr_rfnoc::chdr_packet_factory factory(_chdr_w, endianness);
-    chdr_rfnoc::chdr_packet_writer::uptr packet_writer =
-        factory.make_generic(std::numeric_limits<size_t>::max());
-    chdr_rfnoc::chdr_header header = _header;
+    chdr_rfnoc::chdr_packet_writer::uptr packet_writer = factory.make_generic();
+    chdr_rfnoc::chdr_header header                     = _header;
     packet_writer->refresh(start, header, (_timestamp ? *_timestamp : 0));
 
     uint64_t* mdata_ptr  = static_cast<uint64_t*>(packet_writer->get_mdata_ptr());
@@ -98,8 +97,7 @@ chdr_util::chdr_packet chdr_util::chdr_packet::deserialize_ptr(
     const void* end)
 {
     chdr_rfnoc::chdr_packet_factory factory(chdr_w, endianness);
-    chdr_rfnoc::chdr_packet_writer::uptr packet_writer =
-        factory.make_generic(std::numeric_limits<size_t>::max());
+    chdr_rfnoc::chdr_packet_writer::uptr packet_writer = factory.make_generic();
     packet_writer->refresh(start);
 
     chdr_rfnoc::chdr_header header    = packet_writer->get_chdr_header();

@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_no_swap_64)
         ctrl_payload pyld = populate_ctrl_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_no_swap_256)
         ctrl_payload pyld = populate_ctrl_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_swap_64)
         ctrl_payload pyld = populate_ctrl_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_swap_256)
         ctrl_payload pyld = populate_ctrl_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(chdr_strs_packet_no_swap_64)
         strs_payload pyld = populate_strs_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -222,7 +222,7 @@ BOOST_AUTO_TEST_CASE(chdr_strc_packet_no_swap_64)
         strc_payload pyld = populate_strc_payload();
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -290,7 +290,7 @@ BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_no_swap_64)
         mgmt_payload pyld = populate_mgmt_payload(CHDR_W_64);
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -314,7 +314,7 @@ BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_no_swap_256)
         mgmt_payload pyld = populate_mgmt_payload(CHDR_W_256);
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_swap_64)
         mgmt_payload pyld = populate_mgmt_payload(CHDR_W_64);
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
@@ -360,7 +360,7 @@ BOOST_AUTO_TEST_CASE(chdr_mgmt_packet_swap_256)
         mgmt_payload pyld = populate_mgmt_payload(CHDR_W_256);
 
         memset(buff, 0, MAX_BUF_SIZE_BYTES);
-        tx_pkt->refresh(buff, hdr, pyld);
+        tx_pkt->refresh(buff, MAX_BUF_SIZE_BYTES, hdr, pyld);
         BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
         BOOST_CHECK(tx_pkt->get_payload() == pyld);
 
