@@ -49,7 +49,7 @@ variables:
       'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
       'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'},
       'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404'},
-      'Ubuntu-2504-builder':{'buildOSName':'ubuntu2504','dockerImageName':'uhd-builder-ubuntu2504'}}"
+      'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510'}}"
 - ${{ else }}:
   - name: linuxDockerImages
     value:
@@ -70,7 +70,7 @@ variables:
     "{'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'},
     'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'},
     'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'},
-    'Ubuntu-2504-builder':{'buildOSName':'ubuntu2504','dockerImageName':'uhd-builder-ubuntu2504','ubuntuReleaseName':'plucky'}}"
+    'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','ubuntuReleaseName':'questing'}}"
 
 - name: macOSBuilders
   value:

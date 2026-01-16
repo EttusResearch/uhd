@@ -1,7 +1,7 @@
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
-FROM ubuntu:25.04
+FROM ubuntu:25.10
 LABEL maintainer="Ettus Research"
 
 ARG PIP_INDEX_HOST
