@@ -17,7 +17,7 @@ RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && \
     SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
 RUN choco install -y cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' --version=3.22.3
-RUN choco install -y doxygen.install --version=1.9.1
+RUN choco install -y doxygen.install --version=1.9.8
 RUN choco install -y git
 RUN choco install -y NSIS --version=3.06.1
 RUN choco install -y vim
