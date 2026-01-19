@@ -181,6 +181,5 @@ jobs:
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: '$(Build.BinariesDirectory)/uhddev-installer'
-      artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer-run$(System.JobAttempt)'
+      artifactName: 'uhddev-$(buildOSName)-${{ parameters.toolset }}-${{ parameters.installer }}-installer'
     displayName: Upload uhd installer artifact
-    condition: or(succeeded(), failed())
