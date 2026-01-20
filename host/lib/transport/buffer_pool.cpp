@@ -7,7 +7,7 @@
 
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/shared_array.hpp>
+#include <memory>
 #include <vector>
 
 using namespace uhd::transport;
@@ -29,8 +29,8 @@ buffer_pool::~buffer_pool(void)
 class buffer_pool_impl : public buffer_pool
 {
 public:
-    buffer_pool_impl(const std::vector<ptr_type>& ptrs, boost::shared_array<char> mem)
-        : _ptrs(ptrs), _mem(mem)
+    buffer_pool_impl(const std::vector<ptr_type>& ptrs, std::unique_ptr<char[]> mem)
+        : _ptrs(ptrs), _mem(std::move(mem))
     {
         /* NOP */
     }
@@ -47,7 +47,7 @@ public:
 
 private:
     std::vector<ptr_type> _ptrs;
-    boost::shared_array<char> _mem;
+    std::unique_ptr<char[]> _mem;
 };
 
 /***********************************************************************
@@ -60,7 +60,7 @@ buffer_pool::sptr buffer_pool::make(
     // 2) pad the overall memory size for room after alignment
     // 3) allocate the memory in one block of sufficient size
     const size_t padded_buff_size = pad_to_boundary(buff_size, alignment);
-    boost::shared_array<char> mem(new char[padded_buff_size * num_buffs + alignment - 1]);
+    std::unique_ptr<char[]> mem(new char[padded_buff_size * num_buffs + alignment - 1]);
 
     // Fill a vector with boundary-aligned points in the memory
     const size_t mem_start = pad_to_boundary(size_t(mem.get()), alignment);
@@ -72,5 +72,5 @@ buffer_pool::sptr buffer_pool::make(
     // Create a new buffer pool implementation with:
     // - the pre-computed pointers, and
     // - the reference to allocated memory.
-    return sptr(new buffer_pool_impl(ptrs, mem));
+    return sptr(new buffer_pool_impl(ptrs, std::move(mem)));
 }
