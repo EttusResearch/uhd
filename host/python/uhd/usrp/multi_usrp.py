@@ -165,6 +165,10 @@ class MultiUSRP(lib.usrp.multi_usrp):
         :return: the number of transmitted samples
         """
 
+        # Check if waveform_proto has the correct data type
+        if waveform_proto.dtype != np.complex64:
+            raise TypeError("waveform_proto should be a numpy array with data type np.complex64. Use np.astype() to convert it to one.")
+
         def _config_streamer(streamer):
             """
             Set up the correct streamer
