@@ -18,40 +18,8 @@ static size_t pad_to_boundary(const size_t bytes, const size_t alignment)
     return bytes + (alignment - bytes) % alignment;
 }
 
-buffer_pool::~buffer_pool(void)
-{
-    /* NOP */
-}
-
 /***********************************************************************
- * Buffer pool implementation
- **********************************************************************/
-class buffer_pool_impl : public buffer_pool
-{
-public:
-    buffer_pool_impl(const std::vector<ptr_type>& ptrs, std::unique_ptr<char[]> mem)
-        : _ptrs(ptrs), _mem(std::move(mem))
-    {
-        /* NOP */
-    }
-
-    ptr_type at(const size_t index) const override
-    {
-        return _ptrs.at(index);
-    }
-
-    size_t size(void) const override
-    {
-        return _ptrs.size();
-    }
-
-private:
-    std::vector<ptr_type> _ptrs;
-    std::unique_ptr<char[]> _mem;
-};
-
-/***********************************************************************
- * Buffer pool factor function
+ * Buffer pool factory function
  **********************************************************************/
 buffer_pool::sptr buffer_pool::make(
     const size_t num_buffs, const size_t buff_size, const size_t alignment)
@@ -69,8 +37,8 @@ buffer_pool::sptr buffer_pool::make(
         ptrs[i] = ptr_type(mem_start + padded_buff_size * i);
     }
 
-    // Create a new buffer pool implementation with:
+    // Create a new buffer pool with:
     // - the pre-computed pointers, and
     // - the reference to allocated memory.
-    return sptr(new buffer_pool_impl(ptrs, std::move(mem)));
+    return sptr(new buffer_pool(std::move(ptrs), std::move(mem)));
 }

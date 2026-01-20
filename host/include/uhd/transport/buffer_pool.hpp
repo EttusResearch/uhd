@@ -11,6 +11,7 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <cstddef>
 #include <memory>
+#include <vector>
 
 namespace uhd { namespace transport {
 
@@ -24,7 +25,7 @@ public:
     typedef std::shared_ptr<buffer_pool> sptr;
     typedef void* ptr_type;
 
-    virtual ~buffer_pool(void) = 0;
+    ~buffer_pool() = default;
 
     /*!
      * Make a new buffer pool.
@@ -37,10 +38,25 @@ public:
         const size_t num_buffs, const size_t buff_size, const size_t alignment = 16);
 
     //! Get a pointer to the buffer start at the specified index
-    virtual ptr_type at(const size_t index) const = 0;
+    ptr_type at(const size_t index) const
+    {
+        return _ptrs.at(index);
+    }
 
     //! Get the number of buffers in this pool
-    virtual size_t size(void) const = 0;
+    size_t size() const
+    {
+        return _ptrs.size();
+    }
+
+private:
+    buffer_pool(std::vector<ptr_type>&& ptrs, std::unique_ptr<char[]> mem)
+        : _ptrs(std::move(ptrs)), _mem(std::move(mem))
+    {
+    }
+
+    std::vector<ptr_type> _ptrs;
+    std::unique_ptr<char[]> _mem;
 };
 
 }} // namespace uhd::transport
