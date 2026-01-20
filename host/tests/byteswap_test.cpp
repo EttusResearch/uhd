@@ -5,8 +5,34 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <boost/predef/other/endian.h>
 #include <boost/test/unit_test.hpp>
+
+BOOST_AUTO_TEST_CASE(test_endianness_macro)
+{
+#if BOOST_ENDIAN_BIG_BYTE
+
+#    ifdef UHD_BIG_ENDIAN
+    BOOST_CHECK(true);
+#    else
+    BOOST_CHECK(false);
+#    endif
+
+#elif BOOST_ENDIAN_LITTLE_BYTE
+
+#    ifdef UHD_LITTLE_ENDIAN
+    BOOST_CHECK(true);
+#    else
+    BOOST_CHECK(false);
+#    endif
+
+#else
+    // We should never get here
+    BOOST_CHECK(false);
+#endif
+}
 
 BOOST_AUTO_TEST_CASE(test_byteswap16)
 {
