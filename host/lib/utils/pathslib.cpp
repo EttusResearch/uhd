@@ -7,7 +7,7 @@
 #include <uhd/config.hpp>
 #include <uhdlib/utils/paths.hpp>
 
-#ifdef BOOST_MSVC
+#ifdef UHD_MSVC
 #    include <windows.h>
 #elif defined(__OpenBSD__)
 #    include <glob.h>
@@ -20,7 +20,7 @@ std::string uhd::path_expandvars(const std::string& path)
     if (path.empty()) {
         return path;
     }
-#ifdef BOOST_MSVC
+#ifdef UHD_MSVC
     constexpr size_t max_pathlen = 4096;
     char result[max_pathlen];
     const size_t result_len =

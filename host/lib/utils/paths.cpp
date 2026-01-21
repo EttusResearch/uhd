@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#ifdef BOOST_MSVC
+#ifdef UHD_MSVC
 #    define USE_GET_TEMP_PATH
 #    include <windows.h> //GetTempPath
 #endif

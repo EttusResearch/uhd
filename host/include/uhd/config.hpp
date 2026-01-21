@@ -7,10 +7,9 @@
 
 #pragma once
 
-#include <boost/config.hpp>
-#include <boost/version.hpp>
+#ifdef _MSC_VER
 
-#ifdef BOOST_MSVC
+#    define UHD_MSVC _MSC_VER
 // suppress warnings
 //# pragma warning(push)
 //# pragma warning(disable: 4511) // copy constructor can't not be generated
@@ -44,10 +43,10 @@
 typedef SSIZE_T ssize_t;
 #    endif /* _SSIZE_T_DEFINED */
 
-#endif // BOOST_MSVC
+#endif // _MSC_VER
 
 // define cross platform attribute macros
-#if defined(BOOST_MSVC)
+#if defined(UHD_MSVC)
 #    define UHD_EXPORT __declspec(dllexport)
 #    define UHD_IMPORT __declspec(dllimport)
 #    define UHD_EXPORT_HEADER
@@ -168,7 +167,7 @@ typedef SSIZE_T ssize_t;
 // variable arguments so that it can deal with strings that contain commas.
 // There are two different versions because MSVC handles this syntax a bit
 // differently than other compilers.
-#if defined(BOOST_MSVC)
+#if defined(UHD_MSVC)
 #    define XSTR(x, ...) #    x
 #else
 #    define XSTR(x...) #    x

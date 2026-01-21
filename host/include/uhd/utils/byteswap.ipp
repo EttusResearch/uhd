@@ -10,8 +10,7 @@
 /***********************************************************************
  * Platform-specific implementation details for byteswap below:
  **********************************************************************/
-#if defined( \
-    BOOST_MSVC) // http://msdn.microsoft.com/en-us/library/a3140177%28VS.80%29.aspx
+#if defined(UHD_MSVC)
 #    include <cstdlib>
 
 UHD_INLINE uint16_t uhd::byteswap(uint16_t x)

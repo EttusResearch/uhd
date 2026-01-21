@@ -43,7 +43,7 @@ namespace pt = boost::posix_time;
  **********************************************************************/
 namespace {
 
-#ifdef BOOST_MSVC
+#ifdef UHD_MSVC
 constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
 #endif
 
@@ -291,8 +291,8 @@ public:
     {
         _exit = true;
 
-#ifndef BOOST_MSVC // push a final message is required, since the pop_with_wait() function
-                   // will be used.
+#ifndef UHD_MSVC // push a final message is required, since the pop_with_wait() function
+                 // will be used.
         // We push a final message to kick the pop task out of it's wait state.
         // This wouldn't be necessary if pop_with_wait() could fail. Should
         // that ever get fixed, we can remove this.
@@ -307,7 +307,7 @@ public:
 #    ifndef UHD_LOG_FASTPATH_DISABLE
         push_fastpath("");
 #    endif
-#endif // BOOST_MSVC
+#endif // UHD_MSVC
 
         _pop_task->join();
         {
@@ -358,7 +358,7 @@ public:
 
         // For the lifetime of this thread, we run the following loop:
         while (!_exit) {
-#ifdef BOOST_MSVC
+#ifdef UHD_MSVC
             // Some versions of MSVC will hang if threads are being joined after main has
             // completed, so we need to guarantee a timeout here
             if (_log_queue.pop_with_timed_wait(log_info, READ_TIMEOUT)) {
@@ -367,7 +367,7 @@ public:
 #else
             _log_queue.pop_with_wait(log_info); // Blocking call
             _handle_log_info(log_info);
-#endif // BOOST_MSVC
+#endif // UHD_MSVC
         }
 
         // Exit procedure: Clear the queue
@@ -383,7 +383,7 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         std::string msg;
         while (!_exit) {
-#    ifdef BOOST_MSVC
+#    ifdef UHD_MSVC
             // Some versions of MSVC will hang if threads are being joined after main has
             // completed, so we need to guarantee a timeout here
             if (_fastpath_queue.pop_with_timed_wait(msg, READ_TIMEOUT)) {
@@ -392,7 +392,7 @@ public:
 #    else
             _fastpath_queue.pop_with_wait(msg);
             std::cerr << msg << std::flush;
-#    endif // BOOST_MSVC
+#    endif // UHD_MSVC
         }
 
         // Exit procedure: Clear the queue
@@ -407,13 +407,13 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         std::string msg;
         while (!_exit) {
-#    ifdef BOOST_MSVC
+#    ifdef UHD_MSVC
             // Some versions of MSVC will hang if threads are being joined after main has
             // completed, so we need to guarantee a timeout here
             _fastpath_queue.pop_with_timed_wait(msg, READ_TIMEOUT);
 #    else
             _fastpath_queue.pop_with_wait(msg);
-#    endif // BOOST_MSVC
+#    endif // UHD_MSVC
         }
 
         // Exit procedure: Clear the queue
