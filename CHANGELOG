@@ -5,11 +5,15 @@ Change Log for Releases
 
 
 * New Features
-  - CMake: Create UHD::uhd package for improved integration in downstream build
-    processes. The init_usrp example is used to showcase this feature.
+  - CMake:
+    - Create UHD::uhd package for improved integration in downstream build
+      processes. The init_usrp example is used to showcase this feature.
+    - Improved options for RFNoC OOT modules to write unit tests.
   - Add helper routines to up- and download data (reliably) from and to the
     DRAM block
   - X310: Allow daughterboards to set dboard clock rate
+  - Improve finding of MPM-based devices by making parts of the find call
+    asynchronous and allowing to skip reachability checks.
   - RFNoC:
     - Added new optional feature to all Radio blocks - Timed complex gain:
       - Allows specifying complex gain coefficients to be applied to all
@@ -23,12 +27,41 @@ Change Log for Releases
         blocks and the radio blocks. As a result, only blocks with the same
         indices can be connected (e.g. replay0<->radio0 and replay1<->radio1
         only) when using this pre-built USRP FPGA image.
+    - Blocks may now drive the front-panel GPIO pins on all RFNoC-capable
+      devices. New IO signatures are added, and all device BSPs have IO ports
+      for accessing the GPIOs. Device controls are updated such that the user
+      can choose the source for GPIOs dynamically in this case (i.e., the
+      radio blocks and other GPIO sources are still available). In some cases,
+      the device BSP HDL had to be significantly refactored.
     - Add names and descriptions for block's and module's YAML files, so that
       other tools may read information about those in an automated fashion
     - Allow `mtu` stream argument, which overrides the MTU value that is
       derived from the link information.
+    - Action handling is now moved to its own thread (there is one action
+      handling thread per graph). This allows actions to be handled
+      asynchronously, e.g., when triggering actions from async message handlers.
+    - Add radio_state IO signature, so that other blocks can monitor the ATR
+      state of radio blocks.
+    - All RFNoC devices can now take an `mtu` stream argument (which overrides
+      the detected link MTU) and a `force_mtu` device argument (which skips
+      automatic MTU detection and forces a fixed value). These are helpful in
+      scenarios where a specific network topology interferes with path MTU
+      discovery, and for remote streaming when the MTU for a remote stream link
+      cannot be inferred from UHD.
+    - rfnoc_modtool has improved support for generating unit tests.
+    - Add PPS IO signature for all targets
+    - Add stream command to start receiving when a transmit occurs
+    - Null source/sink: Add finite mode.
+    - Add UX1/UX2/UX4 QSFP configurations for X4xx
 * API Changes
   - meta_range_t and uhd::dict can now be initialized from initializer lists
+  - Add rfnoc_graph::get_chdr_xport_adapters()
+  - Python API now allows creating SubdevSpec from a string
+* Examples
+  - Overhauled many of the examples to improve documentation, as well as some
+    minor conveniences or bug fixes
+  - Added continuous streaming to tx_samples_from_file
+  - Improved gpio example.
 * Bug Fixes
   - Fix static UHD library builds
   - Fix compatibility with Boost 1.89
@@ -38,22 +71,75 @@ Change Log for Releases
       builds of X410 and X440 device bitfiles from GNU Radio)
     - Fix installation of OOT modules in Python venvs
     - Fix time alignment of first sample
+    - Unit tests in RFNoC OOT modules now preload their DLLs to ensure the
+      correct library version is loaded
+    - Fix generation of GNU Radio C++ block controllers
+    - rfnoc_modtool: Fix creation of spurious unit tests, fix package_data for
+      Python module installation
+    - rfnoc_modtool: Fix connection check for invalid ports
+    - Fix alignment of first sample coming from radio block.
+    - Fix bug in ctrlport_endpoint which could cause the software to believe
+      the associated RFNoC block's command FIFO was full when packets were lost
+    - Add parameter to skip waiting for ACKs in async messages
   - E31x: Fix GPIO control
+  - E3xx/B2xx: Fix rounding bug for RF PLL tuning
+  - B2xx: Fix image loading via b200_image_loader when multiple devices are
+    attached
+  - X410: Fix tuning when power calibration and non-default gain profiles are
+    used.
+  - Power calibration tools: Fix settings for E320, allow non-default sampling
+    rate, other minor fixes
   - FPGA
     - Fix various simulation-related bugs
+  - USRP Simulator: Update to match current UHD.
+  - multi_usrp:
+    - Improved bank name check in multi_usrp::{set,get}_gpio_attr()
+  - CMake:
+    - Allow absolute paths for install dirs in pkg-config
+    - Fix target include path for Python module
+  - USRP1: Fix converter name in property tree
+  - FPGA:
+    - Fix various simulation/testbench issues.
+    - Improve resource utilization in various places.
+  - MPM:
+    - Fix file descriptor leaks by using with/open everywhere.
+    - Fix double-free issue in rpclib.
+    - Remove tolerance for non-existing EEPROMs.
+  - Examples: Properly report errors when opening a file failed.
+  - Python: When installing into venvs, no longer force a reinstallation of
+    dependencies.
 * Dependencies changes
   - Increase minimum required versions
     - Boost to 1.71
+    - DPDK to 19.11
     - Changed minimum CMake versions for various non-UHD projects, e.g.
       firmware builds, to stay compatible with CMake 4
 * Documentation
-  - Restructured the UHD manual
+  - Restructured the UHD manual, improved chapter structure, improved getting
+    started content, added RFNoC specification.
+  - Fixed some external links
+  - Many smaller improvements (typos, duplicate entries removed, formatting,
+    etc.)
 * Codebase Management
   - Increased C++ version to 20 for UHD library, examples, and utilities
   - Removed Boost in multiple locations and replaced with standard library
     calls
-  - Fix numerous (mostly harmless) compiler warnings
+  - Fix numerous (mostly harmless) compiler and Doxygen warnings
   - Improve CMake linking instructions
+
+## 004.009.000.001
+
+Changes compared to UHD 4.9.0.0:
+
+* Dependency changes
+  - Support Boost 1.89.0
+  - Drop support for boost below 1.71.0
+* Fixes
+  - Fix static build of libuhd
+* Notes
+  - We suggest to only update to this version if the boost 1.89.0 compability
+    is required. Apart from the Boost build fixes, there are no other changes
+    in this UHD release.
 
 ## 004.009.000.000
 * Highlights / Main Changes
