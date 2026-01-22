@@ -10,7 +10,6 @@
 #include <uhdlib/transport/nirio_zero_copy.hpp>
 #include <uhdlib/utils/atomic.hpp>
 #include <stdio.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/interprocess/mapped_region.hpp> //get_page_size()
 #include <algorithm> // std::max
@@ -39,6 +38,7 @@ static UHD_INLINE size_t get_page_size()
 #endif
 static const size_t page_size = get_page_size();
 
+using namespace std::chrono_literals;
 using namespace uhd;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
@@ -331,12 +331,10 @@ private:
 
     UHD_INLINE void _wait_until_stream_ready()
     {
-        static const uint32_t TIMEOUT_IN_MS = 100;
+        constexpr auto TIMEOUT = 100ms;
 
         uint32_t reg_data = 0xffffffff;
         bool tx_busy = true, rx_busy = true;
-        boost::posix_time::ptime start_time;
-        boost::posix_time::time_duration elapsed;
         nirio_status status = NiRio_Status_Success;
 
         nirio_status_chain(
@@ -351,11 +349,13 @@ private:
         rx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
 
         if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
-            start_time = boost::posix_time::microsec_clock::local_time();
+            const auto start_time = std::chrono::steady_clock::now();
+            std::chrono::milliseconds elapsed;
             do {
                 std::this_thread::sleep_for(
                     std::chrono::microseconds(50)); // Avoid flooding the bus
-                elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+                elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - start_time);
                 nirio_status_chain(
                     _proxy()->peek(
                         PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data),
@@ -367,7 +367,7 @@ private:
                     status);
                 rx_busy = (reg_data & DMA_STATUS_BUSY) > 0;
             } while (nirio_status_not_fatal(status) && (tx_busy || rx_busy)
-                     && elapsed.total_milliseconds() < TIMEOUT_IN_MS);
+                     && elapsed < TIMEOUT);
 
             if (tx_busy || rx_busy) {
                 nirio_status_chain(NiRio_Status_FpgaBusy, status);

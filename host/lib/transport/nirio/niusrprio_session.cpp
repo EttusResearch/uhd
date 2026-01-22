@@ -18,8 +18,10 @@
 #include <fstream>
 #include <thread>
 
+using namespace std::chrono_literals;
+
 namespace {
-constexpr uint32_t FPGA_READY_TIMEOUT_IN_MS = 1000;
+constexpr auto FPGA_READY_TIMEOUT = 1000ms;
 }
 
 namespace uhd { namespace niusrprio {
@@ -223,7 +225,7 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         // there is a small chance that the server is still finishing up cleaning up
         // the DMA FIFOs. We currently don't have any feedback from the driver regarding
         // this state so just wait.
-        std::this_thread::sleep_for(std::chrono::milliseconds(FPGA_READY_TIMEOUT_IN_MS));
+        std::this_thread::sleep_for(FPGA_READY_TIMEOUT);
 
         // Disable all FIFOs in the FPGA
         for (size_t i = 0; i < _lvbitx->get_input_fifo_count(); i++) {
@@ -236,17 +238,17 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         // Disable all FIFOs in the kernel driver
         _riok_proxy->stop_all_fifos();
 
-        boost::posix_time::ptime start_time =
-            boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
+        auto start_time = std::chrono::steady_clock::now();
+        std::chrono::milliseconds elapsed;
         do {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(10)); // Avoid flooding the bus
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+            elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - start_time);
             nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         } while (nirio_status_not_fatal(status)
                  && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)
-                 && elapsed.total_milliseconds() < FPGA_READY_TIMEOUT_IN_MS);
+                 && elapsed < FPGA_READY_TIMEOUT);
 
         nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         if (nirio_status_not_fatal(status) && (reg_data & FPGA_STATUS_DMA_ACTIVE_MASK)) {
