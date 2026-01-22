@@ -9,9 +9,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <condition_variable>
 #include <boost/circular_buffer.hpp>
-#include <boost/thread/condition.hpp>
-#include <boost/utility.hpp>
 #include <functional>
 #include <mutex>
 
@@ -67,7 +66,7 @@ public:
     {
         std::unique_lock<std::mutex> lock(_mutex);
         if (_buffer.full()) {
-            if (not _full_cond.timed_wait(lock, to_time_dur(timeout), _not_full_fcn)) {
+            if (not _full_cond.wait_for(lock, to_time_dur(timeout), _not_full_fcn)) {
                 return false;
             }
         }
@@ -101,7 +100,7 @@ public:
     {
         std::unique_lock<std::mutex> lock(_mutex);
         if (_buffer.empty()) {
-            if (not _empty_cond.timed_wait(lock, to_time_dur(timeout), _not_empty_fcn)) {
+            if (not _empty_cond.wait_for(lock, to_time_dur(timeout), _not_empty_fcn)) {
                 return false;
             }
         }
@@ -124,7 +123,7 @@ public:
 
 private:
     std::mutex _mutex;
-    boost::condition _empty_cond, _full_cond;
+    std::condition_variable _empty_cond, _full_cond;
     boost::circular_buffer<elem_type> _buffer;
 
     bool not_full(void) const
@@ -151,9 +150,9 @@ private:
         _buffer.pop_back();
     }
 
-    static UHD_INLINE boost::posix_time::time_duration to_time_dur(double timeout)
+    static inline std::chrono::microseconds to_time_dur(double timeout)
     {
-        return boost::posix_time::microseconds(long(timeout * 1e6));
+        return std::chrono::microseconds(long(timeout * 1e6));
     }
 };
 }} // namespace uhd::transport
