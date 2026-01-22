@@ -14,12 +14,12 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/nirio/niriok_proxy.h>
 #include <uhdlib/transport/nirio/status.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <mutex>
 #include <thread>
 
+using namespace std::chrono_literals;
 using namespace uhd;
 using namespace uhd::niusrprio;
 
@@ -214,21 +214,22 @@ public:
 
         // Also, poll on the ZPU_STATUS bit to ensure all the state machines in the FPGA
         // are ready to accept register transaction requests.
-        uint32_t reg_data = 0xffffffff;
-        boost::posix_time::ptime start_time =
-            boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
+        uint32_t reg_data       = 0xffffffff;
+        const auto timeout_time = std::chrono::steady_clock::now() + INIT_TIMEOUT;
+        bool timeout_elapsed    = false;
 
         do {
-            std::this_thread::sleep_for(
-                std::chrono::microseconds(500)); // Avoid flooding the bus
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+            std::this_thread::sleep_for(500us); // Avoid flooding the bus
+            timeout_elapsed = std::chrono::steady_clock::now() >= timeout_time;
             nirio_status_chain(
                 _drv_proxy->peek(PCIE_ZPU_STATUS_REG(0), reg_data), status);
         } while (nirio_status_not_fatal(status) && (reg_data & PCIE_ZPU_STATUS_SUSPENDED)
-                 && elapsed.total_milliseconds() < INIT_TIMEOUT_IN_MS);
+                 && !timeout_elapsed);
 
         nirio_status_to_exception(status, "Could not initialize x300_ctrl_iface_pcie.");
+        if (timeout_elapsed) {
+            throw uhd::io_error("x300 fw init - operation timed out");
+        }
 
         try {
             this->peek32(0);
@@ -239,59 +240,55 @@ public:
 protected:
     void __poke32(const wb_addr_type addr, const uint32_t data) override
     {
-        nirio_status status = 0;
-        uint32_t reg_data   = 0xffffffff;
-        boost::posix_time::ptime start_time =
-            boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
+        nirio_status status     = 0;
+        uint32_t reg_data       = 0xffffffff;
+        const auto timeout_time = std::chrono::steady_clock::now() + READ_TIMEOUT;
+        bool timeout_elapsed    = false;
 
         nirio_status_chain(_drv_proxy->poke(PCIE_ZPU_DATA_REG(addr), data), status);
         if (nirio_status_not_fatal(status)) {
             do {
-                std::this_thread::sleep_for(
-                    std::chrono::microseconds(50)); // Avoid flooding the bus
-                elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+                std::this_thread::sleep_for(50us); // Avoid flooding the bus
+                timeout_elapsed = std::chrono::steady_clock::now() >= timeout_time;
                 nirio_status_chain(
                     _drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
                 nirio_status_not_fatal(status)
                 && ((reg_data & (PCIE_ZPU_STATUS_BUSY | PCIE_ZPU_STATUS_SUSPENDED)) != 0)
-                && elapsed.total_milliseconds() < READ_TIMEOUT_IN_MS);
+                && !timeout_elapsed);
         }
 
         if (nirio_status_fatal(status))
             throw uhd::io_error("x300 fw poke32 - hardware IO error");
-        if (elapsed.total_milliseconds() > READ_TIMEOUT_IN_MS)
+        if (timeout_elapsed)
             throw uhd::io_error("x300 fw poke32 - operation timed out");
     }
 
     uint32_t __peek32(const wb_addr_type addr) override
     {
-        nirio_status status = 0;
-        uint32_t reg_data   = 0xffffffff;
-        boost::posix_time::ptime start_time =
-            boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
+        nirio_status status     = 0;
+        uint32_t reg_data       = 0xffffffff;
+        const auto timeout_time = std::chrono::steady_clock::now() + READ_TIMEOUT;
+        bool timeout_elapsed    = false;
 
         nirio_status_chain(
             _drv_proxy->poke(PCIE_ZPU_READ_REG(addr), PCIE_ZPU_READ_START), status);
         if (nirio_status_not_fatal(status)) {
             do {
-                std::this_thread::sleep_for(
-                    std::chrono::microseconds(50)); // Avoid flooding the bus
-                elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
+                std::this_thread::sleep_for(50us); // Avoid flooding the bus
+                timeout_elapsed = std::chrono::steady_clock::now() >= timeout_time;
                 nirio_status_chain(
                     _drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
                 nirio_status_not_fatal(status)
                 && ((reg_data & (PCIE_ZPU_STATUS_BUSY | PCIE_ZPU_STATUS_SUSPENDED)) != 0)
-                && elapsed.total_milliseconds() < READ_TIMEOUT_IN_MS);
+                && !timeout_elapsed);
         }
         nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_DATA_REG(addr), reg_data), status);
 
         if (nirio_status_fatal(status))
             throw uhd::io_error("x300 fw peek32 - hardware IO error");
-        if (elapsed.total_milliseconds() > READ_TIMEOUT_IN_MS)
+        if (timeout_elapsed)
             throw uhd::io_error("x300 fw peek32 - operation timed out");
 
         return reg_data;
@@ -309,8 +306,8 @@ protected:
 
 private:
     niriok_proxy::sptr _drv_proxy;
-    static const uint32_t READ_TIMEOUT_IN_MS = 100;
-    static const uint32_t INIT_TIMEOUT_IN_MS = 5000;
+    static constexpr auto READ_TIMEOUT = 100ms;
+    static constexpr auto INIT_TIMEOUT = 5000ms;
 };
 
 wb_iface::sptr x300_make_ctrl_iface_enet(
