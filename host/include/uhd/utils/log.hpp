@@ -9,9 +9,9 @@
 
 #include <uhd/config.hpp>
 #include <type_traits>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/none.hpp>
 #include <boost/optional.hpp>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <optional>
@@ -136,6 +136,38 @@ namespace detail {
 UHD_API std::optional<uhd::log::severity_level> parse_log_level_from_string_impl(
     const std::string& log_level_str);
 
+/*! Logging info structure
+ *
+ * Information needed to create a log entry is fully contained in the
+ * logging_info structure.
+ */
+struct UHD_API logging_info
+{
+    logging_info() : verbosity(uhd::log::off), line(0) {}
+    logging_info(const std::chrono::system_clock::time_point& time_,
+        const uhd::log::severity_level& verbosity_,
+        const std::string& file_,
+        const unsigned int& line_,
+        const std::string& component_,
+        const std::thread::id& thread_id_)
+        : time(time_)
+        , verbosity(verbosity_)
+        , file(file_)
+        , line(line_)
+        , component(component_)
+        , thread_id(thread_id_)
+    { /* nop */
+    }
+
+    std::chrono::system_clock::time_point time;
+    uhd::log::severity_level verbosity;
+    std::string file;
+    unsigned int line;
+    std::string component;
+    std::thread::id thread_id;
+    std::string message;
+};
+
 } // namespace detail
 
 template <typename T = boost::optional<uhd::log::severity_level>,
@@ -153,38 +185,6 @@ T parse_log_level_from_string(const std::string& log_level_str)
         return detail::parse_log_level_from_string_impl(log_level_str);
     }
 }
-
-/*! Logging info structure
- *
- * Information needed to create a log entry is fully contained in the
- * logging_info structure.
- */
-struct UHD_API logging_info
-{
-    logging_info() : verbosity(uhd::log::off), line(0) {}
-    logging_info(const boost::posix_time::ptime& time_,
-        const uhd::log::severity_level& verbosity_,
-        const std::string& file_,
-        const unsigned int& line_,
-        const std::string& component_,
-        const std::thread::id& thread_id_)
-        : time(time_)
-        , verbosity(verbosity_)
-        , file(file_)
-        , line(line_)
-        , component(component_)
-        , thread_id(thread_id_)
-    { /* nop */
-    }
-
-    boost::posix_time::ptime time;
-    uhd::log::severity_level verbosity;
-    std::string file;
-    unsigned int line;
-    std::string component;
-    std::thread::id thread_id;
-    std::string message;
-};
 
 /*! Set the global log level
  *
@@ -351,14 +351,15 @@ public:
 
     // General insertion overload
     template <typename T>
-    INSERTION_OVERLOAD(T val)
+    INSERTION_OVERLOAD(T val);
 
     // Insertion overloads for std::ostream manipulators
-    INSERTION_OVERLOAD(std::ostream& (*val)(std::ostream&))
-        INSERTION_OVERLOAD(std::ios& (*val)(std::ios&))
-            INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&))
+    INSERTION_OVERLOAD(std::ostream& (*val)(std::ostream&));
+    INSERTION_OVERLOAD(std::ios& (*val)(std::ios&));
+    INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&));
 
-                private : uhd::log::logging_info _log_info;
+private:
+    uhd::log::detail::logging_info _log_info;
     std::ostringstream _ss;
     const bool _log_it;
 };

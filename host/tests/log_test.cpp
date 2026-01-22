@@ -17,7 +17,7 @@ BOOST_AUTO_TEST_CASE(test_messages)
     UHD_LOG_FASTPATH("bar");
     uhd::log::set_log_level(uhd::log::debug);
     uhd::log::set_console_level(uhd::log::info);
-    uhd::log::add_logger("test", [](const uhd::log::logging_info& I) {
+    uhd::log::add_logger("test", [](const uhd::log::detail::logging_info& I) {
         std::cout << "<TEST> " << I.message << std::endl;
     });
     uhd::log::set_logger_level("test", uhd::log::debug);

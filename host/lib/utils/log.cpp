@@ -9,24 +9,24 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/log_add.hpp>
+#include <uhd/utils/log_add_impl.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/thread.hpp>
 #include <uhd/version.hpp>
 #include <uhdlib/utils/isatty.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <atomic>
 #include <cctype>
+#include <chrono>
 #include <fstream>
+#include <iomanip>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <thread>
 #ifdef HAVE_DPDK
 #    include <uhdlib/transport/dpdk/common.hpp>
 #endif
-
-namespace pt = boost::posix_time;
 
 // Don't make these static const std::string -- we need their lifetime guaranteed!
 #define PURPLE        "\033[0;35m" // purple
@@ -74,6 +74,26 @@ std::string verbosity_color(const uhd::log::severity_level& level)
         default:
             return RESET_COLORS;
     }
+}
+
+std::string format_log_time(const std::chrono::system_clock::time_point& time)
+{
+    auto time_t = std::chrono::system_clock::to_time_t(time);
+    auto us =
+        std::chrono::duration_cast<std::chrono::microseconds>(time.time_since_epoch())
+        % 1000000;
+
+    std::tm local_tm{};
+#ifdef _WIN32
+    localtime_s(&local_tm, &time_t);
+#else
+    localtime_r(&time_t, &local_tm);
+#endif
+
+    std::ostringstream ss;
+    ss << std::put_time(&local_tm, "%Y-%m-%d %H:%M:%S");
+    ss << "." << std::setfill('0') << std::setw(6) << us.count();
+    return ss.str();
 }
 
 std::string verbosity_name(const uhd::log::severity_level& level)
@@ -136,7 +156,7 @@ std::optional<uhd::log::severity_level> detail::parse_log_level_from_string_impl
 /***********************************************************************
  * Logger backends
  **********************************************************************/
-void console_log(const uhd::log::logging_info& log_info)
+void console_log(const uhd::log::detail::logging_info& log_info)
 {
     std::ostringstream log_buffer;
     log_buffer
@@ -144,7 +164,7 @@ void console_log(const uhd::log::logging_info& log_info)
         << verbosity_color(log_info.verbosity)
 #endif
 #ifdef UHD_LOG_CONSOLE_TIME
-        << "[" << pt::to_simple_string(log_info.time) << "] "
+        << "[" << format_log_time(log_info.time) << "] "
 #endif
 #ifdef UHD_LOG_CONSOLE_THREAD
         << "[0x" << log_info.thread_id << "] "
@@ -182,10 +202,10 @@ public:
         }
     }
 
-    void log(const uhd::log::logging_info& log_info)
+    void log(const uhd::log::detail::logging_info& log_info)
     {
         if (_file_stream.is_open()) {
-            _file_stream << pt::to_simple_string(log_info.time) << ","
+            _file_stream << format_log_time(log_info.time) << ","
                          << "0x" << log_info.thread_id << ","
                          << path_to_filename(log_info.file) << ":" << log_info.line << ","
                          << log_info.verbosity << "," << log_info.component << ","
@@ -296,12 +316,13 @@ public:
         // We push a final message to kick the pop task out of it's wait state.
         // This wouldn't be necessary if pop_with_wait() could fail. Should
         // that ever get fixed, we can remove this.
-        auto final_message    = uhd::log::logging_info(pt::microsec_clock::local_time(),
-            uhd::log::trace,
-            __FILE__,
-            __LINE__,
-            "LOGGING",
-            std::this_thread::get_id());
+        auto final_message =
+            uhd::log::detail::logging_info(std::chrono::system_clock::now(),
+                uhd::log::trace,
+                __FILE__,
+                __LINE__,
+                "LOGGING",
+                std::this_thread::get_id());
         final_message.message = "";
         push(final_message);
 #    ifndef UHD_LOG_FASTPATH_DISABLE
@@ -321,7 +342,7 @@ public:
 #endif
     }
 
-    void push(const uhd::log::logging_info& log_info)
+    void push(const uhd::log::detail::logging_info& log_info)
     {
         static const double PUSH_TIMEOUT = 0.25; // seconds
         _log_queue.push_with_timed_wait(log_info, PUSH_TIMEOUT);
@@ -336,7 +357,7 @@ public:
     }
 #endif
 
-    void _handle_log_info(const uhd::log::logging_info& log_info)
+    void _handle_log_info(const uhd::log::detail::logging_info& log_info)
     {
         if (log_info.message.empty()) {
             return;
@@ -353,7 +374,7 @@ public:
 
     void pop_task()
     {
-        uhd::log::logging_info log_info;
+        uhd::log::detail::logging_info log_info;
         log_info.message = "";
 
         // For the lifetime of this thread, we run the following loop:
@@ -482,8 +503,10 @@ private:
         }
         if (!log_file_target.empty()) {
             auto F = std::make_shared<file_logger_backend>(log_file_target);
-            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{file_level,
-                [F](const uhd::log::logging_info& log_info) { F->log(log_info); }};
+            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{
+                file_level, [F](const uhd::log::detail::logging_info& log_info) {
+                    F->log(log_info);
+                }};
         }
     }
 
@@ -494,7 +517,7 @@ private:
         if (level < global_level) {
             return;
         }
-        auto log_msg    = uhd::log::logging_info(pt::microsec_clock::local_time(),
+        auto log_msg    = uhd::log::detail::logging_info(std::chrono::system_clock::now(),
             level,
             __FILE__,
             __LINE__,
@@ -511,7 +534,7 @@ private:
 #ifndef UHD_LOG_FASTPATH_DISABLE
     uhd::transport::bounded_buffer<std::string> _fastpath_queue;
 #endif
-    uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue;
+    uhd::transport::bounded_buffer<uhd::log::detail::logging_info> _log_queue;
 };
 
 UHD_SINGLETON_FCN(log_resource, log_rs);
@@ -527,7 +550,7 @@ uhd::_log::log::log(const uhd::log::severity_level verbosity,
     : _log_it(verbosity >= log_rs().global_level)
 {
     if (_log_it) {
-        this->_log_info = uhd::log::logging_info(pt::microsec_clock::local_time(),
+        this->_log_info = uhd::log::detail::logging_info(std::chrono::system_clock::now(),
             verbosity,
             file,
             line,
