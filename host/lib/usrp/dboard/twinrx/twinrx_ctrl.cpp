@@ -73,6 +73,9 @@ public:
                         % TWINRX_REV_AB_PFD_FREQ));
             }
         }
+        // Require the clock rate to remain the same after initialization.
+        _db_iface->lock_clock_rate(dboard_iface::UNIT_RX);
+        _db_iface->lock_clock_rate(dboard_iface::UNIT_TX);
         // Initialize dboard clocks
         _db_iface->set_clock_enabled(dboard_iface::UNIT_TX, true);
         _db_iface->set_clock_enabled(dboard_iface::UNIT_RX, true);

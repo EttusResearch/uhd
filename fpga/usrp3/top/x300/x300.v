@@ -1289,9 +1289,11 @@ module x300
    //
    //////////////////////////////////////////////////////////////////////
 
+   localparam FP_GPIO_WIDTH = 12;
+
    wire [31:0] db0_gpio_in, db0_gpio_out, db0_gpio_ddr;
    wire [31:0] db1_gpio_in, db1_gpio_out, db1_gpio_ddr;
-   wire [31:0] fp_gpio_in, fp_gpio_out, fp_gpio_ddr;
+   wire [11:0] fp_gpio_in, fp_gpio_out, fp_gpio_ddr;
    wire        debug_txd, debug_rxd;
 
    gpio_atr_io #(.WIDTH(32)) gpio_atr_db0_inst (
@@ -1304,21 +1306,27 @@ module x300
       .gpio_ddr(db1_gpio_ddr), .gpio_out(db1_gpio_out), .gpio_in(db1_gpio_in)
    );
 
+
+  genvar i;
+  generate
 `ifdef DEBUG_UART
-   gpio_atr_io #(.WIDTH(10)) fp_gpio_atr_inst (
-      .clk(radio_clk), .gpio_pins(FrontPanelGpio[9:0]),
-      .gpio_ddr(fp_gpio_ddr[9:0]), .gpio_out(fp_gpio_out[9:0]), .gpio_in(fp_gpio_in[9:0])
-   );
-   assign FrontPanelGpio[11] = debug_txd;
-   assign debug_rxd = FrontPanelGpio[10];
+     for (i=0; i<10; i=i+1) begin : fp_gpio_iobuft
 `else
-   gpio_atr_io #(.WIDTH(12)) fp_gpio_atr_inst (
-      .clk(radio_clk), .gpio_pins(FrontPanelGpio[11:0]),
-      .gpio_ddr(fp_gpio_ddr[11:0]), .gpio_out(fp_gpio_out[11:0]), .gpio_in(fp_gpio_in[11:0])
-   );
+     for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin : fp_gpio_iobuft
+`endif
+        // Infer the IOBUFT
+        assign FrontPanelGpio[i] = fp_gpio_ddr[i] ? fp_gpio_out[i] : 1'bz;
+        assign fp_gpio_in[i] = FrontPanelGpio[i];
+     end
+   endgenerate
+
+`ifdef DEBUG_UART
+   assign FrontPanelGpio[10] = 1'bz;
+   assign debug_rxd = FrontPanelGpio[10];
+   assign FrontPanelGpio[11] = debug_txd;
+`else
    assign debug_rxd = 1'b0;
 `endif
-   assign fp_gpio_in[31:12] = 20'h0;
 
    ///////////////////////////////////////////////////////////////////////////////////
    //

@@ -23,7 +23,8 @@ module axi_round_and_clip_complex
    split_complex #(.WIDTH(WIDTH_IN)) split
      (.i_tdata(i_tdata), .i_tlast(i_tlast), .i_tvalid(i_tvalid), .i_tready(i_tready),
       .oi_tdata(ii_tdata), .oi_tlast(ii_tlast), .oi_tvalid(ii_tvalid), .oi_tready(ii_tready),
-      .oq_tdata(iq_tdata), .oq_tlast(iq_tlast), .oq_tvalid(iq_tvalid), .oq_tready(iq_tready));
+      .oq_tdata(iq_tdata), .oq_tlast(iq_tlast), .oq_tvalid(iq_tvalid), .oq_tready(iq_tready),
+      .error());
 
    axi_round_and_clip #(.WIDTH_IN(WIDTH_IN), .WIDTH_OUT(WIDTH_OUT), .CLIP_BITS(CLIP_BITS), .FIFOSIZE(FIFOSIZE)) r_and_c_i
      (.clk(clk), .reset(reset),
@@ -34,10 +35,11 @@ module axi_round_and_clip_complex
      (.clk(clk), .reset(reset),
       .i_tdata(iq_tdata), .i_tlast(iq_tlast), .i_tvalid(iq_tvalid), .i_tready(iq_tready),
       .o_tdata(oq_tdata), .o_tlast(oq_tlast), .o_tvalid(oq_tvalid), .o_tready(oq_tready));
-   
+
    join_complex #(.WIDTH(WIDTH_OUT)) join_complex
      (.ii_tdata(oi_tdata), .ii_tlast(oi_tlast), .ii_tvalid(oi_tvalid), .ii_tready(oi_tready),
       .iq_tdata(oq_tdata), .iq_tlast(oq_tlast), .iq_tvalid(oq_tvalid), .iq_tready(oq_tready),
-      .o_tdata(o_tdata), .o_tlast(o_tlast), .o_tvalid(o_tvalid), .o_tready(o_tready));
+      .o_tdata(o_tdata), .o_tlast(o_tlast), .o_tvalid(o_tvalid), .o_tready(o_tready),
+      .error());
 
 endmodule // round_and_clip_complex

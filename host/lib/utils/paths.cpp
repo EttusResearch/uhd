@@ -13,12 +13,12 @@
 #include <uhdlib/utils/paths.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/version.hpp>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -32,7 +32,7 @@
 #    include <windows.h> //GetTempPath
 #endif
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 static constexpr char UHD_CAL_DATA_PATH_VAR[] = "UHD_CAL_DATA_PATH";
 
@@ -97,7 +97,7 @@ static std::vector<std::string> get_env_paths(const std::string& var_name)
     for (const std::string& path_string : path_tokenizer(var_value)) {
         if (path_string.empty())
             continue;
-        paths.push_back(fs::system_complete(path_string).string());
+        paths.push_back(fs::absolute(path_string).string());
     }
 
     return paths;
@@ -283,7 +283,7 @@ std::string uhd::get_pkg_data_path()
 
 std::string uhd::get_lib_path(void)
 {
-    fs::path runtime_libfile_path = boost::dll::this_line_location();
+    fs::path runtime_libfile_path{boost::dll::this_line_location().string()};
     // Normalize before decomposing path so result is reliable
     fs::path lib_path = runtime_libfile_path.lexically_normal().parent_path();
     return lib_path.string();
@@ -496,7 +496,7 @@ std::string uhd::find_image_path(
     /* If a path was provided on the command-line or as a hint from the caller,
      * we default to that. */
     if (fs::exists(image_name)) {
-        return fs::system_complete(image_name).string();
+        return fs::absolute(image_name).string();
     }
 
     /* Otherwise, look for the image in the images directory. */

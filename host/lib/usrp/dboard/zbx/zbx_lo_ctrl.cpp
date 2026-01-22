@@ -7,6 +7,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_lo_ctrl.hpp>
+#include <uhdlib/utils/narrow.hpp>
+#include <chrono>
 #include <thread>
 
 namespace uhd { namespace usrp { namespace zbx {
@@ -42,6 +44,13 @@ double zbx_lo_ctrl::set_lo_freq(const double freq)
     UHD_LOG_TRACE(_log_id, "Setting LO frequency " << freq / 1e6 << " MHz");
 
     _freq = _lmx->set_frequency(freq, _db_prc_rate, false /*TODO: get_spur_dodging()*/);
+    const uint8_t power = _find_lo_power(_freq);
+    if (_lmx->get_output_enabled(lmx2572_iface::output_t::RF_OUTPUT_A)) {
+        _lmx->set_output_power(lmx2572_iface::output_t::RF_OUTPUT_A, power);
+    }
+    if (_lmx->get_output_enabled(lmx2572_iface::output_t::RF_OUTPUT_B)) {
+        _lmx->set_output_power(lmx2572_iface::output_t::RF_OUTPUT_B, power);
+    }
     _lmx->commit();
     return _freq;
 }
@@ -156,4 +165,38 @@ lmx2572_iface::output_t zbx_lo_ctrl::_get_output_port(bool testing_mode)
     }
 }
 
+uint8_t zbx_lo_ctrl::_find_lo_power(const double freq)
+{
+    if (freq < 3e9) {
+        return 25;
+    } else if (3e9 <= freq && freq < 4e9) {
+        constexpr double slope         = 5.0;
+        constexpr double segment_range = 1e9;
+        constexpr double power_base    = 25.0;
+        const double offset            = freq - 3e9;
+        const uint8_t power            = uhd::narrow_cast<uint8_t>(
+            std::lround(power_base + ((offset / segment_range) * slope)));
+        return power;
+    } else if (4e9 <= freq && freq < 5e9) {
+        constexpr double slope         = 10.0;
+        constexpr double segment_range = 1e9;
+        constexpr double power_base    = 30.0;
+        const double offset            = freq - 4e9;
+        const uint8_t power            = uhd::narrow_cast<uint8_t>(
+            std::lround(power_base + ((offset / segment_range) * slope)));
+        return power;
+    } else if (5e9 <= freq && freq < 6.4e9) {
+        constexpr double slope         = 5 / 1.4;
+        constexpr double segment_range = 1.4e9;
+        constexpr double power_base    = 40.0;
+        const double offset            = freq - 5e9;
+        const uint8_t power            = uhd::narrow_cast<uint8_t>(
+            std::lround(power_base + ((offset / segment_range) * slope)));
+        return power;
+    } else if (freq >= 6.4e9) {
+        return 45;
+    } else {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+}
 }}} // namespace uhd::usrp::zbx

@@ -80,6 +80,7 @@ public:
     std::vector<double> get_clock_rates(unit_t) override;
     void set_clock_enabled(unit_t, bool) override;
     double get_codec_rate(unit_t) override;
+    bool lock_clock_rate(const unit_t) override;
 
     void write_spi(unit_t unit,
         const uhd::spi_config_t& config,
@@ -110,7 +111,6 @@ public:
 private:
     const x300_dboard_iface_config_t _config;
     uhd::dict<unit_t, ad5623_regs_t> _dac_regs;
-    uhd::dict<unit_t, double> _clock_rates;
     uhd::dict<std::string, rx_frontend_core_3000::sptr> _rx_fes;
     uhd::dict<std::string, tx_frontend_core_200::sptr> _tx_fes;
     void _write_aux_dac(unit_t);

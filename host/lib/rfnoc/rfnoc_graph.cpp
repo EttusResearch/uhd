@@ -603,6 +603,13 @@ public:
         return _device->get_mb_iface(mb_index).get_chdr_w();
     }
 
+    std::map<std::string, device_addr_t> get_chdr_xport_adapters(
+        size_t mb_index) const override
+    {
+        UHD_ASSERT_THROW(mb_index < _num_mboards);
+        return _device->get_mb_iface(mb_index).get_chdr_xport_adapters();
+    }
+
 private:
     /**************************************************************************
      * Device Setup

@@ -1,8 +1,6 @@
 parameters:
 - name: suiteName
   type: string
-- name: uhdSrcDir
-  type: string
 - name: uhdArtifactSource
   type: string
 - name: uhdFpgaArtifactSource
@@ -35,19 +33,26 @@ jobs:
   pool:
     name: de-dre-lab
     demands:
+    - agent.os -equals Windows_NT
     - suiteName -equals ${{ parameters.suiteName }}
-    - device -equals $(devName)
+    - device -equals $(dutName)
   strategy:
     matrix: ${{ parameters.dutMatrix }}
   steps:    
+  - checkout: self
+    clean: true
+
   - checkout: ettus-rts
     clean: true
 
   - checkout: labview-usrp-examples
     clean: true
 
-  - checkout: self
-    clean: true
+  - download: ${{ parameters.uhdFpgaArtifactSource }}
+    patterns: |
+      usrp_$(dutModel)*.bit
+      usrp_$(dutModel)*.dts
+    displayName: Download FPGA artifacts
 
   - script: |
       if "${{ parameters.uhdArtifactSource }}" == "current" (
@@ -56,6 +61,16 @@ jobs:
         echo ##vso[task.setvariable variable=uhd_artifact_directory]%Agent_BuildDirectory%\${{ parameters.uhdArtifactSource }}
       )
     displayName: Set uhddev pipeline artifact location
+
+  - script: |
+      if "${{ parameters.uhdFpgaArtifactSource }}" == "current" (
+        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent_BuildDirectory%
+        echo uhd_fpga_artifact_directory=%Agent_BuildDirectory%
+      ) else (
+        echo ##vso[task.setvariable variable=uhd_fpga_artifact_directory]%Agent_BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
+        echo uhd_fpga_artifact_directory=%Agent_BuildDirectory%\${{ parameters.uhdFpgaArtifactSource }}
+      )
+    displayName: Set uhddev FPGA pipeline artifact location
 
   - download: ${{ parameters.uhdArtifactSource }}
     artifact: uhddev-${{ parameters.buildOSName }}-${{ parameters.toolset }}-${{ parameters.installer }}-installer
@@ -86,6 +101,71 @@ jobs:
       %uhd_installer_exe_path% /S /D=%uhd_installation_dir%
       echo ##vso[task.setvariable variable=UHD_PKG_PATH]%uhd_installation_dir%
     displayName: Install UHD from uhddev artifact
+
+  - task: DeleteFiles@1
+    inputs:
+      SourceFolder: '$(uhd_artifact_directory)\$(dutEmbeddedImagesArtifact)'
+      Contents: '*'
+      RemoveSourceFolder: yes
+      TreatMissingSourceFolderAsSuccess: true
+    displayName: Cleanup from prior runs
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+
+  - download: ${{ parameters.uhdArtifactSource }}
+    artifact: $(dutEmbeddedImagesArtifact)
+    displayName: Download $(dutEmbeddedImagesArtifact)
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)/u-boot-jtag-files.zip
+      destinationFolder: $(uhd_artifact_directory)/$(dutEmbeddedImagesArtifact)
+      cleanDestinationFolder: false
+      overwriteExistingFiles: true
+    displayName: Extract JTAG artifact
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+
+  - script: |
+        set USRP_EMB_TARGET_NAME=ni-$(dutType)-$(dutSerial)
+        ssh-keygen -f %userprofile%\.ssh\known_hosts -R %USRP_EMB_TARGET_NAME%
+        dir %uhd_artifact_directory%\%dutEmbeddedImagesArtifact%
+        scp -o StrictHostKeyChecking=no %uhd_artifact_directory%\%dutEmbeddedImagesArtifact%\*.mender root@%USRP_EMB_TARGET_NAME%:~/.
+        if errorlevel 1 exit /b %ERRORLEVEL%
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "mender install ~/*mender.mender"
+        if errorlevel 1 exit /b %ERRORLEVEL%
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "rm -f ~/*mender.mender"
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "reboot"
+        echo waiting 2 minutes for target to reboot...
+        ping 127.0.0.1 -n 120 > nul
+        ipconfig /flushdns
+        ssh-keygen -f %userprofile%\.ssh\known_hosts -R %USRP_EMB_TARGET_NAME%
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "mender commit"
+        if errorlevel 1 exit /b %ERRORLEVEL%
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "mender show-artifact"
+    displayName: Copy + install mender file to target
+    condition: and(succeeded(), eq(variables.dutType, 'x4xx'))
+
+  - script: |
+        set USRP_EMB_TARGET_NAME=ni-$(dutType)-$(dutSerial)
+        ssh-keygen -f %userprofile%\.ssh\known_hosts -R %USRP_EMB_TARGET_NAME%
+        scp -o StrictHostKeyChecking=no $(uhd_fpga_artifact_directory)/*/usrp_$(dutModel)_* root@%USRP_EMB_TARGET_NAME%:/usr/share/uhd/images/
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "md5sum /usr/share/uhd/images/usrp_$(dutModel)_fpga_$(dutFPGA).bit > /usr/share/uhd/images/usrp_$(dutModel)_fpga_$(dutFPGA).bit.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "md5sum /usr/share/uhd/images/usrp_$(dutModel)_fpga_$(dutFPGA).dts > /usr/share/uhd/images/usrp_$(dutModel)_fpga_$(dutFPGA).dts.md5"
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "rm /lib/firmware/x4*.* && systemctl stop usrp-hwd.service"
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "umount /mnt/db*_flash || true && systemctl start usrp-hwd.service"
+    displayName: Copy FPGA pipeline images to device
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.dutType, 'b200')))
+
+  - script: |
+        set USRP_EMB_TARGET_NAME=ni-$(dutType)-$(dutSerial)
+        ssh-keygen -f %userprofile%\.ssh\known_hosts -R %USRP_EMB_TARGET_NAME%
+        ssh -o StrictHostKeyChecking=no -tt root@%USRP_EMB_TARGET_NAME% "uhd_image_loader --args addr=localhost,type=$(dutType),fpga=$(dutFPGA)"
+    displayName: Flash FPGA $(dutFPGA)
+    condition: and(succeeded(), and(contains('${{ parameters.fpga_imgs_source }}', 'Pipeline'), ne(variables.dutType, 'b200')))
+
+  - script: |
+        %uhd_installation_dir%\bin\uhd_usrp_probe --args type=$(dutType),addr=$(dutAddr)
+    displayName: Probe device
 
   # TODO make this work for all python versions we support (3.10 + 3.12)
   - script: |
@@ -133,7 +213,7 @@ jobs:
     displayName: Run lvtest for LabVIEW USRP Examples
 
   - publish: $(Common.TestResultsDirectory)\uhdlvtest
-    artifact: test-logs-uhdlvtest-$(devName)-run$(System.JobAttempt)
+    artifact: test-logs-uhdlvtest-$(dutName)-run$(System.JobAttempt)
     displayName: Upload Test Logs
     condition: always()
   

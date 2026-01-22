@@ -126,7 +126,7 @@ elseif(MSVC)
     endif(${MSVC_VERSION} VERSION_LESS ${UHD_MSVC_MIN_VERSION})
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CMAKE_EXE_LINKER_FLAGS "-lthr ${CMAKE_EXE_LINKER_FLAGS}")
@@ -282,7 +282,6 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
 endif()
 
 if(MSVC)
-    include_directories(${UHD_SOURCE_DIR}/cmake/msvc)
     # Stop all kinds of compatibility warnings
     add_definitions(
         -DWIN32_LEAN_AND_MEAN
@@ -321,8 +320,8 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
     program_options
-    system
     serialization
+    #system Boost.System is used, but explicitly listing it causes errors on some systems.
     thread
     unit_test_framework
 )
@@ -331,7 +330,6 @@ include(UHDBoost)
 
 # Include boost headers as system headers to avoid compiler warnings from them.
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
 
 
 ########################################################################
@@ -497,9 +495,9 @@ LIBUHD_REGISTER_COMPONENT(
     OFF OFF)
 if(WIN32)
     LIBUHD_REGISTER_COMPONENT(
-        "UHD Extended Packaging for Windows" 
-        ENABLE_EXTEND_WIN_PACKAGING 
-        OFF 
+        "UHD Extended Packaging for Windows"
+        ENABLE_EXTEND_WIN_PACKAGING
+        OFF
         "ENABLE_LIBUHD"
         OFF
         OFF)
@@ -559,6 +557,18 @@ if(CMAKE_CROSSCOMPILING)
     set(UHD_PC_LIBS)
 endif(CMAKE_CROSSCOMPILING)
 
+# Support absolute paths for LIBDIR and INCLUDEDIR
+if(IS_ABSOLUTE "${CMAKE_INSTALL_LIBDIR}")
+    set(UHD_PC_LIBDIR "${CMAKE_INSTALL_LIBDIR}")
+else()
+    set(UHD_PC_LIBDIR "\${exec_prefix}/${CMAKE_INSTALL_LIBDIR}")
+endif()
+if(IS_ABSOLUTE "${CMAKE_INSTALL_INCLUDEDIR}")
+    set(UHD_PC_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}")
+else()
+    set(UHD_PC_INCLUDEDIR "\${prefix}/${CMAKE_INSTALL_INCLUDEDIR}")
+endif()
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd.pc.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd.pc
@@ -581,9 +591,9 @@ endif(NOT CMAKE_MODULES_DIR)
 list(APPEND UHD_LINK_LIST_STATIC "dl")
 list(APPEND UHD_LINK_LIST_STATIC "pthread")
 foreach(Boost_Comp ${UHD_BOOST_REQUIRED_COMPONENTS})
-    if(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+    if(NOT ${Boost_Comp} STREQUAL "unit_test_framework" AND NOT ${Boost_Comp} STREQUAL "system")
         list(APPEND UHD_LINK_LIST_STATIC "boost_${Boost_Comp}")
-    endif(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
+    endif()
 endforeach(Boost_Comp)
 if(ENABLE_USB)
     list(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
@@ -600,6 +610,15 @@ configure_file(
     @ONLY
 )
 
+include(CMakePackageConfigHelpers)
+if(TARGET uhd)
+    export(
+        EXPORT uhdTargets
+        FILE ${UHD_BINARY_DIR}/cmake/Modules/UHDTargets.cmake
+        NAMESPACE UHD::
+    )
+endif()
+
 set(uhd_cmake_scripts
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     ${UHD_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
@@ -614,6 +633,15 @@ UHD_INSTALL(
     DESTINATION ${CMAKE_MODULES_DIR}/uhd
     COMPONENT "devel"
 )
+if(TARGET uhd)
+    install(
+        EXPORT uhdTargets
+        FILE UHDTargets.cmake
+        NAMESPACE UHD::
+        DESTINATION ${CMAKE_MODULES_DIR}/uhd
+        COMPONENT "devel"
+    )
+endif()
 
 
 ########################################################################

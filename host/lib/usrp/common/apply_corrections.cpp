@@ -14,9 +14,9 @@
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <unordered_map>
-#include <boost/filesystem.hpp> // For deprecated CSV reader only
 #include <complex>
 #include <cstdio>
+#include <filesystem> // For deprecated CSV reader only
 #include <fstream>
 #include <mutex>
 
@@ -38,7 +38,7 @@ bool load_legacy_fe_corrections(const std::string& cal_key,
     const std::string& db_serial,
     const std::string& file_prefix)
 {
-    namespace fs                             = boost::filesystem;
+    namespace fs                             = std::filesystem;
     const std::string file_prefix_deprecated = file_prefix + "_cal_v0.2_";
     // make the calibration file path
     const fs::path cal_data_path = fs::path(uhd::get_appdata_path()) / ".uhd" / "cal"

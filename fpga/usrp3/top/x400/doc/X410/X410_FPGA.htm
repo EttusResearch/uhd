@@ -458,11 +458,6 @@ p.offset_info, td.offset_info {
 
                 
     <p>
-        <a class="register" href="#AXI_HPM0_REGMAP|JTAG_ENGINE">JTAG_ENGINE</a>
-    </p>
-
-                
-    <p>
         <a class="register" href="#AXI_HPM0_REGMAP|RESERVED">RESERVED</a>
     </p>
 
@@ -2685,7 +2680,7 @@ p.offset_info, td.offset_info {
             <i>This content is intended solely for use by core team members of the 'X410_FPGA' project.
                     Do not distribute or otherwise forward this content.  If you believe you have acquired
                     access to this content in error, delete it immediately and notify the sender that you
-                    are not intended to have access to this content.<BR/><BR/>"All content provided is NI Confidential and Copyright 2025 National Instruments Corporation.
+                    are not intended to have access to this content.<BR/><BR/>"All content provided is NI Confidential and Copyright 2026 National Instruments Corporation.
 For information on NI trademark guidelines, please see <a href="http://www.ni.com/legal/trademarks/">http://www.ni.com/legal/trademarks/</a>. For the NI Patent Notice, please see <a href="http://www.ni.com/legal/patents/">http://www.ni.com/legal/patents/</a>."
             </i></div><BR/>
 </section>
@@ -2900,58 +2895,6 @@ This port has a 40-bit address bus.</p></div>
         <div class="info">
             <div class="xmlpmd">
 <p>Space reserved for RPU access</p></div>
-        </div>
-        
-    </section>
-
-
-        
-            
-    <section class="register">
-        <a name="AXI_HPM0_REGMAP|JTAG_ENGINE"></a>
-        
-        <h3 class="register">
-            Offset 0x1000000000: JTAG_ENGINE
-                Window
-            (R|W)
-            <a href="#AXI_HPM0_REGMAP|JTAG_ENGINE">&#x1F517;</a>
-        </h3>
-        <div class="sh">
-            <span class="opener sh-addrs">(<span class="sh-hidden">show</span><span class="sh-shown">hide</span> extended info)</span>
-            <div class="sh-content">
-                
-                <table class="extended_info">
-                        <tr>
-                                    <td class="outercell" rowspan="1">
-                                        <table border="0" cellspacing="0" cellpadding="0">
-                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|ARM_M_AXI_HPM0">ARM_M_AXI_HPM0</a></td></tr>
-                  </table>
-                                    </td>
-                                    <td class="outercell" rowspan="1">
-                                        <table border="0" cellspacing="0" cellpadding="0">
-  <tr><td class="offset_info" align="right">JTAG_ENGINE</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x1000000000</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;size=0x1000 (4 Kbytes)</td></tr>
-</table>
-                                    </td>
-                                <td class="outercell" rowspan="1">
-                                    <table border="0" cellspacing="0" cellpadding="0">
-                                        <tr>
-                                                <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x1000000000</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                        </tr>
-                </table>
-                    <p class="reg_info">
-                            This window is defined in HDL source file common_regs.v.
-                    </p>
-            </div>
-        </div>
-        <div class="info">
-            <div class="xmlpmd">
-<p>Register space for the JTAG engine for MB CPLD programming.</p></div>
         </div>
         
     </section>
@@ -8395,6 +8338,12 @@ This port has a 40-bit address bus.</p></div>
         <div class="info">
             Controls SPI Transaction<BR/>
 Set of configuration registers for the supported slaves.
+            Starting from FPGA compat number 10.1, the bit order for "Port A GPIO"
+            and "Port B GPIO" matches the pin order of the "DIO" signals on the
+            frontpanel connectors (which is the same order as the HDMI pin numbering
+            with ground pins and pin 14 (HEC/ARC) left out). Up until FPGA compat
+            number 10.0, software had to apply a mapping on software side to compensate
+            for non-linear mapping in the FPGA.
         </div>
         
             <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
@@ -8973,6 +8922,31 @@ Set of configuration registers for the supported slaves.
           alt="Front-Panel Programmable GPIOs"/></br>
       Make sure the GPIO lines between FPGA and GPIO board are not driven by
       two drivers. Set the DIO registers in <a href="#PS_CPLD_BASE_REGMAP">PS_CPLD_BASE_REGMAP</a> appropriately.
+      <p>
+        Important note on the bit ordering inside the DIO_PORT_A and DIO_PORT_B
+        bitfields of all DIO-registers:
+        <ul>
+          <li>
+            Starting from FPGA compat number 10.1, the bit order matches the pin
+            order of the "DIO" signals on the frontpanel connectors (which is the
+            same order as the HDMI pin numbering with ground pins and pin 14
+            (HEC/ARC) left out):
+            <pre>
++----------------------------------------+
+| 11  --  09  08  --  05  04  --  01  00 |
+\   --  10  --  07  06  --  03  02  --   /
+ +--------------------------------------+</pre>
+          </li>
+          <li>
+            Up until FPGA compat number 10.0, the the bit order did not match the
+            actual pin order on the frontpanel connectors. To compensate for this,
+            the software had to apply a mapping table for the values in bitfield
+            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
+            mapping table for the values in bitfield DIO_PORT_B (see parameter
+            'MAPPED_PIN_DIO_B' in x4xx.sv).
+          </li>
+        </ul>
+      </p>
         
             
     <section class="register">
@@ -15828,6 +15802,26 @@ attenuation setting desired. Writing zero to this field results in no attenuatio
     <a name="GPIO_ATR_REGMAP|GPIO_ATR_REGS"></a>
     <h2 class="group">GPIO_ATR_REGS <a href="#GPIO_ATR_REGMAP|GPIO_ATR_REGS">&#x1F517;</a></h2>
     Describes the behavior of GPIO lines when controlled by the ATR state.
+      <p>
+        Important note on the bit ordering inside the (...)_A and (...)_B
+        bitfields of all ATR-registers:
+        <ul>
+          <li>
+            Starting from FPGA compat number 10.1, the bit order matches the pin
+            order of the "DIO" signals on the frontpanel connectors (which is the
+            same order as the HDMI pin numbering with ground pins and pin 14
+            (HEC/ARC) left out).
+          </li>
+          <li>
+            Up until FPGA compat number 10.0, the the bit order did not match the
+            actual pin order on the frontpanel connectors. To compensate for this,
+            the software had to apply a mapping table for the values in bitfield
+            DIO_PORT_A (see parameter 'MAPPED_PIN_DIO_A' in x4xx.sv) and another
+            mapping table for the values in bitfield DIO_PORT_B (see parameter
+            'MAPPED_PIN_DIO_B' in x4xx.sv).
+          </li>
+        </ul>
+      </p>
         
             
     <section class="register">
@@ -32823,19 +32817,6 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
-                                    FPGA_CURRENT_VERSION_MINOR
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">0</td>
-                            <td class="l">0x00000000</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_BUILD"></a>
                                     FPGA_CURRENT_VERSION_BUILD
                                 </p>
@@ -32849,8 +32830,8 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
-                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD"></a>
+                                    FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
                                 </p>
                                 
                             </td>
@@ -32858,12 +32839,25 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">0</td>
-                            <td class="l">0x00000000</td>
+                        <td class="value">1</td>
+                            <td class="l">0x00000001</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD"></a>
-                                    FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
+                                    FPGA_CURRENT_VERSION_MINOR
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">1</td>
+                            <td class="l">0x00000001</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
+                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
                                 </p>
                                 
                             </td>
@@ -32897,8 +32891,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">620958473</td>
-                            <td class="l">0x25031309</td>
+                        <td class="value">621938963</td>
+                            <td class="l">0x25120913</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME"></a>

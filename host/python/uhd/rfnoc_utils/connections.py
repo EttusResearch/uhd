@@ -46,10 +46,13 @@ def _check_duplicate_connections(config):
             def port_match(c):
                 return con[f"{s_d}blk"] == c[f"{s_d}blk"] and con[f"{s_d}port"] == c[f"{s_d}port"]
 
+            def valid_types(c):
+                return con[f"{s_d}type"] is not None and c[f"{s_d}type"] is not None
+
             dupes = [
                 other
                 for other in config.connections[con_idx + 1 :]
-                if port_match(other) and not is_broadcast(other)
+                if valid_types(other) and port_match(other) and not is_broadcast(other)
             ]
             if dupes:
                 error = (
@@ -101,12 +104,12 @@ def check_and_sanitize(config):
 
     def sanitize_port(con, s_d, failure):
         """Unpack port names (separate slice from port name)."""
-        port_match = re.match(r"^([a-z0-9_]+)(?:\[([^]])\])?$", con[f"{s_d}port"])
+        port_match = re.match(r"^([a-z0-9_]+)(?:\[([^]]+)\])?$", con[f"{s_d}port"])
         if not port_match:
             failure += f"Invalid port name: {con[f'{s_d}port']}\n"
-            return con
+            return con, failure
         con[f"{s_d}port"], con[f"{s_d}slice"] = port_match.groups()
-        return con
+        return con, failure
 
     def check_port_is_valid(blk_key, blk, port, s_d):
         """Return true if the port is valid for the block."""
@@ -133,8 +136,10 @@ def check_and_sanitize(config):
 
     ## Phase 1: We go through the list of connections and provide annotations
     for conn_idx, con in enumerate(config.connections):
+        con["srctype"] = None
+        con["dsttype"] = None
         for s_d in ("src", "dst"):
-            con = sanitize_port(con, s_d, failure)
+            con, failure = sanitize_port(con, s_d, failure)
         src_blk = config.get_module(con["srcblk"])
         if src_blk is None:
             failure += f"Source block '{con['srcblk']}' not found\n"

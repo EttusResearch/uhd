@@ -21,6 +21,9 @@ parameters:
 - name: uhdGenerateTestBinaries
   type: boolean
   default: false
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 # If we are requested to use a custom Boost package, then we download and build
@@ -72,8 +75,12 @@ steps:
       echo "Setting CMAKE_INSTALL_PREFIX to ${{ parameters.uhdBuildDir }}-installed"
       export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
     fi
+    if [[ "${{ parameters.cmake_args }}" != " " ]]; then
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
+      ${{ parameters.cmake_args }} \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake make UHD
 

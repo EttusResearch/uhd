@@ -1,27 +1,21 @@
 /*! \mainpage Overview
 
-Welcome to the USRP Hardware Driver (UHD) manual. Here, you will find information on how to use the devices and how to use the API to connect to them through your own software.
+Welcome to the USRP Hardware Driver (UHD)  and device manual. Here, you will find information on how to use the devices and how to use the API to connect to them through your own software.
 
-This manual is split into two parts: The device manual, and the UHD/API manual. The first part describes details of our devices, mainboards and daughterboards, as well as aspects of _using_ UHD.
 
-The second is meant for developers writing UHD-based applications, and includes descriptions of the API, sorted by namespaces, classes and files.
+__Chapters__
+\li **Getting Started**: Lists links to getting-started and training content on devices, UHD and RFNoC.
+\li **Device Manual**: Provides manuals for USRP devices, RF daughterboards and accessories.
+\li **Software Installation**: Explains installation of UHD using binary installers or from source code.
+\li **UHD Driver Usage**: Explains certain features of the UHD driver and how to use them.
+\li **UHD Driver API**: Provides an overview over the different APIs and their availability in different programming languages.
+\li **RFNoC**: Explains how to develop custom FPGA designs using the RFNoC framework. 
+\li **FPGA Manual**: Explains how to build FPGA bitfiles for different USRP generations.
+\li **C++ API Reference**:  Provides Descriptions of the C++ API, sorted by classes, files and namespaces.
 
-Follow these links to get to the section of the manual you wish to consult, or use the browser in the left sidebar. A search bar is also available at the top right, but note that this only works on API components. For information on how to build and install UHD, go to the UHD web site (see below).
-
-## Manual Parts
-
-\li \subpage page_devices "Part I: Devices & Usage Manual"
-\li \subpage page_uhd "Part II: UHD Development Manual"
-\li \subpage md_fpga "Part III: FPGA Manual"
-
-### Further Information
-
-\li <a href="http://www.ettus.com/">Ettus Research Website</a>
-
-### Installing and/or Building UHD
-
-\li \subpage page_install
-\li \subpage page_build_guide
+__Searching this manual__ 
+\li A search bar is available at the top right. This search only works on C++ API components. 
+\li The search on the bottom right at <a href="https://uhd.readthedocs.io/">readthedocs.io</a> provides full text search capabilities for this manual. 
 
 */
 // vim:ft=doxygen:

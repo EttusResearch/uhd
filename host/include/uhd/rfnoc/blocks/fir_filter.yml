@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: fir_filter
+name: FIR Filter
+description: |
+  A programmable finite impulse response (FIR) filter block. The filter taps can be exchanged at runtime.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

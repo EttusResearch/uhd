@@ -33,27 +33,25 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The RFX Series constants
  **********************************************************************/
-static const std::vector<std::string> rfx_tx_antennas = list_of("TX/RX")("CAL");
+static const std::vector<std::string> rfx_tx_antennas{"TX/RX", "CAL"};
 
-static const std::vector<std::string> rfx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
+static const std::vector<std::string> rfx_rx_antennas{"TX/RX", "RX2", "CAL"};
 
-static const uhd::dict<std::string, gain_range_t> rfx_rx_gain_ranges =
-    map_list_of("PGA0", gain_range_t(0, 70, 0.022));
+static const uhd::dict<std::string, gain_range_t> rfx_rx_gain_ranges{
+    {"PGA0", gain_range_t(0, 70, 0.022)}};
 
-static const uhd::dict<std::string, gain_range_t> rfx400_rx_gain_ranges =
-    map_list_of("PGA0", gain_range_t(0, 45, 0.022));
+static const uhd::dict<std::string, gain_range_t> rfx400_rx_gain_ranges{
+    {"PGA0", gain_range_t(0, 45, 0.022)}};
 
 /***********************************************************************
  * The RFX series of dboards
@@ -158,7 +156,7 @@ rfx_xcvr::rfx_xcvr(
     , _freq_range(freq_range)
     , _rx_gain_ranges(
           (get_rx_id() == 0x0024) ? rfx400_rx_gain_ranges : rfx_rx_gain_ranges)
-    , _div2(map_list_of(dboard_iface::UNIT_RX, rx_div2)(dboard_iface::UNIT_TX, tx_div2))
+    , _div2({{dboard_iface::UNIT_RX, rx_div2}, {dboard_iface::UNIT_TX, tx_div2}})
     , _power_up((get_rx_id() == 0x0024 && get_tx_id() == 0x0028) ? POWER_IO : 0)
 {
     ////////////////////////////////////////////////////////////////////
@@ -407,17 +405,17 @@ double rfx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
     bool is_rx_rfx400 = ((get_rx_id() == 0x0024) && unit != dboard_iface::UNIT_TX);
 
     // map prescalers to the register enums
-    static const uhd::dict<int, adf4360_regs_t::prescaler_value_t> prescaler_to_enum =
-        map_list_of(8, adf4360_regs_t::PRESCALER_VALUE_8_9)(
-            16, adf4360_regs_t::PRESCALER_VALUE_16_17)(
-            32, adf4360_regs_t::PRESCALER_VALUE_32_33);
+    static const uhd::dict<int, adf4360_regs_t::prescaler_value_t> prescaler_to_enum{
+        {8, adf4360_regs_t::PRESCALER_VALUE_8_9},
+        {16, adf4360_regs_t::PRESCALER_VALUE_16_17},
+        {32, adf4360_regs_t::PRESCALER_VALUE_32_33}};
 
     // map band select clock dividers to enums
-    static const uhd::dict<int, adf4360_regs_t::band_select_clock_div_t> bandsel_to_enum =
-        map_list_of(1, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_1)(
-            2, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_2)(
-            4, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_4)(
-            8, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8);
+    static const uhd::dict<int, adf4360_regs_t::band_select_clock_div_t> bandsel_to_enum{
+        {1, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_1},
+        {2, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_2},
+        {4, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_4},
+        {8, adf4360_regs_t::BAND_SELECT_CLOCK_DIV_8}};
 
     double actual_freq = 0, ref_freq = this->get_iface()->get_clock_rate(unit);
     int R = 0, BS = 0, P = 0, B = 0, A = 0;
@@ -491,11 +489,12 @@ done_loop:
     regs.band_select_clock_div   = bandsel_to_enum[BS];
 
     // write the registers
-    std::vector<adf4360_regs_t::addr_t> addrs =
-        list_of // correct power-up sequence to write registers (R, C, N)
-        (adf4360_regs_t::ADDR_RCOUNTER)(adf4360_regs_t::ADDR_CONTROL)(
-            adf4360_regs_t::ADDR_NCOUNTER);
-    for (adf4360_regs_t::addr_t addr : addrs) {
+    std::vector<adf4360_regs_t::addr_t> addrs{
+        // correct power-up sequence to write registers (R, C, N)
+        adf4360_regs_t::ADDR_RCOUNTER,
+        adf4360_regs_t::ADDR_CONTROL,
+        adf4360_regs_t::ADDR_NCOUNTER};
+    for (const auto& addr : addrs) {
         this->get_iface()->write_spi(
             unit, spi_config_t::EDGE_RISE, regs.get_reg(addr), 24);
     }

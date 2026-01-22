@@ -48,6 +48,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   replay0:
     block_desc: 'replay.yml'
     parameters:
@@ -86,6 +88,7 @@ connections:
   - { srcblk: replay0,  srcport: axi_ram,  dstblk: _device_, dstport: dram            }
   - { srcblk: _device_, srcport: radio0,   dstblk: radio0,   dstport: radio           }
   - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
+  - { srcblk: _device_, srcport: _none_,   dstblk: _device_, dstport: fp_gpio         }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------

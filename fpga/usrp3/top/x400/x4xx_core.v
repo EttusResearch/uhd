@@ -432,6 +432,12 @@ module x4xx_core #(
 
   wire [95:0] device_dna;
 
+  // Front-Panel GPIO
+  wire [11:0]                     rfnoc_gpio0_out;
+  wire [11:0]                     rfnoc_gpio0_in;
+  wire [11:0]                     rfnoc_gpio1_out;
+  wire [11:0]                     rfnoc_gpio1_in;
+
   x4xx_core_common #(
     .CHDR_CLK_RATE   (CHDR_CLK_RATE),
     .CHDR_W          (CHDR_W),
@@ -484,10 +490,10 @@ module x4xx_core #(
     .gpio_out_b                       (gpio_out_b),
     .gpio_en_a                        (gpio_en_a),
     .gpio_en_b                        (gpio_en_b),
-    .gpio_in_fabric_a                 (),
-    .gpio_in_fabric_b                 (),
-    .gpio_out_fabric_a                (12'b0),
-    .gpio_out_fabric_b                (12'b0),
+    .gpio_in_fabric_a                 (rfnoc_gpio0_in),
+    .gpio_in_fabric_b                 (rfnoc_gpio1_in),
+    .gpio_out_fabric_a                (rfnoc_gpio0_out),
+    .gpio_out_fabric_b                (rfnoc_gpio1_out),
     .ps_gpio_out_a                    (ps_gpio_out_a),
     .ps_gpio_in_a                     (ps_gpio_in_a),
     .ps_gpio_ddr_a                    (ps_gpio_ddr_a),
@@ -1110,7 +1116,13 @@ module x4xx_core #(
     .m_dma_tdata                    (m_dma_tdata),
     .m_dma_tlast                    (m_dma_tlast),
     .m_dma_tvalid                   (m_dma_tvalid),
-    .m_dma_tready                   (m_dma_tready)
+    .m_dma_tready                   (m_dma_tready),
+    .gpio0_out                      (rfnoc_gpio0_out),
+    .gpio0_ddr                      (),
+    .gpio0_in                       (rfnoc_gpio0_in),
+    .gpio1_out                      (rfnoc_gpio1_out),
+    .gpio1_ddr                      (),
+    .gpio1_in                       (rfnoc_gpio1_in)
   );
 
 endmodule

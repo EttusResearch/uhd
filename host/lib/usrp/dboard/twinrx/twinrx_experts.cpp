@@ -13,7 +13,6 @@
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <boost/assign/list_of.hpp>
 #include <cmath>
 
 using namespace uhd::experts;
@@ -303,10 +302,12 @@ void twinrx_chan_gain_expert::resolve()
  */
 void twinrx_lo_config_expert::resolve()
 {
-    static const uhd::dict<std::string, twinrx_ctrl::lo_source_t> src_lookup =
-        boost::assign::map_list_of("internal", twinrx_ctrl::LO_INTERNAL)(
-            "external", twinrx_ctrl::LO_EXTERNAL)("companion", twinrx_ctrl::LO_COMPANION)(
-            "disabled", twinrx_ctrl::LO_DISABLED)("reimport", twinrx_ctrl::LO_REIMPORT);
+    static const uhd::dict<std::string, twinrx_ctrl::lo_source_t> src_lookup{
+        {"internal", twinrx_ctrl::LO_INTERNAL},
+        {"external", twinrx_ctrl::LO_EXTERNAL},
+        {"companion", twinrx_ctrl::LO_COMPANION},
+        {"disabled", twinrx_ctrl::LO_DISABLED},
+        {"reimport", twinrx_ctrl::LO_REIMPORT}};
 
     if (src_lookup.has_key(_lo_source_ch0)) {
         _lo1_src_ch0 = _lo2_src_ch0 = src_lookup[_lo_source_ch0];

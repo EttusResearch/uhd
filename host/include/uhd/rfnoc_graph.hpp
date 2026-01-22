@@ -430,8 +430,27 @@ public:
     //! Return a reference to the property tree
     virtual uhd::property_tree::sptr get_tree(void) const = 0;
 
-    //! Return the CHDR width for a given device
+    /*! Return the CHDR width for a given device
+     *
+     * \param mb_index The index of the motherboard in the graph, 0 if only one device is
+     *                 used.
+     *
+     * \return CHDR width as enum value. Use the function `chdr_w_to_bits` to convert the
+     *         enum to a number of bits.
+     */
     virtual chdr_w_t get_chdr_width(const size_t mb_index = 0) const = 0;
+
+    /*! Return a list of transport adapters that can be used for streaming to a given
+     * device
+     *
+     * \param mb_index The index of the motherboard in the graph, 0 if only one device is
+     *                 used.
+     *
+     * \return A map of device address information for the available interfaces. Note that
+     *         the available device address information keys are device specific.
+     */
+    virtual std::map<std::string, device_addr_t> get_chdr_xport_adapters(
+        size_t mb_index = 0) const = 0;
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc

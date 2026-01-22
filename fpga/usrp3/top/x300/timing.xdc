@@ -558,14 +558,17 @@ set_min_delay 0.500 -to [get_pins -hier -filter {NAME =~ */pps_sync_tbclk_inst/s
 #*******************************************************************************
 ## Miscellaneous Interfaces
 
-# Dboard and Front-Panel GPIO Interfaces 
+# Dboard GPIO Interfaces
 # We force the registers closest to the PADs into the IOB to achieve lowest skew between individual bits
 # in the parallel bus. However, as a sanity check we add the following constraints that will fail if the 
 # registers don't get placed in the IOB for whatever reason.
 set_max_delay 6.000 -to   [get_ports * -filter {(DIRECTION == OUT || DIRECTION == INOUT) && NAME =~ "DB*_*X_IO*"}]
 set_max_delay 3.000 -from [get_ports * -filter {(DIRECTION == IN  || DIRECTION == INOUT) && NAME =~ "DB*_*X_IO*"}]
+
+# Front-Panel GPIO Interface
+# We use small input and output delays to minimize skew
 set_max_delay 6.000 -to   [get_ports * -filter {(DIRECTION == OUT || DIRECTION == INOUT) && NAME =~ "FrontPanelGpio[*]"}]
-set_max_delay 3.000 -from [get_ports * -filter {(DIRECTION == IN  || DIRECTION == INOUT) && NAME =~ "FrontPanelGpio[*]"}]
+set_max_delay 4.000 -from [get_ports * -filter {(DIRECTION == IN  || DIRECTION == INOUT) && NAME =~ "FrontPanelGpio[*]"}]
 
 # SPI Lines
 set_max_delay 10.000 -datapath_only \

@@ -27,10 +27,13 @@ def get_valid_interfaces(iface_list):
     with IPRoute() as ipr:
         for iface in iface_list:
             valid_iface_idx = ipr.link_lookup(ifname=iface)
-            if len(valid_iface_idx) == 0:
+            if not valid_iface_idx:
                 continue
             valid_iface_idx = valid_iface_idx[0]
-            link_info = ipr.get_links(valid_iface_idx)[0]
+            link_list = ipr.get_links(valid_iface_idx)
+            if not link_list:
+                continue
+            link_info = link_list[0]
             # IFLA_OPERSTATE attribute isn't implemented on WSL
             # Workaround is ignore it in the simulator
             from usrp_mpm import __simulated__
@@ -58,14 +61,15 @@ def get_iface_info(ifname):
     try:
         with IPRoute() as ipr:
             links = ipr.link_lookup(ifname=ifname)
-            if len(links) == 0:
-                raise LookupError("No interfaces known with name `{}'!"
-                                  .format(ifname))
-            link_info = ipr.get_links(links)[0]
+            if not links:
+                raise LookupError(f"No interfaces known with name `{ifname}'!")
+            link_list = ipr.get_links(links[0])
+            if not link_list:
+                raise LookupError(f"Could not get link info for interface `{ifname}'")
+            link_info = link_list[0]
             link_speed = get_link_speed(ifname)
     except IndexError:
-        raise LookupError("Could not get links for interface `{}'"
-                          .format(ifname))
+        raise LookupError(f"Could not get links for interface `{ifname}'")
     mac_addr = link_info.get_attr('IFLA_ADDRESS')
     ip_addrs = get_iface_addrs(mac_addr)
     return {
@@ -163,23 +167,26 @@ def get_mac_addr(ip_addr):
             if_addr = ip2.get_addr(
                 match=lambda x: x.get_attr('IFA_ADDRESS') == ip_addr
             )
-            if len(if_addr) == 0:
+            if not if_addr:
                 return None
             if len(if_addr) > 1:
                 get_logger('get_mac_addr').warning(
-                    "More than one device with the same IP address `{}' found. "
-                    "Picking entry at random.".format(ip_addr)
+                    f"More than one device with the same IP address `{ip_addr}' found. "
+                    "Picking entry at random."
                 )
             iface_idx = if_addr[0]['index']
-            if_info = ip2.get_links(iface_idx)[0]
+            link_list = ip2.get_links(iface_idx)
+            if not link_list:
+                return None
+            if_info = link_list[0]
             return if_info.get_attr('IFLA_ADDRESS')
         def _get_remote_mac_addr(remote_addr):
             " Basically an ARP lookup "
             addrs = ip2.get_neighbours(dst=remote_addr)
             if len(addrs) > 1:
                 get_logger('get_mac_addr').warning(
-                    "More than one device with the same IP address `{}' found. "
-                    "Picking entry at random.".format(ip_addr)
+                    f"More than one device with the same IP address `{ip_addr}' found. "
+                    "Picking entry at random."
                 )
             if not addrs:
                 return None

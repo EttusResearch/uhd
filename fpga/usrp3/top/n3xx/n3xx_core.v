@@ -246,6 +246,7 @@ module n3xx_core #(
   localparam REG_FP_GPIO_RADIO_SRC = REG_BASE_MISC + 14'h34;
   localparam REG_NUM_TIMEKEEPERS   = REG_BASE_MISC + 14'h48;
   localparam REG_BUILD_SEED        = REG_BASE_MISC + 14'h4C;
+  localparam REG_FP_GPIO_USER_MUX  = REG_BASE_MISC + 14'h50;
 
   localparam NUM_TIMEKEEPERS = 1;
 
@@ -272,10 +273,18 @@ module n3xx_core #(
     wire [31:0]          m_ctrlport_resp_data_radio1;
   `endif
 
+  // User logic GPIO source
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_out;
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_ddr;
+  wire [FP_GPIO_WIDTH-1:0] user_gpio_in;
+  wire [FP_GPIO_WIDTH-1:0] user_mux_gpio_out;
+  wire [FP_GPIO_WIDTH-1:0] user_mux_gpio_tri;
+
   reg [31:0] scratch_reg = 32'b0;
   reg [31:0] bus_counter = 32'h0;
   reg [31:0] fp_gpio_master_reg = 32'h0;
   reg [31:0] fp_gpio_src_reg = 32'h0;
+  reg [31:0] fp_gpio_user_mux_reg = 32'h0;
 
   always @(posedge bus_clk) begin
      if (bus_rst)
@@ -515,6 +524,10 @@ module n3xx_core #(
             // compatibility.
             enable_ref_clk_async <= ~cp_glob_req_data[16];
           end
+
+          REG_FP_GPIO_USER_MUX:
+            fp_gpio_user_mux_reg <= cp_glob_req_data;
+
           default: begin
             // Don't acknowledge if the address doesn't match
             cp_glob_resp_ack <= 1'b0;
@@ -597,6 +610,9 @@ module n3xx_core #(
             `endif
             cp_glob_resp_data <= `BUILD_SEED;
           end
+
+          REG_FP_GPIO_USER_MUX:
+            cp_glob_resp_data <= fp_gpio_user_mux_reg;
 
           default: begin
             // Don't acknowledge if the address doesn't match
@@ -934,7 +950,7 @@ module n3xx_core #(
   wire [FP_GPIO_WIDTH-1:0] radio_gpio_sync;
   wire [FP_GPIO_WIDTH-1:0] fp_gpio_in_int;
   wire [FP_GPIO_WIDTH-1:0] fp_gpio_out_int;
-  wire [FP_GPIO_WIDTH-1:0] fp_gpio_ddr_int;
+  wire [FP_GPIO_WIDTH-1:0] fp_gpio_tri_int;
 
   generate
     for (i = 0; i < NUM_CHANNELS; i = i + 1) begin
@@ -1026,6 +1042,7 @@ module n3xx_core #(
     ) radio_gpio_in_sync_i (
     .clk(radio_clk), .rst(1'b0), .in(fp_gpio_in_int), .out(radio_gpio_sync)
   );
+  assign user_gpio_in = fp_gpio_in_int;
 
   generate
     for (i=0; i<NUM_CHANNELS; i=i+1) begin: gen_fp_gpio_in_sync
@@ -1033,53 +1050,91 @@ module n3xx_core #(
     end
   endgenerate
 
-  // For each of the FP GPIO bits, implement four control muxes, then the IO buffer.
+  // For each pin and also for both the output ("out") signal and the
+  // direction/tristate ("ddr"/"tri") signal, the following chain of
+  // muxes is generated:
+  //
+  // Note:
+  // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
+  // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
+  //
+  //                               1. Radio source mux
+  //                               +------+
+  //  ATR for pin i from ----------| 00   |
+  //  daughter board 0 (RFA)       |      |
+  //                               |      |----+
+  //  ATR for pin i from ----------| 01   |    |
+  //  daughter board 1 (RFB)       +------+    |
+  //                                 |         |   3. Master mux
+  //  fp_gpio_src[2*i+1:2*i] --------+         |   +------+
+  //                                           +---| 0    |
+  //                                               |      |--- GPIO pin i
+  //                               2. User     +---| 1    |
+  //                               logic mux   |   +------+
+  //                               +------+    |      |
+  //  PS for pin i ----------------| 0    |    |      |
+  //                               |      |----+      |
+  //  User logic for pin i --------| 1    |           |
+  //                               +------+           |
+  //                                 |                |
+  //  fp_gpio_user_mux_reg[i]--------+                |
+  //                                                  |
+  //  fp_gpio_master_reg[i]---------------------------+
+  //
   generate
     for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin: gpio_muxing_gen
 
-      // 1) Select which radio drives the output
+      // 1. Radio source mux: Select which radio drives the output and direction
       assign radio_gpio_src_out[i] = radio_gpio_out[fp_gpio_src_reg[2*i+1:2*i]][i];
       always @ (posedge radio_clk) begin
         if (radio_rst) begin
           radio_gpio_src_out_reg <= 'b0;
-        end else begin
-          radio_gpio_src_out_reg <= radio_gpio_src_out;
-        end
-      end
-
-      // 2) Select which radio drives the direction
-      assign radio_gpio_src_ddr[i] = radio_gpio_ddr[fp_gpio_src_reg[2*i+1:2*i]][i];
-      always @ (posedge radio_clk) begin
-        if (radio_rst) begin
           radio_gpio_src_ddr_reg <= 'b0;
         end else begin
+          radio_gpio_src_out_reg <= radio_gpio_src_out;
           radio_gpio_src_ddr_reg <= radio_gpio_src_ddr;
         end
       end
 
-      // 3) Select if the radio or the ps drives the output
-      // The following is implementing a 2:1 mux in a LUT6 explicitly to avoid
-      // glitching behavior that is introduced by unexpected Vivado synthesis.
-      (* dont_touch = "TRUE" *) LUT3 #(
-        .INIT(8'hCA) // Specify LUT Contents. O = ~I2&I0 | I2&I1
-      ) mux_out_i (
-        .O(fp_gpio_out_int[i]), // LUT general output. Mux output
-        .I0(radio_gpio_src_out_reg[i]), // LUT input. Input 1
-        .I1(ps_gpio_out[i]), // LUT input. Input 2
-        .I2(fp_gpio_master_reg[i])// LUT input. Select bit
+      // 2. User logic mux: Select if the PS or user logic drives the output and direction
+      glitch_free_mux glitch_free_mux_user_mux_out(
+        .select       (fp_gpio_user_mux_reg[i]),
+        .signal0      (ps_gpio_out[i]),
+        .signal1      (user_gpio_out[i]),
+        .muxed_signal (user_mux_gpio_out[i])
       );
-      // 4) Select if the radio or the ps drives the direction
-      (* dont_touch = "TRUE" *) LUT3 #(
-        .INIT(8'hC5) // Specify LUT Contents. O = ~I2&I0 | I2&~I1
-      ) mux_ddr_i (
-        .O(fp_gpio_ddr_int[i]), // LUT general output. Mux output
-        .I0(radio_gpio_src_ddr_reg[i]), // LUT input. Input 1
-        .I1(ps_gpio_tri[i]), // LUT input. Input 2
-        .I2(fp_gpio_master_reg[i]) // LUT input. Select bit
+      // Note: the second input (user_gpio_ddr[i], 0: input, 1: output) needs to be
+      // inverted in order to be interpreted as "tri" signal (0: output, 1: input)
+      glitch_free_mux glitch_free_mux_user_mux_tri(
+        .select       (fp_gpio_user_mux_reg[i]),
+        .signal0      (ps_gpio_tri[i]),
+        .signal1      (~user_gpio_ddr[i]),
+        .muxed_signal (user_mux_gpio_tri[i])
+      );
+
+      // 3. Master mux: Select if the signal from the radio source mux or from the
+      // user mux drives the output and direction
+      glitch_free_mux glitch_free_mux_master_out(
+        .select       (fp_gpio_master_reg[i]),
+        .signal0      (radio_gpio_src_out_reg[i]),
+        .signal1      (user_mux_gpio_out[i]),
+        .muxed_signal (fp_gpio_out_int[i])
+      );
+
+      // 6) Select if the radio or the ps/user logic drives the direction
+      // Note:
+      // the 'ddr' ("data direction") signal is interpreted as 0: input, 1: output
+      // the 'tri' ("tristate") signal is interpreted as 0: output, 1: input
+      // -> the first input (radio_gpio_src_ddr_reg[i]) needs to be inverted
+      glitch_free_mux glitch_free_mux_master_tri(
+        .select       (fp_gpio_master_reg[i]),
+        .signal0      (~radio_gpio_src_ddr_reg[i]),
+        .signal1      (user_mux_gpio_tri[i]),
+        .muxed_signal (fp_gpio_tri_int[i])
       );
 
       // Infer the IOBUFT
-      assign fp_gpio_inout[i] = fp_gpio_ddr_int[i] ? 1'bz : fp_gpio_out_int[i];
+      assign fp_gpio_inout[i] = fp_gpio_tri_int[i] ? 1'bz : fp_gpio_out_int[i];
       assign fp_gpio_in_int[i] = fp_gpio_inout[i];
     end
   endgenerate
@@ -1208,6 +1263,7 @@ module n3xx_core #(
     .m_axi_rvalid   ({dram_axi_rvalid  [3], dram_axi_rvalid  [2], dram_axi_rvalid  [1], dram_axi_rvalid  [0]}),
     .m_axi_rready   ({dram_axi_rready  [3], dram_axi_rready  [2], dram_axi_rready  [1], dram_axi_rready  [0]}),
     .radio_time                     (radio_time      ),
+    .pps                            (pps             ),
   `ifdef N320
     .radio_rx_stb_radio0            (                rx_stb [0]    ),
     .radio_rx_data_radio0           (                rx_data[0]    ),
@@ -1261,8 +1317,11 @@ module n3xx_core #(
     .m_dma_tdata             (m_dma_tdata),
     .m_dma_tlast             (m_dma_tlast),
     .m_dma_tvalid            (m_dma_tvalid),
-    .m_dma_tready            (m_dma_tready)
-  );
+    .m_dma_tready            (m_dma_tready),
+    .fp_gpio_out             (user_gpio_out),
+    .fp_gpio_ddr             (user_gpio_ddr),
+    .fp_gpio_in              (user_gpio_in)
+);
 
 
   //---------------------------------------------------------------------------

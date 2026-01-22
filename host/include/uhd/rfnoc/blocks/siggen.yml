@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: siggen
+name: Signal Generator
+description: |
+  The signal generator block can be used to produce signals of various types,
+  such as constant, sinusoidal, and noise/random.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

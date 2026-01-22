@@ -34,11 +34,19 @@ namespace uhd { namespace rfnoc {
 class UHD_API node_t
 {
 public:
+    //! Action execution modes
+    enum class action_mode_t {
+        SYNC, //!< Synchronous: wait for all actions to be processed
+        ASYNC //!< Asynchronous: queue action and return immediately
+    };
+
     using resolver_fn_t          = std::function<void(void)>;
     using resolve_callback_t     = std::function<void(void)>;
     using graph_mutex_callback_t = std::function<std::recursive_mutex&(void)>;
     using action_handler_t =
         std::function<void(const res_source_info&, action_info::sptr)>;
+    using post_action_handler_t =
+        std::function<void(const res_source_info&, action_info::sptr, action_mode_t)>;
     using forwarding_map_t =
         std::unordered_map<res_source_info, std::vector<res_source_info>>;
 
@@ -426,13 +434,25 @@ protected:
      * If the action is posted to an edge which is not connected, the action
      * is lost.
      *
+     * The action handling can be either asynchronous or synchronous based on
+     * the mode parameter. When asynchronous, the action is placed in a FIFO
+     * queue and the function returns immediately. When synchronous (default),
+     * the function waits until all actions in the queue have been processed
+     * before returning. Note that only one thread can post actions
+     * synchronously, if another thread attempts to do so, that will result in
+     * a deadlock. Therefore, never post actions from an action handler
+     * synchronously.
+     *
      * \param edge_info The edge to which this action is posted. If
-     *                  edge_info.type == INPUT_EDGE, the that means the action
+     *                  edge_info.type == INPUT_EDGE, that means the action
      *                  will be posted to an upstream node, on port edge_info.instance.
      * \param action A reference to the action info object.
-     * \throws uhd::runtime_error if edge_info is not either INPUT_EDGE or OUTPUT_EDGE
+     * \param mode Action execution mode (SYNC for synchronous, ASYNC for asynchronous)
+     * \throws uhd::runtime_error if edge_info is neither INPUT_EDGE nor OUTPUT_EDGE
      */
-    void post_action(const res_source_info& edge_info, action_info::sptr action);
+    void post_action(const res_source_info& edge_info,
+        action_info::sptr action,
+        action_mode_t mode = action_mode_t::SYNC);
 
     /**************************************************************************
      * Graph Interaction
@@ -645,7 +665,7 @@ private:
     /*! Sets a callback that this node can call if it wants to post actions to
      * other nodes.
      */
-    void set_post_action_callback(action_handler_t&& post_handler)
+    void set_post_action_callback(post_action_handler_t&& post_handler)
     {
         _post_action_cb = std::move(post_handler);
     }
@@ -739,8 +759,8 @@ private:
     //! Callback which allows us to post actions to other nodes in the graph
     //
     // The default callback will simply drop actions
-    action_handler_t _post_action_cb = [](const res_source_info&,
-                                           action_info::sptr) { /* nop */ };
+    post_action_handler_t _post_action_cb =
+        [](const res_source_info&, action_info::sptr, action_mode_t) { /* nop */ };
 
     //! Map describing how incoming actions should be forwarded for USE_MAP
     forwarding_map_t _action_fwd_map;

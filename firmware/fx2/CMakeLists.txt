@@ -15,7 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.6)
+# In a pinch, this will work with older CMake versions too (down to 2.6),
+# but we set it to 3.5 to also work with newer CMake versions (4 and above).
+cmake_minimum_required(VERSION 3.5)
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/config/Toolchain-sdcc.cmake)
 project(USRP1 C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/config/")

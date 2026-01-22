@@ -13,7 +13,6 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/assign.hpp>
 #include <boost/lexical_cast.hpp>
 
 using namespace uhd;
@@ -57,8 +56,9 @@ static b200_iface::sptr get_b200_iface(
 
         // At this point, we should have a single B2XX
         if (applicable_dev_handles.size() == 1) {
-            mb_eeprom = eeprom;
             handle    = applicable_dev_handles[0];
+            iface     = b200_iface::make(usb_control::make(handle, 0));
+            mb_eeprom = b200_impl::get_mb_eeprom(iface);
             return iface;
         } else if (applicable_dev_handles.size() > 1) {
             std::string err_msg =

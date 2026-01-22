@@ -21,6 +21,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_rx_data_xport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_tx_data_xport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/client_zero.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/complex_gain_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device_id.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/epid_allocator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graph.cpp
@@ -62,6 +63,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/switchboard_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/vector_iir_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/window_block_control.cpp
+    # Helpers:
+    ${CMAKE_CURRENT_SOURCE_DIR}/dram/dram_helper.cpp
 )
 
 INCLUDE_SUBDIRECTORY(rf_control)

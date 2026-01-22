@@ -145,6 +145,9 @@ steps:
   - write_template:
       template: template_block_control.cpp.mako
       dest: "lib/${ blockname }_block_control.cpp"
+  - write_template:
+      template: template_block_test.cpp.mako
+      dest: "tests/${ blockname }_block_test.cpp"
   - insert_after:
       file: "include/rfnoc/${ MODULE_NAME }/CMakeLists.txt"
       pattern: "install.*FILES"
@@ -153,6 +156,10 @@ steps:
       file: "lib/CMakeLists.txt"
       pattern: "APPEND *rfnoc_${ MODULE_NAME }_sources"
       text: "\n    ${ blockname }_block_control.cpp"
+  - insert_after:
+      file: "tests/CMakeLists.txt"
+      pattern: "set\\(test_sources"
+      text: "\n    ${ blockname }_block_test.cpp"
   - log:
       msg: "Added C++ block controller templates."
   # RFNoC block Python bindings

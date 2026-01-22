@@ -231,11 +231,12 @@ module radio_tx_core #(
 
   // FSM state values
   localparam ST_IDLE        = 0;
-  localparam ST_TIME_CHECK  = 1;
-  localparam ST_TRANSMIT    = 2;
-  localparam ST_WAIT_ALIGN0 = 3;
-  localparam ST_WAIT_ALIGN1 = 4;
-  localparam ST_POLICY_WAIT = 5;
+  localparam ST_ALIGN       = 1;
+  localparam ST_TIME_CHECK  = 2;
+  localparam ST_TRANSMIT    = 3;
+  localparam ST_WAIT_ALIGN0 = 4;
+  localparam ST_WAIT_ALIGN1 = 5;
+  localparam ST_POLICY_WAIT = 6;
 
   reg [2:0] state = ST_IDLE;
 
@@ -300,7 +301,7 @@ module radio_tx_core #(
           // time comparisons.
           if (s_axis_tvalid && radio_tx_stb) begin
             align_cfg_en <= 1'b1;
-            state        <= ST_TIME_CHECK;
+            state        <= (NSPC > 1) ? ST_ALIGN : ST_TIME_CHECK;
           end
 
           // Calculate the time shift, in samples, needed to left-shift the
@@ -324,15 +325,27 @@ module radio_tx_core #(
           end
         end
 
+        ST_ALIGN : begin
+          // We need two cycles for the align_samples module to flush so that
+          // the first sample has the new alignment. The first cycle will be
+          // here and the second will be in ST_TIME_CHECK.
+          if (radio_tx_stb) begin
+            state <= ST_TIME_CHECK;
+          end
+        end
+
         ST_TIME_CHECK : begin
-          if (!s_axis_thas_time ||
+          if (
+            // We check for radio_tx_stb here when it's not timed to give the
+            // align_samples core a second cycle to flush.
+            (radio_tx_stb && !s_axis_thas_time) ||
             (radio_tx_stb && time_now_m1 && ( send_early && NSPC  > 1)) ||
             (radio_tx_stb && time_now    && (!send_early || NSPC == 1))
           ) begin
             // We have a new packet without a timestamp, or a new packet
             // whose time has arrived.
             state <= ST_TRANSMIT;
-          end else if (time_past) begin
+          end else if (s_axis_thas_time && time_past) begin
             // We have a new packet with a timestamp, but the time has passed.
             //synthesis translate off
             $display("WARNING: radio_tx_core: Late data error");

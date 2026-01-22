@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: axi_ram_fifo
+name: DRAM FIFO
+description: |
+  A large FIFO block that uses a device's DRAM, or any other AXI RAM.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

@@ -162,7 +162,7 @@ bool check_rb_values(const uint32_t rb,
 {
     if (loopback_num_bits) {
         const uint32_t lb_mask = (1 << loopback_num_bits) - 1;
-        expected |= ((expected & lb_mask) << GPIO_MIN_NUM_BITS);
+        expected |= ((expected & lb_mask) << loopback_num_bits);
     }
     if ((rb & expected) != expected) {
         std::cout << "fail:" << std::endl;
@@ -356,6 +356,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::string gpio_bank;
     std::string port;
     size_t num_bits;
+    size_t offset;
     uint32_t loopback_num_bits = 0;
     std::string src_str;
     std::string ctrl_str;
@@ -382,6 +383,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("bank", po::value<std::string>(&gpio_bank)->default_value(""), "name of gpio bank (defaults to first bank in list)")
         ("port", po::value<std::string>(&port)->default_value(""), "name of gpio port (source bank). If not specified, defaults to the first bank")
         ("bits", po::value<size_t>(&num_bits)->default_value(GPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
+        ("offset", po::value<size_t>(&offset)->default_value(0), "index of first bit to use for test")
         ("bitbang", "single test case where user sets values for CTRL, DDR, and OUT registers")
         ("check_loopback", "check that lower half of pins is looped back onto upper half")
         ("src", po::value<std::string>(&src_str), "GPIO source value (not available on all USRPs)")
@@ -400,12 +402,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
     if (vm.count("check_loopback")) {
-        // For a proper test, we need at least 5 pins (4xATR + 1xGPIO). That
-        // means we also want at *most* 5 pins to be looped back for this test.
-        if (num_bits <= GPIO_MIN_NUM_BITS) {
+        // For a proper test, we need at least 5 pins (4xATR + 1xGPIO). Only execute
+        // loopback test if at least 5 pins are available
+        if ((num_bits / 2) < GPIO_MIN_NUM_BITS) {
             loopback_num_bits = 0;
         } else {
-            loopback_num_bits = std::min(GPIO_MIN_NUM_BITS, num_bits - GPIO_MIN_NUM_BITS);
+            loopback_num_bits = num_bits / 2;
         }
         std::cout << "Checking external GPIO loopback! Expecting the following external "
                      "connections: "
@@ -481,7 +483,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uint32_t atr_rx     = 0;
     uint32_t atr_tx     = 0;
     uint32_t atr_duplex = 0;
-    uint32_t mask       = (1 << num_bits) - 1;
+    uint32_t mask       = ((1 << num_bits) - 1) << offset;
 
     // The bitbang test is its own thing
     if (vm.count("bitbang")) {
@@ -500,27 +502,27 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // set up GPIO outputs:
     // GPIO[0] = ATR output 1 at idle
-    ctrl |= GPIO_BIT(0);
-    atr_idle |= GPIO_BIT(0);
-    ddr |= GPIO_BIT(0);
+    ctrl |= GPIO_BIT(0 + offset);
+    atr_idle |= GPIO_BIT(0 + offset);
+    ddr |= GPIO_BIT(0 + offset);
 
     // GPIO[1] = ATR output 1 during RX
-    ctrl |= GPIO_BIT(1);
-    ddr |= GPIO_BIT(1);
-    atr_rx |= GPIO_BIT(1);
+    ctrl |= GPIO_BIT(1 + offset);
+    ddr |= GPIO_BIT(1 + offset);
+    atr_rx |= GPIO_BIT(1 + offset);
 
     // GPIO[2] = ATR output 1 during TX
-    ctrl |= GPIO_BIT(2);
-    ddr |= GPIO_BIT(2);
-    atr_tx |= GPIO_BIT(2);
+    ctrl |= GPIO_BIT(2 + offset);
+    ddr |= GPIO_BIT(2 + offset);
+    atr_tx |= GPIO_BIT(2 + offset);
 
     // GPIO[3] = ATR output 1 during full duplex
-    ctrl |= GPIO_BIT(3);
-    ddr |= GPIO_BIT(3);
-    atr_duplex |= GPIO_BIT(3);
+    ctrl |= GPIO_BIT(3 + offset);
+    ddr |= GPIO_BIT(3 + offset);
+    atr_duplex |= GPIO_BIT(3 + offset);
 
     // GPIO[4] = output
-    ddr |= GPIO_BIT(4);
+    ddr |= GPIO_BIT(4 + offset);
 
     // set data direction register (DDR)
     usrp->set_gpio_attr(gpio_bank, "DDR", ddr, mask);
@@ -576,17 +578,17 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         /*** Test 1: User-controlled GPIO + ATR idle *************************/
         std::cout << "\nTesting user controlled GPIO and ATR idle output..."
                   << std::flush;
-        usrp->set_gpio_attr(gpio_bank, "OUT", GPIO_BIT(4), GPIO_BIT(4));
+        usrp->set_gpio_attr(gpio_bank, "OUT", GPIO_BIT(4 + offset), GPIO_BIT(4 + offset));
         auto stop_time = std::chrono::steady_clock::now() + dwell_time;
         while (not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
-            GPIO_BIT(4) | GPIO_BIT(0),
+            GPIO_BIT(4 + offset) | GPIO_BIT(0 + offset),
             num_bits,
             loopback_num_bits));
         output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
-        usrp->set_gpio_attr(gpio_bank, "OUT", 0, GPIO_BIT(4));
+        usrp->set_gpio_attr(gpio_bank, "OUT", 0, GPIO_BIT(4 + offset));
         if (stop_signal_called)
             break;
 
@@ -596,7 +598,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "\nTesting ATR RX output..." << std::flush;
             stream_helper.start_stream(false, true);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
-                GPIO_BIT(1),
+                GPIO_BIT(1 + offset),
                 num_bits,
                 loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
@@ -611,7 +613,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "\nTesting ATR TX output..." << std::flush;
             stream_helper.start_stream(true, false);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
-                GPIO_BIT(2),
+                GPIO_BIT(2 + offset),
                 num_bits,
                 loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);
@@ -626,7 +628,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "\nTesting ATR full duplex output..." << std::flush;
             stream_helper.start_stream(true, true);
             failures += int(!check_rb_values(usrp->get_gpio_attr(gpio_bank, "READBACK"),
-                GPIO_BIT(3),
+                GPIO_BIT(3 + offset),
                 num_bits,
                 loopback_num_bits));
             output_reg_values(gpio_bank, port, usrp, num_bits, has_src_api);

@@ -107,6 +107,13 @@ parameters:
       artifact_name: X310_XG
       timeout: 720
       max_attempts: 2
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 
 stages:
@@ -138,6 +145,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/x300
       target_full_matrix: ${{ parameters.x300_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x300_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 - stage: provide_x310_fpga_images_stage
   displayName: Provide X310 FPGA Images
@@ -164,5 +173,7 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/x300
       target_full_matrix: ${{ parameters.x310_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x310_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: X310 stages

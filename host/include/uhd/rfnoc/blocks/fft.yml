@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: fft
+name: FFT
+description: |
+  An FFT implementation that provides forward and inverse FFT, cyclic prefix
+  insertion and removal, variable FFT sizes and different output formats.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

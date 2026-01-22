@@ -73,6 +73,9 @@ public:
     //! Sets output A or B (OUTA_PD or OUTB_PD)
     virtual void set_output_enable(const output_t output, const bool enable) = 0;
 
+    //! Returns whether the output is enabled
+    virtual bool get_output_enabled(const output_t output) = 0;
+
     //! Sets the output power
     //
     // \param output Choose which output to control

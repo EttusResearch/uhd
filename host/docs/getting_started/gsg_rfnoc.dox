@@ -1,0 +1,17 @@
+/*! \page page_gsg_rfnoc RFNoC
+
+
+\li **Getting started guide** 
+    - <a href="https://kb.ettus.com/Getting_Started_with_RFNoC_in_UHD_4.0">Getting Started with RFNoC in UHD 4.0</a>
+\li  **Developing Custom FPGA Designs Using RFNoC - Video Series**
+    - <a href="https://www.youtube.com/watch?v=g0jmvSkNaAM">What is RFNoC?</a>
+    - <a href="https://www.youtube.com/watch?v=OabezeZI36w">Creating a Custom RFNoC FPGA Design I</a>
+    - <a href="https://www.youtube.com/watch?v=Ptyfpsf6zWU">Creating a Custom RFNoC FPGA Design II</a>
+    - <a href="https://youtu.be/Qpz2sfYSS3A">Creating a Custom RFNoC FPGA Design in GNURadio Companion</a>
+\li **RFNoC Training at GNU Radio Conference**
+    - <a href="https://www.youtube.com/watch?v=M9ntwQie9vs">RFNoC 4 Workshop at GRCon 2020</a> 
+    
+
+
+*/
+// vim:ft=doxygen:

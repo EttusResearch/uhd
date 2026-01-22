@@ -83,7 +83,7 @@ module chdr_ingress_fifo #(
           .o_tdata({int_tlast[i], int_tdata[i]}), .o_tvalid(int_tvalid[i]), .o_tready(int_tready[i]),
           .space(), .occupied()
         );
-        axi_fifo_flop2 #(.WIDTH(WIDTH+1)) fifo_flop2 (
+        axi_fifo #(.WIDTH(WIDTH+1), .SIZE((i == CDEPTH-1) ? 1 : 0)) fifo_flop (
           .clk(clk), .reset(reset), .clear(clear),
           .i_tdata({int_tlast[i], int_tdata[i]}), .i_tvalid(int_tvalid[i]), .i_tready(int_tready[i]),
           .o_tdata({c_tlast[i+1], c_tdata[i+1]}), .o_tvalid(c_tvalid[i+1]), .o_tready(c_tready[i+1]),

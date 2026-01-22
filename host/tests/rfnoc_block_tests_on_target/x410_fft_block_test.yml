@@ -109,6 +109,8 @@ connections:
   - { srcblk: ep5,      srcport: out0,  dstblk: fft1,     dstport: in_1   }
   - { srcblk: fft1,     srcport: out_0, dstblk: ep6,      dstport: in0    }
   - { srcblk: fft1,     srcport: out_1, dstblk: ep7,      dstport: in0    }
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio0 }
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio1 }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------

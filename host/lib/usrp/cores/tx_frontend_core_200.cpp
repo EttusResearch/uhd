@@ -9,7 +9,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
-#include <boost/assign/list_of.hpp>
 #include <cmath>
 #include <functional>
 
@@ -53,13 +52,12 @@ public:
 
     void set_mux(const std::string& mode) override
     {
-        static const uhd::dict<std::string, uint32_t> mode_to_mux =
-            boost::assign::map_list_of(
-                "IQ", (0x1 << 4) | (0x0 << 0)) // DAC0Q=DUC0Q, DAC0I=DUC0I
-            ("QI", (0x0 << 4) | (0x1 << 0)) // DAC0Q=DUC0I, DAC0I=DUC0Q
-            ("I", (0xf << 4) | (0x0 << 0)) // DAC0Q=ZERO,  DAC0I=DUC0I
-            ("Q", (0x0 << 4) | (0xf << 0)) // DAC0Q=DUC0I, DAC0I=ZERO
-            ;
+        static const uhd::dict<std::string, uint32_t> mode_to_mux{
+            {"IQ", (0x1 << 4) | (0x0 << 0)}, // DAC0Q=DUC0Q, DAC0I=DUC0I
+            {"QI", (0x0 << 4) | (0x1 << 0)}, // DAC0Q=DUC0I, DAC0I=DUC0Q
+            {"I", (0xf << 4) | (0x0 << 0)}, // DAC0Q=ZERO,  DAC0I=DUC0I
+            {"Q", (0x0 << 4) | (0xf << 0)} // DAC0Q=DUC0I, DAC0I=ZERO
+        };
         _iface->poke32(REG_TX_FE_MUX, mode_to_mux[mode]);
     }
 

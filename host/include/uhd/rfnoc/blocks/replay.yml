@@ -1,5 +1,8 @@
 schema: rfnoc_modtool_args
 module_name: replay
+name: DRAM Replay/Capture
+description: |
+  This block is used to capture data into DRAM and play it back from there.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

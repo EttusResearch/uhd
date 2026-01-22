@@ -52,7 +52,7 @@ steps:
       source rfnoc-block-test-venv/bin/activate
       TEST_DIR=$(Build.SourcesDirectory)/uhddev/host/tests/rfnoc_block_tests_on_target
       pip install -r $TEST_DIR/requirements.txt
-      pytest --args ${{ parameters.uhdArgs }} $TEST_DIR -vv --junitxml=$(Common.TestResultsDirectory)/rfnoc-block-test.xml
+      pytest --args ${{ parameters.uhdArgs }} $TEST_DIR/test_fft_block*.py -vv --junitxml=$(Common.TestResultsDirectory)/rfnoc-block-test.xml
     displayName: "rfnoc block test: Run test"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)

@@ -263,14 +263,14 @@ usrp1_impl::usrp1_impl(const device_addr_t& device_addr)
             _iface, (db == "A") ? SPI_ENABLE_CODEC_A : SPI_ENABLE_CODEC_B);
         const fs_path rx_codec_path = mb_path / "rx_codecs" / db;
         const fs_path tx_codec_path = mb_path / "tx_codecs" / db;
-        _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
+        _tree->create<std::string>(rx_codec_path / "name").set("ad9862");
         _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range")
             .set(usrp1_codec_ctrl::rx_pga_gain_range);
         _tree->create<double>(rx_codec_path / "gains/pga/value")
             .set_coercer(std::bind(
                 &usrp1_impl::update_rx_codec_gain, this, db, std::placeholders::_1))
             .set(0.0);
-        _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
+        _tree->create<std::string>(tx_codec_path / "name").set("ad9862");
         _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range")
             .set(usrp1_codec_ctrl::tx_pga_gain_range);
         _tree->create<double>(tx_codec_path / "gains/pga/value")

@@ -1,6 +1,4 @@
 parameters:
-- name: uhdSrcDir
-  type: string
 - name: uhdArtifactSource
   type: string
   default: current
@@ -9,6 +7,7 @@ parameters:
   default: current
 - name: fpga_imgs_source
   type: string
+  default: Pipeline
 - name: testDevices
   type: string
   default: 'x410'
@@ -17,7 +16,6 @@ jobs:
 - template: job-uhd-usrp-tests.yml
   parameters:
     suiteName: 'uhdlvtest'
-    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
@@ -27,5 +25,10 @@ jobs:
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x410') }}:
         uhdlvtest-x410-0:
-          devModel: 'x410'
-          devName: 'uhdlvtest-x410-0'
+          dutType: 'x4xx'
+          dutModel: 'x410'
+          dutName: 'uhdlvtest-x410-0'
+          dutSerial: $(x410_serial)
+          dutAddr: $(x410_dutAddr)
+          dutFPGA: 'X4_200'
+          dutEmbeddedImagesArtifact: 'x4xx-images'

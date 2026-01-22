@@ -31,6 +31,8 @@ void export_subdev_spec(py::module& m)
             [](subdev_spec_t& self, const size_t idx) { return self.at(idx); })
 
         ;
+
+    py::implicitly_convertible<std::string, uhd::usrp::subdev_spec_t>();
 }
 
 #endif /* INCLUDED_UHD_USRP_SUBDEV_SPEC_PYTHON_HPP */

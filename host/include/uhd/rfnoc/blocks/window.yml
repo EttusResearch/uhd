@@ -1,5 +1,13 @@
 schema: rfnoc_modtool_args
 module_name: window
+name: Window Function
+description: |
+  The Window Block is a windowing block that is intended to be
+  used with the FFT block. The block can be configured with coefficients,
+  by which the samples in each input packet are multiplied before beginning
+  output. The first sample of the first packet is multiplied by the
+  first coefficient, the second sample is multiplied by the second
+  coefficient, and so on.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

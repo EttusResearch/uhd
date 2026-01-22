@@ -18,9 +18,40 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rx_timed_samples [-h] [--args ARGS] [-r RATE] [--otw {sc16,sc8}]\n"
+        "                        [--secs SECS] [--nsamps NSAMPS] [--dilv]\n"
+        "                        [--channels CHANNELS]"
+        "\n\n"
+        "This example program demonstrates how to receive samples at a\n"
+        "user-specified relative, future time using the UHD multi_usrp API.\n"
+        "\n"
+        "Note: This example program does not set the RX frequency; for your\n"
+        "information, the actual RX frequency is displayed in the console.\n"
+        "\n"
+        "Key features:\n"
+        "  - Supports multiple USRPs and multiple channels.\n"
+        "  - Schedules timed reception to begin at a specified relative, future time.\n"
+        "    - Initialize the time base of all USRP devices to zero.\n"
+        "    - Use streaming metadata to schedule a timed receiption starting at\n"
+        "      a specific relative, future time.\n"
+        "  - Streams the received complex baseband data to a buffer for further\n"
+        "    processing.\n"
+        "  - Provides verbose packet status reporting.\n"
+        "\n"
+        "Note: Although this example program supports simultaneous reception from\n"
+        "multiple USRP devices, it does not synchronize them to a common time\n"
+        "reference such as an external PPS pulse.\n"
+        "\n"
+        "Usage example:\n"
+        " - Receive 10,000 samples at 10 MSps, starting at USRP time 1.5 seconds\n"
+        "   (i.e., 1.5 seconds in the future, since USRP time is initialized to\n"
+        "    zero):\n"
+        "     rx_timed_samples --args \"addr=192.168.10.2\" --rate 10e6\n"
+        "                      --secs 1.5 --nsamps 10000\n";
     // variables to be set by po
     std::string args;
-    std::string wire;
+    std::string otw;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
@@ -28,27 +59,54 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // setup the program options
     po::options_description desc("Allowed options");
+    po::options_description alias_options;
+    po::options_description all_options;
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("wire", po::value<std::string>(&wire)->default_value(""), "the over the wire type, sc16, sc8, etc")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
-        ("dilv", "specify to disable inner-loop verbose")
-        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device selection and configuration "
+            "arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("otw", po::value<std::string>(&otw)->default_value(""), "Specifies the over-the-wire (OTW) data "
+            "format used for transmission between the host and the USRP device. Common values are \"sc16\" (16-bit signed "
+            "complex) and \"sc8\" (8-bit signed complex). Using \"sc8\" can reduce network bandwidth at the cost of "
+            "dynamic range."
+            "\nNote, that not all conversions between CPU and OTW formats are possible.")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "Relative, future time in seconds, at which "
+            "reception will start. Note that this example program initializes the USRP time base to zero, so this option sets a "
+            "relative delay into the future.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "Total number of samples to "
+            "receive. The program stops when this number is reached.")
+        ("rate,r", po::value<double>(&rate)->default_value(100e6/16), "RX sample rate in samples/second. Note "
+            "that each USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("dilv", "Disables inner-loop verbose status prints on received packets.")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "Specifies which channels to "
+            "use. E.g. \"0\", \"1\", \"0,1\", etc.")
     ;
+    alias_options.add_options()
+        ("wire", po::value<std::string>(&otw), "") // alias for --otw for backward compatibility
+    ;
+    all_options.add(desc).add(alias_options);
     // clang-format on
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
+    po::store(po::parse_command_line(argc, argv, all_options), vm);
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD RX Timed Samples %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     bool verbose = vm.count("dilv") == 0;
 
@@ -82,7 +140,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     // create a receive streamer
-    uhd::stream_args_t stream_args("fc32", wire); // complex floats
+    uhd::stream_args_t stream_args("fc32", otw); // complex floats
     stream_args.channels             = channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 

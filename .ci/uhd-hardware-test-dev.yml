@@ -47,6 +47,10 @@ parameters:
   type: boolean
   displayName: Run X440 Phase tests
   default: false
+- name: run_lv_test
+  type: boolean
+  displayName: Run LabVIEW test
+  default: false
 - name: fpga_imgs_source
   type: string
   values:
@@ -170,6 +174,11 @@ resources:
     type: git
     ref: refs/tags/pip/hwsetup/0.1/0.1.3
     name: DevCentral/hwtools
+  - repository: labview-usrp-examples
+    type: github
+    endpoint: EttusResearch
+    name: ni/labview-usrp-examples
+    ref: main
 
 stages:
 - stage: test_uhd_x410_embedded_stage
@@ -325,3 +334,13 @@ stages:
       ${{ else }}:
         extra_rf_test_args: ${{ parameters.extra_rf_test_args }} --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
       testLength: ${{ parameters.testLength }}
+
+- stage: test_labview_usrp_examples
+  displayName: Test LabVIEW USRP Examples
+  dependsOn: []
+  condition: ${{ parameters.run_lv_test }}
+  jobs:
+  - template: templates/job-uhd-usrp-tests-uhdlvtest.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}

@@ -11,6 +11,7 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <iterator>
 #include <typeinfo>
 
 namespace uhd {
@@ -38,6 +39,12 @@ dict<Key, Val>::dict(void)
 template <typename Key, typename Val>
 template <typename InputIterator>
 dict<Key, Val>::dict(InputIterator first, InputIterator last) : _map(first, last)
+{
+    /* NOP */
+}
+
+template <typename Key, typename Val>
+dict<Key, Val>::dict(std::initializer_list<std::pair<Key, Val>> l) : _map(l)
 {
     /* NOP */
 }

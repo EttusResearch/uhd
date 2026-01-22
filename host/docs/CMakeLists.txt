@@ -22,16 +22,11 @@ set(ENABLE_MANUAL_OR_DOXYGEN false)
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
 
 if(ENABLE_MANUAL)
-    set(FPGA_SOURCE_DIR "${UHD_SOURCE_DIR}/../fpga")
     set(ENABLE_MANUAL_OR_DOXYGEN true)
     file(GLOB manual_sources "*.dox")
-    file(GLOB_RECURSE fpga_manual_sources "${FPGA_SOURCE_DIR}/docs/*.md")
-    list(APPEND manual_sources ${fpga_manual_sources})
     set(DOXYGEN_DEPENDENCIES ${manual_sources})
-    set(DOXYGEN_INPUT_DIRS "${UHD_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR} ${FPGA_SOURCE_DIR}/docs")
+    set(DOXYGEN_INPUT_DIRS "${UHD_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
     set(DOXYGEN_DEP_COMPONENT "manual")
-    set(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
-    set(DOXYGEN_STRIP_EXTRA "${UHD_SOURCE_DIR}/../fpga/docs")
     set(DOXYGEN_EXCLUDE_DIRS "")
 endif(ENABLE_MANUAL)
 
@@ -89,7 +84,7 @@ if(ENABLE_MANUAL_OR_DOXYGEN)
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     @ONLY)
     configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/build.dox.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/installation/build.dox.in
         ${CMAKE_CURRENT_BINARY_DIR}/build.dox
     @ONLY)
 
@@ -176,7 +171,7 @@ if(ENABLE_MAN_PAGES)
             #make the gzip file depend on the text file
             string(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
             set(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
-            set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
+            set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/manpages/${manfile}")
             add_custom_command(
                 OUTPUT ${gzfile}
                 DEPENDS ${manfile}

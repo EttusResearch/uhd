@@ -16,6 +16,7 @@ import subprocess
 from typing import Optional
 from dataclasses import dataclass
 from usrp_mpm import bist
+from usrp_mpm.periph_manager.x4xx_periphs import FrontpanelGPIO
 
 # Timeout values are in seconds:
 GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
@@ -632,22 +633,22 @@ class X4XXBIST(bist.UsrpBIST):
         - write_patterns: A list of patterns that were written
         - read_patterns: A list of patterns that were read back
         """
-        assert 'gpio' in self.tests_to_run
+        assert "gpio" in self.tests_to_run
         if self.args.dry_run:
             patterns = range(64)
             return True, {
-                'write_patterns': list(patterns),
-                'read_patterns': list(patterns),
+                "write_patterns": list(patterns),
+                "read_patterns": list(patterns),
             }
         from uhd.usrp import multi_usrp
+
         try:
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost")
         except Exception as ex:
-            return False, {
-                'error_msg': "Failed to create usrp device: {}".format(str(ex))
-            }
+            return False, {"error_msg": "Failed to create usrp device: {}".format(str(ex))}
         mpm_c = usrp_dev.get_mpm_client()
-        def _run_sub_test(inport, outport, pin_mode, voltage, pattern):
+
+        def _run_sub_test(inport, outport, pin_mode, voltage, pattern, gpio_src_in, gpio_src_out):
             """
             Closure to run an actual test. The GPIO control object is enclosed.
 
@@ -662,6 +663,8 @@ class X4XXBIST(bist.UsrpBIST):
             # We set all pins to be driven by the PS
             # in HDMI mode not all pins can be accessed by the user
             if pin_mode == "HDMI":
+                assert gpio_src_in == "MPM"
+                assert gpio_src_out == "MPM"
                 mask = 0xDB6D
             else:
                 mask = 0xFFF
@@ -669,37 +672,84 @@ class X4XXBIST(bist.UsrpBIST):
                 "PORTA": "GPIO0",
                 "PORTB": "GPIO1",
             }
-            ps_control_args = ["MPM"] * 12
-            mpm_c.dio_set_gpio_src(bank_convert[inport], ps_control_args)
-            mpm_c.dio_set_gpio_src(bank_convert[outport], ps_control_args)
+            mpm_c.dio_set_gpio_src(bank_convert[inport], [gpio_src_in] * 12)
+            mpm_c.dio_set_gpio_src(bank_convert[outport], [gpio_src_out] * 12)
             mpm_c.dio_set_voltage_level(inport, voltage)
             mpm_c.dio_set_voltage_level(outport, voltage)
             mpm_c.dio_set_pin_directions(inport, 0x00000)
             mpm_c.dio_set_pin_directions(outport, 0xFFFFF)
-            mpm_c.dio_set_pin_outputs(outport, pattern)
-            read_values = mpm_c.dio_get_pin_inputs(inport)
+            if gpio_src_out == "MPM":
+                mpm_c.dio_set_pin_outputs(outport, pattern)
+            else:
+                gpio_out = FrontpanelGPIO(mask, bank_convert[outport])
+                for i in range(12):
+                    if (mask >> i) & 1:
+                        gpio_out.set(i, (pattern >> i) & 1)
+            if gpio_src_in == "MPM":
+                read_values = mpm_c.dio_get_pin_inputs(inport)
+            else:
+                gpio_in = FrontpanelGPIO(0x000, bank_convert[inport])
+                read_values = 0
+                for i in range(12):
+                    if (mask >> i) & 1:
+                        read_values |= gpio_in.get(i) << i
             if (pattern & mask) != read_values:
+                if gpio_src_out == "PS":
+                    sys.stdout.write(f"output from PS: 0x{pattern:04x}\n")
+                if gpio_src_in == "PS":
+                    sys.stdout.write(f"input to PS:    0x{read_values:04x}\n")
                 sys.stderr.write(mpm_c.dio_status())
-                return False, {'write_patterns': ["0x{:04X}".format(pattern)],
-                               'read_patterns': ["0x{:04X}".format(read_values)]}
-            return True, {'write_patterns': ["0x{:04X}".format(pattern)],
-                          'read_patterns': ["0x{:04X}".format(read_values)]}
+                return False, {
+                    "write_patterns": ["0x{:04X}".format(pattern)],
+                    "read_patterns": ["0x{:04X}".format(read_values)],
+                }
+            return True, {
+                "write_patterns": ["0x{:04X}".format(pattern)],
+                "read_patterns": ["0x{:04X}".format(read_values)],
+            }
+
+        status, data = False, None
         # Now run tests:
         for voltage in ["1V8", "2V5", "3V3"]:
-            for mode in ["DIO", "HDMI"]:
-                for pattern in [0xFFFF, 0xA5A5, 0x5A5A, 0x0000]:
-                    sys.stderr.write("test: PortA -> PortB, {}, {}, 0x{:04X}\n"
-                                     .format(voltage, mode, pattern))
-                    status, data = _run_sub_test(
-                        "PORTB", "PORTA", mode, voltage, pattern)
-                    if not status:
-                        return status, data
-                    sys.stderr.write("test: PortB -> PortA, {}, {}, 0x{:04X}\n"
-                                     .format(voltage, mode, pattern))
-                    status, data = _run_sub_test(
-                        "PORTA", "PORTB", mode, voltage, pattern)
-                    if not status:
-                        return status, data
+            extended_test = voltage in ["3V3"]
+            if extended_test:
+                gpio_in_out_combinations = [
+                    ("PS", "PS"),
+                    ("MPM", "MPM"),
+                    ("MPM", "PS"),
+                    ("PS", "MPM"),
+                ]
+            else:
+                gpio_in_out_combinations = [("MPM", "MPM")]
+            for gpio_src_in, gpio_src_out in gpio_in_out_combinations:
+                if (gpio_src_in, gpio_src_out) == ("MPM", "MPM"):
+                    pin_modes = ["HDMI", "DIO"]
+                else:
+                    pin_modes = ["DIO"]
+                for pin_mode in pin_modes:
+                    for inport, outport in [("PORTB", "PORTA"), ("PORTA", "PORTB")]:
+                        patterns = [0xFFFF, 0xA5A5, 0x5A5A, 0x0000]
+                        if extended_test:
+                            patterns += [1 << i for i in range(12)]
+                        for pattern in patterns:
+                            sys.stderr.write(
+                                f"test: {outport}({gpio_src_out}) -> {inport}({gpio_src_in}), "
+                                f"{voltage}, {pin_mode}, 0x{pattern:04X}\n"
+                            )
+                            try:
+                                status, data = _run_sub_test(
+                                    inport,
+                                    outport,
+                                    pin_mode,
+                                    voltage,
+                                    pattern,
+                                    gpio_src_in,
+                                    gpio_src_out,
+                                )
+                            except KeyboardInterrupt:
+                                return False, data
+                            if not status:
+                                return status, data
         return status, data
 
 

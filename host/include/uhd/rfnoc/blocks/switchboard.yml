@@ -1,5 +1,10 @@
 schema: rfnoc_modtool_args
 module_name: switchboard
+name: Switchboard
+description: |
+  This is a programmable router block that routes any single input to any
+  single output. Routing is 1 to 1, that is, an input port can only be connected
+  to one output port, and vice versa.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

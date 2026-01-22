@@ -13,6 +13,7 @@ from statistics import mean
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
@@ -205,6 +206,9 @@ class MboardRegsControl(MboardRegsCommon):
             ("100G", "100G"):  "CG",
             ("100G", ""):      "C1",
             ("", "100G"):      "UC",
+            ("", "10G"):       "UX1",
+            ("", "2x10G"):     "UX2",
+            ("", "4x10G"):     "UX4",
         }
 
         qsfp0_type = self._get_qsfp_type(0)
@@ -800,3 +804,25 @@ def get_temp_sensor(sensor_names, reduce_fn=mean, log=None):
         'unit': 'C',
         'value': str(reduce_fn(temps))
     }
+
+
+class FrontpanelGPIO(GPIOBank):
+    """
+    Abstraction layer for the front panel GPIO
+    """
+
+    EMIO_BASE = 78
+    FP0_GPIO_OFFSET = 32  # Bit offset within the ps_gpio_* pins
+    FP1_GPIO_OFFSET = 44  # Bit offset within the ps_gpio_* pins
+
+    def __init__(self, ddr, bank=0):
+        if bank in (0, "GPIO0"):
+            pin_offset = self.FP0_GPIO_OFFSET
+        elif bank in (1, "GPIO1"):
+            pin_offset = self.FP1_GPIO_OFFSET
+        else:
+            raise ValueError(f"Invalid GPIO bank: {bank}")
+
+        GPIOBank.__init__(
+            self, {"label": "zynqmp_gpio"}, self.EMIO_BASE + pin_offset, 0xFFF, ddr
+        )

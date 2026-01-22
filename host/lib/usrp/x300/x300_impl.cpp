@@ -152,31 +152,6 @@ device_addrs_t x300_find(const device_addr_t& hint_)
 }
 
 /***********************************************************************
- * Daughterboard detection before initialization in software
- **********************************************************************/
-static std::vector<dboard_id_t> get_dboard_ids(uhd::i2c_iface& zpu_i2c)
-{
-    std::vector<dboard_id_t> dboard_ids;
-    // Read dboard ids from the EEPROM
-    constexpr size_t BASE_ADDR      = 0x50;
-    constexpr size_t RX_EEPROM_ADDR = 0x5;
-    constexpr size_t TX_EEPROM_ADDR = 0x4;
-    static const std::vector<size_t> DB_OFFSETS{0x0, 0x2};
-    static const std::vector<size_t> EEPROM_ADDRS{RX_EEPROM_ADDR, TX_EEPROM_ADDR};
-    for (size_t eeprom_addr : EEPROM_ADDRS) {
-        for (size_t db_offset : DB_OFFSETS) {
-            const size_t addr = eeprom_addr + db_offset;
-            // Load EEPROM
-            std::unordered_map<size_t, usrp::dboard_eeprom_t> db_eeproms;
-            db_eeproms[addr].load(zpu_i2c, BASE_ADDR | addr);
-            uint16_t dboard_id = db_eeproms[addr].id.to_uint16();
-            dboard_ids.push_back(static_cast<dboard_id_t>(dboard_id));
-        }
-    }
-    return dboard_ids;
-}
-
-/***********************************************************************
  * Make
  **********************************************************************/
 static device::sptr x300_make(const device_addr_t& device_addr)
@@ -370,47 +345,15 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     ////////////////////////////////////////////////////////////////////
     UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
-    // The default daughterboard clock rate may have to be overridden. This is due to the
-    // limitation on X300 devices where both daughterboards must use the same clock rate.
-    // The daughterboards that require specific clock rates are UBX, OBX, and TwinRX.
-    // TwinRX requires a clock rate of 100 MHz for the best RF performance. UBX and OBX
-    // daughterboards require a clock rate of no more than the max pfd frequency to
-    // maintain phase synchronization. If there is no UBX or OBX, the default
-    // daughterboard clock rate is half of the master clock rate for X300.
-    const double x300_dboard_clock_rate = [dev_addr, mb]() -> double {
-        // Do not override use-specified dboard clock rates
-        if (dev_addr.has_key("dboard_clock_rate")) {
-            return mb.args.get_dboard_clock_rate();
-        }
-        const double mcr         = mb.args.get_master_clock_rate();
-        double dboard_clock_rate = mb.args.get_dboard_clock_rate();
-        // Check for UBX or OBX daughterboards
-        std::vector<dboard_id_t> dboard_ids = get_dboard_ids(*mb.zpu_i2c);
-        for (dboard_id_t dboard_id : dboard_ids) {
-            bool ubx_db_found = uhd::has(dboard::ubx::ubx_ids, dboard_id);
-            bool obx_db_found = uhd::has(dboard::obx::obx_ids, dboard_id);
-            if (ubx_db_found || obx_db_found) {
-                double dboard_pfd_clock_rate = mcr;
-                double max_pfd_freq          = ubx_db_found
-                                                   ? dboard::ubx::get_max_pfd_freq(dboard_id)
-                                                   : dboard::obx::get_max_pfd_freq(dboard_id);
-                for (int i = 2; dboard_pfd_clock_rate > max_pfd_freq; i++) {
-                    dboard_pfd_clock_rate = mcr / i;
-                }
-                dboard_clock_rate = std::min(dboard_clock_rate, dboard_pfd_clock_rate);
-            }
-        }
-        return dboard_clock_rate;
-    }();
-
     // Initialize clock control registers.
     // NOTE: This does not configure the LMK yet.
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
         mb.args.get_master_clock_rate(),
-        x300_dboard_clock_rate,
-        mb.args.get_system_ref_rate());
+        mb.args.get_dboard_clock_rate(),
+        mb.args.get_system_ref_rate(),
+        dev_addr.has_key("dboard_clock_rate"));
 
     ////////////////////////////////////////////////////////////////////
     // create motherboard controller

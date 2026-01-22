@@ -812,9 +812,9 @@ freq_range_t magnesium_radio_control_impl::get_rx_lo_freq_range(
 ) const
 {
     if (name == MAGNESIUM_LO1) {
-        return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
+        return freq_range_t(ADF4351_MIN_FREQ, ADF4351_MAX_FREQ);
     } else if (name == MAGNESIUM_LO2) {
-        return freq_range_t{AD9371_MIN_FREQ, AD9371_MAX_FREQ};
+        return freq_range_t(AD9371_MIN_FREQ, AD9371_MAX_FREQ);
     } else {
         throw uhd::value_error("Could not find LO stage " + name);
     }
@@ -940,9 +940,9 @@ freq_range_t magnesium_radio_control_impl::get_tx_lo_freq_range(
 )
 {
     if (name == MAGNESIUM_LO2) {
-        return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
+        return freq_range_t(ADF4351_MIN_FREQ, ADF4351_MAX_FREQ);
     } else if (name == MAGNESIUM_LO1) {
-        return freq_range_t{AD9371_MIN_FREQ, AD9371_MAX_FREQ};
+        return freq_range_t(AD9371_MIN_FREQ, AD9371_MAX_FREQ);
     } else {
         throw uhd::value_error("Could not find LO stage " + name);
     }

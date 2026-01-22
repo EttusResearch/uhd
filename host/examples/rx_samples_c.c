@@ -9,6 +9,7 @@
 
 #include "getopt.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +35,16 @@ void print_help(void)
         "    -v (enable verbose prints)\n"
         "    -h (print this help message)\n");
 };
+
+int open_file(const char* filename, FILE** fp)
+{
+    *fp = fopen(filename, "wb");
+    if (!*fp) {
+        fprintf(stderr, "Cannot open %s: %s\n", filename, strerror(errno));
+        return UHD_ERROR_OS;
+    }
+    return UHD_ERROR_NONE;
+}
 
 int main(int argc, char* argv[])
 {
@@ -176,7 +187,8 @@ int main(int argc, char* argv[])
         free_buffer, uhd_rx_streamer_issue_stream_cmd(rx_streamer, &stream_cmd))
 
     // Set up file output
-    fp = fopen(filename, "wb");
+    EXECUTE_OR_GOTO(
+        free_buffer, open_file(filename, &fp));
 
     // Actual streaming
     while (num_acc_samps < n_samples) {

@@ -11,16 +11,25 @@
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhdlib/rfnoc/resolve_context.hpp>
+#include <condition_variable>
 #include <boost/graph/adjacency_list.hpp>
+#include <atomic>
 #include <deque>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <tuple>
 
 namespace uhd { namespace rfnoc { namespace detail {
 
 //! Container for the logical graph within an uhd::rfnoc_graph
+//
+// Some notes on concurrency: The graph supports concurrent access from multiple
+// threads. The main concurrency control is done via a recursive mutex
+// (_graph_mutex). This mutex protects the graph structure itself (adding/removing
+// nodes/edges) as well as property propagation, action handling, and the
+// commit/release mechanism.
 struct graph_t::impl
 {
 public:
@@ -29,6 +38,12 @@ public:
     using node_ref_t = uhd::rfnoc::node_t*;
     //! Shorthand to existing graph_edge_t
     using graph_edge_t = uhd::rfnoc::graph_edge_t;
+
+    /*! Constructor - starts the action handler thread */
+    impl();
+
+    /*! Destructor - properly shuts down the action handler thread */
+    ~impl();
 
     /*! Add a connection to the graph
      *
@@ -224,12 +239,25 @@ private:
      *                 Note that its the edge from the node's point of view, so
      *                 if src_edge.type == OUTPUT_EDGE, then the node posted to
      *                 its output edge.
+     * \param mode Action execution mode (SYNC for synchronous, ASYNC for asynchronous)
      *
      * \throws uhd::runtime_error if it has to terminate a infinite cascade of
      *         actions
      */
-    void enqueue_action(
-        node_ref_t src_node, res_source_info src_edge, action_info::sptr action);
+    void enqueue_action(node_ref_t src_node,
+        res_source_info src_edge,
+        action_info::sptr action,
+        uhd::rfnoc::node_t::action_mode_t mode = uhd::rfnoc::node_t::action_mode_t::SYNC);
+
+    /*! Check if the action queue is empty
+     *
+     * This method can be used to synchronously wait for all actions to be processed.
+     * It will return true when the action queue is empty and all actions have been
+     * handled by the action handler thread.
+     *
+     * \return true if the action queue is empty
+     */
+    void sync_actions();
 
     /**************************************************************************
      * Private graph helpers
@@ -304,6 +332,28 @@ private:
      */
     void _check_topology();
 
+    /*! Action handler thread function
+     *
+     * This function runs in a separate thread and processes actions from
+     * the action queue. It runs until shutdown is requested.
+     */
+    void _action_handler();
+
+    /*! Process a single action
+     *
+     * Helper method to process individual actions. This is called by the
+     * action handler thread.
+     */
+    void _process_action(
+        node_ref_t src_node, res_source_info src_edge, action_info::sptr action);
+
+    /*! Process all actions in the queue until empty
+     *
+     * Helper method that processes all queued actions with proper iteration
+     * limits and error handling. This is shared between sync and async modes.
+     */
+    void _process_action_queue();
+
     /**************************************************************************
      * Attributes
      *************************************************************************/
@@ -321,20 +371,44 @@ private:
     using action_tuple_t = std::tuple<node_ref_t, res_source_info, action_info::sptr>;
 
     //! FIFO for incoming actions
+    //
+    // This FIFO is protected by _action_queue_mutex, which means that multiple
+    // threads can safely enqueue actions.
     std::deque<action_tuple_t> _action_queue;
 
-    //! Flag to ensure serialized handling of actions
-    std::atomic_flag _action_handling_ongoing;
+    //! Mutex to protect the action queue
+    std::mutex _action_queue_mutex;
+
+    //! Condition variable to notify action handler thread
+    std::condition_variable _action_queue_cv;
+
+    //! Action handler thread
+    std::thread _action_handler_thread;
+
+    //! ID of the action handler thread
+    std::thread::id _action_handler_thread_id;
+
+    //! Store exceptions from action handler thread
+    std::exception_ptr _action_eptr;
+
+    //! Flag to track if an action is currently being processed
+    std::atomic<bool> _action_processing{false};
 
     //! Changes to the state of the graph are locked with this mutex
     std::recursive_mutex _graph_mutex;
 
     //! This counter gets decremented everytime commit() is called. When zero,
     // the graph is committed.
+    //
+    // Protected by _graph_mutex.
     size_t _release_count{1};
 
-    //! A flag if the graph has shut down. Is protected by _release_mutex
-    bool _shutdown{false};
+    //! A flag if the graph has shut down.
+    //
+    // _shutdown is only ever set from false -> true when the graph is being
+    // shut down, so reading it to see if the graph is already shut down is OK
+    // to do without holding the _graph_mutex.
+    std::atomic<bool> _shutdown{false};
 };
 
 

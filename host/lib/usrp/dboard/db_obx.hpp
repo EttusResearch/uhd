@@ -61,8 +61,6 @@ private:
     tmp468_iface::sptr _temp_sensor;
     double _tx_target_pfd_freq;
     double _rx_target_pfd_freq;
-    double _tx_freq;
-    double _rx_freq;
     uhd::experts::expert_container::sptr _expert_container;
 };
 

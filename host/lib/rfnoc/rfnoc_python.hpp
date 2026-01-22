@@ -234,7 +234,22 @@ void export_rfnoc(py::module& m)
         .def(
             "get_tree",
             [](rfnoc_graph& self) { return self.get_tree().get(); },
-            py::return_value_policy::reference_internal);
+            py::return_value_policy::reference_internal)
+        .def("get_chdr_width",
+            [](rfnoc_graph& self) { return chdr_w_to_bits(self.get_chdr_width()); })
+        .def(
+            "get_chdr_xport_adapters",
+            [](rfnoc_graph& self, size_t mb_index) {
+                // convert return value to
+                // std::map<std::string, std::map<std::string, std::string>>
+                std::map<std::string, std::map<std::string, std::string>> retval;
+                for (auto const& [iface, addrs] :
+                    self.get_chdr_xport_adapters(mb_index)) {
+                    retval[iface] = std::map<std::string, std::string>(addrs);
+                }
+                return retval;
+            },
+            py::arg("mb_index") = 0);
 
     py::class_<uhd::features::gpio_power_iface>(m, "gpio_power")
         .def("get_supported_voltages",

@@ -5,6 +5,7 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/features/complex_gain_iface.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/multichan_register_iface.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
@@ -15,13 +16,31 @@
 #include <numeric>
 #include <tuple>
 
+
+// Forward-declare factories for complex gain
+namespace uhd { namespace features {
+
+tx_complex_gain_iface::sptr make_tx_complex_gain_iface(
+    uhd::rfnoc::multichan_register_iface& regs,
+    const size_t base,
+    const double tick_rate,
+    const size_t nipc);
+
+rx_complex_gain_iface::sptr make_rx_complex_gain_iface(
+    uhd::rfnoc::multichan_register_iface& regs,
+    const size_t base,
+    const double tick_rate,
+    const size_t nipc);
+
+}} // namespace uhd::features
+
 using namespace uhd::rfnoc;
 
 const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
 
-const uint16_t radio_control_impl::MAJOR_COMPAT = 0;
-const uint16_t radio_control_impl::MINOR_COMPAT = 1;
+const uint16_t radio_control_impl::MAJOR_COMPAT = 1;
+const uint16_t radio_control_impl::MINOR_COMPAT = 0;
 
 const uhd::fs_path radio_control_impl::DB_PATH("dboard");
 const uhd::fs_path radio_control_impl::FE_PATH("frontends");
@@ -101,7 +120,9 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
                 return;
             }
-            post_action({res_source_info::OUTPUT_EDGE, port}, stream_cmd_action);
+            post_action({res_source_info::OUTPUT_EDGE, port},
+                stream_cmd_action,
+                action_mode_t::ASYNC);
         });
 
     register_action_handler(ACTION_KEY_TUNE_REQUEST,
@@ -307,6 +328,23 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     // Set the default gain profiles
     _rx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
     _tx_gain_profile_api = std::make_shared<rf_control::default_gain_profile>();
+
+    // Create complex gain APIs, if available
+    const uint32_t feature_reg = _radio_reg_iface.peek32(regmap::REG_FEATURES_PRESENT);
+
+    double tick_rate = get_tick_rate();
+
+    if (feature_reg & regmap::FEATURE_TX_CGAIN) {
+        RFNOC_LOG_TRACE("Enabling TX complex gain feature.");
+        register_feature(uhd::features::make_tx_complex_gain_iface(
+            _radio_reg_iface, regmap::REG_TX_CGAIN_BASE, tick_rate, get_spc()));
+    }
+    if (feature_reg & regmap::FEATURE_RX_CGAIN) {
+        RFNOC_LOG_TRACE("Enabling RX complex gain feature.");
+        register_feature(uhd::features::make_rx_complex_gain_iface(
+            _radio_reg_iface, regmap::REG_RX_CGAIN_BASE, tick_rate, get_spc()));
+    }
+
 } /* ctor */
 
 /******************************************************************************
@@ -1040,12 +1078,9 @@ void radio_control_impl::issue_stream_cmd(
             {stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS, regmap::RX_CMD_STOP},
             {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, regmap::RX_CMD_FINITE},
             {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, regmap::RX_CMD_FINITE}};
-    const uint32_t cmd_bits = stream_mode_to_cmd_word.at(stream_cmd.stream_mode);
-    const uint32_t cmd_word =
-        cmd_bits
-        | (uint32_t((stream_cmd.stream_now) ? 0 : 1) << regmap::RX_CMD_TIMED_POS);
+    uint32_t cmd_word = stream_mode_to_cmd_word.at(stream_cmd.stream_mode);
 
-    if (cmd_bits == regmap::RX_CMD_FINITE) {
+    if (cmd_word == regmap::RX_CMD_FINITE) {
         if (stream_cmd.num_samps == 0) {
             RFNOC_LOG_WARNING("Ignoring stream command for finite acquisition of "
                               "zero samples");
@@ -1079,9 +1114,21 @@ void radio_control_impl::issue_stream_cmd(
             regmap::REG_RX_CMD_NUM_WORDS_LO, uint32_t(num_words & 0xFFFFFFFF), chan);
     }
     if (!stream_cmd.stream_now) {
-        const uint64_t ticks = stream_cmd.time_spec.to_ticks(get_tick_rate());
-        _radio_reg_iface.poke32(regmap::REG_RX_CMD_TIME_HI, uint32_t(ticks >> 32), chan);
-        _radio_reg_iface.poke32(regmap::REG_RX_CMD_TIME_LO, uint32_t(ticks >> 0), chan);
+        switch (stream_cmd.trigger) {
+            case stream_cmd_t::trigger_t::TIMED: {
+                const uint64_t ticks = stream_cmd.time_spec.to_ticks(get_tick_rate());
+                _radio_reg_iface.poke32(
+                    regmap::REG_RX_CMD_TIME_HI, uint32_t(ticks >> 32), chan);
+                _radio_reg_iface.poke32(
+                    regmap::REG_RX_CMD_TIME_LO, uint32_t(ticks >> 0), chan);
+                cmd_word |= 1 << regmap::RX_CMD_TIMED_POS;
+                break;
+            }
+            case stream_cmd_t::trigger_t::TX_RUNNING: {
+                cmd_word |= 1 << regmap::RX_CMD_TRIG_POS;
+                break;
+            }
+        }
     }
     _radio_reg_iface.poke32(regmap::REG_RX_CMD, cmd_word, chan);
 }
@@ -1149,7 +1196,7 @@ void radio_control_impl::_tune_request_action_handler(
 
     RFNOC_LOG_TRACE("Sending tune_request to " << src.to_string()
                                                << ", id==" << tune_request_action->id);
-    post_action(src, tune_request_action);
+    post_action(src, tune_request_action, action_mode_t::ASYNC);
 }
 
 /******************************************************************************
@@ -1247,7 +1294,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     UHD_LOG_FASTPATH("U");
                     RFNOC_LOG_TRACE("Posting underrun event action message.");
                     break;
@@ -1256,7 +1304,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_TIME_ERROR, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     UHD_LOG_FASTPATH("L");
                     RFNOC_LOG_TRACE("Posting late data event action message.");
                     break;
@@ -1265,7 +1314,8 @@ void radio_control_impl::async_message_handler(
                     auto tx_event_action = tx_event_action_info::make(
                         uhd::async_metadata_t::EVENT_CODE_BURST_ACK, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
-                        tx_event_action);
+                        tx_event_action,
+                        action_mode_t::ASYNC);
                     RFNOC_LOG_TRACE("Posting burst ack event action message.");
                     break;
                 }
@@ -1288,7 +1338,8 @@ void radio_control_impl::async_message_handler(
                     rx_event_action->args["cont_mode"] = std::to_string(cont_mode);
                     RFNOC_LOG_TRACE("Posting overrun event action message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
-                        rx_event_action);
+                        rx_event_action,
+                        action_mode_t::ASYNC);
                     break;
                 }
                 case err_codes::ERR_RX_LATE_CMD:
@@ -1297,7 +1348,8 @@ void radio_control_impl::async_message_handler(
                         uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND);
                     RFNOC_LOG_TRACE("Posting RX late command message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
-                        rx_event_action);
+                        rx_event_action,
+                        action_mode_t::ASYNC);
                     break;
             }
             break;

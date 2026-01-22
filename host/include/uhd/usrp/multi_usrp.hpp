@@ -719,6 +719,13 @@ public:
     virtual size_t get_rx_num_channels(void) = 0;
 
     /*!
+     * Get the RX channel of the radio block.
+     * This is the channel index within the radio block corresponding to the RX channels
+     * per board.
+     */
+    virtual size_t get_rx_radio_channel(size_t chan = 0) = 0;
+
+    /*!
      * Get the name of the RX frontend.
      * \param chan the channel index 0 to N-1
      * \return the frontend name
@@ -1422,6 +1429,13 @@ public:
      * where the number of TX channels per board is homogeneous among all USRPs.
      */
     virtual size_t get_tx_num_channels(void) = 0;
+
+    /*!
+     * Get the TX channel of the radio block.
+     * This is the channel index within the radio block corresponding to the TX channels
+     * per board.
+     */
+    virtual size_t get_tx_radio_channel(size_t chan = 0) = 0;
 
     /*!
      * Get the name of the TX frontend.

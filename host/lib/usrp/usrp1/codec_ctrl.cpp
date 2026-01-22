@@ -15,7 +15,6 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <cmath>
 #include <cstdint>
@@ -273,10 +272,10 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
 
     // setup a lookup table for the aux dac params (reg ref, reg addr)
     typedef std::tuple<uint8_t*, uint8_t> dac_params_t;
-    uhd::dict<aux_dac_t, dac_params_t> aux_dac_to_params =
-        boost::assign::map_list_of(AUX_DAC_A, dac_params_t(&_ad9862_regs.aux_dac_a, 36))(
-            AUX_DAC_B, dac_params_t(&_ad9862_regs.aux_dac_b, 37))(
-            AUX_DAC_C, dac_params_t(&_ad9862_regs.aux_dac_c, 38));
+    uhd::dict<aux_dac_t, dac_params_t> aux_dac_to_params{
+        {AUX_DAC_A, dac_params_t(&_ad9862_regs.aux_dac_a, 36)},
+        {AUX_DAC_B, dac_params_t(&_ad9862_regs.aux_dac_b, 37)},
+        {AUX_DAC_C, dac_params_t(&_ad9862_regs.aux_dac_c, 38)}};
 
     // set the aux dac register
     UHD_ASSERT_THROW(aux_dac_to_params.has_key(which));

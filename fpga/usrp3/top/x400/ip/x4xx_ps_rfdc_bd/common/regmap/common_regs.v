@@ -19,9 +19,6 @@
 //    <window name="RPU"          offset="0x0080000000" size="0x00010000">
 //      <info>Space reserved for RPU access</info>
 //    </window>
-//    <window name="JTAG_ENGINE"  offset="0x1000000000" size="0x1000">
-//      <info>Register space for the JTAG engine for MB CPLD programming.</info>
-//    </window>
 //    <window name="RESERVED"     offset="0x100003F000" size="0x1000">
 //      <info>Register space reserved for future use.</info>
 //    </window>

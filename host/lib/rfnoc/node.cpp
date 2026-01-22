@@ -198,9 +198,10 @@ void node_t::set_action_forwarding_map(const forwarding_map_t& map)
     _action_fwd_map = map;
 }
 
-void node_t::post_action(const res_source_info& edge_info, action_info::sptr action)
+void node_t::post_action(
+    const res_source_info& edge_info, action_info::sptr action, action_mode_t mode)
 {
-    _post_action_cb(edge_info, action);
+    _post_action_cb(edge_info, action, mode);
 }
 
 bool node_t::check_topology(const std::vector<size_t>& connected_inputs,

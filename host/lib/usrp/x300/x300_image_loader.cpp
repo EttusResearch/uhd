@@ -19,13 +19,13 @@
 #include <uhdlib/transport/nirio/niusrprio_session.h>
 #include <uhdlib/transport/nirio/status.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <filesystem>
 #include <fstream>
 #include <vector>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using namespace boost::algorithm;
 using namespace uhd;

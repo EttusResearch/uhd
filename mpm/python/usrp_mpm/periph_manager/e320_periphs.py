@@ -61,6 +61,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_GPS_STATUS      = 0x003C
     MB_DBOARD_CTRL     = 0x0040
     MB_DBOARD_STATUS   = 0x0044
+    MB_GPIO_USER_MUX   = 0x0050
     # pylint: enable=bad-whitespace
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
@@ -166,6 +167,8 @@ class MboardRegsControl(MboardRegsCommon):
         """set driver for front panel GPIO
         Arguments:
             value {unsigned} -- value is a single bit bit mask of 8 pins GPIO
+        0: means the pin is driven by Radio ATR states
+        1: means the pin is driven by PS or user application on PL
         """
         with self.regs:
             self.poke32(self.MB_GPIO_MASTER, value)
@@ -173,11 +176,30 @@ class MboardRegsControl(MboardRegsCommon):
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
            The return value is a bit mask of 8 pins GPIO.
-           0: means the pin is driven by PL
-           1: means the pin is driven by PS
+           0: means the pin is driven by Radio ATR states
+           1: means the pin is driven by PS or user application on PL
         """
         with self.regs:
             return self.peek32(self.MB_GPIO_MASTER) & 0xff
+
+    def set_fp_gpio_user_mux(self, value):
+        """set user mux for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+           0: means the pin is driven by PS
+           1: means the pin is driven by user application
+        """
+        with self.regs:
+            self.poke32(self.MB_GPIO_USER_MUX, value)
+
+    def get_fp_gpio_user_mux(self):
+        """get user mux for front panel GPIO
+        The return value is a bit mask of 12 pins GPIO.
+        0: means the pin is driven by PS
+        1: means the pin is driven by user application
+        """
+        with self.regs:
+            return self.peek32(self.MB_GPIO_USER_MUX) & 0xFF
 
     def set_fp_gpio_radio_src(self, value):
         """set driver for front panel GPIO

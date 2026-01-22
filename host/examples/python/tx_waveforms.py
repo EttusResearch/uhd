@@ -95,8 +95,8 @@ def parse_args():
         "--channels",
         nargs="+",
         type=int,
-        default=0,
-        help='specifies the channels to use (e.g., "0", "1", "0 1", etc) [Default = 0]',
+        default=[0],
+        help='specifies the channels to use (e.g., "0", "1", "0 1", etc) [Default = [0]]',
     )
     parser.add_argument(
         "-g",

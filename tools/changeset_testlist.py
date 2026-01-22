@@ -22,6 +22,14 @@ import requests
 from ruamel import yaml
 
 
+def find_git_toplevel(path):
+    """Find the git toplevel by calling "git rev-parse --show-toplevel"."""
+    cmd_args = ["git", "-C", path, "rev-parse", "--show-toplevel"]
+    proc = subprocess.run(cmd_args, capture_output=True)
+    assert proc.returncode == 0, "given path is not a git directory"
+    return proc.stdout.decode().strip()
+
+
 def parse_args():
     """Parse and return args."""
     parser = argparse.ArgumentParser(
@@ -35,8 +43,10 @@ def parse_args():
     )
     parser.add_argument(
         "--repo-path",
-        default=".",
-        help="Path to the UHD git repository. Defaults to the current directory.",
+        default=os.getcwd(),
+        help="Path to the UHD git repository. Defaults to the current directory."
+        "If a subdirectory of the repository is given, the path is automatically resolved"
+        "to the toplevel of the repository.",
     )
     parser.add_argument("--rule-file", help="Path to rules file.")
     parser.add_argument("--set-azdo-var", help="Generate output to set an AzDO variable")
@@ -58,7 +68,9 @@ def parse_args():
         "--add-test", nargs="*", help="Add a test to the list of tests.", default=[]
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.repo_path = find_git_toplevel(args.repo_path)
+    return args
 
 
 def get_git_commit_range(target_branch, source_branch=None, include_target=False):
@@ -128,7 +140,7 @@ def check_changeset_content(file, **kwargs):
     git_commit_range = get_git_commit_range(
         kwargs["target_branch"],
         kwargs.get("source_branch", None),
-        kwargs.get("include_target", False)
+        kwargs.get("include_target", False),
     )
     get_diff_args = [
         shutil.which("git"),

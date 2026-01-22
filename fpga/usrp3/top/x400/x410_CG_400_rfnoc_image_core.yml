@@ -71,6 +71,8 @@ connections:
   # RF B:1 RX
   - { srcblk: radio1, srcport: out_1, dstblk: ep3,    dstport: in0  }
   #
-  # BSP connections are inherited from YAML include files
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio0 }
+  - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio1 }
+  # Other BSP connections are inherited from YAML include files
 
 # Clock domains are inherited from YAML include files

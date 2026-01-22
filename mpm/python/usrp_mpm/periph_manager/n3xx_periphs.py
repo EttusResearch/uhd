@@ -174,6 +174,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_SFP1_INFO      = 0x002C
     MB_GPIO_MASTER    = 0x0030
     MB_GPIO_RADIO_SRC = 0x0034
+    MB_GPIO_USER_MUX = 0x0050
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -195,20 +196,39 @@ class MboardRegsControl(MboardRegsCommon):
         """set driver for front panel GPIO
         Arguments:
             value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
-           0: means the pin is driven by PL
-           1: means the pin is driven by PS
+           0: means the pin is driven by Radio ATR states
+           1: means the pin is driven by PS or user application
         """
         with self.regs:
             return self.poke32(self.MB_GPIO_MASTER, value)
 
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
-           The return value is a bit mask of 12 pins GPIO.
-           0: means the pin is driven by PL
-           1: means the pin is driven by PS
+        The return value is a bit mask of 12 pins GPIO.
+        0: means the pin is driven by Radio ATR states
+        1: means the pin is driven by PS or user application
         """
         with self.regs:
             return self.peek32(self.MB_GPIO_MASTER) & 0xfff
+
+    def set_fp_gpio_user_mux(self, value):
+        """set user mux for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+           0: means the pin is driven by PS
+           1: means the pin is driven by user application
+        """
+        with self.regs:
+            self.poke32(self.MB_GPIO_USER_MUX, value)
+
+    def get_fp_gpio_user_mux(self):
+        """get user mux for front panel GPIO
+        The return value is a bit mask of 12 pins GPIO.
+        0: means the pin is driven by PS
+        1: means the pin is driven by user application
+        """
+        with self.regs:
+            return self.peek32(self.MB_GPIO_USER_MUX) & 0xFFF
 
     def set_fp_gpio_radio_src(self, value):
         """set driver for front panel GPIO

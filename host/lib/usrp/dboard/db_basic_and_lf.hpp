@@ -5,7 +5,6 @@
 //
 
 #include <uhd/types/dict.hpp>
-#include <boost/assign/list_of.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace basic_and_lf {
 constexpr uint32_t BASIC_TX_PID = 0x0000;
@@ -30,6 +29,7 @@ static const std::vector<std::string> tx_frontends{"0"};
 static const std::map<std::string, double> antenna_mode_bandwidth_scalar{
     {"A", 1.0}, {"B", 1.0}, {"AB", 2.0}, {"BA", 2.0}};
 
-static const uhd::dict<std::string, std::string> antenna_mode_to_conn =
-    boost::assign::map_list_of("AB", "IQ")("BA", "QI")("A", "I")("B", "Q");
+static const uhd::dict<std::string, std::string> antenna_mode_to_conn{
+    {"AB", "IQ"}, {"BA", "QI"}, {"A", "I"}, {"B", "Q"}};
+
 }}}}; // namespace uhd::usrp::dboard::basic_and_lf

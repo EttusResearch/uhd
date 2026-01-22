@@ -236,6 +236,10 @@ pcie_manager::pcie_manager(
     UHD_LOG_INFO(
         "X300", "Connecting to niusrpriorpc at localhost:" << rpc_port_name << "...");
 
+    if (args.enable_force_mtu()) {
+        UHD_LOG_WARNING("X300", "The `force_mtu` argument is not used for PCIe links.");
+    }
+
     // Instantiate the correct lvbitx object
     nifpga_lvbitx::sptr lvbitx;
     switch (get_mb_type_from_pcie(args.get_resource(), rpc_port_name)) {

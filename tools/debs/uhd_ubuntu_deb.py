@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tarfile
 
-supported_ubuntu_releases = ["focal", "jammy", "noble", "plucky"]
+supported_ubuntu_releases = ["focal", "jammy", "noble", "plucky", "questing"]
 tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='./fpga/usrp1' --exclude='./fpga/usrp2' --exclude='./fpga/usrp3/top/b200' --exclude='./fpga/usrp3/top/b2xxmini' --exclude='./fpga/usrp3/lib/*_200' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
 debuild_command = "debuild -S -i -sa"
 debuild_nosign = " -uc -us"

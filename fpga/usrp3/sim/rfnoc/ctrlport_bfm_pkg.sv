@@ -30,7 +30,7 @@ package ctrlport_bfm_pkg;
     local virtual ctrlport_if iface;
 
     // data copy for response data
-    local logic [CTRLPORT_DATA_W-1:0] reponse_data;
+    local logic [CTRLPORT_DATA_W-1:0] response_data;
 
     // ------------------------------------------------------------------
     // Constructor
@@ -114,7 +114,7 @@ package ctrlport_bfm_pkg;
     );
       async_request(request, expected_response);
       wait_complete();
-      data = reponse_data;
+      data = response_data;
     endtask;
 
     // Perform a simple write transaction
@@ -145,7 +145,7 @@ package ctrlport_bfm_pkg;
 
       async_request(request, response, '1);
       wait_complete();
-      data = reponse_data;
+      data = response_data;
     endtask;
 
 
@@ -196,24 +196,33 @@ package ctrlport_bfm_pkg;
           // wait for response
           while(!iface.resp.ack) begin
             @(posedge iface.clk);
-          end
-
-          // status is always expected to match
-          assert (iface.resp.status == transfer.resp.status) else begin
-            $error("Unexpected status received on interface. Expected: 0b%2b Received: 0b%2b",
-              transfer.resp.status, iface.resp.status);
-          end
-
-          // check data if read and data check is not skipped
-          if (transfer.req.rd && !transfer.skip_data_check) begin
-            assert (iface.resp.data == transfer.resp.data) else begin
-              $error("Unexpected data received on interface. Expected: 0x%h Received: 0x%h",
-                transfer.resp.data, iface.resp.data);
+            if (iface.rst) begin
+              $warning("Reset asserted while waiting for response");
+              break;
             end
           end
 
-          // save data for read operations
-          reponse_data = iface.resp.data;
+          if (!iface.rst) begin
+            // status is always expected to match
+            assert (iface.resp.status == transfer.resp.status) else begin
+              $error("Unexpected status received on interface. Expected: 0b%2b Received: 0b%2b",
+                transfer.resp.status, iface.resp.status);
+            end
+
+            // check data if read and data check is not skipped
+            if (transfer.req.rd && !transfer.skip_data_check) begin
+              assert (iface.resp.data == transfer.resp.data) else begin
+                $error("Unexpected data received on interface. Expected: 0x%h Received: 0x%h",
+                  transfer.resp.data, iface.resp.data);
+              end
+            end
+
+            // save data for read operations
+            response_data = iface.resp.data;
+          end else begin
+            // if reset happened, return x data in read response
+            response_data = 'X;
+          end
 
           // request is done -> remove from queue
           transactions.get(transfer);

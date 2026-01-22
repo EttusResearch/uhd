@@ -42,6 +42,13 @@ parameters:
 - name: x440_targets_matrix
   type: object
   default: {}
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 
 stages:
@@ -60,6 +67,8 @@ stages:
       x440_full_targets_matrix: ${{ parameters.x440_targets_matrix }}
       x440_reduced_targets_matrix: ${{ parameters.x440_targets_matrix }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: X400 stages
 
@@ -72,6 +81,8 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: X3x0 stages
 
@@ -84,6 +95,8 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: N3xx stages
 
@@ -96,6 +109,8 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: E31x stages
 
@@ -108,5 +123,7 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    additional_setup_steps: ${{ parameters.additional_setup_steps }}
+    rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: E320 stages

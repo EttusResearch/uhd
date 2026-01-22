@@ -11,6 +11,7 @@
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
+#include <chrono>
 #include <iostream>
 
 using namespace uhd;
@@ -55,6 +56,10 @@ public:
 
         // Setup the GPIO addresses
         read_memory[gpio_offset + 0x4] = 0;
+
+        // Disable the complex gain feature
+        read_memory[radio_control_impl::regmap::RADIO_BASE_ADDR
+                    + radio_control_impl::regmap::REG_FEATURES_PRESENT] = 0;
     }
 
     void _poke_cb(uint32_t addr, uint32_t data, uhd::time_spec_t, bool) override

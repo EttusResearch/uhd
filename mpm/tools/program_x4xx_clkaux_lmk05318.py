@@ -29,13 +29,14 @@ def parse_reg_file(file):
     """
     regfile_regex = re.compile(r"^R(\d*)\t(0x[0-9A-F]*)")
     reg_dict = {}
-    for line in open(file, 'r').readlines():
-        if regfile_regex.match(line):
-            [reg_str, reg_val] = line.strip().split('\t')
-            reg_val = reg_val.split('0x')[1]
-            reg_addr = reg_val[:4]
-            reg_data = reg_val[4:]
-            reg_dict[reg_str] = (hex(int(reg_addr, base=16)), hex(int(reg_data, base=16)))
+    with open(file, 'r') as f:
+        for line in f.readlines():
+            if regfile_regex.match(line):
+                [reg_str, reg_val] = line.strip().split('\t')
+                reg_val = reg_val.split('0x')[1]
+                reg_addr = reg_val[:4]
+                reg_data = reg_val[4:]
+                reg_dict[reg_str] = (hex(int(reg_addr, base=16)), hex(int(reg_data, base=16)))
     return reg_dict
 
 mpm_c = MPMClient(InitMode.Claim, "localhost", MPM_RPC_PORT)

@@ -1300,6 +1300,11 @@ public:
         return _rx_chans.size();
     }
 
+    size_t get_rx_radio_channel(size_t chan = 0) override
+    {
+        return _get_rx_chan(chan).block_chan;
+    }
+
     std::string get_rx_subdev_name(size_t chan = 0) override
     {
         auto rx_chain = _get_rx_chan(chan);
@@ -1980,6 +1985,11 @@ public:
         return _tx_chans.size();
     }
 
+    size_t get_tx_radio_channel(size_t chan = 0) override
+    {
+        return _get_tx_chan(chan).block_chan;
+    }
+
     std::string get_tx_subdev_name(size_t chan = 0) override
     {
         auto tx_chain = _get_tx_chan(chan);
@@ -2318,10 +2328,10 @@ public:
                                      + " to a radio block controller.");
         }();
 
-        const std::string normalized_bank = [radio, bank]() {
+        const std::string normalized_bank = [radio, bank, slot_name]() {
             auto radio_banks = radio->get_gpio_banks();
             for (auto& radio_bank : radio_banks) {
-                if (bank.find(radio_bank) == 0) {
+                if (radio_bank + slot_name == bank) {
                     return radio_bank;
                 }
             }

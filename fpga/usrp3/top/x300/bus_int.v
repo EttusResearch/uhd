@@ -48,6 +48,10 @@ module bus_int #(
     input SFPP1_ModAbs, input SFPP1_TxFault, input SFPP1_RxLOS, inout SFPP1_RS0, inout SFPP1_RS1,
     // Front-panel GPIO source
     output [23:0] fp_gpio_src,
+    // User logic access to front-panel GPIO
+    input  [11:0] user_fp_gpio_in,
+    output [11:0] user_fp_gpio_out,
+    output [11:0] user_fp_gpio_ddr,
     // Clock control and status
     input [7:0] clock_status, output [7:0] clock_control, output [31:0] ref_freq, output ref_freq_changed,
     // SFP+ 0 data stream
@@ -809,7 +813,8 @@ module bus_int #(
     .m_ctrlport_radio0_resp_ack     (m_ctrlport_resp_ack_radio0    ),
     .m_ctrlport_radio0_resp_status  (m_ctrlport_resp_status_radio0 ),
     .m_ctrlport_radio0_resp_data    (m_ctrlport_resp_data_radio0   ),
-    .radio_time                     (radio_time_tb    ),
+    .radio_time                     (radio_time_tb         ),
+    .pps                            (pps                   ),
     .radio_rx_stb_radio0            (radio_rx_stb[1:0]     ),
     .radio_rx_data_radio0           (radio_rx_data[63:0]   ),
     .radio_rx_running_radio0        (radio_rx_running[1:0] ),
@@ -897,7 +902,11 @@ module bus_int #(
     .m_pcie_tdata            (c2p_tdata ),
     .m_pcie_tlast            (c2p_tlast ),
     .m_pcie_tvalid           (c2p_tvalid),
-    .m_pcie_tready           (c2p_tready)
+    .m_pcie_tready           (c2p_tready),
+    // Front-panel GPIO
+    .fp_gpio_out             (user_fp_gpio_out),
+    .fp_gpio_ddr             (user_fp_gpio_ddr),
+    .fp_gpio_in              (user_fp_gpio_in)
   );
 
   //---------------------------------------------------------------------------

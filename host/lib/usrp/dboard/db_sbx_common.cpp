@@ -6,11 +6,11 @@
 //
 
 #include "db_sbx_common.hpp"
+#include <boost/format.hpp>
 #include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 
 /***********************************************************************

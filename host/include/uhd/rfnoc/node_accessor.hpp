@@ -117,7 +117,8 @@ public:
      *
      * See node_t::set_post_action_callback() for details.
      */
-    void set_post_action_callback(node_t* node, node_t::action_handler_t&& post_handler)
+    void set_post_action_callback(
+        node_t* node, node_t::post_action_handler_t&& post_handler)
     {
         node->set_post_action_callback(std::move(post_handler));
     }

@@ -44,6 +44,7 @@ constexpr char LOG_ID[] = "X300::MB_CTRL";
 constexpr char GPIO_SRC_BANK[]     = "FP0";
 constexpr char GPIO_SRC_RFA[]      = "RFA";
 constexpr char GPIO_SRC_RFB[]      = "RFB";
+constexpr char GPIO_SRC_USER[]     = "USER_APP";
 constexpr size_t GPIO_SRC_NUM_PINS = 12;
 
 } // namespace
@@ -512,7 +513,7 @@ std::vector<std::string> x300_mb_controller::get_gpio_srcs(const std::string& ba
                                          << GPIO_SRC_BANK);
         throw uhd::runtime_error(std::string("Invalid GPIO source bank: ") + bank);
     }
-    return {GPIO_SRC_RFA, GPIO_SRC_RFB};
+    return {GPIO_SRC_RFA, GPIO_SRC_RFB, GPIO_SRC_USER};
 }
 
 std::vector<std::string> x300_mb_controller::get_gpio_src(const std::string& bank)
@@ -526,14 +527,13 @@ std::vector<std::string> x300_mb_controller::get_gpio_src(const std::string& ban
     uint32_t fp_gpio_src = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
     const auto gpio_srcs = get_gpio_srcs(bank);
     std::vector<std::string> gpio_src;
-    for (size_t ii = 0; ii < GPIO_SRC_NUM_PINS; ++ii) {
-        const uint32_t this_src = (fp_gpio_src >> (2 * ii)) & 0x3;
-        if (this_src > 1) {
-            UHD_LOG_WARNING(LOG_ID,
-                "get_gpio_src() read back invalid GPIO source index: "
-                    << this_src << ". Falling back to " << (this_src & 0x1));
+    for (size_t pin = 0; pin < GPIO_SRC_NUM_PINS; ++pin) {
+        uint32_t this_src = (fp_gpio_src >> (2 * pin)) & 0x3;
+        if (this_src == 0b11) {
+            // 0b11 -> cast to 0b10 (GPIO_SRC_USER)
+            this_src = 0b10;
         }
-        gpio_src.push_back(gpio_srcs[this_src & 0x1]);
+        gpio_src.push_back(gpio_srcs[this_src]);
     }
     return gpio_src;
 }
@@ -544,25 +544,27 @@ void x300_mb_controller::set_gpio_src(
     if (srcs.size() > GPIO_SRC_NUM_PINS) {
         UHD_LOG_WARNING(LOG_ID, "set_gpio_src(): Provided more sources than pins!");
     }
-    uint32_t fp_gpio_src   = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
-    size_t pins_configured = 0;
+    uint32_t fp_gpio_src = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
+    size_t pin           = 0;
 
     const auto gpio_srcs = get_gpio_srcs(bank);
     for (auto src : srcs) {
         const uint32_t pins = [src]() {
             if (src == GPIO_SRC_RFA) {
-                return 0;
+                return 0b00;
+            } else if (src == GPIO_SRC_RFB) {
+                return 0b01;
+            } else if (src == GPIO_SRC_USER) {
+                return 0b10;
+            } else {
+                UHD_LOG_THROW(
+                    uhd::runtime_error, LOG_ID, "Invalid GPIO source provided: " << src);
             }
-            if (src == GPIO_SRC_RFB) {
-                return 1;
-            }
-            UHD_LOG_ERROR(LOG_ID, "Invalid GPIO source provided: " << src);
-            throw uhd::runtime_error("Invalid GPIO source provided!");
         }();
-        uint32_t pin_mask = ~(uint32_t(0x3) << (2 * pins_configured));
-        fp_gpio_src       = (fp_gpio_src & pin_mask) | (pins << 2 * pins_configured);
-        pins_configured++;
-        if (pins_configured > GPIO_SRC_NUM_PINS) {
+        uint32_t pin_mask = ~(uint32_t(0x3) << (2 * pin));
+        fp_gpio_src       = (fp_gpio_src & pin_mask) | (pins << 2 * pin);
+        pin++;
+        if (pin > GPIO_SRC_NUM_PINS) {
             break;
         }
     }

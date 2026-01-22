@@ -22,7 +22,7 @@ setup(
     description="Universal Software Radio Peripheral (USRP) Hardware Driver Python API",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: C++",
         "Programming Language :: Python",
         "Topic :: System :: Hardware :: Hardware Drivers",
@@ -31,7 +31,7 @@ setup(
     author="Ettus Research",
     author_email="uhd.maintainer@emerson.com",
     url="https://www.ettus.com/",
-    license="GPLv3",
+    license="GPL-3.0-or-later",
     package_dir={"": r"${NATIVE_CURRENT_BINARY_DIR}"},
     package_data={
         "uhd": ["*.so"],

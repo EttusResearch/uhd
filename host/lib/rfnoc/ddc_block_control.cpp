@@ -452,7 +452,7 @@ private:
             RFNOC_LOG_TRACE("Forwarding continuous stream command...")
         }
 
-        post_action(dst_edge, new_action);
+        post_action(dst_edge, new_action, action_mode_t::ASYNC);
     }
 
     void register_issue_tune_request()
@@ -492,7 +492,7 @@ private:
                                     double freq) { set_freq(freq, chan, boost::none); };
 
             double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
-            tune_request_action->tune_result.target_dsp_freq = abs(
+            tune_request_action->tune_result.target_dsp_freq = std::abs(
                 tune_request_action->tune_result.actual_rf_freq - clipped_requested_freq);
 
             //------------------------------------------------------------------
@@ -553,14 +553,14 @@ private:
             new_action->tune_result        = tune_request_action->tune_result;
             new_action->dsp_range          = tune_request_action->dsp_range;
             new_action->overall_freq_range = tune_request_action->overall_freq_range;
-            post_action(dst_edge, new_action);
+            post_action(dst_edge, new_action, action_mode_t::ASYNC);
         } else {
             auto new_action                = tune_request_action_info::make(tune_request);
             new_action->tune_request       = tune_request_action->tune_request;
             new_action->tune_result        = tune_request_action->tune_result;
             new_action->dsp_range          = tune_request_action->dsp_range;
             new_action->overall_freq_range = tune_request_action->overall_freq_range;
-            post_action(dst_edge, new_action);
+            post_action(dst_edge, new_action, action_mode_t::ASYNC);
         }
     }
 

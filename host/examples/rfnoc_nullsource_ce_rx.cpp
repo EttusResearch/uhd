@@ -202,42 +202,80 @@ void pretty_print_flow_graph(std::vector<std::string> blocks)
 ///////////////////// MAIN ////////////////////////////////////////////////////
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rfnoc_nullsource_ce_rx [-h] [--args ARGS] [--file FILE] [--null]\n"
+        "                              [--time TIME] [--spb SPB] [--spp SPP]\n"
+        "                              [--throttle-cycles THROTTLE_CYCLES]\n"
+        "                              [--format {double,float,short}]\n"
+        "                              [--progress] [--stats] [--continue]\n"
+        "                              [--nullid NULLID]"
+        "\n\n"
+        "This example demonstrates how to use the RFNoC Null Source/Sink block to\n"
+        "generate and stream test data. The program requires an FPGA image that\n"
+        "includes the RFNoC Null Source/Sink block. It is useful for verifying\n"
+        "RFNoC data paths and testing system connectivity without external\n"
+        "signals. Generated data is also written to a file for validation\n"
+        "purposes.\n"
+        "\n"
+        "Usage example:\n"
+        "  Receive 1 second of samples from the RFNoC Null Source/Sink block\n"
+        "  and display statistics:\n"
+        "    rfnoc_nullsource_ce_rx --args \"addr=192.168.10.2\"\n"
+        "                           --nullid \"0/NullSrcSink#0\"\n"
+        "                           --spb 10000 --spp 256 --throttle-cycles 0\n"
+        "                           --progress --stats --time 1\n";
+
     // variables to be set by po
     std::string args, file, format, nullid;
     size_t spb, spp, throttle_cycles;
-    double rate, total_time;
+    double total_time;
 
     // setup the program options
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value("type=x300"), "multi uhd device address args")
-        ("file", po::value<std::string>(&file)->default_value("graph_samples.dat"), "name of the file to write binary samples to, set to stdout to print")
-        ("null", "run without writing to file")
-        ("time", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
-        ("spp", po::value<size_t>(&spp)->default_value(64), "samples per packet (on FPGA and wire)")
-        ("throttle-cycles", po::value<size_t>(&throttle_cycles)->default_value(0), "Number of cycles to force in between packets")
-        ("rate", po::value<double>(&rate)->default_value(1e6), "rate at which samples are produced in the null source")
-        ("format", po::value<std::string>(&format)->default_value("sc16"), "File sample type: sc16, fc32, or fc64")
-        ("progress", "periodically display short-term bandwidth")
-        ("stats", "show average bandwidth on exit")
-        ("continue", "don't abort on a bad packet")
-        ("nullid", po::value<std::string>(&nullid)->default_value("0/NullSrcSink#0"), "The block ID for the null source.")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value("type=x300"), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("file", po::value<std::string>(&file)->default_value("graph_samples.dat"), "Name of the raw binary "
+            "file to which received data will be written.")
+        ("null", "Run without writing to file.")
+        ("time", po::value<double>(&total_time)->default_value(0), "Total number of seconds to receive.")
+        ("spb", po::value<size_t>(&spb)->default_value(10000), "Size of the host data buffer in samples.")
+        ("spp", po::value<size_t>(&spp)->default_value(64), "Specifies the number of samples per packet sent "
+            "from the FPGA to the host. Adjusting this value can affect streaming efficiency and packetization behavior.")
+        ("throttle-cycles", po::value<size_t>(&throttle_cycles)->default_value(0), "Number of cycles to force "
+            "in between packets.")
+        ("format", po::value<std::string>(&format)->default_value("sc16"), "Specifies the data format of the "
+            "file. The data will be written as interleaved IQ samples in one of the following numeric formats: 'double' "
+            "(64-bit float, fc64), 'float' (32-bit float, fc32), or 'short' (16-bit integer, sc16, scaled to int16 range "
+            "-32768 to 32767)."
+            "\nChoosing 'short' as the file format matches the sc16 over-the-wire format and is usually sufficient. Using "
+            "'float' or 'double' does not improve precision, but may be more convenient for post-processing or for "
+            "compatibility with certain analysis tools.")
+        ("progress", "Periodically display the estimated short-term USRP device to host streaming rate in "
+            "samples per second.")
+        ("stats", "Show the total number of samples received and the elapsed time when the program exits.")
+        ("continue", "Continue streaming even if a bad packet is received.")
+        ("nullid", po::value<std::string>(&nullid)->default_value("0/NullSrcSink#0"), "The block ID for the "
+            "null source. Format is typically \"mboard_index/NullSrcSink#N\" (e.g. \"0/NullSrcSink#0\").")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
     // print the help message
     if (vm.count("help")) {
-        std::cout << "[RFNOC] Connect a null source to another (processing) block, "
-                     "and stream the result to file."
-                  << desc << std::endl;
-        return EXIT_SUCCESS;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
+        return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     bool bw_summary             = vm.count("progress") > 0;
     bool stats                  = vm.count("stats") > 0;
@@ -285,7 +323,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     stream_args_args["block_id"] = nullid;
 
     /////////////////////////////////////////////////////////////////////////
-    //////// 4. Configure blocks (packet size and rate) /////////////////////
+    //////// 4. Configure blocks (packet size) //////////////////////////////
     /////////////////////////////////////////////////////////////////////////
     std::cout << "Samples per packet coming from null source: " << spp << std::endl;
     const size_t BYTES_PER_SAMPLE = 4;

@@ -41,6 +41,11 @@ public:
      */
     uhd::wb_iface::sptr get_ctrl_iface() override;
 
+    //! Initializes attributes relevant to the Ethernet link
+    //
+    // - Calls discover_eth(), which populates eth_conn and _local_device_ids
+    // - Populates _max_frame_sizes based on MTU discovery and device args
+    // - Compares _max_frame_sizes against values requested via device args
     void init_link(
         const mboard_eeprom_t& mb_eeprom, const std::string& loaded_fpga_image);
 

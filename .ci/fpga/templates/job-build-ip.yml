@@ -33,6 +33,9 @@ parameters:
 - name: num_jobs
   type: number
   default: 5
+- name: additional_setup_steps
+  type: stepList
+  default: []
 
 jobs:
 - job: ${{ parameters.ip_target }}
@@ -47,6 +50,7 @@ jobs:
   - group: sdr-pipeline-vars
   condition: and(succeeded(), eq(variables.BuildRequired, true))
   steps:
+    - ${{ parameters.additional_setup_steps }}
     - template: setup_steps.yml
 
     # Pipeline caching is leveraged in this job to minimize the time it takes

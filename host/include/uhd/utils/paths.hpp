@@ -8,11 +8,9 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <string>
 #include <vector>
-
-namespace fs = boost::filesystem;
 
 namespace uhd {
 
@@ -57,7 +55,7 @@ UHD_API std::string get_cal_data_path(void);
 //
 // This is a list of paths UHD will use to find additional modules to load at
 // runtime.
-UHD_API std::vector<fs::path> get_module_paths(void);
+UHD_API std::vector<std::filesystem::path> get_module_paths(void);
 
 /*! Return the UHD images directory path.
  *

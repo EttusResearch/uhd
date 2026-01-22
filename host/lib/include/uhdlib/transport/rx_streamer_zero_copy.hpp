@@ -11,7 +11,6 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/get_aligned_buffs.hpp>
-#include <boost/format.hpp>
 #include <atomic>
 #include <vector>
 

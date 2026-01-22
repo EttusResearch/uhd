@@ -12,7 +12,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/atomic.hpp>
-#include <boost/thread/condition.hpp>
+#include <condition_variable>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -21,8 +22,7 @@
 using namespace uhd;
 using namespace uhd::transport;
 
-static const boost::posix_time::time_duration AUTOFLUSH_TIMEOUT(
-    boost::posix_time::milliseconds(1));
+constexpr std::chrono::milliseconds AUTOFLUSH_TIMEOUT{1};
 
 /***********************************************************************
  * USB zero copy wrapper - managed receive buffer
@@ -147,7 +147,7 @@ private:
 
     // private variables for auto flusher
     std::mutex _mutex;
-    boost::condition _cond;
+    std::condition_variable _cond;
     uhd::task::sptr _task;
     bool _ok_to_auto_flush;
 
@@ -158,7 +158,8 @@ private:
     void auto_flush(void)
     {
         std::unique_lock<std::mutex> lock(_mutex);
-        const bool timeout = not _cond.timed_wait(lock, AUTOFLUSH_TIMEOUT);
+        const bool timeout = _cond.wait_for(lock, AUTOFLUSH_TIMEOUT)
+                             == std::cv_status::timeout;
         if (timeout and _ok_to_auto_flush and _last_send_buff and _bytes_in_buffer != 0) {
             _last_send_buff->commit(_bytes_in_buffer);
             _last_send_buff.reset();

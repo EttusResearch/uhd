@@ -15,7 +15,6 @@
 #include <b200_iface.hpp>
 #include <libusb.h>
 #include <stdint.h>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
@@ -24,6 +23,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -32,7 +32,7 @@
 #include <thread>
 
 namespace po = boost::program_options;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace {
 struct vid_pid_t

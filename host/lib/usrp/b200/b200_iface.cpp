@@ -12,12 +12,12 @@
 #include <uhdlib/utils/ihex.hpp>
 #include <libusb.h>
 #include <stdint.h>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -482,8 +482,8 @@ public:
 
     size_t _get_file_size(const char* filename)
     {
-        boost::filesystem::path path(filename);
-        auto filesize = boost::filesystem::file_size(path);
+        std::filesystem::path path(filename);
+        auto filesize = std::filesystem::file_size(path);
         return static_cast<size_t>(filesize);
     }
 

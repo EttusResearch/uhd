@@ -19,6 +19,7 @@ namespace py = pybind11;
 #include "include/uhdlib/usrp/common/max287x_python.hpp"
 #include "property_tree_python.hpp"
 #include "rfnoc/ddc_block_control_python.hpp"
+#include "rfnoc/dram/dram_helper_python.hpp"
 #include "rfnoc/duc_block_control_python.hpp"
 #include "rfnoc/fft_block_control_python.hpp"
 #include "rfnoc/fir_filter_block_control_python.hpp"
@@ -125,6 +126,9 @@ PYBIND11_MODULE(libpyuhd, m)
     export_switchboard_block_control(rfnoc_module);
     export_vector_iir_block_control(rfnoc_module);
     export_window_block_control(rfnoc_module);
+
+    auto dram_module = rfnoc_module.def_submodule("dram", "DRAM helpers");
+    export_dram_helper(dram_module);
 
     // Register calibration submodule
     auto cal_module = m.def_submodule("cal", "Calibration Objects");

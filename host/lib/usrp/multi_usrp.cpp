@@ -907,6 +907,11 @@ public:
         return sum;
     }
 
+    size_t get_rx_radio_channel(size_t chan = 0) override
+    {
+        return rx_chan_to_mcp(chan).chan;
+    }
+
     std::string get_rx_subdev_name(size_t chan) override
     {
         return _tree->access<std::string>(rx_rf_fe_root(chan) / "name").get();
@@ -1940,6 +1945,11 @@ public:
             sum += get_tx_subdev_spec(m).size();
         }
         return sum;
+    }
+
+    size_t get_tx_radio_channel(size_t chan = 0) override
+    {
+        return tx_chan_to_mcp(chan).chan;
     }
 
     std::string get_tx_subdev_name(size_t chan) override

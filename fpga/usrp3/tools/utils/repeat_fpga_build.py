@@ -286,6 +286,13 @@ def parse_args():
             "build's directory name."
         ),
     )
+    parser.add_argument(
+        "-I",
+        "--include-dir",
+        help="Path to directory of the RFNoC Out-of-Tree module",
+        action="append",
+        default=[],
+    )
     return parser.parse_args()
 
 
@@ -299,6 +306,7 @@ def rfnoc_image_builder_cmd(
     vivado_path,
     ignore_warnings,
     build_num=None,
+    include_dirs=[],
 ):
     """
     Build the RFNoC image builder command for this build
@@ -321,6 +329,8 @@ def rfnoc_image_builder_cmd(
         cmd += f"--vivado-path {vivado_path} "
     if ignore_warnings:
         cmd += "--ignore-warnings "
+    for include_dir in include_dirs:
+        cmd += f"--include-dir {include_dir} "
     return cmd
 
 
@@ -337,6 +347,7 @@ def run_fpga_build(
     vivado_path,
     ignore_warnings,
     parallel_builds,
+    include_dirs,
 ):
     """Performs one iteration of an FPGA build.
 
@@ -353,6 +364,7 @@ def run_fpga_build(
         vivado_path: --vivado-path argument to be passed
         ignore_warnings: --ignore-warnings argument to be passed
         parallel_builds: Indicates if we are doing builds in parallel
+        include_dirs: --include-dir parameters to be passed
 
     Returns:
         Status.SUCCESS: The build succeeded
@@ -372,6 +384,7 @@ def run_fpga_build(
         vivado_path,
         ignore_warnings,
         cmd_build_num,
+        include_dirs,
     )
     logging.info(f"Running FPGA build command: {cmd}")
     with subprocess.Popen(
@@ -425,6 +438,7 @@ def run_ip_build(
     build_dir,
     vivado_path,
     ignore_warnings,
+    include_dirs,
 ):
     """Performs the IP build.
 
@@ -440,6 +454,7 @@ def run_ip_build(
         build_dir: --build-dir argument to be passed
         vivado_path: --vivado-path argument to be passed
         ignore_warnings: --ignore-warnings argument to be passed
+        include_dirs: --include-dir arguments to be passed
 
     Returns:
         0: The IP build succeeded
@@ -455,6 +470,7 @@ def run_ip_build(
         vivado_path,
         ignore_warnings,
         None,
+        include_dirs,
     )
     cmd += f" --ip-only --jobs {ip_jobs}"
     logging.info(f"Running IP build with command: {cmd}")
@@ -524,6 +540,7 @@ def main():
         args.build_dir,
         args.vivado_path,
         args.ignore_warnings,
+        args.include_dir,
     )
     if status != Status.SUCCESS:
         return status.value
@@ -554,6 +571,7 @@ def main():
                         args.vivado_path,
                         args.ignore_warnings,
                         args.fpga_jobs > 1,
+                        args.include_dir,
                     ),
                 )
                 workers.set(worker_num, thread=thread, start_time=time.time())

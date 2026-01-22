@@ -13,7 +13,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
-#include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -35,15 +34,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("Mini-example to initialize a USRP (args==%s).") % args
+        std::cout << "Mini-example to initialize a USRP (args==" << args << ")."
                   << std::endl;
         return ~0;
     }
 
     // create a usrp device
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args
-              << std::endl;
+    std::cout << "Creating the usrp device with: " << args << "..." << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     return EXIT_SUCCESS;
