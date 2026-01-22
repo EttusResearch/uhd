@@ -11,20 +11,18 @@
 #include <uhdlib/usrp/gps_ctrl.hpp>
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
 #include <chrono>
 #include <ctime>
+#include <iomanip>
 #include <mutex>
 #include <regex>
+#include <sstream>
 #include <string>
 #include <thread>
 #include <tuple>
 
 using namespace uhd;
-using namespace boost::posix_time;
 using namespace boost::algorithm;
 
 namespace {
@@ -48,9 +46,11 @@ gps_ctrl::~gps_ctrl(void)
 class gps_ctrl_impl : public gps_ctrl
 {
 private:
-    std::map<std::string, std::tuple<std::string, boost::system_time, bool>> sentences;
+    std::map<std::string,
+        std::tuple<std::string, std::chrono::steady_clock::time_point, bool>>
+        sentences;
     std::mutex cache_mutex;
-    boost::system_time _last_cache_update;
+    std::chrono::steady_clock::time_point _last_cache_update;
 
     std::string get_sentence(const std::string which,
         const int max_age_ms,
@@ -58,9 +58,9 @@ private:
         const bool wait_for_next = false)
     {
         std::string sentence;
-        boost::system_time now       = boost::get_system_time();
-        boost::system_time exit_time = now + milliseconds(timeout);
-        boost::posix_time::time_duration age;
+        auto now             = std::chrono::steady_clock::now();
+        const auto exit_time = now + std::chrono::milliseconds(timeout);
+        std::chrono::milliseconds age;
 
         if (wait_for_next) {
             update_cache();
@@ -72,17 +72,18 @@ private:
         while (1) {
             try {
                 // update cache if older than a millisecond
-                if (now - _last_cache_update > milliseconds(1)) {
+                if (now - _last_cache_update > std::chrono::milliseconds(1)) {
                     update_cache();
                 }
 
                 std::lock_guard<std::mutex> lock(cache_mutex);
                 if (sentences.find(which) == sentences.end()) {
-                    age = milliseconds(max_age_ms);
+                    age = std::chrono::milliseconds(max_age_ms);
                 } else {
-                    age = boost::get_system_time() - std::get<1>(sentences[which]);
+                    age = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - std::get<1>(sentences[which]));
                 }
-                if (age < milliseconds(max_age_ms)
+                if (age < std::chrono::milliseconds(max_age_ms)
                     and (not(wait_for_next and std::get<2>(sentences[which])))) {
                     sentence                      = std::get<0>(sentences[which]);
                     std::get<2>(sentences[which]) = true;
@@ -96,7 +97,7 @@ private:
             }
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            now = boost::get_system_time();
+            now = std::chrono::steady_clock::now();
         }
 
         if (sentence.empty()) {
@@ -188,7 +189,7 @@ private:
             }
         }
 
-        boost::system_time time = boost::get_system_time();
+        auto time = std::chrono::steady_clock::now();
 
         // Update sentences with newly read data
         for (auto& msg : msgs) {
@@ -215,9 +216,9 @@ public:
         // then we loop until we either timeout, or until we get a response that indicates
         // we're a JL device maximum response time was measured at ~320ms, so we set the
         // timeout at 650ms
-        const boost::system_time comm_timeout =
-            boost::get_system_time() + milliseconds(650);
-        while (boost::get_system_time() < comm_timeout) {
+        const auto comm_timeout =
+            std::chrono::steady_clock::now() + std::chrono::milliseconds(650);
+        while (std::chrono::steady_clock::now() < comm_timeout) {
             reply = _recv();
             // known devices are JL "FireFly", "GPSTCXO", and "LC_XO"
             if (reply.find("FireFly") != std::string::npos
@@ -364,10 +365,10 @@ private:
         return toked[offset];
     }
 
-    ptime get_time(void)
+    std::chrono::system_clock::time_point get_time(void)
     {
         int error_cnt = 0;
-        ptime gps_time;
+        std::chrono::system_clock::time_point gps_time;
         while (error_cnt < 2) {
             try {
                 // wait for next GPRMC string
@@ -382,7 +383,8 @@ private:
                         std::string("Invalid response \"") + reply + "\"");
                 }
 
-                struct tm raw_date;
+                std::tm raw_date{};
+                raw_date.tm_isdst = 0;
                 raw_date.tm_year =
                     std::stoi(datestr.substr(4, 2)) + 2000 - 1900; // years since 1900
                 raw_date.tm_mon =
@@ -391,10 +393,22 @@ private:
                 raw_date.tm_hour = std::stoi(timestr.substr(0, 2));
                 raw_date.tm_min  = std::stoi(timestr.substr(2, 2));
                 raw_date.tm_sec  = std::stoi(timestr.substr(4, 2));
-                gps_time         = boost::posix_time::ptime_from_tm(raw_date);
+#ifdef _WIN32
+                gps_time = std::chrono::system_clock::from_time_t(_mkgmtime(&raw_date));
+#else
+                gps_time = std::chrono::system_clock::from_time_t(timegm(&raw_date));
+#endif
 
-                UHD_LOG_TRACE(
-                    "GPS", "GPS time: " + boost::posix_time::to_simple_string(gps_time));
+                auto time_t_val = std::chrono::system_clock::to_time_t(gps_time);
+                std::tm tm_buf{};
+#ifdef _WIN32
+                gmtime_s(&tm_buf, &time_t_val);
+#else
+                gmtime_r(&time_t_val, &tm_buf);
+#endif
+                std::ostringstream time_str;
+                time_str << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S");
+                UHD_LOG_TRACE("GPS", "GPS time: " + time_str.str());
                 return gps_time;
 
             } catch (std::exception& e) {
@@ -409,7 +423,9 @@ private:
 
     int64_t get_epoch_time(void)
     {
-        return (get_time() - from_time_t(0)).total_seconds();
+        auto gps_time = get_time();
+        auto epoch    = std::chrono::system_clock::from_time_t(0);
+        return std::chrono::duration_cast<std::chrono::seconds>(gps_time - epoch).count();
     }
 
     bool gps_detected(void) override
