@@ -8,7 +8,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
-#include <boost/date_time.hpp>
+
 #include <chrono>
 #include <thread>
 #include <tuple>
