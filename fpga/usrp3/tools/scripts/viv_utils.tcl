@@ -97,7 +97,9 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
         } elseif [expr [lsearch {.xci} $src_ext] >= 0] {
             puts "BUILDER: Adding IP: $src_file"
             read_ip $src_file
-            set_property generate_synth_checkpoint true [get_files $src_file]
+            if {[catch {set_property generate_synth_checkpoint true [get_files $src_file]} errorstring]} {
+                puts "BUILDER: Failed to set synth checkpoint generation ($errorstring). The process will continue."
+            }
         } elseif [expr [lsearch {.ngc .edif .edf} $src_ext] >= 0] {
             puts "BUILDER: Adding Netlist: $src_file"
             read_edif $src_file
