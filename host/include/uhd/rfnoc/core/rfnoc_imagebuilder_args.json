@@ -21,7 +21,8 @@
                               "items": { "$ref": "#/definitions/connection" } },
         "connections":      { "type": "array",
                               "items": { "$ref": "#/definitions/connection" } },
-        "secure_image_core":{ "$ref": "#/definitions/secure_image_core" }
+        "secure_image_core":{ "$ref": "#/definitions/secure_image_core" },
+        "user_clocks":      { "$ref": "#/definitions/user_clocks" }
     },
     "required":             ["schema",
                              "chdr_width",
@@ -133,7 +134,24 @@
             "properties": {
                 "noc_blocks":       { "$ref": "#/definitions/noc_blocks" }
             }
-        }
+        },
 
+        "user_clocks": {
+            "type": "object",
+            "patternProperties": {
+                ".*": { "$ref": "#/definitions/user_clock" }
+            }
+        },
+        
+        "user_clock": {
+            "type": "object",
+            "properties": {
+                "ip": { "type": "string"},
+                "port_in": { "type": "string"},
+                "port_out": { "type": "string"}
+            },
+            "required": ["ip","port_in","port_out"],
+            "additionalProperties": false
+        }        
     }
 }
