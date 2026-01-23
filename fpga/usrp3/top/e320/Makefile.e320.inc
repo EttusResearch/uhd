@@ -108,7 +108,6 @@ $(EXTRAM_SRCS) \
 $(CAP_GEN_GENERIC_SRCS) \
 $(RFNOC_FRAMEWORK_SRCS) \
 $(RFNOC_SRCS) \
-$(RFNOC_OOT_SRCS) \
 $(RFNOC_XPORT_SV_SRCS) \
 $(RFNOC_IMAGE_CORE_SRCS) \
 $(TOP_SRCS) \
@@ -124,8 +123,12 @@ IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 
 VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_HEADER_DEF) $(RFNOC_IMAGE_CORE_DEFS)
 
+OOT_SRCS_FILE := $(BUILD_DIR)/oot_srcs_$(shell date +%s).f
+$(OOT_SRCS_FILE):
+	@printf "%s\n" $(RFNOC_OOT_SRCS) > $@
+
 # DESIGN_SRCS and VERILOG_DEFS must be defined
-bin: .prereqs
+bin: .prereqs $(OOT_SRCS_FILE)
 	@echo "Build directory:: $(BUILD_DIR)"
 	@echo "Printing MB_XDC:: $(MB_XDC)"
 	@echo "Printing VERILOG_DEFS:: $(VERILOG_DEFS)"
