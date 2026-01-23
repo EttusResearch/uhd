@@ -841,6 +841,11 @@ class ImageBuilderConfig:
         """
         # Check the given clock connections are valid
         for clk_domain in self.clk_domains:
+            if (
+                clk_domain["srcblk"] in self.user_clocks
+                or clk_domain["dstblk"] in self.user_clocks
+            ):
+                continue
             srcblk = self.get_module(clk_domain["srcblk"])
             dstblk = self.get_module(clk_domain["dstblk"])
             if not srcblk:
