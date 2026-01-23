@@ -6,7 +6,6 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/features/spi_getter_iface.hpp>
-#include <uhdlib/usrp/cores/gpio_port_mapper.hpp>
 #include <uhdlib/usrp/cores/spi_core_4000.hpp>
 #include <chrono>
 #include <memory>
@@ -25,8 +24,7 @@ public:
         const size_t spi_transaction_cfg,
         const size_t spi_transaction_go,
         const size_t spi_status,
-        const size_t spi_controller_info,
-        const mapper_sptr port_mapper)
+        const size_t spi_controller_info)
         : _poke32(std::move(poke32_fn))
         , _peek32(std::move(peek32_fn))
         , _spi_periph_cfg(spi_periph_cfg)
@@ -34,7 +32,6 @@ public:
         , _spi_transaction_go(spi_transaction_go)
         , _spi_status(spi_status)
         , _spi_ctrl_info(spi_controller_info)
-        , _port_mapper(port_mapper)
     {
     }
 
@@ -77,21 +74,13 @@ public:
         }
         periph_ctrl |= ((num_bits & 0x3F) << 20);
         // periph_cs (which GPIO line for CS signal)
-        periph_ctrl |=
-            _port_mapper->map_value(_spi_periph_config[which_periph].periph_cs & 0x1F)
-            << 15;
+        periph_ctrl |= (_spi_periph_config[which_periph].periph_cs & 0x1F) << 15;
         // periph_sdi (which GPIO line for serial data in from peripheral)
-        periph_ctrl |=
-            _port_mapper->map_value(_spi_periph_config[which_periph].periph_sdi & 0x1F)
-            << 10;
+        periph_ctrl |= (_spi_periph_config[which_periph].periph_sdi & 0x1F) << 10;
         // periph_sdo (which GPIO line for serial data out to peripheral)
-        periph_ctrl |=
-            _port_mapper->map_value(_spi_periph_config[which_periph].periph_sdo & 0x1F)
-            << 5;
+        periph_ctrl |= (_spi_periph_config[which_periph].periph_sdo & 0x1F) << 5;
         // periph_clk (which GPIO line for clk signal)
-        periph_ctrl |=
-            _port_mapper->map_value(_spi_periph_config[which_periph].periph_clk & 0x1F)
-            << 0;
+        periph_ctrl |= (_spi_periph_config[which_periph].periph_clk & 0x1F) << 0;
 
         // conditionally send peripheral control
         if (_periph_ctrl_cache[which_periph] != periph_ctrl) {
@@ -146,7 +135,6 @@ private:
     const size_t _spi_transaction_go;
     const size_t _spi_status;
     const size_t _spi_ctrl_info;
-    const mapper_sptr _port_mapper;
     std::vector<uint32_t> _periph_ctrl_cache;
     uint32_t _transaction_cfg_cache = 0;
     std::mutex _mutex;
@@ -172,8 +160,7 @@ spi_core_4000::sptr spi_core_4000::make(spi_core_4000::poke32_fn_t&& poke32_fn,
     const size_t spi_transaction_cfg,
     const size_t spi_transaction_go,
     const size_t spi_status,
-    const size_t spi_controller_info,
-    const mapper_sptr port_mapper)
+    const size_t spi_controller_info)
 {
     return std::make_shared<spi_core_4000_impl>(std::move(poke32_fn),
         std::move(peek32_fn),
@@ -181,8 +168,7 @@ spi_core_4000::sptr spi_core_4000::make(spi_core_4000::poke32_fn_t&& poke32_fn,
         spi_transaction_cfg,
         spi_transaction_go,
         spi_status,
-        spi_controller_info,
-        port_mapper);
+        spi_controller_info);
 }
 
 }} // namespace uhd::cores

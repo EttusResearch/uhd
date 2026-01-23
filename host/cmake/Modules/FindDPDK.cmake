@@ -17,7 +17,7 @@
 include(FindPackageHandleStandardArgs)
 
 find_package(PkgConfig)
-PKG_CHECK_MODULES(DPDK libdpdk>=18.11)
+PKG_CHECK_MODULES(DPDK libdpdk>=19.11)
 
 find_package_handle_standard_args(
     DPDK

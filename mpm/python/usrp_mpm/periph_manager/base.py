@@ -495,20 +495,6 @@ class PeriphManagerBase:
         self.log.trace("Found EEPROM paths: %s", eeprom_paths)
         for name, path in eeprom_paths.items():
             self.log.debug("Reading EEPROM info for %s...", name)
-            if not path:
-                if "db" in name:
-                    # In order to support having a single dboard in slot 1
-                    # with slot 0 empty on a x4xx, we pretend that there is
-                    # a dummy "EmptyDaughterboard" here.
-                    self.log.debug("Not present. Inserting dummy DB info")
-                    result[name] = {
-                        "eeprom_md": {"serial": "deadbee", "pid": 0x0},
-                        "eeprom_raw": [],
-                        "pid": 0x0,
-                    }
-                else:
-                    self.log.debug("Not present. Skipping board")
-                continue
             try:
                 eeprom_md, eeprom_rawdata = self._read_dboard_eeprom_data(path)
                 self.log.trace("Found EEPROM metadata: `{}'".format(str(eeprom_md)))
@@ -621,10 +607,14 @@ class PeriphManagerBase:
                     ",".join(str(x) for x in override_dboard_pids)
                 )
             )
+            if len(override_dboard_pids) < len(dboard_infos):
+                self.log.warning("--override-db-pids is going to skip dboards.")
+                dboard_infos = dboard_infos[: len(override_dboard_pids)]
+            for idx, new_pid in enumerate(override_dboard_pids):
+                if idx >= len(dboard_infos):
+                    break
+                dboard_infos[idx]["pid"] = new_pid
         assert len(dboard_infos) <= self.max_num_dboards
-        if override_dboard_pids and len(override_dboard_pids) < len(dboard_infos):
-            self.log.warning("--override-db-pids is going to skip dboards.")
-            dboard_infos = dboard_infos[: len(override_dboard_pids)]
         for dboard_idx, dboard_info in enumerate(dboard_infos):
             self.log.debug("Initializing dboard %d...", dboard_idx)
             db_pid = dboard_info.get("pid")

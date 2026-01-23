@@ -90,14 +90,21 @@ steps:
       ]
   - search_and_replace:
       file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.h') }"
-      pattern: "::uhd::rfnoc::noc_block_base::sptr"
-      repl: "::rfnoc::${ MODULE_NAME }::${ blockname }_block_control::sptr"
+      pattern: "    ::uhd::rfnoc::noc_block_base::sptr"
+      repl: "    ::rfnoc::${ MODULE_NAME }::${ blockname }_block_control::sptr"
   - search_and_replace:
-      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.h') }"
-      pattern: "[^\\n]+replace with[^\\n]+\\n"
+      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.cc') }"
+      pattern: "get_block_ref<::uhd::rfnoc::noc_block_base>"
+      repl: "get_block_ref<::rfnoc::${ MODULE_NAME }::${ blockname }_block_control>"
+  - search_and_replace:
+      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.cc') }"
+      pattern: "[^()]+replace with[^>]+>"
       repl: ""
+  - insert_after:
+      file: "${ os.path.join(MODULE_DIR, f'gr-rfnoc_{MODULE_NAME}', 'lib', f'{gr_blockname}_impl.h') }"
+      pattern: "#include <gnuradio.+\\.h>\\n"
+      text: "#include <rfnoc/${ MODULE_NAME }/${ blockname }_block_control.hpp>\n"
   - log:
       msg: "Successfully added GNU Radio block ${ gr_blockname } for RFNoC block ${ blockname }."
   - log:
       msg: "Make sure to modify the newly added files according to your block's functionality."
-      

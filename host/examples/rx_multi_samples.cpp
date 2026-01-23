@@ -20,6 +20,28 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rx_multi_samples [-h] [--args ARGS] [--secs SECS] [--nsamps NSAMPS]\n"
+        "                        [-r RATE] [--sync {now,pps,mimo}] [--subdev SUBDEV]\n"
+        "                        [--dilv] [--channels CHANNELS]"
+        "\n\n"
+        "This is a demonstration of how to receive time and frequency\n"
+        "aligned data from multiple USRP devices and/or multiple channels.\n"
+        "\n"
+        "Note: This program does not set the RX frequency; for your information,\n"
+        "      the actual RX frequency is displayed in the console.\n"
+        "\n"
+        "Key features:\n"
+        "  - Supports simultaneous reception from multiple USRP devices and from\n"
+        "    multiple RX channels.\n"
+        "  - Handles device synchronization using PPS signal or MIMO cable. See\n"
+        "    --sync option for details.\n"
+        "\n"
+        "Usage example:\n"
+        "  - Capture baseband data synchronously from two USRP devices, each with\n"
+        "    two channels, using a sampling rate of 10 MSps:\n"
+        "      rx_multi_samples --args=\"addr0=192.168.10.2,addr1=192.168.10.3\"\n"
+        "                       --rate 10e06 --channels \"0,1,2,3\" --sync pps\n";
     // variables to be set by po
     std::string args, sync, subdev, channel_list;
     double seconds_in_future;
@@ -30,20 +52,59 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to receive")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to receive")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of incoming samples")
-        ("sync", po::value<std::string>(&sync)->default_value("now"), "synchronization method: now, pps, mimo")
-        ("subdev", po::value<std::string>(&subdev), "subdev spec (homogeneous across motherboards)")
-        ("dilv", "specify to disable inner-loop verbose")
-        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device selection and configuration "
+            "arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "USRP time in seconds, at which "
+            "reception will start. Note that USRP time is set to zero during synchronization, so this option sets a "
+            "relative delay from the sync point.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "Total number of samples to "
+            "receive. The program stops when this number is reached.")
+        ("rate,r", po::value<double>(&rate)->default_value(100e6/16), "RX sample rate in samples/second. Note "
+            "that each USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("sync", po::value<std::string>(&sync)->default_value("now"), "Synchronization method:"
+            "\n  now  - Start immediately, no synchronization"
+            "\n  pps  - Synchronize to external Pulse Per Second (PPS) signal"
+            "\n  mimo - Synchronize using a MIMO cable between USRPs")
+        ("subdev", po::value<std::string>(&subdev), "RX subdevice configuration defining the mapping of "
+            "channels to RF RX paths."
+            "\nThe format and available values depend on your USRP model. If not specified, the channels will be numbered "
+            "in order of the devices, daughterboard slots, and their RF RX channels."
+            "\nFor typical applications, this default subdevice configuration is sufficient."
+            "\nNote: this example program expects a single-USRP subdevice configuration which is applied to all USRPs "
+            "equally, if multiple USRPs are configured."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed. Then the default channel mapping is:"
+            "\n  - Ch 0 -> A:0 (1st UBX in slot A, RF RX 0)"
+            "\n  - Ch 1 -> B:0 (2nd UBX in slot B, RF RX 0)"
+            "\nSpecifying --subdev=\"B:0 A:0\" would change the channel mapping to:"
+            "\n  - Ch 0 -> B:0 (2nd UBX in slot B RF RX 0)"
+            "\n  - Ch 1 -> A:0 (1st UBX in slot A RF RX 0)")
+        ("dilv", "Disables inner-loop verbose status prints on received packets.")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "Specifies which channels to "
+            "use. E.g. \"0\", \"1\", \"0,1\", etc.")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
+    // print the help message
+    if (vm.count("help")) {
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
+        return ~0;
+    }
+    po::notify(vm); // only called if --help was not requested
 
     // print the help message
     if (vm.count("help")) {

@@ -4,6 +4,10 @@
 schema: rfnoc_modtool_args
 transport_name: x4xx_eth
 version: "1.0"
+name: USRP X4xx Ethernet Transport Adapter
+description: |
+  The USRP X4xx devices must specify transport adapters explicitly for
+  connectivity. This is the transport adapter for 10 and 100 GbE Ethernet.
 
 parameters:
   # Same as RFNoC blocks, parameters get passed to the top-level Verilog.

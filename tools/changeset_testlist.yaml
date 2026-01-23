@@ -59,6 +59,24 @@
     - hw.rf.e3xx
     - hw.streaming.e3xx
     - devtest.e3xx
+- re: mpm/include/mpm/ad9361
+  add:
+    - uhd.build.all
+    - hw.rf.e3xx
+    - devtest.e3xx
+    - mpm.build.e3xx
+- re: e3xx_ad9361_iface..pp
+  add:
+    - uhd.build.all
+    - hw.rf.e3xx
+    - devtest.e3xx
+- re: ad936
+  add:
+    - uhd.build.all
+    - hw.rf.e3xx
+    - hw.rf.b2xx
+    - devtest.e3xx
+    - devtest.b2xx
 - re: host/lib/usrp/dboard/magnesium
   add:
     - uhd.build.all

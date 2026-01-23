@@ -13,6 +13,7 @@ parameters:
   type: string
 - name: redisHost
   type: string
+  default: ''
 - name: dutMatrix
   type: object
 - name: vivado_dir
@@ -271,9 +272,23 @@ jobs:
     condition: always()
     displayName: Upload pytest results
 
+  - publish: $(Common.TestResultsDirectory)
+    artifact: test-logs-rf-hardware-$(devName)-run$(System.JobAttempt)
+    displayName: Upload Test Logs
+    condition: always()
+
   - script: |
       echo "A previous step failed. See steps with warnings."
       echo "Marking the overall build status as a failure."
       exit 1
     condition: in(variables['Agent.JobStatus'],  'SucceededWithIssues')
     displayName: Mark build as failure
+
+  - script: |
+      if [ -z "${{ parameters.redisHost }}" ]; then
+        echo "No redis host specified, skipping lock release."
+      else
+        redis-cli -h ${{ parameters.redisHost }} DEL redlock:$(devName)
+      fi
+    displayName: Release redis lock
+    condition: always()

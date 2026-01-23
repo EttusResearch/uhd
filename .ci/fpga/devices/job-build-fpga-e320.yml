@@ -79,6 +79,13 @@ parameters:
       image_core_name: usrp_e320_fpga_1G
       timeout: 720
       max_attempts: 2
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 stages:
 - stage: provide_e320_fpga_images_stage
@@ -106,3 +113,5 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/e320
       target_full_matrix: ${{ parameters.e320_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.e320_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}

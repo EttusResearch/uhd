@@ -18,6 +18,7 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <memory>

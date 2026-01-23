@@ -92,6 +92,19 @@ meta_range_t::meta_range_t(double start, double stop, double step)
     /* NOP */
 }
 
+meta_range_t::meta_range_t(std::initializer_list<double> il)
+{
+    this->clear();
+    if (il.size() == 2) {
+        std::vector<double> tmp(il);
+        this->push_back(range_t(tmp[0], tmp[1], 0.0));
+    } else {
+        for (double d : il) {
+            this->push_back(range_t(d));
+        }
+    }
+}
+
 meta_range_t meta_range_t::as_monotonic() const
 {
     try {

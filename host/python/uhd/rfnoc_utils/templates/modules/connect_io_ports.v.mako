@@ -19,6 +19,7 @@
   dwire = dst_module_prefix + dst_wire['name'] + dst_wire_suffix
   if src_wire["direction"] == "output":
     swire, dwire = dwire, swire
+    src_slice, dst_slice = dst_slice, src_slice
 %>\
   assign ${dwire}${dst_slice} = ${swire}${src_slice};
   %endfor

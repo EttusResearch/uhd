@@ -3,7 +3,7 @@
 #include "{lvbitx_classname}_lvbitx.hpp"
 #include <uhd/utils/paths.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/filesystem/path.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <regex>
@@ -32,7 +32,7 @@ const char* {lvbitx_classname}_lvbitx::INPUT_FIFOS[] = {{{in_fifo_list}
 {lvbitx_classname}_lvbitx::{lvbitx_classname}_lvbitx(const std::string& option)
 {{
     std::string fpga_file = "usrp_{lvbitx_classname}_fpga_" + option + ".lvbitx";
-    boost::filesystem::path fpga_path(uhd::find_image_path(fpga_file, SEARCH_PATHS));
+    std::filesystem::path fpga_path(uhd::find_image_path(fpga_file, SEARCH_PATHS));
 
     _fpga_file_name = fpga_path.string();
     _bitstream_checksum = _get_bitstream_checksum(_fpga_file_name);

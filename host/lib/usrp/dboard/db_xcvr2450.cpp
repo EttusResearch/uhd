@@ -51,7 +51,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>
@@ -61,31 +60,31 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * The XCVR 2450 constants
  **********************************************************************/
-static const freq_range_t xcvr_freq_range =
-    list_of(range_t(2.4e9, 2.5e9))(range_t(4.9e9, 6.0e9));
+static const freq_range_t xcvr_freq_range{range_t(2.4e9, 2.5e9), range_t(4.9e9, 6.0e9)};
 
 // Multiplied by 2.0 for conversion to complex bandpass from lowpass
-static const freq_range_t xcvr_tx_bandwidth_range =
-    list_of(range_t(2.0 * 12e6))(range_t(2.0 * 18e6))(range_t(2.0 * 24e6));
+static const freq_range_t xcvr_tx_bandwidth_range{
+    range_t(2.0 * 12e6), range_t(2.0 * 18e6), range_t(2.0 * 24e6)};
 
 // Multiplied by 2.0 for conversion to complex bandpass from lowpass
-static const freq_range_t xcvr_rx_bandwidth_range =
-    list_of(range_t(2.0 * 0.9 * 7.5e6, 2.0 * 1.1 * 7.5e6))(
-        range_t(2.0 * 0.9 * 9.5e6, 2.0 * 1.1 * 9.5e6))(range_t(
-        2.0 * 0.9 * 14e6, 2.0 * 1.1 * 14e6))(range_t(2.0 * 0.9 * 18e6, 2.0 * 1.1 * 18e6));
+static const freq_range_t xcvr_rx_bandwidth_range{
+    range_t(2.0 * 0.9 * 7.5e6, 2.0 * 1.1 * 7.5e6),
+    range_t(2.0 * 0.9 * 9.5e6, 2.0 * 1.1 * 9.5e6),
+    range_t(2.0 * 0.9 * 14e6, 2.0 * 1.1 * 14e6),
+    range_t(2.0 * 0.9 * 18e6, 2.0 * 1.1 * 18e6)};
 
-static const std::vector<std::string> xcvr_antennas = list_of("J1")("J2");
+static const std::vector<std::string> xcvr_antennas{"J1", "J2"};
 
-static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges =
-    map_list_of("VGA", gain_range_t(0, 30, 0.5))("BB", gain_range_t(0, 5, 1.5));
-static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges =
-    map_list_of("LNA", gain_range_t(list_of(range_t(0))(range_t(15))(range_t(30.5))))(
-        "VGA", gain_range_t(0, 62, 2.0));
+static const uhd::dict<std::string, gain_range_t> xcvr_tx_gain_ranges{
+    {"VGA", gain_range_t(0, 30, 0.5)}, {"BB", gain_range_t(0, 5, 1.5)}};
+
+static const uhd::dict<std::string, gain_range_t> xcvr_rx_gain_ranges{
+    {"LNA", gain_range_t({range_t(0), range_t(15), range_t(30.5)})},
+    {"VGA", gain_range_t(0, 62, 2.0)}};
 
 /***********************************************************************
  * The XCVR 2450 dboard class

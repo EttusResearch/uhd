@@ -1,0 +1,126 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdBuildDir
+  type: string
+- name: release_binaries
+  type: boolean
+  default: false
+
+jobs:
+- job: uhd_package_src
+  displayName: UHD Build Manual (the ReadTheDocs way)
+  dependsOn: get_latest_uhd_docker
+  timeoutInMinutes: 90
+  variables:
+    # Docker vars from job-get-latest-uhd-docker.yml
+    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    # Define the ManualBuilders variable as subset of dockerImageMatrixLin that is 
+    # defined in ../uhd-build-docker-container.yml, to include select Ubuntu version.
+    # The ReadTheDocs builder version is defined in ../../.readthedocs.yaml.
+    ManualBuilders: "{'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'}}"
+  pool:
+    name: Drivers-NIBuildFarm-RFMIBUILD
+    demands:
+    - docker
+    - Agent.OS -equals Linux
+  strategy:
+    matrix: $[ variables.ManualBuilders ]
+  workspace:
+    clean: all
+  container:
+    image: '$(dockerImagePrefix)$(DockerImageName):$(dockerBuildNumber)'
+    ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
+      endpoint: rnd-docker-niartifacts-ci-readonly
+    ${{ else }}:
+      endpoint: rnd-docker-niartifacts-pre-readonly
+  steps:
+  - checkout: self
+    clean: true
+
+  - script: |
+      mkdir -p ${{ parameters.uhdBuildDir }}
+      cd ${{ parameters.uhdBuildDir }}
+      if [[ "${{ parameters.release_binaries }}" = "True" ]]; then
+        echo "Setting UHD_RELEASE_MODE to release"
+        export UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release $UHD_CI_CMAKE_OPTIONS"
+      fi
+      cmake \
+        $UHD_CI_CMAKE_OPTIONS \
+        ${{ parameters.uhdSrcDir }}/host
+
+      # Finds UHD_VERSION String from CMake Output
+      uhd_version_str=$(grep -P -o "(?<=set\(PACKAGE_VERSION )[a-z0-9.-]+" cmake/Modules/UHDConfigVersion.cmake)
+
+      echo "##vso[task.setvariable variable=uhdVersionStr;isOutput=true;]$uhd_version_str"
+    name: get_uhd_version
+    displayName: Determine UHD Version Name
+
+  - script: |
+      # For convinience using latest condaforge installer even so ../../.readthedocs.yaml
+      # specifies a fixed mambaforge version.
+      wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+      bash Miniforge3-$(uname)-$(uname -m).sh -b -p $(Build.BinariesDirectory)/miniforge3
+      source $(Build.BinariesDirectory)/miniforge3/etc/profile.d/conda.sh
+      conda config --set ssl_verify false
+      conda env create --name latest --file ${{ parameters.uhdSrcDir }}/host/docs/sphinx/environment.yml
+    name: get_miniforge
+    displayName: Set up UHD conda environment using miniforge3
+
+  - script: |
+      source $(Build.BinariesDirectory)/miniforge3/etc/profile.d/conda.sh
+      conda activate latest
+      export READTHEDOCS_OUTPUT=$(Build.BinariesDirectory)/_readthedocs
+      mkdir -p $READTHEDOCS_OUTPUT
+      echo "##vso[task.setvariable variable=READTHEDOCS_OUTPUT]$READTHEDOCS_OUTPUT"
+      cd ${{ parameters.uhdSrcDir }}/host/docs/sphinx/source
+      # Run sphinx and capture output
+      python3 -m sphinx -T -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html 2>&1 | tee  $READTHEDOCS_OUTPUT/sphinx.log
+      # Fail if Sphinx log was not generated
+      if [ ! -f "$READTHEDOCS_OUTPUT/sphinx.log" ]; then
+        echo "Sphinx build log file not found."
+        exit 1
+      fi
+      # Fail if CMake Error is found
+      if grep -q "CMake Error"  $READTHEDOCS_OUTPUT/sphinx.log; then
+        echo "CMake Error detected in Sphinx build. Failing pipeline."
+        grep "CMake Error"  $READTHEDOCS_OUTPUT/sphinx.log -B 3 -A 3
+        exit 1
+      fi
+      # Fail if generated hierarchy tree html file is not found
+      if [ ! -f "$READTHEDOCS_OUTPUT/html/05__driver__api_8dox.html" ]; then
+        echo "Sphinx build did not complete successfully. 05__driver__api_8dox.html not found."
+        exit 1
+      fi
+      # Check for warnings that indicate syntax errors in the generated html files
+      warning_count=$(grep -E '^[^ ]+:[0-9]+: warning:' $READTHEDOCS_OUTPUT/sphinx.log | wc -l)
+      if [ "$warning_count" -gt 0 ]; then
+        echo "WARNING -- Detected $warning_count warnings in Sphinx build log. Please check the log for details."
+        if [ "$(buildOSName)" = "ubuntu2204" ]; then
+          echo "WARNINGS treated as ERROR in ReadTheDocs $(buildOSName) builder OS version. Failing pipeline."
+          exit 1
+        fi
+      fi
+    displayName: Simulate ReadTheDocs build
+
+  - script: |
+      mkdir -p $(Build.BinariesDirectory)/_publish
+      cp $(READTHEDOCS_OUTPUT)/*.log $(Build.BinariesDirectory)/_publish/
+      tar -czf $(Build.BinariesDirectory)/_publish/manual_archive_v$(get_uhd_version.uhdVersionStr).tar.gz \
+          --directory $(READTHEDOCS_OUTPUT) --exclude *.log .
+    displayName: Prepare files for publishing
+    condition: always()
+
+  - task: PublishPipelineArtifact@1
+    inputs:
+      targetPath: '$(Build.BinariesDirectory)/_publish'
+      artifactName: 'uhddev-manual-$(buildOSName)'
+    displayName: Upload uhd user manual package
+    condition: always()
+  
+  - script: |
+      rm -rf ${{ parameters.uhdSrcDir }}/host/docs/sphinx/source/_build
+      rm -rf ${{ parameters.uhdSrcDir }}/host/docs/sphinx/build_doxygen
+    displayName: Delete temporary build folder
+    condition: always()

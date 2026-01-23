@@ -266,6 +266,7 @@ def flash_sdimage_tftp(
 def get_redis_server(args):
     """Return the Redis object from the given URL (args.redis_server) or None if no URL was provided."""
     if args.redis_server:
+        print("Using redis server at {}".format(args.redis_server), flush=True)
         return {Redis.from_url("redis://{}:6379/0".format(args.redis_server))}
     else:
         return None
@@ -274,6 +275,7 @@ def get_redis_server(args):
 def main_mutexed(args):
     """Main entry point for mutex_hardware."""
     print("Waiting to acquire mutex for {}".format(args.dut_name), flush=True)
+    print("ARGS: {}".format(args), flush=True)
     with Redlock(
         key=args.dut_name,
         masters=get_redis_server(args),

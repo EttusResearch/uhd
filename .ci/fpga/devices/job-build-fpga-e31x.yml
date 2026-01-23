@@ -92,6 +92,13 @@ parameters:
       artifact_name: E310_SG3
       timeout: 720
       max_attempts: 2
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 
 stages:
@@ -123,6 +130,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/e31x
       target_full_matrix: ${{ parameters.e31x_sg1_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.e31x_sg1_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 - stage: provide_e31x_sg3_fpga_images_stage
   displayName: Provide E310 SG3 FPGA Images
@@ -149,5 +158,7 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/e31x
       target_full_matrix: ${{ parameters.e31x_sg3_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.e31x_sg3_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: E310 stages

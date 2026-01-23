@@ -180,39 +180,127 @@ package PkgRfnocBlockCtrlBfm;
       repeat (rst_cyc) @(posedge backend.ctrl_clk);
     endtask : reset_ctrl
 
+
+    // Soft-Reset the CHDR path
+    //
+    //   rst_cyc: Number of cycles to wait for reset completion
+    //
+    task reset_chdr(input int rst_cyc = 100);
+      assert (running) else begin
+        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
+      end
+
+      // Assert soft_chdr_rst then wait
+      // Note: soft_chdr_rst must be driven in the ctrl_clk domain
+      @(posedge backend.ctrl_clk);
+      backend.cfg.v1.soft_chdr_rst = 1;
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      backend.cfg.v1.soft_chdr_rst = 0;
+      @(posedge backend.ctrl_clk);
+      repeat (rst_cyc) @(posedge backend.ctrl_clk);
+    endtask : reset_chdr
+
+
+    // Flush the data ports of the block
+    //
+    //   idle_cyc: Number of idle cycles before done is asserted
+    //
+    task flush(input logic [31:0] idle_cyc = 100);
+      assert (running) else begin
+        $fatal(1, "Cannot call flush until RfnocBlockCtrlBfm is running");
+      end
+
+      // Set flush timeout then wait
+      backend.cfg.v1.flush_timeout = idle_cyc;
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
+      // Start flush then wait for done
+      @(posedge backend.ctrl_clk);
+      backend.cfg.v1.flush_en = 1;
+      @(posedge backend.ctrl_clk);
+      while (~backend.sts.v1.flush_done) @(posedge backend.ctrl_clk);
+      // Deassert flush then wait
+      backend.cfg.v1.flush_en = 0;
+      while (backend.sts.v1.flush_active) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
+    endtask : flush
+
+
+    // Flush the data ports of the block then reset the CHDR
+    // path, wait then reset the ctrl path
+    //
+    //   idle_cyc: Number of idle cycles before done is asserted
+    //   chdr_rst_cyc: Number of cycles to wait for chdr_rst completion
+    //   ctrl_rst_cyc: Number of cycles to wait for ctrl_rst completion
+    //
+    task flush_and_reset(
+      input logic [31:0] idle_cyc     = 100,
+      input int          chdr_rst_cyc = 100,
+      input int          ctrl_rst_cyc = 100
+    );
+      assert (running) else begin
+        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
+      end
+
+      // Set flush timeout then wait
+      backend.cfg.v1.flush_timeout = idle_cyc;
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
+      // Start flush then wait for done
+      @(posedge backend.ctrl_clk);
+      backend.cfg.v1.flush_en = 1;
+      @(posedge backend.ctrl_clk);
+      while (~backend.sts.v1.flush_done) @(posedge backend.ctrl_clk);
+      // Assert chdr_rst then wait
+      reset_chdr(chdr_rst_cyc);
+      // Assert ctrl_rst then wait
+      reset_ctrl(ctrl_rst_cyc);
+      // Deassert flush then wait
+      backend.cfg.v1.flush_en = 0;
+      while (backend.sts.v1.flush_active) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
+      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
+    endtask : flush_and_reset
+
+
     // Send a read request packet on the AXIS-Ctrl interface and get the
     // response.
     //
-    //   addr:   Address for the read request
-    //   word:   Data word that was returned in response to the read
+    //   addr:       Address for the read request
+    //   word:       Data word that was returned in response to the read
+    //   timestamp:  Timestamp for the read request (Optional)
     //
     task reg_read(
       input  ctrl_address_t addr,
-      output ctrl_word_t    word
+      output ctrl_word_t    word,
+      input  chdr_timestamp_t timestamp = RESERVED_TS
     );
       assert (running) else begin
         $fatal(1, "Cannot call reg_read until RfnocBlockCtrlBfm is running");
       end
 
-      ctrl.reg_read(addr, word);
+      ctrl.reg_read(addr, word, timestamp);
     endtask : reg_read
 
 
     // Send a a write request packet on the AXIS-Ctrl interface and get the
     // response.
     //
-    //   addr:   Address for the write request
-    //   word:   Data word to write
+    //   addr:       Address for the write request
+    //   word:       Data word to write
+    //   timestamp:  Timestamp for the write request (Optional)
     //
     task reg_write(
       ctrl_address_t addr,
-      ctrl_word_t    word
+      ctrl_word_t    word,
+      chdr_timestamp_t timestamp = RESERVED_TS
     );
       assert (running) else begin
         $fatal(1, "Cannot call reg_write until RfnocBlockCtrlBfm is running");
       end
 
-      ctrl.reg_write(addr, word);
+      ctrl.reg_write(addr, word, timestamp);
     endtask : reg_write
 
   endclass : RfnocBlockCtrlBfmCtrlOnly
@@ -398,86 +486,6 @@ package PkgRfnocBlockCtrlBfm;
       end
       return m_data[port].get_ticks_per_word();
     endfunction
-
-    // Soft-Reset the CHDR path
-    //
-    //   rst_cyc: Number of cycles to wait for reset completion
-    //
-    task reset_chdr(input int rst_cyc = 100);
-      assert (running) else begin
-        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
-      end
-
-      // Assert soft_chdr_rst then wait
-      // Note: soft_chdr_rst must be driven in the ctrl_clk domain
-      @(posedge backend.ctrl_clk);
-      backend.cfg.v1.soft_chdr_rst = 1;
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      backend.cfg.v1.soft_chdr_rst = 0;
-      @(posedge backend.ctrl_clk);
-      repeat (rst_cyc) @(posedge backend.ctrl_clk);
-    endtask : reset_chdr
-
-    // Flush the data ports of the block
-    //
-    //   idle_cyc: Number of idle cycles before done is asserted
-    //
-    task flush(input logic [31:0] idle_cyc = 100);
-      assert (running) else begin
-        $fatal(1, "Cannot call flush until RfnocBlockCtrlBfm is running");
-      end
-
-      // Set flush timeout then wait
-      backend.cfg.v1.flush_timeout = idle_cyc;
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
-      // Start flush then wait for done
-      @(posedge backend.ctrl_clk);
-      backend.cfg.v1.flush_en = 1;
-      @(posedge backend.ctrl_clk);
-      while (~backend.sts.v1.flush_done) @(posedge backend.ctrl_clk);
-      // Deassert flush then wait
-      backend.cfg.v1.flush_en = 0;
-      while (backend.sts.v1.flush_active) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
-    endtask : flush
-
-    // Flush the data ports of the block then reset the CHDR
-    // path, wait then reset the ctrl path
-    //
-    //   idle_cyc: Number of idle cycles before done is asserted
-    //   chdr_rst_cyc: Number of cycles to wait for chdr_rst completion
-    //   ctrl_rst_cyc: Number of cycles to wait for ctrl_rst completion
-    //
-    task flush_and_reset(
-      input logic [31:0] idle_cyc     = 100,
-      input int          chdr_rst_cyc = 100,
-      input int          ctrl_rst_cyc = 100
-    );
-      assert (running) else begin
-        $fatal(1, "Cannot call flush_and_reset until RfnocBlockCtrlBfm is running");
-      end
-
-      // Set flush timeout then wait
-      backend.cfg.v1.flush_timeout = idle_cyc;
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
-      // Start flush then wait for done
-      @(posedge backend.ctrl_clk);
-      backend.cfg.v1.flush_en = 1;
-      @(posedge backend.ctrl_clk);
-      while (~backend.sts.v1.flush_done) @(posedge backend.ctrl_clk);
-      // Assert chdr_rst then wait
-      reset_chdr(chdr_rst_cyc);
-      // Assert ctrl_rst then wait
-      reset_ctrl(ctrl_rst_cyc);
-      // Deassert flush then wait
-      backend.cfg.v1.flush_en = 0;
-      while (backend.sts.v1.flush_active) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.ctrl_clk);
-      repeat (CMD_PROP_CYC) @(posedge backend.chdr_clk);
-    endtask : flush_and_reset
 
 
     // Send a CHDR data packet out the CHDR data interface.

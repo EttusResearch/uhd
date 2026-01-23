@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: moving_avg
+name: Moving Average
+description: |
+  The Moving Average block is an RFNoC block that computes the running average
+  of an input data stream.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

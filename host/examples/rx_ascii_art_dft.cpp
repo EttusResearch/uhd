@@ -23,6 +23,51 @@ using std::chrono::high_resolution_clock;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rx_ascii_art_dft [-h] [--args ARGS] -f FREQ -r RATE\n"
+        "                        [--num-bins NUM_BINS] [--gain GAIN]\n"
+        "                        [--power POWER] [--ant ANT] [--subdev SUBDEV]\n"
+        "                        [--bw BW] [--frame-rate FRAME_RATE]\n"
+        "                        [--ref-lvl REF_LVL] [--dyn-rng DYN_RNG]\n"
+        "                        [--ref {internal,external,mimo,gpsdo}]\n"
+        "                        [--step STEP] [--show-controls {true,false}]\n"
+        "                        [--int-n]"
+        "\n\n"
+        "This example demonstrates how to use the UHD C++ API to create\n"
+        "an ASCII-art FFT (Fast Fourier Transform) spectrum display in the\n"
+        "terminal.\n"
+        "The example program configures a single USRP device for reception of an\n"
+        "RF signal from a single channel and displays the spectrum of the complex\n"
+        "baseband data as an ASCII-art spectrum plot in the terminal. It supports\n"
+        "interactive adjustment of frequency, sample rate, gain, bandwidth, and\n"
+        "display parameters using keyboard controls. The example program operates\n"
+        "on a single channel and is intended for quick visualization and\n"
+        "monitoring of received signals.\n"
+        "\n"
+        "Keyboard Controls:\n"
+        "  The example program supports interactive adjustment of key parameters\n"
+        "  using the keyboard:\n"
+        "    f/F - Decrease/increase center frequency\n"
+        "    r/R - Decrease/increase sample rate\n"
+        "    b/B - Decrease/increase bandwidth\n"
+        "    g/G - Decrease/increase gain (if supported by USRP)\n"
+        "    p/P - Decrease/increase receive power reference level\n"
+        "          (if supported by USRP)\n"
+        "    l/L - Decrease/increase reference level\n"
+        "    d/D - Decrease/increase dynamic range\n"
+        "    s/S - Decrease/increase display frame rate\n"
+        "    t/T - Decrease/increase tuning step size\n"
+        "    c   - Toggle display of keyboard controls\n"
+        "    Arrow keys - Fine-tune center frequency\n"
+        "    Any other key - Exit the program\n"
+        "    All changes are applied immediately to the USRP device and the\n"
+        "    spectrum display.\n"
+        "    Note: The step size for frequency, sample rate, and bandwidth\n"
+        "    adjustments is set by the --step option.\n"
+        "\n"
+        "Usage example:\n"
+        "  rx_ascii_art_dft --args \"addr=192.168.10.2\" --freq 2.4e09\n"
+        "                   --rate 10e06\n";
     // variables to be set by po
     std::string args, ant, subdev, ref;
     size_t num_bins;
@@ -34,36 +79,68 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        // hardware parameters
-        ("rate", po::value<double>(&rate), "rate of incoming samples (sps)")
-        ("freq", po::value<double>(&freq), "RF center frequency in Hz")
-        ("gain", po::value<double>(&gain), "gain for the RF chain")
-        ("power", po::value<double>(&power), "Transmit power (if USRP supports it)")
-        ("ant", po::value<std::string>(&ant), "antenna selection")
-        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
-        // display parameters
-        ("num-bins", po::value<size_t>(&num_bins)->default_value(512), "the number of bins in the DFT")
-        ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "frame rate of the display (fps)")
-        ("ref-lvl", po::value<float>(&ref_lvl)->default_value(0), "reference level for the display (dB)")
-        ("dyn-rng", po::value<float>(&dyn_rng)->default_value(60), "dynamic range for the display (dB)")
-        ("ref", po::value<std::string>(&ref), "reference source (internal, external, gpsdo, mimo)")
-        ("step", po::value<double>(&step)->default_value(1e6), "tuning step for rate/bw/freq")
-        ("show-controls", po::value<bool>(&show_controls)->default_value(true), "show the keyboard controls")
-        ("int-n", "tune USRP with integer-N tuning")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("freq,f", po::value<double>(&freq)->required(), "RF center frequency in Hz.")
+        ("rate,r", po::value<double>(&rate)->required(), "RX sample rate in samples/second. Note that each "
+            "USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("num-bins", po::value<size_t>(&num_bins)->default_value(512), "Sets the number of frequency bins for "
+            "the spectrum display.")
+        ("gain", po::value<double>(&gain), "RX gain for the RF chain in dB. Will be ignored, if --power is "
+            "specified.")
+        ("power", po::value<double>(&power), "Sets the RX power reference level in dBm."
+            "\nThis adjusts the reference point for received power measurements. Only available on devices with RX power "
+            "reference support; an error is returned otherwise.")
+        ("ant", po::value<std::string>(&ant), "Antenna port selection string selecting a specific antenna "
+            "port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("subdev", po::value<std::string>(&subdev), "RX subdevice configuration string, selecting which RF "
+            "path to use for the receive channel."
+            "\nThis example program always uses channel 0; use --subdev to select which RF path is mapped to channel 0."
+            "\nThe format and available values depend on your USRP model. If not specified, the default subdevice will be "
+            "used."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed."
+            "\nBy default, channel 0 maps to A:0 (1st UBX in slot A, RF RX 0), which is equivalent to --subdev \"A:0\"."
+            "\nTo use the 2nd UBX (slot B, RF RX 0), specify --subdev \"B:0\".")
+        ("bw", po::value<double>(&bw), "Sets the analog frontend filter bandwidth for the RX path in Hz. Not "
+            "all USRP devices support programmable bandwidth; if an unsupported value is requested, the device will use "
+            "the nearest supported bandwidth instead.")
+        ("frame-rate", po::value<double>(&frame_rate)->default_value(5), "Specifies the number of spectrum "
+            "frames displayed per second (fps).")
+        ("ref-lvl", po::value<float>(&ref_lvl)->default_value(0), "Sets the reference level for the display "
+            "in dBFS.")
+        ("dyn-rng", po::value<float>(&dyn_rng)->default_value(60), "Sets the dynamic range for the display in "
+            "dB.")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("step", po::value<double>(&step)->default_value(1e6), "Specifies the step size in Hz used for "
+            "interactive adjustments of center frequency, sample rate, and bandwidth.")
+        ("show-controls", po::value<bool>(&show_controls)->default_value(true), "Enables or disables the "
+            "display of keyboard controls in the terminal.")
+        ("int-n", "Use integer-N tuning for USRP RF synthesizers. With this mode, the LO can only be tuned in "
+            "discrete steps, which are integer multiples of the reference frequency. This mode can improve phase noise "
+            "and spurious performance at the cost of coarser frequency resolution.")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
     // print the help message
-    if (vm.count("help") or not vm.count("rate")) {
-        std::cout << boost::format("UHD RX ASCII Art DFT %s") % desc << std::endl;
-        return EXIT_FAILURE;
+    if (vm.count("help")) {
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
+        return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     // create a usrp device
     std::cout << std::endl;

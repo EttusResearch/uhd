@@ -18,9 +18,35 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    // program documentation string
+    const std::string program_doc =
+        "usage: tx_timed_samples [--help] [--args ARGS] [--secs SECS] [--nsamps NSAMPS]\n"
+        "                        [--rate RATE] [--ampl AMPL] [--otw {sc16,sc8}]\n"
+        "                        [--dilv]"
+        "\n\n"
+        "This example demonstrates how to stream complex baseband data from a local\n"
+        "data buffer and schedule it for transmission at a user-specified USRP time\n"
+        "using the UHD multi_usrp API.\n"
+        "For demonstration purposes, the program transmits a constant complex value\n"
+        "on a single channel of a single USRP device.\n"
+        "\n"
+        "Note: This program does not set the TX frequency; for your information,\n"
+        "      the actual TX frequency is displayed in the console.\n"
+        "\n"
+        "Key features:\n"
+        "  - Set the USRP time to 0.\n"
+        "  - Use metadata to schedule a timed transmissions starting at a specific\n"
+        "    USRP device time.\n"
+        "\n"
+        "Usage example:\n"
+        " - Transmit 10,000 samples at 6.25 MSps, scheduled for USRP time 1.5 seconds\n"
+        "   (i.e., 1.5 seconds in the future, since USRP time is initialized to zero):\n"
+        "     tx_timed_samples --args \"addr=192.168.10.2\" --rate 6.25e6 --secs 1.5\n"
+        "                      --nsamps 10000\n";
+
     // variables to be set by po
     std::string args;
-    std::string wire;
+    std::string otw;
     double seconds_in_future;
     size_t total_num_samps;
     double rate;
@@ -30,14 +56,30 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("wire", po::value<std::string>(&wire)->default_value(""), "the over the wire type, sc16, sc8, etc")
-        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to transmit")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "total number of samples to transmit")
-        ("rate", po::value<double>(&rate)->default_value(100e6/16), "rate of outgoing samples")
-        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
-        ("dilv", "specify to disable inner-loop verbose")
+        ("help", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device arguments, which holds "
+            "multiple key-value pairs separated by commas."
+            "\nFor a list of available options for a specific USRP model, see the UHD manual."
+            "\nIf not specified, UHD will connect to the first device it can find."
+            "\nExample:"
+            "\n  --args \"type=b200,serial=30A\"")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "USRP device time in seconds at "
+            "which transmission will start. This is relative to the device time, which is initialized to zero by this "
+            "program. For example, --secs 1.5 schedules transmission 1.5 seconds in the future.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(10000), "Total number of samples to "
+            "transmit. Transmission stops when this number is reached.")
+        ("rate", po::value<double>(&rate)->default_value(100e6/16), "Sample rate in samples/second. Note that "
+            "each USRP device only supports a set of discrete sample rates, which depend on the hardware model and "
+            "configuration. If you request a rate that is not supported, the USRP device will automatically select and "
+            "use the closest available rate.")
+        ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "The amplitude of the complex baseband "
+            "signal that is scheduled for transmission.")
+        ("otw", po::value<std::string>(&otw)->default_value(""), "Specifies the over-the-wire (OTW) data "
+            "format used for transmission between the host and the USRP device. Common values are \"sc16\" (16-bit signed "
+            "complex) and \"sc8\" (8-bit signed complex). Using \"sc8\" can reduce network bandwidth at the cost of "
+            "dynamic range."
+            "\nNote, that not all conversions between CPU and OTW formats are possible.")
+        ("dilv", "Disables inner-loop verbose status prints on transmitted packets.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -46,7 +88,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD TX Timed Samples %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
 
@@ -59,6 +102,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
+    // print the actual TX frequency
+    std::cout << boost::format("Actual TX Freq: %f MHz") % (usrp->get_tx_freq() / 1e06)
+              << std::endl;
+
     // set the tx sample rate
     std::cout << boost::format("Setting TX Rate: %f Msps...") % (rate / 1e6) << std::endl;
     usrp->set_tx_rate(rate);
@@ -70,7 +117,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     usrp->set_time_now(uhd::time_spec_t(0.0));
 
     // create a transmit streamer
-    uhd::stream_args_t stream_args("fc32", wire); // complex floats
+    uhd::stream_args_t stream_args("fc32", otw); // complex floats
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     // allocate buffer with data to send

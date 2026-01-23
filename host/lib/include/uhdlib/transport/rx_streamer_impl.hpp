@@ -15,6 +15,7 @@
 #include <uhdlib/transport/rx_streamer_zero_copy.hpp>
 #include <algorithm>
 #include <limits>
+#include <optional>
 #include <vector>
 
 namespace uhd { namespace transport {
@@ -92,6 +93,9 @@ public:
         if (stream_args.args.has_key("spp")) {
             _spp = stream_args.args.cast<size_t>("spp", _spp);
         }
+        if (stream_args.args.has_key("mtu")) {
+            _mtu_override = stream_args.args.cast<size_t>("mtu", _mtu);
+        }
     }
 
     //! Connect a new channel to the streamer
@@ -108,9 +112,7 @@ public:
             _chans_connected.cend(),
             [](const bool connected) { return connected; });
 
-        if (mtu < _mtu) {
-            set_mtu(mtu);
-        }
+        set_mtu(_mtu_override.value_or(std::min(_mtu, mtu)));
     }
 
     //! Implementation of rx_streamer API method
@@ -420,8 +422,11 @@ private:
     // Sample rate used to calculate metadata time_spec_t
     double _samp_rate = 1.0;
 
-    // MTU, determined when xport is connected and modifiable by subclass
+    // MTU, determined when xport is connected or by an MTU override
     size_t _mtu = std::numeric_limits<std::size_t>::max();
+
+    //! Set this if the user provided an override value for the MTU
+    std::optional<size_t> _mtu_override{};
 
     // Size of CHDR header in bytes
     size_t _hdr_len = 0;

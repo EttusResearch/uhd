@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <uhd/features/complex_gain_iface.hpp>
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/features/internal_sync_iface.hpp>
 #include <uhd/rfnoc/block_controller_factory_python.hpp>
@@ -22,6 +23,20 @@ void export_radio_control(py::module& m)
     py::class_<uhd::features::internal_sync_iface>(m, "internal_sync")
         .def("enable_sync_clk", &uhd::features::internal_sync_iface::enable_sync_clk)
         .def("disable_sync_clk", &uhd::features::internal_sync_iface::disable_sync_clk);
+    py::class_<uhd::features::tx_complex_gain_iface>(m, "tx_complex_gain")
+        .def("set_gain_coeff",
+            &uhd::features::tx_complex_gain_iface::set_gain_coeff,
+            py::arg("gain_coeff"),
+            py::arg("chan"),
+            py::arg("time") = py::none())
+        .def("get_gain_coeff", &uhd::features::tx_complex_gain_iface::get_gain_coeff);
+    py::class_<uhd::features::rx_complex_gain_iface>(m, "rx_complex_gain")
+        .def("set_gain_coeff",
+            &uhd::features::rx_complex_gain_iface::set_gain_coeff,
+            py::arg("gain_coeff"),
+            py::arg("chan"),
+            py::arg("time") = py::none())
+        .def("get_gain_coeff", &uhd::features::rx_complex_gain_iface::get_gain_coeff);
 
     py::class_<radio_control, noc_block_base, radio_control::sptr>(m, "radio_control")
         .def(py::init(&block_controller_factory<radio_control>::make_from))
@@ -185,6 +200,18 @@ void export_radio_control(py::module& m)
             "get_internal_sync",
             [](radio_control& self) {
                 return &self.get_feature<uhd::features::internal_sync_iface>();
+            },
+            py::return_value_policy::reference_internal)
+        .def(
+            "get_tx_complex_gain",
+            [](radio_control& self) {
+                return &self.get_feature<uhd::features::tx_complex_gain_iface>();
+            },
+            py::return_value_policy::reference_internal)
+        .def(
+            "get_rx_complex_gain",
+            [](radio_control& self) {
+                return &self.get_feature<uhd::features::rx_complex_gain_iface>();
             },
             py::return_value_policy::reference_internal);
 }

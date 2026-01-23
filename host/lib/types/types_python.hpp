@@ -20,9 +20,10 @@
 
 void export_types(py::module& m)
 {
-    using stream_cmd_t  = uhd::stream_cmd_t;
-    using stream_mode_t = stream_cmd_t::stream_mode_t;
-    using str_map       = std::map<std::string, std::string>;
+    using stream_cmd_t     = uhd::stream_cmd_t;
+    using stream_mode_t    = stream_cmd_t::stream_mode_t;
+    using str_map          = std::map<std::string, std::string>;
+    using stream_trigger_t = stream_cmd_t::trigger_t;
 
     py::enum_<stream_mode_t>(m, "stream_mode")
         .value("start_cont", stream_cmd_t::STREAM_MODE_START_CONTINUOUS)
@@ -30,13 +31,19 @@ void export_types(py::module& m)
         .value("num_done", stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE)
         .value("num_more", stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE);
 
-    py::class_<stream_cmd_t>(m, "stream_cmd")
-        .def(py::init<stream_cmd_t::stream_mode_t>())
-        // Properties
-        .def_readwrite("stream_mode", &stream_cmd_t::stream_mode)
-        .def_readwrite("num_samps", &stream_cmd_t::num_samps)
-        .def_readwrite("time_spec", &stream_cmd_t::time_spec)
-        .def_readwrite("stream_now", &stream_cmd_t::stream_now);
+    auto stream_cmd_class = py::class_<stream_cmd_t>(m, "stream_cmd")
+                                .def(py::init<stream_cmd_t::stream_mode_t>())
+                                // Properties
+                                .def_readwrite("stream_mode", &stream_cmd_t::stream_mode)
+                                .def_readwrite("num_samps", &stream_cmd_t::num_samps)
+                                .def_readwrite("time_spec", &stream_cmd_t::time_spec)
+                                .def_readwrite("stream_now", &stream_cmd_t::stream_now)
+                                .def_readwrite("trigger", &stream_cmd_t::trigger);
+
+    // Add trigger_t as a nested enum within stream_cmd
+    py::enum_<stream_trigger_t>(stream_cmd_class, "trigger_t")
+        .value("TIMED", stream_cmd_t::trigger_t::TIMED)
+        .value("TX_RUNNING", stream_cmd_t::trigger_t::TX_RUNNING);
 
     py::class_<uhd::device_addr_t>(m, "device_addr")
         // Constructors

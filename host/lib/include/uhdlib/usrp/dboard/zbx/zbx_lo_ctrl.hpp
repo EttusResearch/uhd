@@ -62,6 +62,9 @@ private:
     // Returns the appropriate output port for given LO
     lmx2572_iface::output_t _get_output_port(bool test_port);
 
+    // Finds the LO power depending on the frequency
+    uint8_t _find_lo_power(const double freq);
+
     // String prefix for log messages
     const std::string _log_id;
 

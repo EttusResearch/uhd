@@ -141,7 +141,8 @@ def prepare_manifest(manifest):
         print("Downloading manifest file from {}...".format(manifest.strip()))
         req_obj = requests.get(manifest)
         manifest_path = os.path.join(temp_dir, "manifest.txt")
-        open(manifest_path, "wb").write(req_obj.content)
+        with open(manifest_path, "wb") as f:
+            f.write(req_obj.content)
         # This will leave a stray file in /tmp but that's OK... we're blowing
         # away the FS anyway
         return manifest_path

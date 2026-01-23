@@ -112,7 +112,7 @@ include(GNUInstallDirs)
 ########################################################################
 # Setup library configuration
 ########################################################################
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wno-psabi" _has_no_psabi)
 # -Wno-psabi lets us know if the gcc ABI changed and would cause binaries

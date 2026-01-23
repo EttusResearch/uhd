@@ -41,6 +41,42 @@ void sig_int_handler(int)
  ***************************************************************************/
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: rfnoc_radio_loopback [-h] [--args ARGS] [--spp SPP]\n"
+        "                            [--rx-freq RX_FREQ] [--tx-freq TX_FREQ]\n"
+        "                            [--rx-gain RX_GAIN] [--tx-gain TX_GAIN]\n"
+        "                            [--rx-ant RX_ANT] [--tx-ant TX_ANT]\n"
+        "                            [--rx-blockid RX_BLOCKID]\n"
+        "                            [--tx-blockid TX_BLOCKID]\n"
+        "                            [--rx-chan RX_CHAN] [--tx-chan TX_CHAN]\n"
+        "                            [--rx-bw RX_BW] [--tx-bw TX_BW]\n"
+        "                            [--rx-timestamps RX_TIMESTAMPS]\n"
+        "                            [--setup SETUP] [--nsamps NSAMPS]\n"
+        "                            [-r RATE] [--duration DURATION] [--int-n]\n"
+        "                            [--ref {internal,external,mimo,gpsdo}]\n"
+        "                            [--pps {internal,external,mimo,gpsdo}]\n"
+        "                            [--dot]"
+        "\n\n"
+        "This example streams baseband data from a selected RFNoC RX radio block\n"
+        "and channel to a TX radio block and channel.\n"
+        "The connection is dynamically established between the RX radio and TX\n"
+        "radio; if DDC and DUC blocks are present, data is routed through them\n"
+        "for digital down/up conversion. Streaming can be performed for a\n"
+        "user-defined duration or continuously.\n"
+        "\n"
+        "Key features:\n"
+        "- Dynamically connects RX radio (or DDC) to TX radio (or DUC) using\n"
+        "  RFNoC.\n"
+        "- Flexible selection of radio blocks and channels.\n"
+        "- Configurable sample rate, frequency, gain, bandwidth, and antenna for\n"
+        "  both RX and TX.\n"
+        "- Shows how to enable timestamping of RX packets.\n"
+        "\n"
+        "Usage example:\n"
+        "Receive a signal at 3.5 GHz at re-transmit it at 2.4 GHz using the\n"
+        "default radio sampling rate and using two different RFNoC radio blocks:\n"
+        "  rfnoc_radio_loopback --args \"addr=192.168.10.2\"\n"
+        "                       --rx-blockid \"0/Radio#0\" --tx-blockid \"0/Radio#1\"";
     // variables to be set by po
     std::string args, rx_ant, tx_ant, rx_blockid, tx_blockid, ref, pps;
     size_t total_num_samps, spp, rx_chan, tx_chan;
@@ -51,44 +87,73 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "UHD device address args")
-        ("spp", po::value<size_t>(&spp)->default_value(0), "Samples per packet (reduce for lower latency)")
-        ("rx-freq", po::value<double>(&rx_freq)->default_value(0.0), "Rx RF center frequency in Hz")
-        ("tx-freq", po::value<double>(&tx_freq)->default_value(0.0), "Tx RF center frequency in Hz")
-        ("rx-gain", po::value<double>(&rx_gain)->default_value(0.0), "Rx RF center gain in Hz")
-        ("tx-gain", po::value<double>(&tx_gain)->default_value(0.0), "Tx RF center gain in Hz")
-        ("rx-ant", po::value<std::string>(&rx_ant), "Receive antenna selection")
-        ("tx-ant", po::value<std::string>(&tx_ant), "Transmit antenna selection")
-        ("rx-blockid", po::value<std::string>(&rx_blockid)->default_value("0/Radio#0"), "Receive radio block ID")
-        ("tx-blockid", po::value<std::string>(&tx_blockid)->default_value("0/Radio#1"), "Transmit radio block ID")
-        ("rx-chan", po::value<size_t>(&rx_chan)->default_value(0), "Channel index on receive radio")
-        ("tx-chan", po::value<size_t>(&tx_chan)->default_value(0), "Channel index on transmit radio")
-        ("rx-bw", po::value<double>(&rx_bw), "RX analog frontend filter bandwidth in Hz")
-        ("tx-bw", po::value<double>(&tx_bw), "TX analog frontend filter bandwidth in Hz")
-        ("rx-timestamps", po::value<bool>(&rx_timestamps)->default_value(false), "Set timestamps on RX")
-        ("setup", po::value<double>(&setup_time)->default_value(0.1), "seconds of setup time")
-        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("rate", po::value<double>(&rate)->default_value(0.0), "Sampling rate")
-        ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
-        ("int-n", "Tune USRP with integer-N tuning")
-        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, gpsdo, mimo)")
-        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
+        ("help,h", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("spp", po::value<size_t>(&spp)->default_value(0), "Specifies the number of samples per packet sent "
+            "from the RFNoC radio block. Use smaller values to reduce latency.")
+        ("rx-freq", po::value<double>(&rx_freq)->default_value(0.0), "RX RF center frequency in Hz.")
+        ("tx-freq", po::value<double>(&tx_freq)->default_value(0.0), "TX RF center frequency in Hz.")
+        ("rx-gain", po::value<double>(&rx_gain)->default_value(0.0), "RX gain for the RF chain in dB.")
+        ("tx-gain", po::value<double>(&tx_gain)->default_value(0.0), "TX gain for the RF chain in dB.")
+        ("rx-ant", po::value<std::string>(&rx_ant), "RX antenna port selection string selecting a specific "
+            "antenna port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("tx-ant", po::value<std::string>(&tx_ant), "TX antenna port selection string selecting a specific "
+            "antenna port for USRP daughterboards having multiple antenna connectors per RF channel."
+            "\nExample: --ant \"TX/RX\"")
+        ("rx-blockid", po::value<std::string>(&rx_blockid)->default_value("0/Radio#0"), "Specifies the RFNoC "
+            "radio block ID to use for receiving. Format is typically \"mboard_index/Radio#N\" (e.g., 0/Radio#0).")
+        ("tx-blockid", po::value<std::string>(&tx_blockid)->default_value("0/Radio#1"), "Specifies the RFNoC "
+            "radio block ID to use for transmitting. Format is typically \"mboard_index/Radio#N\" (e.g., 0/Radio#1).")
+        ("rx-chan", po::value<size_t>(&rx_chan)->default_value(0), "Selects the channel index within the "
+            "chosen RX radio block for data reception (e.g., 0 for the first channel).")
+        ("tx-chan", po::value<size_t>(&tx_chan)->default_value(0), "Selects the channel index within the "
+            "chosen TX radio block for data transmission (e.g., 0 for the first channel).")
+        ("rx-bw", po::value<double>(&rx_bw), "Sets the analog frontend filter bandwidth for the RX path in "
+            "Hz. Not all USRP devices support programmable bandwidth; if an unsupported value is requested, the device "
+            "will use the nearest supported bandwidth instead.")
+        ("tx-bw", po::value<double>(&tx_bw), "Sets the analog frontend filter bandwidth for the TX path in "
+            "Hz. Not all USRP devices support programmable bandwidth; if an unsupported value is requested, the device "
+            "will use the nearest supported bandwidth instead.")
+        ("rx-timestamps", po::value<bool>(&rx_timestamps)->default_value(false), "Enables timestamping on "
+            "received packets, associating each sample with a precise time value.")
+        ("setup", po::value<double>(&setup_time)->default_value(0.1), "Sets the amount of time (in seconds) "
+            "the program waits for hardware locks (e.g. LO) to ensure the device is properly synchronized before starting "
+            "reception.")
+        ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "Total number of samples to "
+            "receive. The program stops when this number is reached.")
+        ("rate,r", po::value<double>(&rate)->default_value(0.0), "Sets the sample rate for both RX and TX "
+            "radio blocks. The specified rate must be supported by the selected radio; supported values differ between "
+            "USRP models. Refer to the UHD manual for valid sample rates for your hardware.")
+        ("duration", po::value<double>(&total_time)->default_value(0), "Total number of seconds to receive. "
+            "The program stops when this number is reached.")
+        ("int-n", "Use integer-N tuning for USRP RF synthesizers. With this mode, the LO can only be tuned in "
+            "discrete steps, which are integer multiples of the reference frequency. This mode can improve phase noise "
+            "and spurious performance at the cost of coarser frequency resolution.")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("pps", po::value<std::string>(&pps), "Specifies the PPS source for time synchronization. Available "
+            "values depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("dot", "Outputs the RFNoC graph as a DOT-format representation, showing the connections between "
+            "blocks for visualization or analysis.")
     ;
     // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("RFNoC: Radio loopback test %s") % desc << std::endl;
-        std::cout
-            << std::endl
-            << "This application streams data from one radio to another using RFNoC.\n"
-            << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
+    po::notify(vm); // only called if --help was not requested
 
     /************************************************************************
      * Create device and block controls
@@ -123,6 +188,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::rfnoc::connect_through_blocks(
         graph, rx_radio_ctrl_id, rx_chan, tx_radio_ctrl_id, tx_chan, skip_pp);
     graph->commit();
+    std::cout << "Active connections:" << std::endl;
+    if (vm.count("dot")) {
+        std::cout << graph->to_dot() << std::endl;
+    } else {
+        for (auto& edge : graph->enumerate_active_connections()) {
+            std::cout << "* " << edge.to_string() << std::endl;
+        }
+    }
 
     rx_radio_ctrl->enable_rx_timestamps(rx_timestamps, rx_chan);
 
@@ -154,6 +227,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                   << std::endl
                   << std::endl;
     }
+    std::cout << "Actual Sample Rate: " << (rate / 1e6) << " Msps..." << std::endl
+              << std::endl;
 
     // set the center frequency
     if (vm.count("rx-freq")) {

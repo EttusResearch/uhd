@@ -23,19 +23,54 @@ ADJACENCY_BASE_ADDR = 0x10000
 #! Each port is allocated this many registers in the backend register space
 REGS_PER_PORT = 16
 
-REG_RX_MAX_WORDS_PER_PKT = 0x28
-REG_RX_CMD_NUM_WORDS_HI = 0x1C
-REG_RX_CMD_NUM_WORDS_LO = 0x18
-REG_RX_CMD_TIME_LO = 0x20
-REG_RX_CMD_TIME_HI = 0x24
-REG_RX_CMD = 0x14
-
 RX_CMD_CONTINUOUS = 0x2
 RX_CMD_STOP = 0x0
 RX_CMD_FINITE = 0x1
 
 RADIO_BASE_ADDR = 0x1000
-REG_CHAN_OFFSET = 128 # 0x80
+REG_CHAN_OFFSET = 1024 # 0x400 in hex
+
+# Radio block register addresses (see radio_control_impl.hpp)
+REG_COMPAT_NUM = 0x00
+REG_TIME_LO = 0x04
+REG_TIME_HI = 0x08
+REG_RADIO_WIDTH = 0x1004  # Upper 16 bits is sample width, lower 16 bits is NSPC
+
+# General Radio Registers (at RADIO_BASE_ADDR + offset)
+REG_PORT_GENERAL_ADDR_OFFSET = 0x00
+REG_LOOPBACK_EN = REG_PORT_GENERAL_ADDR_OFFSET + 0x00  # Loopback enable
+REG_FEATURES_PRESENT = REG_PORT_GENERAL_ADDR_OFFSET + 0x08  # Feature flags
+
+# RX Core Control Registers (per-channel offsets from RADIO_BASE_ADDR + chan*REG_CHAN_OFFSET)
+REG_PORT_RX_ADDR_OFFSET = 0x100
+REG_RX_STATUS = REG_PORT_RX_ADDR_OFFSET + 0x00
+REG_RX_CMD = REG_PORT_RX_ADDR_OFFSET + 0x04
+REG_RX_CMD_NUM_WORDS_LO = REG_PORT_RX_ADDR_OFFSET + 0x08
+REG_RX_CMD_NUM_WORDS_HI = REG_PORT_RX_ADDR_OFFSET + 0x0C
+REG_RX_CMD_TIME_LO = REG_PORT_RX_ADDR_OFFSET + 0x10
+REG_RX_CMD_TIME_HI = REG_PORT_RX_ADDR_OFFSET + 0x14
+REG_RX_MAX_WORDS_PER_PKT = REG_PORT_RX_ADDR_OFFSET + 0x18
+REG_RX_DATA = REG_PORT_RX_ADDR_OFFSET + 0x2C
+REG_RX_HAS_TIME = REG_PORT_RX_ADDR_OFFSET + 0x30
+
+# TX Core Control Registers (per-channel offsets)
+REG_PORT_TX_ADDR_OFFSET = 0x200
+REG_TX_IDLE_VALUE = REG_PORT_TX_ADDR_OFFSET + 0x00 # Value to output when transmitter is idle
+
+# Feature Control Registers (per-channel offsets)
+REG_PORT_FEAT_ADDR_OFFSET = 0x300
+
+# Register address space widths and sizes (see radio_control_impl.hpp)
+REG_PORT_RX_ADDR_W = 8      # Address space width in bits for RX registers
+REG_PORT_TX_ADDR_W = 8      # Address space width in bits for TX registers
+REG_PORT_FEAT_ADDR_W = 8    # Address space width in bits for Feature registers
+REG_PORT_RX_SIZE = 2**REG_PORT_RX_ADDR_W    # 0x100, address space size for RX registers
+REG_PORT_TX_SIZE = 2**REG_PORT_TX_ADDR_W    # 0x100, address space size for TX registers
+REG_PORT_FEAT_SIZE = 2**REG_PORT_FEAT_ADDR_W  # 0x100, address space size for Feature registers
+
+# Radio block compatibility version
+RADIO_MAJOR_COMPAT = 1
+RADIO_MINOR_COMPAT = 0
 
 
 class StreamEndpointPort:
@@ -153,8 +188,10 @@ class NocBlockRegs:
         self.stop_tx_stream = stop_tx_stream
 
     def read(self, addr):
-        # See client_zero.cpp
-        if addr == PROTOVER_ADDR:
+        # See client_zero.cpp and radio_control_impl.cpp
+        if addr == REG_COMPAT_NUM:
+            return self.read_reg_compat_num()
+        elif addr == PROTOVER_ADDR:
             return self.read_protover()
         elif addr == PORT_CNT_ADDR:
             return self.read_port_cnt()
@@ -167,7 +204,7 @@ class NocBlockRegs:
         elif addr >= 0x40 and addr < 0x1000:
             return self.read_port_reg(addr)
         # See radio_control_impl.cpp
-        elif addr >= 0x1000 and addr < 0x10000:
+        elif addr >= RADIO_BASE_ADDR and addr < ADJACENCY_BASE_ADDR:
             return self.read_radio(addr)
         # See client_zero.cpp
         elif addr >= 0x10000:
@@ -176,33 +213,77 @@ class NocBlockRegs:
             raise RuntimeError("Unsupported register addr: 0x{:08X}".format(addr))
 
     def read_radio(self, addr):
-        if addr == 0x1000:
-            raise NotImplementedError() # TODO: This should be REG_COMPAT
-        elif addr == 0x1004:
+        """Read values from radio registers.
+        """
+        # General Radio Registers (not per-channel)
+        if addr == RADIO_BASE_ADDR + REG_LOOPBACK_EN:
+            self.log.trace(f"Not implemented: Loopback enable register at 0x{addr:08X}")
+            return 0
+        elif addr == REG_RADIO_WIDTH:
             return self.read_radio_width()
+        elif addr == RADIO_BASE_ADDR + REG_FEATURES_PRESENT:
+            self.log.trace(f"Not implemented: Features present register at 0x{addr:08X}")
+            return 0
         else:
-            offset = addr - 0x1000
-            chan = offset // 0x80
-            radio_offset = offset % 0x80
-            if radio_offset == 0x40:
-                return self.radio_reg
-            elif radio_offset == 0x3C:
-                return self.radio_reg
+            # Per-channel register access
+            offset = addr - RADIO_BASE_ADDR
+            chan = offset // REG_CHAN_OFFSET
+            radio_offset = offset % REG_CHAN_OFFSET
+            
+            # Handle loopback test register reads (REG_TX_IDLE_VALUE for all channels)            
+            if radio_offset == REG_TX_IDLE_VALUE:
+                return self.radio_reg.get(chan, 0)
+
+            # Check if this is in the RX register space (0x100-0x1FF)
+            elif REG_PORT_RX_ADDR_OFFSET <= radio_offset < REG_PORT_RX_ADDR_OFFSET + REG_PORT_RX_SIZE:
+                # Handle Loopback test register reads (REG_RX_DATA for all channels)
+                if radio_offset == REG_RX_DATA:
+                    return self.radio_reg.get(chan, 0)
+                else:
+                    self.log.trace(f"Not implemented: RX register at 0x{addr:08X}")
+                    return 0  # Default for unimplemented RX registers
+            # Check if this is in the TX register space (0x200-0x2FF)
+            elif REG_PORT_TX_ADDR_OFFSET <= radio_offset < REG_PORT_TX_ADDR_OFFSET + REG_PORT_TX_SIZE:
+                self.log.trace(f"Not implemented: TX register at 0x{addr:08X}")
+                return 0
+            # Check if this is in the Feature register space (0x300-0x3FF)
+            elif REG_PORT_FEAT_ADDR_OFFSET <= radio_offset < REG_PORT_FEAT_ADDR_OFFSET + REG_PORT_FEAT_SIZE:
+                self.log.trace(f"Not implemented: Feature register at 0x{addr:08X}")
+                return 0
             else:
                 raise NotImplementedError("Radio addr 0x{:08X} not implemented".format(addr))
+
+    def write(self, addr, value):
+        """Write value to a register address.
+        
+        Assuming upto 2 channels, out of bounds is ignored for now.
+        which is RADIO_BASE_ADDR + 2*REG_CHAN_OFFSET
+        e.g., 0x1000 + 2*0x400 = 0x1800
+        """
+        if RADIO_BASE_ADDR <= addr < RADIO_BASE_ADDR + 2 * REG_CHAN_OFFSET:
+            offset = addr - RADIO_BASE_ADDR
+            chan = offset // REG_CHAN_OFFSET
+            reg = offset % REG_CHAN_OFFSET
+            # Handle loopback test register writes (REG_TX_IDLE_VALUE for all channels)
+            if reg == REG_TX_IDLE_VALUE:
+                self.log.trace(f"Storing value: 0x{value:08X} to self.radio_reg[{chan}] for data loopback test")
+                self.radio_reg[chan] = value
+            # Route other radio register writes to write_radio()
+            else:
+                self.write_radio(addr, value)
 
     def write_radio(self, addr, value):
         """Write a value to radio registers
 
         See radio_control_impl.cpp
         """
-        offset = addr - 0x1000
+        offset = addr - RADIO_BASE_ADDR
         assert offset >= 0
-        chan = offset // 0x80
-        if chan > 0: # For now, just operate as if there is one channel
-            self.log.warn("Channel {} not suported".format(chan))
-            return
-        reg = offset % 0x80
+        chan = offset // REG_CHAN_OFFSET
+        # Removed channel >0 check to allow multi-channel operation
+        # This needs to be tested further
+
+        reg = offset % REG_CHAN_OFFSET
         if reg == REG_RX_MAX_WORDS_PER_PKT:
             self.get_stream_spec().packet_samples = value
         elif reg == REG_RX_CMD_NUM_WORDS_HI:
@@ -253,6 +334,10 @@ class NocBlockRegs:
     def read_protover(self):
         return 0xFFFF & self.protover
 
+    def read_reg_compat_num(self):
+        # Register compatibility number: (MAJOR << 16) | MINOR
+        return (RADIO_MAJOR_COMPAT << 16) | RADIO_MINOR_COMPAT
+
     def read_port_cnt(self):
         return (self.num_stream_ep & 0x3FF) | \
             ((self.num_blocks & 0x3FF) << 10) | \
@@ -277,15 +362,6 @@ class NocBlockRegs:
             assert(offset % 4 == 0)
             index = (offset // 4) - 1
             return self.adjacency_list_reg[index]
-
-    def write(self, addr, value):
-        if addr == 0x1040 or addr == 0x10C0:
-            self.log.trace("Storing value: 0x:{:08X} to self.radio_reg for data loopback test".format(value))
-            self.radio_reg = value
-        # assuming 2 channels, out of bounds is
-        # BASE + 2 * CHAN_OFFSET = 0x1000 + 2 * 0x80 = 0x1100
-        elif 0x1000 <= addr < 0x1100:
-            self.write_radio(addr, value)
 
     def read_port_reg(self, addr):
         port = addr // 0x40

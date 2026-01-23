@@ -109,7 +109,7 @@ freq_range_t rhodium_radio_control_impl::_get_lo_freq_range(const std::string& n
         return freq_range_t{RHODIUM_LO1_MIN_FREQ, RHODIUM_LO1_MAX_FREQ};
     } else if (name == RHODIUM_LO2) {
         // The Lowband LO is a fixed frequency
-        return freq_range_t{_get_lowband_lo_freq(), _get_lowband_lo_freq()};
+        return freq_range_t(_get_lowband_lo_freq(), _get_lowband_lo_freq());
     } else {
         throw uhd::runtime_error(
             "LO frequency range must be retrieved for each stage individually");

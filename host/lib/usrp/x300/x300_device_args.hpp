@@ -41,6 +41,8 @@ public:
         , _download_fpga("download-fpga", false)
         , _recv_frame_size("recv_frame_size", DATA_FRAME_MAX_SIZE)
         , _send_frame_size("send_frame_size", DATA_FRAME_MAX_SIZE)
+        , _enable_force_mtu("force_mtu", false)
+        , _force_mtu("force_mtu", 0)
     {
         // nop
     }
@@ -141,6 +143,14 @@ public:
     {
         return _send_frame_size.get();
     }
+    bool enable_force_mtu() const
+    {
+        return _enable_force_mtu.get();
+    }
+    size_t get_force_mtu() const
+    {
+        return _force_mtu.get();
+    }
     device_addr_t get_orig_args() const
     {
         return _orig_args;
@@ -181,7 +191,10 @@ public:
                + (_enable_tx_dual_eth.get() ? (_enable_tx_dual_eth.to_string() + ", ")
                                             : "")
                + (_fpga_option.get().empty() ? "" : _fpga_option.to_string() + ", ")
-               + (_download_fpga.get() ? _download_fpga.to_string() + ", " : "");
+               + (_download_fpga.get() ? _download_fpga.to_string() + ", " : "")
+               + (_enable_force_mtu.get() ? _force_mtu.to_string() + ", " : "")
+
+            ;
     }
 
 private:
@@ -263,6 +276,11 @@ private:
         PARSE_DEFAULT(_recv_frame_size)
         PARSE_DEFAULT(_send_frame_size)
 
+        if (dev_args.has_key("force_mtu")) {
+            _enable_force_mtu.set(true);
+            PARSE_DEFAULT(_force_mtu);
+        }
+
         // Sanity check params
         _enforce_range(_master_clock_rate, MIN_TICK_RATE, MAX_TICK_RATE);
         _enforce_discrete(_system_ref_rate, EXTERNAL_FREQ_OPTIONS);
@@ -294,6 +312,8 @@ private:
     constrained_device_args_t::bool_arg _download_fpga;
     constrained_device_args_t::num_arg<size_t> _recv_frame_size;
     constrained_device_args_t::num_arg<size_t> _send_frame_size;
+    constrained_device_args_t::bool_arg _enable_force_mtu;
+    constrained_device_args_t::num_arg<size_t> _force_mtu;
 
     device_addr_t _orig_args;
 };

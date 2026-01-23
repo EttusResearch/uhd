@@ -19,11 +19,13 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
 include $(BASE_DIR)/../lib/rfnoc/utils/Makefile.srcs
 include Makefile.srcs
+include $(BASE_DIR)/../lib/axi4s_sv/Makefile.srcs
 
 DESIGN_SRCS += $(abspath \
 $(RFNOC_CORE_SRCS) \
 $(RFNOC_UTIL_SRCS) \
 $(RFNOC_BLOCK_RADIO_SRCS) \
+$(AXI4S_SV_SRCS) \
 )
 
 #-------------------------------------------------

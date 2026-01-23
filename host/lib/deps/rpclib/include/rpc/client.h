@@ -18,7 +18,8 @@ namespace rpc {
 //! functions. This class supports calling functions synchronously and
 //! asynchronously. When the client object is created, it initiates connecting
 //! to the given server asynchronically and disconnects when it is destroyed.
-class client {
+class client
+{
 public:
     //! \brief Constructs a client.
     //!
@@ -30,10 +31,10 @@ public:
     //! \param addr The address of the server to connect to. This might be an
     //! IP address or a host name, too.
     //! \param port The port on the server to connect to.
-    client(std::string const &addr, uint16_t port);
+    client(std::string const& addr, uint16_t port);
 
     //! \cond DOXYGEN_SKIP
-    client(client const &) = delete;
+    client(client const&) = delete;
     //! \endcond
 
     //! \brief Destructor.
@@ -56,7 +57,7 @@ public:
     //!
     //! \throws rpc::rpc_error if the server responds with an error.
     template <typename... Args>
-    RPCLIB_MSGPACK::object_handle call(std::string const &func_name, Args... args);
+    RPCLIB_MSGPACK::object_handle call(std::string const& func_name, Args&&... args);
 
     //! \brief Calls a function asynchronously with the given name and
     //! arguments.
@@ -75,8 +76,8 @@ public:
     //! \returns A std::future, possibly holding a future result
     //! (which is a RPCLIB_MSGPACK::object).
     template <typename... Args>
-    std::future<RPCLIB_MSGPACK::object_handle> async_call(std::string const &func_name,
-                                                   Args... args);
+    std::future<RPCLIB_MSGPACK::object_handle> async_call(
+        std::string const& func_name, Args&&... args);
 
     //! \brief Sends a notification with the given name and arguments (if any).
     //!
@@ -91,7 +92,7 @@ public:
     //! \note This function returns immediately (possibly before the
     //! notification is written to the socket).
     template <typename... Args>
-    void send(std::string const &func_name, Args... args);
+    void send(std::string const& func_name, Args&&... args);
 
     //! \brief Returns the timeout setting of this client in milliseconds.
     //!
@@ -125,10 +126,11 @@ private:
     enum class request_type { call = 0, notification = 2 };
 
     void wait_conn();
-    void post(std::shared_ptr<RPCLIB_MSGPACK::sbuffer> buffer, int idx,
-              std::string const& func_name,
-              std::shared_ptr<rsp_promise> p);
-    void post(RPCLIB_MSGPACK::sbuffer *buffer);
+    void post(std::shared_ptr<RPCLIB_MSGPACK::sbuffer> buffer,
+        int idx,
+        std::string const& func_name,
+        std::shared_ptr<rsp_promise> p);
+    void post(RPCLIB_MSGPACK::sbuffer* buffer);
     int get_next_call_idx();
     RPCLIB_NORETURN void throw_timeout(std::string const& func_name);
 
@@ -136,6 +138,6 @@ private:
     static constexpr double buffer_grow_factor = 1.8;
     RPCLIB_DECLARE_PIMPL()
 };
-}
+} // namespace rpc
 
 #include "rpc/client.inl"

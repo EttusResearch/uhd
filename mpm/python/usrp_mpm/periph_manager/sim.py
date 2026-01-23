@@ -57,11 +57,14 @@ class SimEthDispatcher:
         """
         with IPRoute() as ipr:
             valid_iface_idx = ipr.link_lookup(ifname=self.if_name)[0]
-            link_info = ipr.get_links(valid_iface_idx)[0]
+            link_list = ipr.get_links(ifindex=valid_iface_idx)
+            if len(link_list) == 0:
+                self.log.warning(f"Cannot get link info for interface {self.if_name}")
+                return
+            link_info = link_list[0]
             real_addr = link_info.get_attr('IFLA_ADDRESS')
             if addr != real_addr:
-                self.log.warning("Cannot change ip address on simulator! Requested: {}, Actual: {}"
-                                 .format(addr, real_addr))
+                self.log.warning(f"Cannot change ip address on simulator! Requested: {addr}, Actual: {real_addr}")
 
 class sim(PeriphManagerBase):
     """This is a periph manager that is designed to run on a regular
@@ -302,6 +305,10 @@ class sim(PeriphManagerBase):
     def get_time_sources(self):
         " Returns list of valid time sources "
         return (CLOCK_SOURCE_INTERNAL,)
+
+    def get_time_source(self):
+        " Returns the current time source "
+        return CLOCK_SOURCE_INTERNAL
 
     def get_clock_sources(self):
         " Lists all available clock sources. "

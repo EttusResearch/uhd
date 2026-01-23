@@ -292,6 +292,7 @@ class USRPPowerGenerator(SignalGeneratorBase):
         self._amplitude = float(options.get('ampl', 1/numpy.sqrt(2)))
         self._pwr_dbfs = 20 * numpy.log10(self._amplitude)
         self._tone_freq = 0
+        self._usrp.set_tx_rate(self._rate, self._chan)
         stream_args = uhd.usrp.StreamArgs('fc32', 'sc16')
         stream_args.channels = [self._chan]
         self._streamer = self._usrp.get_tx_stream(stream_args)

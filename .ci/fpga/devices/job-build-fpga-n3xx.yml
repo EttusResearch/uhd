@@ -198,6 +198,13 @@ parameters:
       image_core_name: usrp_n320_fpga_XQ
       timeout: 720
       max_attempts: 2
+- name: additional_setup_steps
+  type: stepList
+  default: []
+- name: rfnoc_include_dir
+  type: string
+  default: ""
+  displayName: RFNoC OOT module path
 
 
 stages:
@@ -227,6 +234,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/n3xx
       target_full_matrix: ${{ parameters.n300_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.n300_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 - stage: provide_n310_fpga_images_stage
   displayName: Provide N310 FPGA Images
@@ -253,6 +262,8 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/n3xx
       target_full_matrix: ${{ parameters.n310_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.n310_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 - stage: provide_n320_fpga_images_stage
   displayName: Provide N320 FPGA Images
@@ -279,3 +290,5 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/n3xx
       target_full_matrix: ${{ parameters.n320_full_targets_matrix }}
       target_reduced_matrix: ${{ parameters.n320_reduced_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}

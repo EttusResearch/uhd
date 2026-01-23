@@ -70,6 +70,11 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
     if (hint.has_key("resource"))
         return usrp2_addrs;
 
+    // Return an empty list of addresses when a product is specified,
+    // since a product is intended for a different, non-usrp2, device.
+    if (hint.has_key("product"))
+        return usrp2_addrs;
+
     // if no address was specified, send a broadcast on each interface
     if (not hint.has_key("addr")) {
         for (const if_addrs_t& if_addrs : get_if_addrs()) {
@@ -161,14 +166,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
                 new_addr["name"]   = "";
                 new_addr["serial"] = "";
             }
-
-            // filter the discovered device below by matching optional keys
-            if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
-                and (not hint.has_key("serial")
-                     or hint["serial"] == new_addr["serial"])) {
-                usrp2_addrs.push_back(new_addr);
-            }
-
+            usrp2_addrs.push_back(new_addr);
             // dont break here, it will exit the while loop
             // just continue on to the next loop iteration
         }

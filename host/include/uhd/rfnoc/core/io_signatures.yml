@@ -225,26 +225,35 @@ axis_chdr:
     type: from-master
     width: 1
 
-  #
-  # - TODO
-  #
-  # Register Access (AXI-Lite)
-  # - TODO
-  #
-  # DMA (AXI-Stream)
-  # - TODO
-  #
-  # Transceiver Pins
-  # - TODO
-  #
-  # Misc Pins
-  # - Port Info x 4 (Output from transport adapter to tell software via global_regs what type of bitstream is loaded, e.g., X4, CG, etc.)
-  # - IRQ x 4
-  # - Link Up x 4
-  # - Link Activity x 4
-
 pps:
   type: broadcaster-listener
   ports:
   - name: pps
     width: 1
+
+gpio:
+  parameters:
+    width: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+  type:
+    master-slave
+  ports:
+  - name: gpio_out
+    type: from-master
+    width: "${parameters['width']}"
+  - name: gpio_ddr
+    type: from-master
+    width: "${parameters['width']}"
+  - name: gpio_in
+    type: to-master
+    width: "${parameters['width']}"
+
+radio_state:
+  parameters:
+    num_ports: ${ config.device.parameters['NUM_PORTS_PER_RADIO'] }
+  type:
+    broadcaster-listener
+  ports:
+  - name: radio_state_rx_running
+    width: "${parameters['num_ports']}"
+  - name: radio_state_tx_running
+    width: "${parameters['num_ports']}"

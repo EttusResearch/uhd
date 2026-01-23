@@ -7,6 +7,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <chrono>
 #include <string>
 #include <thread>
 

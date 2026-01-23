@@ -51,13 +51,13 @@
  * The minimum log level is defined by `-DUHD_LOG_MIN_LEVEL` at compile time,
  * and this value can be increased at runtime by specifying the `UHD_LOG_LEVEL`
  * environment variable. This minimum logging level applies to any form of
- * runtime logging. Thus for example if this minimum is set to 3 (`info`), then
- * during runtime no logging at levels below 3 can be provided.
+ * runtime logging. Thus for example if this minimum is set to 2 (`info`), then
+ * during runtime no logging at levels below 2 can be provided.
  *
- * The following set the minimum logging level to 3 (`info`):
- *   - Example pre-processor define: `-DUHD_LOG_MIN_LEVEL=3`
+ * The following set the minimum logging level to 2 (`info`):
+ *   - Example pre-processor define: `-DUHD_LOG_MIN_LEVEL=2`
  *   - Example pre-processor define: `-DUHD_LOG_MIN_LEVEL=info`
- *   - Example environment variable: `export UHD_LOG_LEVEL=3`
+ *   - Example environment variable: `export UHD_LOG_LEVEL=2`
  *   - Example environment variable: `export UHD_LOG_LEVEL=info`
  *
  * The actual log level for console and file logging can be configured by
@@ -66,9 +66,9 @@
  * `-DUHD_LOG_CONSOLE_LEVEL` and `-DUHD_LOG_FILE_LEVEL`, respectively.
  *
  * These variables can be the name of a verbosity enum or integer value:
- *   - Example pre-processor define: `-DUHD_LOG_CONSOLE_LEVEL=3`
+ *   - Example pre-processor define: `-DUHD_LOG_CONSOLE_LEVEL=2`
  *   - Example pre-processor define: `-DUHD_LOG_CONSOLE_LEVEL=info`
- *   - Example environment variable: `export UHD_LOG_CONSOLE_LEVEL=3`
+ *   - Example environment variable: `export UHD_LOG_CONSOLE_LEVEL=2`
  *   - Example environment variable: `export UHD_LOG_CONSOLE_LEVEL=info`
  *
  * The `UHD_LOG_FILE_LEVEL` variable can be used in the same way.
@@ -136,7 +136,7 @@ boost::optional<uhd::log::severity_level> UHD_API parse_log_level_from_string(
  */
 struct UHD_API logging_info
 {
-    logging_info() : verbosity(uhd::log::off) {}
+    logging_info() : verbosity(uhd::log::off), line(0) {}
     logging_info(const boost::posix_time::ptime& time_,
         const uhd::log::severity_level& verbosity_,
         const std::string& file_,

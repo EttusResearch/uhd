@@ -10,13 +10,16 @@
 
 
 module rfnoc_block_radio_tb #(
-  parameter int CHDR_W     = 128, // CHDR bus width
-  parameter int ITEM_W     = 32,  // Sample width
-  parameter int NIPC       = 2,   // Number of samples per radio clock cycle
-  parameter int NUM_PORTS  = 2,   // Number of radio channels
-  parameter int STALL_PROB = 25,  // Probability of AXI BFM stall
-  parameter int STB_PROB   = 80,  // Probability of radio STB asserting
-  parameter bit TEST_REGS  = 1    // Do register tests
+    parameter int CHDR_W          = 128,  // CHDR bus width
+    parameter int ITEM_W          = 32,   // Sample width
+    parameter int NIPC            = 2,    // Number of samples per radio clock cycle
+    parameter int NUM_PORTS       = 2,    // Number of radio channels
+    parameter int STALL_PROB      = 25,   // Probability of AXI BFM stall
+    parameter int STB_PROB        = 80,   // Probability of radio STB asserting
+    parameter bit TEST_REGS       = 1,    // Do register tests
+    parameter bit EN_COMP_GAIN_TX = 0,    // Enable TX gain compensation
+    parameter bit EN_COMP_GAIN_RX = 0,    // Enable RX gain compensation
+    parameter bit EN_FIFO_OUT_REG = 0     // Add output register after SRL FIFOs
 );
 
   // Include macros and time declarations for use with PkgTestExec
@@ -28,9 +31,15 @@ module rfnoc_block_radio_tb #(
   import PkgRfnocBlockCtrlBfm::*;
   import PkgAxisCtrlBfm::*;
   import PkgChdrBfm::*;
+  import PkgRandom::*;
+  import PkgComplex::*;
+  import PkgMath::*;
+  import PkgCtrlIfaceBfm::RESERVED_TS;
+  import ctrlport_pkg::*;
 
   // Pull in radio register offsets and constants
   `include "rfnoc_block_radio_regs.vh"
+  `include "../../../dsp/timed_complex_gain_regs.svh"
 
 
   // Simulation Parameters
@@ -62,8 +71,20 @@ module rfnoc_block_radio_tb #(
   // strobed in or out. We need to make sure this latency is constant. The
   // actual amount of latency is not critical since there's always an unknown
   // but constant amount of latency in the RF front end.
-  localparam int RADIO_TX_LATENCY = (NIPC > 1) ? 4 : 2;
-  localparam int RADIO_RX_LATENCY = (NIPC > 1) ? 2 : 0;
+  localparam int FEATURE_COMP_GAIN_LATENCY = 6;
+
+  localparam int CORE_TX_LATENCY  = (NIPC > 1) ? 4 : 2;
+  localparam int CORE_RX_LATENCY  = (NIPC > 1) ? 2 : 0;
+
+
+  localparam int RADIO_TX_LATENCY = (EN_COMP_GAIN_TX) ?
+    CORE_TX_LATENCY + FEATURE_COMP_GAIN_LATENCY :
+    CORE_TX_LATENCY;
+  localparam int RADIO_RX_LATENCY = (EN_COMP_GAIN_RX) ?
+    CORE_RX_LATENCY + FEATURE_COMP_GAIN_LATENCY :
+    CORE_RX_LATENCY;
+
+  localparam int ALIGN_W  = (NIPC > 1) ? $clog2(NIPC) : 1; // Width of radio alignment counters
 
   // Calculate an appropriate delay to use for future timed TX/RX tests in
   // terms of the radio time ticks. RX takes a lot longer because you have to
@@ -73,6 +94,28 @@ module rfnoc_block_radio_tb #(
   localparam int TX_CMD_DELAY = 200;
   localparam int RX_CMD_DELAY = 500*NIPC;
 
+  // Feature Registers
+  localparam int FEATURES_EN_COMP_GAIN_TX_POS = 0;
+  localparam int FEATURES_EN_COMP_GAIN_RX_POS = 1;
+  localparam logic [31:0] EN_COMP_GAIN_TX_MSK = 1 << FEATURES_EN_COMP_GAIN_TX_POS;
+  localparam logic [31:0] EN_COMP_GAIN_RX_MSK = 1 << FEATURES_EN_COMP_GAIN_RX_POS;
+
+  localparam int MAX_COMPONENT_VALUE = 2**(ITEM_W/2-1)-1;
+  localparam int MIN_COMPONENT_VALUE = -2**(ITEM_W/2-1);
+
+  // Complex gain parameters
+  localparam int COMPLEX_GAIN_COEFF_W = CTRLPORT_DATA_W; // Width of complex gain input
+  localparam int GAIN_FXP_FRACT_W     = 14;              // Fractional bits in complex gain
+
+  typedef logic [COMPLEX_GAIN_COEFF_W/2-1:0] coeff_component_t;
+
+  localparam logic [COMPLEX_GAIN_COEFF_W-1:0] DEFAULT_GAIN_FXP =
+    {coeff_component_t'(1 << GAIN_FXP_FRACT_W),  // Real = 1.0
+     coeff_component_t'(0)};                     // Imag = 0.0
+
+  // FIFO size calculation
+  localparam int CMD_FIFO_SPACE_MAX = 2**CMD_FIFO_SIZE_LOG2 +
+                                      (EN_FIFO_OUT_REG ? CMD_FLOP_SIZE : 0);
 
 
   //---------------------------------------------------------------------------
@@ -108,6 +151,7 @@ module rfnoc_block_radio_tb #(
 
   typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
   typedef ChdrData #(CHDR_W, ITEM_W)::item_t      sample_t;
+  typedef bit signed [ITEM_W/2-1:0]               complex_component_t;
 
   // Bus functional model for a software block controller
   RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = new(backend, m_ctrl, s_ctrl);
@@ -191,12 +235,15 @@ module rfnoc_block_radio_tb #(
 
 
   rfnoc_block_radio #(
-    .THIS_PORTID (THIS_PORTID),
-    .CHDR_W      (CHDR_W),
-    .NIPC        (NIPC),
-    .ITEM_W      (ITEM_W),
-    .NUM_PORTS   (NUM_PORTS),
-    .MTU         (MTU)
+    .THIS_PORTID      (THIS_PORTID),
+    .CHDR_W           (CHDR_W),
+    .NIPC             (NIPC),
+    .ITEM_W           (ITEM_W),
+    .NUM_PORTS        (NUM_PORTS),
+    .MTU              (MTU),
+    .EN_COMP_GAIN_TX  (EN_COMP_GAIN_TX),
+    .EN_COMP_GAIN_RX  (EN_COMP_GAIN_RX),
+    .EN_FIFO_OUT_REG  (EN_FIFO_OUT_REG)
   ) rfnoc_block_radio_i (
     .rfnoc_chdr_clk          (backend.chdr_clk),
     .s_rfnoc_chdr_tdata      (s_rfnoc_chdr_tdata_flat),
@@ -257,31 +304,66 @@ module rfnoc_block_radio_tb #(
   endtask : write_shared
 
   // Read a 32-bit register at offset "addr" from radio "radio_num"
-  task automatic read_radio(int radio_num, logic [19:0] addr, output logic [31:0] data);
-    addr = addr + RADIO_BASE_ADDR + (radio_num * 2**RADIO_ADDR_W);
-    blk_ctrl.reg_read(addr, data);
+  task automatic read_radio(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
+                            output logic [31:0] data,
+                            input chdr_timestamp_t timestamp = RESERVED_TS);
+    addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
+    blk_ctrl.reg_read(addr, data, timestamp);
   endtask : read_radio
 
   // Read a 64-bit register at offset "addr" from radio "radio_num"
-  task automatic read_radio_64(int radio_num, logic [19:0] addr, output logic [63:0] data);
-    addr = addr + RADIO_BASE_ADDR + (radio_num * 2**RADIO_ADDR_W);
+  task automatic read_radio_64(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
+                               output logic [63:0] data);
+    addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
     blk_ctrl.reg_read(addr,   data[31:0]);
     blk_ctrl.reg_read(addr+4, data[63:32]);
   endtask : read_radio_64
 
   // Write a 32-bit register at offset "addr" in radio "radio_num"
-  task automatic write_radio(int radio_num, logic [19:0] addr, logic [31:0] data);
-    addr = addr + RADIO_BASE_ADDR + (radio_num * 2**RADIO_ADDR_W);
-    blk_ctrl.reg_write(addr, data);
+  task automatic write_radio(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
+                             logic [31:0] data, chdr_timestamp_t timestamp = RESERVED_TS);
+    addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
+    blk_ctrl.reg_write(addr, data, timestamp);
   endtask : write_radio
 
   // Write a 64-bit register at offset "addr" in radio "radio_num"
-  task automatic write_radio_64(int radio_num, logic [19:0] addr, logic [63:0] data);
-    addr = addr + RADIO_BASE_ADDR + (radio_num * 2**RADIO_ADDR_W);
+  task automatic write_radio_64(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
+                                logic [63:0] data);
+    addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
     blk_ctrl.reg_write(addr,   data[31:0]);
     blk_ctrl.reg_write(addr+4, data[63:32]);
   endtask : write_radio_64
 
+  // Apply gain to sample value
+  function automatic bit [ITEM_W-1:0] apply_gain(bit [ITEM_W-1:0] sample, complex_t gain);
+    real samp_real = real'(signed'(sample[ITEM_W/2 +: ITEM_W/2]));
+    real samp_imag = real'(signed'(sample[0 +: ITEM_W/2]));
+    complex_t samp_cplx = '{samp_real, samp_imag};
+    complex_t out_cplx = mul(samp_cplx, gain);
+
+    // Round and clip
+    int out_rounded_real = $rtoi(round(out_cplx.re, ROUND_HALF_UP));
+    int out_rounded_imag = $rtoi(round(out_cplx.im, ROUND_HALF_UP));
+    int out_clipped_real = (out_rounded_real > MAX_COMPONENT_VALUE) ?
+                              MAX_COMPONENT_VALUE :   // if too big, coerce to max
+                              (out_rounded_real < MIN_COMPONENT_VALUE) ?
+                                MIN_COMPONENT_VALUE : // if too small, coerce to min
+                                out_rounded_real;     // otherwise, keep value as is
+    int out_clipped_imag = (out_rounded_imag >  MAX_COMPONENT_VALUE) ?
+                              MAX_COMPONENT_VALUE :   // if too big, coerce to max
+                              (out_rounded_imag < MIN_COMPONENT_VALUE) ?
+                                MIN_COMPONENT_VALUE : // if too small, coerce to min
+                                out_rounded_imag;     // otherwise, keep value as is
+    return { complex_component_t'(out_clipped_real) , complex_component_t'(out_clipped_imag) };
+  endfunction : apply_gain
+
+  // Convert complex gain from floating point to fixed point representation
+  function automatic logic [COMPLEX_GAIN_COEFF_W-1:0] complex_to_fixed(complex_t gain);
+    int signed real_fxp = $rtoi(gain.re * (1 << GAIN_FXP_FRACT_W));
+    int signed imag_fxp = $rtoi(gain.im * (1 << GAIN_FXP_FRACT_W));
+    return {coeff_component_t'(real_fxp[COMPLEX_GAIN_COEFF_W/2-1:0]),
+            coeff_component_t'(imag_fxp[COMPLEX_GAIN_COEFF_W/2-1:0])};
+  endfunction : complex_to_fixed
 
   // Start an Rx acquisition
   task automatic start_rx (
@@ -297,12 +379,12 @@ module rfnoc_block_radio_tb #(
     end else begin
       // Do a finite acquisition (num samps and done)
       if (VERBOSE) $display("Radio %0d: Start RX, receive %0d words", radio_num, num_words);
-      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, num_words);
+      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, num_words);
       cmd = RX_CMD_FINITE;
     end
 
     // Write command to radio
-    write_radio(radio_num, REG_RX_CMD, cmd);
+    write_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, cmd);
   endtask : start_rx
 
 
@@ -321,7 +403,7 @@ module rfnoc_block_radio_tb #(
     end else begin
       // Do a finite acquisition (num samps and done)
       if (VERBOSE) $display("Radio %0d: Start RX, receive %0d words (timed)", radio_num, num_words);
-      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, num_words);
+      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, num_words);
       cmd = RX_CMD_FINITE;
     end
 
@@ -329,44 +411,61 @@ module rfnoc_block_radio_tb #(
     cmd[RX_CMD_TIMED_POS] = 1'b1;
 
     // Set start time for command
-    write_radio_64(radio_num, REG_RX_CMD_TIME_LO, start_time);
+    write_radio_64(radio_num, REG_RX_CMD_TIME_LO, REG_PORT_RX_ADDR_OFFSET, start_time);
 
     // Write command to radio
-    write_radio(radio_num, REG_RX_CMD, cmd);
+    write_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, cmd);
   endtask : start_rx_timed
 
 
   // Send the Rx stop command to the indicated radio channel
   task automatic stop_rx(int radio_num);
     if (VERBOSE) $display("Radio %0d: Stop RX", radio_num);
-    write_radio(radio_num, REG_RX_CMD, RX_CMD_STOP);
+    write_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, RX_CMD_STOP);
   endtask : stop_rx
 
 
   // Receive num_words from the indicated radio channel and verify that it's
   // sequential and contiguous data aligned on packet boundaries.
   task automatic check_rx(
-    int radio_num,    // Radio to receive from and check
-    int num_words     // Number of radio words to expect
+    int radio_num,                // Radio to receive from and check
+    int num_words,                // Number of radio words to expect
+    complex_t gain = '{1.0, 0.0}, // Gain applied to samples by the block
+    int gain_offset = 0           // Offset to apply to gain index
   );
-    int              sample_count;    // Counter to track number of samples generated
-    bit [ITEM_W-1:0] sample_val;      // Value of the next sample
-    chdr_word_t      data[$];         // Array of data for the received packet
-    int              num_samples;     // Number of samples to send
-    int              byte_length;     // Number of data bytes in next packet
-    int              expected_length; // Expected byte length of the next packet
-    int              valid_words;     // Number of valid chdr_word_t in next packet
+    int              sample_count;              // Counter to track number of samples generated
+    bit [ITEM_W-1:0] sample_val;                // Value of the next sample
+    chdr_word_t      data[$], metadata[$];      // Array of data/metadata for the received packet
+    int              num_samples;               // Number of samples to send
+    int              byte_length;               // Number of data bytes in next packet
+    int              expected_length;           // Expected byte length of the next packet
+    int              valid_words;               // Number of valid chdr_word_t in next packet
+    packet_info_t    pkt_info;                  // Header information for the received packet
+    complex_t        default_gain = '{1.0, 0.0};// Default gain (no change)
+
 
     num_samples = num_words * NIPC;
 
     sample_count = 0;
     while (sample_count < num_samples) begin
       // Fetch the next packet
-      blk_ctrl.recv(radio_num, data, byte_length);
+      blk_ctrl.recv_adv(radio_num, data, byte_length, metadata, pkt_info);
 
       // Take the first sample as a starting count for the remaining samples
       if (sample_count == 0) begin
-        sample_val = data[0][ITEM_W-1:0];
+        // Workaround for  XSim bug with following complex_t struct comparison:
+        // ```
+        // if (gain != default_gain || gain_offset != 0) begin
+        // ```
+        // This comparison does not work as expected in Vivado 2021.1 simulator,
+        // so we break it down into component comparisons.
+        if (gain.re != default_gain.re ||
+            gain.im != default_gain.im ||
+            gain_offset != 0) begin
+          sample_val = pkt_info.timestamp[ITEM_W-1:0] - (NIPC*RADIO_RX_LATENCY);
+        end else begin
+          sample_val = data[0][ITEM_W-1:0];
+        end
       end
 
       // Calculate expected length in bytes
@@ -390,13 +489,18 @@ module rfnoc_block_radio_tb #(
       for (int i = 0; i < valid_words; i++) begin
         // Check each sample of the next chdr_word_t value
         for (int sub_sample = 0; sub_sample < $bits(chdr_word_t)/ITEM_W; sub_sample++) begin
-          sample_t actual;
+          sample_t actual, expected_val;
           actual = data[i][ITEM_W*sub_sample +: ITEM_W];  // Work around Vivado 2018.3 issue
+          if (sample_count < gain_offset) begin
+            expected_val = sample_val;
+          end else begin
+            expected_val = apply_gain(sample_val, gain);
+          end
           `ASSERT_ERROR(
-            actual == sample_val,
+            actual == expected_val,
             $sformatf(
               "Sample %0d (0x%X) didn't match expected value (0x%X)",
-              sample_count, actual, sample_val
+              sample_count, actual, expected_val
             )
           );
           sample_val++;
@@ -486,23 +590,31 @@ module rfnoc_block_radio_tb #(
 
   // Verify the output of a packet, expecting it at a specific time
   task automatic check_tx_timed (
-    int                radio_num,        // Radio channel to transmit on
-    bit   [63:0]       num_words,        // Number of radio words to expect
-    logic [63:0]       start_time = 'X,  // Expected start time
-    bit   [ITEM_W-1:0] start_val  = 1    // Initial sample value
+    int                radio_num,               // Radio channel to transmit on
+    bit   [63:0]       num_words,               // Number of radio words to expect
+    logic [63:0]       start_time = 'X,         // Expected start time
+    bit   [ITEM_W-1:0] start_val  = 1,          // Initial sample value
+    complex_t          gain     = '{1.0, 0.0},  // Expected complex gain
+    int                gain_offset = 0          // Offset to apply to gain index
   );
     int sample_val;           // Expected value of next sample
     bit found = 0;
     int offset = 0;
     int num_samps;
+    bit [ITEM_W-1:0] expected_sample, expected_start;
 
     // Wait for the expected packet to start. Look for the start value in any
     // sample position. Save the sample offset so we can verify it's correct.
+    if (gain_offset != 0) begin
+      expected_start = start_val;
+    end else begin
+      expected_start = apply_gain(start_val, gain);
+    end
     while (!found) begin
       @(posedge radio_clk);
       if (radio_tx_stb[radio_num]) begin
         for (int samp_i = 0; samp_i < NIPC; samp_i++) begin
-          if (radio_tx_data[radio_num*RADIO_W + samp_i*ITEM_W +: ITEM_W] == start_val) begin
+          if (radio_tx_data[radio_num*RADIO_W + samp_i*ITEM_W +: ITEM_W] == expected_start) begin
             found = 1;
             offset = samp_i;
             break;
@@ -524,11 +636,16 @@ module rfnoc_block_radio_tb #(
     sample_val = start_val;
     num_samps = num_words * NIPC;
     for (int samp_count = 0; samp_count < num_samps; samp_count++) begin
+      if (samp_count >= gain_offset) begin
+        expected_sample = apply_gain(sample_val, gain);
+      end else begin
+        expected_sample = sample_val;
+      end
       `ASSERT_ERROR(
-        radio_tx_data[radio_num*RADIO_W + offset*ITEM_W +: ITEM_W] == sample_val,
+        radio_tx_data[radio_num*RADIO_W + offset*ITEM_W +: ITEM_W] == expected_sample,
         $sformatf({"Radio output doesn't match expected value\n",
           "Expected 0x%X but found 0x%X at sample %0d (word offset %0d)."},
-          sample_val, radio_tx_data[radio_num*RADIO_W + ITEM_W*offset +: ITEM_W],
+          expected_sample, radio_tx_data[radio_num*RADIO_W + ITEM_W*offset +: ITEM_W],
           samp_count, offset)
       );
       sample_val++;
@@ -547,11 +664,12 @@ module rfnoc_block_radio_tb #(
 
   // Verify the output of a packet
   task automatic check_tx (
-    int              radio_num,        // Radio to transmit on
-    bit [63:0]       num_words,        // Number of radio words to expect
-    bit [ITEM_W-1:0] start_val  = 1    // Initial sample value
+    int              radio_num,               // Radio to transmit on
+    bit [63:0]       num_words,               // Number of radio words to expect
+    bit [ITEM_W-1:0] start_val  = 1,          // Initial sample value
+    complex_t        gain       = '{1.0, 0.0} // Expected complex gain
   );
-    check_tx_timed(radio_num, num_words, 'X, start_val);
+    check_tx_timed(radio_num, num_words, 'X, start_val, gain);
   endtask : check_tx
 
 
@@ -657,15 +775,15 @@ module rfnoc_block_radio_tb #(
     test.start_test("General Registers", 10us);
 
     // Test loopback enable register (read/write)
-    read_radio(radio_num, REG_LOOPBACK_EN, val);
+    read_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "Initial value of REG_LOOPBACK_EN is incorrect");
-    write_radio(radio_num, REG_LOOPBACK_EN, 32'hFFFFFFFF);
-    read_radio(radio_num, REG_LOOPBACK_EN, val);
+    write_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, 32'hFFFFFFFF);
+    read_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 1, "REG_LOOPBACK_EN didn't update correctly");
-    write_radio(radio_num, REG_LOOPBACK_EN, 0);
+    write_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, 0);
 
     // Read ITEM_W and NIPC (read only)
-    read_radio(radio_num, REG_RADIO_WIDTH, val);
+    read_radio(radio_num, REG_RADIO_WIDTH, REG_PORT_GENERAL_ADDR_OFFSET, val);
     `ASSERT_ERROR(val[15:0] == NIPC, "Value of NIPC register is incorrect");
     `ASSERT_ERROR(val[31:16] == ITEM_W, "Value of ITEM_W register is incorrect");
 
@@ -682,7 +800,7 @@ module rfnoc_block_radio_tb #(
 
     // REG_RX_CMD_STATUS (read only)
     expected = CMD_FIFO_SPACE_MAX;
-    read_radio(radio_num, REG_RX_STATUS, val);
+    read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_STATUS not initially CMD_FIFO_SPACE_MAX");
 
     // REG_RX_CMD (read/write). Test a bogus timed stop command just to check
@@ -690,67 +808,67 @@ module rfnoc_block_radio_tb #(
     expected = 0;
     expected[RX_CMD_POS +: RX_CMD_LEN] = RX_CMD_STOP;
     expected[RX_CMD_TIMED_POS] = 1'b1;
-    write_radio(radio_num, REG_RX_CMD, expected);
-    read_radio(radio_num, REG_RX_CMD, val);
+    write_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_CMD didn't update correctly");
 
     // REG_RX_CMD_NUM_WORDS (read/write)
-    read_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, val);
+    read_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_CMD_NUM_WORDS not initially 0");
     expected = 64'hFEDCBA9876543210;
-    write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, expected);
-    read_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, val);
+    write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(
       val == expected[num_words_len-1:0],
      "REG_RX_CMD_NUM_WORDS didn't update correctly"
     );
 
     // REG_RX_CMD_TIME (read/write)
-    read_radio_64(radio_num, REG_RX_CMD_TIME_LO, val);
+    read_radio_64(radio_num, REG_RX_CMD_TIME_LO, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_CMD_TIME not initially 0");
     expected = 64'hBEADFEED0123F1FE;
-    write_radio_64(radio_num, REG_RX_CMD_TIME_LO, expected);
-    read_radio_64(radio_num, REG_RX_CMD_TIME_LO, val);
+    write_radio_64(radio_num, REG_RX_CMD_TIME_LO, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio_64(radio_num, REG_RX_CMD_TIME_LO, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_CMD_TIME didn't update correctly");
 
     // REG_RX_MAX_WORDS_PER_PKT (read/write)
-    read_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, val);
+    read_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 64, "REG_RX_MAX_WORDS_PER_PKT not initially 64");
     expected = 32'hABBEC001;
-    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, expected);
-    read_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, val);
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_MAX_WORDS_PER_PKT didn't update correctly");
 
     // REG_RX_ERR_PORT (read/write)
-    read_radio(radio_num, REG_RX_ERR_PORT, val);
+    read_radio(radio_num, REG_RX_ERR_PORT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_ERR_PORT not initially 0");
     expected = $urandom() & 32'h000001FF;
-    write_radio(radio_num, REG_RX_ERR_PORT, expected);
-    read_radio(radio_num, REG_RX_ERR_PORT, val);
+    write_radio(radio_num, REG_RX_ERR_PORT, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_ERR_PORT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_ERR_PORT didn't update correctly");
 
     // REG_RX_ERR_REM_PORT (read/write)
-    read_radio(radio_num, REG_RX_ERR_REM_PORT, val);
+    read_radio(radio_num, REG_RX_ERR_REM_PORT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_ERR_REM_PORT not initially 0");
     expected = $urandom() & 32'h000001FF;
-    write_radio(radio_num, REG_RX_ERR_REM_PORT, expected);
-    read_radio(radio_num, REG_RX_ERR_REM_PORT, val);
+    write_radio(radio_num, REG_RX_ERR_REM_PORT, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_ERR_REM_PORT, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_ERR_REM_PORT didn't update correctly");
 
     // REG_RX_ERR_REM_EPID (read/write)
-    read_radio(radio_num, REG_RX_ERR_REM_EPID, val);
+    read_radio(radio_num, REG_RX_ERR_REM_EPID, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_ERR_REM_EPID not initially 0");
     expected = $urandom() & 32'h0000FFFF;
-    write_radio(radio_num, REG_RX_ERR_REM_EPID, expected);
-    read_radio(radio_num, REG_RX_ERR_REM_EPID, val);
+    write_radio(radio_num, REG_RX_ERR_REM_EPID, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_ERR_REM_EPID, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_ERR_REM_EPID didn't update correctly");
 
     // REG_RX_ERR_ADDR (read/write)
-    read_radio(radio_num, REG_RX_ERR_ADDR, val);
+    read_radio(radio_num, REG_RX_ERR_ADDR, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_RX_ERR_ADDR not initially 0");
     expected = $urandom() & 32'h000FFFFF;
-    write_radio(radio_num, REG_RX_ERR_ADDR, expected);
-    read_radio(radio_num, REG_RX_ERR_ADDR, val);
+    write_radio(radio_num, REG_RX_ERR_ADDR, REG_PORT_RX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_RX_ERR_ADDR, REG_PORT_RX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_RX_ERR_ADDR didn't update correctly");
 
     // REG_RX_DATA (read-only)
@@ -758,7 +876,7 @@ module rfnoc_block_radio_tb #(
       // Loop until we get a valid sample from the register (not X's)
       do @(posedge radio_clk); while (!radio_rx_stb[radio_num]);
       radio_val_0 = radio_rx_data[RADIO_W*radio_num +: RADIO_W] & {32{1'b1}};
-      read_radio(radio_num, REG_RX_DATA, val);
+      read_radio(radio_num, REG_RX_DATA, REG_PORT_RX_ADDR_OFFSET, val);
       do @(posedge radio_clk); while (!radio_rx_stb[radio_num]);
       radio_val_1 = radio_rx_data[RADIO_W*radio_num +: RADIO_W] & {32{1'b1}};
     end while ($isunknown(val));
@@ -780,67 +898,127 @@ module rfnoc_block_radio_tb #(
     test.start_test("Tx Registers", 50us);
 
     // REG_TX_IDLE_VALUE (read/write)
-    read_radio(radio_num, REG_TX_IDLE_VALUE, val);
+    read_radio(radio_num, REG_TX_IDLE_VALUE, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_TX_IDLE_VALUE not initially 0");
     expected = $urandom() & {ITEM_W{1'b1}};
-    write_radio(radio_num, REG_TX_IDLE_VALUE, expected);
-    read_radio(radio_num, REG_TX_IDLE_VALUE, val);
+    write_radio(radio_num, REG_TX_IDLE_VALUE, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_IDLE_VALUE, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_IDLE_VALUE didn't update correctly");
 
     // REG_TX_ERROR_POLICY (read/write)
-    read_radio(radio_num, REG_TX_ERROR_POLICY, val);
+    read_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, val);
     expected = TX_ERR_POLICY_PACKET;
     `ASSERT_ERROR(val == expected, "REG_TX_ERROR_POLICY not initially 'PACKET'");
     expected = TX_ERR_POLICY_BURST;
-    write_radio(radio_num, REG_TX_ERROR_POLICY, expected);
-    read_radio(radio_num, REG_TX_ERROR_POLICY, val);
+    write_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERROR_POLICY didn't update to 'BURST'");
     expected = TX_ERR_POLICY_PACKET;
-    write_radio(radio_num, REG_TX_ERROR_POLICY, 32'h03); // Try to set both bits!
-    read_radio(radio_num, REG_TX_ERROR_POLICY, val);
+    write_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET,
+                32'h03);  // Try to set both bits!
+    read_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERROR_POLICY didn't revert to 'PACKET'");
 
     // REG_TX_ERR_PORT (read/write)
-    read_radio(radio_num, REG_TX_ERR_PORT, val);
+    read_radio(radio_num, REG_TX_ERR_PORT, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_TX_ERR_PORT not initially 0");
     expected = $urandom() & 32'h000001FF;
-    write_radio(radio_num, REG_TX_ERR_PORT, expected);
-    read_radio(radio_num, REG_TX_ERR_PORT, val);
+    write_radio(radio_num, REG_TX_ERR_PORT, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_ERR_PORT, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERR_PORT didn't update correctly");
 
     // REG_TX_ERR_REM_PORT (read/write)
-    read_radio(radio_num, REG_TX_ERR_REM_PORT, val);
+    read_radio(radio_num, REG_TX_ERR_REM_PORT, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_TX_ERR_REM_PORT not initially 0");
     expected = $urandom() & 32'h000001FF;
-    write_radio(radio_num, REG_TX_ERR_REM_PORT, expected);
-    read_radio(radio_num, REG_TX_ERR_REM_PORT, val);
+    write_radio(radio_num, REG_TX_ERR_REM_PORT, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_ERR_REM_PORT, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERR_REM_PORT didn't update correctly");
 
     // REG_TX_ERR_REM_EPID (read/write)
-    read_radio(radio_num, REG_TX_ERR_REM_EPID, val);
+    read_radio(radio_num, REG_TX_ERR_REM_EPID, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_TX_ERR_REM_EPID not initially 0");
     expected = $urandom() & 32'h0000FFFF;
-    write_radio(radio_num, REG_TX_ERR_REM_EPID, expected);
-    read_radio(radio_num, REG_TX_ERR_REM_EPID, val);
+    write_radio(radio_num, REG_TX_ERR_REM_EPID, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_ERR_REM_EPID, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERR_REM_EPID didn't update correctly");
 
     // REG_TX_ERR_ADDR (read/write)
-    read_radio(radio_num, REG_TX_ERR_ADDR, val);
+    read_radio(radio_num, REG_TX_ERR_ADDR, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == 0, "REG_TX_ERR_ADDR not initially 0");
     expected = $urandom() & 32'h000FFFFF;
-    write_radio(radio_num, REG_TX_ERR_ADDR, expected);
-    read_radio(radio_num, REG_TX_ERR_ADDR, val);
+    write_radio(radio_num, REG_TX_ERR_ADDR, REG_PORT_TX_ADDR_OFFSET, expected);
+    read_radio(radio_num, REG_TX_ERR_ADDR, REG_PORT_TX_ADDR_OFFSET, val);
     `ASSERT_ERROR(val == expected, "REG_TX_ERR_ADDR didn't update correctly");
 
     test.end_test();
   endtask : test_tx_registers
 
+  task automatic test_comp_gain_registers(int radio_num, bit is_tx);
+    logic [31:0] val, expected;
+    int tx_rx_addr_offset = is_tx ? REG_CGAIN_TX_OFFSET : REG_CGAIN_RX_OFFSET;
 
+    // Test default coefficients
+    read_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + tx_rx_addr_offset,
+      val);
+    expected = {16'h4000,  // Default real coefficient (1.0)
+                16'h0000}; // Default imag coefficient (0.0)
+    `ASSERT_ERROR(val == expected, "REG_CGAIN_COEFF not initially correct");
+
+    // Test setting coefficients
+    expected = Rand#(32)::rand_bit();
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + tx_rx_addr_offset,
+      expected);
+    read_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + tx_rx_addr_offset,
+      val);
+    `ASSERT_ERROR(val == expected, "REG_CGAIN_COEFF didn't update correctly");
+
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + tx_rx_addr_offset,
+      {16'h4000, 16'h0000});
+
+  endtask : test_comp_gain_registers
+
+  task automatic test_feature_registers(int radio_num);
+    logic [31:0] val, expected;
+
+    test.start_test("Feature Registers", 10us);
+
+    if (EN_COMP_GAIN_RX) begin
+      // REG_FEATURES (read only)
+      read_radio(radio_num, REG_FEATURES_PRESENT, REG_PORT_GENERAL_ADDR_OFFSET, val);
+      expected = EN_COMP_GAIN_RX_MSK;
+      `ASSERT_ERROR(val & EN_COMP_GAIN_RX_MSK == expected,
+        "REG_FEATURES does not indicate COMP_GAIN_RX support.");
+
+      test_comp_gain_registers(radio_num, 0);
+    end;
+
+    if (EN_COMP_GAIN_TX) begin
+      // REG_FEATURES (read only)
+      read_radio(radio_num, REG_FEATURES_PRESENT, REG_PORT_GENERAL_ADDR_OFFSET, val);
+      expected = EN_COMP_GAIN_TX_MSK;
+      `ASSERT_ERROR(val & EN_COMP_GAIN_TX_MSK == expected,
+        "REG_FEATURES does not indicate COMP_GAIN_TX support.");
+
+      test_comp_gain_registers(radio_num, 1);
+    end;
+
+    test.end_test();
+  endtask : test_feature_registers
 
   task automatic test_rx(int radio_num);
 
     // Set default packet length
-    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, WPP);
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, WPP);
 
     //---------------------
     // Finite Acquisitions
@@ -999,7 +1177,6 @@ module rfnoc_block_radio_tb #(
 
     if (NIPC > 1) begin
       ChdrPacket #(CHDR_W) chdr_packet;
-      localparam int ALIGN_W   = (NIPC > 1) ? $clog2(NIPC) : 1;
       localparam int NUM_WORDS = 4;
       bit [ALIGN_W-1:0] radio_align;     // Radio alignment
       bit [ALIGN_W-1:0] req_align;       // Request alignment
@@ -1018,14 +1195,15 @@ module rfnoc_block_radio_tb #(
           // Set radio alignment and set the data to be the same as the time to
           // make it easier to validate.
           radio_clk_gen.clk_wait_f();
-          new_time = (radio_time & ('1 << ALIGN_W)) | radio_align;
+          new_time = radio_time;
+          new_time[ALIGN_W-1:0] = radio_align;
           radio_gen.set_time(new_time);
           radio_gen.set_data(radio_num, radio_init(new_time));
           radio_clk_gen.clk_wait_f();
 
           // Create future time that's aligned for our request
           expected_time = new_time + RX_CMD_DELAY;
-          expected_time = (expected_time & ('1 << ALIGN_W)) | req_align;
+          expected_time[ALIGN_W-1:0] = req_align;
 
           // Send Rx command with time in the future
           start_rx_timed(radio_num, NUM_WORDS, expected_time);
@@ -1074,10 +1252,10 @@ module rfnoc_block_radio_tb #(
       test.start_test("Rx (now, overflow)", 200us);
 
       // Configure the error reporting registers
-      write_radio(radio_num, REG_RX_ERR_PORT, TX_ERR_DST_PORT);
-      write_radio(radio_num, REG_RX_ERR_REM_PORT, TX_ERR_REM_DST_PORT);
-      write_radio(radio_num, REG_RX_ERR_REM_EPID, TX_ERR_REM_DST_EPID);
-      write_radio(radio_num, REG_RX_ERR_ADDR, TX_ERR_ADDRESS);
+      write_radio(radio_num, REG_RX_ERR_PORT, REG_PORT_RX_ADDR_OFFSET, TX_ERR_DST_PORT);
+      write_radio(radio_num, REG_RX_ERR_REM_PORT, REG_PORT_RX_ADDR_OFFSET, TX_ERR_REM_DST_PORT);
+      write_radio(radio_num, REG_RX_ERR_REM_EPID, REG_PORT_RX_ADDR_OFFSET, TX_ERR_REM_DST_EPID);
+      write_radio(radio_num, REG_RX_ERR_ADDR, REG_PORT_RX_ADDR_OFFSET, TX_ERR_ADDRESS);
 
       // Stall the BFM to force a backup of data
       blk_ctrl.set_slave_stall_prob(radio_num, 100);
@@ -1086,7 +1264,7 @@ module rfnoc_block_radio_tb #(
       start_rx(radio_num);
 
       // Check that we're acquiring
-      read_radio(radio_num, REG_RX_STATUS, val);
+      read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
       `ASSERT_ERROR(
         val[CMD_FIFO_SPACE_POS +: CMD_FIFO_SPACE_LEN] != CMD_FIFO_SPACE_MAX,
         "Rx radio reports that it is not busy"
@@ -1099,7 +1277,7 @@ module rfnoc_block_radio_tb #(
       blk_ctrl.set_slave_stall_prob(radio_num, STALL_PROB);
 
       // Verify that Rx stopped
-      read_radio(radio_num, REG_RX_STATUS, val);
+      read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
       `ASSERT_ERROR(
         val[CMD_FIFO_SPACE_POS +: CMD_FIFO_SPACE_LEN] == CMD_FIFO_SPACE_MAX,
         "Rx radio reports that it is still busy after overflow"
@@ -1156,7 +1334,7 @@ module rfnoc_block_radio_tb #(
       // Send one continuous command and verify the queue fullness
       start_rx(radio_num);
       expected = CMD_FIFO_SPACE_MAX-1;
-      read_radio(radio_num, REG_RX_STATUS, val);
+      read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
       `ASSERT_ERROR(
         val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not decrement"
@@ -1167,7 +1345,7 @@ module rfnoc_block_radio_tb #(
         start_rx(radio_num, WPP);
       end
       expected = 0;
-      read_radio(radio_num, REG_RX_STATUS, val);
+      read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
       `ASSERT_ERROR(
         val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not reach 0"
@@ -1176,7 +1354,7 @@ module rfnoc_block_radio_tb #(
       // Issue stop command and verify that the FIFO empties
       stop_rx(radio_num);
       expected = CMD_FIFO_SPACE_MAX;
-      read_radio(radio_num, REG_RX_STATUS, val);
+      read_radio(radio_num, REG_RX_STATUS, REG_PORT_RX_ADDR_OFFSET, val);
       `ASSERT_ERROR(
         val[CMD_FIFO_SPACE_POS+:CMD_FIFO_SPACE_LEN] == expected,
         "CMD_FIFO_SPACE did not return to max"
@@ -1223,10 +1401,10 @@ module rfnoc_block_radio_tb #(
     test.start_test("Tx Init", 50us);
 
     // Configure the error reporting registers
-    write_radio(radio_num, REG_TX_ERR_PORT, TX_ERR_DST_PORT);
-    write_radio(radio_num, REG_TX_ERR_REM_PORT, TX_ERR_REM_DST_PORT);
-    write_radio(radio_num, REG_TX_ERR_REM_EPID, TX_ERR_REM_DST_EPID);
-    write_radio(radio_num, REG_TX_ERR_ADDR, TX_ERR_ADDRESS);
+    write_radio(radio_num, REG_TX_ERR_PORT, REG_PORT_TX_ADDR_OFFSET, TX_ERR_DST_PORT);
+    write_radio(radio_num, REG_TX_ERR_REM_PORT, REG_PORT_TX_ADDR_OFFSET, TX_ERR_REM_DST_PORT);
+    write_radio(radio_num, REG_TX_ERR_REM_EPID, REG_PORT_TX_ADDR_OFFSET, TX_ERR_REM_DST_EPID);
+    write_radio(radio_num, REG_TX_ERR_ADDR, REG_PORT_TX_ADDR_OFFSET, TX_ERR_ADDRESS);
 
     test.end_test();
 
@@ -1261,7 +1439,7 @@ module rfnoc_block_radio_tb #(
 
     test.start_test("Tx (now, underflow)", 50us);
 
-    write_radio(radio_num, REG_TX_ERROR_POLICY, TX_ERR_POLICY_PACKET);
+    write_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, TX_ERR_POLICY_PACKET);
 
     // Send some bursts without EOB
     start_tx(radio_num, WPP*3/4, 1, 0);  // Skip EOB
@@ -1318,7 +1496,6 @@ module rfnoc_block_radio_tb #(
 
     if (NIPC > 1) begin
       ChdrPacket #(CHDR_W) chdr_packet;
-      localparam int ALIGN_W   = (NIPC > 1) ? $clog2(NIPC) : 1;
       localparam int NUM_WORDS = 4;
       bit [ALIGN_W-1:0] radio_align;     // Radio alignment
       bit [ALIGN_W-1:0] req_align;       // Request alignment
@@ -1337,13 +1514,14 @@ module rfnoc_block_radio_tb #(
 
           // Set radio alignment
           radio_clk_gen.clk_wait_f();
-          new_time = (radio_time & ('1 << ALIGN_W)) | radio_align;
+          new_time = radio_time;
+          new_time[ALIGN_W-1:0] = radio_align;
           radio_gen.set_time(new_time);
           radio_clk_gen.clk_wait_f();
 
           // Create future time that's aligned for our request
           expected_time = new_time + TX_CMD_DELAY;
-          expected_time = (expected_time & ('1 << ALIGN_W)) | req_align;
+          expected_time[ALIGN_W-1:0] = req_align;
 
           // Transmit and verify the output
           start_tx_timed(radio_num, NUM_WORDS, expected_time);
@@ -1375,9 +1553,9 @@ module rfnoc_block_radio_tb #(
     do begin
       // Set the policy
       if (policy == WAIT_FOR_EOP) begin
-        write_radio(radio_num, REG_TX_ERROR_POLICY, TX_ERR_POLICY_PACKET);
+        write_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, TX_ERR_POLICY_PACKET);
       end else if (policy == WAIT_FOR_EOB) begin
-        write_radio(radio_num, REG_TX_ERROR_POLICY, TX_ERR_POLICY_BURST);
+        write_radio(radio_num, REG_TX_ERROR_POLICY, REG_PORT_TX_ADDR_OFFSET, TX_ERR_POLICY_BURST);
       end
 
       radio_data = radio_tx_data[radio_num];
@@ -1442,7 +1620,7 @@ module rfnoc_block_radio_tb #(
     test.start_test("Idle Loopback", 50us);
 
     // Turn on loopback
-    write_radio(radio_num, REG_LOOPBACK_EN, 1);
+    write_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, 1);
 
     // This test ensures we get the Tx output on Rx and not the TB's simulated
     // radio data. It also tests updating the idle value. Run the test twice to
@@ -1450,11 +1628,11 @@ module rfnoc_block_radio_tb #(
     repeat (2) begin
       // Set idle value
       idle = $urandom();
-      write_radio(radio_num, REG_TX_IDLE_VALUE, idle);
+      write_radio(radio_num, REG_TX_IDLE_VALUE, REG_PORT_TX_ADDR_OFFSET, idle);
 
       // Grab a radio word and check that it equals the IDLE value
-      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, WPP);
-      write_radio(radio_num, REG_RX_CMD, RX_CMD_FINITE);
+      write_radio_64(radio_num, REG_RX_CMD_NUM_WORDS_LO, REG_PORT_RX_ADDR_OFFSET, WPP);
+      write_radio(radio_num, REG_RX_CMD, REG_PORT_RX_ADDR_OFFSET, RX_CMD_FINITE);
       blk_ctrl.recv(radio_num, data, byte_length);
 
       // Check the length
@@ -1484,13 +1662,13 @@ module rfnoc_block_radio_tb #(
     // unexpected.
 
     // Configure the Tx error reporting registers
-    write_radio(radio_num, REG_TX_ERR_PORT,     TX_ERR_DST_PORT);
-    write_radio(radio_num, REG_TX_ERR_REM_PORT, TX_ERR_REM_DST_PORT);
-    write_radio(radio_num, REG_TX_ERR_REM_EPID, TX_ERR_REM_DST_EPID);
-    write_radio(radio_num, REG_TX_ERR_ADDR,     TX_ERR_ADDRESS);
+    write_radio(radio_num, REG_TX_ERR_PORT, REG_PORT_TX_ADDR_OFFSET, TX_ERR_DST_PORT);
+    write_radio(radio_num, REG_TX_ERR_REM_PORT, REG_PORT_TX_ADDR_OFFSET, TX_ERR_REM_DST_PORT);
+    write_radio(radio_num, REG_TX_ERR_REM_EPID, REG_PORT_TX_ADDR_OFFSET, TX_ERR_REM_DST_EPID);
+    write_radio(radio_num, REG_TX_ERR_ADDR, REG_PORT_TX_ADDR_OFFSET, TX_ERR_ADDRESS);
 
     // Set packet length
-    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, WPP);
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, WPP);
 
     // Loopback a few packets, back-to-back. This code has a race condition
     // since there's a delay between when we start Tx and when Rx starts, due
@@ -1505,10 +1683,279 @@ module rfnoc_block_radio_tb #(
     check_error(ERR_TX_EOB_ACK);
 
     // Turn off loopback
-    write_radio(radio_num, REG_LOOPBACK_EN, 0);
+    write_radio(radio_num, REG_LOOPBACK_EN, REG_PORT_GENERAL_ADDR_OFFSET, 0);
 
     test.end_test();
   endtask : test_loopback_and_idle;
+
+  task automatic test_complex_gain_tx(int radio_num);
+    logic [31:0] start_val = 1;
+    chdr_timestamp_t ts, ts_gain;
+    complex_t test_gain_coeffs[4] =
+      '{'{1.0, 0.0}, '{0.5, 0.5}, '{-0.5, -0.5}, '{0.0, 1.0}};
+    bit unsigned [ALIGN_W-1:0] radio_align = 0;     // Radio alignment
+    bit unsigned [ALIGN_W-1:0] req_align   = 0;     // Request alignment
+    chdr_timestamp_t new_time;
+
+    // Comp Gain Tx - untimed
+
+    test.start_test("Comp Gain TX (now)", 50us);
+
+    // Set default packet length
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, WPP);
+
+    foreach (test_gain_coeffs[index]) begin
+      // Set coefficients
+      write_radio(radio_num,
+        REG_CGAIN_COEFF,
+        REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+        complex_to_fixed(test_gain_coeffs[index]));
+      if (VERBOSE) begin
+        $display("Radio %0d Tx Comp Gain Coefficients: %0f + j%0f",
+          radio_num,
+          test_gain_coeffs[index].re,
+          test_gain_coeffs[index].im);
+      end
+      // Grab and verify a partial packet
+      start_tx(radio_num, WPP*4, start_val);
+      check_tx(radio_num, WPP*4, start_val, test_gain_coeffs[index]);
+      check_error(ERR_TX_EOB_ACK);
+    end
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+      DEFAULT_GAIN_FXP);
+
+    test.end_test();
+
+    // Comp Gain Tx - timed
+    test.start_test("Comp Gain TX (timed)", 100us);
+
+    foreach (test_gain_coeffs[index]) begin
+      while ($isunknown(radio_time)) @(posedge radio_clk);
+      ts = radio_time + NIPC*TX_CMD_DELAY;
+      write_radio(radio_num,
+        REG_CGAIN_COEFF,
+        REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+        complex_to_fixed(test_gain_coeffs[index]),
+        ts + CORE_TX_LATENCY * NIPC
+      );
+      if (VERBOSE) begin
+        $display("Radio %0d Tx Comp Gain Coefficients: %0f + j%0f",
+          radio_num,
+          test_gain_coeffs[index].re,
+          test_gain_coeffs[index].im);
+      end
+      start_tx_timed(radio_num, WPP*4, ts, start_val);
+      check_tx_timed(radio_num, WPP*4, ts, start_val, test_gain_coeffs[index]);
+      check_error(ERR_TX_EOB_ACK);
+    end
+
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+      DEFAULT_GAIN_FXP);
+
+    test.end_test();
+
+    // Skip if NIPC=1 since alignment doesn't matter
+    if (NIPC == 1) return;
+    // Comp Gain Tx - timed, aligned
+    test.start_test("Comp Gain TX (timed, aligned)", NIPC*200us);
+    repeat (NIPC) begin : align_loop_radio
+      repeat (NIPC) begin : align_loop_request
+        foreach (test_gain_coeffs[index]) begin
+          // Set radio alignment
+          while ($isunknown(radio_time)) begin
+            radio_clk_gen.clk_wait_f();
+          end
+          new_time = radio_time;
+          new_time[ALIGN_W-1:0] = radio_align;
+          radio_gen.set_time(new_time);
+          radio_gen.set_data(radio_num, radio_init(new_time));
+          radio_clk_gen.clk_wait_f();
+          ts = new_time + NIPC*TX_CMD_DELAY;
+          ts[ALIGN_W-1:0] = req_align;
+          // Set gain to be applied halfway through the packet.
+          ts_gain = ts + SPP*2;
+          write_radio(radio_num,
+            REG_CGAIN_COEFF,
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+            complex_to_fixed(test_gain_coeffs[index]),
+            ts_gain + CORE_TX_LATENCY * NIPC
+          );
+          if (VERBOSE) begin
+            $display({"Radio %0d Tx Comp Gain : %0f + j%0f, req align %0d, radio align %0d"},
+              radio_num,
+              test_gain_coeffs[index].re,
+              test_gain_coeffs[index].im,
+              req_align,
+              radio_align);
+          end
+          start_tx_timed(radio_num, WPP*4, ts, start_val);
+          check_tx_timed(radio_num, WPP*4, ts, start_val, test_gain_coeffs[index], SPP*2);
+          check_error(ERR_TX_EOB_ACK);
+
+          // Reset coefficients to defaults
+          write_radio(radio_num,
+            REG_CGAIN_COEFF,
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+            DEFAULT_GAIN_FXP);
+        end
+        req_align++;
+      end
+      radio_align++;
+    end
+
+
+    // Reset the radio time and outputs
+    radio_gen.set_time(0);
+    radio_gen.set_data_all(radio_gen.radio_init_all(0));
+    radio_clk_gen.clk_wait_r(2);
+
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_TX_OFFSET,
+      DEFAULT_GAIN_FXP);
+
+    test.end_test();
+
+  endtask : test_complex_gain_tx
+
+  task automatic test_complex_gain_rx(int radio_num);
+    chdr_timestamp_t ts, ts_gain;
+    complex_t test_gain_coeffs[4] =
+      '{'{1.0, 0.0}, '{0.5, 0.5}, '{-0.5, -0.5}, '{0.0, 1.0}};
+    bit [ALIGN_W-1:0] radio_align = 0;     // Radio alignment
+    bit [ALIGN_W-1:0] req_align   = 0;     // Request alignment
+    chdr_timestamp_t new_time;
+
+    // Comp Gain RX - untimed
+
+    test.start_test("Comp Gain RX (now)", NIPC * 50us);
+
+    // Set default packet length
+    write_radio(radio_num, REG_RX_MAX_WORDS_PER_PKT, REG_PORT_RX_ADDR_OFFSET, WPP);
+
+    foreach (test_gain_coeffs[index]) begin
+      // Set coefficients
+      write_radio(radio_num,
+        REG_CGAIN_COEFF,
+        REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+        complex_to_fixed(test_gain_coeffs[index]));
+      if (VERBOSE) begin
+        $display("Radio %0d Rx Comp Gain Coefficients: %0f + j%0f",
+          radio_num,
+          test_gain_coeffs[index].re,
+          test_gain_coeffs[index].im);
+      end
+      // Grab and verify a partial packet
+      start_rx(radio_num, WPP*4);
+      check_rx(radio_num, WPP*4, test_gain_coeffs[index]);
+    end
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+      DEFAULT_GAIN_FXP);
+
+    test.end_test();
+
+    // Comp Gain RX - timed
+    test.start_test("Comp Gain RX (timed)",(NIPC * 50us));
+
+    foreach (test_gain_coeffs[index]) begin
+      while ($isunknown(radio_time)) @(posedge radio_clk);
+      ts = radio_time + NIPC*RX_CMD_DELAY;
+      write_radio(radio_num,
+        REG_CGAIN_COEFF,
+        REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+        complex_to_fixed(test_gain_coeffs[index]),
+        ts - (RADIO_RX_LATENCY*NIPC)
+      );
+      if (VERBOSE) begin
+        $display("Radio %0d Rx Comp Gain Coefficients: %0f + j%0f",
+          radio_num,
+          test_gain_coeffs[index].re,
+          test_gain_coeffs[index].im);
+      end
+      start_rx_timed(radio_num, WPP*4, ts);
+      check_rx(radio_num, WPP*4, test_gain_coeffs[index]);
+    end
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+      DEFAULT_GAIN_FXP);
+
+    test.end_test();
+
+    // Skip if NIPC=1 since alignment doesn't matter
+    if (NIPC == 1) return;
+    // Comp Gain RX - timed, aligned
+    test.start_test("Comp Gain RX (timed, aligned)", NIPC * 300us);
+    repeat (NIPC) begin : align_loop_radio
+      repeat (NIPC) begin : align_loop
+        foreach (test_gain_coeffs[index]) begin
+          // Set radio alignment
+          while ($isunknown(radio_time)) begin
+            radio_clk_gen.clk_wait_f();
+          end
+          new_time = radio_time;
+          new_time[ALIGN_W-1:0] = radio_align;
+          radio_gen.set_time(new_time);
+          radio_gen.set_data(radio_num, radio_init(new_time));
+          radio_clk_gen.clk_wait_f();
+          // Set request alignment
+          ts = new_time + RX_CMD_DELAY;
+          ts[ALIGN_W-1:0] = req_align;
+          // Set gain to be applied halfway through the packet.
+          ts_gain = ts + SPP*2;
+          write_radio(radio_num,
+            REG_CGAIN_COEFF,
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+            complex_to_fixed(test_gain_coeffs[index]),
+            ts_gain - (RADIO_RX_LATENCY*NIPC)
+          );
+          if (VERBOSE) begin
+            $display({"Radio %0d Rx Comp Gain: %0f + j%0f,",
+              " req align %0d, radio align %0d"},
+              radio_num,
+              test_gain_coeffs[index].re,
+              test_gain_coeffs[index].im,
+              req_align,
+              radio_align);
+          end
+          start_rx_timed(radio_num, WPP*4, ts);
+          check_rx(radio_num, WPP*4, test_gain_coeffs[index], ts_gain - ts);
+          // Reset coefficients to defaults
+          write_radio(radio_num,
+            REG_CGAIN_COEFF,
+            REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+            DEFAULT_GAIN_FXP);
+        end
+        req_align++;
+      end
+      radio_align++;
+    end
+
+
+    // Reset the radio time and outputs
+    radio_gen.set_time(0);
+    radio_gen.set_data_all(radio_gen.radio_init_all(0));
+    radio_clk_gen.clk_wait_r(2);
+
+    // Reset coefficients to defaults
+    write_radio(radio_num,
+      REG_CGAIN_COEFF,
+      REG_PORT_FEAT_ADDR_OFFSET + REG_CGAIN_RX_OFFSET,
+      DEFAULT_GAIN_FXP);
+    test.end_test();
+
+  endtask : test_complex_gain_rx
 
 
 
@@ -1528,8 +1975,10 @@ module rfnoc_block_radio_tb #(
     // Generate a string for the name of this instance of the testbench
     tb_name = $sformatf(
       {"rfnoc_block_radio_tb\nCHDR_W = %0D, ITEM_W = %0D, NIPC = %0D, ",
-      "NUM_PORTS = %0D, STALL_PROB = %0D, STB_PROB = %0D, TEST_REGS = %0D"},
-      CHDR_W, ITEM_W, NIPC, NUM_PORTS, STALL_PROB, STB_PROB, TEST_REGS
+      "NUM_PORTS = %0D, STALL_PROB = %0D, STB_PROB = %0D, TEST_REGS = %0D",
+      "\nEN_COMP_GAIN_TX = %0D, EN_COMP_GAIN_RX = %0D"},
+      CHDR_W, ITEM_W, NIPC, NUM_PORTS, STALL_PROB, STB_PROB, TEST_REGS,
+      EN_COMP_GAIN_TX, EN_COMP_GAIN_RX
     );
 
     test.start_tb(tb_name, NUM_TESTS*5ms);
@@ -1572,11 +2021,14 @@ module rfnoc_block_radio_tb #(
         test_general_registers(radio_num);
         test_rx_registers(radio_num);
         test_tx_registers(radio_num);
+        test_feature_registers(radio_num);
       end
       repeat (NUM_TESTS) begin
         test_rx(radio_num);
         test_tx(radio_num);
         test_loopback_and_idle(radio_num);
+        if (EN_COMP_GAIN_TX) test_complex_gain_tx(radio_num);
+        if (EN_COMP_GAIN_RX) test_complex_gain_rx(radio_num);
       end
     end
 

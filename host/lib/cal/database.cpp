@@ -10,9 +10,9 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <cmrc/cmrc.hpp>
-#include <boost/filesystem.hpp>
 #include <array>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <tuple>
 #include <vector>
@@ -21,7 +21,7 @@ CMRC_DECLARE(rc);
 
 using namespace uhd::usrp::cal;
 namespace rc = cmrc::rc;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 namespace {
 constexpr char LOG_ID[]  = "CAL::DATABASE";

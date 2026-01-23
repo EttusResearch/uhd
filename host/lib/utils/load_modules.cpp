@@ -9,14 +9,14 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/utils/paths.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 /***********************************************************************
  * Module Load Function

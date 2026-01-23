@@ -138,7 +138,7 @@ package PkgComplex;
   function complex_t div(complex_t x, complex_t y);
     complex_t z;
     z.re = (x.re*y.re + x.im*y.im) / (y.re*y.re + y.im*y.im);
-    z.im = (x.im*y.re + x.re*y.im) / (y.re*y.re + y.im*y.im);
+    z.im = (x.im*y.re - x.re*y.im) / (y.re*y.re + y.im*y.im);
     return z;
   endfunction : div
 

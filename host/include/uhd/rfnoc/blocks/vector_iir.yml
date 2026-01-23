@@ -1,5 +1,10 @@
 schema: rfnoc_modtool_args
 module_name: vector_iir
+name: Vector IIR (Average)
+description: |
+  The Vector IIR Block is an RFNoC block that implements an infinite
+  impulse filter with a variable length delay line. It is useful for averaging
+  consecutive power density values.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64

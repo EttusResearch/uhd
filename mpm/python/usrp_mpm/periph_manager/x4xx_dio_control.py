@@ -3,14 +3,17 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""X4xx DIO Control.
-"""
+"""X4xx DIO Control."""
 
 import re
 import signal
 from multiprocessing import Event, Process, Value, current_process
 
-from usrp_mpm.mpmutils import poll_with_timeout, register_chained_signal_handler, set_proc_title
+from usrp_mpm.mpmutils import (
+    poll_with_timeout,
+    register_chained_signal_handler,
+    set_proc_title,
+)
 from usrp_mpm.sys_utils.gpio import Gpio
 
 
@@ -136,6 +139,10 @@ class DioControl:
         DIO_PORTS[0]: (3, 1, 4, 6, 9, 7, 10, 12, 15, 13, 16, 19),
         DIO_PORTS[1]: (16, 19, 15, 13, 10, 12, 9, 7, 4, 6, 3, 1),
     }
+    HDMI_PORT_MAP_LINEAR = {
+        DIO_PORTS[0]: (1, 3, 4, 6, 7, 9, 10, 12, 13, 15, 16, 19),
+        DIO_PORTS[1]: (1, 3, 4, 6, 7, 9, 10, 12, 13, 15, 16, 19),
+    }
     HDMI_FIRST_PIN = 1
 
     # DIO mapping constants
@@ -158,6 +165,10 @@ class DioControl:
         DIO_PORTS[0]: (1, 0, 2, 3, 5, 4, 6, 7, 9, 8, 10, 11),
         DIO_PORTS[1]: (10, 11, 9, 8, 6, 7, 5, 4, 2, 3, 1, 0),
     }
+    DIO_PORT_MAP_LINEAR = {
+        DIO_PORTS[0]: list(range(12)),
+        DIO_PORTS[1]: list(range(12)),
+    }
     DIO_FIRST_PIN = 0
 
     # Register layout/size constants
@@ -178,6 +189,7 @@ class DioControl:
 
     FULL_DIO_FPGA_COMPAT = (7, 5)
     FULL_SPI_FPGA_COMPAT = (7, 7)
+    LINEAR_PIN_MAPPING_COMPAT = (10, 1)
 
     # DIO registers addresses in CPLD
     CPLD_DIO_DIRECTION_REGISTER = 0x30
@@ -198,10 +210,11 @@ class DioControl:
         Simple container class.
         """
 
-        def __init__(self, name, pin_names, pin_map, first_pin):
+        def __init__(self, name, pin_names, pin_map, pin_map_cpld, first_pin):
             self.name = name
             self.pin_names = pin_names
             self.map = pin_map
+            self.cpld_map = pin_map_cpld
             self.first_pin = first_pin
 
     class _PortControl:
@@ -264,11 +277,25 @@ class DioControl:
         # initialize port mapping for HDMI and DIO
         self.port_mappings = {}
         self.mapping = None
+        if self.mboard_regs.get_compat_number() < self.LINEAR_PIN_MAPPING_COMPAT:
+            self.log.debug("DIO uses legacy pin mapping (reordering in software)")
+            linear_mapping = False
+        else:
+            self.log.debug("DIO uses linear pin mapping (no reordering in software)")
+            linear_mapping = True
         self.port_mappings[self.HDMI_MAP_NAME] = self._PortMapDescriptor(
-            self.HDMI_MAP_NAME, self.HDMI_PIN_NAMES, self.HDMI_PORT_MAP, self.HDMI_FIRST_PIN
+            self.HDMI_MAP_NAME,
+            self.HDMI_PIN_NAMES,
+            self.HDMI_PORT_MAP_LINEAR if linear_mapping else self.HDMI_PORT_MAP,
+            self.HDMI_PORT_MAP,
+            self.HDMI_FIRST_PIN,
         )
         self.port_mappings[self.DIO_MAP_NAME] = self._PortMapDescriptor(
-            self.DIO_MAP_NAME, self.DIO_PIN_NAMES, self.DIO_PORT_MAP, self.DIO_FIRST_PIN
+            self.DIO_MAP_NAME,
+            self.DIO_PIN_NAMES,
+            self.DIO_PORT_MAP_LINEAR if linear_mapping else self.DIO_PORT_MAP,
+            self.DIO_PORT_MAP,
+            self.DIO_FIRST_PIN,
         )
         self.set_port_mapping(self.HDMI_MAP_NAME)
         self.log.trace("Spawning DIO fault monitors...")
@@ -361,7 +388,7 @@ class DioControl:
         pins = sorted(self.mapping.map[port])
         return pins[pin]
 
-    def _map_to_register_bit(self, port, pin, lift_portb=True):
+    def _map_to_register_bit(self, port, pin, lift_portb=True, cpld=False):
         """Maps a pin in current mapping scheme to a corresponding bit in register map.
 
         Maps a pin denoted in current mapping scheme to a corresponding bit in
@@ -376,7 +403,7 @@ class DioControl:
         port = self._normalize_port_name(port)
         first_pin = self.mapping.first_pin
         last_pin = first_pin + len(self.mapping.pin_names) - 1
-        port_map = self.mapping.map[port]
+        port_map = self.mapping.cpld_map[port] if cpld else self.mapping.map[port]
 
         if not first_pin <= pin <= last_pin:
             raise RuntimeError(
@@ -395,7 +422,7 @@ class DioControl:
             bit = bit if port == self.DIO_PORTS[0] else bit + self.PORT_BIT_SIZE
         return bit
 
-    def _calc_register_value(self, register, port, pin, value):
+    def _calc_register_value(self, register, port, pin, value, cpld=False):
         """Recalculates register value.
 
         Current register state is read and the bit that corresponds to the
@@ -413,8 +440,8 @@ class DioControl:
         """
         assert value in [0, 1]
 
-        content = self.mboard_regs.peek32(register)
-        bit = self._map_to_register_bit(port, pin)
+        content = self.mboard_cpld.peek32(register) if cpld else self.mboard_regs.peek32(register)
+        bit = self._map_to_register_bit(port, pin, cpld=cpld)
         content = (content | 1 << bit) if value == 1 else (content & ~(1 << bit))
         return content
 
@@ -433,7 +460,7 @@ class DioControl:
         port = self._normalize_port_name(port)
         for i, _ in enumerate(self.mapping.pin_names):
             if i + first_pin in self.mapping.map[port]:
-                set_method(port, i + first_pin, int(values & 1 << i != 0))
+                set_method(port, i + first_pin, (values >> i) & 1)
 
     # --------------------------------------------------------------------------
     # Helper to convert abbreviations to constants defined in DioControl
@@ -751,23 +778,31 @@ class DioControl:
         :param pin: pin to change
         :param value: desired pin value
         """
-        content = self._calc_register_value(self.FPGA_DIO_DIRECTION_REGISTER, port, pin, value)
+        mbrd_content = self._calc_register_value(self.FPGA_DIO_DIRECTION_REGISTER, port, pin, value)
+        cpld_content = self._calc_register_value(
+            self.CPLD_DIO_DIRECTION_REGISTER, port, pin, value, cpld=True
+        )
         # When setting direction pin, order matters. Always switch the component
         # first that will get the driver disabled.
         # This ensures that there wont be two drivers active at a time.
         if value == 1:  # FPGA is driver => write DIO register first
-            self.mboard_cpld.poke32(self.CPLD_DIO_DIRECTION_REGISTER, content)
-            self.mboard_regs.poke32(self.FPGA_DIO_DIRECTION_REGISTER, content)
+            self.mboard_cpld.poke32(self.CPLD_DIO_DIRECTION_REGISTER, cpld_content)
+            self.mboard_regs.poke32(self.FPGA_DIO_DIRECTION_REGISTER, mbrd_content)
         else:  # DIO is driver => write FPGA register first
-            self.mboard_regs.poke32(self.FPGA_DIO_DIRECTION_REGISTER, content)
-            self.mboard_cpld.poke32(self.CPLD_DIO_DIRECTION_REGISTER, content)
+            self.mboard_regs.poke32(self.FPGA_DIO_DIRECTION_REGISTER, mbrd_content)
+            self.mboard_cpld.poke32(self.CPLD_DIO_DIRECTION_REGISTER, cpld_content)
         # Read back values to ensure registers are in sync
-        cpld_content = self.mboard_cpld.peek32(self.CPLD_DIO_DIRECTION_REGISTER)
-        mbrd_content = self.mboard_regs.peek32(self.FPGA_DIO_DIRECTION_REGISTER)
-        if not ((cpld_content == content) and (mbrd_content == content)):
+        cpld_readback = self.mboard_cpld.peek32(self.CPLD_DIO_DIRECTION_REGISTER)
+        mbrd_readback = self.mboard_regs.peek32(self.FPGA_DIO_DIRECTION_REGISTER)
+        if cpld_readback != cpld_content:
             raise RuntimeError(
-                "Direction register content mismatch. Expected:"
-                "0x%0.8X, CPLD: 0x%0.8X, FPGA: 0x%0.8X." % (content, cpld_content, mbrd_content)
+                "CPLD direction register content mismatch: wrote "
+                f"0x{cpld_content:08X} but read back 0x{cpld_readback:08X}"
+            )
+        if mbrd_content != mbrd_readback:
+            raise RuntimeError(
+                "DIO direction register content mismatch: wrote "
+                f"0x{mbrd_content:08X} but read back 0x{mbrd_readback:08X}"
             )
 
     def set_pin_directions(self, port, values):

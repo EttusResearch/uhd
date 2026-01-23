@@ -48,10 +48,14 @@ noc_blocks:
     block_desc: 'radio.yml'             # Block device descriptor file
     parameters:
       NUM_PORTS: 2
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   radio1:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 2
+      EN_COMP_GAIN_TX: 1
+      EN_COMP_GAIN_RX: 1
   fifo0:
     block_desc: 'axi_ram_fifo.yml'
     parameters:
@@ -111,6 +115,7 @@ connections:
   - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
   - { srcblk: _device_, srcport: time,     dstblk: radio1,   dstport: time            }
   - { srcblk: fifo0,    srcport: axi_ram,  dstblk: _device_, dstport: dram            }
+  - { srcblk: _device_, srcport: _none_,   dstblk: _device_, dstport: fp_gpio         }
 
 # A list of all clock domain connections in design
 # ------------------------------------------------

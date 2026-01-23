@@ -85,7 +85,7 @@ def parse_args():
     parser.add_argument(
         "-c",
         "--channels",
-        default=0,
+        default=[0],
         nargs="+",
         type=int,
         help='specifies the channel(s) to use (specify "0", "1", "0 1", etc) [default = 0].',

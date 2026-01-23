@@ -42,8 +42,8 @@ module add_then_mac
    localparam  B0REG_IN = 1;
 
    // Sign extend inputs
-   assign      a_in = (a[17] == 1'b1) ? {7'hff, a} : {7'h00, a};
-   assign      d_in = (d[17] == 1'b1) ? {7'hff, d} : {7'h00, d};
+   assign      a_in = (a[17] == 1'b1) ? {7'h7f, a} : {7'h00, a};
+   assign      d_in = (d[17] == 1'b1) ? {7'h7f, d} : {7'h00, d};
 
    generate
       case(DEVICE)

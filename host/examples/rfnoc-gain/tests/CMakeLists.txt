@@ -41,14 +41,14 @@ foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} ${test_source})
     target_link_libraries(${test_name} uhd rfnoc-gain ${Boost_LIBRARIES})
-    UHD_ADD_TEST(${test_name} ${test_name})
+    UHD_ADD_TEST(${test_name} MODULE_PATH $<TARGET_FILE:rfnoc-gain> ${test_name})
     install(TARGETS ${test_name} RUNTIME DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests COMPONENT tests)
 endforeach(test_source)
 
 if(ENABLE_PYTHON_API)
     foreach(test_source ${pytest_sources})
         get_filename_component(test_name ${test_source} NAME_WE)
-        UHD_ADD_PYTEST(${test_name})
+        UHD_ADD_PYTEST(${test_name} MODULE_PATH $<TARGET_FILE:rfnoc-gain>)
     endforeach(test_source)
     install(FILES ${pytest_sources}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/tests

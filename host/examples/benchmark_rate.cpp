@@ -331,6 +331,90 @@ void benchmark_tx_rate_async_helper(uhd::tx_streamer::sptr tx_stream,
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: benchmark_rate [--help] [--args ARGS] [--duration DURATION]\n"
+        "                      [--rx_subdev RX_SUBDEV] [--tx_subdev TX_SUBDEV]\n"
+        "                      [--rx_stream_args RX_STREAM_ARGS]\n"
+        "                      [--tx_stream_args TX_STREAM_ARGS]\n"
+        "                      [--rx_rate RX_RATE] [--tx_rate TX_RATE]\n"
+        "                      [--rx_spp RX_SPP] [--tx_spp TX_SPP]\n"
+        "                      [--rx_spb RX_SPB] [--tx_spb TX_SPB]\n"
+        "                      [--tx_sample_align TX_SAMPLE_ALIGN]\n"
+        "                      [--rx_otw {sc16,sc8}] [--tx_otw {sc16,sc8}]\n"
+        "                      [--rx_cpu RX_CPU] [--tx_cpu TX_CPU]\n"
+        "                      [--ref {internal,external,mimo,gpsdo}]\n"
+        "                      [--pps {internal,external,mimo,gpsdo}]\n"
+        "                      [--random] [--channels CHANNELS]\n"
+        "                      [--rx_channels RX_CHANNELS]\n"
+        "                      [--tx_channels TX_CHANNELS]\n"
+        "                      [--overrun-threshold OVERRUN_THRESHOLD]\n"
+        "                      [--underrun-threshold UNDERRUN_THRESHOLD]\n"
+        "                      [--drop-threshold DROP_THRESHOLD]\n"
+        "                      [--seq-threshold SEQ_THRESHOLD]\n"
+        "                      [--tx_delay TX_DELAY] [--rx_delay RX_DELAY]\n"
+        "                      [--priority PRIORITY] [--multi_streamer]"
+        "\n\n"
+        "This example program benchmarks the streaming performance of a USRP\n"
+        "device at user-specified RX and/or TX sample rate per channel. Specify\n"
+        "--rx_rate for an RX-only test, --tx_rate for a TX-only test, or both for\n"
+        "a full-duplex test. As a result, overruns, underruns, dropped packets,\n"
+        "and other relevant statistics are reported.\n"
+        "\n"
+        "Key features:\n"
+        "  - Supports RX-only, TX-only, or simultaneous RX+TX benchmarking.\n"
+        "  - Configurable sample rates, buffer sizes, packet sizes, and data\n"
+        "    formats.\n"
+        "  - Multi-channel and multi-USRP device support.\n"
+        "  - Reports detailed statistics and error thresholds.\n"
+        "\n"
+        "Benchmark Statistics Overview:\n"
+        "  Transmit (TX) Statistics\n"
+        "    - Num transmitted samples: The total number of samples successfully\n"
+        "      sent from the host to the USRP device.\n"
+        "    - Num underruns detected: The number of times the TX radio transmit\n"
+        "      buffer ran empty because the host did not supply data fast enough\n"
+        "      (EVENT_CODE_UNDERFLOW or EVENT_CODE_UNDERFLOW_IN_PACKET).\n"
+        "    - Num sequence errors (Tx): The count of sequence error events from\n"
+        "      host to device, indicating packet loss or drops between the host\n"
+        "      and the USRP device (EVENT_CODE_SEQ_ERROR or\n"
+        "      EVENT_CODE_SEQ_ERROR_IN_BURST).\n"
+        "    - Num timeouts (Tx): Number of times the TX streamer was unable to\n"
+        "      send data within the requested time window.\n"
+        "  Receive (RX) Statistics\n"
+        "    - Num received samples: The total number of samples successfully\n"
+        "      received from the USRP device.\n"
+        "    - Num overruns detected: The number of RX radio receive buffer\n"
+        "      overflows, which occur when the host does not read incoming data\n"
+        "      fast enough (ERROR_CODE_OVERFLOW).\n"
+        "    - Num sequence errors (Rx): The count of sequence error events from\n"
+        "      device to host, indicating packet drops between the USRP device\n"
+        "      and the host (detected via the out_of_sequence flag in metadata).\n"
+        "    - Num dropped samples: Number of samples lost during recovery from\n"
+        "      overflow situations.\n"
+        "    - Num late commands: Number of timed receive commands that were\n"
+        "      scheduled for a time in the past (this program uses timed receive\n"
+        "      commands when a --rx-delay is configured or when --multi_streamer\n"
+        "      is configured to run multiple streamers in parallel).\n"
+        "    - Num timeouts (Rx): Number of times the RX streamer could not\n"
+        "      complete a receive request within the allotted time.\n"
+        "\n"
+        "Usage examples:\n"
+        "1. Benchmark RX rate only (single channel, default settings):\n"
+        "     benchmark_rate --args=\"addr=192.168.10.2\" --rx_rate=10e6\n"
+        "                    --duration=10\n"
+        "2. Benchmark TX rate only (single channel, default settings):\n"
+        "     benchmark_rate --args=\"addr=192.168.10.2\" --tx_rate=10e6\n"
+        "                    --duration=10\n"
+        "3. Full-duplex (RX and TX together, single channel):\n"
+        "     benchmark_rate --args=\"addr=192.168.10.2\" --rx_rate=10e6\n"
+        "                    --tx_rate=10e6 --duration=10\n"
+        "4. Set error thresholds to fail early on overruns/underruns:\n"
+        "     benchmark_rate --args=\"addr=192.168.10.2\"\n"
+        "                    --rx_rate=10e6 --tx_rate=10e6\n"
+        "                    --overrun-threshold=10 --underrun-threshold=10\n"
+        "5. Use two USRPs with two channels each:\n"
+        "     benchmark_rate --args=\"addr0=192.168.10.2,addr1=192.168.10.3\"\n"
+        "                    --rx_rate=10e6 --tx_rate=10e6 --channels \"0,1,2,3\"\n";
     // variables to be set by po
     std::string args;
     std::string rx_subdev, tx_subdev;
@@ -354,44 +438,101 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
-        ("rx_subdev", po::value<std::string>(&rx_subdev), "specify the device subdev for RX")
-        ("tx_subdev", po::value<std::string>(&tx_subdev), "specify the device subdev for TX")
-        ("rx_stream_args", po::value<std::string>(&rx_stream_args)->default_value(""), "stream args for RX streamer")
-        ("tx_stream_args", po::value<std::string>(&tx_stream_args)->default_value(""), "stream args for TX streamer")
-        ("rx_rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
-        ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
-        ("rx_spp", po::value<size_t>(&rx_spp), "samples/packet value for RX")
-        ("tx_spp", po::value<size_t>(&tx_spp), "samples/packet value for TX")
-        ("rx_spb", po::value<size_t>(&rx_spb), "samples/buffer value for RX")
-        ("tx_spb", po::value<size_t>(&tx_spb), "samples/buffer value for TX")
-        ("tx_sample_align", po::value<size_t>(&tx_align), "Align samples/packet (use to enforce optimal sample alignment with respect to CHDR width and radio samples per cycle)")
-        ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
-        ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for TX")
+        ("help", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "USRP device selection and configuration "
+            "arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nFor multi-device setups, specify multiple IP addresses (e.g., addr0, addr1) to group multiple USRPs into a "
+            "single virtual device."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\n  --args \"addr0=192.168.10.2,addr1=192.168.10.3\""
+            "\nIf not specified, UHD connects to the first available device.")
+        ("duration", po::value<double>(&duration)->default_value(10.0), "Duration for the test in seconds.")
+        ("rx_subdev", po::value<std::string>(&rx_subdev), "RX subdevice configuration defining the mapping of "
+            "channels to RF RX paths."
+            "\nThe format and available values depend on your USRP model. If not specified, the channels will be numbered "
+            "in order of the devices, daughterboard slots, and their RF RX channels."
+            "\nFor typical applications, this default subdevice configuration is sufficient."
+            "\nNote: this example program expects a single-USRP subdevice configuration which is applied to all USRPs "
+            "equally, if multiple USRPs are configured."
+            "\nExample:"
+            "\nAssume we have an X310 with two UBX daughterboards installed. Then the default channel mapping is:"
+            "\n  - Ch 0 -> A:0 (1st UBX in slot A, RF RX 0)"
+            "\n  - Ch 1 -> B:0 (2nd UBX in slot B, RF RX 0)"
+            "\nSpecifying --subdev=\"B:0 A:0\" would change the channel mapping to:"
+            "\n  - Ch 0 -> B:0 (2nd UBX in slot B RF RX 0)"
+            "\n  - Ch 1 -> A:0 (1st UBX in slot A RF RX 0)")
+        ("tx_subdev", po::value<std::string>(&tx_subdev), "TX subdevice configuration defining the mapping of "
+            "channels to RF TX paths.")
+        ("rx_stream_args", po::value<std::string>(&rx_stream_args)->default_value(""), "Specifies additional "
+            "key-value arguments for configuring the RX streamer. These options allow advanced control over streaming "
+            "behavior, such as buffer sizes or data formats.")
+        ("tx_stream_args", po::value<std::string>(&tx_stream_args)->default_value(""), "Specifies additional "
+            "key-value arguments for configuring the TX streamer.")
+        ("rx_rate", po::value<double>(&rx_rate), "RX sample rate in samples/second. Note that each USRP "
+            "device only supports a set of discrete sample rates, which depend on the hardware model and configuration. "
+            "If you request a rate that is not supported, the USRP device will automatically select and use the closest "
+            "available rate.")
+        ("tx_rate", po::value<double>(&tx_rate), "TX sample rate in samples/second.")
+        ("rx_spp", po::value<size_t>(&rx_spp), "Number of samples per packet (spp) for USRP-to-host "
+            "streaming."
+            "\nAdjusting this value can affect packetization, latency, and streaming efficiency."
+            "\nIf not specified, UHD automatically selects a value based on device capabilities and MTU size.")
+        ("tx_spp", po::value<size_t>(&tx_spp), "Number of samples per packet (spp) for host-to-USRP "
+            "streaming.")
+        ("rx_spb", po::value<size_t>(&rx_spb), "Size of the host data buffer that is allocated for each Rx "
+            "channel."
+            "\nLarger values can improve throughput but may increase latency."
+            "\nTypical values range from 1,000 to 10,000 samples, but optimal values depend on device, transport, and "
+            "application requirements."
+            "\nIf not specified, UHD automatically selects a value based on the maximum value supported by the USRP RX "
+            "streamer.")
+        ("tx_spb", po::value<size_t>(&tx_spb), "Size of the host data buffer that is allocated for each Tx "
+            "channel.")
+        ("tx_sample_align", po::value<size_t>(&tx_align), "Ensure that each packet (or burst) sent to the "
+            "USRP contains a number of samples that is a multiple of the specified value."
+            "\nThis enforces optimal alignment for the device's internal data path (CHDR width and radio samples per "
+            "cycle), which can improve streaming efficiency."
+            "\nAdvanced option; most users can leave this unset.")
+        ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "Specifies the over-the-wire (OTW) "
+            "data format used for transmission between the USRP device and the host. Common values are \"sc16\" (16-bit "
+            "signed complex) and \"sc8\" (8-bit signed complex). Using \"sc8\" can reduce network bandwidth at the cost "
+            "of dynamic range."
+            "\nNote, that not all conversions between CPU and OTW formats are possible.")
+        ("tx_otw", po::value<std::string>(&tx_otw)->default_value("sc16"), "Specifies the over-the-wire (OTW) "
+            "data format used for transmission between the host and the USRP device.")
         ("rx_cpu", po::value<std::string>(&rx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for RX")
         ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
-        ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
-        ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
+        ("ref", po::value<std::string>(&ref), "Sets the source for the frequency reference. Available values "
+            "depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
+        ("pps", po::value<std::string>(&pps), "Specifies the PPS source for time synchronization. Available "
+            "values depend on the USRP model. Typical values are 'internal', 'external', 'mimo', and 'gpsdo'.")
         ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
-        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-        ("rx_channels", po::value<std::string>(&rx_channel_list), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
-        ("tx_channels", po::value<std::string>(&tx_channel_list), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("channels", po::value<std::string>(&channel_list)->default_value("0"), "Specifies which channels to "
+            "use. E.g. \"0\", \"1\", \"0,1\", etc.")
+        ("rx_channels", po::value<std::string>(&rx_channel_list), "Specifies which RX channels to use. E.g. "
+            "\"0\", \"1\", \"0,1\", etc.")
+        ("tx_channels", po::value<std::string>(&tx_channel_list), "Specifies which TX channels to use. E.g. "
+            "\"0\", \"1\", \"0,1\", etc.")
         ("overrun-threshold", po::value<size_t>(&overrun_threshold),
          "Number of overruns (O) which will declare the benchmark a failure.")
         ("underrun-threshold", po::value<size_t>(&underrun_threshold),
          "Number of underruns (U) which will declare the benchmark a failure.")
         ("drop-threshold", po::value<size_t>(&drop_threshold),
-         "Number of dropped packets (D) which will declare the benchmark a failure.")
+         "Number of dropped packets which will declare the benchmark a failure.")
         ("seq-threshold", po::value<size_t>(&seq_threshold),
-         "Number of dropped packets (D) which will declare the benchmark a failure.")
+         "Number of packet sequence errors which will declare the benchmark a failure.")
         // NOTE: tx_delay defaults to 0.25 while rx_delay defaults to 0.05 when left unspecified
         // in multi-channel and multi-streamer configurations.
-        ("tx_delay", po::value<double>(&tx_delay)->default_value(0.0), "delay before starting TX in seconds")
-        ("rx_delay", po::value<double>(&rx_delay)->default_value(0.0), "delay before starting RX in seconds")
-        ("priority", po::value<std::string>(&priority)->default_value("normal"), "thread priority (normal, high)")
-        ("multi_streamer", "Create a separate streamer per channel")
+        ("tx_delay", po::value<double>(&tx_delay)->default_value(0.0), "Delay before starting TX in seconds.")
+        ("rx_delay", po::value<double>(&rx_delay)->default_value(0.0), "Delay before starting RX in seconds.")
+        ("priority", po::value<std::string>(&priority)->default_value("normal"), "Thread priority (normal, "
+            "high).")
+        ("multi_streamer", "Create a separate data streamer for each TX/RX channel, each running in a "
+            "separate thread.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -400,11 +541,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help") or (vm.count("rx_rate") + vm.count("tx_rate")) == 0) {
-        std::cout << boost::format("UHD Benchmark Rate %s") % desc << std::endl;
-        std::cout << "    Specify --rx_rate for a receive-only test.\n"
-                     "    Specify --tx_rate for a transmit-only test.\n"
-                     "    Specify both options for a full-duplex test.\n"
-                  << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
 

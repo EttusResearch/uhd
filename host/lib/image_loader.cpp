@@ -11,11 +11,12 @@
 #include <uhd/utils/static.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
+#include <filesystem>
 #include <iostream>
 #include <map>
 #include <utility>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 typedef std::map<std::string, uhd::image_loader::loader_fcn_t> loader_fcn_map_t;
 typedef std::map<std::string, std::string> string_map_t;

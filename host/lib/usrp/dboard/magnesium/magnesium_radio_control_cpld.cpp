@@ -8,6 +8,7 @@
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_radio_control.hpp"
 #include <uhd/utils/log.hpp>
+#include <chrono>
 
 using namespace uhd;
 using namespace uhd::usrp;

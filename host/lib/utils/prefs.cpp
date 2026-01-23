@@ -10,8 +10,8 @@
 #include <uhdlib/utils/paths.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <config.h>
-#include <boost/filesystem.hpp>
 #include <cstdlib>
+#include <filesystem>
 
 using namespace uhd;
 
@@ -23,7 +23,7 @@ inline bool _update_conf_file(
 {
     if (not path.empty()) {
         UHD_LOG_TRACE("PREFS", "Trying to load " << path);
-        if (boost::filesystem::exists(path)) {
+        if (std::filesystem::exists(path)) {
             try {
                 conf_file.read_file(path);
                 UHD_LOG_DEBUG(
@@ -138,6 +138,12 @@ void uhd::prefs::resume_guided_mode()
 {
     uhd::prefs::get_uhd_config().set<std::string>(
         uhd::prefs::GLOBAL_SECTION, "guided_mode_suspended", "false");
+}
+
+bool uhd::prefs::mpm_check_reachability()
+{
+    return cast::from_str<bool>(uhd::prefs::get_uhd_config().get<std::string>(
+        uhd::prefs::GLOBAL_SECTION, "mpm_check_reachability", "true"));
 }
 
 device_addr_t uhd::prefs::get_usrp_args(const uhd::device_addr_t& user_args)

@@ -131,7 +131,7 @@ jobs:
   - script: |
       DUTTYPE=$(dutType)
       # in the following, "${DUTTYPE,,}" is used as lower case version of "$(dutType)"
-      if [ "$(dutFamily)" = "b2xx" ]; then
+      if [ "$(dutFamily)" = "b200" ]; then
         $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b2xx -t fw
       fi
       $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t ${DUTTYPE,,} -t fpga
@@ -354,7 +354,7 @@ jobs:
       sleep 5
       exit $EXITCODE
     displayName: setup interfaces for use with DPDK
-    condition: and(succeeded(), not(eq(variables.dutFamily, 'b2xx')))
+    condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')))
     timeoutInMinutes: 5
 
   - ${{ each dpdkDir in parameters.dpdkDirs }}:
@@ -388,7 +388,7 @@ jobs:
         DPDK_VERSION_STRING=$(utils/uhd_config_info --dpdk-version | awk '{print $3;}')
         echo "##vso[task.setvariable variable=DPDK_VERSION_STRING]$DPDK_VERSION_STRING"
       displayName: build UHD for DPDK (${{ dpdkDir }})
-      condition: and(succeeded(), not(eq(variables.dutFamily, 'b2xx')))
+      condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')))
 
     - script: |
         if [ "$(dutType)" = "x440" ]; then
@@ -411,7 +411,7 @@ jobs:
           sed -i "s|^dpdk_driver.*|dpdk_driver = $dpdk_driver|" $config_file
         fi
       displayName: select UHD config file for DPDK ${{ dpdkDir }}
-      condition: and(succeeded(), not(eq(variables.dutFamily, 'b2xx')))
+      condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')))
 
     - script: |
         echo "##[group]Printing Environment"
@@ -435,12 +435,12 @@ jobs:
         UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
       continueOnError: true
       displayName: Run streaming tests with DPDK ${{ dpdkDir }} on $(dutName)
-      condition: and(succeeded(), not(eq(variables.dutFamily, 'b2xx')))
+      condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')))
 
     - publish: $(Common.TestResultsDirectory)
       artifact: test-logs-streamingtest-$(dutName)-$(dutFpga)-dpdk$(DPDK_VERSION_STRING)-run$(System.JobAttempt)
       displayName: Upload Test Logs with DPDK ${{ dpdkDir }}
-      condition: and(succeededOrFailed(), not(eq(variables.dutFamily, 'b2xx')))
+      condition: and(succeededOrFailed(), not(eq(variables.dutFamily, 'b200')))
 
     - task: PublishTestResults@2
       inputs:
@@ -451,7 +451,7 @@ jobs:
         mergeTestResults: true
         failTaskOnFailedTests: false
       displayName: Upload streaming test results with DPDK ${{ dpdkDir }}
-      condition: not(eq(variables.dutFamily, 'b2xx'))
+      condition: not(eq(variables.dutFamily, 'b200'))
 
   - script: |
       echo "A previous step failed. See steps with warnings."

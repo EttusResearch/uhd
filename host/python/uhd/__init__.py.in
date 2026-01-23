@@ -60,6 +60,7 @@ try:
     from .libpyuhd import find, get_abi_string, get_component, get_version_string
     from .libpyuhd.paths import *  # noqa: F403
     from .property_tree import PropertyTree
+    from .utils import dram
 
     __version__ = get_version_string()
 except ImportError as e:

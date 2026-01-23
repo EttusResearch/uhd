@@ -6,8 +6,44 @@ parameters:
 - name: uhdGenerateTestBinaries
   type: boolean
   default: false
+- name: uhdCustomBoostPackage
+  type: boolean
+  default: false
+- name: uhdCustomBoostPackageURL
+  type: string
+  default: 'https://boostorg.jfrog.io/artifactory/main/release/1.76.0/source/boost_1_76_0.tar.bz2'
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
+- ${{ if parameters.uhdCustomBoostPackage }}:
+  - bash: |
+      cd $(Pipeline.Workspace)
+      echo "Entering workspace directory:"
+      pwd
+      rm -rf boost
+      mkdir boost
+      cd boost
+      # We reimplement tar's -a flag here so we can pipe from curl straight to tar
+      if [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ bz2$ ]]; then
+          export TAR_EXTRACT_FLAG="j"
+      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ gz$ ]]; then
+          export TAR_EXTRACT_FLAG="z"
+      elif [[ "${{ parameters.uhdCustomBoostPackageURL }}" =~ xz$ ]]; then
+          export TAR_EXTRACT_FLAG="J"
+      fi
+      curl -L ${{ parameters.uhdCustomBoostPackageURL }} | tar -x -$TAR_EXTRACT_FLAG
+      export BOOST_DIR=`pwd`/`ls | head -1`
+      echo "Using Boost directory: $BOOST_DIR"
+      echo "##vso[task.setvariable variable=CustomBoostPath;isOutput=true;]$BOOST_DIR"
+      cd $BOOST_DIR
+      BOOST_INSTALL_DIR=${{ parameters.uhdBuildDir }}-boost
+      ./bootstrap.sh --prefix=${BOOST_INSTALL_DIR} --includedir=headers --libdir=dist --with-libraries=chrono,date_time,filesystem,program_options,serialization,test,thread
+      ./b2 -j$(nproc) --prefix=${BOOST_INSTALL_DIR} install
+    displayName: "Build Custom Boost Version"
+    name: build_boost_step
+
 - script: |
     mkdir -p ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
@@ -26,9 +62,18 @@ steps:
       export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
       export UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
     fi
+    if [[ "${{ parameters.uhdCustomBoostPackage }}" = "True" ]]; then
+      BOOST_INSTALL_DIR=${{ parameters.uhdBuildDir }}-boost
+      export UHD_BOOST_OPTIONS="-DCMAKE_PREFIX_PATH=$BOOST_INSTALL_DIR"
+    fi
+    if [[ "${{ parameters.cmake_args }}" != " " ]]; then
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    fi
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       $UHD_CI_CMAKE_SIM \
+      $UHD_BOOST_OPTIONS \
+      ${{ parameters.cmake_args }} \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake homebrew macOS UHD
 

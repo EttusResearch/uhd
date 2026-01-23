@@ -202,9 +202,6 @@ module chdr_channel_demux_tb #(
     // Mailboxes to communicate the expected packets to the readers
     mailbox #(chdr_pkt_t) exp_pkts_mb [NUM_PORTS];
 
-    // Semaphore to know when all the readers are done checking their ports
-    semaphore reader_sm = new();
-
     foreach (exp_pkts_mb[port]) begin
       exp_pkts_mb[port] = new();
     end
@@ -229,46 +226,41 @@ module chdr_channel_demux_tb #(
         foreach (exp_pkts_mb[ch]) begin
           exp_pkts_mb[ch].put(null);
         end
-      end
+      end : writer
 
       //-----------------------------------------------------------------------
       // Output Thread and Checker
       //-----------------------------------------------------------------------
 
-      // Create one thread per output port
-      for (int port_count = 0; port_count < NUM_PORTS; port_count++) begin
-        fork : reader_thread
-          // This line below ensures that each thread knows which port it is.
-          automatic int port = port_count;
-          begin
-            chdr_pkt_t act_pkt, exp_pkt;  // Actual and expected packets
-            int out_pkt_count = 0;
-            forever begin
-              // Wait for next packet from write thread. If it's null, the last
-              // packet was already sent.
-              exp_pkts_mb[port].get(exp_pkt);
-              if (exp_pkt == null) break;
+      // Create one thread for all output ports. We don't have to read the
+      // output ports simultaneously because the BFM will buffer all captured
+      // packets for us. We previously had one thread per output port, but this
+      // didn't work in Vivado XSim.
+      begin : reader
+        for (int port = 0; port < NUM_PORTS; port++) begin
+          chdr_pkt_t act_pkt, exp_pkt;  // Actual and expected packets
+          int out_pkt_count = 0;
+          forever begin
+            // Wait for next packet from write thread. If it's null, the last
+            // packet was already sent.
+            exp_pkts_mb[port].get(exp_pkt);
+            if (exp_pkt == null) break;
 
-              // Grab the next packet from the DUT
-              chdr_bfm[port].get_chdr(act_pkt);
+            // Grab the next packet from the DUT
+            chdr_bfm[port].get_chdr(act_pkt);
 
-              // Make sure it matches what we sent
-              pkt_count_sm.get();
-              `ASSERT_ERROR(act_pkt.equal(exp_pkt), $sformatf(
-                "Output packet %0d on port %0d (input packet %0d) does not match",
-                out_pkt_count, port, pkt_count));
-              pkt_count++;
-              pkt_count_sm.put();
-              out_pkt_count++;
-            end
-            reader_sm.put(1);
+            // Make sure it matches what we sent
+            pkt_count_sm.get();
+            `ASSERT_ERROR(act_pkt.equal(exp_pkt), $sformatf(
+              "Output packet %0d on port %0d does not match",
+              out_pkt_count, port));
+            pkt_count++;
+            pkt_count_sm.put();
+            out_pkt_count++;
           end
-        join_none : reader_thread
-      end
+        end
+      end : reader
     join
-
-    // Wait for all readers to finish
-    reader_sm.get(NUM_PORTS);
 
     // As a sanity check, make sure we verified the expected number of packets.
     `ASSERT_ERROR(pkt_count == num_packets,
@@ -289,7 +281,7 @@ module chdr_channel_demux_tb #(
       int s_prob;
     } stall_prob_t;
 
-    automatic stall_prob_t stall_speeds [3] = '{
+    automatic stall_prob_t stall_speeds [] = '{
       '{DEF_STALL_PROB, DEF_STALL_PROB}, // Equal write/read
       '{10, 90},                         // Fast write, slow read
       '{90, 10}                          // Slow write, fast ready
@@ -300,7 +292,7 @@ module chdr_channel_demux_tb #(
       "rfnoc_block_fft_tb\n",
       "\tNUM_PORTS                = %0d\n",
       "\tCHDR_W                   = %0d\n",
-      "\tCHANNEL_OFFSET           = %0d\n"},
+      "\tCHANNEL_OFFSET           = %0d"},
       NUM_PORTS, CHDR_W, CHANNEL_OFFSET
     );
 

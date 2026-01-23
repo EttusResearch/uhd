@@ -40,6 +40,8 @@ public:
     static const uint32_t REG_LOOP_LINE_CNT_HI;
     static const uint32_t REG_LOOP_PKT_CNT_LO;
     static const uint32_t REG_LOOP_PKT_CNT_HI;
+    static const uint32_t REG_SRC_NUM_PKT_LO;
+    static const uint32_t REG_SRC_NUM_PKT_HI;
 
     /*! Start/stop the null source (port 0)
      */

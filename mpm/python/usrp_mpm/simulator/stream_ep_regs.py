@@ -23,6 +23,7 @@ REG_OSTRM_SEQ_ERR_CNT = 0x2C # R
 REG_OSTRM_DATA_ERR_CNT = 0x30 # R
 REG_OSTRM_ROUTE_ERR_CNT = 0x34 # R
 REG_ISTRM_CTRL_STATUS = 0x38 # RW
+REG_OSTRM_THROTTLE = 0x3C # W
 
 RESET_AND_FLUSH_OSTRM = (1 << 0)
 RESET_AND_FLUSH_ISTRM = (1 << 1)
@@ -124,6 +125,10 @@ class StreamEpRegs:
             self.log.debug("Setting EPID Input Stream Ctrl Status: {}".format(status))
             new_status = self.update_status_in(status)
             self.in_ctrl_status = new_status if new_status is not None else val
+        elif addr == REG_OSTRM_THROTTLE:
+            self.log.trace(f"Setting output stream throttle to {val}. "
+                           "Note: Throttle not implemented.")
+            pass # TODO: implement throttle control
         else:
             raise NotImplementedError("Unable to write addr 0x{:08X} from stream ep regs"
                                       .format(addr))

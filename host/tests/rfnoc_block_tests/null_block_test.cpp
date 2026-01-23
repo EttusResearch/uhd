@@ -103,8 +103,49 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     stream_cmd.stream_mode = stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
     test_null->issue_stream_cmd(stream_cmd);
     BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x2);
+
+    // Test finite streaming with NUM_SAMPS_AND_DONE mode
+    // First, set bytes per packet to a known value for calculations
+    uint32_t packet_bytes = 1024;
+    test_null->set_bytes_per_packet(packet_bytes); // Header + payload
+    copy_mem(null_block_control::REG_SRC_BYTES_PER_PKT);
+    uint32_t header_bytes       = nipc * item_width / 8;
+    uint32_t payload_bytes      = packet_bytes - header_bytes;
+    uint32_t samples_per_packet = payload_bytes / 4; // 4 bytes per sample
+
+    // Test with a small number of samples
+    stream_cmd.stream_mode = stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
+    stream_cmd.num_samps   = 1000;
+    test_null->issue_stream_cmd(stream_cmd);
+    // Verify that finite mode is enabled (bit 2 set) and source enabled (bit 1 set)
+    BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x6, 0x6);
+    // Verify that a packet count was set (non-zero)
+    copy_mem(null_block_control::REG_SRC_NUM_PKT_LO);
+    copy_mem(null_block_control::REG_SRC_NUM_PKT_HI);
+    uint64_t num_packets_lo = get_mem(null_block_control::REG_SRC_NUM_PKT_LO);
+    uint64_t num_packets_hi = get_mem(null_block_control::REG_SRC_NUM_PKT_HI);
+    uint64_t num_packets    = (num_packets_hi << 32) | num_packets_lo;
+    uint64_t expected_packets =
+        (stream_cmd.num_samps + samples_per_packet - 1) / samples_per_packet;
+    BOOST_CHECK_EQUAL(num_packets, expected_packets);
+
+    // Test with a larger number of samples
+    stream_cmd.num_samps = 1000000;
+    test_null->issue_stream_cmd(stream_cmd);
+    copy_mem(null_block_control::REG_SRC_NUM_PKT_LO);
+    copy_mem(null_block_control::REG_SRC_NUM_PKT_HI);
+    uint64_t large_packets_lo = get_mem(null_block_control::REG_SRC_NUM_PKT_LO);
+    uint64_t large_packets_hi = get_mem(null_block_control::REG_SRC_NUM_PKT_HI);
+    uint64_t large_packets    = (large_packets_hi << 32) | large_packets_lo;
+    uint64_t large_expected =
+        (stream_cmd.num_samps + samples_per_packet - 1) / samples_per_packet;
+    BOOST_CHECK_EQUAL(large_packets, large_expected);
+    // More samples should require more packets
+    BOOST_CHECK(large_packets > num_packets);
+
     node_accessor.shutdown(test_null.get());
     BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x0);
+    stream_cmd.stream_mode = stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
     test_null->issue_stream_cmd(stream_cmd);
     UHD_LOG_INFO("TEST", "Expected error message here ^^^");
     // The last issue_stream_cmd should do nothing b/c we called shutdown

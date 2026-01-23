@@ -12,8 +12,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/numeric/conversion/bounds.hpp>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -110,19 +108,17 @@ public:
         _continuous_streaming = stream_cmd.stream_mode
                                 == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
 
+        // clang-format off
         // setup the mode to instruction flags
         typedef std::tuple<bool, bool, bool, bool> inst_t;
-        static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst =
-            boost::assign::map_list_of
-            // reload, chain, samps, stop
-            (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,
-                inst_t(true, true, false, false))(
-                stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,
-                inst_t(false, false, false, true))(
-                stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE,
-                inst_t(false, false, true, false))(
-                stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE,
-                inst_t(false, true, true, false));
+        static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst{
+                                                              // reload, chain, samps, stop
+            {stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false) },
+            {stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true ) },
+            {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false) },
+            {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false) }
+        };
+        // clang-format on
 
         // setup the instruction flag values
         bool inst_reload, inst_chain, inst_samps, inst_stop;
@@ -147,10 +143,10 @@ public:
 
     void set_mux(const std::string& mode, const bool fe_swapped) override
     {
-        static const uhd::dict<std::string, uint32_t> mode_to_mux =
-            boost::assign::map_list_of("IQ", 0)("QI", FLAG_DSP_RX_MUX_SWAP_IQ)(
-                "I", FLAG_DSP_RX_MUX_REAL_MODE)(
-                "Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE);
+        static const uhd::dict<std::string, uint32_t> mode_to_mux{{"IQ", 0},
+            {"QI", FLAG_DSP_RX_MUX_SWAP_IQ},
+            {"I", FLAG_DSP_RX_MUX_REAL_MODE},
+            {"Q", FLAG_DSP_RX_MUX_SWAP_IQ | FLAG_DSP_RX_MUX_REAL_MODE}};
         _iface->poke32(REG_DSP_RX_MUX,
             mode_to_mux[mode] ^ (fe_swapped ? FLAG_DSP_RX_MUX_SWAP_IQ : 0));
     }

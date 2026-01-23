@@ -15,7 +15,7 @@ module axi_dma_fifo
 #(
    parameter SIMULATION       = 0,             // Shorten flush counter for simulation
    parameter DEFAULT_BASE     = 30'h00000000,
-   parameter DEFAULT_MASK     = 30'hFF000000,
+   parameter DEFAULT_MASK     = 30'h3F000000,
    parameter DEFAULT_TIMEOUT  = 12'd256,
    parameter BUS_CLK_RATE     = 32'd166666666,  // Frequency in Hz of bus_clk
    parameter SR_BASE          = 0,              // Base address for settings registers

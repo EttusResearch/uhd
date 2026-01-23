@@ -1316,10 +1316,11 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         throw uhd::runtime_error("[ad9361_device_t] RFVCO can't find valid VCO rate!");
 
     int nint  = static_cast<int>(vcorate / fref);
-    int nfrac = static_cast<int>(((vcorate / fref) - nint) * modulus);
+    int nfrac = static_cast<int>(
+        std::lround(((vcorate / fref) - (double)nint) * (double)modulus));
 
-    double actual_vcorate = fref * (nint + (double)(nfrac) / modulus);
-    double actual_lo      = actual_vcorate / vcodiv;
+    double actual_vcorate = fref * ((double)nint + ((double)nfrac / (double)modulus));
+    double actual_lo      = actual_vcorate / (double)vcodiv;
 
     if (direction == RX) {
         _req_rx_freq = value;

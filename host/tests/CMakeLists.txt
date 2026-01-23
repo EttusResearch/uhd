@@ -100,7 +100,8 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} ${test_source})
-    target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+    target_link_libraries(${test_name}
+        PUBLIC uhd uhd_test Boost::unit_test_framework)
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(test_source)
@@ -109,7 +110,8 @@ endforeach(test_source)
 foreach(benchmark_source ${benchmark_sources})
     get_filename_component(benchmark_name ${benchmark_source} NAME_WE)
     add_executable(${benchmark_name} ${benchmark_source})
-    target_link_libraries(${benchmark_name} uhd uhd_test ${Boost_LIBRARIES})
+    target_link_libraries(${benchmark_name}
+        PUBLIC uhd uhd_test Boost::unit_test_framework)
     UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(benchmark_source)
 
@@ -133,7 +135,8 @@ macro(UHD_ADD_NONAPI_TEST)
     get_filename_component(test_name ${test_TARGET} NAME_WE)
     include_directories(${test_INCLUDE_DIRS})
     add_executable(${test_name} ${test_TARGET} ${test_EXTRA_SOURCES})
-    target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+    target_link_libraries(${test_name}
+        PUBLIC uhd uhd_test Boost::unit_test_framework Boost::program_options)
     target_compile_definitions(${test_name} PUBLIC ${test_DEFINITIONS})
     if(NOT ${test_NOAUTORUN})
         UHD_ADD_TEST(${test_name} ${test_name})
@@ -197,7 +200,8 @@ set(rfnoc_block_sources
 foreach(test_source ${rfnoc_block_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} rfnoc_block_tests/${test_source})
-    target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+    target_link_libraries(${test_name}
+        PUBLIC uhd uhd_test Boost::unit_test_framework)
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests/rfnoc_block_tests COMPONENT tests)
 endforeach(test_source)
@@ -371,9 +375,11 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/complex_gain_iface.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
@@ -405,9 +411,11 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/complex_gain_iface.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
             ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
@@ -490,6 +498,12 @@ UHD_ADD_NONAPI_TEST(
     TARGET "custom_reg_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/ctrlport_endpoint.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET "complex_gain_3000_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
 )
 
 ########################################################################

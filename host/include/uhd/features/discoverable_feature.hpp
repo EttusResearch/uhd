@@ -39,7 +39,9 @@ public:
         GPIO_POWER,
         SPI_GETTER_IFACE,
         INTERNAL_SYNC,
-        GPS
+        GPS,
+        TX_COMPLEX_GAIN,
+        RX_COMPLEX_GAIN
     };
 
     virtual ~discoverable_feature() = default;

@@ -24,6 +24,7 @@
 #include <boost/optional.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <cctype>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <string>
@@ -48,7 +49,7 @@ uhd::usrp::component_file_t generate_component(
     // Add the filename to the metadata
     // Remove the path to the filename
     component_file.metadata["filename"] =
-        boost::filesystem::path(filepath).filename().string();
+        std::filesystem::path(filepath).filename().string();
     UHD_LOG_TRACE("MPMD IMAGE LOADER",
         "Component filename added to the component dictionary: " << filepath);
     // Add the hash, if a hash file exists
@@ -164,7 +165,7 @@ static std::string get_fpga_path(
 {
     // If the user provided a path to an fpga image, use that
     if (not image_loader_args.fpga_path.empty()) {
-        if (boost::filesystem::exists(image_loader_args.fpga_path)) {
+        if (std::filesystem::exists(image_loader_args.fpga_path)) {
             return image_loader_args.fpga_path;
         } else {
             throw uhd::runtime_error(
@@ -268,7 +269,7 @@ static uhd::usrp::component_files_t bin_dts_to_component_files(
     // DTS component struct
     // First, we need to determine the name
     const std::string base_name =
-        boost::filesystem::path(fpga_path).replace_extension("").string();
+        std::filesystem::path(fpga_path).replace_extension("").string();
     if (base_name == fpga_path) {
         const std::string err_msg(
             "Can't cut extension from FPGA filename... " + fpga_path);
@@ -337,7 +338,7 @@ static void mpmd_send_fpga_to_device(
         UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA path: " << fpga_path);
 
         // If the fpga_path is a lvbitx file, parse it as such
-        if (boost::filesystem::path(fpga_path).extension() == ".lvbitx") {
+        if (std::filesystem::path(fpga_path).extension() == ".lvbitx") {
             all_component_files = lvbitx_to_component_files(fpga_path, delay_reload);
         } else {
             all_component_files = bin_dts_to_component_files(fpga_path, delay_reload);

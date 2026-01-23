@@ -111,7 +111,6 @@ public:
 
     /*!
      * Pop all elements from the bounded_buffer.
-     * \param elem the element reference pop to
      * \return The vector of the popped elements
      */
     UHD_INLINE std::vector<elem_type> pop_all()

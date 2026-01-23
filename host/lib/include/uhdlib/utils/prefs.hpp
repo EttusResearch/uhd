@@ -36,6 +36,18 @@ void suspend_guided_mode();
 /*! Sets the `guided_mode_suspended` flag in the config to false. */
 void resume_guided_mode();
 
+/*! `mpm_check_reachability` controls how uhd::find handles MPM device
+ *  discovery. If set to true each IP on each device will be tested
+ *  whether it is reachable by the host. The find result will only return
+ *  reachable devices. This can add a few seconds delay on the find
+ *  command. If set to false all IP addresses of an MPM device will be
+ *  return no matter whether they can be reached by the host in the
+ *  current network.
+ *
+ *  Default is true.
+ */
+bool mpm_check_reachability();
+
 /*! Convenience function to update device args with settings from
  *  config files.
  *

@@ -1,5 +1,9 @@
 schema: rfnoc_modtool_args
 module_name: radio
+name: Radio
+description: |
+  The Radio block is a hardware-dependent block that exposes access to the
+  RF data interface of the underlying hardware and supports streaming to/from this interface on demand.
 version: "1.0"
 rfnoc_version: "1.0"
 chdr_width: 64
@@ -9,6 +13,9 @@ parameters:
   NUM_PORTS: 2
   NIPC: ${ config.device.parameters.get("RADIO_NIPC", 1) }
   ITEM_W: 32
+  EN_COMP_GAIN_TX: 0
+  EN_COMP_GAIN_RX: 0
+  EN_FIFO_OUT_REG: 0
 
 checks:
   - condition: "${parameters['NUM_PORTS'] > 0}"
@@ -80,6 +87,11 @@ io_ports:
       spc: "${parameters['NIPC']}"
       num_ports: "${parameters['NUM_PORTS']}"
     required: true # Definitely required!
+  radio_state:
+    type: radio_state
+    drive: broadcaster
+    parameters:
+      num_ports: "${parameters['NUM_PORTS']}"
 
 # This section helps the make process find the source files for the block. If
 # this section is absent, the FPGA build process will fail as it won't be able

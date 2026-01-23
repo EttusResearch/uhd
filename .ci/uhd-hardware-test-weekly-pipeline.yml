@@ -110,6 +110,12 @@ stages:
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       testLength: ${{ parameters.testLength }}
+  - template: templates/job-uhd-streaming-tests-s175.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      testLength: ${{ parameters.testLength }}
   - template: templates/job-uhd-streaming-tests-x440.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev

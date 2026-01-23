@@ -143,7 +143,6 @@ set bCheckIPsPassed 1
 set bCheckIPs 1
 if { $bCheckIPs == 1 } {
    set list_check_ips "\ 
-ettus.com:ip:axi_bitq:1.0\
 xilinx.com:ip:zynq_ultra_ps_e:3.3\
 xilinx.com:ip:xlconcat:2.1\
 xilinx.com:ip:xlconstant:1.1\
@@ -568,8 +567,6 @@ proc create_hier_cell_axi_interconnect_common { parentCell nameHier } {
 
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_eth_internal
 
-  create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_jtag
-
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_mpm_ep
 
   create_bd_intf_pin -mode Master -vlnv xilinx.com:interface:aximm_rtl:1.0 m_axi_rf
@@ -588,27 +585,26 @@ proc create_hier_cell_axi_interconnect_common { parentCell nameHier } {
   # Create instance: axi_interconnect_0, and set properties
   set axi_interconnect_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_interconnect:2.1 axi_interconnect_0 ]
   set_property -dict [ list \
-   CONFIG.NUM_MI {7} \
+   CONFIG.NUM_MI {6} \
  ] $axi_interconnect_0
 
   # Create instance: axi_protocol_convert_0, and set properties
   set axi_protocol_convert_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_protocol_converter:2.1 axi_protocol_convert_0 ]
 
   # Create interface connections
-  connect_bd_intf_net -intf_net Conn1 [get_bd_intf_pins m_axi_jtag] [get_bd_intf_pins axi_interconnect_0/M01_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins m_axi_app] [get_bd_intf_pins axi_interconnect_0/M00_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins m_axi_rf] [get_bd_intf_pins axi_interconnect_0/M02_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M03_AXI [get_bd_intf_pins m_axi_mpm_ep] [get_bd_intf_pins axi_interconnect_0/M03_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M04_AXI [get_bd_intf_pins m_axi_core] [get_bd_intf_pins axi_interconnect_0/M04_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M05_AXI [get_bd_intf_pins m_axi_eth_dma_ctrl] [get_bd_intf_pins axi_interconnect_0/M05_AXI]
-  connect_bd_intf_net -intf_net axi_interconnect_0_M06_AXI [get_bd_intf_pins m_axi_eth_internal] [get_bd_intf_pins axi_interconnect_0/M06_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins m_axi_rf] [get_bd_intf_pins axi_interconnect_0/M01_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M02_AXI [get_bd_intf_pins m_axi_mpm_ep] [get_bd_intf_pins axi_interconnect_0/M02_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M03_AXI [get_bd_intf_pins m_axi_core] [get_bd_intf_pins axi_interconnect_0/M03_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M04_AXI [get_bd_intf_pins m_axi_eth_dma_ctrl] [get_bd_intf_pins axi_interconnect_0/M04_AXI]
+  connect_bd_intf_net -intf_net axi_interconnect_0_M05_AXI [get_bd_intf_pins m_axi_eth_internal] [get_bd_intf_pins axi_interconnect_0/M05_AXI]
   connect_bd_intf_net -intf_net axi_protocol_convert_0_M_AXI [get_bd_intf_pins m_axi_rpu] [get_bd_intf_pins axi_protocol_convert_0/M_AXI]
   connect_bd_intf_net -intf_net inst_zynq_ps_M_AXI_HPM0_FPD [get_bd_intf_pins s_axi_common] [get_bd_intf_pins axi_interconnect_0/S00_AXI]
   connect_bd_intf_net -intf_net s_axi_lpd_1 [get_bd_intf_pins s_axi_lpd] [get_bd_intf_pins axi_protocol_convert_0/S_AXI]
 
   # Create port connections
-  connect_bd_net -net M01_ARESETN_1 [get_bd_pins clk40_rstn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_0/M03_ARESETN] [get_bd_pins axi_interconnect_0/M04_ARESETN] [get_bd_pins axi_interconnect_0/M05_ARESETN] [get_bd_pins axi_interconnect_0/M06_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_protocol_convert_0/aresetn]
-  connect_bd_net -net clk40_1 [get_bd_pins clk40] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_0/M03_ACLK] [get_bd_pins axi_interconnect_0/M04_ACLK] [get_bd_pins axi_interconnect_0/M05_ACLK] [get_bd_pins axi_interconnect_0/M06_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_protocol_convert_0/aclk]
+  connect_bd_net -net M01_ARESETN_1 [get_bd_pins clk40_rstn] [get_bd_pins axi_interconnect_0/ARESETN] [get_bd_pins axi_interconnect_0/M00_ARESETN] [get_bd_pins axi_interconnect_0/M01_ARESETN] [get_bd_pins axi_interconnect_0/M02_ARESETN] [get_bd_pins axi_interconnect_0/M03_ARESETN] [get_bd_pins axi_interconnect_0/M04_ARESETN] [get_bd_pins axi_interconnect_0/M05_ARESETN] [get_bd_pins axi_interconnect_0/S00_ARESETN] [get_bd_pins axi_protocol_convert_0/aresetn]
+  connect_bd_net -net clk40_1 [get_bd_pins clk40] [get_bd_pins axi_interconnect_0/ACLK] [get_bd_pins axi_interconnect_0/M00_ACLK] [get_bd_pins axi_interconnect_0/M01_ACLK] [get_bd_pins axi_interconnect_0/M02_ACLK] [get_bd_pins axi_interconnect_0/M03_ACLK] [get_bd_pins axi_interconnect_0/M04_ACLK] [get_bd_pins axi_interconnect_0/M05_ACLK] [get_bd_pins axi_interconnect_0/S00_ACLK] [get_bd_pins axi_protocol_convert_0/aclk]
 
   # Restore current instance
   current_bd_instance $oldCurInst
@@ -1456,10 +1452,6 @@ proc create_hier_cell_ps { parentCell nameHier } {
   create_bd_pin -dir I -type rst clk40_rstn
   create_bd_pin -dir I irq0_lpd_rpu_n
   create_bd_pin -dir I irq1_lpd_rpu_n
-  create_bd_pin -dir IO jtag0_tck
-  create_bd_pin -dir IO jtag0_tdi
-  create_bd_pin -dir I jtag0_tdo
-  create_bd_pin -dir IO jtag0_tms
   create_bd_pin -dir O -type clk pl_clk40
   create_bd_pin -dir O -type clk pl_clk100
   create_bd_pin -dir O -type clk pl_clk166
@@ -1476,19 +1468,6 @@ proc create_hier_cell_ps { parentCell nameHier } {
 
   # Create instance: axi_interconnect_common
   create_hier_cell_axi_interconnect_common $hier_obj axi_interconnect_common
-
-  # Create instance: cpld_jtag_engine, and set properties
-  set cpld_jtag_engine [ create_bd_cell -type ip -vlnv ettus.com:ip:axi_bitq:1.0 cpld_jtag_engine ]
-
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {40000000} \
-   CONFIG.CLK_DOMAIN {x410_ps_rfdc_bd_clk40} \
- ] [get_bd_intf_pins /ps/cpld_jtag_engine/S_AXI]
-
-  set_property -dict [ list \
-   CONFIG.FREQ_HZ {40000000} \
-   CONFIG.CLK_DOMAIN {x410_ps_rfdc_bd_clk40} \
- ] [get_bd_pins /ps/cpld_jtag_engine/S_AXI_ACLK]
 
   # Create instance: eth_dma_internal
   create_hier_cell_eth_dma_internal $hier_obj eth_dma_internal
@@ -3062,7 +3041,6 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_intf_net -intf_net S_AXI_HPC1_FPD_0_1 [get_bd_intf_pins s_axi_hpc1] [get_bd_intf_pins hpc1_axi_interconnect/S01_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_0_M00_AXI [get_bd_intf_pins hpc1_axi_interconnect/M00_AXI] [get_bd_intf_pins inst_zynq_ps/S_AXI_HPC1_FPD]
   connect_bd_intf_net -intf_net axi_interconnect_0_M01_AXI [get_bd_intf_pins m_axi_rf] [get_bd_intf_pins axi_interconnect_common/m_axi_rf]
-  connect_bd_intf_net -intf_net axi_interconnect_common_M01_AXI [get_bd_intf_pins axi_interconnect_common/m_axi_jtag] [get_bd_intf_pins cpld_jtag_engine/S_AXI]
   connect_bd_intf_net -intf_net axi_interconnect_common_m_axi_eth_dma_ctrl [get_bd_intf_pins axi_interconnect_common/m_axi_eth_dma_ctrl] [get_bd_intf_pins eth_dma_internal/s_axi_eth_dma_ctrl]
   connect_bd_intf_net -intf_net axi_interconnect_common_m_axi_mpm_ep [get_bd_intf_pins m_axi_mpm_ep] [get_bd_intf_pins axi_interconnect_common/m_axi_mpm_ep]
   connect_bd_intf_net -intf_net axi_interconnect_common_m_axi_rpu [get_bd_intf_pins m_axi_rpu] [get_bd_intf_pins axi_interconnect_common/m_axi_rpu]
@@ -3074,12 +3052,9 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_intf_net -intf_net s_axi_hp1_1 [get_bd_intf_pins s_axi_hp1] [get_bd_intf_pins inst_zynq_ps/S_AXI_HP1_FPD]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_pins jtag0_tck] [get_bd_pins cpld_jtag_engine/bit_clk]
-  connect_bd_net -net Net1 [get_bd_pins jtag0_tdi] [get_bd_pins cpld_jtag_engine/bit_out]
-  connect_bd_net -net Net2 [get_bd_pins jtag0_tms] [get_bd_pins cpld_jtag_engine/bit_stb]
   connect_bd_net -net bus_rstn_1 [get_bd_pins bus_rstn] [get_bd_pins eth_dma_internal/bus_rstn] [get_bd_pins hpc1_axi_interconnect/ARESETN] [get_bd_pins hpc1_axi_interconnect/M00_ARESETN] [get_bd_pins hpc1_axi_interconnect/S00_ARESETN] [get_bd_pins hpc1_axi_interconnect/S01_ARESETN]
-  connect_bd_net -net clk40_1 [get_bd_pins clk40] [get_bd_pins axi_interconnect_common/clk40] [get_bd_pins cpld_jtag_engine/S_AXI_ACLK] [get_bd_pins eth_dma_internal/clk40] [get_bd_pins inst_zynq_ps/maxihpm0_fpd_aclk] [get_bd_pins inst_zynq_ps/maxihpm0_lpd_aclk]
-  connect_bd_net -net clk40_rstn_1 [get_bd_pins clk40_rstn] [get_bd_pins axi_interconnect_common/clk40_rstn] [get_bd_pins cpld_jtag_engine/S_AXI_ARESETN] [get_bd_pins eth_dma_internal/clk40_rstn]
+  connect_bd_net -net clk40_1 [get_bd_pins clk40] [get_bd_pins axi_interconnect_common/clk40] [get_bd_pins eth_dma_internal/clk40] [get_bd_pins inst_zynq_ps/maxihpm0_fpd_aclk] [get_bd_pins inst_zynq_ps/maxihpm0_lpd_aclk]
+  connect_bd_net -net clk40_rstn_1 [get_bd_pins clk40_rstn] [get_bd_pins axi_interconnect_common/clk40_rstn] [get_bd_pins eth_dma_internal/clk40_rstn]
   connect_bd_net -net eth_dma_internal_irq [get_bd_pins eth_dma_internal/irq] [get_bd_pins xlconcat_0/In0]
   connect_bd_net -net inst_zynq_ps_pl_clk0 [get_bd_pins pl_clk100] [get_bd_pins inst_zynq_ps/pl_clk0]
   connect_bd_net -net inst_zynq_ps_pl_clk1 [get_bd_pins pl_clk40] [get_bd_pins inst_zynq_ps/pl_clk1]
@@ -3089,7 +3064,6 @@ Port;FD4A0000;FD4AFFFF;0|FPD;DPDMA;FD4C0000;FD4CFFFF;0|FPD;DDR_XMPU5_CFG;FD05000
   connect_bd_net -net inst_zynq_ps_pl_resetn1 [get_bd_pins pl_resetn1] [get_bd_pins inst_zynq_ps/pl_resetn1]
   connect_bd_net -net inst_zynq_ps_pl_resetn2 [get_bd_pins pl_resetn2] [get_bd_pins inst_zynq_ps/pl_resetn2]
   connect_bd_net -net inst_zynq_ps_pl_resetn3 [get_bd_pins pl_resetn3] [get_bd_pins inst_zynq_ps/pl_resetn3]
-  connect_bd_net -net jtag0_tdo_1 [get_bd_pins jtag0_tdo] [get_bd_pins cpld_jtag_engine/bit_in]
   connect_bd_net -net m_axi_sg_aclk_0_1 [get_bd_pins bus_clk] [get_bd_pins eth_dma_internal/bus_clk] [get_bd_pins hpc1_axi_interconnect/ACLK] [get_bd_pins hpc1_axi_interconnect/M00_ACLK] [get_bd_pins hpc1_axi_interconnect/S00_ACLK] [get_bd_pins hpc1_axi_interconnect/S01_ACLK] [get_bd_pins inst_zynq_ps/saxihpc1_fpd_aclk]
   connect_bd_net -net nirq0_lpd_rpu_0_1 [get_bd_pins irq0_lpd_rpu_n] [get_bd_pins inst_zynq_ps/nirq0_lpd_rpu]
   connect_bd_net -net nirq1_lpd_rpu_0_1 [get_bd_pins irq1_lpd_rpu_n] [get_bd_pins inst_zynq_ps/nirq1_lpd_rpu]
@@ -3520,10 +3494,6 @@ proc create_root_design { parentCell } {
   set gated_base_clks_valid_clk40 [ create_bd_port -dir O gated_base_clks_valid_clk40 ]
   set irq0_lpd_rpu_n [ create_bd_port -dir I irq0_lpd_rpu_n ]
   set irq1_lpd_rpu_n [ create_bd_port -dir I irq1_lpd_rpu_n ]
-  set jtag0_tck [ create_bd_port -dir IO jtag0_tck ]
-  set jtag0_tdi [ create_bd_port -dir IO jtag0_tdi ]
-  set jtag0_tdo [ create_bd_port -dir I jtag0_tdo ]
-  set jtag0_tms [ create_bd_port -dir IO jtag0_tms ]
   set nco_reset_done_dclk [ create_bd_port -dir O nco_reset_done_dclk ]
   set nco_sync_failed_r0clk [ create_bd_port -dir O nco_sync_failed_r0clk ]
   set pl_clk40 [ create_bd_port -dir O -type clk pl_clk40 ]
@@ -3633,9 +3603,6 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net vin2_23_0_1 [get_bd_intf_ports adc_tile226_ch1_vin] [get_bd_intf_pins rfdc/adc_tile226_ch1_vin]
 
   # Create port connections
-  connect_bd_net -net Net [get_bd_ports jtag0_tck] [get_bd_pins ps/jtag0_tck]
-  connect_bd_net -net Net1 [get_bd_ports jtag0_tdi] [get_bd_pins ps/jtag0_tdi]
-  connect_bd_net -net Net2 [get_bd_ports jtag0_tms] [get_bd_pins ps/jtag0_tms]
   connect_bd_net -net S02_ARESETN_0_1 [get_bd_ports bus_rstn] [get_bd_pins ps/bus_rstn]
   connect_bd_net -net adc_reset_pulse_dclk_1 [get_bd_ports adc_reset_pulse_dclk] [get_bd_pins rfdc/adc_reset_pulse_dclk]
   connect_bd_net -net capture_sysref_0_sysref_out_rclk [get_bd_ports sysref_out_rclk] [get_bd_pins rfdc/sysref_out_rclk]
@@ -3660,7 +3627,6 @@ proc create_root_design { parentCell } {
   connect_bd_net -net inst_zynq_ps_pl_resetn1 [get_bd_ports pl_resetn1] [get_bd_pins ps/pl_resetn1]
   connect_bd_net -net inst_zynq_ps_pl_resetn2 [get_bd_ports pl_resetn2] [get_bd_pins ps/pl_resetn2]
   connect_bd_net -net inst_zynq_ps_pl_resetn3 [get_bd_ports pl_resetn3] [get_bd_pins ps/pl_resetn3]
-  connect_bd_net -net jtag0_tdo_1 [get_bd_ports jtag0_tdo] [get_bd_pins ps/jtag0_tdo]
   connect_bd_net -net m_axi_sg_aclk_0_1 [get_bd_ports bus_clk] [get_bd_pins ps/bus_clk]
   connect_bd_net -net nirq0_lpd_rpu_0_1 [get_bd_ports irq0_lpd_rpu_n] [get_bd_pins ps/irq0_lpd_rpu_n]
   connect_bd_net -net nirq1_lpd_rpu_0_1 [get_bd_ports irq1_lpd_rpu_n] [get_bd_pins ps/irq1_lpd_rpu_n]
@@ -3697,7 +3663,6 @@ proc create_root_design { parentCell } {
   assign_bd_address -offset 0x001000155000 -range 0x00001000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs rfdc/ThresholdRegister/axi_gpio_0/S_AXI/Reg] -force
   assign_bd_address -offset 0x001000154000 -range 0x00001000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs rfdc/calibration_muxes/axi_gpio_data/S_AXI/Reg] -force
   assign_bd_address -offset 0x001000157000 -range 0x00001000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs rfdc/axi_rfdc_info_memory_0/axi_s/reg0] -force
-  assign_bd_address -offset 0x001000000000 -range 0x00001000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs ps/cpld_jtag_engine/S_AXI/reg0] -force
   assign_bd_address -offset 0x001000140000 -range 0x00010000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs rfdc/data_clock_mmcm/s_axi_lite/Reg] -force
   assign_bd_address -offset 0x001200000000 -range 0x000200000000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs m_axi_app/Reg] -force
   assign_bd_address -offset 0x0010000A0000 -range 0x00004000 -target_address_space [get_bd_addr_spaces ps/inst_zynq_ps/Data] [get_bd_addr_segs m_axi_core/Reg] -force

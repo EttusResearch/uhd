@@ -6,12 +6,14 @@
 
 #include "x4xx_radio_mock.hpp"
 #include "x4xx_zbx_mpm_mock.hpp"
+#include <uhd/features/complex_gain_iface.hpp>
 #include <uhd/rfnoc/detail/graph.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/mock_nodes.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <boost/test/unit_test.hpp>
+#include <chrono>
 #include <cstddef>
 #include <iostream>
 #include <thread>
@@ -1185,6 +1187,30 @@ BOOST_FIXTURE_TEST_CASE(zbx_tx_gain_profile_test, x400_radio_fixture)
     UHD_LOG_INFO(log, "Testing TABLE coercion");
     BOOST_CHECK_EQUAL(0.0, test_radio->set_tx_gain(-17, "TABLE", 0));
     BOOST_CHECK_EQUAL(255.0, test_radio->set_tx_gain(1e9, "TABLE", 0));
+}
+
+
+BOOST_FIXTURE_TEST_CASE(zbx_complex_gain_test, x400_radio_fixture)
+{
+    BOOST_ASSERT(test_radio->has_feature<uhd::features::tx_complex_gain_iface>());
+    BOOST_ASSERT(test_radio->has_feature<uhd::features::rx_complex_gain_iface>());
+
+    auto& tx_cgain = test_radio->get_feature<uhd::features::tx_complex_gain_iface>();
+    auto& rx_cgain = test_radio->get_feature<uhd::features::rx_complex_gain_iface>();
+
+    size_t chan = 0;
+    // Test setting gain coefficients
+    tx_cgain.set_gain_coeff({0.5, 0.5}, chan);
+    rx_cgain.set_gain_coeff({0.5, 0.5}, chan);
+
+    // Test getting gain coefficients
+    std::complex<double> expected_result{0.5, 0.5};
+    BOOST_CHECK_EQUAL(tx_cgain.get_gain_coeff(chan), expected_result);
+    BOOST_CHECK_EQUAL(rx_cgain.get_gain_coeff(chan), expected_result);
+
+    // Test out-of-bounds gain coefficients
+    BOOST_CHECK_THROW(tx_cgain.set_gain_coeff({2.0, -2.1}, chan), uhd::value_error);
+    BOOST_CHECK_THROW(rx_cgain.set_gain_coeff({-2.1, 2.0}, chan), uhd::value_error);
 }
 
 // TODO:

@@ -8,12 +8,10 @@
 #include "x300_dboard_iface.hpp"
 #include "x300_regs.hpp"
 #include <uhd/utils/safe_call.hpp>
-#include <boost/assign/list_of.hpp>
 #include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
-using namespace boost::assign;
 
 /***********************************************************************
  * Structors
@@ -30,9 +28,6 @@ x300_dboard_iface::x300_dboard_iface(const x300_dboard_iface_config_t& config)
         _dac_regs[unit].cmd  = ad5623_regs_t::CMD_RESET;
         this->_write_aux_dac(unit);
     }
-
-    _clock_rates[UNIT_RX] = _config.clock->get_dboard_rate(_config.which_rx_clk);
-    _clock_rates[UNIT_TX] = _config.clock->get_dboard_rate(_config.which_tx_clk);
 
     this->set_clock_enabled(UNIT_RX, false);
     this->set_clock_enabled(UNIT_TX, false);
@@ -52,10 +47,6 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
 
-    // Just return if the requested rate is already set
-    if (std::abs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
-        return;
-
     switch (unit) {
         case UNIT_RX:
             _config.clock->set_dboard_rate(_config.which_rx_clk, rate);
@@ -66,14 +57,21 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
         default:
             UHD_THROW_INVALID_CODE_PATH();
     }
-    _clock_rates[unit] = rate; // set to shadow
 }
 
 double x300_dboard_iface::get_clock_rate(unit_t unit)
 {
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
-    return _clock_rates[unit]; // get from shadow
+
+    switch (unit) {
+        case UNIT_RX:
+            return _config.clock->get_dboard_rate(_config.which_rx_clk);
+        case UNIT_TX:
+            return _config.clock->get_dboard_rate(_config.which_tx_clk);
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 std::vector<double> x300_dboard_iface::get_clock_rates(unit_t unit)
@@ -109,6 +107,25 @@ double x300_dboard_iface::get_codec_rate(unit_t unit)
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
     return _config.clock->get_master_clock_rate();
+}
+
+bool x300_dboard_iface::lock_clock_rate(const unit_t unit)
+{
+    switch (unit) {
+        case UNIT_RX:
+            _config.clock->lock_dboard_rate(_config.which_rx_clk);
+            break;
+        case UNIT_TX:
+            _config.clock->lock_dboard_rate(_config.which_tx_clk);
+            break;
+        case UNIT_BOTH:
+            _config.clock->lock_dboard_rate(_config.which_rx_clk);
+            _config.clock->lock_dboard_rate(_config.which_tx_clk);
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+    return true;
 }
 
 /***********************************************************************
@@ -205,8 +222,8 @@ byte_vector_t x300_dboard_iface::read_i2c(uint16_t addr, size_t num_bytes)
  **********************************************************************/
 void x300_dboard_iface::_write_aux_dac(unit_t unit)
 {
-    static const uhd::dict<unit_t, int> unit_to_spi_dac =
-        map_list_of(UNIT_RX, DB_RX_LSDAC_SEN)(UNIT_TX, DB_TX_LSDAC_SEN);
+    static const uhd::dict<unit_t, int> unit_to_spi_dac{
+        {UNIT_RX, DB_RX_LSDAC_SEN}, {UNIT_TX, DB_TX_LSDAC_SEN}};
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");
     _config.spi->write_spi(
@@ -222,22 +239,25 @@ void x300_dboard_iface::write_aux_dac(unit_t unit, aux_dac_t which, double value
     _dac_regs[unit].cmd  = ad5623_regs_t::CMD_WR_UP_DAC_CHAN_N;
 
     typedef uhd::dict<aux_dac_t, ad5623_regs_t::addr_t> aux_dac_to_addr;
-    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr =
-        map_list_of(UNIT_RX,
-            map_list_of(AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A)(AUX_DAC_B,
-                ad5623_regs_t::ADDR_DAC_B)(AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B)(
-                AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A))(UNIT_TX,
-            map_list_of(AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A)(AUX_DAC_B,
-                ad5623_regs_t::ADDR_DAC_B)(AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B)(
-                AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A));
+    static const uhd::dict<unit_t, aux_dac_to_addr> unit_to_which_to_addr{
+        {UNIT_RX,
+            {{AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A},
+                {AUX_DAC_B, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A}}},
+        {UNIT_TX,
+            {{AUX_DAC_A, ad5623_regs_t::ADDR_DAC_A},
+                {AUX_DAC_B, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_C, ad5623_regs_t::ADDR_DAC_B},
+                {AUX_DAC_D, ad5623_regs_t::ADDR_DAC_A}}}};
     _dac_regs[unit].addr = unit_to_which_to_addr[unit][which];
     this->_write_aux_dac(unit);
 }
 
 double x300_dboard_iface::read_aux_adc(unit_t unit, aux_adc_t which)
 {
-    static const uhd::dict<unit_t, int> unit_to_spi_adc =
-        map_list_of(UNIT_RX, DB_RX_LSADC_SEN)(UNIT_TX, DB_TX_LSADC_SEN);
+    static const uhd::dict<unit_t, int> unit_to_spi_adc{
+        {UNIT_RX, DB_RX_LSADC_SEN}, {UNIT_TX, DB_TX_LSADC_SEN}};
 
     if (unit == UNIT_BOTH)
         throw uhd::runtime_error("UNIT_BOTH not supported.");

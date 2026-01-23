@@ -1,0 +1,50 @@
+/*! \page page_devices Device Manuals
+
+
+__USRP N-Series Devices__
+
+\li \subpage page_usrp2 "USRP N2x0 Series"
+\li \subpage page_usrp_n3xx "USRP N3xx Series"
+
+__USRP B-Series Devices__
+
+\li \subpage page_usrp_b200
+
+__USRP E-Series Devices__
+
+\li \subpage page_usrp_e3xx
+
+__USRP X-Series Devices__
+
+\li \subpage page_usrp_x3x0
+\li \subpage page_usrp_x4xx
+
+__USRP Legacy Series__
+
+Legacy devices are USRPs that are either no longer supported, or are no longer
+available for purchase. Refer to the individual manual pages for details.
+In general, no new feature development is happening for these devices, but
+unless stated otherwise, they will still work with this version of UHD.
+
+\li \subpage page_usrp1
+\li \subpage page_usrp_b100
+\li \subpage page_usrp_e1x0
+\li \ref page_usrp2 "USRP2 Series"
+
+__Daughterboards__
+
+\li \subpage page_dboards
+\li \ref page_twinrx
+\li \ref page_zbx
+\li \ref page_fbx
+
+__OctoClock__
+
+\li \subpage page_octoclock
+
+__Usrpctl__
+
+\li \subpage page_usrpctl
+
+*/
+// vim:ft=doxygen:

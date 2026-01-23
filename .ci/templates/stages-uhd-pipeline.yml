@@ -28,7 +28,7 @@ parameters:
   default: 'smoke'
 - name: create_sbom
   type: boolean
-  displayName: Create SBOM for filesystem images
+  displayName: Create SBOMs
   default: true
 - name: build_sdk
   type: boolean
@@ -51,6 +51,9 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
+- name: cmake_args
+  type: string
+  default: " "
 - name: fpga_imgs_source
   type: string
   displayName: FPGA Images Source
@@ -97,30 +100,35 @@ parameters:
       image_core_name: usrp_x410_fpga_X4_400
       artifact_name: X410_X4_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_UC_200:
       image_core: x410_UC_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_UC_200
       artifact_name: X410_UC_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_X4_200:
       image_core: x410_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_X4_200
       artifact_name: X410_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_CG_400:
       image_core: x410_CG_400_rfnoc_image_core.yml
       image_core_name: usrp_x410_fpga_CG_400
       artifact_name: X410_CG_400
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X410_FFT_BLOCK_TEST:
       image_core: ../../../../host/tests/rfnoc_block_tests_on_target/x410_fft_block_test.yml
       image_core_name: usrp_x410_fpga_fft_block_test
       artifact_name: X410_FFT_BLOCK_TEST
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 # Requested X440 targets
 - name: x440_targets_matrix
@@ -131,30 +139,35 @@ parameters:
       image_core_name: usrp_x440_fpga_CG_1600
       artifact_name: X440_CG_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_CG_400:
       image_core: x440_CG_400_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_CG_400
       artifact_name: X440_CG_400
-      timeout: 720
+      timeout: 1080
+      attempt_timeout: 540 # successfull runs can take longer than default 6h
       max_attempts: 2
     X440_X4_1600:
       image_core: x440_X4_1600_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_1600
       artifact_name: X440_X4_1600
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
     X440_X4_400:
       image_core: x440_X4_400_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_400
       artifact_name: X440_X4_400
-      timeout: 720
+      timeout: 1080
+      attempt_timeout: 540 # successfull runs can take longer than default 6h
       max_attempts: 2
     X440_X4_200:
       image_core: x440_X4_200_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_X4_200
       artifact_name: X440_X4_200
       timeout: 720
+      attempt_timeout: 360
       max_attempts: 2
 
 variables:
@@ -221,6 +234,11 @@ resources:
     endpoint: EttusResearch
     name: ni/labview-usrp-examples
     ref: main
+  - repository: rfnoc-oot-blocks
+    type: github
+    endpoint: EttusResearch
+    name: EttusResearch/rfnoc-oot-blocks-dev
+    ref: main
 
 stages:
 ###############################################################################
@@ -270,17 +288,21 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make
+      cmake_args: ${{ parameters.cmake_args }}
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make_trace
+      cmake_args: ${{ parameters.cmake_args }}
   - template: job-uhd-build-src.yml
     parameters:
       toolset: ninja
+      cmake_args: ${{ parameters.cmake_args }}
   - ${{ if parameters.custom_boost_version }}:
     - template: job-uhd-build-src.yml
       parameters:
         toolset: make_custom_boost_version
         custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+        cmake_args: ${{ parameters.cmake_args }}
 
 - stage: build_rfnoc_modtool_stage_linux
   displayName: Build and Test RFNoC Modtool
@@ -313,6 +335,8 @@ stages:
   - template: job-uhd-build-src.yml
     parameters:
       toolset: make_homebrew_macos
+      custom_boost_version: ${{ parameters.custom_boost_version }}
+      custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
 
 - stage: build_uhd_embedded_system_images
   displayName: Build UHD Embedded System Images
@@ -405,6 +429,29 @@ stages:
       uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
       release_binaries: ${{ parameters.release_binaries }}
 
+- stage: build_uhd_manual
+  displayName: Build UHD Manual (the ReadTheDocs way)
+  dependsOn: analyze_changeset
+  # This stage is executed if any of these are true:
+  # - uhd.build* is set to Force-yes or auto
+  # - uhd.docs is set to Force-yes or auto
+  # - fpga.usrp3* is set to Force-yes or auto
+  condition: >
+    and(succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.docs'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3')
+      )
+    )
+  jobs:
+  - template: job-get-latest-uhd-docker.yml
+  - template: job-uhd-build-manual.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdBuildDir: $(Build.BinariesDirectory)/uhddev/build
+      release_binaries: ${{ parameters.release_binaries }}
+
 - stage: build_gnuradio_stage_linux
   displayName: Build gnuradio Linux
   dependsOn:
@@ -433,6 +480,8 @@ stages:
       parameters:
         toolset: ubuntu_deb
         installer: deb
+        cmake_args: ${{ parameters.cmake_args }}
+        create_sbom: ${{ parameters.create_sbom }}
 
 - stage: build_uhd_installer_stage_fedora
   displayName: Build UHD Installers Fedora
@@ -443,7 +492,9 @@ stages:
       parameters:
         toolset: fedora_rpm
         installer: rpm
+        cmake_args: ${{ parameters.cmake_args }}
         releaseBinaries: ${{ parameters.release_binaries }}
+        create_sbom: ${{ parameters.create_sbom }}
 
 - stage: build_uhd_installer_stage_win
   displayName: Build UHD Installers Windows
@@ -461,11 +512,13 @@ stages:
       parameters:
         toolset: msbuild
         installer: nsis
+        cmake_args: ${{ parameters.cmake_args }}
         releaseBinaries: ${{ parameters.release_binaries }}
         ${{ if contains(parameters.fpga_imgs_source, 'files.ettus.com') }}:
           fpga_imgs_source: 'files.ettus.com'
         ${{ else }}:
           fpga_imgs_source: 'Internal'
+        create_sbom: ${{ parameters.create_sbom }}
     - ${{ if parameters.release_binaries }}:
       - template: job-uhd-build-installer-signing.yml
         parameters:
@@ -487,6 +540,11 @@ stages:
     )
   jobs:
   - template: ../fpga/templates/job-run-testbenches.yml
+    parameters:
+      simulator: modelsim
+  - template: ../fpga/templates/job-run-testbenches.yml
+    parameters:
+      simulator: xsim
 
 ### END: Testbenches stage
 
@@ -552,6 +610,10 @@ stages:
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    additional_setup_steps:
+      - checkout: rfnoc-oot-blocks
+        clean: true
+    rfnoc_include_dir: $(Build.SourcesDirectory)/rfnoc-oot-blocks-dev/rfnoc
 
 ###############################################################################
 # Hardware Test Stages. These require having valid software and FPGA images.
@@ -582,7 +644,7 @@ stages:
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
-      testDevices: 'b2xx'
+      testDevices: 'x3xx,b2xx'
 
 - stage: devtest_uhd_n3xx_e320_stage
   displayName: Dev Test UHD n3xx e320
@@ -821,9 +883,8 @@ stages:
   displayName: Test LabVIEW USRP Examples
   dependsOn:
   - analyze_changeset
+  - build_uhd_embedded_system_images
   - build_uhd_installer_stage_win
+  - provide_x410_fpga_images_stage
   jobs:
   - template: job-uhd-usrp-tests-uhdlvtest.yml
-    parameters:
-      uhdSrcDir: $(Build.SourcesDirectory)
-      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}

@@ -11,7 +11,6 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/utils/assert_has.hpp>
-#include <boost/assign/list_of.hpp>
 #include <iostream>
 
 #define FR_OE_0 5
@@ -54,7 +53,6 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::usrp::gpio_atr;
-using namespace boost::assign;
 
 static const dboard_id_t tvrx_id(0x0040);
 
@@ -466,22 +464,26 @@ void usrp1_dboard_iface::write_aux_dac(
     dboard_iface::unit_t, aux_dac_t which, double value)
 {
     // same aux dacs for each unit
-    static const uhd::dict<aux_dac_t, usrp1_codec_ctrl::aux_dac_t> which_to_aux_dac =
-        map_list_of(AUX_DAC_A, usrp1_codec_ctrl::AUX_DAC_A)(AUX_DAC_B,
-            usrp1_codec_ctrl::AUX_DAC_B)(AUX_DAC_C, usrp1_codec_ctrl::AUX_DAC_C)(
-            AUX_DAC_D, usrp1_codec_ctrl::AUX_DAC_D);
+    static const uhd::dict<aux_dac_t, usrp1_codec_ctrl::aux_dac_t> which_to_aux_dac{
+        {AUX_DAC_A, usrp1_codec_ctrl::AUX_DAC_A},
+        {AUX_DAC_B, usrp1_codec_ctrl::AUX_DAC_B},
+        {AUX_DAC_C, usrp1_codec_ctrl::AUX_DAC_C},
+        {AUX_DAC_D, usrp1_codec_ctrl::AUX_DAC_D}};
 
     _codec->write_aux_dac(which_to_aux_dac[which], value);
 }
 
 double usrp1_dboard_iface::read_aux_adc(dboard_iface::unit_t unit, aux_adc_t which)
 {
+    // clang-format off
     static const uhd::dict<unit_t, uhd::dict<aux_adc_t, usrp1_codec_ctrl::aux_adc_t>>
-        unit_to_which_to_aux_adc = map_list_of(UNIT_RX,
-            map_list_of(AUX_ADC_A, usrp1_codec_ctrl::AUX_ADC_A1)(
-                AUX_ADC_B, usrp1_codec_ctrl::AUX_ADC_B1))(UNIT_TX,
-            map_list_of(AUX_ADC_A, usrp1_codec_ctrl::AUX_ADC_A2)(
-                AUX_ADC_B, usrp1_codec_ctrl::AUX_ADC_B2));
+        unit_to_which_to_aux_adc{
+        {UNIT_RX,
+            {{AUX_ADC_A, usrp1_codec_ctrl::AUX_ADC_A1}, {AUX_ADC_B, usrp1_codec_ctrl::AUX_ADC_B1}}},
+        {UNIT_TX,
+            {{AUX_ADC_A, usrp1_codec_ctrl::AUX_ADC_A2}, {AUX_ADC_B, usrp1_codec_ctrl::AUX_ADC_B2}}}
+    };
+    // clang-format on
 
     return _codec->read_aux_adc(unit_to_which_to_aux_adc[unit][which]);
 }

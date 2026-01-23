@@ -14,7 +14,7 @@ using namespace uhd;
  * stream command
  **********************************************************************/
 stream_cmd_t::stream_cmd_t(const stream_mode_t& stream_mode)
-    : stream_mode(stream_mode), num_samps(0), stream_now(true)
+    : stream_mode(stream_mode), num_samps(0), stream_now(true), trigger(trigger_t::TIMED)
 {
     /* NOP */
 }

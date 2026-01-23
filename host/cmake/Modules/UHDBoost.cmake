@@ -6,11 +6,8 @@
 
 # The following variables can be defined external to this script.
 #
-# ENABLE_STATIC_LIBS : whether to enable static libraries, which will
-# require static Boost libraries too. If not using static libraries,
-# shared libraries will be used. The default is to use shared
-# libraries, and this default will be used if this variable is not
-# defined or if is it NO/OFF/FALSE.
+# Boost_*: Check the FindBoost CMake documentation. For example,
+# Boost_USE_STATIC_LIBS can be set to require static libraries.
 #
 # UHD_BOOST_REQUIRED_COMPONENTS : Boost components that are required
 # for Boost_FOUND to be true. The linkage (shared or static) must be
@@ -103,14 +100,6 @@ if(MINGW)
     endif()
 endif()
 
-# if 'system' is in the list, make sure it comes last; sometimes this
-# linkage makes a difference
-list(FIND UHD_BOOST_REQUIRED_COMPONENTS "system" SYSTEM_NDX)
-if(NOT ${SYSTEM_NDX} EQUAL -1)
-    list(REMOVE_AT UHD_BOOST_REQUIRED_COMPONENTS ${SYSTEM_NDX})
-    list(APPEND UHD_BOOST_REQUIRED_COMPONENTS "system")
-endif()
-
 # special library directory that's used by some Linux
 if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
@@ -162,23 +151,6 @@ if(NOT CMAKE_CXX_STANDARD)
   message(WARNING "\nC++ standard not yet set; setting to C++14.\n")
 endif()
 
-# tell boost the linkage required
-set(Boost_USE_STATIC_LIBS ${ENABLE_STATIC_LIBS})
-# temporarily explicitly enable or disable shared libraries,
-# build-wise; this can be disabled on a case by case basis for each
-# library built.
-if(BUILD_SHARED_LIBS)
-    set(BUILD_SHARED_LIBS_SET TRUE)
-    set(OLD_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
-else()
-    set(BUILD_SHARED_LIBS_SET FALSE)
-endif()
-if(ENABLE_STATIC_LIBS)
-    set(BUILD_SHARED_LIBS FALSE)
-else()
-    set(BUILD_SHARED_LIBS TRUE)
-endif()
-
 if(${UHD_BOOST_OPTIONAL_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for optional Boost components...")
     find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
@@ -189,14 +161,6 @@ if(${UHD_BOOST_REQUIRED_COMPONENTS_LEN} GREATER 0)
     message(STATUS "  Looking for required Boost components...")
     find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
         COMPONENTS ${UHD_BOOST_REQUIRED_COMPONENTS} ${UHD_BOOST_REQUIRED})
-endif()
-
-# restore BUILD_SHARED_LIBS, if set
-if(BUILD_SHARED_LIBS_SET)
-    set(BUILD_SHARED_LIBS ${OLD_BUILD_SHARED_LIBS})
-    unset(OLD_BUILD_SHARED_LIBS)
-else()
-    unset(BUILD_SHARED_LIBS)
 endif()
 
 if(NOT Boost_FOUND)
@@ -212,12 +176,6 @@ else()
     # fix the Boost_VERSION to be X.Y.Z if CMake version < 3.15
     if(CMAKE_VERSION VERSION_LESS 3.15)
         set(Boost_VERSION "${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}")
-    endif()
-
-    # generic fix for some linking issues with Boost 1.68.0 or newer.
-    if(NOT ${Boost_VERSION} VERSION_LESS 1.68.0)
-        message(STATUS "  Enabling Boost Error Code Header Only")
-        add_definitions(-DBOOST_ERROR_CODE_HEADER_ONLY)
     endif()
 
     # test for std::string_view in boost::asio only if we're using
@@ -273,53 +231,6 @@ else()
     # disable Boost's use of std::experimental::string_view
     # works for Boost 1.67.0 and newer & doesn't hurt older
     add_definitions(-DBOOST_ASIO_DISABLE_STD_EXPERIMENTAL_STRING_VIEW)
-
-    # Boost 1.70.0's find cmake scripts don't always set the expected
-    # return variables. Replicate the commit that fixes that issue here:
-    # https://github.com/boostorg/boost_install/commit/cfa8d55250dfc2635e907e42da423e4eb540dee5
-    if(Boost_FOUND AND (${Boost_VERSION} VERSION_EQUAL 1.70.0))
-        message(STATUS "  Enabling possible Boost 1.70.0 Fixes")
-
-        # FindBoost compatibility variables: Boost_LIBRARIES, Boost_<C>_LIBRARY
-        if(NOT Boost_LIBRARIES OR "${Boost_LIBRARIES}" STREQUAL "")
-            set(Boost_LIBRARIES "")
-            foreach(dep IN LISTS UHD_BOOST_REQUIRED_COMPONENTS UHD_BOOST_OPTIONAL_COMPONENTS)
-                string(TOUPPER ${dep} _BOOST_DEP)
-                if(NOT Boost_${_BOOST_DEP}_FOUND)
-                    status(WARNING "  Boost component '${dep}' should have been found but somehow isn't listed as found. Ignoring and hoping for the best!")
-                endif()
-                list(APPEND Boost_LIBRARIES Boost::${dep})
-                set(Boost_${_BOOST_DEP}_LIBRARY Boost::${dep})
-            endforeach()
-        endif()
-
-        # FindBoost compatibility variables: Boost_INCLUDE_DIRS
-        if(NOT Boost_INCLUDE_DIRS OR "${Boost_INCLUDE_DIRS}" STREQUAL "")
-            get_target_property(Boost_INCLUDE_DIRS Boost::headers INTERFACE_INCLUDE_DIRECTORIES)
-        endif()
-
-        # FindBoost compatibility variables: Boost_LIBRARY_DIRS
-        if(NOT Boost_LIBRARY_DIRS OR "${Boost_LIBRARY_DIRS}" STREQUAL "")
-            set(Boost_LIBRARY_DIRS "")
-            foreach(dep IN LISTS UHD_BOOST_REQUIRED_COMPONENTS UHD_BOOST_OPTIONAL_COMPONENTS)
-                string(TOUPPER ${dep} _BOOST_DEP)
-                if(NOT Boost_${_BOOST_DEP}_FOUND)
-                    status(WARNING "  Boost component '${dep}' should have been found but somehow isn't listed as found. Ignoring and hoping for the best!")
-                endif()
-                if(Boost_USE_DEBUG_LIBS)
-                    get_target_property(Boost_${dep}_LIBRARY Boost::${dep} IMPORTED_LOCATION_DEBUG)
-                else()
-                    get_target_property(Boost_${dep}_LIBRARY Boost::${dep} IMPORTED_LOCATION_RELEASE)
-                endif()
-                get_filename_component(Boost_${dep}_LIBRARY_DIR ${Boost_${dep}_LIBRARY} DIRECTORY ABSOLUTE)
-                list(FIND Boost_LIBRARY_DIRS ${Boost_${dep}_LIBRARY_DIR} Boost_${dep}_LIBRARY_DIR_FOUND)
-                if(${Boost_${dep}_LIBRARY_DIR_FOUND} EQUAL -1)
-                    list(APPEND Boost_LIBRARY_DIRS ${Boost_${dep}_LIBRARY_DIR})
-                endif()
-            endforeach()
-        endif()
-        list(SORT Boost_LIBRARY_DIRS)
-    endif()
 
     message(STATUS "  Boost version: ${Boost_VERSION}")
     message(STATUS "  Boost include directories: ${Boost_INCLUDE_DIRS}")

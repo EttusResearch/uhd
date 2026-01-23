@@ -27,6 +27,7 @@ if(ENABLE_X300)
 endif()
 
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/complex_gain_3000.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dma_fifo_core_3000.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gpio_atr_3000.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/i2c_core_100_wb32.cpp

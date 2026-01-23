@@ -23,6 +23,7 @@ set(example_sources
     tx_timed_samples.cpp
     tx_waveforms.cpp
     txrx_loopback_to_file.cpp
+    txrx_complex_gain.cpp
     usrp_list_sensors.cpp
     latency_test.cpp
     gpio.cpp
@@ -42,7 +43,8 @@ endif(ENABLE_OCTOCLOCK)
 foreach(example_source ${example_sources})
     get_filename_component(example_name ${example_source} NAME_WE)
     add_executable(${example_name} ${example_source})
-    target_link_libraries(${example_name} uhd ${Boost_LIBRARIES})
+    target_link_libraries(${example_name}
+        PUBLIC uhd Boost::program_options Boost::filesystem)
     UHD_INSTALL(TARGETS ${example_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 endforeach(example_source)
 
@@ -55,11 +57,13 @@ find_package(Curses)
 if(CURSES_FOUND)
     include_directories(${CURSES_INCLUDE_DIR})
     add_executable(rx_ascii_art_dft rx_ascii_art_dft.cpp)
-    target_link_libraries(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(rx_ascii_art_dft
+        PUBLIC uhd ${CURSES_LIBRARIES} Boost::program_options)
     UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 
     add_executable(twinrx_freq_hopping twinrx_freq_hopping.cpp)
-    target_link_libraries(twinrx_freq_hopping uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(twinrx_freq_hopping
+        PUBLIC uhd ${CURSES_LIBRARIES} Boost::program_options)
     UHD_INSTALL(TARGETS twinrx_freq_hopping RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 endif(CURSES_FOUND)
 

@@ -13,6 +13,7 @@
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/test/unit_test.hpp>
+#include <cmath>
 #include <iostream>
 
 using namespace uhd::rfnoc;
@@ -201,7 +202,7 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
         mock_source_term.received_actions.back());
     BOOST_CHECK(tune_req_received);
     BOOST_CHECK_EQUAL(
-        abs(tune_req_received->tune_request.target_freq), tune_request.target_freq);
+        std::abs(tune_req_received->tune_request.target_freq), tune_request.target_freq);
     BOOST_CHECK_CLOSE(tune_req_received->tune_result.target_dsp_freq,
         tune_req_received->tune_result.actual_dsp_freq,
         1e-5);

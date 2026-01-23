@@ -17,6 +17,26 @@ namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
+    const std::string program_doc =
+        "usage: test_timed_commands [--help] [--args ARGS]"
+        "\n\n"
+        "This example program demonstrates two distinct mechanisms for timed\n"
+        "operations using the UHD multi_usrp API.\n"
+        "- First, it shows how to use set_command_time to schedule the timed\n"
+        "  execution of subsequent commands; it demonstrates this at hand of\n"
+        "  get_time_now, illustrating that multiple calls to set_command_time\n"
+        "  with different time values can be queued and executed at their\n"
+        "  designated hardware timestamps. (In practice, timed commands are\n"
+        "  typically used to precisely schedule actions such as frequency changes\n"
+        "  or gain adjustments)\n"
+        "- Second, the program demonstrates timed streaming by issuing stream\n"
+        "  commands with a specified time_spec, enabling precise control over\n"
+        "  when RX streaming begins.\n"
+        "These techniques provide deterministic timing for device actions and\n"
+        "data streaming, which is essential for synchronization and coordinated\n"
+        "operations across multiple USRP devices. The results are printed to the\n"
+        "console, confirming correct execution of both timed command scheduling\n"
+        "and timed receive streaming.\n";
     // variables to be set by po
     std::string args;
 
@@ -24,8 +44,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
+        ("help", "Show this help message and exit.")
+        ("args", po::value<std::string>(&args)->default_value(""), "Single USRP device selection and "
+            "configuration arguments."
+            "\nSpecify key-value pairs (e.g., addr, serial, type, master_clock_rate) separated by commas."
+            "\nSee the UHD manual for model-specific options."
+            "\nExamples:"
+            "\n  --args \"addr=192.168.10.2\""
+            "\n  --args \"addr=192.168.10.2,master_clock_rate=200e6\""
+            "\nIf not specified, UHD connects to the first available device.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -34,7 +61,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD Test Timed Commands %s") % desc << std::endl;
+        std::cout << program_doc << std::endl;
+        std::cout << desc << std::endl;
         return ~0;
     }
 

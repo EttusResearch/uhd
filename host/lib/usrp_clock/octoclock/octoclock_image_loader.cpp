@@ -17,19 +17,19 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/utils/ihex.hpp>
 #include <stdint.h>
-#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <string>
 #include <thread>
 
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 using namespace uhd;
 using namespace uhd::usrp_clock;
 using namespace uhd::transport;

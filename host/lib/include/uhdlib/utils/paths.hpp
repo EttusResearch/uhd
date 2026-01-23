@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <string>
+#include <vector>
 
 namespace uhd {
 
@@ -32,7 +33,7 @@ std::string get_appdata_path(void);
 // There are valid scenarios when there is no such variable, e.g., when a process
 // is being spawned as a system process (there is no 'user' specified). If no
 // such path can be found, an empty string is returned.
-boost::filesystem::path get_xdg_data_home();
+std::filesystem::path get_xdg_data_home();
 
 //! Return a path to XDG_CONFIG_HOME
 //
@@ -44,19 +45,19 @@ boost::filesystem::path get_xdg_data_home();
 // There are valid scenarios when there is no such variable, e.g., when a process
 // is being spawned as a system process (there is no 'user' specified). If no
 // such path can be found, an empty string is returned.
-boost::filesystem::path get_xdg_config_home();
+std::filesystem::path get_xdg_config_home();
 
 //! Return a path to ~/.uhd
 //
 // If no home directory can be found, an empty string is returned.
-boost::filesystem::path get_legacy_config_home();
+std::filesystem::path get_legacy_config_home();
 
 //! Return a list of paths to module.d/ directories.
 //
 // These directories contain files that are loaded by UHD at runtime. Every
 // file may contain a list of modules to load. Every line in each file is
 // the name or path of a library to load.
-std::vector<boost::filesystem::path> get_module_d_paths(void);
+std::vector<std::filesystem::path> get_module_d_paths(void);
 
 //! Return the path to a UHD command.
 //

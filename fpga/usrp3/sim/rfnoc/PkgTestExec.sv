@@ -31,15 +31,19 @@ package PkgTestExec;
     bit    stop_on_error = 1;         // Configuration option to stop when an error occurs
     bit    done = 0;                  // Flag that sets when tb is finished
     logic  test_status[$] = { 1'bX }; // Pass/fail of each test where index matches test number
+    int    start_tb_count = 0;        // Total number of start_tb calls
+    int    end_tb_count = 0;          // Total number of end_tb completions
 
     timeout_t tb_timeout;             // Handle to timeout for the overall testbench
     timeout_t test_timeout;           // Handle to timeout for current test
 
+    semaphore tb_count_sem;           // Semaphore for testbench counters
     semaphore test_sem;               // Testbench semaphore
 
 
     function new();
       $timeformat(-9, 0, " ns", 12);
+      this.tb_count_sem = new(1);
       this.test_sem = new(1);
     endfunction : new
 
@@ -52,6 +56,12 @@ package PkgTestExec;
     //                 simulation and cause it to never end.
     //
     task start_tb(string tb_name, realtime time_limit = 10ms);
+      // Increment start_tb_count to track how many TBs we expect to complete.
+      // Use a semaphore to protect the read-modify-write operation, which
+      // could be called from multiple threads.
+      tb_count_sem.get();
+      start_tb_count++;
+      tb_count_sem.put();
       // Get the sempahore, to prevent multiple overlapping instances of the
       // same testbench.
       test_sem.get();
@@ -99,10 +109,16 @@ package PkgTestExec;
       end_timeout(tb_timeout);
 
       done = 1;
-      if (finish) $finish();
+
+      // Increment end_tb_count so we know when all the TBs have completed. Do
+      // this before releasing the semaphore so that only one thread can be
+      // doing this read-modify-write operation.
+      end_tb_count++;
 
       // Release the semaphore to allow new instances of the testbench to run
       test_sem.put();
+
+      if (finish) $finish();
     endfunction : end_tb
 
 
@@ -157,6 +173,25 @@ package PkgTestExec;
 
       current_test = "";
     endtask : end_test
+
+
+    // Wait until all testbenches have completed. This assumes that start_tb is
+    // called for all testbenches at time 0, but the testbenches may finish at
+    // different times.
+    //
+    //   finish: If 1, this task calls $finish() once all testbenches have
+    //          completed. Otherwise, it returns.
+    //
+    task wait_all_tb(bit finish = 0);
+      // Wait until the first testbench has completed
+      wait (end_tb_count > 0);
+
+      // By this time, all the testbenches should have started, so we wait
+      // until the end count catches up to the start count.
+      wait (end_tb_count == start_tb_count);
+
+      if (finish) $finish();
+    endtask
 
 
     // Assert the given expression and call $error() if it fails. Simulation

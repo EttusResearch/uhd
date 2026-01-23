@@ -10,6 +10,9 @@ parameters:
 - name: releaseBinaries
   type: boolean
   default: false
+- name: cmake_args
+  type: string
+  default: " "
 
 steps:
 - script: |
@@ -20,11 +23,15 @@ steps:
       echo "Setting UHD_RELEASE_MODE to release"
       export UHD_CI_CMAKE_OPTIONS="-DUHD_RELEASE_MODE=release $UHD_CI_CMAKE_OPTIONS"
     fi
+    if [[ "${{ parameters.cmake_args }}" != " " ]]; then
+      echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
+    fi
     cmake \
       -DCMAKE_INSTALL_PREFIX=/usr \
       $UHD_CI_CMAKE_OPTIONS \
       -DUNDERSCORE_UHD_VERSION=ON \
       -DENABLE_DPDK=OFF \
+      ${{ parameters.cmake_args }} \
       -G "Unix Makefiles" \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake rpm
@@ -34,7 +41,7 @@ steps:
     make package -j$(nproc)
   displayName: make package rpm
 
-- task: CopyFiles@2.246.0
+- task: CopyFiles@2
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd*.rpm'

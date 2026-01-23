@@ -17,8 +17,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-const std::string STREAM_CMD_KEY = "stream_cmd";
-
 BOOST_AUTO_TEST_CASE(test_actions_single_node)
 {
     node_accessor_t node_accessor{};
