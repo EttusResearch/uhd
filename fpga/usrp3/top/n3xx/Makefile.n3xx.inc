@@ -128,7 +128,7 @@ $(XGE_SRCS) $(XGE_INTERFACE_SRCS) $(AURORA_PHY_SRCS) \
 $(TEN_GIGE_PHY_SRCS) $(ONE_GIGE_PHY_SRCS) \
 $(RFNOC_FRAMEWORK_SRCS) $(PACKET_PROC_SRCS) $(DSP_SRCS) $(DRAM_SRCS) \
 $(RADIO_SRCS) $(CAP_GEN_GENERIC_SRCS) $(IP_XCI_SRCS) $(BD_SRCS) \
-$(RFNOC_SRCS) $(RFNOC_OOT_SRCS) $(LIB_IP_XCI_SRCS) $(LIB_HLS_IP_SRCS) \
+$(RFNOC_SRCS) $(LIB_IP_XCI_SRCS) $(LIB_HLS_IP_SRCS) \
 $(WHITE_RABBIT_SRCS) \
 $(RFNOC_XPORT_SV_SRCS) \
 $(RFNOC_IMAGE_CORE_SRCS) \
@@ -146,8 +146,11 @@ IMAGE_CORE_HEADER_DEF="RFNOC_IMAGE_CORE_HDR=$(BUILD_DIR)/rfnoc_image_core.vh"
 
 VERILOG_DEFS=$(EXTRA_DEFS) $(CUSTOM_DEFS) $(GIT_HASH_VERILOG_DEF) $(IMAGE_CORE_HEADER_DEF) $(RFNOC_IMAGE_CORE_DEFS)
 
+$(OOT_SRCS_FILE):
+	@printf "%s\n" $(RFNOC_OOT_SRCS) > $@
+
 # DESIGN_SRCS and VERILOG_DEFS must be defined
-bin: .prereqs
+bin: .prereqs $(OOT_SRCS_FILE)
 	@echo "Build directory:: $(BUILD_DIR)"
 	@echo "Printing MB_XDC:: $(MB_XDC)"
 	@echo "Printing VERILOG_DEFS:: $(VERILOG_DEFS)"
@@ -162,4 +165,4 @@ rtl: .prereqs
 viv_ip: .prereqs $$(DESIGN_SRCS) ip
 	@echo "IP build for $(NAME) DONE . . ."
 
-.PHONY: bin synth rtl viv_ip
+.PHONY: bin synth rtl viv_ip $(OOT_SRCS_FILE)
