@@ -14,6 +14,7 @@ UHD_INSTALL(FILES
     trig_io_mode_iface.hpp
     internal_sync_iface.hpp
     complex_gain_iface.hpp
+    gps_iface.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/features
     COMPONENT headers
 )
