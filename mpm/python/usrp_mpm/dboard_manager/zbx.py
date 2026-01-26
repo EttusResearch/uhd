@@ -51,7 +51,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         "fpga": {
             "compatibility": {
                 "rf_core_100m": {
-                    "current": (1, 0),
+                    "current": (1, 1),
                     "oldest": (1, 0),
                 },
                 "rf_core_400m": {
