@@ -247,10 +247,9 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     device_addrs_t filtered_mpm_devs;
 
     const bool check_reachability =
-        ((hint_.has_key("mpm_check_reachability")
-            and uhd::cast::from_str<bool>(
-                hint_.cast<std::string>("mpm_check_reachability", "Yes"))))
-        || uhd::prefs::mpm_check_reachability();
+        hint_.has_key("mpm_check_reachability") ? uhd::cast::from_str<bool>(
+            hint_.cast<std::string>("mpm_check_reachability", "Yes"))
+                                                : uhd::prefs::mpm_check_reachability();
 
     UHD_LOG_DEBUG("MPMD FIND",
         "Will " << (check_reachability ? "" : "not ")
