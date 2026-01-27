@@ -16,14 +16,18 @@
 //   BLANK_OUTPUT             - Disable (1) or enable (0) output when initially filling internal pipeline
 //   USE_EMBEDDED_REGS_COEFFS - Reduce register usage by only using embedded registers in DSP slices.
 //                              Updating taps while streaming will cause temporary output corruption!
-//
+//   COEFF_WIDTH              - Width of filter coefficients
+//   COEFFS_VEC               - Vector of filter coefficients
 
 module axi_fir_multisample_filter_tb #(
-  parameter       NUM_SPC                  = 8,
-  parameter       NUM_COEFFS               = 41,
-  parameter       RELOADABLE_COEFFS         = 1,
-  parameter       BLANK_OUTPUT              = 1,
-  parameter       USE_EMBEDDED_REGS_COEFFS  = 1
+  parameter int NUM_SPC                  = 8,
+  parameter int NUM_COEFFS               = 41,
+  parameter bit RELOADABLE_COEFFS        = 1,
+  parameter bit BLANK_OUTPUT             = 1,
+  parameter bit USE_EMBEDDED_REGS_COEFFS = 1,
+  parameter int COEFF_WIDTH              = 16,
+  parameter bit [COEFF_WIDTH-1:0] COEFFS_VEC [NUM_COEFFS] =
+    '{0: (1 << (COEFF_WIDTH-1)) - 1, default: 0}
 ) ();
 
   `include "test_exec.svh"
@@ -46,28 +50,12 @@ module axi_fir_multisample_filter_tb #(
   // DUT parameters to test
   localparam int IN_WIDTH                 = 16;
   localparam int AXI_WIDTH                = IN_WIDTH * NUM_SPC;
-  localparam int COEFF_WIDTH              = 16;
   localparam int OUT_WIDTH                = 16;
   localparam int CLIP_BITS                = $clog2(NUM_COEFFS);
   localparam int ACCUM_WIDTH              = IN_WIDTH + COEFF_WIDTH + CLIP_BITS - 1;
-  localparam int PIPELINE_DELAY           = NUM_COEFFS + 5;
 
-  // How many groups of multisampled-input needed
-  localparam int IN_GROUP_NUM             = $ceil(NUM_COEFFS*1.0/NUM_SPC);
   // +10 is pipeline compensation
   localparam int FLUSH_CYCLE              = ((NUM_SPC < NUM_COEFFS) ? NUM_COEFFS : NUM_SPC ) +10;
-
-  localparam logic [COEFF_WIDTH*NUM_COEFFS-1:0] COEFFS_VEC_0 = {
-    16'sd158,   16'sd0,     16'sd33,    -16'sd0,    -16'sd256,
-    16'sd553,   16'sd573,   -16'sd542,  -16'sd1012, 16'sd349,
-    16'sd1536,  16'sd123,   -16'sd2097, -16'sd1012, 16'sd1633,
-    16'sd1608,  -16'sd3077, -16'sd5946, 16'sd3370,  16'sd10513,
-    -16'sd19295, // 16'sd19295, change to negative to avoid clipping
-    16'sd10513, 16'sd3370,  -16'sd5946, -16'sd3077, 16'sd1608,
-    16'sd1633,  -16'sd1012, -16'sd2097, 16'sd123,   16'sd1536,
-    16'sd349,   -16'sd1012, -16'sd542,  16'sd573,   16'sd553,
-    -16'sd256,  -16'sd0,    16'sd33,    16'sd0,     16'sd158
-  };
 
   //---------------------------------------------------------------------------
   // Clocks and Resets
@@ -146,7 +134,7 @@ module axi_fir_multisample_filter_tb #(
     .NUM_COEFFS(NUM_COEFFS),
     .CLIP_BITS(CLIP_BITS),
     .ACCUM_WIDTH(ACCUM_WIDTH),
-    .COEFFS_VEC(COEFFS_VEC_0),
+    .COEFFS_VEC(COEFFS_VEC),
     .RELOADABLE_COEFFS(RELOADABLE_COEFFS),
     .BLANK_OUTPUT(BLANK_OUTPUT),
     .USE_EMBEDDED_REGS_COEFFS(USE_EMBEDDED_REGS_COEFFS)
@@ -314,7 +302,7 @@ module axi_fir_multisample_filter_tb #(
         packet_reload.empty();
         // Reload must send data in reverse direction
         for (int i= NUM_COEFFS-1 ; i>=0; i--) begin
-          packet_reload.data.push_back(COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
+          packet_reload.data.push_back(COEFFS_VEC[i]);
         end
         AxisIf_coeff_bfm.put(packet_reload);
         AxisIf_coeff_bfm.wait_complete();
@@ -368,7 +356,7 @@ module axi_fir_multisample_filter_tb #(
         end else begin
           get_sample(i_samp_int, i == 0); // ask one single sample from output
         end
-        i_coeff = $signed(COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
+        i_coeff = $signed(COEFFS_VEC[i]);
 
         $sformat(
           s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d",
