@@ -168,17 +168,22 @@ jobs:
     displayName: Probe device
 
   # TODO make this work for all python versions we support (3.10 + 3.12)
+  # UHD Python package must be installed into System Python because the LV-example opens a normal 
+  # Python process, not a virtual environment one.
   - script: |
       cd $(Build.SourcesDirectory)
       echo "Upgrading required Python packages"
       py -3.10 -m pip install --upgrade pip setuptools virtualenv wheel
+      echo "Removing and reinstalling uhd Python package"
+      py -3.10 -m pip uninstall -y uhd
+      for %%f in ("%uhd_installer_dir%\uhd-*.whl") do (set uhd_python_pkg_path=%%f)
+      echo "Using wheel: %uhd_python_pkg_path%"
+      py -3.10 -m pip install "%uhd_python_pkg_path%"
       echo "Creating virtual environment"
       py -3.10 -m venv lvtest_venv
       call lvtest_venv\Scripts\activate.bat
       echo "Installing required Python packages into the virtual environment"
       pip install lvtest
-      for %%f in ("%uhd_installer_dir%\uhd-*.whl") do (set uhd_python_pkg_path=%%f)
-      pip install "%uhd_python_pkg_path%"
     displayName: Prepare venv (Python 3.10)
 
   - script: |
@@ -217,6 +222,13 @@ jobs:
     displayName: Upload Test Logs
     condition: always()
   
+  # UHD Python package must be uninstalled to cleanup the System Python 
+  - script: |
+      echo "Removing uhd Python package"
+      py -3.10 -m pip uninstall -y uhd
+    displayName: Remove uhd from Python 3.10
+    condition: always()
+
   workspace:
     clean: all
  
