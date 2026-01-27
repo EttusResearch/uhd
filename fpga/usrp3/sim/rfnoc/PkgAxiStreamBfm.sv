@@ -264,6 +264,14 @@ package PkgAxiStreamBfm;
   // AXI Stream BFM Class
   //---------------------------------------------------------------------------
 
+  // Reset behavior: determines how the BFM slave handles packets in progress when
+  // a reset occurs.
+  typedef enum  {
+    DISCARD_PACKET,  // DISCARD_PACKET  - discard any in-progress output packets on reset
+    CONTINUE_PACKET, // CONTINUE_PACKET - continue sending/receiving packet in progress during reset
+    TRUNCATE_PACKET  // TRUNCATE_PACKET - ignore DUT outputs for the duration of the reset
+  } reset_behavior_t;
+
   class AxiStreamBfm #(
     int DATA_WIDTH = 64,
     int USER_WIDTH = 1,
@@ -271,7 +279,8 @@ package PkgAxiStreamBfm;
     bit TDATA = 1,
     bit TUSER = 1,
     bit TKEEP = 1,
-    bit TLAST = 1
+    bit TLAST = 1,
+    reset_behavior_t RESET_BEHAVIOR = DISCARD_PACKET
   );
 
     //------------------
@@ -561,7 +570,25 @@ package PkgAxiStreamBfm;
 
       forever begin
         @(posedge slave.clk);
-        if (slave.rst) continue;
+        if (slave.rst) begin
+          case (RESET_BEHAVIOR)
+            DISCARD_PACKET: begin
+              packet.data = {};
+              packet.user = {};
+              packet.keep = {};
+              continue;
+            end
+            CONTINUE_PACKET: begin
+              // Do nothing, continue receiving the packet
+            end
+            TRUNCATE_PACKET: begin
+              continue;
+            end
+            default: begin
+              $fatal(1, "Unrecognized RESET_BEHAVIOR value: %s", RESET_BEHAVIOR.name());
+            end
+          endcase
+        end
 
         if (slave.tvalid) begin
           if (slave.tready) begin
