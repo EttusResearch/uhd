@@ -13,7 +13,7 @@
 
 /*! \file byteswap.hpp
  *
- * Provide fast byteswaping routines for 16, 32, and 64 bit integers,
+ * Provide fast byteswapping routines for 16, 32, and 64 bit integers,
  * by using the system's native routines/intrinsics when available.
  */
 namespace uhd {
@@ -48,6 +48,30 @@ T wtohx(T);
 // of typical network endianness).
 template <typename T>
 T htowx(T);
+
+//! Host to link with configurable endianness (16-bit, 32-bit, or 64-bit).
+//
+// Use this if the link endianness ("network or worknet") is configurable as
+// template parameter. Note the host endianness is auto-detected at compile
+// time.
+//
+// \tparam endianness The link endianness.
+// \param num The value in host endianness, to be swapped.
+// \return The value byte-swapped to the link endianness.
+template <endianness_t endianness, typename T>
+T htolx(T num);
+
+//! Link with configurable endianness to host (16-bit, 32-bit, or 64-bit).
+//
+// Use this if the link endianness ("network or worknet") is configurable as
+// template parameter. Note the host endianness is auto-detected at compile
+// time.
+//
+// \tparam endianness The link endianness.
+// \param num The value in link endianness, to be swapped.
+// \return The value byte-swapped to the host endianness.
+template <endianness_t endianness, typename T>
+T ltohx(T num);
 
 } // namespace uhd
 

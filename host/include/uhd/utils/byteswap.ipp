@@ -147,4 +147,40 @@ UHD_INLINE T htowx(T num)
 #endif
 }
 
+template <endianness_t endianness, typename T>
+UHD_FORCE_INLINE T htolx(T num)
+{
+#ifdef UHD_BIG_ENDIAN
+    if constexpr (endianness == ENDIANNESS_BIG) {
+        return num;
+    } else {
+        return uhd::byteswap(num);
+    }
+#else // if UHD_LITTLE_ENDIAN
+    if constexpr (endianness == ENDIANNESS_LITTLE) {
+        return num;
+    } else {
+        return uhd::byteswap(num);
+    }
+#endif
+}
+
+template <endianness_t endianness, typename T>
+UHD_FORCE_INLINE T ltohx(T num)
+{
+#ifdef UHD_BIG_ENDIAN
+    if constexpr (endianness == ENDIANNESS_BIG) {
+        return num;
+    } else {
+        return uhd::byteswap(num);
+    }
+#else // if UHD_LITTLE_ENDIAN
+    if constexpr (endianness == ENDIANNESS_LITTLE) {
+        return num;
+    } else {
+        return uhd::byteswap(num);
+    }
+#endif
+}
+
 } /* namespace uhd */
