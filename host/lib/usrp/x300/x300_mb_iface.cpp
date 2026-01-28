@@ -173,6 +173,7 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
         local_epid,
         send_link->get_num_send_frames(),
         recv_link->get_num_recv_frames(),
+        send_link->get_send_frame_size(),
         [io_srv_mgr, send_link, recv_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

@@ -20,8 +20,12 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     sep_id_t my_epid,
     size_t num_send_frames,
     size_t num_recv_frames,
+    size_t send_frame_size,
     disconnect_callback_t disconnect)
-    : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic()), _disconnect(disconnect)
+    : _my_epid(my_epid)
+    , _recv_packet(pkt_factory.make_generic())
+    , _send_frame_size(send_frame_size)
+    , _disconnect(disconnect)
 {
     /* Make dumb send pipe */
     send_io_if::send_callback_t send_cb = [](frame_buff::uptr buff, send_link_if* link) {

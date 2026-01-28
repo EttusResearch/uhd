@@ -47,6 +47,7 @@ public:
         sep_id_t my_epid,
         size_t num_send_frames,
         size_t num_recv_frames,
+        size_t send_frame_size,
         disconnect_callback_t disconnect)
     {
         return std::make_shared<chdr_ctrl_xport>(io_srv,
@@ -56,6 +57,7 @@ public:
             my_epid,
             num_send_frames,
             num_recv_frames,
+            send_frame_size,
             disconnect);
     }
 
@@ -77,6 +79,7 @@ public:
         sep_id_t my_epid,
         size_t num_send_frames,
         size_t num_recv_frames,
+        size_t send_frame_size,
         disconnect_callback_t disconnect);
 
     ~chdr_ctrl_xport();
@@ -97,6 +100,13 @@ public:
      * \param buffer frame buffer to release for reuse by the link
      */
     void release_send_buff(frame_buff::uptr buff);
+
+    /*! Return the max size of send frames
+     */
+    size_t get_send_frame_size() const
+    {
+        return _send_frame_size;
+    }
 
     /*!
      * Attempt to get a frame buffer with data from the recv link.
@@ -156,6 +166,8 @@ private:
     send_io_if::sptr _send_if;
     recv_io_if::sptr _ctrl_recv_if;
     recv_io_if::sptr _mgmt_recv_if;
+
+    size_t _send_frame_size;
 
     // Disconnect callback
     disconnect_callback_t _disconnect;

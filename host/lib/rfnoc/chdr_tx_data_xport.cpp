@@ -277,6 +277,7 @@ chdr_tx_data_xport::configure_sep(io_service::sptr io_srv,
         local_epid,
         1, // num_send_frames
         1, // num_recv_frames
+        send_link->get_send_frame_size(),
         disconnect);
 
     // Setup a route to the EPID
