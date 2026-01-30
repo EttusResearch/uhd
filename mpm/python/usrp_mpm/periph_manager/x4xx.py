@@ -290,6 +290,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         try:
             self._init_peripherals(args)
             self.init_dboards(args)
+            # We finish initializing the tiles after the daughterboard has powered up
+            # so the foreground cal can work while the DB is in a defined state and we
+            # can expect the ADC input level to be as low as possible.
+            self.clk_mgr.restart_tiles()
             # We need to init dio_control separately from peripherals
             # since it needs information about available dboards
             self._init_dio_control(args)
@@ -504,8 +508,11 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # capabilities. This will allow us to figure out a good default MCR,
         # and we set that. Remember that earlier, when we turned on the clocks,
         # we just picked any valid clock rate so we would be able to communicate
-        # with all the devices. After this call, all clocks will be set to useful
-        # and valid values.
+        # with all the devices. After this call, all clocks except for the RFDC
+        # will be set to useful and valid values. The RFDC tiles will be started
+        # afterwards to provide a stable daughterboard state while the ADCs are
+        # running their foreground calibrations which is part of their
+        # initialization.
         self.clk_mgr.finalize_init(args, self.mboard_regs_control, self.rfdc)
 
         # Init ctrlport endpoint

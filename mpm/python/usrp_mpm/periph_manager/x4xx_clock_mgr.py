@@ -257,7 +257,8 @@ class X4xxClockManager:
         Store a reference to the RFdc object, and update internal state.
 
         This completes initialization of the clocking. After this call, all
-        clocks are ticking at a useful rate.
+        clocks are ticking at a useful rate. Only the RFDC tiles still need
+        to be brought up. x4xx.py takes care of that.
         """
         self.clk_ctrl.mboard_regs_control = mboard_regs_control
         self.rfdc = rfdc
@@ -285,11 +286,7 @@ class X4xxClockManager:
         # the clocking policy needs access to the DSP info, meaning this is the
         # earliest point during initialization when we can do this reset.
         self._reset_clocks(True, ("mmcm", "rfdc"))
-        self._reset_clocks(False, ("mmcm", "rfdc"))
-
-        # Devices that use non-default clocking parameters may require an explicit
-        # startup after the RFDC reset:
-        self.rfdc.startup_tiles(quiet=True)
+        self._reset_clocks(False, ("mmcm",))
 
         # The initial default mcr only works if we have an FPGA with
         # a decimation of 2. But we need the overlay applied before we
@@ -709,20 +706,6 @@ class X4xxClockManager:
                 " RF performance. Consider swapping your master clock rate values."
             )
         self._configure_clock_chain(clk_settings, self.get_time_source(), self.get_ref_clock_freq())
-        # Bring RFDC out of reset, reset tiles and reconfigure RFDC
-        self._reset_clocks(False, ("rfdc",))
-        self.rfdc.reset_tiles()
-        self.rfdc.configure(clk_settings.spll_config.output_freq, clk_settings.rfdc_configs)
-        # If non-default clocking parameters are used, reset_tiles() may not be successful in
-        # the first place, so we have to start the tiles explicitely again after the
-        # reconfiguration:
-        self.rfdc.startup_tiles()
-        # According to PG269, self-cal coefficients get lost when calling startup_tiles().
-        # Therefore we need to mark self-cal as required again after that. May be skipped
-        # with 'skip_adc_selfcal' argument (but should be called manually then).
-        if not self.skip_adc_selfcal:
-            for db in range(self.num_dboards):
-                self.tasks[f"db{db}_ADCSelfCal"] = [{"Run": "True"}]
 
         # All settings are applied: Now bring other clocks out of reset. Note
         # that cpld and db_clock don't depend on MMCM or RFDC, but we don't need
@@ -781,6 +764,27 @@ class X4xxClockManager:
         Return the PRC rate
         """
         return self.clk_ctrl.get_prc_rate()
+
+    @no_rpc
+    def restart_tiles(self):
+        """Configure and (re-)start the tiles."""
+        clk_settings = self.clk_policy.get_config(
+            self.get_ref_clock_freq(), self._master_clock_rates
+        )
+        # Bring RFDC out of reset, reset tiles and reconfigure RFDC
+        self._reset_clocks(False, ("rfdc",))
+        self.rfdc.reset_tiles()
+        self.rfdc.configure(clk_settings.spll_config.output_freq, clk_settings.rfdc_configs)
+
+        # Devices that use non-default clocking parameters may require an explicit
+        # startup after the RFDC reset:
+        self.rfdc.startup_tiles()
+        # According to PG269, self-cal coefficients get lost when calling startup_tiles().
+        # Therefore we need to mark self-cal as required again after that. May be skipped
+        # with 'skip_adc_selfcal' argument (but should be called manually then).
+        if not self.skip_adc_selfcal:
+            for db in range(self.num_dboards):
+                self.tasks[f"db{db}_ADCSelfCal"] = [{"Run": "True"}]
 
     ###########################################################################
     # Clock/Time API (this is a public MPM API)
@@ -987,6 +991,7 @@ class X4xxClockManager:
                 # clock chain, so if we had an intermediate settting, it will
                 # be overwritten immediately.
             self.set_master_clock_rate(master_clock_rates)
+            self.restart_tiles()
             # Restore the nco frequency to the same values as before the sync source
             # was changed, to ensure the device transmission/acquisition continues at
             # the requested frequency.
