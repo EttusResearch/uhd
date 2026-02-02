@@ -41,7 +41,7 @@ steps:
     make package -j$(nproc)
   displayName: make package rpm
 
-- task: CopyFiles@2
+- task: CopyFiles@2.246.0
   inputs:
     sourceFolder: ${{ parameters.uhdBuildDir }}
     contents: 'uhd*.rpm'

@@ -97,7 +97,7 @@ jobs:
         volkInstalledArtifactPath: $(Build.BinariesDirectory)/volk/build-installed
         uhdInstalledArtifactPath: $(Agent.BuildDirectory)/uhddev-$(buildOSName)-${{ parameters.toolset }}/uhddev/build-installed
 
-  - task: CopyFiles@2
+  - task: CopyFiles@2.246.0
     inputs:
       sourceFolder: $(Build.BinariesDirectory)
       targetFolder: $(Build.BinariesDirectory)/artifacts
@@ -115,7 +115,7 @@ jobs:
       replaceExistingArchive: true
     displayName: Compress build files
 
-  - task: CopyFiles@2
+  - task: CopyFiles@2.246.0
     inputs:
       sourceFolder: $(Pipeline.Workspace)/uhd_build_docker_container/$(UHDPipelineDockerImageArtifactName)
       targetFolder: $(Build.ArtifactStagingDirectory)
