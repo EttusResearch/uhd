@@ -21,9 +21,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 constexpr size_t NUM_PORTS   = 4;
 constexpr size_t DEFAULT_MTU = 8000;
 

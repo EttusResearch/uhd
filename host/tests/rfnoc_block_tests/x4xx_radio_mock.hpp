@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/node_accessor.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/noc_block_make_args.hpp>
 #include <chrono>
 #include <iostream>
 
@@ -20,9 +21,6 @@ using namespace uhd::rfnoc;
 using namespace std::chrono_literals;
 using namespace uhd::usrp::zbx;
 using namespace uhd::experts;
-
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
 
 namespace {
 /* This class extends mock_reg_iface_t by adding a constructor that initializes

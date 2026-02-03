@@ -11,6 +11,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
+#include <uhdlib/rfnoc/noc_block_make_args.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -31,7 +32,8 @@ uhd::rfnoc::mock_block_container uhd::rfnoc::get_mock_block(const noc_id_t noc_i
                                            : std::make_shared<mock_reg_iface_t>();
     ret_val.tree      = uhd::property_tree::make();
     // Create make args
-    ret_val.make_args                   = std::make_unique<noc_block_base::make_args_t>();
+    ret_val.make_args =
+        noc_block_base::make_args_ptr(new noc_block_base::make_args_int_t());
     ret_val.make_args->noc_id           = noc_id;
     ret_val.make_args->block_id         = block_id_t(fac_info.block_name);
     ret_val.make_args->num_input_ports  = num_inputs;

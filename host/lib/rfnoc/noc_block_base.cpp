@@ -9,10 +9,15 @@
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/noc_block_make_args.hpp>
 
 using namespace uhd::rfnoc;
 
-noc_block_base::make_args_t::~make_args_t() = default;
+// Custom deleter implementation for make_args_deleter
+void uhd::rfnoc::noc_block_base::make_args_deleter::operator()(make_args_int_t* ptr)
+{
+    delete ptr;
+}
 
 /******************************************************************************
  * Structors

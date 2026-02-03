@@ -18,9 +18,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 /* addsub_block_fixture is a class which is instantiated before each test
  * case is run. It sets up the block container and addsub_block_control
  * object, all of which are accessible to the test case. The instance of the

@@ -28,8 +28,7 @@ namespace uhd { namespace rfnoc {
 class clock_iface;
 class mb_controller;
 
-/*!
- * The primary interface to a NoC block in the FPGA
+/*! The primary interface to a NoC block in the FPGA
  *
  * The block supports three types of data access:
  * - Low-level register access
@@ -37,21 +36,40 @@ class mb_controller;
  * - Action execution
  *
  * The main difference between this class and its parent is the direct access to
- * registers, and the NoC&block IDs.
+ * registers, and the NoC-block IDs.
  */
 class UHD_API noc_block_base : public node_t, public register_iface_holder
 {
 public:
-    /*! A shared pointer to allow easy access to this class and for
-     *  automatic memory management.
-     */
     using sptr = std::shared_ptr<noc_block_base>;
 
-    //! Forward declaration for the constructor arguments
-    struct make_args_t;
+    //! Dummy make_args_t class
+    //
+    // This allows OOTs to compile even if they were created prior to making
+    // make_args_t fully opaque.
+    //
+    // This is deprecated and will be removed in future UHD versions.
+    struct UHD_API make_args_t
+    {
+        ~make_args_t();
+    };
 
-    //! Opaque pointer to the constructor arguments
-    using make_args_ptr = std::unique_ptr<make_args_t>;
+    /*! Data structure to hold the arguments passed into the noc_block_base ctor
+     *
+     * This is a fully opaque data type - the struct definition is hidden in the
+     * implementation and not exposed in the public API. This allows the contents
+     * to be modified without breaking ABI compatibility.
+     */
+    struct make_args_int_t;
+
+    //! Custom deleter for make_args_int_t that doesn't require complete type
+    struct UHD_API make_args_deleter
+    {
+        void operator()(make_args_int_t* ptr);
+    };
+
+    //! Opaque pointer to the constructor arguments with custom deleter
+    using make_args_ptr = std::unique_ptr<make_args_int_t, make_args_deleter>;
 
     ~noc_block_base() override;
 
@@ -399,5 +417,3 @@ private:
 }; // class noc_block_base
 
 }} /* namespace uhd::rfnoc */
-
-#include <uhd/rfnoc/noc_block_make_args.hpp>

@@ -18,9 +18,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 /*
  * This class extends mock_reg_iface_t by adding poke and peek hooks that
  * monitor writes and reads to the registers implemented within the FIR

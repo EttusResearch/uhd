@@ -16,9 +16,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 struct split_stream_block_fixture
 {
     //! Create a split stream block having a particular number of input and

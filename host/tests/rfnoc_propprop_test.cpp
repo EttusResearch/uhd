@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/rfnoc_types.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/noc_block_make_args.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <algorithm>
@@ -247,17 +248,15 @@ BOOST_AUTO_TEST_CASE(test_failures)
     BOOST_REQUIRE_THROW(node_accessor.resolve_props(&mock2), uhd::resolve_error);
 }
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
 
 BOOST_AUTO_TEST_CASE(test_mtu_forwarding_policy_restrictions)
 {
     // Most of this is just dummy stuff required to correctly instantiate a
     // noc_block_base-derived block and is inconsequential to the test itself
     mock_block_container mbc;
-    mbc.reg_iface                     = std::make_shared<mock_reg_iface_t>();
-    mbc.tree                          = uhd::property_tree::make();
-    mbc.make_args                     = std::make_unique<noc_block_base::make_args_t>();
+    mbc.reg_iface = std::make_shared<mock_reg_iface_t>();
+    mbc.tree      = uhd::property_tree::make();
+    mbc.make_args = noc_block_base::make_args_ptr(new noc_block_base::make_args_int_t());
     mbc.make_args->noc_id             = 0x01020304;
     mbc.make_args->block_id           = block_id_t("0/Dummy#0");
     mbc.make_args->num_input_ports    = 2;

@@ -20,9 +20,6 @@ using namespace std::chrono_literals;
 using namespace uhd::usrp::fbx;
 using namespace uhd::experts;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 namespace {
 /* This class extends mock_reg_iface_t by adding a constructor that initializes
  * some of the read memory to contain the memory size for the radio block.

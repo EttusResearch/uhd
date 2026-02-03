@@ -20,9 +20,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 constexpr size_t NUM_CHANS       = 4;
 constexpr uint16_t MAX_DELAY_LEN = 2047;
 constexpr size_t DEFAULT_MTU     = 8000;

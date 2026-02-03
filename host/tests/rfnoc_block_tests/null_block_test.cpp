@@ -18,9 +18,6 @@
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 BOOST_AUTO_TEST_CASE(test_null_block)
 {
     node_accessor_t node_accessor{};

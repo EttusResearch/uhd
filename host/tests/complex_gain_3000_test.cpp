@@ -16,9 +16,6 @@ using namespace uhd;
 using namespace uhd::cores;
 using namespace uhd::rfnoc;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 constexpr size_t NUM_CHANS    = 2;
 constexpr size_t NIPC         = 1;
 constexpr double TICK_RATE    = 125e6;
