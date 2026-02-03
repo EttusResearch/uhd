@@ -32,7 +32,7 @@ UHD_INLINE __m256i pack_sc32_4x(
     return _mm256_set_m128i(tmpi_hi, tmpi_lo);
 }
 
-DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_AVX2(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD_AVX2)
 {
     const fc64_t* input = reinterpret_cast<const fc64_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);
@@ -82,7 +82,7 @@ DECLARE_CONVERTER(fc64, 1, sc8_item32_be, 1, PRIORITY_SIMD)
     xx_to_item32_sc8<uhd::htonx>(input + i, output + (i / 2), nsamps - i, scale_factor);
 }
 
-DECLARE_CONVERTER(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_AVX2(fc64, 1, sc8_item32_le, 1, PRIORITY_SIMD_AVX2)
 {
     const fc64_t* input = reinterpret_cast<const fc64_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);

@@ -11,7 +11,7 @@
 
 using namespace uhd::convert;
 
-DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(inputs[0]);
     fc32_t* output        = reinterpret_cast<fc32_t*>(outputs[0]);
@@ -66,7 +66,7 @@ DECLARE_CONVERTER(sc16_item32_le, 1, fc32, 1, PRIORITY_SIMD)
     item32_sc16_to_xx<uhd::htowx>(input + i, output + i, nsamps - i, scale_factor);
 }
 
-DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16_item32_be, 1, fc32, 1, PRIORITY_SIMD)
 {
     const item32_t* input = reinterpret_cast<const item32_t*>(inputs[0]);
     fc32_t* output        = reinterpret_cast<fc32_t*>(outputs[0]);
@@ -120,7 +120,7 @@ DECLARE_CONVERTER(sc16_item32_be, 1, fc32, 1, PRIORITY_SIMD)
     item32_sc16_to_xx<uhd::htonx>(input + i, output + i, nsamps - i, scale_factor);
 }
 
-DECLARE_CONVERTER(sc16_chdr, 1, fc32, 1, PRIORITY_SIMD)
+DECLARE_CONVERTER_SSE2(sc16_chdr, 1, fc32, 1, PRIORITY_SIMD)
 {
     const sc16_t* input = reinterpret_cast<const sc16_t*>(inputs[0]);
     fc32_t* output      = reinterpret_cast<fc32_t*>(outputs[0]);

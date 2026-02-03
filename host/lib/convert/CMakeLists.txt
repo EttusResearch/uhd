@@ -1,6 +1,7 @@
 #
 # Copyright 2011-2013 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2024 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -13,47 +14,68 @@ include(CheckCXXCompilerFlag)
 message(STATUS "")
 
 ########################################################################
-# Check for SIMD headers
+# Check for x86 SIMD compiler support
+#
+# Note: These checks verify that the COMPILER can generate SIMD code,
+# not that the build machine has SIMD support. The actual SIMD converters
+# will check CPU support at runtime and only register if the CPU supports
+# the instruction set. This allows a single binary to work on machines
+# with varying SIMD capabilities.
 ########################################################################
 
-# Check for SSE2 support
-check_cxx_compiler_flag("-msse2" SSE2_SUPPORTED)
-if(SSE2_SUPPORTED)
-    message(STATUS "SSE2 is supported")
-endif(SSE2_SUPPORTED)
-
-# Check for SSE3 support
-check_cxx_compiler_flag("-msse3" SSE3_SUPPORTED)
-if(SSE3_SUPPORTED)
-    message(STATUS "SSE3 is supported")
-    set(SSE2_SUPPORTED OFF)
-endif(SSE3_SUPPORTED)
-
-# Check for AVX2 support
-check_cxx_compiler_flag("-mavx2" AVX2_SUPPORTED)
-# set(AVX2_SUPPORTED OFF)
-if(AVX2_SUPPORTED)
-    message(STATUS "AVX2 is supported")
-    # set(SSE3_SUPPORTED OFF)
-endif(AVX2_SUPPORTED)
-
-# Check for AVX2 support
-check_cxx_compiler_flag("-mavx512" AVX512_SUPPORTED)
-if(AVX512_SUPPORTED)
-    message(STATUS "AVX512 is supported")
-    set(AVX2_SUPPORTED OFF)
-endif(AVX512_SUPPORTED)
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(SSE2_FLAGS -msse2)
-    set(SSE3_FLAGS -mssse3)
-    set(AVX2_FLAGS -mavx2)
-    set(AVX512_FLAGS -mavx512)
-elseif(MSVC)
-    set(SSE2_FLAGS /arch:SSE2)
+# Check if we're on an x86 platform
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|i[3-6]86")
+    set(IS_X86_PLATFORM TRUE)
+else()
+    set(IS_X86_PLATFORM FALSE)
 endif()
 
-if(SSE2_SUPPORTED)
+if(IS_X86_PLATFORM)
+    # Check for SSE2 compiler support
+    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        check_cxx_compiler_flag("-msse2" COMPILER_SUPPORTS_SSE2)
+        check_cxx_compiler_flag("-mssse3" COMPILER_SUPPORTS_SSSE3)
+        check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
+        check_cxx_compiler_flag("-mavx512f" COMPILER_SUPPORTS_AVX512F)
+        set(SSE2_FLAGS -msse2)
+        set(SSSE3_FLAGS -mssse3)
+        set(AVX2_FLAGS -mavx2)
+        set(AVX512_FLAGS -mavx512f)
+    elseif(MSVC)
+        # MSVC doesn't need flags for SSE2 on x64, but we can check
+        set(COMPILER_SUPPORTS_SSE2 TRUE)
+        set(COMPILER_SUPPORTS_SSSE3 TRUE)
+        check_cxx_compiler_flag("/arch:AVX2" COMPILER_SUPPORTS_AVX2)
+        check_cxx_compiler_flag("/arch:AVX512" COMPILER_SUPPORTS_AVX512F)
+        set(SSE2_FLAGS "")  # Default on x64
+        set(SSSE3_FLAGS "") # Default on x64
+        set(AVX2_FLAGS /arch:AVX2)
+        set(AVX512_FLAGS /arch:AVX512)
+    endif()
+
+    if(COMPILER_SUPPORTS_SSE2)
+        message(STATUS "Compiler supports SSE2 - will build SSE2 converters")
+    endif()
+    if(COMPILER_SUPPORTS_SSSE3)
+        message(STATUS "Compiler supports SSSE3 - will build SSSE3 converters")
+    endif()
+    if(COMPILER_SUPPORTS_AVX2)
+        message(STATUS "Compiler supports AVX2 - will build AVX2 converters")
+    endif()
+    if(COMPILER_SUPPORTS_AVX512F)
+        message(STATUS "Compiler supports AVX512F - will build AVX512 converters")
+    endif()
+endif()
+
+########################################################################
+# x86 SIMD converter sources
+#
+# All SIMD variants are compiled unconditionally (if the compiler supports
+# the flags). At runtime, each converter checks if the CPU supports the
+# required instruction set before registering itself.
+########################################################################
+
+if(COMPILER_SUPPORTS_SSE2)
     set(convert_with_sse2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc64.cpp
@@ -70,38 +92,37 @@ if(SSE2_SUPPORTED)
         PROPERTIES COMPILE_FLAGS "${SSE2_FLAGS}"
     )
     LIBUHD_APPEND_SOURCES(${convert_with_sse2_sources})
-endif(SSE2_SUPPORTED)
+endif()
 
-if(SSE3_SUPPORTED)
+if(COMPILER_SUPPORTS_SSSE3)
     set(convert_with_ssse3_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_pack_sc12.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_unpack_sc12.cpp
     )
     set_source_files_properties(
         ${convert_with_ssse3_sources}
-        PROPERTIES COMPILE_FLAGS "${SSE3_FLAGS}"
+        PROPERTIES COMPILE_FLAGS "${SSSE3_FLAGS}"
     )
     LIBUHD_APPEND_SOURCES(${convert_with_ssse3_sources})
-endif(SSE3_SUPPORTED)
+endif()
 
-if(AVX2_SUPPORTED)
+if(COMPILER_SUPPORTS_AVX2)
     set(convert_with_avx2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_fc64.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_fc32.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc8_to_fc64.cpp # AVX2 conversion is not efficient as SSE2 for this case
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc8_to_fc32.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc64_to_sc16.cpp 
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc64_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc32_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc64_to_sc8.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc32_to_sc8.cpp
     )
     set_source_files_properties(
         ${convert_with_avx2_sources}
-        PROPERTIES COMPILE_FLAGS "${AVX2_FLAGS} ${SSE2_FLAGS}"
+        PROPERTIES COMPILE_FLAGS "${AVX2_FLAGS}"
     )
     LIBUHD_APPEND_SOURCES(${convert_with_avx2_sources})
-endif(AVX2_SUPPORTED)
+endif()
 
 ########################################################################
 # Check for NEON SIMD headers

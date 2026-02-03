@@ -10,6 +10,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
+#include "simd_features.hpp"
 #include <stdint.h>
 #include <boost/format.hpp>
 #include <complex>
@@ -136,6 +137,9 @@ size_t convert::get_bytes_per_item(const std::string& format)
 
 UHD_STATIC_BLOCK(convert_register_item_sizes)
 {
+    // Log detected SIMD capabilities at startup
+    uhd::convert::log_simd_capabilities();
+
     // register standard complex types
     convert::register_bytes_per_item("fc64", sizeof(std::complex<double>));
     convert::register_bytes_per_item("fc32", sizeof(std::complex<float>));
