@@ -16,9 +16,6 @@ using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::test;
 using namespace rfnoc::${MODULE_NAME};
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 // Fix these based on your block design
 constexpr size_t NUM_INPUT_CHANS = 1;
 constexpr size_t NUM_OUTPUT_CHANS = 1;
