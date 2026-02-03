@@ -17,3 +17,5 @@ repos:
     language: python
     types_or: [python]
     entry: ni-python-styleguide lint
+    # TODO: re-enable linting until we have the fixed all files at once
+    exclude: ^mpm
