@@ -444,6 +444,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_SOURCE_DIR}/lib/usrp/common/tmp468.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "ublox_msg_helper_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/ublox_msg_helper.cpp
+)
+
 set_source_files_properties(
     ${UHD_SOURCE_DIR}/lib/utils/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS

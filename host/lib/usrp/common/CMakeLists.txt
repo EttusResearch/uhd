@@ -40,6 +40,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_mgr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_args.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pwr_cal_mgr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ublox_msg_helper.cpp
 )
 
 if(ENABLE_X400)
