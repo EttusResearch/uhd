@@ -34,7 +34,7 @@ parameters:
 - name: add_tests
   displayName: Force-enable modules
   type: string
-  default: "none"
+  default: "uhd.build.all"
 - name: remove_tests
   displayName: Force-disable modules
   type: string
