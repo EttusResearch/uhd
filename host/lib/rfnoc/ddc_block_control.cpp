@@ -448,8 +448,6 @@ private:
             }
             RFNOC_LOG_TRACE("Forwarding num_samps stream command, new value is "
                             << new_action->stream_cmd.num_samps);
-        } else {
-            RFNOC_LOG_TRACE("Forwarding continuous stream command...")
         }
 
         post_action(dst_edge, new_action, action_mode_t::ASYNC);
