@@ -21,6 +21,7 @@ class X4xxMboardCPLD:
     Derive from this class for a specific implementation of the X4xx MB CPLD.
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     SIGNATURE_OFFSET         = 0x0000
     COMPAT_REV_OFFSET        = 0x0004
     OLDEST_COMPAT_REV_OFFSET = 0x0008
@@ -56,6 +57,7 @@ class X4xxMboardCPLD:
 
     COMPATIBLE_DB_PIDS      = []
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     def __init__(self, regs, log):
         self.log = log
@@ -202,12 +204,14 @@ class X410MboardCPLD(X4xxMboardCPLD):
     installed).
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # change these revisions only on breaking changes
     OLDEST_REQ_COMPAT_REV   = 0x20122114
     REQ_COMPAT_REV          = 0x20122114
     SIGNATURE               = 0x0A522D27
     COMPATIBLE_DB_PIDS      = ZBX.pids
     # pylint: enable=bad-whitespace
+    # fmt: on
 
 
 class X440MboardCPLD(X4xxMboardCPLD):
@@ -216,12 +220,14 @@ class X440MboardCPLD(X4xxMboardCPLD):
     installed).
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # change these revisions only on breaking changes
     OLDEST_REQ_COMPAT_REV   = 0x22080414
     REQ_COMPAT_REV          = 0x22080414
     SIGNATURE               = 0x0A522D28
     COMPATIBLE_DB_PIDS      = FBX.pids
     # pylint: enable=bad-whitespace
+    # fmt: on
 
 
 def make_mb_cpld_ctrl(spi_dev_node, log):

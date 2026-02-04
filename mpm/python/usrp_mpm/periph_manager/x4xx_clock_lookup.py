@@ -7,6 +7,7 @@
 X4xx Clock parameter lookup tables
 These lookup tables are pre-calculated and fixed for the hardware X440 uses.
 """
+# fmt: off
 # The shape of this lookup table is
 # Converter_Rate: (PLL_Fin1, PLL_Fin2, ...)
 RFDC_PLL_CONFIGS = {

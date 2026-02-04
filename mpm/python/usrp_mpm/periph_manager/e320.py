@@ -443,12 +443,14 @@ class e320(ZynqComponents, PeriphManagerBase):
         valid_sync_sources = {
             # clock, time. Reminder: 'internal' is an alias for 'gpsdo'
             # pylint: disable=bad-whitespace
+            # fmt: off
             ('internal', 'internal'),
             ('external', 'internal'),
             ('external', 'external'),
             ('gpsdo',    'gpsdo'   ),
             ('gpsdo',    'internal'),
             # pylint: enable=bad-whitespace
+            # fmt: on
         }
         return [{
             "time_source": time_source,

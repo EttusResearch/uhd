@@ -165,6 +165,7 @@ class MboardRegsControl(MboardRegsCommon):
     Control the FPGA Motherboard registers
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # Motherboard registers (on top of the ones in MboardRegsCommon)
     MB_CLOCK_CTRL     = 0x0018
     MB_XADC_RB        = 0x001C
@@ -188,6 +189,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_CLOCK_CTRL_MEAS_CLK_LOCKED = 13 # locked indication for meas_clk mmcm
     MB_CLOCK_CTRL_DISABLE_REF_CLK = 16 # to disable the ref_clk, write a '1'
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     def __init__(self, label, log):
         MboardRegsCommon.__init__(self, label, log)

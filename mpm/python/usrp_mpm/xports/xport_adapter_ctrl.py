@@ -36,6 +36,7 @@ class XportAdapterCtrl:
     """
     # Address offsets (these must match xport_sv/eth_regs.vh)
     # pylint: disable=bad-whitespace
+    # fmt: off
     XPORT_ADAPTER_COMPAT_NUM      = 0x0100 # 8 bits major, 8 bits minor
     XPORT_ADAPTER_INFO            = 0x0104
     XPORT_ADAPTER_NODE_INST       = 0x0108 # read-only
@@ -45,6 +46,7 @@ class XportAdapterCtrl:
     KV_UDP_PORT                   = 0x0118
     KV_CFG                        = 0x011C
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     class StreamModes(Enum):
         """

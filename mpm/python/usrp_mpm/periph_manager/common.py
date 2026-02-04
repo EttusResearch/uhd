@@ -15,6 +15,7 @@ class MboardRegsCommon:
     Parent class for mboard regs that are common between *all* MPM devices
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # Global Registers
     MB_COMPAT_NUM          = 0x0000
     MB_DATESTAMP           = 0x0004
@@ -42,6 +43,7 @@ class MboardRegsCommon:
     MB_RFNOC_INFO_PROTO_VER  = 0
     MB_RFNOC_INFO_CHDR_WIDTH = 16
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     def __init__(self, label, log):
         self.log = log.getChild('MBRegs')

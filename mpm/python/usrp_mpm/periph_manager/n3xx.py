@@ -100,6 +100,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     # manager class. The format of this map is:
     # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
     # pylint: disable=bad-whitespace
+    # fmt: off
     product_map = {
         ('n300', tuple()        ) : 'n300', # No dboards
         ('n300', (MG_PID,       )): 'n300', # Normal case: Slot B is empty
@@ -113,6 +114,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         ('n310', (RHODIUM_PID,            )): 'n320',
     }
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     #########################################################################
     # Overridables

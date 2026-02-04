@@ -37,6 +37,7 @@ class MboardRegsControl(MboardRegsCommon):
     """
     # Motherboard registers
     # pylint: disable=bad-whitespace
+    # fmt: off
     # 0 through 0x14 are common regs (see MboardRegsCommon)
     MB_CLOCK_CTRL        = 0x0018
     MB_PPS_CTRL          = 0x001C
@@ -84,6 +85,7 @@ class MboardRegsControl(MboardRegsCommon):
     CLOCK_CTRL_PPS_INT_10MHz       = 0x1
     CLOCK_CTRL_PPS_EXT             = 0x2
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     def __init__(self, label, log):
         MboardRegsCommon.__init__(self, label, log)
@@ -405,6 +407,7 @@ class CtrlportRegs:
     Control the FPGA Ctrlport registers
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     IPASS_OFFSET        = 0x000010
     MB_PL_SPI_CONFIG    = 0x000020
     DB_SPI_CONFIG       = 0x000024
@@ -412,6 +415,7 @@ class CtrlportRegs:
     DB_0_CPLD           = 0x010000
     DB_1_CPLD           = 0x018000
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     min_mb_cpld_spi_divider = 2
     min_db_cpld_spi_divider = 5

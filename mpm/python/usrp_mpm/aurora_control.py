@@ -27,6 +27,7 @@ class AuroraControl(object):
     Controls an Aurora core.
     """
     # These are relative addresses
+    # fmt: off
     REG_AURORA_PORT_INFO       = 0x00
     REG_AURORA_MAC_CTRL_STATUS = 0x04
     REG_AURORA_PHY_CTRL_STATUS = 0x08
@@ -41,6 +42,7 @@ class AuroraControl(object):
     MAC_STATUS_BIST_LOCKED_MSK     = 0x00000008
     MAC_STATUS_BIST_LATENCY_MSK    = 0x000FFFF0
     MAC_STATUS_BIST_LATENCY_OFFSET = 4
+    # fmt: on
 
     RATE_RES_BITS = 6
 

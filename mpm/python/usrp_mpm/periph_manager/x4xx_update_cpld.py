@@ -176,10 +176,14 @@ def jtag_cpld_update(filename, logger):
         return False
     enable_jtag_gpio(gpios)
 
-    cmd = ["openocd",
-           "-c", config['cmd'][0] % (uio_id, AXI_BITQ_BUS_CLK, AXI_BITQ_ADAPTER_SPEED),
-           "-f", (config['files'][0]).strip(),
-           "-c", config['cmd'][1] % filename]
+    # fmt: off
+    cmd = [
+        "openocd",
+        "-c", config["cmd"][0] % (uio_id, AXI_BITQ_BUS_CLK, AXI_BITQ_ADAPTER_SPEED),
+        "-f", (config["files"][0]).strip(),
+        "-c", config["cmd"][1] % filename
+    ]
+    # fmt: on
 
     logger.trace("Update CPLD CMD: {}".format(" ".join(cmd)))
     subprocess.call(cmd)

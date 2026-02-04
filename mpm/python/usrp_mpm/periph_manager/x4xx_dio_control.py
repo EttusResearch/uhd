@@ -95,6 +95,7 @@ class DioControl:
 
     # For this, we want our own formatting rules
     # pylint: disable=bad-whitespace
+    # fmt: off
 
     # Available DIO ports
     DIO_PORTS = ("PORTA", "PORTB")
@@ -203,6 +204,7 @@ class DioControl:
     X4XX_GPIO_SPI_SRC_RADIO = [["DB0_SPI"], ["DB1_SPI"]]
     X4XX_GPIO_WIDTH = 12
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     class _PortMapDescriptor:
         """Helper class to hold port mapping relevant information.

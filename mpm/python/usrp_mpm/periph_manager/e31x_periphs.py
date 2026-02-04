@@ -34,6 +34,7 @@ class MboardRegsControl(MboardRegsCommon):
     Control the FPGA Motherboard registers
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # Motherboard registers
     MB_CLOCK_CTRL       = 0x0018
     MB_XADC_RB          = 0x001C
@@ -66,6 +67,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_DBOARD_STATUS_RX_LOCK = 6
     MB_DBOARD_STATUS_TX_LOCK = 7
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     def __init__(self, label, log):
         MboardRegsCommon.__init__(self, label, log)

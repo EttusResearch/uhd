@@ -47,9 +47,11 @@ class DAC37J82Rh(object):
         # Therefore, depending on the DB that is being configured, we need
         # to change the JESD lanes internal routing in the DAC to compensate
         # for the board traces swapping.
+        # fmt: off
         self.lanes_ids_1   = {0: 0x0044, 1: 0x0046}[self.slot_idx] # config70
         self.lanes_ids_2   = {0: 0x190A, 1: 0x110A}[self.slot_idx] # config71
         self.octetpath_sel = {0: 0x0123, 1: 0x0132}[self.slot_idx] # config95
+        # fmt: on
 
         self.init()
 
@@ -103,6 +105,7 @@ class DAC37J82Rh(object):
         self.regs.poke16(0x6C, 0x0000) # Clear alarm bits for PLLs
 
         self.log.trace("DAC Configuration.")
+        # fmt: off
         self.pokes16((
             (0x00, 0x001B), # config0: Interpolation 1x; ALARM enabled w/ pos. logic.
             (0x01, 0x0003), # config1: Rewriting reserved default values.
@@ -207,6 +210,7 @@ class DAC37J82Rh(object):
             (0x7D, 0x0000), # config125: Delay fractional filter settings (default).
             (0x02, 0x2002), # Deassert the reset for the SIF registers
         ))
+        # fmt: on
         self.log.trace("DAC register dump finished.")
 
         self.log.trace("Polling for PLL lock...")

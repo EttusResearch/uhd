@@ -18,6 +18,7 @@ class EthDispatcherCtrl:
     DEFAULT_VITA_PORT = (49153, 49154)
     # Address offsets:
     # pylint: disable=bad-whitespace
+    # fmt: off
     ETH_IP_OFFSET                 = 0x0000
     ETH_PORT_OFFSET               = 0x0004
     FORWARD_ETH_BCAST_OFFSET      = 0x0008
@@ -27,6 +28,7 @@ class EthDispatcherCtrl:
     BRIDGE_INTERNAL_PORT_OFFSET   = 0x001c
     BRIDGE_INTERNAL_ENABLE_OFFSET = 0x0020
     # pylint: enable=bad-whitespace
+    # fmt: on
 
 
     def __init__(self, label):

@@ -16,6 +16,7 @@ class Max10CpldFlashCtrl():
     Calling "with" using an instance of this class will disable write
     protection for the duration of that context.
     """
+    # fmt: off
     REVISION_REG                = 0x0004
     # Addresses relative to reconfiguration register offset
     FLASH_STATUS_REG            = 0x0000
@@ -25,6 +26,7 @@ class Max10CpldFlashCtrl():
     FLASH_READ_DATA_REG         = 0x0010
     FLASH_CFM0_START_ADDR_REG   = 0x0014
     FLASH_CFM0_END_ADDR_REG     = 0x0018
+    # fmt: on
 
     # Masks for FLASH_STATUS_REG
     FLASH_MEM_INIT_ENABLED_MASK = 0x10000

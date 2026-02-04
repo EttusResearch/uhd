@@ -48,6 +48,7 @@ class MboardRegsControl(MboardRegsCommon):
     Control the FPGA Motherboard registers
     """
     # pylint: disable=bad-whitespace
+    # fmt: off
     # Motherboard registers
     MB_CLOCK_CTRL      = 0x0018
     MB_XADC_RB         = 0x001C
@@ -63,6 +64,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_DBOARD_STATUS   = 0x0044
     MB_GPIO_USER_MUX   = 0x0050
     # pylint: enable=bad-whitespace
+    # fmt: on
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT = 0

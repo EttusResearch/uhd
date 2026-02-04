@@ -80,10 +80,12 @@ class AD9695Rh(object):
         """
         self.power_down_channel(False) # Power-up the channel.
         self.log.trace("Reset ADC & Verify")
+        # fmt: off
         self.regs.poke8(0x0000, 0x81) # Soft-reset the ADC (self-clearing).
         time.sleep(0.005)             # We must allow 5 ms for the ADC's bootloader.
         self.assert_scratch(0xAD)     # Verify scratch register R/W access.
         self.regs.poke8(0x0571, 0x15) # Powerdown the JESD204B serial transmit link.
+        # fmt: on
         self.log.trace("ADC's JESD204B link powered down.")
 
 
@@ -102,6 +104,7 @@ class AD9695Rh(object):
             raise RuntimeError("Input clock not detected for ADC")
 
         self.log.trace("ADC Configuration.")
+        # fmt: off
         self.pokes8((
             (0x003F, 0x80), # Disable PDWN/STBY pin.
             (0x0040, 0x00), # FD_A|B pins configured as Fast Detect outputs.
@@ -122,6 +125,7 @@ class AD9695Rh(object):
             (0x05C2, 0x10), # SERDOUT2 voltage swing adjust (improves RX margin at FPGA).
             (0x05C3, 0x10), # SERDOUT3 voltage swing adjust (improves RX margin at FPGA).
         ))
+        # fmt: on
         self.log.trace("ADC register dump finished.")
 
 
@@ -138,6 +142,7 @@ class AD9695Rh(object):
             return True
 
         self.log.trace("Initializing framer...")
+        # fmt: off
         self.pokes8((
             (0x0571, 0x14), # Powerup the link before JESD204B initialization.
             (0x1228, 0x4F), # Reset JESD204B start-up circuit
@@ -148,6 +153,7 @@ class AD9695Rh(object):
             (0x1262, 0x08), # Clear loss of lock bit
             (0x1262, 0x00), # Loss of lock bit normal operation
         ))
+        # fmt: on
 
         self.log.trace("Polling for PLL lock...")
         locked = False

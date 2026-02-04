@@ -29,6 +29,7 @@ class NIJESDCore(object):
     CURRENT_VERSION = 0x18071209
 
     # Register offsets for JESD core.
+    # fmt: off
     DB_ID                      = 0x0630
     MGT_QPLL_CONTROL           = 0x2000
     MGT_PLL_POWER_DOWN_CONTROL = 0x200C
@@ -46,11 +47,13 @@ class NIJESDCore(object):
     JESD_SIGNATURE_REG         = 0x2100
     JESD_REVISION_REG          = 0x2104
     JESD_OLD_COMPAT_REV_REG    = 0x2108
+    # fmt: on
 
     # NIJESDCore configuration attributes.
     # These parameters should be set per board (ie. Mg, Rh, etc.) at the creation
     # of the NIJESDCore object. Use **kwargs to pass a dict which keys correspond
     # to the parameter's name (eg. {"lmfc_divider": 12, ...}).
+    # fmt: off
     JESDCORE_DEFAULTS = {"qplls_used"        : 1,       # Number of QPLLs used.
                          "cplls_used"        : 0,       # Number of CPLLs used.
                          "rx_lanes"          : 4,       # Number of RX lanes used.
@@ -64,6 +67,7 @@ class NIJESDCore(object):
                          "tx_precursor"      : 0b00000, # See UG476, TXPRECURSOR
                          "tx_postcursor"     : 0b00000, # See UG476, TXPOSTCURSOR
                          "enable_rx_eyescan" : False}   # Enable the PMA Eye Scan circuitry.
+    # fmt: on    
 
     def __init__(self, regs, slot_idx=0, **kwargs):
         self.regs = regs

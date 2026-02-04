@@ -260,32 +260,36 @@ class XportMgrUDP:
         int_iface = internal_ifaces[0]
         iface_ip_addr = self._chdr_ifaces[iface]['ip_addr']
         internal_ip_addr = self.get_fpga_internal_ip_address(int_iface)
+        # fmt: off
         prerouting_arguments = [
-            'PREROUTING',
-            '-t', 'nat',
-            '-i', iface,
-            '-p', 'udp',
-            '-d', iface_ip_addr,
-            '--dport', str(self.chdr_port),
-            '-j', 'DNAT',
-            '--to-destination', internal_ip_addr]
+            "PREROUTING",
+            "-t", "nat",
+            "-i", iface,
+            "-p", "udp",
+            "-d", iface_ip_addr,
+            "--dport", str(self.chdr_port),
+            "-j", "DNAT",
+            "--to-destination", internal_ip_addr,
+        ]
         postrouting_arguments = [
-            'POSTROUTING',
-            '-t', 'nat',
-            '-o', iface,
-            '-p', 'udp',
-            '-s', internal_ip_addr,
-            '--sport', str(self.chdr_port),
-            '-j', 'SNAT',
-            '--to-source', iface_ip_addr
+            "POSTROUTING",
+            "-t", "nat",
+            "-o", iface,
+            "-p", "udp",
+            "-s", internal_ip_addr,
+            "--sport", str(self.chdr_port),
+            "-j", "SNAT",
+            "--to-source", iface_ip_addr,
         ]
         forward_arguments = [
-            'FORWARD',
-            '-t', 'filter',
-            '-p', 'udp',
-            '-d', internal_ip_addr,
-            '--dport', str(self.chdr_port),
-            '-j', 'ACCEPT']
+            "FORWARD",
+            "-t", "filter",
+            "-p", "udp",
+            "-d", internal_ip_addr,
+            "--dport", str(self.chdr_port),
+            "-j", "ACCEPT"
+        ]
+        # fmt: on
         try:
             arguments_map = {
                 'prerouting': prerouting_arguments,
