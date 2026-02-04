@@ -12,21 +12,24 @@ its capabilities.
 
 import netaddr
 from usrp_mpm.sys_utils import net
+
 from .xport_adapter_ctrl import XportAdapterCtrl
+
 
 class XportAdapterMgr:
     """
     Transport adapter manager
     """
+
     def __init__(self, log, iface, uio_label):
-        self.log = log.getChild(f'XportAdapterMgr@{iface}')
+        self.log = log.getChild(f"XportAdapterMgr@{iface}")
         self.iface = iface
         self._ta_ctrl = XportAdapterCtrl(uio_label)
         self.log.debug(
             "Transport adapter compat number: %s Capabilities: %s Node instance: %d",
             str(self._ta_ctrl.get_compat_num()),
-            ', '.join(self.get_capabilities()) if self.get_capabilities() else 'none',
-            self.get_xport_adapter_inst()
+            ", ".join(self.get_capabilities()) if self.get_capabilities() else "none",
+            self.get_xport_adapter_inst(),
         )
 
     def get_xport_adapter_inst(self):
@@ -62,10 +65,11 @@ class XportAdapterMgr:
                             case).
         :returns: An integer value identifying the transport adapter used
         """
-        dest_addr = kwargs.get('dest_addr')
-        dest_port = kwargs.get('dest_port')
-        dest_mac_addr = kwargs.get('dest_mac_addr')
-        stream_mode = kwargs.get('stream_mode', '')
+        dest_addr = kwargs.get("dest_addr")
+        dest_port = kwargs.get("dest_port")
+        dest_mac_addr = kwargs.get("dest_mac_addr")
+        stream_mode = kwargs.get("stream_mode", "")
+
         def map_stream_mode(mode):
             """
             Map a string-based stream mode value to an Enum-based one.
@@ -75,6 +79,7 @@ class XportAdapterMgr:
                     return available_mode
             assert False
             return None
+
         try:
             stream_mode = map_stream_mode(stream_mode)
         except:
@@ -93,7 +98,6 @@ class XportAdapterMgr:
         except:
             raise ValueError(f"Invalid MAC address: {dest_mac_addr}")
         # Inputs are good, poke the regs
-        self.log.debug(
-            f"Adding route for endpoint ID {epid} from interface {self.iface}...")
+        self.log.debug(f"Adding route for endpoint ID {epid} from interface {self.iface}...")
         self._ta_ctrl.add_remote_ep_route(epid, dest_addr, dest_port, dest_mac_addr, stream_mode)
         return self._ta_ctrl.get_xport_adapter_inst()

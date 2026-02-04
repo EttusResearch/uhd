@@ -7,11 +7,13 @@
 Utilities for creating a mount point
 """
 
-import subprocess
 import os
+import subprocess
+
 from usrp_mpm.mpmlog import get_logger
 
-class Mount():
+
+class Mount:
     """
     Class for creating a mount point
     """
@@ -27,8 +29,11 @@ class Mount():
             self.log = get_logger("Mount")
         else:
             self.log = log.getChild("Mount")
-        self.log.trace("Early initialization: devicepath={}, mountpoint={}, options={}".format(
-            devicepath, mountpoint, options))
+        self.log.trace(
+            "Early initialization: devicepath={}, mountpoint={}, options={}".format(
+                devicepath, mountpoint, options
+            )
+        )
 
     def ismounted(self):
         """
@@ -37,7 +42,7 @@ class Mount():
         assert self.devicepath is not None
         with open("/etc/mtab") as mtab_f:
             return any(
-                line.split()[0] == self.devicepath and line.split()[1] == self.mountpoint \
+                line.split()[0] == self.devicepath and line.split()[1] == self.mountpoint
                 for line in mtab_f
             )
 
@@ -73,7 +78,7 @@ class Mount():
             return True
         self.prepare_mountpoint()
         self.log.debug("Mounting {}".format(self.mountpoint))
-        cmd = ['mount']
+        cmd = ["mount"]
         if self.options:
             cmd.extend(self.options)
         cmd.append(self.devicepath)
@@ -90,7 +95,7 @@ class Mount():
             self.log.warning("{} was not mounted".format(self.mountpoint))
             return True
         self.log.debug("Unmounting {}".format(self.mountpoint))
-        cmd = ['umount', self.mountpoint]
+        cmd = ["umount", self.mountpoint]
         proc = subprocess.run(cmd, check=True)
         self.log.trace(proc)
         self.delete_mountpoint()

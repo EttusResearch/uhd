@@ -7,10 +7,11 @@
 Mixin class for daughterboard classes that live on a X4xx motherboard
 """
 
-from usrp_mpm.mpmlog import get_logger
 from usrp_mpm import tlv_eeprom
-from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
+from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.rpc_utils import no_rpc
+from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
+
 
 # pylint: disable=too-few-public-methods
 class EepromTagMap:
@@ -21,40 +22,42 @@ class EepromTagMap:
     is defined in mpm/tools/tlv_eeprom/usrp_eeprom.h. Only the subset relevant
     to MPM are included below.
     """
+
     magic = 0x55535250
     tagmap = {
         # 0x10: usrp_eeprom_board_info
-        0x10: tlv_eeprom.NamedStruct('< H H H 7s 1x',
-                                     ['pid', 'rev', 'rev_compat', 'serial']),
+        0x10: tlv_eeprom.NamedStruct("< H H H 7s 1x", ["pid", "rev", "rev_compat", "serial"]),
     }
+
 
 class X4xxDbMixin:
     """
     Mixin class for daughterboards that live in an X4xx motherboard.
     """
+
     # Make sure to populated this in the base class
     DBOARD_SUPPORTED_COMPAT_REVS = ()
 
     def __init__(self, product_name, slot_idx, **kwargs):
         self.log = get_logger(f"{product_name}-{slot_idx}")
-        self.log.trace("Initializing %s daughterboard, slot index %d",
-                       product_name, slot_idx)
+        self.log.trace("Initializing %s daughterboard, slot index %d", product_name, slot_idx)
         super().__init__(slot_idx, **kwargs)
         self.eeprom_symbol = f"db{slot_idx}_eeprom"
         self.product_name = product_name
 
         # Get MB interface
-        if 'db_iface' not in kwargs:
+        if "db_iface" not in kwargs:
             self.log.error("Required DB Iface was not provided!")
             raise RuntimeError("Required DB Iface was not provided!")
-        self.db_iface = kwargs['db_iface']
+        self.db_iface = kwargs["db_iface"]
 
         self.enable_base_power()
 
         assert self.DBOARD_SUPPORTED_COMPAT_REVS
         # This allows overriding the rev_compat from the EEPROM
-        rev_compat = kwargs.get('rev_compat') if 'rev_compat' in kwargs else \
-                self.get_eeprom()['rev_compat']
+        rev_compat = (
+            kwargs.get("rev_compat") if "rev_compat" in kwargs else self.get_eeprom()["rev_compat"]
+        )
         self._assert_rev_compatibility(rev_compat)
         self._assert_mb_cpld_compatibility(self.db_iface.mboard.cpld_control)
 
@@ -67,8 +70,7 @@ class X4xxDbMixin:
         Return the eeprom data.
         """
         path = get_eeprom_paths_by_symbol(self.eeprom_symbol)[self.eeprom_symbol]
-        eeprom, _ = tlv_eeprom.read_eeprom(
-            path, EepromTagMap.tagmap, EepromTagMap.magic, None)
+        eeprom, _ = tlv_eeprom.read_eeprom(path, EepromTagMap.tagmap, EepromTagMap.magic, None)
         return eeprom
 
     def _assert_rev_compatibility(self, rev_compat):
@@ -81,10 +83,11 @@ class X4xxDbMixin:
         Note: The CPLD image version is checked separately.
         """
         if rev_compat not in self.DBOARD_SUPPORTED_COMPAT_REVS:
-            err = \
-                f"This MPM version is not compatible with this {self.product_name}" \
-                f"daughterboard. Found rev_compat value: 0x{rev_compat:02x}. " \
+            err = (
+                f"This MPM version is not compatible with this {self.product_name}"
+                f"daughterboard. Found rev_compat value: 0x{rev_compat:02x}. "
                 "Please update your MPM version to support this daughterboard revision."
+            )
             self.log.error(err)
             raise RuntimeError(err)
 
@@ -95,10 +98,11 @@ class X4xxDbMixin:
         Throws a RuntimeError() if that's not the case.
         """
         if not any(pid in self.pids for pid in mb_cpld_ctrl.COMPATIBLE_DB_PIDS):
-            err = \
-                f"This {self.product_name} daughterboard is not compatible with " \
-                f"the motherboard CPLD image (CPLD signature: {mb_cpld_ctrl.SIGNATURE:X}). " \
+            err = (
+                f"This {self.product_name} daughterboard is not compatible with "
+                f"the motherboard CPLD image (CPLD signature: {mb_cpld_ctrl.SIGNATURE:X}). "
                 f"Please update the motherboard CPLD image."
+            )
             self.log.error(err)
             raise RuntimeError(err)
 
@@ -114,7 +118,7 @@ class X4xxDbMixin:
                 err_msg = f"{self.product_name} {self.slot_idx} power up failed"
                 self.log.error(err_msg)
                 raise RuntimeError(err_msg)
-        else: # disable
+        else:  # disable
             # Removing power from the CPLD will set all the output pins to open and the
             # supplies default to disabled on power up.
             self.db_iface.enable_daughterboard(enable=False)
@@ -131,10 +135,10 @@ class X4xxDbMixin:
         converters as a sensor value.
         """
         return {
-            'name': 'rfdc_rate',
-            'type': 'REALNUM',
-            'unit': 'Hz',
-            'value': str(self.get_dboard_sample_rate()),
+            "name": "rfdc_rate",
+            "type": "REALNUM",
+            "unit": "Hz",
+            "value": str(self.get_dboard_sample_rate()),
         }
 
     ###########################################################################

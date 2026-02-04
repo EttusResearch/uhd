@@ -3,15 +3,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""Code to run the discovery port.
-"""
+"""Code to run the discovery port."""
 
 import socket
 from multiprocessing import Process, current_process
 
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
-from usrp_mpm.mpmutils import to_binary_str, set_proc_title
+from usrp_mpm.mpmutils import set_proc_title, to_binary_str
 
 RESPONSE_PREAMBLE = b"USRP-MPM"
 RESPONSE_SEP = b";"

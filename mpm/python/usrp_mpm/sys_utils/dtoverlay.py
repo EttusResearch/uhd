@@ -8,10 +8,12 @@ Manipulation of device tree overlays (Linux kernel)
 """
 
 import os
+
 from usrp_mpm.mpmlog import get_logger
 
-SYSFS_OVERLAY_BASE_DIR = '/sys/kernel/config/device-tree/overlays'
-OVERLAY_DEFAULT_PATH = '/lib/firmware'
+SYSFS_OVERLAY_BASE_DIR = "/sys/kernel/config/device-tree/overlays"
+OVERLAY_DEFAULT_PATH = "/lib/firmware"
+
 
 def get_overlay_attrs(overlay_name):
     """
@@ -22,7 +24,7 @@ def get_overlay_attrs(overlay_name):
     attrs = {}
     for attr_name in os.listdir(overlay_path):
         try:
-            with open(os.path.join(overlay_path, attr_name), 'r') as f:
+            with open(os.path.join(overlay_path, attr_name), "r") as f:
                 attr_val = f.read().strip()
         except OSError:
             pass
@@ -30,17 +32,17 @@ def get_overlay_attrs(overlay_name):
             attrs[attr_name] = attr_val
     return attrs
 
+
 def is_applied(overlay_name):
     """
     Returns True if the overlay is already applied, False if not.
     """
     try:
-        with open(
-            os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'status'), 'r'
-        ) as f:
-            return f.read().strip() == 'applied'
+        with open(os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, "status"), "r") as f:
+            return f.read().strip() == "applied"
     except IOError:
         return False
+
 
 def list_overlays(applied_only=False):
     """
@@ -58,16 +60,17 @@ def list_overlays(applied_only=False):
     return {
         overlay_name: get_overlay_attrs(overlay_name)
         for overlay_name in os.listdir(SYSFS_OVERLAY_BASE_DIR)
-        if not applied_only \
-            or get_overlay_attrs(overlay_name).get('status') == 'applied'
+        if not applied_only or get_overlay_attrs(overlay_name).get("status") == "applied"
     }
+
 
 def list_available_overlays(path=None):
     """
     List available overlay files (dtbo)
     """
     path = path or OVERLAY_DEFAULT_PATH
-    return [x.strip()[:-5] for x in os.listdir(path) if x.endswith('.dtbo')]
+    return [x.strip()[:-5] for x in os.listdir(path) if x.endswith(".dtbo")]
+
 
 def apply_overlay(overlay_name):
     """
@@ -77,10 +80,9 @@ def apply_overlay(overlay_name):
     overlay_path = os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name)
     if not os.path.exists(overlay_path):
         os.mkdir(overlay_path)
-    with open(
-        os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'path'), 'w'
-    ) as f:
+    with open(os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, "path"), "w") as f:
         f.write("{}.dtbo".format(overlay_name))
+
 
 def apply_overlay_safe(overlay_name):
     """
@@ -90,14 +92,13 @@ def apply_overlay_safe(overlay_name):
     """
     if is_applied(overlay_name):
         get_logger("DTO").debug(
-            "Overlay `{}' was already applied, not applying again.".format(
-                overlay_name
-            )
+            "Overlay `{}' was already applied, not applying again.".format(overlay_name)
         )
     else:
         apply_overlay(overlay_name)
     if not is_applied(overlay_name):
         raise RuntimeError("Failed to apply overlay `{}'".format(overlay_name))
+
 
 def rm_overlay(overlay_name):
     """
@@ -106,6 +107,7 @@ def rm_overlay(overlay_name):
     get_logger("DTO").trace("Removing overlay `{}'...".format(overlay_name))
     os.rmdir(os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name))
 
+
 def rm_overlay_safe(overlay_name):
     """
     Only remove an overlay if it's already applied.
@@ -113,7 +115,4 @@ def rm_overlay_safe(overlay_name):
     if overlay_name in list(list_overlays(applied_only=True).keys()):
         rm_overlay(overlay_name)
     else:
-        get_logger("DTO").debug(
-            "Overlay `{}' was not loaded, not removing.".format(overlay_name)
-        )
-
+        get_logger("DTO").debug("Overlay `{}' was not loaded, not removing.".format(overlay_name))

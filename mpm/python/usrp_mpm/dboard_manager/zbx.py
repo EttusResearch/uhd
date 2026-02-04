@@ -8,13 +8,15 @@ ZBX dboard implementation module
 """
 
 import time
+
 from usrp_mpm import tlv_eeprom
+from usrp_mpm.chips.ic_reg_maps import zbx_cpld_regs_t
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.x4xx_db import X4xxDbMixin
-from usrp_mpm.chips.ic_reg_maps import zbx_cpld_regs_t
+from usrp_mpm.mpmutils import parse_encoded_git_hash
 from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
 from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
-from usrp_mpm.mpmutils import parse_encoded_git_hash
+
 
 ###############################################################################
 # Main dboard control class
@@ -23,6 +25,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the ZBX dboard
     """
+
     #########################################################################
     # Overridables
     #
@@ -30,30 +33,30 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     #########################################################################
     pids = [0x4002]
     rx_sensor_callback_map = {
-        'temperature': 'get_rf_temp_sensor_average',
-        'temperature_top': 'get_rf_temp_sensor_top',
-        'temperature_bottom': 'get_rf_temp_sensor_bottom',
-        'rfdc_rate': 'get_rfdc_rate_sensor',
+        "temperature": "get_rf_temp_sensor_average",
+        "temperature_top": "get_rf_temp_sensor_top",
+        "temperature_bottom": "get_rf_temp_sensor_bottom",
+        "rfdc_rate": "get_rfdc_rate_sensor",
     }
     tx_sensor_callback_map = {
-        'temperature': 'get_rf_temp_sensor_average',
-        'temperature_top': 'get_rf_temp_sensor_top',
-        'temperature_bottom': 'get_rf_temp_sensor_bottom',
-        'rfdc_rate': 'get_rfdc_rate_sensor',
+        "temperature": "get_rf_temp_sensor_average",
+        "temperature_top": "get_rf_temp_sensor_top",
+        "temperature_bottom": "get_rf_temp_sensor_bottom",
+        "rfdc_rate": "get_rfdc_rate_sensor",
     }
     has_db_flash = True
     # ZBX depends on two types of RF core implementations which each have
     # compat versions.
     updateable_components = {
-        'fpga': {
-            'compatibility': {
-                'rf_core_100m': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
+        "fpga": {
+            "compatibility": {
+                "rf_core_100m": {
+                    "current": (1, 0),
+                    "oldest": (1, 0),
                 },
-                'rf_core_400m': {
-                    'current': (1, 0),
-                    'oldest': (1, 0),
+                "rf_core_400m": {
+                    "current": (1, 0),
+                    "oldest": (1, 0),
                 },
             }
         },
@@ -108,40 +111,43 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         self._cpld_set_safe_defaults()
 
     def _enable_power(self, enable=True):
-        """ Enables or disables power switches internal to the DB CPLD """
+        """Enables or disables power switches internal to the DB CPLD"""
         self.regs.ENABLE_TX_POS_7V0 = self.regs.ENABLE_TX_POS_7V0_t(int(enable))
         self.regs.ENABLE_RX_POS_7V0 = self.regs.ENABLE_RX_POS_7V0_t(int(enable))
         self.regs.ENABLE_POS_3V3 = self.regs.ENABLE_POS_3V3_t(int(enable))
         self.poke_cpld(
-            self.regs.ENABLE_POS_3V3_addr,
-            self.regs.get_reg(self.regs.ENABLE_POS_3V3_addr))
+            self.regs.ENABLE_POS_3V3_addr, self.regs.get_reg(self.regs.ENABLE_POS_3V3_addr)
+        )
 
     #########################################################################
     # DB-CPLD Interfacing
     #########################################################################
     def _check_compat_version(self):
-        """ Check compatibility of DB CPLD image and SW regmap """
+        """Check compatibility of DB CPLD image and SW regmap"""
         compat_revision_addr = self.regs.OLDEST_COMPAT_REVISION_addr
         cpld_oldest_compat_revision = self.peek_cpld(compat_revision_addr)
         if cpld_oldest_compat_revision < self.REQ_OLDEST_COMPAT_REV:
             err_msg = (
-                f'DB CPLD oldest compatible revision 0x{cpld_oldest_compat_revision:x}'
-                f' is out of date, the required revision is 0x{self.REQ_OLDEST_COMPAT_REV:x}. '
-                f'Update your CPLD image.')
+                f"DB CPLD oldest compatible revision 0x{cpld_oldest_compat_revision:x}"
+                f" is out of date, the required revision is 0x{self.REQ_OLDEST_COMPAT_REV:x}. "
+                f"Update your CPLD image."
+            )
             self.log.error(err_msg)
             raise RuntimeError(err_msg)
         if cpld_oldest_compat_revision > self.REQ_OLDEST_COMPAT_REV:
             err_msg = (
-                f'DB CPLD oldest compatible revision 0x{cpld_oldest_compat_revision:x}'
-                f' is newer than the expected revision 0x{self.REQ_OLDEST_COMPAT_REV:x}.'
-                ' Downgrade your CPLD image or update MPM.')
+                f"DB CPLD oldest compatible revision 0x{cpld_oldest_compat_revision:x}"
+                f" is newer than the expected revision 0x{self.REQ_OLDEST_COMPAT_REV:x}."
+                " Downgrade your CPLD image or update MPM."
+            )
             self.log.error(err_msg)
             raise RuntimeError(err_msg)
 
         if not self.has_compat_version(self.REQ_COMPAT_REV):
             err_msg = (
                 "ZBX DB CPLD revision is too old. Update your"
-                f" CPLD image to at least 0x{self.REQ_COMPAT_REV:08x}.")
+                f" CPLD image to at least 0x{self.REQ_COMPAT_REV:08x}."
+            )
             self.log.error(err_msg)
             raise RuntimeError(err_msg)
 
@@ -246,7 +252,6 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         (git_hash, dirtiness_qualifier) = parse_encoded_git_hash(git_hash_rb)
         return "{:07x} ({})".format(git_hash, dirtiness_qualifier)
 
-
     #########################################################################
     # UHD (De-)Initialization
     #########################################################################
@@ -255,9 +260,11 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         Execute necessary init dance to bring up dboard. This happens when a UHD
         session starts.
         """
-        self.log.debug("init() called with args `{}'".format(
-            ",".join(['{}={}'.format(x, args[x]) for x in args])
-        ))
+        self.log.debug(
+            "init() called with args `{}'".format(
+                ",".join(["{}={}".format(x, args[x]) for x in args])
+            )
+        )
         return True
 
     def deinit(self):
@@ -304,22 +311,22 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     # We keep a LO peek/poke interface for debugging purposes.
     #########################################################################
     def _wait_for_spi_ready(self, timeout):
-        """ Returns False if a timeout occurred. timeout is in ms """
+        """Returns False if a timeout occurred. timeout is in ms"""
         for _ in range(timeout):
-            if (self.peek_cpld(self._spi_addr) >> self.regs.SPI_READY_shift) \
-                    & self.regs.SPI_READY_mask:
+            if (
+                self.peek_cpld(self._spi_addr) >> self.regs.SPI_READY_shift
+            ) & self.regs.SPI_READY_mask:
                 return True
             time.sleep(0.001)
         return False
 
     def _lo_spi_send_tx(self, lo_name, write, addr, data=None):
-        """ Wait for SPI Ready and setup the TX data for a LO SPI transaction """
+        """Wait for SPI Ready and setup the TX data for a LO SPI transaction"""
         if not self._wait_for_spi_ready(timeout=100):
-            self.log.error('Timeout before LO SPI transaction waiting for SPI Ready')
-            raise RuntimeError('Timeout before LO SPI transaction waiting for SPI Ready')
-        lo_enum_name = 'LO_SELECT_' + lo_name.upper()
-        assert hasattr(self.regs.LO_SELECT_t, lo_enum_name), \
-            "Invalid LO name: {}".format(lo_name)
+            self.log.error("Timeout before LO SPI transaction waiting for SPI Ready")
+            raise RuntimeError("Timeout before LO SPI transaction waiting for SPI Ready")
+        lo_enum_name = "LO_SELECT_" + lo_name.upper()
+        assert hasattr(self.regs.LO_SELECT_t, lo_enum_name), "Invalid LO name: {}".format(lo_name)
         self.regs.LO_SELECT = getattr(self.regs.LO_SELECT_t, lo_enum_name)
         if write:
             self.regs.READ_FLAG = self.regs.READ_FLAG_t.READ_FLAG_WRITE
@@ -330,37 +337,36 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         else:
             self.regs.DATA = 0
         self.regs.ADDRESS = addr
-        self.regs.START_TRANSACTION = \
-            self.regs.START_TRANSACTION_t.START_TRANSACTION_ENABLE
+        self.regs.START_TRANSACTION = self.regs.START_TRANSACTION_t.START_TRANSACTION_ENABLE
         self.poke_cpld(self._spi_addr, self.regs.get_reg(self._spi_addr))
 
     def _lo_spi_check_status(self, lo_name, addr, write=False):
-        """ Wait for SPI Ready and check the success of the LO SPI transaction """
+        """Wait for SPI Ready and check the success of the LO SPI transaction"""
         # SPI Ready indicates that the previous transaction has completed
         # and the RX data is ready to be consumed
         if not write and not self._wait_for_spi_ready(timeout=100):
-            self.log.error('Timeout after LO SPI transaction waiting for SPI Ready')
-            raise RuntimeError('Timeout after LO SPI transaction waiting for SPI Ready')
+            self.log.error("Timeout after LO SPI transaction waiting for SPI Ready")
+            raise RuntimeError("Timeout after LO SPI transaction waiting for SPI Ready")
         # If the address or CS are not the same as what we set, there
         # was interference during the SPI transaction
-        lo_select = self.regs.LO_SELECT.name[len('LO_SELECT_'):]
+        lo_select = self.regs.LO_SELECT.name[len("LO_SELECT_") :]
         if self.regs.ADDRESS != addr or lo_select != lo_name.upper():
-            self.log.error('SPI transaction to LO failed!')
-            raise RuntimeError('SPI transaction to LO failed!')
+            self.log.error("SPI transaction to LO failed!")
+            raise RuntimeError("SPI transaction to LO failed!")
 
     def _lo_spi_get_rx(self):
-        """ Return RX data read from the LO SPI transaction """
+        """Return RX data read from the LO SPI transaction"""
         spi_reg = self.peek_cpld(self._spi_addr)
         return (spi_reg >> self.regs.DATA_shift) & self.regs.DATA_mask
 
     def peek_lo_spi(self, lo_name, addr):
-        """ Perform a register read access to an LO via SPI """
+        """Perform a register read access to an LO via SPI"""
         self._lo_spi_send_tx(lo_name=lo_name, write=False, addr=addr)
         self._lo_spi_check_status(lo_name, addr)
         return self._lo_spi_get_rx()
 
     def poke_lo_spi(self, lo_name, addr, val):
-        """ Perform a register write access to an LO via SPI """
+        """Perform a register write access to an LO via SPI"""
         self._lo_spi_send_tx(lo_name=lo_name, write=True, addr=addr, data=val)
         self._lo_spi_check_status(lo_name, addr, write=True)
 
@@ -368,7 +374,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
     # LEDs
     ###########################################################################
     def set_leds(self, channel, rx, trx_rx, trx_tx):
-        """ Set the frontpanel LEDs """
+        """Set the frontpanel LEDs"""
         assert channel in (0, 1)
 
         self.regs.save_state()
@@ -376,22 +382,40 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
             # ensure to be in SW controlled mode
             self.regs.RF0_OPTION = self.regs.RF0_OPTION.RF0_OPTION_SW_DEFINED
             self.regs.SW_RF0_CONFIG = 0
-            self.regs.RX0_RX_LED[0] = self.regs.RX0_RX_LED[0].RX0_RX_LED_ENABLE \
-                if bool(rx) else self.regs.RX0_RX_LED[0].RX0_RX_LED_DISABLE
-            self.regs.RX0_TRX_LED[0] = self.regs.RX0_TRX_LED[0].RX0_TRX_LED_ENABLE \
-                if bool(trx_rx) else self.regs.RX0_TRX_LED[0].RX0_TRX_LED_DISABLE
-            self.regs.TX0_TRX_LED[0] = self.regs.TX0_TRX_LED[0].TX0_TRX_LED_ENABLE \
-                if bool(trx_tx) else self.regs.TX0_TRX_LED[0].TX0_TRX_LED_DISABLE
+            self.regs.RX0_RX_LED[0] = (
+                self.regs.RX0_RX_LED[0].RX0_RX_LED_ENABLE
+                if bool(rx)
+                else self.regs.RX0_RX_LED[0].RX0_RX_LED_DISABLE
+            )
+            self.regs.RX0_TRX_LED[0] = (
+                self.regs.RX0_TRX_LED[0].RX0_TRX_LED_ENABLE
+                if bool(trx_rx)
+                else self.regs.RX0_TRX_LED[0].RX0_TRX_LED_DISABLE
+            )
+            self.regs.TX0_TRX_LED[0] = (
+                self.regs.TX0_TRX_LED[0].TX0_TRX_LED_ENABLE
+                if bool(trx_tx)
+                else self.regs.TX0_TRX_LED[0].TX0_TRX_LED_DISABLE
+            )
         else:
             # ensure to be in SW controlled mode
             self.regs.RF1_OPTION = self.regs.RF1_OPTION.RF1_OPTION_SW_DEFINED
             self.regs.SW_RF1_CONFIG = 0
-            self.regs.RX1_RX_LED[0] = self.regs.RX1_RX_LED[0].RX1_RX_LED_ENABLE \
-                if bool(rx) else self.regs.RX1_RX_LED[0].RX1_RX_LED_DISABLE
-            self.regs.RX1_TRX_LED[0] = self.regs.RX1_TRX_LED[0].RX1_TRX_LED_ENABLE \
-                if bool(trx_rx) else self.regs.RX1_TRX_LED[0].RX1_TRX_LED_DISABLE
-            self.regs.TX1_TRX_LED[0] = self.regs.TX1_TRX_LED[0].TX1_TRX_LED_ENABLE \
-                if bool(trx_tx) else self.regs.TX1_TRX_LED[0].TX1_TRX_LED_DISABLE
+            self.regs.RX1_RX_LED[0] = (
+                self.regs.RX1_RX_LED[0].RX1_RX_LED_ENABLE
+                if bool(rx)
+                else self.regs.RX1_RX_LED[0].RX1_RX_LED_DISABLE
+            )
+            self.regs.RX1_TRX_LED[0] = (
+                self.regs.RX1_TRX_LED[0].RX1_TRX_LED_ENABLE
+                if bool(trx_rx)
+                else self.regs.RX1_TRX_LED[0].RX1_TRX_LED_DISABLE
+            )
+            self.regs.TX1_TRX_LED[0] = (
+                self.regs.TX1_TRX_LED[0].TX1_TRX_LED_ENABLE
+                if bool(trx_tx)
+                else self.regs.TX1_TRX_LED[0].TX1_TRX_LED_DISABLE
+            )
 
         for addr in self.regs.get_changed_addrs():
             self.poke_cpld(addr, self.regs.get_reg(addr))
@@ -418,7 +442,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
         return get_temp_sensor(sensor_names, log=self.log)
-    
+
     def get_rf_temp_sensor_average(self, _):
         """
         Return the RF temperature sensor value of the average of the top and bottom side of the PCB

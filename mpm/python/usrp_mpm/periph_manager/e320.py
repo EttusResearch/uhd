@@ -11,6 +11,7 @@ import bisect
 import copy
 import re
 from functools import partial
+
 from six import iteritems
 from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.components import ZynqComponents
@@ -18,28 +19,34 @@ from usrp_mpm.dboard_manager import Neon
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.rpc_utils import no_rpc, get_map_for_rpc
+from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
+from usrp_mpm.rpc_utils import get_map_for_rpc, no_rpc
 from usrp_mpm.sys_utils import dtoverlay
-from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value, read_thermal_sensors_value
+from usrp_mpm.sys_utils.sysfs_thermal import (
+    read_thermal_sensor_value,
+    read_thermal_sensors_value,
+)
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.xports import XportMgrUDP
-from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
 
 E320_DEFAULT_INT_CLOCK_FREQ = 20e6
 E320_DEFAULT_EXT_CLOCK_FREQ = 10e6
-E320_DEFAULT_CLOCK_SOURCE = 'internal'
-E320_DEFAULT_TIME_SOURCE = 'internal'
+E320_DEFAULT_CLOCK_SOURCE = "internal"
+E320_DEFAULT_TIME_SOURCE = "internal"
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (6, 1)
 E320_REMOTE_STREAMING_COMPAT = (6, 1)
 E320_DBOARD_SLOT_IDX = 0
-E320_GPIO_BANKS = ["FP0",]
+E320_GPIO_BANKS = [
+    "FP0",
+]
 E320_GPIO_SRC_PS = "PS"
 E320_GPIO_SRC_USER_APP = "USER_APP"
 # We use the index positions of RFA and RFB to map between name and radio index
 E320_GPIO_SRCS = ("RFA", "RFB", E320_GPIO_SRC_PS, E320_GPIO_SRC_USER_APP)
 E320_FPGPIO_WIDTH = 8
+
 
 ###############################################################################
 # Transport managers
@@ -47,23 +54,25 @@ E320_FPGPIO_WIDTH = 8
 # pylint: disable=too-few-public-methods
 class E320XportMgrUDP(XportMgrUDP):
     "E320-specific UDP configuration"
+
     iface_config = {
-        'sfp0': {
-            'label': 'misc-enet-regs',
-            'type': 'sfp',
+        "sfp0": {
+            "label": "misc-enet-regs",
+            "type": "sfp",
         },
-        'int0': {
-            'label': 'misc-enet-int-regs',
-            'type': 'internal',
+        "int0": {
+            "label": "misc-enet-int-regs",
+            "type": "internal",
         },
-        'eth0': {
-            'label': '',
-            'type': 'forward',
-        }
+        "eth0": {
+            "label": "",
+            "type": "forward",
+        },
     }
 
 
 # pylint: enable=too-few-public-methods
+
 
 ###############################################################################
 # Main Class
@@ -75,19 +84,18 @@ class e320(ZynqComponents, PeriphManagerBase):
     """
     Holds E320 specific attributes and methods
     """
+
     #########################################################################
     # Overridables
     #
     # See PeriphManagerBase for documentation on these fields
     #########################################################################
     description = "E300-Series Device"
-    pids = {0xe320: 'e320'}
+    pids = {0xE320: "e320"}
     mboard_eeprom_addr = "e0004000.i2c"
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
-    mboard_info = {"type": "e3xx",
-                   "product": "e320"
-                  }
+    mboard_info = {"type": "e3xx", "product": "e320"}
     # This is the latest HW revision that his version of MPM is aware of. This
     # version of MPM will be able to run with any hardware which has a rev_compat
     # field that is equal or less than this value.
@@ -95,14 +103,14 @@ class e320(ZynqComponents, PeriphManagerBase):
     # must also be updated (derive_rev_compat).
     mboard_max_rev = 4  # rev E
     mboard_sensor_callback_map = {
-        'ref_locked': 'get_ref_lock_sensor',
-        'gps_locked': 'get_gps_locked_sensor',
-        'fan': 'get_fan_sensor',
-        'temp_fpga' : 'get_fpga_temp_sensor',
-        'temp_internal' : 'get_internal_temp_sensor',
-        'temp_rf_channelA' : 'get_rf_channelA_temp_sensor',
-        'temp_rf_channelB' : 'get_rf_channelB_temp_sensor',
-        'temp_main_power' : 'get_main_power_temp_sensor',
+        "ref_locked": "get_ref_lock_sensor",
+        "gps_locked": "get_gps_locked_sensor",
+        "fan": "get_fan_sensor",
+        "temp_fpga": "get_fpga_temp_sensor",
+        "temp_internal": "get_internal_temp_sensor",
+        "temp_rf_channelA": "get_rf_channelA_temp_sensor",
+        "temp_rf_channelB": "get_rf_channelB_temp_sensor",
+        "temp_main_power": "get_main_power_temp_sensor",
     }
     max_num_dboards = 1
 
@@ -114,16 +122,16 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_regs_label = "mboard-regs"
     # Override the list of updateable components
     updateable_components = {
-        'fpga': {
-            'callback': "update_fpga",
-            'path': '/lib/firmware/{}.bin',
-            'reset': True,
+        "fpga": {
+            "callback": "update_fpga",
+            "path": "/lib/firmware/{}.bin",
+            "reset": True,
         },
-        'dts': {
-            'callback': "update_dts",
-            'path': '/lib/firmware/{}.dts',
-            'output': '/lib/firmware/{}.dtbo',
-            'reset': False,
+        "dts": {
+            "callback": "update_dts",
+            "path": "/lib/firmware/{}.dts",
+            "output": "/lib/firmware/{}.dtbo",
+            "reset": False,
         },
     }
 
@@ -137,7 +145,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         eeprom_md -- Dictionary of info read out from the mboard EEPROM
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
-        return [device_info['product']]
+        return [device_info["product"]]
 
     ###########################################################################
     # Ctor and device initialization tasks
@@ -157,7 +165,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._xport_adapter_mgrs = {}
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
         for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
-            if sensor_name[:5] == 'temp_':
+            if sensor_name[:5] == "temp_":
                 setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
         try:
             self._init_peripherals(args)
@@ -182,8 +190,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         default_args -- Default args
         """
         if override_dboard_pids:
-            self.log.warning("Overriding daughterboard PIDs with: {}"
-                             .format(override_dboard_pids))
+            self.log.warning("Overriding daughterboard PIDs with: {}".format(override_dboard_pids))
             raise NotImplementedError("Can't override dboard pids")
         # The DBoard PID is the same as the MBoard PID
         db_pid = list(self.pids.keys())[0]
@@ -197,34 +204,34 @@ class e320(ZynqComponents, PeriphManagerBase):
         if not spi_nodes:
             self.log.warning("No SPI nodes for dboard %d.", E320_DBOARD_SLOT_IDX)
         dboard_info = {
-            'eeprom_md': self.mboard_info,
-            'eeprom_rawdata': self._eeprom_rawdata,
-            'pid': db_pid,
-            'spi_nodes': spi_nodes,
-            'default_args': default_args,
+            "eeprom_md": self.mboard_info,
+            "eeprom_rawdata": self._eeprom_rawdata,
+            "pid": db_pid,
+            "spi_nodes": spi_nodes,
+            "default_args": default_args,
         }
         # This will actually instantiate the dboard class:
         self.dboards.append(Neon(E320_DBOARD_SLOT_IDX, **dboard_info))
         assert len(self.dboards) == 1
 
     def _check_fpga_compat(self):
-        " Throw an exception if the compat numbers don't match up "
+        "Throw an exception if the compat numbers don't match up"
         actual_compat = self.mboard_regs_control.get_compat_number()
-        self.log.debug("Actual FPGA compat number: {:d}.{:d}".format(
-            actual_compat[0], actual_compat[1]
-        ))
+        self.log.debug(
+            "Actual FPGA compat number: {:d}.{:d}".format(actual_compat[0], actual_compat[1])
+        )
         assert_compat_number(
             E320_FPGA_COMPAT,
             self.mboard_regs_control.get_compat_number(),
             component="FPGA",
             fail_on_old_minor=True,
-            log=self.log
+            log=self.log,
         )
         if CompatNumber(actual_compat) >= CompatNumber(E320_REMOTE_STREAMING_COMPAT):
-            self.fpga_features.add('remote_udp_streaming')
+            self.fpga_features.add("remote_udp_streaming")
         self.log.debug(
-            "FPGA supports the following features: {}"
-            .format(", ".join(self.fpga_features)))
+            "FPGA supports the following features: {}".format(", ".join(self.fpga_features))
+        )
 
     def _init_ref_clock_and_time(self, default_args):
         """
@@ -232,14 +239,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         reference signals going to the FPGA are valid.
         """
         self._ext_clock_freq = float(
-            default_args.get('ext_clock_freq', E320_DEFAULT_EXT_CLOCK_FREQ)
+            default_args.get("ext_clock_freq", E320_DEFAULT_EXT_CLOCK_FREQ)
         )
-        self.set_clock_source(
-            default_args.get('clock_source', E320_DEFAULT_CLOCK_SOURCE)
-        )
-        self.set_time_source(
-            default_args.get('time_source', E320_DEFAULT_TIME_SOURCE)
-        )
+        self.set_clock_source(default_args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
+        self.set_time_source(default_args.get("time_source", E320_DEFAULT_TIME_SOURCE))
 
     def _init_peripherals(self, args):
         """
@@ -250,30 +253,26 @@ class e320(ZynqComponents, PeriphManagerBase):
         likely.
         """
         # Sanity checks
-        assert self.mboard_info.get('product') in self.pids.values(), \
-            "Device product could not be determined!"
+        assert (
+            self.mboard_info.get("product") in self.pids.values()
+        ), "Device product could not be determined!"
         # Init Mboard Regs
-        self.mboard_regs_control = MboardRegsControl(
-            self.mboard_regs_label, self.log)
+        self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
         self._update_fpga_type()
         # Init peripherals
         self._gps_enabled = None  # Assume indeterminant, will latch _def_gps_enabled
-        self._def_gps_enabled = str2bool(args.get('enable_gps', E320_DEFAULT_ENABLE_GPS))
+        self._def_gps_enabled = str2bool(args.get("enable_gps", E320_DEFAULT_ENABLE_GPS))
         self.enable_gps(self._def_gps_enabled)
-        self.enable_fp_gpio(
-            enable=args.get('enable_fp_gpio', E320_DEFAULT_ENABLE_FPGPIO)
-        )
+        self.enable_fp_gpio(enable=args.get("enable_fp_gpio", E320_DEFAULT_ENABLE_FPGPIO))
         # Init clocking
         self._init_ref_clock_and_time(args)
         # Init GPSd iface and GPS sensors
         self._init_gps_sensors()
         # Init CHDR transports
-        self._xport_mgrs = {
-            'udp': E320XportMgrUDP(self.log, args)
-        }
+        self._xport_mgrs = {"udp": E320XportMgrUDP(self.log, args)}
         # Init complete.
         self.log.debug("mboard info: {}".format(self.mboard_info))
 
@@ -302,11 +301,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         dispatchers accordingly.
         """
         if not self._device_initialized:
-            self.log.warning(
-                "Cannot run init(), device was never fully initialized!")
+            self.log.warning("Cannot run init(), device was never fully initialized!")
             return False
         args = self._update_default_args(args)
-        self.enable_gps(str2bool(args.get('enable_gps', self._def_gps_enabled)))
+        self.enable_gps(str2bool(args.get("enable_gps", self._def_gps_enabled)))
         self.set_clock_source(args.get("clock_source", E320_DEFAULT_CLOCK_SOURCE))
         self.set_time_source(args.get("time_source", E320_DEFAULT_TIME_SOURCE))
         result = super(e320, self).init(args)
@@ -317,8 +315,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         Clean up after a UHD session terminates.
         """
         if not self._device_initialized:
-            self.log.warning(
-                "Cannot run deinit(), device was never fully initialized!")
+            self.log.warning("Cannot run deinit(), device was never fully initialized!")
             return
         # Restore default power-state of GPS hardware resources
         self.enable_gps(self._def_gps_enabled)
@@ -333,12 +330,9 @@ class e320(ZynqComponents, PeriphManagerBase):
         self.log.trace("Tearing down E320 device...")
         self._tear_down = True
         active_overlays = self.list_active_overlays()
-        self.log.trace("E320 has active device tree overlays: {}".format(
-            active_overlays
-        ))
+        self.log.trace("E320 has active device tree overlays: {}".format(active_overlays))
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
-
 
     ###########################################################################
     # Device info
@@ -349,26 +343,26 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         if not self._device_initialized:
             return {}
-        device_info = self._xport_mgrs['udp'].get_xport_info()
-        device_info.update({
-            'fpga_version': "{}.{}".format(
-                *self.mboard_regs_control.get_compat_number()),
-            'fpga_version_hash': "{:x}.{}".format(
-                *self.mboard_regs_control.get_git_hash()),
-            'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
-        })
+        device_info = self._xport_mgrs["udp"].get_xport_info()
+        device_info.update(
+            {
+                "fpga_version": "{}.{}".format(*self.mboard_regs_control.get_compat_number()),
+                "fpga_version_hash": "{:x}.{}".format(*self.mboard_regs_control.get_git_hash()),
+                "fpga": self.updateable_components.get("fpga", {}).get("type", ""),
+            }
+        )
         return device_info
 
     ###########################################################################
     # Clock/Time API
     ###########################################################################
     def get_clock_sources(self):
-        " Lists all available clock sources. "
+        "Lists all available clock sources."
         self.log.trace("Listing available clock sources...")
-        return ('external', 'internal', 'gpsdo')
+        return ("external", "internal", "gpsdo")
 
     def get_clock_source(self):
-        " Returns the currently selected clock source "
+        "Returns the currently selected clock source"
         return self._clock_source
 
     def set_clock_source(self, *args):
@@ -386,9 +380,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._clock_source = clock_source
         ref_clk_freq = self.get_ref_clock_freq()
         self.mboard_regs_control.set_clock_source(clock_source, ref_clk_freq)
-        self.log.debug("Reference clock frequency is: {} MHz".format(
-            ref_clk_freq/1e6
-        ))
+        self.log.debug("Reference clock frequency is: {} MHz".format(ref_clk_freq / 1e6))
         self.dboard.update_ref_clock_freq(ref_clk_freq)
 
     def set_ref_clock_freq(self, freq):
@@ -399,20 +391,24 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         # Other frequencies have not been tested
         assert freq in (10e6, 20e6)
-        self.log.debug("We've been told the external reference clock " \
-                       "frequency is {} MHz.".format(freq / 1e6))
+        self.log.debug(
+            "We've been told the external reference clock "
+            "frequency is {} MHz.".format(freq / 1e6)
+        )
         if self._ext_clock_freq == freq:
-            self.log.trace("New external reference clock frequency " \
-                           "assignment matches previous assignment. Ignoring " \
-                           "update command.")
+            self.log.trace(
+                "New external reference clock frequency "
+                "assignment matches previous assignment. Ignoring "
+                "update command."
+            )
             return
         self._ext_clock_freq = freq
-        if self.get_clock_source() == 'external':
+        if self.get_clock_source() == "external":
             self.log.trace(f"Updating reference clock to {freq/1e6} MHz...")
             self.dboard.update_ref_clock_freq(freq)
 
     def get_ref_clock_freq(self):
-        " Returns the currently active reference clock frequency"
+        "Returns the currently active reference clock frequency"
         clock_source = self.get_clock_source()
         if clock_source in ("internal", "gpsdo"):
             return E320_DEFAULT_INT_CLOCK_FREQ
@@ -420,15 +416,15 @@ class e320(ZynqComponents, PeriphManagerBase):
         return self._ext_clock_freq
 
     def get_time_sources(self):
-        " Returns list of valid time sources "
-        return ['internal', 'external', 'gpsdo']
+        "Returns list of valid time sources"
+        return ["internal", "external", "gpsdo"]
 
     def get_time_source(self):
-        " Return the currently selected time source "
+        "Return the currently selected time source"
         return self._time_source
 
     def set_time_source(self, time_source):
-        " Set a time source "
+        "Set a time source"
         assert time_source in self.get_time_sources()
         if time_source == self.get_time_source():
             self.log.trace("Nothing to do -- time source already set.")
@@ -452,10 +448,10 @@ class e320(ZynqComponents, PeriphManagerBase):
             # pylint: enable=bad-whitespace
             # fmt: on
         }
-        return [{
-            "time_source": time_source,
-            "clock_source": clock_source
-        } for (clock_source, time_source) in valid_sync_sources]
+        return [
+            {"time_source": time_source, "clock_source": clock_source}
+            for (clock_source, time_source) in valid_sync_sources
+        ]
 
     ###########################################################################
     # GPIO API
@@ -483,6 +479,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         gpio_master_reg = self.mboard_regs_control.get_fp_gpio_master()
         gpio_user_mux_reg = self.mboard_regs_control.get_fp_gpio_user_mux()
         gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
+
         def get_gpio_src_i(gpio_pin_index):
             """
             Return the current radio source given a pin index.
@@ -495,6 +492,7 @@ class e320(ZynqComponents, PeriphManagerBase):
             radio_src = (gpio_radio_src_reg >> (2 * gpio_pin_index)) & 0b11
             assert radio_src in (0, 1)
             return E320_GPIO_SRCS[radio_src]
+
         return [get_gpio_src_i(i) for i in range(E320_FPGPIO_WIDTH)]
 
     def set_gpio_src(self, bank, src):
@@ -502,8 +500,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         Set the GPIO source for a given bank.
         """
         assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
-        assert len(src) == E320_FPGPIO_WIDTH, \
-            "Invalid number of GPIO sources!"
+        assert len(src) == E320_FPGPIO_WIDTH, "Invalid number of GPIO sources!"
         gpio_master_reg = 0x00
         gpio_user_mux_reg = 0x00
         gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
@@ -548,9 +545,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         Turn power to the front panel GPIO off or on and set voltage
         to 3.3V.
         """
-        self.log.trace("{} power to front-panel GPIO".format(
-            "Enabling" if enable else "Disabling"
-        ))
+        self.log.trace("{} power to front-panel GPIO".format("Enabling" if enable else "Disabling"))
         self.mboard_regs_control.enable_fp_gpio(enable)
 
     def set_fp_gpio_voltage(self, value):
@@ -582,10 +577,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         self.log.trace("Querying ref lock status from adf4002.")
         lock_status = self.mboard_regs_control.get_refclk_lock()
         return {
-            'name': 'ref_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "ref_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     def get_temp_sensor(self, sensor_name):
@@ -593,28 +588,23 @@ class e320(ZynqComponents, PeriphManagerBase):
         Get temperature sensor reading of the E320.
         """
         temp_sensor_map = {
-            "temp_internal" : 0,
-            "temp_rf_channelA" : 1,
-            "temp_fpga" : 2,
-            "temp_rf_channelB" : 3,
-            "temp_main_power" : 4
+            "temp_internal": 0,
+            "temp_rf_channelA": 1,
+            "temp_fpga": 2,
+            "temp_rf_channelB": 3,
+            "temp_main_power": 4,
         }
         self.log.trace("Reading temperature.")
-        return_val = '-1'
+        return_val = "-1"
         sensor = temp_sensor_map[sensor_name]
         try:
-            raw_val = read_thermal_sensors_value('cros-ec-thermal', 'temp')[sensor]
+            raw_val = read_thermal_sensors_value("cros-ec-thermal", "temp")[sensor]
             return_val = str(raw_val / 1000)
         except ValueError:
             self.log.warning("Error when converting temperature value")
         except KeyError:
             self.log.warning("Can't read temp on thermal_zone {}".format(sensor))
-        return {
-            'name': sensor_name,
-            'type': 'REALNUM',
-            'unit': 'C',
-            'value': return_val
-        }
+        return {"name": sensor_name, "type": "REALNUM", "unit": "C", "value": return_val}
 
     def get_gps_locked_sensor(self):
         """
@@ -622,10 +612,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         gps_locked = bool(self.mboard_regs_control.get_gps_locked_val())
         return {
-            'name': 'gps_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if gps_locked else 'unlocked',
-            'value': str(gps_locked).lower(),
+            "name": "gps_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if gps_locked else "unlocked",
+            "value": str(gps_locked).lower(),
         }
 
     def get_fan_sensor(self):
@@ -633,20 +623,15 @@ class e320(ZynqComponents, PeriphManagerBase):
         Return a sensor dictionary containing the RPM of the cooling device/fan0
         """
         self.log.trace("Reading cooling device.")
-        return_val = '-1'
+        return_val = "-1"
         try:
-            raw_val = read_thermal_sensor_value('Fan', 'cur_state')
+            raw_val = read_thermal_sensor_value("Fan", "cur_state")
             return_val = str(raw_val)
         except ValueError:
             self.log.warning("Error when converting fan speed value")
         except KeyError:
             self.log.warning("Can't read cur_state on Fan")
-        return {
-            'name': 'cooling fan',
-            'unit': 'rpm',
-            'type': 'INTEGER',
-            'value': return_val
-        }
+        return {"name": "cooling fan", "unit": "rpm", "type": "INTEGER", "value": return_val}
 
     ###########################################################################
     # EEPROMs
@@ -675,13 +660,14 @@ class e320(ZynqComponents, PeriphManagerBase):
         See PeriphManagerBase.get_db_eeprom() for docs.
         """
         if dboard_idx != E320_DBOARD_SLOT_IDX:
-            self.log.warn("Trying to access invalid dboard index {}. "
-                          "Using the only dboard.".format(dboard_idx))
+            self.log.warn(
+                "Trying to access invalid dboard index {}. "
+                "Using the only dboard.".format(dboard_idx)
+            )
         db_eeprom_data = copy.copy(self.dboard.device_info)
         for blob_id, blob in iteritems(self.dboard.get_user_eeprom_data()):
             if blob_id in db_eeprom_data:
-                self.log.warn("EEPROM user data contains invalid blob ID "
-                              "%s", blob_id)
+                self.log.warn("EEPROM user data contains invalid blob ID " "%s", blob_id)
             else:
                 db_eeprom_data[blob_id] = blob
         return db_eeprom_data
@@ -696,22 +682,22 @@ class e320(ZynqComponents, PeriphManagerBase):
                        specific device implementation on how to handle it.
         """
         if dboard_idx != E320_DBOARD_SLOT_IDX:
-            self.log.warn("Trying to access invalid dboard index {}. "
-                          "Using the only dboard.".format(dboard_idx))
+            self.log.warn(
+                "Trying to access invalid dboard index {}. "
+                "Using the only dboard.".format(dboard_idx)
+            )
         safe_db_eeprom_user_data = {}
         for blob_id, blob in iteritems(eeprom_data):
             if blob_id in self.dboard.device_info:
-                error_msg = "Trying to overwrite read-only EEPROM " \
-                            "entry `{}'!".format(blob_id)
+                error_msg = "Trying to overwrite read-only EEPROM " "entry `{}'!".format(blob_id)
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
             if not isinstance(blob, str) and not isinstance(blob, bytes):
-                error_msg = "Blob data for ID `{}' is not a " \
-                            "string!".format(blob_id)
+                error_msg = "Blob data for ID `{}' is not a " "string!".format(blob_id)
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
             assert isinstance(blob, str)
-            safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
+            safe_db_eeprom_user_data[blob_id] = blob.encode("ascii")
         self.dboard.set_user_eeprom_data(safe_db_eeprom_user_data)
 
     ###########################################################################
@@ -723,7 +709,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         """Update the fpga type stored in the updateable components"""
         fpga_type = self.mboard_regs_control.get_fpga_type()
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
-        self.updateable_components['fpga']['type'] = fpga_type
+        self.updateable_components["fpga"]["type"] = fpga_type
 
     #######################################################################
     # Timekeeper API
@@ -734,12 +720,12 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         return [
             {
-                'name': 'radio_clk',
-                'freq': str(self.dboard.get_master_clock_rate()),
-                'mutable': 'true'
+                "name": "radio_clk",
+                "freq": str(self.dboard.get_master_clock_rate()),
+                "mutable": "true",
             },
             {
-                'name': 'bus_clk',
-                'freq': str(200e6),
-            }
+                "name": "bus_clk",
+                "freq": str(200e6),
+            },
         ]

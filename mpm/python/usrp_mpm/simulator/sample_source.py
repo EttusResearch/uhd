@@ -12,18 +12,23 @@ import importlib.util
 sources = {}
 sinks = {}
 
+
 def cli_source(cls):
     """This decorator adds a class to the global list of SampleSources"""
     sources[cls.__name__] = cls
     return cls
+
 
 def cli_sink(cls):
     """This decorator adds a class to the global list of SampleSinks"""
     sinks[cls.__name__] = cls
     return cls
 
+
 name_index = 0
 module_lookup = {}
+
+
 def from_import_path(class_name, import_path):
     global name_index
     global module_lookup
@@ -32,17 +37,19 @@ def from_import_path(class_name, import_path):
         module = module_lookup[import_path]
     else:
         spec = importlib.util.spec_from_file_location("simsample." + str(name_index), import_path)
-        name_index =+ 1
+        name_index = +1
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         module_lookup[import_path] = module
     return getattr(module, class_name)
+
 
 class SampleSource:
     """This class defines the interface of a SampleSource. It
     provides samples to the simulator which are then sent over the
     network to a UHD client.
     """
+
     def fill_packet(self, packet, payload_size):
         """This method should fill the packet with enough samples to
         make its payload payload_size bytes long.
@@ -54,11 +61,13 @@ class SampleSource:
         """Use this to clean up any resources held by the object"""
         raise NotImplementedError()
 
+
 class SampleSink:
     """This class provides the interface of a SampleSink. It serves
     as a destination for smaples received over the network from a
     UHD client.
     """
+
     def accept_packet(self, packet):
         """Called whenever a new packet is received"""
         raise NotImplementedError()
@@ -67,6 +76,7 @@ class SampleSink:
         """Use this to clean up any resources held by the object"""
         raise NotImplementedError()
 
+
 @cli_source
 @cli_sink
 class NullSamples(SampleSource, SampleSink):
@@ -74,6 +84,7 @@ class NullSamples(SampleSource, SampleSink):
     number of samples with a value of zero. You may optionally provide
     a log object which will enable debug output.
     """
+
     def __init__(self, log=None):
         self.log = log
 
@@ -86,17 +97,22 @@ class NullSamples(SampleSource, SampleSink):
 
     def accept_packet(self, packet):
         if self.log is not None:
-            self.log.debug("Null Source called, accepting {} bytes of payload"
-                           .format(len(packet.get_payload_bytes())))
+            self.log.debug(
+                "Null Source called, accepting {} bytes of payload".format(
+                    len(packet.get_payload_bytes())
+                )
+            )
 
     def close(self):
         pass
+
 
 class IOSource(SampleSource):
     """This adaptor class creates a sample source using a read object
     that provides a read(# of bytes) function.
     (e.g. the result of an open("<filename>", "rb") call)
     """
+
     def __init__(self, read):
         self.read_obj = read
 
@@ -110,11 +126,13 @@ class IOSource(SampleSource):
     def close(self):
         self.read_obj.close()
 
+
 class IOSink(SampleSink):
     """This adaptor class creates a sample sink using a write object
     that provides a write(bytes) function.
     (e.g. the result of an open("<filename>", "wb") call)
     """
+
     def __init__(self, write):
         self.write_obj = write
 
@@ -126,9 +144,11 @@ class IOSink(SampleSink):
     def close(self):
         self.write_obj.close()
 
+
 @cli_source
 class FileSource(IOSource):
     """This class creates a SampleSource using a file path"""
+
     def __init__(self, read_file, repeat=False):
         self.open = lambda: open(read_file, "rb")
         if isinstance(repeat, bool):
@@ -150,9 +170,11 @@ class FileSource(IOSource):
         packet.set_payload_bytes(payload)
         return packet
 
+
 @cli_sink
 class FileSink(IOSink):
     """This class creates a SampleSink using a file path"""
+
     def __init__(self, write_file):
         write = open(write_file, "wb")
         super().__init__(write)

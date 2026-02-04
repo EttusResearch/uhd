@@ -4,11 +4,12 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-import socket
-from mprpc import RPCClient
-import usrp_mpm as mpm
 import argparse
 import random
+import socket
+
+import usrp_mpm as mpm
+from mprpc import RPCClient
 
 
 def parse_args():
@@ -41,11 +42,9 @@ def rpc(address, port, command, *args):
 def discovery(address, port):
     if not port:
         port = mpm.types.MPM_DISCOVERY_PORT
-    sock = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.sendto(mpm.types.MPM_DISCOVERY_MESSAGE, (address, port))
-    sock.settimeout(1.0) # wait max 1 second
+    sock.settimeout(1.0)  # wait max 1 second
     while True:
         try:
             data, sender = sock.recvfrom(8000)
@@ -58,12 +57,10 @@ def discovery(address, port):
 def echo(address, port):
     if not port:
         port = mpm.types.MPM_DISCOVERY_PORT
-    sock = socket.socket(
-        socket.AF_INET,
-        socket.SOCK_DGRAM)
-    message = "MPM-ECHO" + bytearray(random.getrandbits(8) for _ in range(8000-8))
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    message = "MPM-ECHO" + bytearray(random.getrandbits(8) for _ in range(8000 - 8))
     sock.sendto(message, (address, port))
-    sock.settimeout(0.05) # wait max 50 ms
+    sock.settimeout(0.05)  # wait max 50 ms
     while True:
         try:
             data, sender = sock.recvfrom(9000)
@@ -91,4 +88,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(not(main()))
+    exit(not (main()))

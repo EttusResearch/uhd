@@ -8,16 +8,27 @@ This module contains the streaming backend for the simulator. It
 handles managing threads, as well as interfacing with sample sources
 and sinks.
 """
-import time
-from threading import Thread
 import queue
 import socket
-from uhd.chdr import PacketType, StrcOpCode, StrcPayload, StrsPayload, StrsStatus, ChdrHeader, ChdrPacket
+import time
+from threading import Thread
+
+from uhd.chdr import (
+    ChdrHeader,
+    ChdrPacket,
+    PacketType,
+    StrcOpCode,
+    StrcPayload,
+    StrsPayload,
+    StrsStatus,
+)
+
 
 class XferCount:
     """This class keeps track of flow control transfer status which are
     used to populate Strc and Strs packets
     """
+
     def __init__(self):
         self.num_bytes = 0
         self.num_packets = 0
@@ -56,14 +67,17 @@ class XferCount:
     def __str__(self):
         return "XferCount{{num_bytes:{}, num_packets:{}}}".format(self.num_bytes, self.num_packets)
 
+
 class ChdrInputStream:
     """This class encapsulates an Rx Thread. This thread blocks on a
     queue which receives STRC and DATA ChdrPackets. It places the data
     packets into the sample_sink and responds to the STRC packets using
     the send_wrapper
     """
-    CAPACITY_BYTES = int(5e3) # 5 KB
+
+    CAPACITY_BYTES = int(5e3)  # 5 KB
     QUEUE_CAP = 3
+
     def __init__(self, log, chdr_w, sample_sink, send_wrapper, our_epid):
         self.log = log
         self.chdr_w = chdr_w
@@ -116,7 +130,9 @@ class ChdrInputStream:
                 self.log.trace("Flow Control Due, sending STRS")
                 self.command_target = None
                 resp_packet = self._generate_strs_packet(self.command_epid, self.our_epid)
-                self.log.trace("Sending Flow Control: {}".format(resp_packet.to_string_with_payload()))
+                self.log.trace(
+                    "Sending Flow Control: {}".format(resp_packet.to_string_with_payload())
+                )
                 self.send_wrapper.send_packet(resp_packet, self.command_addr)
 
         self.sample_sink.close()
@@ -147,6 +163,7 @@ class ChdrInputStream:
         """Queue a packet to be processed by the ChdrInputStream"""
         self.rx_queue.put((packet, recv_len, addr))
 
+
 class ChdrOutputStream:
     """This class encapsulates a Tx Thread. It takes data from its
     sample_source and then sends it in a data packet using its
@@ -155,6 +172,7 @@ class ChdrOutputStream:
     The tx stream is configured using the stream_spec object, which
     sets parameters such as sample rate and destination
     """
+
     def __init__(self, log, chdr_w, sample_source, stream_spec, send_wrapper):
         self.log = log
         self.chdr_w = chdr_w
@@ -172,10 +190,16 @@ class ChdrOutputStream:
         self.thread.start()
 
     def _tx_worker(self):
-        self.log.info("Stream TX Worker Starting with {} packets/sec"
-                      .format(1/self.stream_spec.seconds_per_packet()))
-        self.log.info("Downstream Buffer Capacity: {} packets or {} bytes"
-                      .format(self.stream_spec.capacity_packets, self.stream_spec.capacity_bytes))
+        self.log.info(
+            "Stream TX Worker Starting with {} packets/sec".format(
+                1 / self.stream_spec.seconds_per_packet()
+            )
+        )
+        self.log.info(
+            "Downstream Buffer Capacity: {} packets or {} bytes".format(
+                self.stream_spec.capacity_packets, self.stream_spec.capacity_bytes
+            )
+        )
         header = ChdrHeader()
         start_time = time.time()
         next_send = start_time
@@ -186,10 +210,9 @@ class ChdrOutputStream:
         num_samps_left = None
         if not is_continuous:
             # TODO: Put sample format/width in the stream spec
-            num_samps_left = self.stream_spec.total_samples * 4 # SC16 is 4 bytes per sample
+            num_samps_left = self.stream_spec.total_samples * 4  # SC16 is 4 bytes per sample
 
-        timestamp = self.stream_spec.init_timestamp  \
-            if self.stream_spec.is_timed else None
+        timestamp = self.stream_spec.init_timestamp if self.stream_spec.is_timed else None
 
         while is_continuous or num_samps_left > 0:
             if self.stop:
@@ -207,7 +230,7 @@ class ChdrOutputStream:
             packet = self.sample_source.fill_packet(packet, packet_samples)
             if packet is None:
                 break
-            send_data = bytes(packet.serialize()) # Serialize before waiting
+            send_data = bytes(packet.serialize())  # Serialize before waiting
 
             delay = next_send - time.time()
             if delay > 0:
@@ -227,8 +250,11 @@ class ChdrOutputStream:
 
         self.log.info("Stream Worker Done")
         finish_time = time.time()
-        self.log.info("Actual Packet Rate was {} packets/sec"
-                      .format(self.xfer.num_packets/(finish_time - start_time)))
+        self.log.info(
+            "Actual Packet Rate was {} packets/sec".format(
+                self.xfer.num_packets / (finish_time - start_time)
+            )
+        )
         self.sample_source.close()
 
     def finish(self):
@@ -236,11 +262,11 @@ class ChdrOutputStream:
         self.stop = True
 
     def queue_packet(self, packet):
-        """ Place an incoming STRS packet in the Queue """
+        """Place an incoming STRS packet in the Queue"""
         self.strs_queue.put_nowait(packet)
 
     def _can_fit_packet(self, length):
-        """ Can the downstream buffer fit a packet of length right now """
+        """Can the downstream buffer fit a packet of length right now"""
         packets_in_transit = self.xfer.num_packets - self.recv.num_packets
         space_packets = self.stream_spec.capacity_packets - packets_in_transit
         bytes_in_transit = self.xfer.num_bytes - self.recv.num_bytes
@@ -248,10 +274,11 @@ class ChdrOutputStream:
         return space_packets > 0 and space_bytes >= length
 
     def _update_recv(self, strs_payload):
-        """ Update the Xfer counts for downstream receive using
+        """Update the Xfer counts for downstream receive using
         an incoming strs payload
         """
-        assert strs_payload.status == StrsStatus.OKAY, \
-            "Flow Control Error: STRS Status is {}".format(strs_payload.status)
+        assert (
+            strs_payload.status == StrsStatus.OKAY
+        ), "Flow Control Error: STRS Status is {}".format(strs_payload.status)
         self.recv.num_packets = strs_payload.xfer_count_pkts
         self.recv.num_bytes = strs_payload.xfer_count_bytes

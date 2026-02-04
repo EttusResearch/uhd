@@ -7,9 +7,11 @@
 LMK05318 parent driver class
 """
 
-import time
 import datetime
+import time
+
 from usrp_mpm.mpmlog import get_logger
+
 
 class LMK05318:
     """
@@ -19,16 +21,16 @@ class LMK05318:
     LMK_VENDOR_ID = 0x100B
     LMK_PROD_ID = 0x35
 
-    LMK_EEPROM_REG_COMMIT   = "register_commit"
+    LMK_EEPROM_REG_COMMIT = "register_commit"
     LMK_EEPROM_DIRECT_WRITE = "direct_write"
 
     def __init__(self, regs_iface, parent_log=None):
-        self.log = \
-            parent_log.getChild("LMK05318") if parent_log is not None \
-            else get_logger("LMK05318")
+        self.log = (
+            parent_log.getChild("LMK05318") if parent_log is not None else get_logger("LMK05318")
+        )
         self.regs_iface = regs_iface
-        assert hasattr(self.regs_iface, 'peek8')
-        assert hasattr(self.regs_iface, 'poke8')
+        assert hasattr(self.regs_iface, "peek8")
+        assert hasattr(self.regs_iface, "poke8")
         self.peek8 = regs_iface.peek8
 
     def poke8(self, addr, val, overwrite_mask=False):
@@ -57,8 +59,8 @@ class LMK05318:
                 val = val | current_val
                 self.log.trace(
                     "Attention: writing to register {:02x} with masked bits, "
-                    "mask 0x{:02x} was applied, resulting in value {:02x}"
-                    .format(addr, mask, val))
+                    "mask 0x{:02x} was applied, resulting in value {:02x}".format(addr, mask, val)
+                )
         self.regs_iface.poke8(addr, val)
 
     def pokes8(self, addr_vals, overwrite_mask=False):
@@ -70,11 +72,10 @@ class LMK05318:
             self.poke8(addr, val, overwrite_mask)
 
     def get_vendor_id(self):
-        """ Read back the chip's vendor ID"""
+        """Read back the chip's vendor ID"""
         vendor_id_high = self.peek8(0x00)
         vendor_id_low = self.peek8(0x01)
-        vendor_id = (vendor_id_high << 8) \
-                  | vendor_id_low
+        vendor_id = (vendor_id_high << 8) | vendor_id_low
         self.log.trace("Vendor ID Readback: 0x{:X}".format(vendor_id))
         return vendor_id
 
@@ -106,10 +107,10 @@ class LMK05318:
         Performs a soft reset of the LMK05318 by setting or unsetting
         the reset register
         """
-        reset_addr = 0xC #DEV_CTL
-        if value: # Reset
+        reset_addr = 0xC  # DEV_CTL
+        if value:  # Reset
             reset_byte = 0x80
-        else: # Clear Reset
+        else:  # Clear Reset
             reset_byte = 0x7F & self.peek8(reset_addr)
         self.poke8(reset_addr, reset_byte, overwrite_mask=True)
 
@@ -117,11 +118,12 @@ class LMK05318:
         """
         program the current register config to LMK eeprom
         """
+
         def _wait_for_busy(self, value):
             wait_until = datetime.datetime.now() + datetime.timedelta(seconds=2)
             while datetime.datetime.now() < wait_until:
                 self.log.trace("wait till busy bit becomes {}".format(value))
-                busy = (self.peek8(0x9D) >> 2) & 1 # check if busy bit is cleared
+                busy = (self.peek8(0x9D) >> 2) & 1  # check if busy bit is cleared
                 if busy == value:
                     return True
                 time.sleep(0.01)
@@ -129,15 +131,15 @@ class LMK05318:
 
         if method == self.LMK_EEPROM_REG_COMMIT:
             self.log.trace("write current device register content to EEPROM")
-            #store current cfg to SRAM
+            # store current cfg to SRAM
             self.poke8(0x9D, 0x40, overwrite_mask=True)
             time.sleep(0.01)
-            #unlock EEPROM
+            # unlock EEPROM
             self.poke8(0xA4, 0xEA, overwrite_mask=True)
             time.sleep(0.01)
-            #store SRAM into EEPROM
+            # store SRAM into EEPROM
             self.poke8(0x9D, 0x03, overwrite_mask=True)
-            #the actual programming takes about 230ms, poll the busy bit to see when it's done
+            # the actual programming takes about 230ms, poll the busy bit to see when it's done
             if not _wait_for_busy(self, 1):
                 self.log.error("EEPROM does not start programming, something went wrong")
             if not _wait_for_busy(self, 0):
@@ -148,7 +150,7 @@ class LMK05318:
         else:
             raise RuntimeError("Invalid method for LMK05318 EEPROM programming")
 
-        #lock EEPROM
+        # lock EEPROM
         self.poke8(0xA4, 0x00, overwrite_mask=True)
         self.log.trace("programming EEPROM done, power-cycle or hard-reset to take effect")
 

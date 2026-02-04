@@ -8,10 +8,11 @@ JESD FPGA Core Interface
 """
 
 import time
+from builtins import hex, object
+
 from six import iteritems
-from builtins import hex
-from builtins import object
 from usrp_mpm.mpmlog import get_logger
+
 
 class NIJESDCore(object):
     """
@@ -33,11 +34,11 @@ class NIJESDCore(object):
     DB_ID                      = 0x0630
     MGT_QPLL_CONTROL           = 0x2000
     MGT_PLL_POWER_DOWN_CONTROL = 0x200C
-    MGT_TX_RESET_CONTROL       = 0x2020
-    MGT_RX_RESET_CONTROL       = 0x2024
-    MGT_RECEIVER_CONTROL       = 0x2040
+    MGT_TX_RESET_CONTROL = 0x2020
+    MGT_RX_RESET_CONTROL = 0x2024
+    MGT_RECEIVER_CONTROL = 0x2040
     MGT_RX_DESCRAMBLER_CONTROL = 0x2050
-    MGT_TRANSMITTER_CONTROL    = 0x2060
+    MGT_TRANSMITTER_CONTROL = 0x2060
     MGT_TX_TRANSCEIVER_CONTROL = 0x2064
     MGT_TX_SCRAMBLER_CONTROL   = 0x2068
     LMK_SYNC_CONTROL           = 0x206C
@@ -72,17 +73,16 @@ class NIJESDCore(object):
     def __init__(self, regs, slot_idx=0, **kwargs):
         self.regs = regs
         self.log = get_logger("NIJESD204bCore-{}".format(slot_idx))
-        assert hasattr(self.regs, 'peek32')
-        assert hasattr(self.regs, 'poke32')
+        assert hasattr(self.regs, "peek32")
+        assert hasattr(self.regs, "poke32")
         # Initialize the driver's attributes with the default value, or a user-given
         # value if the attribute key exists in kwargs.
         for key, default_value in iteritems(self.JESDCORE_DEFAULTS):
             setattr(self, key, kwargs.get(key, default_value))
-            assert type(getattr(self, key)) == type(default_value), \
-                "Invalid type for attribute {}".format(key)
-            self.log.trace("Initialized attribute {0} = {1}."
-                           .format(key, getattr(self, key)))
-        
+            assert type(getattr(self, key)) == type(
+                default_value
+            ), "Invalid type for attribute {}".format(key)
+            self.log.trace("Initialized attribute {0} = {1}.".format(key, getattr(self, key)))
 
     def check_core(self):
         """
@@ -90,26 +90,36 @@ class NIJESDCore(object):
         """
         self.log.trace("Checking JESD Core...")
         if self.regs.peek32(self.JESD_SIGNATURE_REG) != 0x4A455344:
-            raise RuntimeError('JESD Core signature mismatch! Check that core is mapped correctly')
+            raise RuntimeError("JESD Core signature mismatch! Check that core is mapped correctly")
         # Two revision checks are needed:
         #   FPGA Current Rev >= Host Oldest Compatible Rev
         #   Host Current Rev >= FPGA Oldest Compatible Rev
-        fpga_current_revision    = self.regs.peek32(self.JESD_REVISION_REG) & 0xFFFFFFFF
+        fpga_current_revision = self.regs.peek32(self.JESD_REVISION_REG) & 0xFFFFFFFF
         fpga_old_compat_revision = self.regs.peek32(self.JESD_OLD_COMPAT_REV_REG) & 0xFFFFFFFF
         if fpga_current_revision < self.OLDEST_COMPAT_VERSION:
-            self.log.error("Revision check failed! MPM oldest supported revision "
-                           "(0x{:08X}) is too new for this FPGA revision (0x{:08X})."
-                           .format(self.OLDEST_COMPAT_VERSION, fpga_current_revision))
-            raise RuntimeError('This MPM version does not support the loaded FPGA image. Please update images!')
+            self.log.error(
+                "Revision check failed! MPM oldest supported revision "
+                "(0x{:08X}) is too new for this FPGA revision (0x{:08X}).".format(
+                    self.OLDEST_COMPAT_VERSION, fpga_current_revision
+                )
+            )
+            raise RuntimeError(
+                "This MPM version does not support the loaded FPGA image. Please update images!"
+            )
         if self.CURRENT_VERSION < fpga_old_compat_revision:
-            self.log.error("Revision check failed! FPGA oldest compatible revision "
-                           "(0x{:08X}) is too new for this MPM version (0x{:08X})."
-                           .format(fpga_current_revision, self.CURRENT_VERSION))
-            raise RuntimeError('The loaded FPGA version is too new for MPM. Please update MPM!')
+            self.log.error(
+                "Revision check failed! FPGA oldest compatible revision "
+                "(0x{:08X}) is too new for this MPM version (0x{:08X}).".format(
+                    fpga_current_revision, self.CURRENT_VERSION
+                )
+            )
+            raise RuntimeError("The loaded FPGA version is too new for MPM. Please update MPM!")
         self.log.trace("JESD Core current revision: 0x{:08X}".format(fpga_current_revision))
-        self.log.trace("JESD Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision))
-        self.log.trace("DB Slot #: {}".format( (self.regs.peek32(self.DB_ID) & 0x10000) >> 16  ))
-        self.log.trace("DB PID: {:X}" .format(  self.regs.peek32(self.DB_ID) & 0xFFFF ))
+        self.log.trace(
+            "JESD Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision)
+        )
+        self.log.trace("DB Slot #: {}".format((self.regs.peek32(self.DB_ID) & 0x10000) >> 16))
+        self.log.trace("DB PID: {:X}".format(self.regs.peek32(self.DB_ID) & 0xFFFF))
         return True
 
     def reset(self):
@@ -118,35 +128,37 @@ class NIJESDCore(object):
         logic) in reset. Also disables the SYSREF sampler.
         """
         self.log.trace("Resetting the JESD204B FPGA core(s)...")
-        self._gt_reset('tx', reset_only=True)
-        self._gt_reset('rx', reset_only=True)
+        self._gt_reset("tx", reset_only=True)
+        self._gt_reset("rx", reset_only=True)
         self._gt_pll_lock_control(self.qplls_used, self.cplls_used, reset_only=True)
         # Disable SYSREF Sampler
         self.enable_lmfc(False)
 
     def init_deframer(self):
-        " Initialize deframer "
+        "Initialize deframer"
         self.log.trace("Initializing deframer...")
         # Force ADC SYNC_n to asserted, telling the transmitter to start (or stay in) CGS.
         self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x2)
         # De-scrambler setup.
         reg_val = {True: 0x1, False: 0x0}[self.bypass_descrambler]
         self.regs.poke32(self.MGT_RX_DESCRAMBLER_CONTROL, reg_val)
-        self._gt_reset('rx', reset_only=False)
+        self._gt_reset("rx", reset_only=False)
         # Remove forced SYNC_n assertion to allow link to connect normally.
         self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x0)
 
     def init_framer(self):
-        " Initialize framer "
+        "Initialize framer"
         self.log.trace("Initializing framer...")
         # Disable DAC Sync from requesting CGS & Stop Deframer
         self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, (0b1 << 13) | (0b1 << 1))
         # Reset, unreset, and check the GTs
-        self._gt_reset('tx', reset_only=False)
+        self._gt_reset("tx", reset_only=False)
         # MGT TX PHY control.
-        reg_val = ((self.tx_driver_swing & 0x0F) << 16) | \
-                  ((self.tx_precursor    & 0x1F) <<  8) | \
-                  ((self.tx_postcursor   & 0x1F) <<  0)
+        reg_val = (
+            ((self.tx_driver_swing & 0x0F) << 16)
+            | ((self.tx_precursor & 0x1F) << 8)
+            | ((self.tx_postcursor & 0x1F) << 0)
+        )
         self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, reg_val)
         time.sleep(0.001)
         # Bypass scrambler and char replacement. If the scrambler is bypassed,
@@ -156,14 +168,14 @@ class NIJESDCore(object):
         # Check for Framer in Idle state
         rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         if rb & 0x100 != 0x100:
-            raise RuntimeError('TX Framer is not idle after reset')
+            raise RuntimeError("TX Framer is not idle after reset")
         # Enable incoming DAC Sync
         self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 << 12)
         # Enable the framer
-        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 <<  0)
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 << 0)
 
     def get_framer_status(self):
-        " Return True if framer is in good status "
+        "Return True if framer is in good status"
         rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         self.log.trace("FPGA Framer status: {0}".format(hex(rb & 0xFF0)))
         if rb & (0b1 << 8) == 0b1 << 8:
@@ -175,40 +187,48 @@ class NIJESDCore(object):
         return rb & 0xFF0 == 0x6C0
 
     def get_deframer_status(self, ignore_sysref=False):
-        " Return True if deframer is in good status "
+        "Return True if deframer is in good status"
         rb = self.regs.peek32(self.MGT_RECEIVER_CONTROL) & 0xFFFFFFFF
         self.log.trace("FPGA Deframer Status Readback: {0}".format(hex(rb)))
-        cgs_pass     =  (rb & (0b1 <<  2)) > 0
-        ila_pass     =  (rb & (0b1 <<  3)) > 0
-        sys_ref_pass = ((rb & (0b1 <<  5)) > 0) | ignore_sysref
-        mgt_pass     =  (rb & (0b1 << 21)) == 0
+        cgs_pass = (rb & (0b1 << 2)) > 0
+        ila_pass = (rb & (0b1 << 3)) > 0
+        sys_ref_pass = ((rb & (0b1 << 5)) > 0) | ignore_sysref
+        mgt_pass = (rb & (0b1 << 21)) == 0
 
         if not sys_ref_pass:
             self.log.warning("Deframer warning: SYSREF not received!")
         elif not cgs_pass:
             self.log.warning("Deframer warning: Code Group Sync failed to complete!")
             for lane in range(self.rx_lanes):
-                if (rb & (0b1 << (24+lane))) == 0:
+                if (rb & (0b1 << (24 + lane))) == 0:
                     self.log.warning("Deframer warning: Lane {0} failed CGS!".format(lane))
         elif not ila_pass:
             self.log.warning("Deframer warning: Channel Bonding failed to complete!")
             for lane in range(self.rx_lanes):
-                if (rb & (0b1 << (28+lane))) == 0:
+                if (rb & (0b1 << (28 + lane))) == 0:
                     self.log.warning("Deframer warning: Lane {0} failed ILA!".format(lane))
         elif not mgt_pass:
             self.log.warning("Deframer warning, Misc Link Error!")
             # Specific sticky bits for link errors. The only way to clear these is to
             # issue the RX MGT reset.
-            link_disparity    = (rb & (0b1 << 16)) > 0
+            link_disparity = (rb & (0b1 << 16)) > 0
             link_not_in_table = (rb & (0b1 << 17)) > 0
             link_misalignment = (rb & (0b1 << 18)) > 0
-            adc_cgs_request   = (rb & (0b1 << 19)) > 0
+            adc_cgs_request = (rb & (0b1 << 19)) > 0
             unexpected_k_char = (rb & (0b1 << 20)) > 0
             self.log.warning("Deframer warning, Link Disparity Error: {}".format(link_disparity))
-            self.log.warning("Deframer warning, Link Not In Table Error: {}".format(link_not_in_table))
-            self.log.warning("Deframer warning, Link Misalignment Error: {}".format(link_misalignment))
-            self.log.warning("Deframer warning, Link ADC CGS Request Error: {}".format(adc_cgs_request))
-            self.log.warning("Deframer warning, Link Unexpected K Char Error: {}".format(unexpected_k_char))
+            self.log.warning(
+                "Deframer warning, Link Not In Table Error: {}".format(link_not_in_table)
+            )
+            self.log.warning(
+                "Deframer warning, Link Misalignment Error: {}".format(link_misalignment)
+            )
+            self.log.warning(
+                "Deframer warning, Link ADC CGS Request Error: {}".format(adc_cgs_request)
+            )
+            self.log.warning(
+                "Deframer warning, Link Unexpected K Char Error: {}".format(unexpected_k_char)
+            )
         return cgs_pass & ila_pass & sys_ref_pass & mgt_pass
 
     def init(self):
@@ -218,8 +238,8 @@ class NIJESDCore(object):
         self.log.trace("Initializing JESD204B FPGA core(s)...")
         self._gt_pma_eyescan(self.enable_rx_eyescan)
         self._gt_pll_power_control(self.qplls_used, self.cplls_used)
-        self._gt_reset('tx', reset_only=True)
-        self._gt_reset('rx', reset_only=True)
+        self._gt_reset("tx", reset_only=True)
+        self._gt_reset("rx", reset_only=True)
         self._gt_pll_lock_control(self.qplls_used, self.cplls_used, reset_only=False)
         # Disable SYSREF Sampler
         self.enable_lmfc(False)
@@ -228,14 +248,18 @@ class NIJESDCore(object):
         """
         Enable/disable LMFC generator in FPGA.
         """
-        self.log.trace("%s FPGA SYSREF Receiver..." % {True: 'Enabling', False: 'Disabling'}[enable])
+        self.log.trace(
+            "%s FPGA SYSREF Receiver..." % {True: "Enabling", False: "Disabling"}[enable]
+        )
         disable_bit = 0b1
         if enable:
             disable_bit = 0b0
-        reg_val = ((self.lmfc_divider-1) << 23) | \
-                  ((self.rx_sysref_delay) << 16) | \
-                  ((self.tx_sysref_delay) << 8) | \
-                  (disable_bit << 6)
+        reg_val = (
+            ((self.lmfc_divider - 1) << 23)
+            | ((self.rx_sysref_delay) << 16)
+            | ((self.tx_sysref_delay) << 8)
+            | (disable_bit << 6)
+        )
         self.log.trace("Setting SYSREF Capture reg: 0x{:08X}".format(reg_val))
         self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, reg_val)
 
@@ -245,12 +269,12 @@ class NIJESDCore(object):
         Note: SYSREFs must be enabled on LMK separately beforehand.
         """
         self.log.trace("Sending SYSREF pulse...")
-        self.regs.poke32(self.LMK_SYNC_CONTROL, 0b1 << 30) # Bit 30. Self-clears.
+        self.regs.poke32(self.LMK_SYNC_CONTROL, 0b1 << 30)  # Bit 30. Self-clears.
 
     def _gt_reset(self, tx_or_rx, reset_only=False):
-        " Put MGTs into reset. Optionally unresets and enables them "
-        assert tx_or_rx.lower() in ('rx', 'tx')
-        mgt_reg = {'tx': self.MGT_TX_RESET_CONTROL, 'rx': self.MGT_RX_RESET_CONTROL}[tx_or_rx]
+        "Put MGTs into reset. Optionally unresets and enables them"
+        assert tx_or_rx.lower() in ("rx", "tx")
+        mgt_reg = {"tx": self.MGT_TX_RESET_CONTROL, "rx": self.MGT_RX_RESET_CONTROL}[tx_or_rx]
         self.log.trace("Resetting %s MGTs..." % tx_or_rx.upper())
         self.regs.poke32(mgt_reg, 0x10)
         if not reset_only:
@@ -262,29 +286,31 @@ class NIJESDCore(object):
                     self.log.trace("%s MGT Reset Cleared!" % tx_or_rx.upper())
                     return True
                 time.sleep(0.001)
-            raise RuntimeError('Timeout in GT {trx} Reset (Readback: 0x{rb:X})'.format(
-                trx=tx_or_rx.upper(),
-                rb=(rb & 0xFFFF0000),
-            ))
+            raise RuntimeError(
+                "Timeout in GT {trx} Reset (Readback: 0x{rb:X})".format(
+                    trx=tx_or_rx.upper(),
+                    rb=(rb & 0xFFFF0000),
+                )
+            )
         return True
 
-    def _gt_pll_power_control(self, qplls = 0, cplls = 0):
-        " Power down unused CPLLs and QPLLs "
-        assert qplls in range(4+1) # valid is 0 - 4
-        assert cplls in range(8+1) # valid is 0 - 8
+    def _gt_pll_power_control(self, qplls=0, cplls=0):
+        "Power down unused CPLLs and QPLLs"
+        assert qplls in range(4 + 1)  # valid is 0 - 4
+        assert cplls in range(8 + 1)  # valid is 0 - 8
         self.log.trace("Powering up {} CPLLs and {} QPLLs".format(cplls, qplls))
         reg_val = 0xFFFF000F
         reg_val_on = 0x0
         # Power down state is when the corresponding bit is set. For the PLLs we wish to
         # use, clear those bits.
         for x in range(qplls):
-            reg_val_on = reg_val_on | 0x1 << x # QPLL bits are 0-3
+            reg_val_on = reg_val_on | 0x1 << x  # QPLL bits are 0-3
         for y in range(16, 16 + cplls):
-            reg_val_on = reg_val_on | 0x1 << y # CPLL bits are 16-23, others are reserved
+            reg_val_on = reg_val_on | 0x1 << y  # CPLL bits are 16-23, others are reserved
         reg_val = reg_val ^ reg_val_on
         self.regs.poke32(self.MGT_PLL_POWER_DOWN_CONTROL, reg_val)
 
-    def _gt_pll_lock_control(self, qplls = 0, cplls = 0, reset_only=False):
+    def _gt_pll_lock_control(self, qplls=0, cplls=0, reset_only=False):
         """
         Turn on the PLLs we're using, and make sure lock bits are set.
         QPLL bitfield mapping: the following nibble is repeated for each QPLL. For
@@ -298,10 +324,10 @@ class NIJESDCore(object):
         """
         # FutureWork: CPLLs are NOT supported yet!!!
         assert cplls == 0
-        assert qplls in range(4+1) # valid is 0 - 4
+        assert qplls in range(4 + 1)  # valid is 0 - 4
 
         # Reset QPLLs.
-        reg_val = 0x1111 # by default assert all resets
+        reg_val = 0x1111  # by default assert all resets
         self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
         self.log.trace("Resetting QPLL(s)...")
 
@@ -311,7 +337,7 @@ class NIJESDCore(object):
                 # Unreset only the QPLLs we are using.
                 reg_val_on = 0x0
                 for nibble in range(qplls):
-                    reg_val_on = reg_val_on | 0x1 << nibble*4
+                    reg_val_on = reg_val_on | 0x1 << nibble * 4
                 reg_val = reg_val ^ reg_val_on
                 self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
                 self.log.trace("Clearing QPLL reset...")
@@ -325,10 +351,10 @@ class NIJESDCore(object):
                 rb_mask = 0x0
                 locked_val = 0x0
                 for nibble in range(qplls):
-                    if (rb & (0xF << nibble*4)) != (0x2 << nibble*4):
+                    if (rb & (0xF << nibble * 4)) != (0x2 << nibble * 4):
                         self.log.warning("GT QPLL {} failed to lock!".format(nibble))
-                    locked_val = locked_val | 0x2 << nibble*4
-                    rb_mask    = rb_mask    | 0xF << nibble*4
+                    locked_val = locked_val | 0x2 << nibble * 4
+                    rb_mask = rb_mask | 0xF << nibble * 4
                 if (rb & rb_mask) != locked_val:
                     raise RuntimeError("One or more GT QPLLs failed to lock!")
                 self.log.trace("QPLL(s) reporting locked!")
@@ -338,10 +364,13 @@ class NIJESDCore(object):
         # asserted when using Eye Scan; otherwise, the Eye Scan circuitry in the PMA
         # will be powered down.
         PMA_RSV2_DRP_ADDR = 0x082
-        self.log.debug("{} the eye scan circuitry in the PMA for the GTXs..."
-                       .format({True: "Enabling", False: "Disabling"}[enable]))
+        self.log.debug(
+            "{} the eye scan circuitry in the PMA for the GTXs...".format(
+                {True: "Enabling", False: "Disabling"}[enable]
+            )
+        )
         for gt_num in range(0, self.rx_lanes):
-            self.set_drp_target('mgt', gt_num)
+            self.set_drp_target("mgt", gt_num)
             drp_x082_rb = self.drp_access(rd=True, addr=PMA_RSV2_DRP_ADDR)
             pma_rsv2_bit5 = int(enable)
             drp_x082_wr = (drp_x082_rb & ~(0b1 << 5)) | (pma_rsv2_bit5 << 5)
@@ -352,16 +381,24 @@ class NIJESDCore(object):
         """
         This method configures the TX pattern generator for ALL GTs.
         """
-        TXPRBSSEL = {'OFF'    : 0b000, 'PRBS-7' : 0b001,
-                     'PRBS-15': 0b010, 'PRBS-23': 0b011,
-                     'PRBS-31': 0b100, 'PCIE'   : 0b101,
-                     'SQR-2UI': 0b110, 'SQR-xUI': 0b111}
+        TXPRBSSEL = {
+            "OFF": 0b000,
+            "PRBS-7": 0b001,
+            "PRBS-15": 0b010,
+            "PRBS-23": 0b011,
+            "PRBS-31": 0b100,
+            "PCIE": 0b101,
+            "SQR-2UI": 0b110,
+            "SQR-xUI": 0b111,
+        }
         assert mode in TXPRBSSEL
         self.log.debug("Setting TX pattern mode for all GTs: {}".format(mode))
-        self.log.trace("Writing MGT Test Register (offset 0x{:04X}) with 0x{:08X}"
-                       .format(self.JESD_MGT_TEST_CONTROL, TXPRBSSEL[mode]))
+        self.log.trace(
+            "Writing MGT Test Register (offset 0x{:04X}) with 0x{:08X}".format(
+                self.JESD_MGT_TEST_CONTROL, TXPRBSSEL[mode]
+            )
+        )
         self.regs.poke32(self.JESD_MGT_TEST_CONTROL, TXPRBSSEL[mode])
-
 
     def adjust_tx_phy(self, **kwargs):
         """
@@ -372,17 +409,21 @@ class NIJESDCore(object):
         for key, new_value in iteritems(kwargs):
             assert key in self.JESDCORE_DEFAULTS, "{} is not a valid attribute".format(key)
             if getattr(self, key) != new_value:
-                self.log.trace("Changing TX PHY attribute {0} from {1} to {2}..."
-                               .format(key, getattr(self, key), new_value))
+                self.log.trace(
+                    "Changing TX PHY attribute {0} from {1} to {2}...".format(
+                        key, getattr(self, key), new_value
+                    )
+                )
                 setattr(self, key, new_value)
                 tx_settings_changed = True
         # MGT TX PHY control.
         if tx_settings_changed:
-            reg_val = ((self.tx_driver_swing & 0x0F) << 16) | \
-                      ((self.tx_precursor    & 0x1F) <<  8) | \
-                      ((self.tx_postcursor   & 0x1F) <<  0)
+            reg_val = (
+                ((self.tx_driver_swing & 0x0F) << 16)
+                | ((self.tx_precursor & 0x1F) << 8)
+                | ((self.tx_postcursor & 0x1F) << 0)
+            )
             self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, reg_val)
-
 
     def set_drp_target(self, mgt_or_qpll, dev_num):
         """
@@ -393,18 +434,21 @@ class NIJESDCore(object):
         MAX_MGTS = 4
         MAX_QPLLs = 1
         DRP_ENABLE_VAL = 0b1
-        assert mgt_or_qpll.lower() in ('mgt', 'qpll')
+        assert mgt_or_qpll.lower() in ("mgt", "qpll")
 
-        self.log.trace("Enabling DRP access to %s #%d...",mgt_or_qpll.upper(), dev_num)
+        self.log.trace("Enabling DRP access to %s #%d...", mgt_or_qpll.upper(), dev_num)
 
         # Enable access to the DRP ports and select the correct channel. Channels are
         # one-hot encoded with the MGT ports in bit locations [0, (MAX_MGTS-1)] and the
         # QPLL in [MAX_MGTS, MAX_MGTs+MAX_QPLLs-1].
-        drp_ch_sel = {'mgt': dev_num, 'qpll': dev_num + MAX_MGTS}[mgt_or_qpll.lower()]
+        drp_ch_sel = {"mgt": dev_num, "qpll": dev_num + MAX_MGTS}[mgt_or_qpll.lower()]
         assert drp_ch_sel in range(MAX_MGTS + MAX_QPLLs)
         reg_val = (0b1 << drp_ch_sel) | (DRP_ENABLE_VAL << 16)
-        self.log.trace("Writing DRP Control Register (offset 0x{:04X}) with 0x{:08X}"
-                       .format(self.JESD_MGT_DRP_CONTROL, reg_val))
+        self.log.trace(
+            "Writing DRP Control Register (offset 0x{:04X}) with 0x{:08X}".format(
+                self.JESD_MGT_DRP_CONTROL, reg_val
+            )
+        )
         self.regs.poke32(self.JESD_MGT_DRP_CONTROL, reg_val)
 
     def disable_drp_target(self):
@@ -430,9 +474,10 @@ class NIJESDCore(object):
         core_offset = 0x2800 + (addr << 2)
         if rd:
             rd_data = self.regs.peek32(core_offset)
-            self.log.trace("Reading DRP register 0x{:04X} at DB Core offset 0x{:04X}... "
-                           "0x{:04X}"
-                           .format(addr, core_offset, rd_data))
+            self.log.trace(
+                "Reading DRP register 0x{:04X} at DB Core offset 0x{:04X}... "
+                "0x{:04X}".format(addr, core_offset, rd_data)
+            )
         else:
             self.log.trace("Writing DRP register 0x{:04X} with 0x{:04X}...".format(addr, wr_data))
             self.regs.poke32(core_offset, wr_data)

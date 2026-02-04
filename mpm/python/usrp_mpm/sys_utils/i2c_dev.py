@@ -10,6 +10,7 @@ Utilities for i2c lookups
 import pyudev
 from usrp_mpm.sys_utils.udev import get_device_from_dt_symbol
 
+
 def _get_i2c_adapter_from_parent(parent, context):
     """
     Helper to get the i2c adapter from a given parent device.
@@ -21,8 +22,9 @@ def _get_i2c_adapter_from_parent(parent, context):
     properties = [dict(d.properties) for d in devices]
     # The i2c-adapter will have the lowest minor number
     # FIXME: This likely isn't API--It just happens to work as of this writing
-    chosen = min([(int(p['MINOR']), p['DEVNAME']) for p in properties])
+    chosen = min([(int(p["MINOR"]), p["DEVNAME"]) for p in properties])
     return chosen[1]
+
 
 def of_get_i2c_adapter(of_name):
     """
@@ -52,7 +54,7 @@ def dt_symbol_get_i2c_bus(symbol):
     return None.
     """
     context = pyudev.Context()
-    parent = get_device_from_dt_symbol(symbol, subsystem='i2c', context=context)
+    parent = get_device_from_dt_symbol(symbol, subsystem="i2c", context=context)
     return _get_i2c_adapter_from_parent(parent, context)
 
 
@@ -65,6 +67,7 @@ def sysname_get_i2c_adapter(sys_name):
     """
     parent = sysname_get_i2c_parent(sys_name)
     return _get_i2c_adapter_from_parent(parent, pyudev.Context())
+
 
 def sysname_get_i2c_parent(sys_name):
     """

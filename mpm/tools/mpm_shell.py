@@ -9,11 +9,12 @@ RPC shell to debug USRP MPM capable devices
 """
 
 from __future__ import print_function
-import re
-import cmd
-import time
+
 import argparse
+import cmd
 import multiprocessing
+import re
+import time
 from importlib import import_module
 
 try:
@@ -36,32 +37,33 @@ def parse_args():
         description="MPM Shell",
     )
     parser.add_argument(
-        'host',
-        help="Specify host to connect to.", default=None,
+        "host",
+        help="Specify host to connect to.",
+        default=None,
     )
     parser.add_argument(
-        '-p', '--port', type=int,
-        help="Specify port to connect to.", default=MPM_RPC_PORT,
+        "-p",
+        "--port",
+        type=int,
+        help="Specify port to connect to.",
+        default=MPM_RPC_PORT,
+    )
+    parser.add_argument("-c", "--claim", action="store_true", help="Claim device after connecting.")
+    parser.add_argument(
+        "-j", "--hijack", type=str, help="Hijack running session (excludes --claim)."
     )
     parser.add_argument(
-        '-c', '--claim',
-        action='store_true',
-        help="Claim device after connecting."
-    )
-    parser.add_argument(
-        '-j', '--hijack', type=str,
-        help="Hijack running session (excludes --claim)."
-    )
-    parser.add_argument(
-        '-s', '--script', type=str,
+        "-s",
+        "--script",
+        type=str,
         help="Run shell in scripting mode. Specified script contains "
-             "MPM shell commands, one per line."
+        "MPM shell commands, one per line.",
     )
     return parser.parse_args()
 
 
 def split_args(args, *default_args):
-    " Returns an array of args, space-separated "
+    "Returns an array of args, space-separated"
     args = args.split()
     return [
         arg_val if arg_idx < len(args) else default_args[arg_idx]
@@ -73,6 +75,7 @@ class MPMClaimer(object):
     """
     Holds a claim.
     """
+
     def __init__(self, host, port):
         self.token = None
         self.hijacked = False
@@ -81,7 +84,7 @@ class MPMClaimer(object):
         self._claim_loop = multiprocessing.Process(
             target=self.claim_loop,
             name="Claimer Loop",
-            args=(host, port, self._cmd_q, self._token_q)
+            args=(host, port, self._cmd_q, self._token_q),
         )
         self._claim_loop.start()
 
@@ -91,28 +94,29 @@ class MPMClaimer(object):
         """
         from mprpc import RPCClient
         from mprpc.exceptions import RPCError
+
         command = None
         token = None
         exit_loop = False
-        client = RPCClient(host, port, pack_params={'use_bin_type': True})
+        client = RPCClient(host, port, pack_params={"use_bin_type": True})
         try:
             while not exit_loop:
                 if token and not command:
-                    client.call('reclaim', token)
-                elif command == 'claim':
+                    client.call("reclaim", token)
+                elif command == "claim":
                     if not token:
-                        token = client.call('claim', 'MPM Shell')
+                        token = client.call("claim", "MPM Shell")
                     else:
                         print("Already have claim")
                     token_q.put(token)
-                elif command == 'unclaim':
+                elif command == "unclaim":
                     if token:
-                        client.call('unclaim', token)
+                        client.call("unclaim", token)
                     token = None
                     token_q.put(None)
-                elif command == 'exit':
+                elif command == "exit":
                     if token:
-                        client.call('unclaim', token)
+                        client.call("unclaim", token)
                     token = None
                     token_q.put(None)
                     exit_loop = True
@@ -129,7 +133,7 @@ class MPMClaimer(object):
         Unclaim device and exit claim loop.
         """
         self.unclaim()
-        self._cmd_q.put('exit')
+        self._cmd_q.put("exit")
         self._claim_loop.join()
 
     def unclaim(self):
@@ -137,7 +141,7 @@ class MPMClaimer(object):
         Unclaim device.
         """
         if not self.hijacked:
-            self._cmd_q.put('unclaim')
+            self._cmd_q.put("unclaim")
         else:
             self.hijacked = False
         self.token = None
@@ -146,7 +150,7 @@ class MPMClaimer(object):
         """
         Claim device.
         """
-        self._cmd_q.put('claim')
+        self._cmd_q.put("claim")
         self.token = self._token_q.get(True, 5.0)
 
     def get_token(self):
@@ -168,10 +172,12 @@ class MPMClaimer(object):
             self.token = token
         self.hijacked = True
 
+
 class MPMShell(cmd.Cmd):
     """
     RPC Shell class. See cmd module.
     """
+
     def __init__(self, host, port, claim, hijack, script):
         cmd.Cmd.__init__(self)
         self.prompt = "> "
@@ -196,11 +202,9 @@ class MPMShell(cmd.Cmd):
         """
         Add a command to the current session
         """
-        cmd_name = 'do_' + command
+        cmd_name = "do_" + command
         if not hasattr(self, cmd_name):
-            new_command = lambda args: self.rpc_template(
-                str(command), requires_token, args
-            )
+            new_command = lambda args: self.rpc_template(str(command), requires_token, args)
             new_command.__doc__ = docs
             setattr(self, cmd_name, new_command)
             self.remote_methods.append(command)
@@ -213,10 +217,9 @@ class MPMShell(cmd.Cmd):
         Template function to create new RPC shell commands
         """
         from mprpc.exceptions import RPCError
-        if requires_token and \
-                (self._claimer is None or self._claimer.get_token() is None):
-            self._print_response("Cannot execute `{}' -- "
-                                 "no claim available!".format(command))
+
+        if requires_token and (self._claimer is None or self._claimer.get_token() is None):
+            self._print_response("Cannot execute `{}' -- " "no claim available!".format(command))
             return False
         try:
             if args or requires_token:
@@ -243,7 +246,7 @@ class MPMShell(cmd.Cmd):
         return False
 
     def get_names(self):
-        " We need this for tab completion. "
+        "We need this for tab completion."
         return dir(self)
 
     ###########################################################################
@@ -285,11 +288,10 @@ class MPMShell(cmd.Cmd):
         Launch a connection.
         """
         from mprpc import RPCClient
-        print("Attempting to connect to {host}:{port}...".format(
-            host=host, port=port
-        ))
+
+        print("Attempting to connect to {host}:{port}...".format(host=host, port=port))
         try:
-            self.client = RPCClient(host, port, pack_params={'use_bin_type': True})
+            self.client = RPCClient(host, port, pack_params={"use_bin_type": True})
             print("Connection successful.")
         except Exception as ex:
             print("Connection refused")
@@ -298,12 +300,12 @@ class MPMShell(cmd.Cmd):
         self._host = host
         self._port = port
         print("Getting methods...")
-        methods = self.client.call('list_methods')
+        methods = self.client.call("list_methods")
         for method in methods:
             self._add_command(*method)
         print("Added {} methods.".format(len(methods)))
         print("Quering device info...")
-        self._device_info = self.client.call('get_device_info')
+        self._device_info = self.client.call("get_device_info")
         return True
 
     def disconnect(self):
@@ -311,6 +313,7 @@ class MPMShell(cmd.Cmd):
         Clean up after a connection was closed.
         """
         from mprpc.exceptions import RPCError
+
         self._device_info = None
         if self._claimer is not None:
             self._claimer.exit()
@@ -328,13 +331,13 @@ class MPMShell(cmd.Cmd):
         self._port = None
 
     def claim(self):
-        " Initialize claim "
+        "Initialize claim"
         print("Claiming device...")
         self._claimer.claim()
         return True
 
     def hijack(self, token):
-        " Hijack running session "
+        "Hijack running session"
         if self._claimer.hijacked:
             print("Claimer already active. Can't hijack.")
             return False
@@ -353,19 +356,17 @@ class MPMShell(cmd.Cmd):
         Update prompt
         """
         if self._device_info is None:
-            self.prompt = '> '
+            self.prompt = "> "
         else:
             token = self._claimer.get_token()
             if token is None:
-                claim_status = ''
+                claim_status = ""
             elif self._claimer.hijacked:
-                claim_status = ' [H]'
+                claim_status = " [H]"
             else:
-                claim_status = ' [C]'
-            self.prompt = '{dev_id}{claim_status}> '.format(
-                dev_id=self._device_info.get(
-                    'name', self._device_info.get('serial', '?')
-                ),
+                claim_status = " [C]"
+            self.prompt = "{dev_id}{claim_status}> ".format(
+                dev_id=self._device_info.get("name", self._device_info.get("serial", "?")),
                 claim_status=claim_status,
             )
 
@@ -385,15 +386,15 @@ class MPMShell(cmd.Cmd):
                     self.cmdqueue.append(command.strip())
         except OSError as ex:
             print("Failed to read script. (%s)" % ex)
-        self.cmdqueue.append("EOF") # terminate shell after script execution
+        self.cmdqueue.append("EOF")  # terminate shell after script execution
 
     def expand_args(self, args):
         """
         Takes a string and returns a list
         """
         if self._claimer is not None and self._claimer.get_token() is not None:
-            args = args.replace('$T', str(self._claimer.get_token()))
-        eval_preamble = '='
+            args = args.replace("$T", str(self._claimer.get_token()))
+        eval_preamble = "="
         args = args.strip()
         if args.startswith(eval_preamble):
             parsed_args = eval(args.lstrip(eval_preamble))
@@ -422,7 +423,7 @@ class MPMShell(cmd.Cmd):
         """
         Connect to a remote MPM server. See connect()
         """
-        host, port = split_args(args, 'localhost', MPM_RPC_PORT)
+        host, port = split_args(args, "localhost", MPM_RPC_PORT)
         port = int(port)
         self.connect(host, port)
 
@@ -461,23 +462,24 @@ class MPMShell(cmd.Cmd):
         """
         print("Exiting...")
         self.disconnect()
-        return True # orderly shutdown
+        return True  # orderly shutdown
+
 
 def main():
-    " Go, go, go! "
+    "Go, go, go!"
     args = parse_args()
-    my_shell = MPMShell(args.host, args.port, args.claim,
-                        args.hijack, args.script)
+    my_shell = MPMShell(args.host, args.port, args.claim, args.hijack, args.script)
 
     try:
         my_shell.cmdloop()
     except KeyboardInterrupt:
         my_shell.disconnect()
-    except Exception as ex: # pylint: disable=broad-except
+    except Exception as ex:  # pylint: disable=broad-except
         print("Uncaught exception: " + str(ex))
         my_shell.disconnect()
         return False
     return True
+
 
 if __name__ == "__main__":
     exit(not main())

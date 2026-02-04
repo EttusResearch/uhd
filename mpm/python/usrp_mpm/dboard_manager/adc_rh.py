@@ -9,7 +9,9 @@ AD9695 driver for use with Rhodium
 
 import time
 from builtins import object
+
 from ..mpmlog import get_logger
+
 
 class AD9695Rh(object):
     """
@@ -19,15 +21,18 @@ class AD9695Rh(object):
     ADC_CHIP_ID = 0xDE
 
     CHIP_CONFIGURATION_REG = 0x0002
-    CHIP_ID_LSB_REG        = 0x0004
-    SCRATCH_PAD_REG        = 0x000A
+    CHIP_ID_LSB_REG = 0x0004
+    SCRATCH_PAD_REG = 0x000A
 
     def __init__(self, slot_idx, regs_iface, parent_log=None):
-        self.log = parent_log.getChild("AD9695") if parent_log is not None \
+        self.log = (
+            parent_log.getChild("AD9695")
+            if parent_log is not None
             else get_logger("AD9695-{}".format(slot_idx))
+        )
         self.regs = regs_iface
-        assert hasattr(self.regs, 'peek8')
-        assert hasattr(self.regs, 'poke8')
+        assert hasattr(self.regs, "peek8")
+        assert hasattr(self.regs, "poke8")
 
         def _verify_chip_id():
             chip_id = self.regs.peek8(self.CHIP_ID_LSB_REG)
@@ -39,7 +44,6 @@ class AD9695Rh(object):
 
         if not _verify_chip_id():
             raise RuntimeError("Unable to locate AD9695")
-
 
     def assert_scratch(self, scratch_val=0xAD):
         """
@@ -60,7 +64,6 @@ class AD9695Rh(object):
         for addr, val in addr_vals:
             self.regs.poke8(addr, val)
 
-
     def power_down_channel(self, power_down=False):
         """
         This method either powers up/down the channel according to register 0x0002 [1:0]:
@@ -73,12 +76,11 @@ class AD9695Rh(object):
         power_mode = 0b11 if power_down else 0b00
         self.regs.poke8(self.CHIP_CONFIGURATION_REG, power_mode)
 
-
     def init(self):
         """
         Basic init that resets the ADC and verifies it.
         """
-        self.power_down_channel(False) # Power-up the channel.
+        self.power_down_channel(False)  # Power-up the channel.
         self.log.trace("Reset ADC & Verify")
         # fmt: off
         self.regs.poke8(0x0000, 0x81) # Soft-reset the ADC (self-clearing).
@@ -87,7 +89,6 @@ class AD9695Rh(object):
         self.regs.poke8(0x0571, 0x15) # Powerdown the JESD204B serial transmit link.
         # fmt: on
         self.log.trace("ADC's JESD204B link powered down.")
-
 
     def config(self):
         """
@@ -128,16 +129,15 @@ class AD9695Rh(object):
         # fmt: on
         self.log.trace("ADC register dump finished.")
 
-
     def init_framer(self):
         """
         Initialize the ADC's framer, and check the PLL for lock.
         """
+
         def _check_pll_lock():
             pll_lock_status = self.regs.peek8(0x056F)
             if (pll_lock_status & 0x88) != 0x80:
-                self.log.debug("PLL reporting unlocked... Status: 0x{:x}"
-                               .format(pll_lock_status))
+                self.log.debug("PLL reporting unlocked... Status: 0x{:x}".format(pll_lock_status))
                 return False
             return True
 
@@ -173,30 +173,31 @@ class AD9695Rh(object):
         """
         Enable the SYSREF capture block.
         """
-        sysref_ctl1 = 0x00 # Default value is disabled.
+        sysref_ctl1 = 0x00  # Default value is disabled.
         if enabled:
-            sysref_ctl1 = 0b1 << 2 # N-Shot SYSREF mode
+            sysref_ctl1 = 0b1 << 2  # N-Shot SYSREF mode
 
-        self.log.trace("%s ADC SYSREF capture..." % {True: 'Enabling', False: 'Disabling'}[enabled])
-        self.pokes8((
-            (0x0120, sysref_ctl1), # Capture low-to-high N-shot SYSREF transitions on CLK's RE
-            (0x0121, 0x00),        # Capture the next SYSREF only.
-        ))
-        self.log.trace("ADC SYSREF capture %s." % {True: 'enabled', False: 'disabled'}[enabled])
-
+        self.log.trace("%s ADC SYSREF capture..." % {True: "Enabling", False: "Disabling"}[enabled])
+        self.pokes8(
+            (
+                (0x0120, sysref_ctl1),  # Capture low-to-high N-shot SYSREF transitions on CLK's RE
+                (0x0121, 0x00),  # Capture the next SYSREF only.
+            )
+        )
+        self.log.trace("ADC SYSREF capture %s." % {True: "enabled", False: "disabled"}[enabled])
 
     def check_framer_status(self):
         """
         This function checks the status of the framer by checking SYSREF capture regs.
         """
         SYSREF_MONITOR_MESSAGES = {
-            0 : "Condition not defined!",
-            1 : "Possible setup error. The smaller the setup, the smaller its margin.",
-            2 : "No setup or hold error (best hold margin).",
-            3 : "No setup or hold error (best setup and hold margin).",
-            4 : "No setup or hold error (best setup margin).",
-            5 : "Possible hold error. The largest the hold, the smaller its margin.",
-            6 : "Possible setup or hold error."
+            0: "Condition not defined!",
+            1: "Possible setup error. The smaller the setup, the smaller its margin.",
+            2: "No setup or hold error (best hold margin).",
+            3: "No setup or hold error (best setup and hold margin).",
+            4: "No setup or hold error (best setup margin).",
+            5: "Possible hold error. The largest the hold, the smaller its margin.",
+            6: "Possible setup or hold error.",
         }
 
         # This is based of Table 37 in the AD9695's datasheet.
@@ -244,5 +245,7 @@ class AD9695Rh(object):
         elif sysref_monitor_status in (1, 5, 6):
             self.log.warning("SYSREF monitor: %s" % SYSREF_MONITOR_MESSAGES[sysref_monitor_status])
         elif sysref_phase > 0x0:
-            self.log.trace("SYSREF capture was %.2f cycle(s) delayed from clock." % (sysref_phase * 0.5))
+            self.log.trace(
+                "SYSREF capture was %.2f cycle(s) delayed from clock." % (sysref_phase * 0.5)
+            )
         return sysref_count >= 0x01

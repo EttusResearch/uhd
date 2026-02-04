@@ -5,8 +5,10 @@
 #
 
 import unittest
+
 from base_tests import TestBase
 from usrp_mpm.compat_num import CompatNumber
+
 
 class TestCompatNum(TestBase):
 

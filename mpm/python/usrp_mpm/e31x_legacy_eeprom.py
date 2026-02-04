@@ -8,8 +8,8 @@ E310 EEPROM management code
 """
 
 import struct
-from builtins import zip
-from builtins import object
+from builtins import object, zip
+
 
 # pylint: disable=too-few-public-methods
 class MboardEEPROM(object):
@@ -32,17 +32,20 @@ class MboardEEPROM(object):
     to know the MAC address of an interface, we can fish it out the raw data,
     or ask the system.
     """
+
     # Refer e300_eeprom_manager.hpp.
     eeprom_header_format = "<H H 6s H H 8s 12s 8s"
     eeprom_header_keys = (
-        'data_version_major',
-        'data_version_minor',
-        'mac_address',
-        'pid',
-        'rev',
-        'serial',
-        'pad',
-        'user_name')
+        "data_version_major",
+        "data_version_minor",
+        "mac_address",
+        "pid",
+        "rev",
+        "serial",
+        "pad",
+        "user_name",
+    )
+
 
 class DboardEEPROM(object):
     """
@@ -58,24 +61,22 @@ class DboardEEPROM(object):
     - 8 bytes serial number (xFF or NULL terminated)
     - 12 bytes padding
     """
+
     # Refer e300_eeprom_manager.hpp.
     eeprom_header_format = "<H H H H 8s 12s"
-    eeprom_header_keys = (
-        'data_version_major',
-        'data_version_minor',
-        'pid',
-        'rev',
-        'serial',
-        'pad')
+    eeprom_header_keys = ("data_version_major", "data_version_minor", "pid", "rev", "serial", "pad")
+
+
 # pylint: disable=too-few-public-methods
 
+
 def read_eeprom(
-        is_motherboard,
-        nvmem_path,
-        offset,
-        eeprom_header_format,
-        eeprom_header_keys,
-        max_size=None,
+    is_motherboard,
+    nvmem_path,
+    offset,
+    eeprom_header_format,
+    eeprom_header_keys,
+    max_size=None,
 ):
     """
     Read the EEPROM located at nvmem_path and return a tuple (header, data)
@@ -94,7 +95,7 @@ def read_eeprom(
     eeprom_keys = eeprom_header_keys
     parsed_data = eeprom_parser.unpack_from(data)
 
-    if is_motherboard: # E310 MB.
+    if is_motherboard:  # E310 MB.
         # Rectify the PID and REV parsing. Reverse the bytes.
         # PID and REV are the 4th and 5th elements in the tuple.
         parsed_data_list = list(parsed_data)
@@ -102,11 +103,11 @@ def read_eeprom(
         parsed_data_list[4] = struct.unpack("<H", struct.pack(">H", parsed_data_list[4]))[0]
         # Some revisions use xFF terminated strings for serial and user_name.
         # Replace xFF with NULL to pass ascii conversion.
-        parsed_data_list[5] = parsed_data_list[5].replace(b'\xff',b'\x00')
-        parsed_data_list[7] = parsed_data_list[7].replace(b'\xff',b'\x00')
+        parsed_data_list[5] = parsed_data_list[5].replace(b"\xff", b"\x00")
+        parsed_data_list[7] = parsed_data_list[7].replace(b"\xff", b"\x00")
         parsed_data = tuple(parsed_data_list)
 
-    else: # E310 DB.
+    else:  # E310 DB.
         # Rectify the PID and REV parsing. Reverse the bytes.
         # PID and REV are the 3rd and 4th elements in the tuple.
         parsed_data_list = list(parsed_data)
@@ -114,7 +115,7 @@ def read_eeprom(
         parsed_data_list[3] = struct.unpack("<H", struct.pack(">H", parsed_data_list[3]))[0]
         # Some revisions use xFF terminated strings for serial.
         # Replace xFF with NULL to pass ascii conversion.
-        parsed_data_list[4] = parsed_data_list[4].replace(b'\xff',b'\x00')
+        parsed_data_list[4] = parsed_data_list[4].replace(b"\xff", b"\x00")
         parsed_data = tuple(parsed_data_list)
 
     ret_val = (dict(list(zip(eeprom_keys, parsed_data))), data)

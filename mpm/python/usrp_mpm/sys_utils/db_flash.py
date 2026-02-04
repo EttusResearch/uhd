@@ -9,18 +9,20 @@ Daughterboard flash implementation
 
 import subprocess
 import time
-from usrp_mpm.sys_utils.udev import get_device_from_symbol
-from usrp_mpm.sys_utils.mount import Mount
-from usrp_mpm.sys_utils import dtoverlay
-from usrp_mpm.mpmlog import get_logger
 
-class DBFlash():
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils.mount import Mount
+from usrp_mpm.sys_utils.udev import get_device_from_symbol
+
+
+class DBFlash:
     """
     Class for accessing (mounting) the daughterboard flash
     """
 
     def __init__(self, slot_idx, log=None):
-        self.dt_symbol = 'db{}_flash'.format(slot_idx)
+        self.dt_symbol = "db{}_flash".format(slot_idx)
         self.overlay = self.dt_symbol
         if log is None:
             self.log = get_logger("DBFlash")
@@ -40,16 +42,16 @@ class DBFlash():
         dtoverlay.apply_overlay_safe(self.overlay)
         time.sleep(0.2)
         try:
-            self.mtd_devpath = get_device_from_symbol(self.dt_symbol, ['*', 'mtd'])
-            self.mtdblock_devpath = get_device_from_symbol(
-                self.dt_symbol, ['*', 'block'])
+            self.mtd_devpath = get_device_from_symbol(self.dt_symbol, ["*", "mtd"])
+            self.mtdblock_devpath = get_device_from_symbol(self.dt_symbol, ["*", "block"])
         except FileNotFoundError:
             raise ValueError(
-                "could not find MTD/-block device for device tree symbol {}".format(
-                    self.dt_symbol))
+                "could not find MTD/-block device for device tree symbol {}".format(self.dt_symbol)
+            )
         try:
-            self.mount = Mount(self.mtdblock_devpath, '/mnt/' + self.dt_symbol,
-                               ['-t', 'jffs2'], log=self.log)
+            self.mount = Mount(
+                self.mtdblock_devpath, "/mnt/" + self.dt_symbol, ["-t", "jffs2"], log=self.log
+            )
             if not self.mount.ismounted():
                 ret = self.mount.mount()
                 if not ret:
@@ -88,6 +90,6 @@ class DBFlash():
         of any data stored in the flash
         """
         self.log.info("Clearing daughterboard flash")
-        proc = subprocess.run(['flash_erase', self.mtd_devpath, '0', '0'], check=True)
+        proc = subprocess.run(["flash_erase", self.mtd_devpath, "0", "0"], check=True)
         self.log.trace(proc)
         return True

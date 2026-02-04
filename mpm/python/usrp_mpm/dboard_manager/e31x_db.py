@@ -8,12 +8,14 @@
 E310 dboard (RF and control) implementation module
 """
 
-from usrp_mpm import lib # Pulls in everything from C++-land
-from usrp_mpm.dboard_manager import DboardManagerBase, AD936xDboard
+from usrp_mpm import lib  # Pulls in everything from C++-land
+from usrp_mpm.dboard_manager import AD936xDboard, DboardManagerBase
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
 
 DEFAULT_MASTER_CLOCK_RATE = 16e6
+
+
 ###############################################################################
 # Main dboard control class
 ###############################################################################
@@ -21,6 +23,7 @@ class E31x_db(AD936xDboard, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the E31x_db dboard
     """
+
     #########################################################################
     # Overridables
     #
@@ -28,19 +31,19 @@ class E31x_db(AD936xDboard, DboardManagerBase):
     #########################################################################
     pids = [0x0110]
     rx_sensor_callback_map = {
-        'ad9361_temperature': 'get_catalina_temp_sensor',
-        'rssi' : 'get_rssi_sensor',
+        "ad9361_temperature": "get_catalina_temp_sensor",
+        "rssi": "get_rssi_sensor",
         # For backward compatibility reasons we have the same sensor with two
         # different names
-        'lo_lock' : 'get_rx_lo_lock_sensor',
-        'lo_locked' : 'get_rx_lo_lock_sensor',
+        "lo_lock": "get_rx_lo_lock_sensor",
+        "lo_locked": "get_rx_lo_lock_sensor",
     }
     tx_sensor_callback_map = {
-        'ad9361_temperature': 'get_catalina_temp_sensor',
+        "ad9361_temperature": "get_catalina_temp_sensor",
         # For backward compatibility reasons we have the same sensor with two
         # different names
-        'lo_lock' : 'get_tx_lo_lock_sensor',
-        'lo_locked' : 'get_tx_lo_lock_sensor',
+        "lo_lock": "get_tx_lo_lock_sensor",
+        "lo_locked": "get_tx_lo_lock_sensor",
     }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"catalina": 0}
@@ -50,13 +53,11 @@ class E31x_db(AD936xDboard, DboardManagerBase):
 
     def __init__(self, slot_idx, **kwargs):
         DboardManagerBase.__init__(self, slot_idx, **kwargs)
-        AD936xDboard.__init__(
-            self, lambda: MboardRegsControl(self.mboard_regs_label, self.log))
+        AD936xDboard.__init__(self, lambda: MboardRegsControl(self.mboard_regs_label, self.log))
         self.log = get_logger("E31x_db-{}".format(slot_idx))
-        self.log.trace("Initializing e31x daughterboard, slot index %d",
-                       self.slot_idx)
+        self.log.trace("Initializing e31x daughterboard, slot index %d", self.slot_idx)
         self.swap_fe = True
-        self.rev = int(self.device_info['rev'])
+        self.rev = int(self.device_info["rev"])
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         # These will get updated during init()
         self.master_clock_rate = None
@@ -76,7 +77,7 @@ class E31x_db(AD936xDboard, DboardManagerBase):
         """
         self.log.debug("Loading C++ drivers...")
         # Setup AD9361 / the E31x_db Manager
-        self._device = lib.dboards.e31x_db_manager(self._spi_nodes['catalina'])
+        self._device = lib.dboards.e31x_db_manager(self._spi_nodes["catalina"])
         ad936x_rfic = self._device.get_radio_ctrl()
         self.log.trace("Loaded C++ drivers.")
         self._init_cat_api(ad936x_rfic)
@@ -90,8 +91,7 @@ class E31x_db(AD936xDboard, DboardManagerBase):
             error_msg = "Cannot run init(), peripherals are not initialized!"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
-        master_clock_rate = \
-            float(args.get('master_clock_rate', DEFAULT_MASTER_CLOCK_RATE))
+        master_clock_rate = float(args.get("master_clock_rate", DEFAULT_MASTER_CLOCK_RATE))
         self.init_rfic(master_clock_rate)
         return True
 

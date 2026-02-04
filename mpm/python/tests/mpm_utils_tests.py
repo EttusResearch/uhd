@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 import unittest
+
 from base_tests import TestBase
 from usrp_mpm import mpmutils
 
@@ -12,6 +13,7 @@ class MockLockable:
     """
     Class which exposes whether lock() or unlock() have been called on it
     """
+
     def __init__(self):
         self.locked = False
 
@@ -26,6 +28,7 @@ class TestMpmUtils(TestBase):
     """
     Tests for the myriad utilities in mpmutils
     """
+
     def test_normal_usage(self):
         """
         Checks whether in normal operation the resource gets unlocked
@@ -51,5 +54,5 @@ class TestMpmUtils(TestBase):
             self.assertEqual(my_resource.locked, False)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

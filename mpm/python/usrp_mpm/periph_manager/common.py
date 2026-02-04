@@ -8,7 +8,9 @@ Common code for all MPM devices
 """
 
 import datetime
+
 from usrp_mpm.sys_utils.uio import UIO
+
 
 class MboardRegsCommon:
     """
@@ -46,11 +48,8 @@ class MboardRegsCommon:
     # fmt: on
 
     def __init__(self, label, log):
-        self.log = log.getChild('MBRegs')
-        self.regs = UIO(
-            label=label,
-            read_only=False
-        )
+        self.log = log.getChild("MBRegs")
+        self.regs = UIO(label=label, read_only=False)
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
 
@@ -71,7 +70,7 @@ class MboardRegsCommon:
         """
         with self.regs:
             regs_val = self.peek32(self.MB_DEVICE_ID)
-            device_id = regs_val & 0x0000ffff
+            device_id = regs_val & 0x0000FFFF
             self.log.trace("Read MB_DEVICE_ID 0x{:08X}".format(device_id))
             return device_id
 
@@ -87,8 +86,8 @@ class MboardRegsCommon:
         """
         with self.regs:
             compat_number = self.peek32(self.MB_COMPAT_NUM)
-        minor = compat_number & 0xff
-        major = (compat_number>>16) & 0xff
+        minor = compat_number & 0xFF
+        major = (compat_number >> 16) & 0xFF
         return (major, minor)
 
     def get_build_timestamp(self):
@@ -101,16 +100,17 @@ class MboardRegsCommon:
             datestamp_rb = self.peek32(self.MB_DATESTAMP)
         if datestamp_rb > 0:
             dt_str = datetime.datetime(
-                year=((datestamp_rb>>17)&0x3F)+2000,
-                month=(datestamp_rb>>23)&0x0F,
-                day=(datestamp_rb>>27)&0x1F,
-                hour=(datestamp_rb>>12)&0x1F,
-                minute=(datestamp_rb>>6)&0x3F,
-                second=((datestamp_rb>>0)&0x3F))
+                year=((datestamp_rb >> 17) & 0x3F) + 2000,
+                month=(datestamp_rb >> 23) & 0x0F,
+                day=(datestamp_rb >> 27) & 0x1F,
+                hour=(datestamp_rb >> 12) & 0x1F,
+                minute=(datestamp_rb >> 6) & 0x3F,
+                second=((datestamp_rb >> 0) & 0x3F),
+            )
             self.log.trace("FPGA build timestamp: {}".format(str(dt_str)))
             return str(dt_str)
         # Compatibility with FPGAs without datestamp capability
-        return ''
+        return ""
 
     def get_git_hash(self):
         """
@@ -121,10 +121,9 @@ class MboardRegsCommon:
         with self.regs:
             git_hash_rb = self.peek32(self.MB_GIT_HASH)
         git_hash = git_hash_rb & 0x0FFFFFFF
-        tree_dirty = ((git_hash_rb & 0xF0000000) > 0)
-        dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
-        self.log.trace("FPGA build GIT Hash: {:07x} ({})".format(
-            git_hash, dirtiness_qualifier))
+        tree_dirty = (git_hash_rb & 0xF0000000) > 0
+        dirtiness_qualifier = "dirty" if tree_dirty else "clean"
+        self.log.trace("FPGA build GIT Hash: {:07x} ({})".format(git_hash, dirtiness_qualifier))
         return (git_hash, dirtiness_qualifier)
 
     def get_proto_ver(self):
@@ -133,7 +132,7 @@ class MboardRegsCommon:
         """
         with self.regs:
             reg_val = self.peek32(self.MB_RFNOC_INFO)
-            proto_ver = (reg_val & 0x0000ffff) >> self.MB_RFNOC_INFO_PROTO_VER
+            proto_ver = (reg_val & 0x0000FFFF) >> self.MB_RFNOC_INFO_PROTO_VER
             self.log.trace("Read RFNOC_PROTO_VER 0x{:08X}".format(proto_ver))
             return proto_ver
 
@@ -143,7 +142,7 @@ class MboardRegsCommon:
         """
         with self.regs:
             reg_val = self.peek32(self.MB_RFNOC_INFO)
-            chdr_width = (reg_val & 0xffff0000) >> self.MB_RFNOC_INFO_CHDR_WIDTH
+            chdr_width = (reg_val & 0xFFFF0000) >> self.MB_RFNOC_INFO_CHDR_WIDTH
             self.log.trace("Read RFNOC_CHDR_WIDTH 0x{:08X}".format(chdr_width))
             return chdr_width
 
@@ -165,9 +164,9 @@ class MboardRegsCommon:
         tk_idx: Index of timekeeper
         next_pps: If True, get time at last PPS. Otherwise, get time now.
         """
-        addr_lo = \
-            (self.MB_TIME_LAST_PPS_LO if last_pps else self.MB_TIME_NOW_LO) + \
-            tk_idx * self.MB_TIMEKEEPER_OFFSET
+        addr_lo = (
+            self.MB_TIME_LAST_PPS_LO if last_pps else self.MB_TIME_NOW_LO
+        ) + tk_idx * self.MB_TIMEKEEPER_OFFSET
         addr_hi = addr_lo + 4
         with self.regs:
             time_lo = self.peek32(addr_lo)
@@ -183,17 +182,18 @@ class MboardRegsCommon:
         ticks: Time in ticks
         next_pps: If True, set time at next PPS. Otherwise, set time now.
         """
-        addr_lo = \
-            self.MB_TIME_EVENT_LO + tk_idx * self.MB_TIMEKEEPER_OFFSET
-        addr_hi = \
-            self.MB_TIME_EVENT_HI + tk_idx * self.MB_TIMEKEEPER_OFFSET
-        addr_ctrl = \
-            self.MB_TIME_CTRL + tk_idx * self.MB_TIMEKEEPER_OFFSET
+        addr_lo = self.MB_TIME_EVENT_LO + tk_idx * self.MB_TIMEKEEPER_OFFSET
+        addr_hi = self.MB_TIME_EVENT_HI + tk_idx * self.MB_TIMEKEEPER_OFFSET
+        addr_ctrl = self.MB_TIME_CTRL + tk_idx * self.MB_TIMEKEEPER_OFFSET
         time_lo = ticks & 0xFFFFFFFF
         time_hi = (ticks >> 32) & 0xFFFFFFFF
         time_ctrl = self.MB_TIME_SET_NEXT_PPS if next_pps else self.MB_TIME_SET_NOW
-        self.log.trace("Setting time on timekeeper %d to %d %s", tk_idx, ticks,
-                       ("on next pps" if next_pps else "now"))
+        self.log.trace(
+            "Setting time on timekeeper %d to %d %s",
+            tk_idx,
+            ticks,
+            ("on next pps" if next_pps else "now"),
+        )
         with self.regs:
             self.poke32(addr_lo, time_lo)
             self.poke32(addr_hi, time_hi)

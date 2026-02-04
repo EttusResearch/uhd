@@ -8,15 +8,17 @@ Transport adapter control
 """
 
 from enum import Enum
+
 import netaddr
-from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.compat_num import CompatNumber
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.sys_utils.uio import UIO
 
 MIN_COMPAT_NUM_REMOTE_STREAMING = CompatNumber(1, 0)
 
 # pylint: disable=too-many-arguments
+
 
 class XportAdapterCtrl:
     """
@@ -34,6 +36,7 @@ class XportAdapterCtrl:
     - rx_hdr_removal: The TA can remove CHDR headers when routing data to
                       arbitrary endpoints (StreamModes.RAW_PAYLOAD may be used)
     """
+
     # Address offsets (these must match xport_sv/eth_regs.vh)
     # pylint: disable=bad-whitespace
     # fmt: off
@@ -55,9 +58,9 @@ class XportAdapterCtrl:
         The numerical values must be such that they can be written to KV_CFG
         (see eth_regs.vh).
         """
+
         FULL_PACKET = 0
         RAW_PAYLOAD = 1
-
 
     def __init__(self, label):
         self.log = get_logger(label)
@@ -79,9 +82,9 @@ class XportAdapterCtrl:
         if self._compat_num < MIN_COMPAT_NUM_REMOTE_STREAMING:
             return
         if bool(adapter_info & (1 << 0)):
-            self.features.add('rx_routing')
+            self.features.add("rx_routing")
         if bool(adapter_info & (1 << 1)):
-            self.features.add('rx_hdr_removal')
+            self.features.add("rx_hdr_removal")
 
     def get_xport_adapter_inst(self):
         """
@@ -113,14 +116,12 @@ class XportAdapterCtrl:
         assert isinstance(stream_mode, self.StreamModes)
         assert (epid >> 16) == 0
         # Check capabilities
-        if 'rx_routing' not in self.features:
+        if "rx_routing" not in self.features:
             raise RuntimeError(
-                "This transport adapter does not support routing to remote "
-                "destinations!")
-        if stream_mode == self.StreamModes.RAW_PAYLOAD \
-                and 'rx_hdr_removal' not in self.features:
-            raise RuntimeError(
-                "Requesting to remove CHDR headers, but feature not enabled!")
+                "This transport adapter does not support routing to remote " "destinations!"
+            )
+        if stream_mode == self.StreamModes.RAW_PAYLOAD and "rx_hdr_removal" not in self.features:
+            raise RuntimeError("Requesting to remove CHDR headers, but feature not enabled!")
         # Encode inputs for our registers
         stream_mode_int = stream_mode.value
         mac_addr_int = int(netaddr.EUI(mac_addr))
@@ -132,18 +133,19 @@ class XportAdapterCtrl:
         self.log.debug(
             f"On transport adapter {self._ta_index}: Adding route from EPID "
             f"{epid} to destination {ipv4}:{port} (MAC Address: {mac_addr}), "
-            f"stream mode {stream_mode.name} ({stream_mode_int})")
+            f"stream mode {stream_mode.name} ({stream_mode_int})"
+        )
         # Now write registers
         with self._regs:
             # Check BUSY bit before writing new values
             if not poll_with_timeout(
-                    lambda: not bool(self.peek32(self.KV_CFG) & (1 << 31)),
-                    0.5, # timeout at 500 ms
-                    0.1, # check at 100 ms interval
-                ):
+                lambda: not bool(self.peek32(self.KV_CFG) & (1 << 31)),
+                0.5,  # timeout at 500 ms
+                0.1,  # check at 100 ms interval
+            ):
                 raise RuntimeError(
-                    f"Timeout while polling BUSY bit on transport adapter "
-                    f"{self._ta_index}!")
+                    f"Timeout while polling BUSY bit on transport adapter " f"{self._ta_index}!"
+                )
             # Now write all the configurations; CFG goes last
             self.poke32(self.KV_MAC_LO, mac_addr_lo)
             self.poke32(self.KV_MAC_HI, mac_addr_hi)

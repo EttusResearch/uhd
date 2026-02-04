@@ -3,33 +3,36 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" Utility classes to facilitate unit testing """
+"""Utility classes to facilitate unit testing"""
 
-import queue
-import platform
 import os
+import platform
+import queue
+
 
 def on_linux():
     """
     Returns True if this is being executed on a Linux system
     """
-    return 'linux' in platform.system().lower()
+    return "linux" in platform.system().lower()
+
 
 def on_usrp():
     """
     Returns True if this is being executed on an USRP
     """
     # Check device tree standard property for manufacturer info
-    path = '/sys/firmware/devicetree/base/compatible'
+    path = "/sys/firmware/devicetree/base/compatible"
 
     if not os.path.exists(path):
         return False
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         s = f.read()
         # String returned is actually a list of null-terminated strings,
         # replace the null-terminations with a separator
-        s.replace('\x00', ';')
-        return 'ettus' in s
+        s.replace("\x00", ";")
+        return "ettus" in s
+
 
 def _mock_gpiod_pkg():
     """
@@ -44,13 +47,16 @@ def _mock_gpiod_pkg():
         if on_usrp():
             raise ex
         import sys
+
         sys.modules["gpiod"] = MockGpiod
+
 
 class MockGpiod:
     """
     Mocks a portion of the gpiod python package without actually
     accessing GPIO hardware.
     """
+
     LINE_REQ_DIR_IN = 0
     LINE_REQ_DIR_OUT = 1
     LINE_REQ_EV_FALLING_EDGE = 4
@@ -81,11 +87,13 @@ class MockGpiod:
             self.lines[name] = self.MockLine(self._DEFAULT_LINE_VAL)
         return self.lines[name]
 
+
 class MockRegsIface(object):
     """
     Mocks the interaction with a register interface by returning
     values from an ic_reg_map
     """
+
     def __init__(self, register_map):
         self.map = register_map
         self.recent_vals = {}
@@ -162,11 +170,13 @@ class MockRegsIface(object):
         for val in vals:
             self.next_vals[addr].put_nowait(val)
 
+
 class MockLog:
     """
     Mocks logging functionality for testing purposes by putting log
     messages in a queue.
     """
+
     # The MockLog class is not currently implemented to be thread safe
     def __init__(self):
         self.error_log = queue.Queue()
@@ -191,7 +201,7 @@ class MockLog:
         self.debug_log.put_nowait(msg)
 
     def clear_all(self):
-        """ Clears all log queues """
+        """Clears all log queues"""
         self.error_log.queue.clear()
         self.warning_log.queue.clear()
         self.info_log.queue.clear()
@@ -204,15 +214,15 @@ class MockLog:
         empty string if the queue is empty or throw an error if a queue
         of that log_level does not exist.
         """
-        queue_name = log_level + '_log'
+        queue_name = log_level + "_log"
         if not hasattr(self, queue_name):
-            raise RuntimeError("Log level {} does not exist in " \
-                               "mock log".format(log_level))
+            raise RuntimeError("Log level {} does not exist in " "mock log".format(log_level))
         log_messages = getattr(self, queue_name)
         if log_messages.empty():
-            return ''
+            return ""
         else:
             return log_messages.get_nowait()
+
 
 # importing this utilities package should mock out the gpiod package
 # if necessary so that usrp_mpm can be imported on devices without

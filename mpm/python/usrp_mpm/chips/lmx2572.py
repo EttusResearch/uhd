@@ -9,10 +9,12 @@ LMX2572 parent driver class
 
 import math
 from builtins import object
-from usrp_mpm.mpmlog import get_logger
+
 from usrp_mpm.chips.ic_reg_maps import lmx2572_regs_t
+from usrp_mpm.mpmlog import get_logger
 
 NUMBER_OF_LMX2572_REGISTERS = 126
+
 
 class LMX2572(object):
     """
@@ -21,12 +23,12 @@ class LMX2572(object):
 
     READ_ONLY_REGISTERS = [107, 108, 109, 110, 111, 112, 113]
 
-    def __init__(self, regs_iface, parent_log = None):
+    def __init__(self, regs_iface, parent_log=None):
         self.log = parent_log
 
         self.regs_iface = regs_iface
-        assert hasattr(self.regs_iface, 'peek16')
-        assert hasattr(self.regs_iface, 'poke16')
+        assert hasattr(self.regs_iface, "peek16")
+        assert hasattr(self.regs_iface, "poke16")
         self._poke16 = regs_iface.poke16
         self._peek16 = regs_iface.peek16
 
@@ -83,9 +85,11 @@ class LMX2572(object):
         """
         Enables and disables the phase synchronization
         """
-        vco_phase_sync = lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE if \
-            enable_synchronization else \
-            lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_NORMAL_OPERATION
+        vco_phase_sync = (
+            lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE
+            if enable_synchronization
+            else lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_NORMAL_OPERATION
+        )
         self._lmx2572_regs.vco_phase_sync_en = vco_phase_sync
         self._need_recalculation = True
 
@@ -93,8 +97,10 @@ class LMX2572(object):
         """
         Returns the enabled/disabled state of the phase synchronization
         """
-        return self._lmx2572_regs.vco_phase_sync_en == \
-            lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE
+        return (
+            self._lmx2572_regs.vco_phase_sync_en
+            == lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE
+        )
 
     def set_output_enable_all(self, enable_output):
         """
@@ -108,8 +114,11 @@ class LMX2572(object):
         Enables or disables the LMX2572 using the powerdown register
             All other registers are maintained during powerdown
         """
-        powerdown = lmx2572_regs_t.powerdown_t.POWERDOWN_NORMAL_OPERATION if chip_enable else \
-            lmx2572_regs_t.powerdown_t.POWERDOWN_POWER_DOWN
+        powerdown = (
+            lmx2572_regs_t.powerdown_t.POWERDOWN_NORMAL_OPERATION
+            if chip_enable
+            else lmx2572_regs_t.powerdown_t.POWERDOWN_POWER_DOWN
+        )
         self._lmx2572_regs.powerdown = powerdown
         self._poke16(0, self._lmx2572_regs.get_reg(0))
 
@@ -117,10 +126,11 @@ class LMX2572(object):
         """
         Wraps _peek16 to account for mux_ld_sel
         """
-        # SPI MISO is multiplexed to lock detect and register readback. Set the mux to register 
+        # SPI MISO is multiplexed to lock detect and register readback. Set the mux to register
         # readback before trying to read the register.
-        self._lmx2572_regs.muxout_ld_sel = \
+        self._lmx2572_regs.muxout_ld_sel = (
             lmx2572_regs_t.muxout_ld_sel_t.MUXOUT_LD_SEL_REGISTER_READBACK
+        )
         self._poke16(0, self._lmx2572_regs.get_reg(0))
 
         value_read = self._peek16(address)
@@ -129,7 +139,6 @@ class LMX2572(object):
         self._poke16(0, self._lmx2572_regs.get_reg(0))
 
         return value_read
-
 
     def _calculate_settings(self):
         """
@@ -157,16 +166,22 @@ class LMX2572(object):
         """
         Sets output A (OUTA_PD)
         """
-        new_value = lmx2572_regs_t.outa_pd_t.OUTA_PD_NORMAL_OPERATION if enable_output \
+        new_value = (
+            lmx2572_regs_t.outa_pd_t.OUTA_PD_NORMAL_OPERATION
+            if enable_output
             else lmx2572_regs_t.outa_pd_t.OUTA_PD_POWER_DOWN
+        )
         self._lmx2572_regs.outa_pd = new_value
 
     def _set_output_b_enable(self, enable_output):
         """
         Sets output B (OUTB_PD)
         """
-        new_value = lmx2572_regs_t.outb_pd_t.OUTB_PD_NORMAL_OPERATION if enable_output \
+        new_value = (
+            lmx2572_regs_t.outb_pd_t.OUTB_PD_NORMAL_OPERATION
+            if enable_output
             else lmx2572_regs_t.outb_pd_t.OUTB_PD_POWER_DOWN
+        )
         self._lmx2572_regs.outb_pd = new_value
 
     def _set_output_a_power(self, power):
@@ -192,7 +207,7 @@ class LMX2572(object):
             self._lmx2572_regs.fcal_hpfd_adj = 0x1
         elif 75e6 < phase_detector_frequency <= 100e6:
             self._lmx2572_regs.fcal_hpfd_adj = 0x2
-        else: # 100MHz < phase_detector_frequency
+        else:  # 100MHz < phase_detector_frequency
             self._lmx2572_regs.fcal_hpfd_adj = 0x3
 
     def _set_fcal_lpfd_adj(self, phase_detector_frequency):
@@ -206,15 +221,16 @@ class LMX2572(object):
             self._lmx2572_regs.fcal_lpfd_adj = 0x1
         elif 5e6 > phase_detector_frequency >= 2.5e6:
             self._lmx2572_regs.fcal_lpfd_adj = 0x2
-        else: # phase_detector_frequency < 2.5MHz
+        else:  # phase_detector_frequency < 2.5MHz
             self._lmx2572_regs.fcal_lpfd_adj = 0x3
 
     def _set_pll_n(self, n):
         """
         Sets the pll_n registers
         """
-        self._lmx2572_regs.pll_n_upper_3_bits = (n >> 16) & \
-            self._lmx2572_regs.pll_n_upper_3_bits_mask
+        self._lmx2572_regs.pll_n_upper_3_bits = (
+            n >> 16
+        ) & self._lmx2572_regs.pll_n_upper_3_bits_mask
         self._lmx2572_regs.pll_n_lower_16_bits = n & self._lmx2572_regs.pll_n_lower_16_bits_mask
 
     def _set_pll_den(self, den):
@@ -228,8 +244,9 @@ class LMX2572(object):
         """
         Sets the mash seed register
         """
-        self._lmx2572_regs.mash_seed_upper = (mash_seed >> 16) & \
-            self._lmx2572_regs.mash_seed_upper_mask
+        self._lmx2572_regs.mash_seed_upper = (
+            mash_seed >> 16
+        ) & self._lmx2572_regs.mash_seed_upper_mask
         self._lmx2572_regs.mash_seed_lower = mash_seed & self._lmx2572_regs.mash_seed_lower_mask
 
     def _set_pll_num(self, num):
@@ -243,17 +260,24 @@ class LMX2572(object):
         """
         Sets the mash_rst_count registers
         """
-        self._lmx2572_regs.mash_rst_count_upper = (mash_rst_count >> 16) & \
-            self._lmx2572_regs.mash_rst_count_upper_mask
-        self._lmx2572_regs.mash_rst_count_lower = mash_rst_count & \
-            self._lmx2572_regs.mash_rst_count_lower_mask
+        self._lmx2572_regs.mash_rst_count_upper = (
+            mash_rst_count >> 16
+        ) & self._lmx2572_regs.mash_rst_count_upper_mask
+        self._lmx2572_regs.mash_rst_count_lower = (
+            mash_rst_count & self._lmx2572_regs.mash_rst_count_lower_mask
+        )
 
     def _compute_and_set_mult_hi(self, reference_frequency):
-        multiplier_output_frequency = (reference_frequency*(int(self._lmx2572_regs.osc_2x.value)\
-            +1)*self._lmx2572_regs.mult) / self._lmx2572_regs.pll_r_pre
-        new_mult_hi = lmx2572_regs_t.mult_hi_t.MULT_HI_GREATER_THAN_100M \
-            if self._lmx2572_regs.mult > 1 and multiplier_output_frequency > 100e6 else \
-            lmx2572_regs_t.mult_hi_t.MULT_HI_LESS_THAN_EQUAL_TO_100M
+        multiplier_output_frequency = (
+            reference_frequency
+            * (int(self._lmx2572_regs.osc_2x.value) + 1)
+            * self._lmx2572_regs.mult
+        ) / self._lmx2572_regs.pll_r_pre
+        new_mult_hi = (
+            lmx2572_regs_t.mult_hi_t.MULT_HI_GREATER_THAN_100M
+            if self._lmx2572_regs.mult > 1 and multiplier_output_frequency > 100e6
+            else lmx2572_regs_t.mult_hi_t.MULT_HI_LESS_THAN_EQUAL_TO_100M
+        )
         self._lmx2572_regs.mult_hi = new_mult_hi
 
     def _power_up_sequence(self):
@@ -278,13 +302,13 @@ class LMX2572(object):
         # Write PLL_NUM to registers R42 and R43
         self._poke16(42, self._lmx2572_regs.get_reg(42))
         self._poke16(43, self._lmx2572_regs.get_reg(43))
-        
+
         # MASH_SEED to registers R40 and R41
         self._poke16(40, self._lmx2572_regs.get_reg(40))
         self._poke16(41, self._lmx2572_regs.get_reg(41))
 
         # Write OUTA_PWR to register R44 or OUTB_PWR to register R45
-        # Write OUTA_MUX to register R45 and/or OUTB_MUX to register R46 
+        # Write OUTA_MUX to register R45 and/or OUTB_MUX to register R46
         self._poke16(44, self._lmx2572_regs.get_reg(44))
         self._poke16(45, self._lmx2572_regs.get_reg(45))
         self._poke16(46, self._lmx2572_regs.get_reg(46))
@@ -331,7 +355,7 @@ class LMX2572(object):
         # Write PLL_R_PRE to register R12
         self._poke16(12, self._lmx2572_regs.get_reg(12))
 
-        # if Phase SYNC being used: 
+        # if Phase SYNC being used:
         # Write MASH_RST_COUNT to registers R69 and 70
         if self.get_synchronization():
             self._poke16(70, self._lmx2572_regs.get_reg(70))

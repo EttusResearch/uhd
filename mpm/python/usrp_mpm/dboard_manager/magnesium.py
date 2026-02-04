@@ -8,17 +8,19 @@ Magnesium dboard implementation module
 """
 
 from __future__ import print_function
+
 import os
-from usrp_mpm import lib # Pulls in everything from C++-land
-from usrp_mpm.dboard_manager import DboardManagerBase
-from usrp_mpm.dboard_manager.mg_periphs import TCA6408, MgCPLD
-from usrp_mpm.dboard_manager.mg_init import MagnesiumInitManager
-from usrp_mpm.dboard_manager.mg_periphs import DboardClockControl
+
+from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm.cores import nijesdcore
+from usrp_mpm.dboard_manager import DboardManagerBase
+from usrp_mpm.dboard_manager.mg_init import MagnesiumInitManager
+from usrp_mpm.dboard_manager.mg_periphs import TCA6408, DboardClockControl, MgCPLD
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.mpmutils import async_exec
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.user_eeprom import BfrfsEEPROM
-from usrp_mpm.mpmutils import async_exec
+
 
 ###############################################################################
 # SPI Helpers
@@ -29,13 +31,14 @@ def create_spidev_iface_lmk(dev_node):
     """
     return lib.spi.make_spidev_regs_iface(
         str(dev_node),
-        1000000, # Speed (Hz)
-        3, # SPI mode
-        8, # Addr shift
-        0, # Data shift
-        1<<23, # Read flag
-        0, # Write flag
+        1000000,  # Speed (Hz)
+        3,  # SPI mode
+        8,  # Addr shift
+        0,  # Data shift
+        1 << 23,  # Read flag
+        0,  # Write flag
     )
+
 
 def create_spidev_iface_cpld(dev_node):
     """
@@ -43,13 +46,14 @@ def create_spidev_iface_cpld(dev_node):
     """
     return lib.spi.make_spidev_regs_iface(
         str(dev_node),
-        1000000, # Speed (Hz)
-        0, # SPI mode
-        16, # Addr shift
-        0, # Data shift
-        1<<23, # Read flag
-        0, # Write flag
+        1000000,  # Speed (Hz)
+        0,  # SPI mode
+        16,  # Addr shift
+        0,  # Data shift
+        1 << 23,  # Read flag
+        0,  # Write flag
     )
+
 
 def create_spidev_iface_phasedac(dev_node):
     """
@@ -57,13 +61,14 @@ def create_spidev_iface_phasedac(dev_node):
     """
     return lib.spi.make_spidev_regs_iface(
         str(dev_node),
-        1000000, # Speed (Hz)
-        1, # SPI mode
-        16, # Addr shift
-        0, # Data shift
-        0, # Read flag (phase DAC is write-only)
-        0, # Write flag
+        1000000,  # Speed (Hz)
+        1,  # SPI mode
+        16,  # Addr shift
+        0,  # Data shift
+        0,  # Read flag (phase DAC is write-only)
+        0,  # Write flag
     )
+
 
 ###############################################################################
 # Main dboard control class
@@ -72,6 +77,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
     """
+
     #########################################################################
     # Overridables
     #
@@ -79,12 +85,12 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
     #########################################################################
     pids = [0x150]
     rx_sensor_callback_map = {
-        'lowband_lo_locked': 'get_lowband_tx_lo_locked_sensor',
-        'ad9371_lo_locked': 'get_ad9371_tx_lo_locked_sensor',
+        "lowband_lo_locked": "get_lowband_tx_lo_locked_sensor",
+        "ad9371_lo_locked": "get_ad9371_tx_lo_locked_sensor",
     }
     tx_sensor_callback_map = {
-        'lowband_lo_locked': 'get_lowband_rx_lo_locked_sensor',
-        'ad9371_lo_locked': 'get_ad9371_rx_lo_locked_sensor',
+        "lowband_lo_locked": "get_lowband_rx_lo_locked_sensor",
+        "ad9371_lo_locked": "get_ad9371_rx_lo_locked_sensor",
     }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2, "phase_dac": 3}
@@ -95,31 +101,30 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         "lmk": create_spidev_iface_lmk,
         "phase_dac": create_spidev_iface_phasedac,
     }
-    #file system path to i2c-adapter/mux
-    base_i2c_adapter = '/sys/class/i2c-adapter'
+    # file system path to i2c-adapter/mux
+    base_i2c_adapter = "/sys/class/i2c-adapter"
     # Map I2C channel to slot index
-    i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
+    i2c_chan_map = {0: "i2c-9", 1: "i2c-10"}
     # This map describes how the user data is stored in EEPROM. If a dboard rev
     # changes the way the EEPROM is used, we add a new entry. If a dboard rev
     # is not found in the map, then we go backward until we find a suitable rev
     user_eeprom = {
-        2: { # RevC
-            'label': "e0004000.i2c",
-            'offset': 1024,
-            'max_size': 32786 - 1024,
-            'alignment': 1024, # FIXME check alignment is correct (block size)
+        2: {  # RevC
+            "label": "e0004000.i2c",
+            "offset": 1024,
+            "max_size": 32786 - 1024,
+            "alignment": 1024,  # FIXME check alignment is correct (block size)
         },
     }
     default_master_clock_rate = 125e6
-    default_time_source = 'internal'
+    default_time_source = "internal"
     default_current_jesd_rate = 2500e6
 
     def __init__(self, slot_idx, **kwargs):
         DboardManagerBase.__init__(self, slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
-        self.log.trace("Initializing Magnesium daughterboard, slot index %d",
-                       self.slot_idx)
-        self.rev = int(self.device_info['rev'])
+        self.log.trace("Initializing Magnesium daughterboard, slot index %d", self.slot_idx)
+        self.rev = int(self.device_info["rev"])
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         # This is a default ref clock freq, it must be updated before init() is
         # called!
@@ -143,8 +148,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
             self._init_periphs()
             self._periphs_initialized = True
         except Exception as ex:
-            self.log.error("Failed to initialize peripherals: %s",
-                           str(ex))
+            self.log.error("Failed to initialize peripherals: %s", str(ex))
             self._periphs_initialized = False
 
     def _init_periphs(self):
@@ -162,8 +166,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         deserializer_lane_xbar = 0xD2 if self.slot_idx == 0 else 0x72
 
         self._device = lib.dboards.magnesium_manager(
-            self._spi_nodes['mykonos'],
-            deserializer_lane_xbar
+            self._spi_nodes["mykonos"], deserializer_lane_xbar
         )
         self.mykonos = self._device.get_radio_ctrl()
         self.spi_lock = self._device.get_spi_lock()
@@ -180,15 +183,13 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         BfrfsEEPROM.__init__(self)
         self.log.trace("Loading SPI devices...")
         self._spi_ifaces = {
-            key: self.spi_factories[key](self._spi_nodes[key])
-            for key in self.spi_factories
+            key: self.spi_factories[key](self._spi_nodes[key]) for key in self.spi_factories
         }
-        self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
-        self.device_info['cpld_rev'] = \
-                str(self.cpld.major_rev) + '.' + str(self.cpld.minor_rev)
+        self.cpld = MgCPLD(self._spi_ifaces["cpld"], self.log)
+        self.device_info["cpld_rev"] = str(self.cpld.major_rev) + "." + str(self.cpld.minor_rev)
 
     def _power_on(self):
-        " Turn on power to daughterboard "
+        "Turn on power to daughterboard"
         self.log.trace("Powering on slot_idx={}...".format(self.slot_idx))
         self._port_expander.set("PWR-EN-3.6V")
         self._port_expander.set("PWR-EN-1.5V")
@@ -196,7 +197,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         self._port_expander.set("LED")
 
     def _power_off(self):
-        " Turn off power to daughterboard "
+        "Turn off power to daughterboard"
         self.log.trace("Powering off slot_idx={}...".format(self.slot_idx))
         self._port_expander.reset("PWR-EN-3.6V")
         self._port_expander.reset("PWR-EN-1.5V")
@@ -204,33 +205,35 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         self._port_expander.reset("LED")
 
     def _get_i2c_dev(self, slot_idx):
-        " Return the I2C path for this daughterboard "
+        "Return the I2C path for this daughterboard"
         import pyudev
+
         context = pyudev.Context()
-        i2c_dev_path = os.path.join(
-            self.base_i2c_adapter,
-            self.i2c_chan_map[slot_idx]
-        )
+        i2c_dev_path = os.path.join(self.base_i2c_adapter, self.i2c_chan_map[slot_idx])
         return pyudev.Devices.from_sys_path(context, i2c_dev_path)
 
     def _init_myk_api(self, myk):
         """
         Propagate the C++ Mykonos API into Python land.
         """
+
         def export_method(obj, method):
-            " Export a method object, including docstring "
+            "Export a method object, including docstring"
             meth_obj = getattr(obj, method)
+
             def func(*args):
-                " Functor for storing docstring to "
+                "Functor for storing docstring to"
                 return meth_obj(*args)
+
             func.__doc__ = meth_obj.__doc__
             return func
+
         self.log.trace("Forwarding AD9371 methods to Magnesium class...")
         for method in [
-                x for x in dir(self.mykonos)
-                if not x.startswith("_") and \
-                        callable(getattr(self.mykonos, x)) \
-                        and not hasattr(self, x)]:
+            x
+            for x in dir(self.mykonos)
+            if not x.startswith("_") and callable(getattr(self.mykonos, x)) and not hasattr(self, x)
+        ]:
             self.log.trace("adding {}".format(method))
             setattr(self, method, export_method(myk, method))
 
@@ -239,52 +242,53 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         Execute necessary init dance to bring up dboard
         """
         # Sanity checks and input validation:
-        self.log.debug("init() called with args `{}'".format(
-            ",".join(['{}={}'.format(x, args[x]) for x in args])
-        ))
+        self.log.debug(
+            "init() called with args `{}'".format(
+                ",".join(["{}={}".format(x, args[x]) for x in args])
+            )
+        )
         if not self._periphs_initialized:
             error_msg = "Cannot run init(), peripherals are not initialized!"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         # Check if ref clock freq changed (would require a full init)
         ref_clk_freq_changed = False
-        if 'ref_clk_freq' in args:
-            new_ref_clock_freq = float(args['ref_clk_freq'])
+        if "ref_clk_freq" in args:
+            new_ref_clock_freq = float(args["ref_clk_freq"])
             assert new_ref_clock_freq in (10e6, 20e6, 25e6)
             if new_ref_clock_freq != self.ref_clock_freq:
-                self.ref_clock_freq = float(args['ref_clk_freq'])
+                self.ref_clock_freq = float(args["ref_clk_freq"])
                 ref_clk_freq_changed = True
                 self.log.debug(
-                    "Updating reference clock frequency to {:.02f} MHz!"
-                    .format(self.ref_clock_freq / 1e6)
+                    "Updating reference clock frequency to {:.02f} MHz!".format(
+                        self.ref_clock_freq / 1e6
+                    )
                 )
         assert self.ref_clock_freq is not None
         # Check if master clock freq changed (would require a full init)
-        master_clock_rate = \
-            float(args.get('master_clock_rate',
-                           self.default_master_clock_rate))
-        assert master_clock_rate in (122.88e6, 125e6, 153.6e6), \
-                "Invalid master clock rate: {:.02f} MHz".format(
-                    master_clock_rate / 1e6)
-        master_clock_rate_changed = \
-            master_clock_rate != self.master_clock_rate
+        master_clock_rate = float(args.get("master_clock_rate", self.default_master_clock_rate))
+        assert master_clock_rate in (
+            122.88e6,
+            125e6,
+            153.6e6,
+        ), "Invalid master clock rate: {:.02f} MHz".format(master_clock_rate / 1e6)
+        master_clock_rate_changed = master_clock_rate != self.master_clock_rate
         if master_clock_rate_changed:
             self.master_clock_rate = master_clock_rate
             self.log.debug(
-                "Updating master clock rate to {:.02f} MHz!"
-                .format(self.master_clock_rate / 1e6)
+                "Updating master clock rate to {:.02f} MHz!".format(self.master_clock_rate / 1e6)
             )
         # Track if we're able to do a "fast reinit", which means there were no
         # major changes and can skip all slow initialization steps.
-        fast_reinit = \
-            not bool(args.get("force_reinit", False)) \
-            and not master_clock_rate_changed \
+        fast_reinit = (
+            not bool(args.get("force_reinit", False))
+            and not master_clock_rate_changed
             and not ref_clk_freq_changed
+        )
         if fast_reinit:
             self.log.debug(
                 "Attempting fast re-init with the following settings: "
-                "master_clock_rate={} MHz ref_clk_freq={}"
-                .format(
+                "master_clock_rate={} MHz ref_clk_freq={}".format(
                     self.master_clock_rate / 1e6,
                     self.ref_clock_freq,
                 )
@@ -292,11 +296,11 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         # Note: MagnesiumInitManager.init() can still override fast_reinit.
         # Consider it a hint.
         result = MagnesiumInitManager(self, self._spi_ifaces).init(
-            args, self._init_args, fast_reinit)
+            args, self._init_args, fast_reinit
+        )
         if result:
             self._init_args = args
         return result
-
 
     ##########################################################################
     # Clocking control APIs
@@ -316,15 +320,15 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         # Reset Mykonos, since it receives a copy of the clock from the LMK.
         self.cpld.reset_mykonos(keep_in_reset=True)
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+            label="dboard-regs-{}".format(self.slot_idx), read_only=False
         ) as dboard_ctrl_regs:
             # Clear the Sample Clock enables and place the MMCM in reset.
             db_clk_control = DboardClockControl(dboard_ctrl_regs, self.log)
             db_clk_control.reset_mmcm()
             # Place the JESD204b core in reset, mainly to reset QPLL/CPLLs.
-            jesdcore = nijesdcore.NIJESDCore(dboard_ctrl_regs, self.slot_idx,
-                                             **MagnesiumInitManager.JESD_DEFAULT_ARGS)
+            jesdcore = nijesdcore.NIJESDCore(
+                dboard_ctrl_regs, self.slot_idx, **MagnesiumInitManager.JESD_DEFAULT_ARGS
+            )
             jesdcore.reset()
             # The reference clock is handled elsewhere since it is a motherboard-
             # level clock.
@@ -355,10 +359,9 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         args["ref_clk_freq"] = self.ref_clock_freq
         # If we add API calls to reset the cals, they need to update
         # self._init_args
-        self.master_clock_rate = None # <= This will force a re-init
+        self.master_clock_rate = None  # <= This will force a re-init
         self.init(args)
         # self.master_clock_rate is now OK again
-
 
     def set_master_clock_rate(self, rate):
         """
@@ -369,13 +372,14 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         if rate == self.master_clock_rate:
             self.log.debug(
                 "New master clock rate assignment matches previous assignment. "
-                "Ignoring set_master_clock_rate() command.")
+                "Ignoring set_master_clock_rate() command."
+            )
             return self.master_clock_rate
         self._reinit(rate)
         return rate
 
     def get_master_clock_rate(self):
-        " Return master clock rate (== sampling rate) "
+        "Return master clock rate (== sampling rate)"
         return self.master_clock_rate
 
     def update_ref_clock_freq(self, freq, **kwargs):
@@ -390,16 +394,14 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         has already switched the clock rate externally. All we need to do now
         is re-initialize with the new rate.
         """
-        assert freq in (10e6, 20e6, 25e6), \
-                "Invalid ref clock frequency: {}".format(freq)
-        self.log.trace("Changing ref clock frequency to %f MHz", freq/1e6)
+        assert freq in (10e6, 20e6, 25e6), "Invalid ref clock frequency: {}".format(freq)
+        self.log.trace("Changing ref clock frequency to %f MHz", freq / 1e6)
         self.ref_clock_freq = freq
         if self._init_args is not None:
             self._init_args = {**self._init_args, **kwargs}
             self.log.info("Re-initializing daughter board. This may take some time.")
             self._reinit(self.master_clock_rate)
             self.log.debug("Daughter board re-initialization done.")
-
 
     ##########################################################################
     # Sensors
@@ -412,8 +414,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         in the motherboard class.
         """
         if self.lmk is None:
-            self.log.trace("LMK object not yet initialized, defaulting to " \
-                           "no ref locked!")
+            self.log.trace("LMK object not yet initialized, defaulting to " "no ref locked!")
             return False
         lmk_lock_status = self.lmk.check_plls_locked()
         self.log.trace("LMK lock status is: {}".format(lmk_lock_status))
@@ -424,7 +425,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         Return LO lock status (Boolean!) of the lowband LOs. 'which' must be
         either 'tx' or 'rx'
         """
-        assert which.lower() in ('tx', 'rx')
+        assert which.lower() in ("tx", "rx")
         return self.cpld.get_lo_lock_status(which.upper())
 
     def get_ad9371_lo_lock(self, which):
@@ -435,61 +436,59 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         return self.mykonos.get_lo_locked(which.upper())
 
     def get_lowband_tx_lo_locked_sensor(self, chan):
-        " TX lowband LO lock sensor "
-        self.log.trace("Querying TX lowband LO lock status for chan %d...",
-                       chan)
-        lock_status = self.get_lowband_lo_lock('tx')
+        "TX lowband LO lock sensor"
+        self.log.trace("Querying TX lowband LO lock status for chan %d...", chan)
+        lock_status = self.get_lowband_lo_lock("tx")
         return {
-            'name': 'lowband_lo_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "lowband_lo_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     def get_lowband_rx_lo_locked_sensor(self, chan):
-        " RX lowband LO lock sensor "
-        self.log.trace("Querying RX lowband LO lock status for chan %d...",
-                       chan)
-        lock_status = self.get_lowband_lo_lock('rx')
+        "RX lowband LO lock sensor"
+        self.log.trace("Querying RX lowband LO lock status for chan %d...", chan)
+        lock_status = self.get_lowband_lo_lock("rx")
         return {
-            'name': 'lowband_lo_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "lowband_lo_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     def get_ad9371_tx_lo_locked_sensor(self, chan):
-        " TX ad9371 LO lock sensor "
+        "TX ad9371 LO lock sensor"
         self.log.trace("Querying TX AD9371 LO lock status for chan %d...", chan)
-        lock_status = self.get_ad9371_lo_lock('tx')
+        lock_status = self.get_ad9371_lo_lock("tx")
         return {
-            'name': 'ad9371_lo_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "ad9371_lo_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     def get_ad9371_rx_lo_locked_sensor(self, chan):
-        " RX ad9371 LO lock sensor "
+        "RX ad9371 LO lock sensor"
         self.log.trace("Querying RX AD9371 LO lock status for chan %d...", chan)
-        lock_status = self.get_ad9371_lo_lock('tx')
+        lock_status = self.get_ad9371_lo_lock("tx")
         return {
-            'name': 'ad9371_lo_locked',
-            'type': 'BOOLEAN',
-            'unit': 'locked' if lock_status else 'unlocked',
-            'value': str(lock_status).lower(),
+            "name": "ad9371_lo_locked",
+            "type": "BOOLEAN",
+            "unit": "locked" if lock_status else "unlocked",
+            "value": str(lock_status).lower(),
         }
 
     ##########################################################################
     # Filter API
     ##########################################################################
     def set_bandwidth(self, which, bw):
-        if which.lower()[0:2] in ('tx', 'dx'):
+        if which.lower()[0:2] in ("tx", "dx"):
             self.log.debug("ad9371 set_tx_bandwidth bw: {}".format(bw))
-            self._init_args['tx_bw'] = bw
-        if which.lower()[0:2] in ('rx', 'dx'):
+            self._init_args["tx_bw"] = bw
+        if which.lower()[0:2] in ("rx", "dx"):
             self.log.debug("ad9371 set_rx_bandwidth bw: {}".format(bw))
-            self._init_args['rx_bw'] = bw
+            self._init_args["rx_bw"] = bw
         self._reinit(self.master_clock_rate)
         return bw
 
@@ -519,15 +518,14 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         return self.cpld.peek16(addr)
 
     def dump_jesd_core(self):
-        " Debug method to dump all JESD core regs "
+        "Debug method to dump all JESD core regs"
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+            label="dboard-regs-{}".format(self.slot_idx), read_only=False
         ) as dboard_ctrl_regs:
             for i in range(0x2000, 0x2110, 0x10):
-                print(("0x%04X " % i), end=' ')
+                print(("0x%04X " % i), end=" ")
                 for j in range(0, 0x10, 0x4):
-                    print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
+                    print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=" ")
                 print("")
 
     def dbcore_peek(self, addr):
@@ -535,8 +533,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         Debug for accessing the DB Core registers via the RPC shell.
         """
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+            label="dboard-regs-{}".format(self.slot_idx), read_only=False
         ) as dboard_ctrl_regs:
             rd_data = dboard_ctrl_regs.peek32(addr)
             self.log.trace("DB Core Register 0x{:04X} response: 0x{:08X}".format(addr, rd_data))
@@ -547,9 +544,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         Debug for accessing the DB Core registers via the RPC shell.
         """
         with open_uio(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
+            label="dboard-regs-{}".format(self.slot_idx), read_only=False
         ) as dboard_ctrl_regs:
             self.log.trace("Writing DB Core Register 0x{:04X} with 0x{:08X}...".format(addr, data))
             dboard_ctrl_regs.poke32(addr, data)
-

@@ -94,6 +94,7 @@ class EepromTagMap:
 ###############################################################################
 class X400XportMgrUDP(XportMgrUDP):
     "X400-specific UDP configuration"
+
     iface_config = {
         "sfp0": {
             "label": "misc-enet-regs0",

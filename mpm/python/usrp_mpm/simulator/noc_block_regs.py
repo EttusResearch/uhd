@@ -28,7 +28,7 @@ RX_CMD_STOP = 0x0
 RX_CMD_FINITE = 0x1
 
 RADIO_BASE_ADDR = 0x1000
-REG_CHAN_OFFSET = 1024 # 0x400 in hex
+REG_CHAN_OFFSET = 1024  # 0x400 in hex
 
 # Radio block register addresses (see radio_control_impl.hpp)
 REG_COMPAT_NUM = 0x00
@@ -55,17 +55,17 @@ REG_RX_HAS_TIME = REG_PORT_RX_ADDR_OFFSET + 0x30
 
 # TX Core Control Registers (per-channel offsets)
 REG_PORT_TX_ADDR_OFFSET = 0x200
-REG_TX_IDLE_VALUE = REG_PORT_TX_ADDR_OFFSET + 0x00 # Value to output when transmitter is idle
+REG_TX_IDLE_VALUE = REG_PORT_TX_ADDR_OFFSET + 0x00  # Value to output when transmitter is idle
 
 # Feature Control Registers (per-channel offsets)
 REG_PORT_FEAT_ADDR_OFFSET = 0x300
 
 # Register address space widths and sizes (see radio_control_impl.hpp)
-REG_PORT_RX_ADDR_W = 8      # Address space width in bits for RX registers
-REG_PORT_TX_ADDR_W = 8      # Address space width in bits for TX registers
-REG_PORT_FEAT_ADDR_W = 8    # Address space width in bits for Feature registers
-REG_PORT_RX_SIZE = 2**REG_PORT_RX_ADDR_W    # 0x100, address space size for RX registers
-REG_PORT_TX_SIZE = 2**REG_PORT_TX_ADDR_W    # 0x100, address space size for TX registers
+REG_PORT_RX_ADDR_W = 8  # Address space width in bits for RX registers
+REG_PORT_TX_ADDR_W = 8  # Address space width in bits for TX registers
+REG_PORT_FEAT_ADDR_W = 8  # Address space width in bits for Feature registers
+REG_PORT_RX_SIZE = 2**REG_PORT_RX_ADDR_W  # 0x100, address space size for RX registers
+REG_PORT_TX_SIZE = 2**REG_PORT_TX_ADDR_W  # 0x100, address space size for TX registers
 REG_PORT_FEAT_SIZE = 2**REG_PORT_FEAT_ADDR_W  # 0x100, address space size for Feature registers
 
 # Radio block compatibility version
@@ -78,9 +78,11 @@ class StreamEndpointPort:
 
     inst should be the same as the stream endpoint's node_inst
     """
+
     def __init__(self, inst, port):
         self.inst = inst
         self.port = port
+
     def to_tuple(self, num_stream_ep):
         # The entry in an adjacency list is (blk_id, block_port)
         # where blk_id for stream endpoints starts at 1
@@ -88,8 +90,10 @@ class StreamEndpointPort:
         # See rfnoc_graph.cpp
         return (1 + self.inst, self.port)
 
+
 class NocBlockPort:
     """Represents a port on a Noc Block"""
+
     def __init__(self, inst, port):
         self.inst = inst
         self.port = port
@@ -101,6 +105,7 @@ class NocBlockPort:
         # See rfnoc_graph.cpp
         return (1 + num_stream_ep + self.inst, self.port)
 
+
 class NocBlock:
     """Represents a NocBlock
 
@@ -108,8 +113,17 @@ class NocBlock:
 
     NOTE: The mtu in bytes is calculated by (2**data_mtu * CHDR_W)
     """
-    def __init__(self, protover, num_inputs, num_outputs, ctrl_fifo_size,
-                 ctrl_max_async_msgs, noc_id, data_mtu):
+
+    def __init__(
+        self,
+        protover,
+        num_inputs,
+        num_outputs,
+        ctrl_fifo_size,
+        ctrl_max_async_msgs,
+        noc_id,
+        data_mtu,
+    ):
         self.protover = protover
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
@@ -130,18 +144,20 @@ class NocBlock:
             raise RuntimeError("NocBlock doesn't have a register #{}".format(reg_num))
 
     def read_config(self):
-        return (self.protover & 0x3F) | \
-            ((self.num_inputs & 0x3F) << 6) | \
-            ((self.num_outputs & 0x3F) << 12) | \
-            ((self.ctrl_fifo_size & 0x3F) << 18) | \
-            ((self.ctrl_max_async_msgs & 0xFF) << 24)
+        return (
+            (self.protover & 0x3F)
+            | ((self.num_inputs & 0x3F) << 6)
+            | ((self.num_outputs & 0x3F) << 12)
+            | ((self.ctrl_fifo_size & 0x3F) << 18)
+            | ((self.ctrl_max_async_msgs & 0xFF) << 24)
+        )
 
     def read_data(self):
-        return (self.data_mtu & 0x3F) << 2 | \
-            (1 << 1) # Permanently Set flush done
+        return (self.data_mtu & 0x3F) << 2 | (1 << 1)  # Permanently Set flush done
 
     def read_noc_id(self):
         return self.noc_id & 0xFFFFFFFF
+
 
 class NocBlockRegs:
     """Represents registers associated whith a group of NoCBlocks
@@ -149,10 +165,25 @@ class NocBlockRegs:
 
     NOTE: Many write operations are currently unimplemented and simply no-op
     """
-    def __init__(self, log, protover, has_xbar, num_xports, blocks, num_stream_ep, num_ctrl_ep,
-                 device_type, adjacency_list, sample_width, samples_per_cycle, get_stream_spec,
-                 create_tx_stream, stop_tx_stream):
-        """ Args:
+
+    def __init__(
+        self,
+        log,
+        protover,
+        has_xbar,
+        num_xports,
+        blocks,
+        num_stream_ep,
+        num_ctrl_ep,
+        device_type,
+        adjacency_list,
+        sample_width,
+        samples_per_cycle,
+        get_stream_spec,
+        create_tx_stream,
+        stop_tx_stream,
+    ):
+        """Args:
         protover -> FPGA Compat number
         has_xbar -> Is there a chdr xbar?
         num_xports -> how many xports
@@ -177,8 +208,10 @@ class NocBlockRegs:
         self.num_stream_ep = num_stream_ep
         self.num_ctrl_ep = num_ctrl_ep
         self.device_type = device_type
-        self.adjacency_list = [(src_blk.to_tuple(num_stream_ep), dst_blk.to_tuple(num_stream_ep))
-                               for src_blk, dst_blk in adjacency_list]
+        self.adjacency_list = [
+            (src_blk.to_tuple(num_stream_ep), dst_blk.to_tuple(num_stream_ep))
+            for src_blk, dst_blk in adjacency_list
+        ]
         self.adjacency_list_reg = NocBlockRegs._parse_adjacency_list(self.adjacency_list)
         self.sample_width = sample_width
         self.samples_per_cycle = samples_per_cycle
@@ -213,8 +246,7 @@ class NocBlockRegs:
             raise RuntimeError("Unsupported register addr: 0x{:08X}".format(addr))
 
     def read_radio(self, addr):
-        """Read values from radio registers.
-        """
+        """Read values from radio registers."""
         # General Radio Registers (not per-channel)
         if addr == RADIO_BASE_ADDR + REG_LOOPBACK_EN:
             self.log.trace(f"Not implemented: Loopback enable register at 0x{addr:08X}")
@@ -229,13 +261,15 @@ class NocBlockRegs:
             offset = addr - RADIO_BASE_ADDR
             chan = offset // REG_CHAN_OFFSET
             radio_offset = offset % REG_CHAN_OFFSET
-            
-            # Handle loopback test register reads (REG_TX_IDLE_VALUE for all channels)            
+
+            # Handle loopback test register reads (REG_TX_IDLE_VALUE for all channels)
             if radio_offset == REG_TX_IDLE_VALUE:
                 return self.radio_reg.get(chan, 0)
 
             # Check if this is in the RX register space (0x100-0x1FF)
-            elif REG_PORT_RX_ADDR_OFFSET <= radio_offset < REG_PORT_RX_ADDR_OFFSET + REG_PORT_RX_SIZE:
+            elif (
+                REG_PORT_RX_ADDR_OFFSET <= radio_offset < REG_PORT_RX_ADDR_OFFSET + REG_PORT_RX_SIZE
+            ):
                 # Handle Loopback test register reads (REG_RX_DATA for all channels)
                 if radio_offset == REG_RX_DATA:
                     return self.radio_reg.get(chan, 0)
@@ -243,11 +277,17 @@ class NocBlockRegs:
                     self.log.trace(f"Not implemented: RX register at 0x{addr:08X}")
                     return 0  # Default for unimplemented RX registers
             # Check if this is in the TX register space (0x200-0x2FF)
-            elif REG_PORT_TX_ADDR_OFFSET <= radio_offset < REG_PORT_TX_ADDR_OFFSET + REG_PORT_TX_SIZE:
+            elif (
+                REG_PORT_TX_ADDR_OFFSET <= radio_offset < REG_PORT_TX_ADDR_OFFSET + REG_PORT_TX_SIZE
+            ):
                 self.log.trace(f"Not implemented: TX register at 0x{addr:08X}")
                 return 0
             # Check if this is in the Feature register space (0x300-0x3FF)
-            elif REG_PORT_FEAT_ADDR_OFFSET <= radio_offset < REG_PORT_FEAT_ADDR_OFFSET + REG_PORT_FEAT_SIZE:
+            elif (
+                REG_PORT_FEAT_ADDR_OFFSET
+                <= radio_offset
+                < REG_PORT_FEAT_ADDR_OFFSET + REG_PORT_FEAT_SIZE
+            ):
                 self.log.trace(f"Not implemented: Feature register at 0x{addr:08X}")
                 return 0
             else:
@@ -255,7 +295,7 @@ class NocBlockRegs:
 
     def write(self, addr, value):
         """Write value to a register address.
-        
+
         Assuming upto 2 channels, out of bounds is ignored for now.
         which is RADIO_BASE_ADDR + 2*REG_CHAN_OFFSET
         e.g., 0x1000 + 2*0x400 = 0x1800
@@ -266,7 +306,9 @@ class NocBlockRegs:
             reg = offset % REG_CHAN_OFFSET
             # Handle loopback test register writes (REG_TX_IDLE_VALUE for all channels)
             if reg == REG_TX_IDLE_VALUE:
-                self.log.trace(f"Storing value: 0x{value:08X} to self.radio_reg[{chan}] for data loopback test")
+                self.log.trace(
+                    f"Storing value: 0x{value:08X} to self.radio_reg[{chan}] for data loopback test"
+                )
                 self.radio_reg[chan] = value
             # Route other radio register writes to write_radio()
             else:
@@ -296,7 +338,7 @@ class NocBlockRegs:
             self.get_stream_spec().set_timestamp_lo(value)
         elif reg == REG_RX_CMD:
             if value & (1 << 31) != 0:
-                value = value & ~(1 << 31) # Clear the flag
+                value = value & ~(1 << 31)  # Clear the flag
                 self.get_stream_spec().is_timed = True
             if value == RX_CMD_STOP:
                 sep_block_id = self.resolve_ep_towards_outputs((self.get_radio_port(), chan))
@@ -339,10 +381,12 @@ class NocBlockRegs:
         return (RADIO_MAJOR_COMPAT << 16) | RADIO_MINOR_COMPAT
 
     def read_port_cnt(self):
-        return (self.num_stream_ep & 0x3FF) | \
-            ((self.num_blocks & 0x3FF) << 10) | \
-            ((self.num_xports & 0x3FF) << 20) | \
-            ((1 if self.has_xbar else 0) << 31)
+        return (
+            (self.num_stream_ep & 0x3FF)
+            | ((self.num_blocks & 0x3FF) << 10)
+            | ((self.num_xports & 0x3FF) << 20)
+            | ((1 if self.has_xbar else 0) << 31)
+        )
 
     def read_edge_cnt(self):
         return len(self.adjacency_list)
@@ -351,7 +395,7 @@ class NocBlockRegs:
         return (self.device_type & 0xFFFF) << 16
 
     def read_ctrlport_cnt(self):
-        return (self.num_ctrl_ep & 0x3FF)
+        return self.num_ctrl_ep & 0x3FF
 
     def read_adjacency_list(self, addr):
         offset = addr & 0xFFFF
@@ -359,7 +403,7 @@ class NocBlockRegs:
             self.log.debug("Adjacency List has {} entries".format(len(self.adjacency_list_reg)))
             return len(self.adjacency_list_reg)
         else:
-            assert(offset % 4 == 0)
+            assert offset % 4 == 0
             index = (offset // 4) - 1
             return self.adjacency_list_reg[index]
 
@@ -373,8 +417,7 @@ class NocBlockRegs:
             return self.blocks[block].read_reg(offset)
 
     def read_radio_width(self):
-        return (self.samples_per_cycle & 0xFFFF) | \
-            ((self.sample_width & 0xFFFF) << 16)
+        return (self.samples_per_cycle & 0xFFFF) | ((self.sample_width & 0xFFFF) << 16)
 
     @staticmethod
     def _parse_adjacency_list(adj_list):
@@ -383,12 +426,15 @@ class NocBlockRegs:
 
         See client_zero.cpp:client_zero#_get_adjacency_list()
         """
+
         def pack(blocks):
             src_blk, src_port = blocks[0]
             dst_blk, dst_port = blocks[1]
-            return ((src_blk & 0x3FF) << 22) | \
-                ((src_port & 0x3F) << 16) | \
-                ((dst_blk & 0x3FF) << 6) | \
-                ((dst_port & 0x3F) << 0)
-        return [pack(blocks) for blocks in adj_list]
+            return (
+                ((src_blk & 0x3FF) << 22)
+                | ((src_port & 0x3F) << 16)
+                | ((dst_blk & 0x3FF) << 6)
+                | ((dst_port & 0x3F) << 0)
+            )
 
+        return [pack(blocks) for blocks in adj_list]

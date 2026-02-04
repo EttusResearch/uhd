@@ -8,44 +8,48 @@ One of these objects is instantiated for each Stream Endpoint Node.
 """
 from enum import IntEnum
 
-REG_EPID_SELF = 0x00 # RW
-REG_RESET_AND_FLUSH = 0x04 # W
-REG_OSTRM_CTRL_STATUS = 0x08 # RW
-REG_OSTRM_DST_EPID = 0x0C # W
-REG_OSTRM_FC_FREQ_BYTES_LO = 0x10 # W
-REG_OSTRM_FC_FREQ_BYTES_HI = 0x14 # W
-REG_OSTRM_FC_FREQ_PKTS = 0x18 # W
-REG_OSTRM_FC_HEADROOM = 0x1C # W
-REG_OSTRM_BUFF_CAP_BYTES_LO = 0x20 # R
-REG_OSTRM_BUFF_CAP_BYTES_HI = 0x24 # R
-REG_OSTRM_BUFF_CAP_PKTS = 0x28 # R
-REG_OSTRM_SEQ_ERR_CNT = 0x2C # R
-REG_OSTRM_DATA_ERR_CNT = 0x30 # R
-REG_OSTRM_ROUTE_ERR_CNT = 0x34 # R
-REG_ISTRM_CTRL_STATUS = 0x38 # RW
-REG_OSTRM_THROTTLE = 0x3C # W
+REG_EPID_SELF = 0x00  # RW
+REG_RESET_AND_FLUSH = 0x04  # W
+REG_OSTRM_CTRL_STATUS = 0x08  # RW
+REG_OSTRM_DST_EPID = 0x0C  # W
+REG_OSTRM_FC_FREQ_BYTES_LO = 0x10  # W
+REG_OSTRM_FC_FREQ_BYTES_HI = 0x14  # W
+REG_OSTRM_FC_FREQ_PKTS = 0x18  # W
+REG_OSTRM_FC_HEADROOM = 0x1C  # W
+REG_OSTRM_BUFF_CAP_BYTES_LO = 0x20  # R
+REG_OSTRM_BUFF_CAP_BYTES_HI = 0x24  # R
+REG_OSTRM_BUFF_CAP_PKTS = 0x28  # R
+REG_OSTRM_SEQ_ERR_CNT = 0x2C  # R
+REG_OSTRM_DATA_ERR_CNT = 0x30  # R
+REG_OSTRM_ROUTE_ERR_CNT = 0x34  # R
+REG_ISTRM_CTRL_STATUS = 0x38  # RW
+REG_OSTRM_THROTTLE = 0x3C  # W
 
-RESET_AND_FLUSH_OSTRM = (1 << 0)
-RESET_AND_FLUSH_ISTRM = (1 << 1)
-RESET_AND_FLUSH_CTRL = (1 << 2)
+RESET_AND_FLUSH_OSTRM = 1 << 0
+RESET_AND_FLUSH_ISTRM = 1 << 1
+RESET_AND_FLUSH_CTRL = 1 << 2
 RESET_AND_FLUSH_ALL = 0x7
 
 STRM_STATUS_FC_ENABLED = 0x80000000
 STRM_STATUS_SETUP_ERR = 0x40000000
 STRM_STATUS_SETUP_PENDING = 0x20000000
 
+
 class SwBuff(IntEnum):
     """The size of the elements in a buffer"""
+
     BUFF_U64 = 0
     BUFF_U32 = 1
     BUFF_U16 = 2
     BUFF_U8 = 3
+
 
 class CtrlStatusWord:
     """Represents a Control Status Word
 
     See mgmt_portal:BUILD_CTRL_STATUS_WORD()
     """
+
     def __init__(self, cfg_start, xport_lossy, pyld_buff_fmt, mdata_buff_fmt, byte_swap):
         self.cfg_start = cfg_start
         self.xport_lossy = xport_lossy
@@ -63,10 +67,17 @@ class CtrlStatusWord:
         return cls(cfg_start, xport_lossy, pyld_buff_fmt, mdata_buff_fmt, byte_swap)
 
     def __str__(self):
-        return "CtrlStatusWord{{cfg_start: {}, xport_lossy: {}, " \
-               "pyld_buff_fmt: {}, mdata_buff_fmt: {}, byte_swap: {}}}" \
-               .format(self.cfg_start, self.xport_lossy,
-                       self.pyld_buff_fmt, self.mdata_buff_fmt, self.byte_swap)
+        return (
+            "CtrlStatusWord{{cfg_start: {}, xport_lossy: {}, "
+            "pyld_buff_fmt: {}, mdata_buff_fmt: {}, byte_swap: {}}}".format(
+                self.cfg_start,
+                self.xport_lossy,
+                self.pyld_buff_fmt,
+                self.mdata_buff_fmt,
+                self.byte_swap,
+            )
+        )
+
 
 class StreamEpRegs:
     """Represents a set of registers associated with a stream endpoint
@@ -74,8 +85,17 @@ class StreamEpRegs:
 
     See mgmt_portal.cpp
     """
-    def __init__(self, get_epid, set_epid, set_dst_epid, update_status_out,
-                 update_status_in, cap_pkts, cap_bytes):
+
+    def __init__(
+        self,
+        get_epid,
+        set_epid,
+        set_dst_epid,
+        update_status_out,
+        update_status_in,
+        cap_pkts,
+        cap_bytes,
+    ):
         self.get_epid = get_epid
         self.set_epid = set_epid
         self.set_dst_epid = set_dst_epid
@@ -101,8 +121,9 @@ class StreamEpRegs:
         elif addr == REG_OSTRM_BUFF_CAP_PKTS:
             return self.cap_pkts
         else:
-            raise NotImplementedError("Unable to read addr 0x{:08X} from stream ep regs"
-                                      .format(addr))
+            raise NotImplementedError(
+                "Unable to read addr 0x{:08X} from stream ep regs".format(addr)
+            )
 
     def write(self, addr, val):
         if addr == REG_EPID_SELF:
@@ -119,16 +140,18 @@ class StreamEpRegs:
             self.log.debug("Setting Dest EPID to {}".format(val))
             self.set_dst_epid(val)
         elif REG_OSTRM_FC_FREQ_BYTES_LO <= addr <= REG_OSTRM_FC_HEADROOM:
-            pass # TODO: implement these Flow Control parameters
+            pass  # TODO: implement these Flow Control parameters
         elif addr == REG_ISTRM_CTRL_STATUS:
             status = CtrlStatusWord.parse(val)
             self.log.debug("Setting EPID Input Stream Ctrl Status: {}".format(status))
             new_status = self.update_status_in(status)
             self.in_ctrl_status = new_status if new_status is not None else val
         elif addr == REG_OSTRM_THROTTLE:
-            self.log.trace(f"Setting output stream throttle to {val}. "
-                           "Note: Throttle not implemented.")
-            pass # TODO: implement throttle control
+            self.log.trace(
+                f"Setting output stream throttle to {val}. " "Note: Throttle not implemented."
+            )
+            pass  # TODO: implement throttle control
         else:
-            raise NotImplementedError("Unable to write addr 0x{:08X} from stream ep regs"
-                                      .format(addr))
+            raise NotImplementedError(
+                "Unable to write addr 0x{:08X} from stream ep regs".format(addr)
+            )

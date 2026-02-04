@@ -8,19 +8,19 @@ MPM types
 """
 
 import ctypes
-from multiprocessing import Value
-from multiprocessing import Array
-from multiprocessing import RLock
+from multiprocessing import Array, RLock, Value
 
 MPM_RPC_PORT = 49601
 MPM_DISCOVERY_PORT = 49600
 MPM_DISCOVERY_MESSAGE = "MPM-DISC"
+
 
 # pylint: disable=too-few-public-methods
 class SharedState:
     """
     Holds information which should be shared between processes.
     """
+
     def __init__(self):
         self.lock = RLock()
         self.claim_status = Value(ctypes.c_bool, False, lock=self.lock)

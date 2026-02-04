@@ -8,6 +8,7 @@ sysfs thermal sensors API
 
 import pyudev
 
+
 def read_sysfs_sensors_value(sensor_type, data_probe, subsystem, attribute):
     """
     This function will return a list of all the float value of
@@ -22,12 +23,16 @@ def read_sysfs_sensors_value(sensor_type, data_probe, subsystem, attribute):
     subsystem -- of the thermal sensor
     attribute -- matching attribute for the sensor e.g. 'type', 'name'
     """
-    reading_sensors = [float(x.attributes.asstring(data_probe)) for x in pyudev.Context()
-                       .list_devices(subsystem=subsystem)
-                       .match_attribute(attribute, sensor_type)]
+    reading_sensors = [
+        float(x.attributes.asstring(data_probe))
+        for x in pyudev.Context()
+        .list_devices(subsystem=subsystem)
+        .match_attribute(attribute, sensor_type)
+    ]
     return reading_sensors
 
-def read_thermal_sensors_value(sensor_type, data_probe, subsystem='thermal', attribute='type'):
+
+def read_thermal_sensors_value(sensor_type, data_probe, subsystem="thermal", attribute="type"):
     """
     This function will return a list of all the float value of
     the thermal sensor subsystem = 'thermal' and type = sensor_type
@@ -41,7 +46,8 @@ def read_thermal_sensors_value(sensor_type, data_probe, subsystem='thermal', att
     """
     return read_sysfs_sensors_value(sensor_type, data_probe, subsystem, attribute)
 
-def read_thermal_sensor_value(sensor_type, data_probe, subsystem='thermal', attribute='type'):
+
+def read_thermal_sensor_value(sensor_type, data_probe, subsystem="thermal", attribute="type"):
     """
     This function will return the float value of the thermal sensor
     which is under thermal subsystem.

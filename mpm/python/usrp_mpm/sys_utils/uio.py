@@ -8,18 +8,19 @@ Access to UIO mapped memory.
 """
 
 import os
-from contextlib import contextmanager
 from builtins import object
+from contextlib import contextmanager
+
 import pyudev
-from usrp_mpm.mpmlog import get_logger
 from usrp_mpm import __simulated__
+from usrp_mpm.mpmlog import get_logger
 
 # Conditionally import C++ library - not available in simulator mode
 if not __simulated__:
     import usrp_mpm.libpyusrp_periphs as lib
 
-UIO_SYSFS_BASE_DIR = '/sys/class/uio'
-UIO_DEV_BASE_DIR = '/dev'
+UIO_SYSFS_BASE_DIR = "/sys/class/uio"
+UIO_DEV_BASE_DIR = "/dev"
 
 
 @contextmanager
@@ -41,8 +42,10 @@ def get_all_uio_devs():
     """
     try:
         context = pyudev.Context()
-        paths = [os.path.split(device.device_node)[-1]
-                 for device in context.list_devices(subsystem="uio")]
+        paths = [
+            os.path.split(device.device_node)[-1]
+            for device in context.list_devices(subsystem="uio")
+        ]
         return paths
     except OSError:
         # Typically means UIO devices
@@ -59,9 +62,7 @@ def get_uio_map_info(uio_dev, map_num):
     Numbers are casted to numbers automatically. Strings remain strings.
     """
     map_info = {}
-    map_info_path = os.path.join(
-        UIO_SYSFS_BASE_DIR, uio_dev, 'maps', 'map{0}'.format(map_num)
-    )
+    map_info_path = os.path.join(UIO_SYSFS_BASE_DIR, uio_dev, "maps", "map{0}".format(map_num))
     for info_file in os.listdir(map_info_path):
         with open(os.path.join(map_info_path, info_file), "r") as f:
             map_info_value = f.read().strip()
@@ -81,12 +82,12 @@ def find_uio_device(label, logger=None):
     """
     uio_devices = get_all_uio_devs()
     if logger:
-        logger.trace("Found the following UIO devices: `{0}'".format(','.join(uio_devices)))
+        logger.trace("Found the following UIO devices: `{0}'".format(",".join(uio_devices)))
     for uio_device in uio_devices:
         map0_info = get_uio_map_info(uio_device, 0)
         if logger:
             logger.trace("{0} has map info: {1}".format(uio_device, map0_info))
-        if map0_info.get('name') == label:
+        if map0_info.get("name") == label:
             if logger:
                 logger.trace("Device matches label: `{0}'".format(uio_device))
             return os.path.join(UIO_DEV_BASE_DIR, uio_device), map0_info
@@ -100,6 +101,7 @@ class _UIOStub:
     Stub implementation for UIO when C++ library is not available (simulator mode).
     Provides no-op implementations of the UIO interface to prevent crashes.
     """
+
     def __init__(self, path, logger):
         self.path = path
         self.log = logger
@@ -165,8 +167,9 @@ class UIO(object):
               This is usually automatically determined. No need to set it.
               Unless you really know what you're doing.
     """
+
     def __init__(self, label=None, path=None, length=None, read_only=True, offset=None):
-        self.log = get_logger('UIO')
+        self.log = get_logger("UIO")
         if label is None:
             self._path = path
             self.log.trace("Using UIO device `{0}'".format(path))
@@ -182,16 +185,19 @@ class UIO(object):
             self.log.error("Could not find a UIO device for label {0}".format(label))
             raise RuntimeError("Could not find a UIO device for label {0}".format(label))
         # TODO If we ever support multiple maps, check if this is correct...
-        offset = offset or map_info['offset']
-        assert offset == 0 # ...and then remove this line
-        length = length or map_info['size']
-        self.log.trace("UIO device is being opened read-{0}.".format(
-            "only" if read_only else "write"))
+        offset = offset or map_info["offset"]
+        assert offset == 0  # ...and then remove this line
+        length = length or map_info["size"]
+        self.log.trace(
+            "UIO device is being opened read-{0}.".format("only" if read_only else "write")
+        )
         self._read_only = read_only
         # Our UIO objects are managed in C++ land, which gives us more granular control over
         # opening and closing. In simulator mode, use a stub implementation.
         if not __simulated__:
-            self._uio = lib.types.mmap_regs_iface(self._path, length, offset, self._read_only, False)
+            self._uio = lib.types.mmap_regs_iface(
+                self._path, length, offset, self._read_only, False
+            )
         else:
             # Simulator mode: create a stub that won't crash but will log warnings
             self._uio = _UIOStub(self._path, self.log)

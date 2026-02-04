@@ -9,19 +9,21 @@ LMK03328 parent driver class
 
 from usrp_mpm.mpmlog import get_logger
 
-class LMK03328():
+
+class LMK03328:
     """
     Generic driver class for LMK03328 access.
     """
+
     LMK_CHIP_ID = 0x32
 
     def __init__(self, regs_iface, parent_log=None):
-        self.log = \
-            parent_log.getChild("LMK03328") if parent_log is not None \
-            else get_logger("LMK03328")
+        self.log = (
+            parent_log.getChild("LMK03328") if parent_log is not None else get_logger("LMK03328")
+        )
         self.regs_iface = regs_iface
-        assert hasattr(self.regs_iface, 'peek8')
-        assert hasattr(self.regs_iface, 'poke8')
+        assert hasattr(self.regs_iface, "peek8")
+        assert hasattr(self.regs_iface, "poke8")
         self.poke8 = regs_iface.poke8
         self.peek8 = regs_iface.peek8
 
@@ -56,8 +58,7 @@ class LMK03328():
         Returns True if the specified PLL is locked, False otherwise.
         """
         if pll_num not in (1, 2):
-            self.log.warning("PLL{} is not a valid PLL"
-                             .format(pll_num))
+            self.log.warning("PLL{} is not a valid PLL".format(pll_num))
             return False
         pll_lock_status = self.peek8(13)
 
@@ -65,8 +66,9 @@ class LMK03328():
         pll_lock_mask = 0xC0 if pll_num == 1 else 0x18
 
         if (pll_lock_status & pll_lock_mask) != 0x0:
-            self.log.debug("PLL{} reporting unlocked... Status: 0x{:x}"
-                           .format(pll_num, pll_lock_status))
+            self.log.debug(
+                "PLL{} reporting unlocked... Status: 0x{:x}".format(pll_num, pll_lock_status)
+            )
             return False
         return True
 

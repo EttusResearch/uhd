@@ -9,12 +9,15 @@ Types and values relevant for clocking on the X4xx USRPs.
 
 from enum import Enum
 
+
 class Spll1Vco(Enum):
     """
     VCO options for the sample PLL's (LMK04832) PLL1 VCOs.
     """
+
     VCO100MHz = 0
     VCO122_88MHz = 1
+
 
 class RpllRefSel(Enum):
     """
@@ -26,6 +29,7 @@ class RpllRefSel(Enum):
     Secondary reference (SECREF) is connected to a reliable, fixed 100 MHz
     crystal.
     """
+
     PRIMARY = 1
     SECONDARY = 2
 
@@ -37,8 +41,9 @@ class RpllBrcSrcSel(Enum):
     BYPASS is only a valid option if the primary reference is already the
     desired BRC rate.
     """
-    BYPASS = 'bypass'
-    PLL = 'PLL'
+
+    BYPASS = "bypass"
+    PLL = "PLL"
 
 
 class BrcSource(Enum):
@@ -47,5 +52,6 @@ class BrcSource(Enum):
     clocking AUX board, or from the reference PLL. The hardware has no other
     options available.
     """
-    CLK_AUX = 'clk_aux'
-    RPLL = 'rpll'
+
+    CLK_AUX = "clk_aux"
+    RPLL = "rpll"

@@ -11,38 +11,43 @@ configuration by using the cmake flag -DMPM_DEVICE=sim
 """
 
 from pyroute2 import IPRoute
-from usrp_mpm.xports import XportMgrUDP
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.rpc_utils import no_claim
 from usrp_mpm.periph_manager import PeriphManagerBase
-from usrp_mpm.simulator.sim_dboard import registry as dboards
+from usrp_mpm.rpc_utils import no_claim
 from usrp_mpm.simulator.chdr_endpoint import ChdrEndpoint
 from usrp_mpm.simulator.config import Config
+from usrp_mpm.simulator.sim_dboard import registry as dboards
+from usrp_mpm.xports import XportMgrUDP
 
 CLOCK_SOURCE_INTERNAL = "internal"
 
 E320_DBOARD_SLOT_IDX = 0
+
 
 class SimXportMgrUDP(XportMgrUDP):
     """This is an adaptor class for the normal XportMgrUDP
     In radios, the interface names are hardcoded. Since we are on a
     desktop computer, we generate the names at runtime.
     """
+
     def __init__(self, log, args, eth_dispatcher_cls):
         with IPRoute() as ipr:
             self.iface_config = {
-                link.get_attr('IFLA_IFNAME'): {
-                    'label': link.get_attr('IFLA_IFNAME'),
-                    'type': 'forward'
-                } for link in ipr.get_links()
+                link.get_attr("IFLA_IFNAME"): {
+                    "label": link.get_attr("IFLA_IFNAME"),
+                    "type": "forward",
+                }
+                for link in ipr.get_links()
             }
         super().__init__(log, args, eth_dispatcher_cls)
+
 
 class SimEthDispatcher:
     """This is the hardware specific part of the normal XportMgrUDP
     that we have to simulate. We get the ipv4 addr with IPRoute
     instead of registers
     """
+
     DEFAULT_VITA_PORT = (49153, 49154)
     LOG = None
 
@@ -62,14 +67,18 @@ class SimEthDispatcher:
                 self.log.warning(f"Cannot get link info for interface {self.if_name}")
                 return
             link_info = link_list[0]
-            real_addr = link_info.get_attr('IFLA_ADDRESS')
+            real_addr = link_info.get_attr("IFLA_ADDRESS")
             if addr != real_addr:
-                self.log.warning(f"Cannot change ip address on simulator! Requested: {addr}, Actual: {real_addr}")
+                self.log.warning(
+                    f"Cannot change ip address on simulator! Requested: {addr}, Actual: {real_addr}"
+                )
+
 
 class sim(PeriphManagerBase):
     """This is a periph manager that is designed to run on a regular
     computer rather than the arm core on an SDR
     """
+
     #########################################################################
     # Overridables
     #########################################################################
@@ -82,8 +91,8 @@ class sim(PeriphManagerBase):
         # Logger is initialized in super().__init__ but we need config values
         # before we call that
         config_log = get_logger("PeriphConfig")
-        if 'config' in args:
-            config_path = args['config']
+        if "config" in args:
+            config_path = args["config"]
             config_log.info("Loading config from {}".format(config_path))
             self.config = Config.from_path(config_log, config_path)
         else:
@@ -92,9 +101,11 @@ class sim(PeriphManagerBase):
 
         self.device_id = 1
         self.description = self.config.hardware.description
-        self.mboard_info = {"type": self.config.hardware.uhd_device_type,
-                            "product": self.config.hardware.product,
-                            "simulated": "True"}
+        self.mboard_info = {
+            "type": self.config.hardware.uhd_device_type,
+            "product": self.config.hardware.product,
+            "simulated": "True",
+        }
         self.pids = {int(self.config.hardware.pid): self.config.hardware.product}
         # This uses the description, mboard_info, and pids
         super().__init__()
@@ -105,7 +116,7 @@ class sim(PeriphManagerBase):
         # we just crash. No use missing an error when testing.
         self._init_peripherals(args)
         self.init_dboards(args)
-        if not args.get('skip_boot_init', False):
+        if not args.get("skip_boot_init", False):
             self.init(args)
 
     def _simulator_sample_rate(self, freq):
@@ -117,11 +128,10 @@ class sim(PeriphManagerBase):
         Hard-code our product map
         """
         # Add the default PeriphManagerBase information first
-        device_info = super().generate_device_info(
-            eeprom_md, mboard_info, dboard_infos)
+        device_info = super().generate_device_info(eeprom_md, mboard_info, dboard_infos)
         # Then add device-specific information
-        mb_pid = eeprom_md.get('pid')
-        device_info['product'] = self.pids.get(mb_pid, 'unknown')
+        mb_pid = eeprom_md.get("pid")
+        device_info["product"] = self.pids.get(mb_pid, "unknown")
         return device_info
 
     def _read_mboard_eeprom(self):
@@ -130,14 +140,15 @@ class sim(PeriphManagerBase):
         """
         self._eeprom_head = self._generate_eeprom_head()
 
-        self.log.trace("Found EEPROM metadata: '{}'"
-                       .format(str(self._eeprom_head)))
+        self.log.trace("Found EEPROM metadata: '{}'".format(str(self._eeprom_head)))
         return (self._eeprom_head, None)
 
     def _generate_eeprom_head(self):
-        return {'pid': self.config.hardware.pid,
-                'rev': 0,
-                'serial': self.config.hardware.serial_num}
+        return {
+            "pid": self.config.hardware.pid,
+            "rev": 0,
+            "serial": self.config.hardware.serial_num,
+        }
 
     def _init_peripherals(self, args):
         """
@@ -148,14 +159,13 @@ class sim(PeriphManagerBase):
         likely.
         """
         # Sanity checks
-        assert self.mboard_info.get('product') in self.pids.values(), \
-            "Device product could not be determined!"
+        assert (
+            self.mboard_info.get("product") in self.pids.values()
+        ), "Device product could not be determined!"
         # Init peripherals
 
         # Init CHDR transports
-        self._xport_mgrs = {
-            'udp': SimXportMgrUDP(self.log, args, SimEthDispatcher)
-        }
+        self._xport_mgrs = {"udp": SimXportMgrUDP(self.log, args, SimEthDispatcher)}
 
         # Init complete.
         self.log.debug("Device info: {}".format(self.device_info))
@@ -177,7 +187,7 @@ class sim(PeriphManagerBase):
         """
         if not self._device_initialized:
             return {}
-        device_info = self._xport_mgrs['udp'].get_xport_info()
+        device_info = self._xport_mgrs["udp"].get_xport_info()
         self.log.warn("get_device_info_dyn() - FPGA functionality not implemented yet")
         return device_info
 
@@ -235,8 +245,9 @@ class sim(PeriphManagerBase):
         - link_rate (bps of the link, e.g. 10e9 for 10GigE)
         """
         if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: '{}'."
-                             .format(xport_type))
+            self.log.warning(
+                "Can't get link options for unknown link type: '{}'.".format(xport_type)
+            )
             return []
         return self._xport_mgrs[xport_type].get_chdr_link_options()
 
@@ -258,8 +269,11 @@ class sim(PeriphManagerBase):
         ticks: Time in ticks
         next_pps: If True, set time at next PPS. Otherwise, set time now.
         """
-        self.log.debug("Setting timekeeper time (tx_idx:{}, ticks: {}, next_pps: {})"
-                       .format(tk_idx, ticks, next_pps))
+        self.log.debug(
+            "Setting timekeeper time (tx_idx:{}, ticks: {}, next_pps: {})".format(
+                tk_idx, ticks, next_pps
+            )
+        )
 
     def get_timekeeper_time(self, tk_idx, last_pps):
         """
@@ -279,49 +293,44 @@ class sim(PeriphManagerBase):
         tk_idx: Index of timekeeper
         period_ns: Period in nanoseconds
         """
-        self.log.debug("Setting tick period (tk_idx: {}, period_ns: {})"
-                       .format(tk_idx, period_ns))
+        self.log.debug("Setting tick period (tk_idx: {}, period_ns: {})".format(tk_idx, period_ns))
 
     def get_clocks(self):
         """
         Gets the RFNoC-related clocks present in the FPGA design
         """
         return [
+            {"name": "radio_clk", "freq": str(122.88e6), "mutable": "true"},
             {
-                'name': 'radio_clk',
-                'freq': str(122.88e6),
-                'mutable': 'true'
+                "name": "bus_clk",
+                "freq": str(200e6),
             },
             {
-                'name': 'bus_clk',
-                'freq': str(200e6),
+                "name": "ctrl_clk",
+                "freq": str(40e6),
             },
-            {
-                'name': 'ctrl_clk',
-                'freq': str(40e6),
-            }
         ]
 
     def get_time_sources(self):
-        " Returns list of valid time sources "
+        "Returns list of valid time sources"
         return (CLOCK_SOURCE_INTERNAL,)
 
     def get_time_source(self):
-        " Returns the current time source "
+        "Returns the current time source"
         return CLOCK_SOURCE_INTERNAL
 
     def get_clock_sources(self):
-        " Lists all available clock sources. "
+        "Lists all available clock sources."
         return (CLOCK_SOURCE_INTERNAL,)
 
     def get_clock_source(self):
-        " Returns the current Clock Source "
+        "Returns the current Clock Source"
         return CLOCK_SOURCE_INTERNAL
 
     def set_clock_source(self, source):
-        " No-op which sets the clock source on a real radio "
+        "No-op which sets the clock source on a real radio"
         self.log.debug("Setting clock source to {}".format(source))
 
     def set_channel_mode(self, channel_mode):
-        " No-op which sets the channel mode on a real radio "
+        "No-op which sets the channel mode on a real radio"
         self.log.debug("Using channel mode {}".format(channel_mode))

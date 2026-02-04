@@ -11,6 +11,7 @@ from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.gpio import Gpio
 
+
 class DebugDboardSignalPath:
     def __init__(self, slot_idx, path, adc_indexes, dac_indexes, loopback):
         self.log = get_logger("X4xxDebugDboard-{}-path-{}".format(slot_idx, path))
@@ -55,6 +56,7 @@ class X4xxDebugDboard(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the X4xx debug dboard
     """
+
     #########################################################################
     # Overridables
     #
@@ -66,21 +68,20 @@ class X4xxDebugDboard(DboardManagerBase):
     def __init__(self, slot_idx, **kwargs):
         DboardManagerBase.__init__(self, slot_idx, **kwargs)
         self.log = get_logger("X4xxDebugDboard-{}".format(slot_idx))
-        self.log.trace("Initializing X4xxDebug daughterboard, slot index %d",
-                       self.slot_idx)
+        self.log.trace("Initializing X4xxDebug daughterboard, slot index %d", self.slot_idx)
 
         # Interface with MB HW
-        if 'db_iface' not in kwargs:
+        if "db_iface" not in kwargs:
             self.log.error("Required DB Iface was not provided!")
             raise RuntimeError("Required DB Iface was not provided!")
-        self.db_iface = kwargs['db_iface']
+        self.db_iface = kwargs["db_iface"]
 
         # Power on the card
         self.db_iface.enable_daughterboard(enable=True)
         if not self.db_iface.check_enable_daughterboard():
             self.db_iface.enable_daughterboard(enable=False)
-            self.log.error('Debug dboard {} power up failed'.format(self.slot_idx))
-            raise RuntimeError('Debug dboard {} power up failed'.format(self.slot_idx))
+            self.log.error("Debug dboard {} power up failed".format(self.slot_idx))
+            raise RuntimeError("Debug dboard {} power up failed".format(self.slot_idx))
 
         self._paths = {
             "a": DebugDboardSignalPath(
@@ -94,7 +95,7 @@ class X4xxDebugDboard(DboardManagerBase):
                     "dac0": 1,
                     "dac2": 0,
                 },
-                1  # TRXA_CTRL=1 enables loopback
+                1,  # TRXA_CTRL=1 enables loopback
             ),
             "b": DebugDboardSignalPath(
                 slot_idx,
@@ -107,22 +108,23 @@ class X4xxDebugDboard(DboardManagerBase):
                     "dac3": 1,
                     "dac1": 0,
                 },
-                0  # TRXB_CTRL=0 enables loopback
+                0,  # TRXB_CTRL=0 enables loopback
             ),
         }
 
-
         # TODO: Configure the correct RFDC settings for this board
-        #if not self.db_iface.disable_mixer():
+        # if not self.db_iface.disable_mixer():
         #    raise RuntimeError("Received an error disabling the mixer for slot_idx={}".format(slot_idx))
 
     def init(self, args):
         """
         Execute necessary init dance to bring up dboard
         """
-        self.log.debug("init() called with args `{}'".format(
-            ",".join(['{}={}'.format(x, args[x]) for x in args])
-        ))
+        self.log.debug(
+            "init() called with args `{}'".format(
+                ",".join(["{}={}".format(x, args[x]) for x in args])
+            )
+        )
         self.config_path("a", "adc0", "dac0", 0)
         self.config_path("b", "adc1", "dac1", 0)
         return True

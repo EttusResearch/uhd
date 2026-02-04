@@ -5,8 +5,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-import socket
 import binascii
+import socket
 
 UDP_IP = "0.0.0.0"
 UDP_PORT = 5000

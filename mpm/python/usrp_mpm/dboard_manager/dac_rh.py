@@ -9,7 +9,9 @@ DAC37J82 driver for use with Rhodium
 
 import time
 from builtins import object
+
 from ..mpmlog import get_logger
+
 
 class DAC37J82Rh(object):
     """
@@ -17,15 +19,18 @@ class DAC37J82Rh(object):
     """
 
     DAC_VENDOR_ID = 0b01
-    DAC_VERSION_ID = 0b010 # Version used in Rhodium Rev. A
+    DAC_VERSION_ID = 0b010  # Version used in Rhodium Rev. A
 
     def __init__(self, slot_idx, regs_iface, parent_log=None):
-        self.log = parent_log.getChild("DAC37J82") if parent_log is not None \
+        self.log = (
+            parent_log.getChild("DAC37J82")
+            if parent_log is not None
             else get_logger("DAC37J82-{}".format(slot_idx))
+        )
         self.slot_idx = slot_idx
         self.regs = regs_iface
-        assert hasattr(self.regs, 'peek16')
-        assert hasattr(self.regs, 'poke16')
+        assert hasattr(self.regs, "peek16")
+        assert hasattr(self.regs, "poke16")
 
         def _verify_chip_id():
             chip_id = self.regs.peek16(0x7F) & 0x001F
@@ -55,7 +60,6 @@ class DAC37J82Rh(object):
 
         self.init()
 
-
     def tx_enable(self, enable=False):
         """
         Enable/disable the analog TX output.
@@ -63,7 +67,6 @@ class DAC37J82Rh(object):
         enable_bit = 0b1 if enable else 0b0
         prev_val = self.regs.peek16(0x03)
         self.regs.poke16(0x03, prev_val | enable_bit)
-
 
     def pokes16(self, addr_vals):
         """
@@ -73,36 +76,35 @@ class DAC37J82Rh(object):
         for addr, val in addr_vals:
             self.regs.poke16(addr, val)
 
-
     def init(self):
         """
         Basic init that disables the analog output.
         """
-        self.tx_enable(False) # Set TXENABLE low at the DAC
+        self.tx_enable(False)  # Set TXENABLE low at the DAC
         self.log.trace("DAC's Analog TX output is disabled.")
 
     def reset(self):
         """
         Reset the DAC state
         """
-        self.regs.poke16(0x02, 0x2002) # Deassert the reset for the SIF registers
-        self.regs.poke16(0x02, 0x2003) # Assert the reset for the SIF registers
+        self.regs.poke16(0x02, 0x2002)  # Deassert the reset for the SIF registers
+        self.regs.poke16(0x02, 0x2003)  # Assert the reset for the SIF registers
 
     def config(self):
         """
         Check the clock status, and write configuration values!
         """
+
         def _check_pll_lock():
             pll_ool_alarms = self.regs.peek16(0x6C)
             if (pll_ool_alarms & 0x0008) != 0x0000:
-                self.log.warning("PLL reporting unlocked... Status: 0x{:x}"
-                                 .format(pll_ool_alarms))
+                self.log.warning("PLL reporting unlocked... Status: 0x{:x}".format(pll_ool_alarms))
                 return False
             return True
 
         self.log.trace("Reset DAC & Clear alarm bits")
         self.reset()
-        self.regs.poke16(0x6C, 0x0000) # Clear alarm bits for PLLs
+        self.regs.poke16(0x6C, 0x0000)  # Clear alarm bits for PLLs
 
         self.log.trace("DAC Configuration.")
         # fmt: off
@@ -218,7 +220,7 @@ class DAC37J82Rh(object):
         for _ in range(6):
             time.sleep(0.001)
             # Clear stickies possibly?
-            self.regs.poke16(0x6C, 0x0000) # Clear alarm bits for PLLs
+            self.regs.poke16(0x6C, 0x0000)  # Clear alarm bits for PLLs
             if _check_pll_lock():
                 locked = True
                 self.log.info("DAC PLL Locked!")
@@ -226,49 +228,51 @@ class DAC37J82Rh(object):
         if not locked:
             raise RuntimeError("DAC PLL did not lock! Check the logs for details.")
 
-
     def enable_sysref_capture(self, enabled=False):
         """
         Enable the SYSREF capture block, and enable divider's reset.
         """
-        self.log.trace("%s DAC SYSREF capture...",
-                       {True: 'Enabling', False: 'Disabling'}[enabled])
+        self.log.trace("%s DAC SYSREF capture...", {True: "Enabling", False: "Disabling"}[enabled])
         cdrvser_sysref_mode = 0b001 if enabled else 0b000
         sysref_mode_link0 = 0b001 if enabled else 0b000
-        self.regs.poke16(0x24, cdrvser_sysref_mode << 4) # Enable next SYSREF to reset the clock dividers.
-        self.regs.poke16(0x5C, sysref_mode_link0 << 0)   # Enable next SYSREF pulse capture for link 0.
-        self.log.trace("DAC SYSREF capture %s." % {True: 'enabled', False: 'disabled'}[enabled])
-
+        self.regs.poke16(
+            0x24, cdrvser_sysref_mode << 4
+        )  # Enable next SYSREF to reset the clock dividers.
+        self.regs.poke16(
+            0x5C, sysref_mode_link0 << 0
+        )  # Enable next SYSREF pulse capture for link 0.
+        self.log.trace("DAC SYSREF capture %s." % {True: "enabled", False: "disabled"}[enabled])
 
     def init_deframer(self):
         """
         Initialize the DAC's framer.
         """
         self.log.trace("Initializing framer...")
-        self.pokes16((
-            (0x4A, 0x0F3F), # config74: Deassert JESD204B block reset.
-            (0x4A, 0x0F21), # config74: Set JESD204B to exit init state.
-        ))
+        self.pokes16(
+            (
+                (0x4A, 0x0F3F),  # config74: Deassert JESD204B block reset.
+                (0x4A, 0x0F21),  # config74: Set JESD204B to exit init state.
+            )
+        )
         self.log.trace("DAC deframer initialized.")
-
 
     def check_deframer_status(self):
         """
         This function checks the status of the framer by checking alarms.
         """
         ALARM_ERRORS_DESCRIPTION = {
-            15 : "Multiframe alignment error",
-            14 : "Frame alignment error",
-            13 : "Link configuration error",
-            12 : "Elastic buffer overflow",
-            11 : "Elastic buffer match error",
-            10 : "Code synchronization error",
-            9  : "8b/10b not-in-table code error",
-            8  : "8b/10b disparity error",
-            3  : "FIFO write_error",
-            2  : "FIFO write_full",
-            1  : "FIFO read_error",
-            0  : "FIFO read_empty"
+            15: "Multiframe alignment error",
+            14: "Frame alignment error",
+            13: "Link configuration error",
+            12: "Elastic buffer overflow",
+            11: "Elastic buffer match error",
+            10: "Code synchronization error",
+            9: "8b/10b not-in-table code error",
+            8: "8b/10b disparity error",
+            3: "FIFO write_error",
+            2: "FIFO write_full",
+            1: "FIFO read_error",
+            0: "FIFO read_empty",
         }
 
         self.log.trace("Checking DAC's deframer status.")
@@ -296,23 +300,26 @@ class DAC37J82Rh(object):
                     errors_ary[error].append(lane)
             if len(errors_ary[error]) > 0:
                 enable_analog_output = False
-                self.log.warning(ALARM_ERRORS_DESCRIPTION[error] +
-                                 " in lane(s): " + ' '.join(map(str, errors_ary[error])))
+                self.log.warning(
+                    ALARM_ERRORS_DESCRIPTION[error]
+                    + " in lane(s): "
+                    + " ".join(map(str, errors_ary[error]))
+                )
 
         self.tx_enable(enable_analog_output)
-        self.log.debug("%s analog TX output.",
-                       {True: 'Enabling', False: 'Disabling'}[enable_analog_output])
+        self.log.debug(
+            "%s analog TX output.", {True: "Enabling", False: "Disabling"}[enable_analog_output]
+        )
         return enable_analog_output
 
-
-    def test_mode(self, mode='PRBS-31', lane=0):
+    def test_mode(self, mode="PRBS-31", lane=0):
         """
         This method enables the DAC's test mode to verify the SerDes.
         Users should monitor the ALARM pin to see the results of the test.
         If the test is failing, ALARM will be high (or toggling if marginal).
         If the test is passing, the ALARM will be low.
         """
-        MODE_VAL = {'OFF': 0x0, 'PRBS-7': 0x2, 'PRBS-23': 0x3, 'PRBS-31': 0x4}
+        MODE_VAL = {"OFF": 0x0, "PRBS-7": 0x2, "PRBS-23": 0x3, "PRBS-31": 0x4}
         assert mode.upper() in MODE_VAL
         assert lane in range(0, 8)
         self.log.debug("Setting test mode for lane {} at the DAC: {}.".format(lane, mode))
@@ -321,7 +328,7 @@ class DAC37J82Rh(object):
         # 1. config74, set bits 4:0 to 0x1E to disable JESD clock.
         addr = 0x4A
         rb = self.regs.peek16(addr)
-        data_w = (rb & ~0x001F) | 0x001E if mode != 'OFF' else 0x0F3E
+        data_w = (rb & ~0x001F) | 0x001E if mode != "OFF" else 0x0F3E
         self.log.trace("Writing register {:02X} with {:04X}".format(addr, data_w))
         self.regs.poke16(addr, data_w)
         # 2. config61, set bits 14:12 to 0x2 to enable the 7-bit PRBS test pattern; or
@@ -336,7 +343,7 @@ class DAC37J82Rh(object):
         # 4. config27, set bits 14:12 to the lane to be tested (0 through 7).
         addr = 0x1B
         rb = self.regs.peek16(addr)
-        data_w = (rb & ~0x7F00) | (0x3 << 8) | (lane << 12) if mode != 'OFF' else 0x0000
+        data_w = (rb & ~0x7F00) | (0x3 << 8) | (lane << 12) if mode != "OFF" else 0x0000
         self.log.trace("Writing register {:02X} with {:04X}".format(addr, data_w))
         self.regs.poke16(addr, data_w)
         # 5. config62, make sure bits 12:11 are set to 0x0 to disable character alignment.

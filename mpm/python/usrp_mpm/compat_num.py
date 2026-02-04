@@ -7,6 +7,7 @@
 Provides class CompatNumber, a convenience class for handling compat numbers.
 """
 
+
 class CompatNumber:
     """
     Utility class for handling compat numbers.
@@ -37,7 +38,7 @@ class CompatNumber:
             self.major = major[0]
             self.minor = major[1]
         elif minor is None:
-            major, minor = str(float(major)).split('.', 1)
+            major, minor = str(float(major)).split(".", 1)
             self.major, self.minor = int(major), int(minor)
         else:
             if not isinstance(major, int) or not isinstance(minor, int):
@@ -59,20 +60,19 @@ class CompatNumber:
     def __gt__(self, rhs):
         if not isinstance(rhs, CompatNumber):
             return self > CompatNumber(rhs)
-        return self.major > rhs.major or \
-                (self.major == rhs.major and self.minor > rhs.minor)
+        return self.major > rhs.major or (self.major == rhs.major and self.minor > rhs.minor)
 
     def __lt__(self, rhs):
         if not isinstance(rhs, CompatNumber):
             return self < CompatNumber(rhs)
-        return self.major < rhs.major or \
-                (self.major == rhs.major and self.minor < rhs.minor)
+        return self.major < rhs.major or (self.major == rhs.major and self.minor < rhs.minor)
 
     def __ge__(self, rhs):
         return self == rhs or self > rhs
 
     def __le__(self, rhs):
         return self == rhs or self < rhs
+
 
 if __name__ == "__main__":
     c = CompatNumber(4.3)

@@ -10,10 +10,12 @@ dboard base implementation module
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.mpmutils import to_native_str
 
+
 class DboardManagerBase:
     """
     Base class for daughterboard controls
     """
+
     #########################################################################
     # Overridables
     #
@@ -24,7 +26,7 @@ class DboardManagerBase:
     pids = []
     # tuple of id and name of the first revision,
     # id and name of revisions are consecutive (2, B), (3, C), ...
-    first_revision = (1, 'A')
+    first_revision = (1, "A")
     # See PeriphManager.mboard_sensor_callback_map for a description.
     rx_sensor_callback_map = {}
     # See PeriphManager.mboard_sensor_callback_map for a description.
@@ -41,23 +43,19 @@ class DboardManagerBase:
     ### End of overridables #################################################
 
     def __init__(self, slot_idx, **kwargs):
-        self.log = get_logger('dboardManager')
+        self.log = get_logger("dboardManager")
         self.slot_idx = slot_idx
-        if 'eeprom_md' not in kwargs:
+        if "eeprom_md" not in kwargs:
             self.log.debug("No EEPROM metadata given!")
         # In C++, we can only handle dicts if all the values are of the
         # same type. So we must convert them all to strings here:
         self.device_info = {
-            key: to_native_str(kwargs.get('eeprom_md', {}).get(key, 'n/a'))
-            for key in ('pid', 'serial', 'rev', 'eeprom_version')
+            key: to_native_str(kwargs.get("eeprom_md", {}).get(key, "n/a"))
+            for key in ("pid", "serial", "rev", "eeprom_version")
         }
         self.log.trace("Dboard device info: `{}'".format(self.device_info))
-        self._spi_nodes = self._init_spi_nodes(
-            kwargs.get('spi_nodes', []),
-            self.spi_chipselect
-        )
+        self._spi_nodes = self._init_spi_nodes(kwargs.get("spi_nodes", []), self.spi_chipselect)
         self.log.debug("spidev device node map: {}".format(self._spi_nodes))
-
 
     def _init_spi_nodes(self, spi_devices, chip_select_map):
         """
@@ -67,9 +65,12 @@ class DboardManagerBase:
         that enough nodes are available.
         """
         if len(spi_devices) < len(set(chip_select_map.values())):
-            self.log.error("Expected {0} spi devices, found {1}".format(
-                len(set(chip_select_map.values())), len(spi_devices),
-            ))
+            self.log.error(
+                "Expected {0} spi devices, found {1}".format(
+                    len(set(chip_select_map.values())),
+                    len(spi_devices),
+                )
+            )
             self.log.error("Not enough SPI devices found.")
             return {}
         return {
@@ -115,7 +116,7 @@ class DboardManagerBase:
         -1 if no revision can be found or revision is not an integer
         """
         try:
-            return int(self.device_info.get('rev', '-1'))
+            return int(self.device_info.get("rev", "-1"))
         except ValueError:
             return -1
 
@@ -123,9 +124,7 @@ class DboardManagerBase:
         """
         Converts revision number to string.
         """
-        return chr(ord(self.first_revision[1])
-                   + self.get_revision()
-                   - self.first_revision[0])
+        return chr(ord(self.first_revision[1]) + self.get_revision() - self.first_revision[0])
 
     ##########################################################################
     # Clocking
@@ -160,8 +159,7 @@ class DboardManagerBase:
         - In UHD, the place where we need access to this value is always the
           dboard control code, rarely if ever the mpmd motherboard control code
         """
-        raise NotImplementedError(
-            "DboardManagerBase::get_master_clock_rate() not implemented!")
+        raise NotImplementedError("DboardManagerBase::get_master_clock_rate() not implemented!")
 
     ##########################################################################
     # Sensors
@@ -172,8 +170,8 @@ class DboardManagerBase:
 
         direction needs to be either RX or TX.
         """
-        assert direction.lower() in ('rx', 'tx')
-        if direction.lower() == 'rx':
+        assert direction.lower() in ("rx", "tx")
+        if direction.lower() == "rx":
             return list(self.rx_sensor_callback_map.keys())
         # else:
         return list(self.tx_sensor_callback_map.keys())
@@ -187,15 +185,13 @@ class DboardManagerBase:
         See PeriphManager.get_mb_sensor() for a description of the return value
         format.
         """
-        callback_map = \
-            self.rx_sensor_callback_map if direction.lower() == 'rx' \
+        callback_map = (
+            self.rx_sensor_callback_map
+            if direction.lower() == "rx"
             else self.tx_sensor_callback_map
+        )
         if sensor_name not in callback_map:
-            error_msg = "Was asked for non-existent sensor `{}'.".format(
-                sensor_name
-            )
+            error_msg = "Was asked for non-existent sensor `{}'.".format(sensor_name)
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
-        return getattr(
-            self, callback_map.get(sensor_name)
-        )(chan)
+        return getattr(self, callback_map.get(sensor_name))(chan)

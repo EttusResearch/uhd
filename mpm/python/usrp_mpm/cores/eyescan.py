@@ -165,22 +165,24 @@ Future work ideas:
      process and visualize the eye scan results (pes file).
 """
 
+import datetime
+import math
 import os
 import time
-import math
-import datetime
 from builtins import object
+
 from usrp_mpm.mpmlog import get_logger
+
 
 class EyeScanTool(object):
     """
     Provides a library to perform Eye Scan measurements using the NI JESD core.
     """
 
-    MGT_TYPE  = "GTX"
+    MGT_TYPE = "GTX"
     VER_MAJOR = "1"
     VER_MINOR = "0"
-    SAVE_DIR  = "/home/root/eyescan/"
+    SAVE_DIR = "/home/root/eyescan/"
 
     # Set this value according to the status message printing rate desired. (Min=1)
     # E.g. PRINT_STATUS_EVERY = 1 will print a status message every offset measurement.
@@ -189,6 +191,7 @@ class EyeScanTool(object):
     lanes = None
     # Array that defines the available lanes to measure.
     lane_num = None
+
     # Defines the currently global controled lane number.
     def set_global_lane(self, lane_num=None):
         """
@@ -201,14 +204,13 @@ class EyeScanTool(object):
             # Set the global variable.
             self.lane_num = lane_num
             # Set the DRP target in the JESD core to the given lane number.
-            self.jesdcore.set_drp_target('mgt', self.lane_num)
+            self.jesdcore.set_drp_target("mgt", self.lane_num)
         else:
             self.log.trace("Unsetting the lane global variable...")
             # Unset the global variable.
             self.lane_num = None
             # Disable DRP target for the given lane number.
             self.jesdcore.disable_drp_target()
-
 
     def __init__(self, jesdcore, slot_idx=0, **kwargs):
         def validate_config():
@@ -218,18 +220,24 @@ class EyeScanTool(object):
             assert (0 <= self.prescale) and (self.prescale <= 31)
             assert self.rxout_div in (1, 2, 4, 8, 16)
             assert self.rx_int_datawidth in (16, 20, 32, 40)
-            assert self.eq_mode.upper() in ('LPM', 'DFE')
-            self.log.debug("Valid Eye Scan configuration: prescale=%d rxout_div=%d"
-                           " rx_int_datawidth=%d eq_mode=%s",
-                           self.prescale, self.rxout_div, self.rx_int_datawidth, self.eq_mode)
+            assert self.eq_mode.upper() in ("LPM", "DFE")
+            self.log.debug(
+                "Valid Eye Scan configuration: prescale=%d rxout_div=%d"
+                " rx_int_datawidth=%d eq_mode=%s",
+                self.prescale,
+                self.rxout_div,
+                self.rx_int_datawidth,
+                self.eq_mode,
+            )
+
         #
         self.slot_idx = slot_idx
         self.log = get_logger("EyeScanTool-{}".format(self.slot_idx))
         self.log.info("Initializing Eye Scan Tool...")
         self.jesdcore = jesdcore
-        assert hasattr(self.jesdcore, 'set_drp_target')
-        assert hasattr(self.jesdcore, 'disable_drp_target')
-        assert hasattr(self.jesdcore, 'drp_access')
+        assert hasattr(self.jesdcore, "set_drp_target")
+        assert hasattr(self.jesdcore, "disable_drp_target")
+        assert hasattr(self.jesdcore, "drp_access")
         # Some global parameters defined.
         #
         # Control the prescaling of the sample count to keep both sample
@@ -252,22 +260,26 @@ class EyeScanTool(object):
         # one at -UT, to measure the TOTAL BER at a given vertical and
         # horizontal offset.
         # Valid values = 'LPM', 'DFE'.
-        self.eq_mode = 'LPM'
+        self.eq_mode = "LPM"
         #
         # Overwrite the default configuration parameters with the ones given
         # by the user (host) through kwargs.
         for key, new_val in list(kwargs.items()):
             if hasattr(self, key) and (new_val != getattr(self, key)):
-                self.log.trace("Overwriting {0}... default:{1} user:{2}"
-                               .format(key, getattr(self, key), new_val))
+                self.log.trace(
+                    "Overwriting {0}... default:{1} user:{2}".format(
+                        key, getattr(self, key), new_val
+                    )
+                )
                 setattr(self, key, new_val)
         # Validate configuration attributes' values.
         validate_config()
 
-
-    def parse_ranges(self,
-                     hor_range={'start':-32 , 'stop':32 , 'step': 1},
-                     ver_range={'start':-127, 'stop':127, 'step': 2}):
+    def parse_ranges(
+        self,
+        hor_range={"start": -32, "stop": 32, "step": 1},
+        ver_range={"start": -127, "stop": 127, "step": 2},
+    ):
         """
         This function extracts parameters from the Eye Scan phase and voltage ranges
         used in measurement loops and height/width calculation.
@@ -290,37 +302,46 @@ class EyeScanTool(object):
         self.log.trace("Parsing horizontal/vertical ranges...")
         parsed_ranges = {}
         # Do some input validation.
-        assert ('start' in hor_range) and ('stop' in hor_range) and ('step' in hor_range)
-        assert ('start' in ver_range) and ('stop' in ver_range) and ('step' in ver_range)
-        assert hor_range['step'] in (1, 2, 4, 8)
-        assert ver_range['step'] in (1, 2, 4, 8)
+        assert ("start" in hor_range) and ("stop" in hor_range) and ("step" in hor_range)
+        assert ("start" in ver_range) and ("stop" in ver_range) and ("step" in ver_range)
+        assert hor_range["step"] in (1, 2, 4, 8)
+        assert ver_range["step"] in (1, 2, 4, 8)
         # Parse the horizontal and vertical ranges, and build the output lists.
-        parsed_ranges['hor_start'] = self.rxout_div * hor_range['start']
-        parsed_ranges['hor_stop' ] = self.rxout_div * hor_range['stop' ]
-        parsed_ranges['hor_step' ] = self.rxout_div * hor_range['step' ]
-        parsed_ranges['hor_iterations'] = math.ceil( \
-          (parsed_ranges['hor_stop'] - parsed_ranges['hor_start'] + 1) / \
-            parsed_ranges['hor_step'])
-        self.log.trace("hor_start=%d  hor_stop=%d  hor_step=%d  hor_iterations=%d",
-                       parsed_ranges['hor_start'], parsed_ranges['hor_stop'],
-                       parsed_ranges['hor_step' ], parsed_ranges['hor_iterations'])
-        parsed_ranges['ver_start'] = ver_range['start']
-        parsed_ranges['ver_stop' ] = ver_range['stop']
-        parsed_ranges['ver_step' ] = ver_range['step']
-        parsed_ranges['ver_iterations'] = math.ceil( \
-          (ver_range['stop'] - ver_range['start'] + 1) / \
-           ver_range['step'])
-        self.log.trace("ver_start=%d  ver_stop=%d  ver_step=%d  ver_iterations=%d",
-                       parsed_ranges['ver_start'], parsed_ranges['ver_stop'],
-                       parsed_ranges['ver_step' ], parsed_ranges['ver_iterations'])
+        parsed_ranges["hor_start"] = self.rxout_div * hor_range["start"]
+        parsed_ranges["hor_stop"] = self.rxout_div * hor_range["stop"]
+        parsed_ranges["hor_step"] = self.rxout_div * hor_range["step"]
+        parsed_ranges["hor_iterations"] = math.ceil(
+            (parsed_ranges["hor_stop"] - parsed_ranges["hor_start"] + 1) / parsed_ranges["hor_step"]
+        )
+        self.log.trace(
+            "hor_start=%d  hor_stop=%d  hor_step=%d  hor_iterations=%d",
+            parsed_ranges["hor_start"],
+            parsed_ranges["hor_stop"],
+            parsed_ranges["hor_step"],
+            parsed_ranges["hor_iterations"],
+        )
+        parsed_ranges["ver_start"] = ver_range["start"]
+        parsed_ranges["ver_stop"] = ver_range["stop"]
+        parsed_ranges["ver_step"] = ver_range["step"]
+        parsed_ranges["ver_iterations"] = math.ceil(
+            (ver_range["stop"] - ver_range["start"] + 1) / ver_range["step"]
+        )
+        self.log.trace(
+            "ver_start=%d  ver_stop=%d  ver_step=%d  ver_iterations=%d",
+            parsed_ranges["ver_start"],
+            parsed_ranges["ver_stop"],
+            parsed_ranges["ver_step"],
+            parsed_ranges["ver_iterations"],
+        )
         # Return the list with the extracted parameters.
         return parsed_ranges
 
-
-    def eyescan_config(self,
-                       es_qualifier =[0x0000, 0x0000, 0x0000, 0x0000, 0x0000],
-                       es_qual_mask =[0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF],
-                       es_sdata_mask=[]):
+    def eyescan_config(
+        self,
+        es_qualifier=[0x0000, 0x0000, 0x0000, 0x0000, 0x0000],
+        es_qual_mask=[0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF],
+        es_sdata_mask=[],
+    ):
         """
         This function configures the current GT number to enable Eye Scan.
         The following attributes are configured for the given transceiver lane:
@@ -353,10 +374,12 @@ class EyeScanTool(object):
         """
         #
         #                           [15: 0] [31:16] [47:32] [63:48] [79:64]
-        ES_SDATA_MASK_DICT = {16 : [0xFFFF, 0x00FF, 0xFF00, 0xFFFF, 0xFFFF],
-                              20 : [0xFFFF, 0x000F, 0xFF00, 0xFFFF, 0xFFFF],
-                              32 : [0x00FF, 0x0000, 0xFF00, 0xFFFF, 0xFFFF],
-                              40 : [0x0000, 0x0000, 0xFF00, 0xFFFF, 0xFFFF]}
+        ES_SDATA_MASK_DICT = {
+            16: [0xFFFF, 0x00FF, 0xFF00, 0xFFFF, 0xFFFF],
+            20: [0xFFFF, 0x000F, 0xFF00, 0xFFFF, 0xFFFF],
+            32: [0x00FF, 0x0000, 0xFF00, 0xFFFF, 0xFFFF],
+            40: [0x0000, 0x0000, 0xFF00, 0xFFFF, 0xFFFF],
+        }
         #
         # Configure each lane in the global lanes array.
         for current_lane in self.lanes:
@@ -366,36 +389,37 @@ class EyeScanTool(object):
             assert len(es_qualifier) == 5
             assert len(es_qual_mask) == 5
             if len(es_sdata_mask) != 5:
-                self.log.trace("ES_SDATA_MASK defined based on rx_int_datawidth=%d",
-                               self.rx_int_datawidth)
+                self.log.trace(
+                    "ES_SDATA_MASK defined based on rx_int_datawidth=%d", self.rx_int_datawidth
+                )
                 es_sdata_mask = ES_SDATA_MASK_DICT[self.rx_int_datawidth]
             # Configure the ES_QUALIFIER attribute.
             self.log.trace("Configuring the ES_QUALIFIER attribute for GT #%d...", self.lane_num)
             ES_QUALIFIER_FIRST_ADDR = 0x02C
-            ES_QUALIFIER_LAST_ADDR  = 0x030
+            ES_QUALIFIER_LAST_ADDR = 0x030
             index = 0
             for drp_addr in range(ES_QUALIFIER_FIRST_ADDR, ES_QUALIFIER_LAST_ADDR + 0x1):
-                self.jesdcore.drp_access(rd=False, addr=drp_addr,
-                                         wr_data=es_qualifier[index]); index += 1
+                self.jesdcore.drp_access(rd=False, addr=drp_addr, wr_data=es_qualifier[index])
+                index += 1
             # Configure the ES_QUAL_MASK attribute.
             # According to UG476 pg. 217, ES_QUAL_MASK for a statistical eye is 80 1's,
             # so the sample counter and error counter accumulate on every cycle.
             # Thus, we write this registers to the given GT number to configure the hardware.
             self.log.trace("Configuring the ES_QUAL_MASK attribute for GT #%d...", self.lane_num)
             ES_QUAL_MASK_FIRST_ADDR = 0x031
-            ES_QUAL_MASK_LAST_ADDR  = 0x035
+            ES_QUAL_MASK_LAST_ADDR = 0x035
             index = 0
             for drp_addr in range(ES_QUAL_MASK_FIRST_ADDR, ES_QUAL_MASK_LAST_ADDR + 0x1):
-                self.jesdcore.drp_access(rd=False, addr=drp_addr,
-                                         wr_data=es_qual_mask[index]); index += 1
+                self.jesdcore.drp_access(rd=False, addr=drp_addr, wr_data=es_qual_mask[index])
+                index += 1
             # Configure the ES_SDATA_MASK attribute.
             self.log.trace("Configuring the ES_SDATA_MASK attribute for GT #%d...", self.lane_num)
             ES_SDATA_MASK_FIRST_ADDR = 0x036
-            ES_SDATA_MASK_LAST_ADDR  = 0x03A
+            ES_SDATA_MASK_LAST_ADDR = 0x03A
             index = 0
             for drp_addr in range(ES_SDATA_MASK_FIRST_ADDR, ES_SDATA_MASK_LAST_ADDR + 0x1):
-                self.jesdcore.drp_access(rd=False, addr=drp_addr,
-                                         wr_data=es_sdata_mask[index]); index += 1
+                self.jesdcore.drp_access(rd=False, addr=drp_addr, wr_data=es_sdata_mask[index])
+                index += 1
             # Configure the ES_PRESCALE attribute.
             ES_PRESCALE_ADDR = 0x03B
             self.log.trace("Configuring the ES_PRESCALE attribute for GT #%d...", self.lane_num)
@@ -407,18 +431,22 @@ class EyeScanTool(object):
             # asserted when using Eye Scan; otherwise, the Eye Scan circuitry in the PMA
             # will be powered down.
             PMA_RSV2_ADDR = 0x082
-            if self.MGT_TYPE == 'GTX':
-                self.log.trace("Asserting that PMA_RSV2[5] bit is high for GTX #%d...", self.lane_num)
+            if self.MGT_TYPE == "GTX":
+                self.log.trace(
+                    "Asserting that PMA_RSV2[5] bit is high for GTX #%d...", self.lane_num
+                )
                 drp_x082_rb = self.jesdcore.drp_access(rd=True, addr=PMA_RSV2_ADDR)
                 pma_rsv2_bit5 = (drp_x082_rb >> 5) & 0x1
                 if not pma_rsv2_bit5:
-                    self.log.error("PMA_RSV2[5] is not asserted for GT#{}, enable it before link bringup."
-                                   .format(self.lane_num))
-                    raise  RuntimeError('Eye Scan cicuitry is powered down, see log for details.')
+                    self.log.error(
+                        "PMA_RSV2[5] is not asserted for GT#{}, enable it before link bringup.".format(
+                            self.lane_num
+                        )
+                    )
+                    raise RuntimeError("Eye Scan cicuitry is powered down, see log for details.")
             self.log.info("Configured GT #%d!", self.lane_num)
         self.set_global_lane(None)
         return
-
 
     def eyescan_control(self, err_det_en=True, run=False, arm=False):
         """
@@ -436,33 +464,37 @@ class EyeScanTool(object):
                         to the READ state if one of the states of bits x03D[5:2] below is
                         not met.
         """
-        ARM_TRIGGER_ON = {"error_detected"   : 0b0001,\
-                          "qualifier_pattern": 0b0010,\
-                          "es_trigger"       : 0b0100,\
-                          "immediate"        : 0b1000}
+        ARM_TRIGGER_ON = {
+            "error_detected": 0b0001,
+            "qualifier_pattern": 0b0010,
+            "es_trigger": 0b0100,
+            "immediate": 0b1000,
+        }
         EYE_SCAN_EN_VAL = 0b1
         self.log.trace("Eyescan state machine control for MGT #%d", self.lane_num)
         # Read the current register values.
         drp_x03d_rb = self.jesdcore.drp_access(rd=True, addr=0x03D)
         # Determine the GT Channel attributes to be changed.
-        es_errdet_en   = int(err_det_en)
+        es_errdet_en = int(err_det_en)
         es_eye_scan_en = EYE_SCAN_EN_VAL
-        es_control     = (int(run)                         << 0) | \
-                         (int(arm)                         << 1) | \
-                         (ARM_TRIGGER_ON["error_detected"] << 2)
-        self.log.trace("Control attributes... ES_ERRDET_EN:0b{0:b}"
-                       " ES_EYE_SCAN_EN:0b{1:b} ES_CONTROL:0b{2:06b}"
-                       .format(es_errdet_en, es_eye_scan_en, es_control))
+        es_control = (int(run) << 0) | (int(arm) << 1) | (ARM_TRIGGER_ON["error_detected"] << 2)
+        self.log.trace(
+            "Control attributes... ES_ERRDET_EN:0b{0:b}"
+            " ES_EYE_SCAN_EN:0b{1:b} ES_CONTROL:0b{2:06b}".format(
+                es_errdet_en, es_eye_scan_en, es_control
+            )
+        )
         # Build and write the new register values.
-        drp_x03d_wr = ((drp_x03d_rb & ~0x023F) << 0) | \
-                      (es_errdet_en            << 9) | \
-                      (es_eye_scan_en          << 8) | \
-                      (es_control              << 0)
+        drp_x03d_wr = (
+            ((drp_x03d_rb & ~0x023F) << 0)
+            | (es_errdet_en << 9)
+            | (es_eye_scan_en << 8)
+            | (es_control << 0)
+        )
         self.jesdcore.drp_access(rd=False, addr=0x03D, wr_data=drp_x03d_wr)
-        return drp_x03d_rb != drp_x03d_wr # Return True when the register changed.
+        return drp_x03d_rb != drp_x03d_wr  # Return True when the register changed.
 
-
-    def eyescan_offset(self, hor_offset=0, ver_offset=0, ut_sign='+UT'):
+    def eyescan_offset(self, hor_offset=0, ver_offset=0, ut_sign="+UT"):
         """
         Configures the eyescan horizontal phase offset and vertical voltage offset
         for the current XCVR lane number.
@@ -475,22 +507,32 @@ class EyeScanTool(object):
                         [-127, 127] corresponding to 0.39% increments.
           ut_sign    -> UT tap sign: '+UT' or '-UT'.
         """
-        UT_SIGN_BIT = {'+UT': 0b0, '-UT': 0b1}
+        UT_SIGN_BIT = {"+UT": 0b0, "-UT": 0b1}
         self.log.trace("Offset configuration for MGT #{}:".format(self.lane_num))
         # Do some input validation for the given parameters.
-        assert ut_sign.upper() in ('+UT', '-UT')
-        self.log.trace("GT #%d  Horizontal offset: %d  Vertical offset: %d  Tap: %s",
-                       self.lane_num, hor_offset, ver_offset, ut_sign)
+        assert ut_sign.upper() in ("+UT", "-UT")
+        self.log.trace(
+            "GT #%d  Horizontal offset: %d  Vertical offset: %d  Tap: %s",
+            self.lane_num,
+            hor_offset,
+            ver_offset,
+            ut_sign,
+        )
         # Read the current register values.
         drp_x03b_rb = self.jesdcore.drp_access(rd=True, addr=0x03B)
         drp_x03c_rb = self.jesdcore.drp_access(rd=True, addr=0x03C)
         # Determine the GT channel attributes to be changed.
-        es_vert_offset = ((abs(ver_offset) & 0x007F) << 0) | \
-                         ( int(ver_offset < 0)       << 7) | \
-                         ( UT_SIGN_BIT[ut_sign]      << 8)
-        es_horz_offset = (hor_offset & 0x0FFF)
-        self.log.trace("Offset attributes... ES_HORZ_OFFSET:0b{0:012b} ES_VERT_OFFSET:0b{1:09b}"
-                       .format(es_horz_offset, es_vert_offset))
+        es_vert_offset = (
+            ((abs(ver_offset) & 0x007F) << 0)
+            | (int(ver_offset < 0) << 7)
+            | (UT_SIGN_BIT[ut_sign] << 8)
+        )
+        es_horz_offset = hor_offset & 0x0FFF
+        self.log.trace(
+            "Offset attributes... ES_HORZ_OFFSET:0b{0:012b} ES_VERT_OFFSET:0b{1:09b}".format(
+                es_horz_offset, es_vert_offset
+            )
+        )
         # Build and write new register values.
         drp_x03b_wr = (drp_x03b_rb & ~0x01FF) | (es_vert_offset & 0x01FF)
         drp_x03c_wr = (drp_x03c_rb & ~0x0FFF) | (es_horz_offset & 0x0FFF)
@@ -499,8 +541,7 @@ class EyeScanTool(object):
         # Return True when at least one of the two registers changed.
         return (drp_x03b_rb != drp_x03b_wr) or (drp_x03c_rb != drp_x03c_wr)
 
-
-    def eyescan_wait(self, wait_for='END', exit_after=10000):
+    def eyescan_wait(self, wait_for="END", exit_after=10000):
         """
         This function waits for the eye scan control FSM of the current lane
         number, to transition to the given state (wait_for).
@@ -510,11 +551,17 @@ class EyeScanTool(object):
           wait_for -> State which the function waits the FSM to transition to.
                       {'WAIT','RESET','COUNT','END','ARMED','READ'}
         """
-        STATE_DECODE = {'WAIT': 0b000, 'RESET': 0b001, 'COUNT': 0b011, \
-                        'END' : 0b010, 'ARMED': 0b101, 'READ' : 0b100}
+        STATE_DECODE = {
+            "WAIT": 0b000,
+            "RESET": 0b001,
+            "COUNT": 0b011,
+            "END": 0b010,
+            "ARMED": 0b101,
+            "READ": 0b100,
+        }
         self.log.trace("Waiting for %s state at MGT #%d", wait_for, self.lane_num)
         # Validate the state input parameter.
-        assert wait_for.upper() in ('WAIT', 'RESET', 'COUNT', 'END', 'ARMED', 'READ')
+        assert wait_for.upper() in ("WAIT", "RESET", "COUNT", "END", "ARMED", "READ")
         # Poll the es_control_status GT attribute until the FSM transistions to
         # the given state.
         state_reached = False
@@ -525,13 +572,19 @@ class EyeScanTool(object):
             es_control_status = self.jesdcore.drp_access(rd=True, addr=0x151)
             done = es_control_status & 0x0001
             current_state = (es_control_status & 0x000E) >> 1
-            self.log.trace("Current state: 0b{0:03b}  Status: %s"
-                           .format(current_state), {0b0:'Not Done!', 0b1: 'Done!'}[done])
+            self.log.trace(
+                "Current state: 0b{0:03b}  Status: %s".format(current_state),
+                {0b0: "Not Done!", 0b1: "Done!"}[done],
+            )
             # Compare current state with expected state.
-            state_reached = (current_state == STATE_DECODE[wait_for])
+            state_reached = current_state == STATE_DECODE[wait_for]
             if (iterations >= 100) and (not state_reached) and (iterations % 100 == 0):
-                self.log.debug("%s state has not been reached for GT #%d after %d iterations.",
-                               wait_for, self.lane_num, iterations)
+                self.log.debug(
+                    "%s state has not been reached for GT #%d after %d iterations.",
+                    wait_for,
+                    self.lane_num,
+                    iterations,
+                )
             time.sleep(delay / 1000.0)
             # Exit after so many iterations, prevneting the application to hang.
             iterations += 1
@@ -539,12 +592,15 @@ class EyeScanTool(object):
                 break
         # Validate that the expected state was reached.
         if not state_reached:
-            self.log.error("%s state was not reached at GT #%d after %d polls.",
-                           wait_for, self.lane_num, iterations)
+            self.log.error(
+                "%s state was not reached at GT #%d after %d polls.",
+                wait_for,
+                self.lane_num,
+                iterations,
+            )
             raise Exception("Eyescan status timed out, see log for details.")
         self.log.trace("%s state reached at GT #%d", wait_for, self.lane_num)
         return state_reached
-
 
     def eyescan_counters(self):
         """
@@ -552,14 +608,16 @@ class EyeScanTool(object):
         Returns a tuple with the error and sample count.
         """
         self.log.trace("Reading counters for GT #%d ...", self.lane_num)
-        counters = {'error_count': 0x0000, 'sample_count': 0x0000}
+        counters = {"error_count": 0x0000, "sample_count": 0x0000}
         # Read the error counter.
-        counters['error_count' ] = self.jesdcore.drp_access(rd=True, addr=0x14F) & 0xFFFF
-        counters['sample_count'] = self.jesdcore.drp_access(rd=True, addr=0x150) & 0xFFFF
-        self.log.trace("es_error_count: 0x{:04X}   es_sample_count: 0x{:04X}"
-                       .format(counters['error_count'], counters['sample_count']))
+        counters["error_count"] = self.jesdcore.drp_access(rd=True, addr=0x14F) & 0xFFFF
+        counters["sample_count"] = self.jesdcore.drp_access(rd=True, addr=0x150) & 0xFFFF
+        self.log.trace(
+            "es_error_count: 0x{:04X}   es_sample_count: 0x{:04X}".format(
+                counters["error_count"], counters["sample_count"]
+            )
+        )
         return counters
-
 
     def eyescan_acquisition(self, hor_offset=0, ver_offset=0):
         """
@@ -574,7 +632,7 @@ class EyeScanTool(object):
                         [-127, 127] corresponding to 0.39% increments.
         """
         self.log.trace("Starting acquisition for GTs {}".format(self.lanes))
-        acq_counters = [] # Array that stores multiple sl_counters lists.
+        acq_counters = []  # Array that stores multiple sl_counters lists.
         for _ in range(0, max(self.lanes) + 1):
             acq_counters.append({})
         #
@@ -586,7 +644,7 @@ class EyeScanTool(object):
             # Clear run & arm bits in the Eyescan control.
             self.eyescan_control(err_det_en=True, run=False, arm=False)
             # Set offsets with +UT.
-            self.eyescan_offset(hor_offset, ver_offset, ut_sign='+UT')
+            self.eyescan_offset(hor_offset, ver_offset, ut_sign="+UT")
             # Start eyescan FSM: set run with ErrDet enabled.
             self.eyescan_control(err_det_en=True, run=True, arm=False)
         #
@@ -595,44 +653,59 @@ class EyeScanTool(object):
         for current_lane in self.lanes:
             self.set_global_lane(current_lane)
             # Wait for END state.
-            self.eyescan_wait(wait_for='END')
+            self.eyescan_wait(wait_for="END")
             # Clear run & arm bits in the Eyescan control.
             self.eyescan_control(err_det_en=True, run=False, arm=False)
             # Read counters with +UT.
-            acq_counters[self.lane_num]['+UT'] = self.eyescan_counters()
-            self.log.trace("Results +UT GT #%d... Errors=%d  Samples=%d.", self.lane_num,
-                           acq_counters[self.lane_num]['+UT']['error_count'],
-                           acq_counters[self.lane_num]['+UT']['sample_count'])
+            acq_counters[self.lane_num]["+UT"] = self.eyescan_counters()
+            self.log.trace(
+                "Results +UT GT #%d... Errors=%d  Samples=%d.",
+                self.lane_num,
+                acq_counters[self.lane_num]["+UT"]["error_count"],
+                acq_counters[self.lane_num]["+UT"]["sample_count"],
+            )
             # Start second eye scan measurement (DFE eq. only).
-            if self.eq_mode == 'DFE':
+            if self.eq_mode == "DFE":
                 # Set offsets with -UT.
-                self.eyescan_offset(hor_offset, ver_offset, ut_sign='-UT')
+                self.eyescan_offset(hor_offset, ver_offset, ut_sign="-UT")
                 # Start eyescan FSM: set run with ErrDet enabled.
                 self.eyescan_control(err_det_en=True, run=True, arm=False)
             else:
-                self.log.debug("Single measurement finalized for GT #%d (H=%d, V=%d, %s).",
-                               self.lane_num, hor_offset, ver_offset, self.eq_mode)
+                self.log.debug(
+                    "Single measurement finalized for GT #%d (H=%d, V=%d, %s).",
+                    self.lane_num,
+                    hor_offset,
+                    ver_offset,
+                    self.eq_mode,
+                )
         #
         # Wait for the FSM (-UT, DFE only) to complete on each lane, and read counters.
-        if self.eq_mode == 'DFE':
+        if self.eq_mode == "DFE":
             for current_lane in self.lanes:
                 self.set_global_lane(current_lane)
                 # Wait for END state.
-                self.eyescan_wait(wait_for='END')
+                self.eyescan_wait(wait_for="END")
                 # Clear run & arm bits in the Eyescan control.
                 self.eyescan_control(err_det_en=True, run=False, arm=False)
                 # Read counters with -UT.
-                acq_counters[self.lane_num]['-UT'] = self.eyescan_counters()
-                self.log.trace("Results -UT GT #%d... Errors=%d  Samples=%d.", self.lane_num,
-                               acq_counters[self.lane_num]['-UT']['error_count'],
-                               acq_counters[self.lane_num]['-UT']['sample_count'])
-                self.log.debug("Single measurement finalized for GT #%d (H=%d, V=%d, %s).",
-                               self.lane_num, hor_offset, ver_offset, self.eq_mode)
+                acq_counters[self.lane_num]["-UT"] = self.eyescan_counters()
+                self.log.trace(
+                    "Results -UT GT #%d... Errors=%d  Samples=%d.",
+                    self.lane_num,
+                    acq_counters[self.lane_num]["-UT"]["error_count"],
+                    acq_counters[self.lane_num]["-UT"]["sample_count"],
+                )
+                self.log.debug(
+                    "Single measurement finalized for GT #%d (H=%d, V=%d, %s).",
+                    self.lane_num,
+                    hor_offset,
+                    ver_offset,
+                    self.eq_mode,
+                )
         #
         self.set_global_lane(None)
         # Return the error and sample counters for all lanes, both +UT and -UT.
         return acq_counters
-
 
     def eyescan_sweep(self, bin_file, parsed_ranges):
         """
@@ -665,6 +738,7 @@ class EyeScanTool(object):
           bin_file      -> Binary file reference to write data to. Passed from top level function.
           parsed_ranges -> This is a keyed list with parsed parameters from parse_ranges().
         """
+
         def write_byte_counters(acq_counters):
             """
             This method writes the acquisition counters for each lane to the binary file.
@@ -673,32 +747,36 @@ class EyeScanTool(object):
             for current_lane in self.lanes:
                 # Write the counters for the current lane.
                 sl_counters = acq_counters[current_lane]
-                self.log.debug("Writing +UT counters for GT #{0}: {1}"
-                               .format(current_lane, sl_counters))
-                byte_number = (sl_counters['+UT']['sample_count']).to_bytes(2, 'little')
+                self.log.debug(
+                    "Writing +UT counters for GT #{0}: {1}".format(current_lane, sl_counters)
+                )
+                byte_number = (sl_counters["+UT"]["sample_count"]).to_bytes(2, "little")
                 bin_file.write(byte_number)
-                byte_number = (sl_counters['+UT']['error_count' ]).to_bytes(2, 'little')
+                byte_number = (sl_counters["+UT"]["error_count"]).to_bytes(2, "little")
                 bin_file.write(byte_number)
                 # -UT results only exists when DFE eq. mode is used.
-                if '-UT' in sl_counters:
+                if "-UT" in sl_counters:
                     self.log.debug("Writing -UT counters for GT #%d...", current_lane)
-                    byte_number = (sl_counters['-UT']['sample_count']).to_bytes(2, 'little')
+                    byte_number = (sl_counters["-UT"]["sample_count"]).to_bytes(2, "little")
                     bin_file.write(byte_number)
-                    byte_number = (sl_counters['-UT']['error_count' ]).to_bytes(2, 'little')
+                    byte_number = (sl_counters["-UT"]["error_count"]).to_bytes(2, "little")
                     bin_file.write(byte_number)
+
         #
         gts_string = "GTs {}".format(self.lanes)
         self.log.trace("Starting sweep for %s ...", gts_string)
         # Perform the Eye Scan sweep!
         acq_counters = []
-        total_iterations = parsed_ranges['hor_iterations'] * parsed_ranges['ver_iterations']
+        total_iterations = parsed_ranges["hor_iterations"] * parsed_ranges["ver_iterations"]
         iterations = 0
         # Outer loop iterates horizontally.
-        for hor_offset in range(parsed_ranges['hor_start'], parsed_ranges['hor_stop'] + 1,
-                                parsed_ranges['hor_step']):
+        for hor_offset in range(
+            parsed_ranges["hor_start"], parsed_ranges["hor_stop"] + 1, parsed_ranges["hor_step"]
+        ):
             # Inner loop iterates vertically.
-            for ver_offset in range(parsed_ranges['ver_start'], parsed_ranges['ver_stop'] + 1,
-                                    parsed_ranges['ver_step']):
+            for ver_offset in range(
+                parsed_ranges["ver_start"], parsed_ranges["ver_stop"] + 1, parsed_ranges["ver_step"]
+            ):
                 # Perform a single acquisition at each "coordinate".
                 acq_counters = self.eyescan_acquisition(hor_offset, ver_offset)
                 # Write the data to a binary file.
@@ -709,7 +787,6 @@ class EyeScanTool(object):
                 # Only print status messages every PRINT_STATUS_EVERY iterations.
                 if iterations % self.PRINT_STATUS_EVERY == 0:
                     self.log.info("Eye Scan progress for %s sweep: %.2f %%", gts_string, progress)
-
 
     def create_pes_file(self, hor_range, ver_range):
         """
@@ -735,6 +812,7 @@ class EyeScanTool(object):
           0x26 -> 0x27 : number of lanes    [ 2 bytes]
           0x28 -> 0x29 : lane_num array     [ 2 bytes] (Each nibble represents a lane)
         """
+
         def build_file_name():
             """
             This function builds the file name, which contains the scanned GTs and the
@@ -743,19 +821,25 @@ class EyeScanTool(object):
             file_name = "eyescan"
             # Include a time stamp.
             now = datetime.datetime.now()
-            file_name += ("_%04d%02d%02d%02d%02d" %
-                          (now.year, now.month, now.day, now.hour, now.minute))
+            file_name += "_%04d%02d%02d%02d%02d" % (
+                now.year,
+                now.month,
+                now.day,
+                now.hour,
+                now.minute,
+            )
             # Include the scanned slot.
-            file_name += ("_slot%d" % self.slot_idx)
+            file_name += "_slot%d" % self.slot_idx
             # Include the scanned GTs.
             file_name += "_gt"
             for lane in self.lanes:
-                file_name += ("%d" % lane)
+                file_name += "%d" % lane
             # Include the prescale value.
-            file_name += ("_pre%d" % self.prescale)
+            file_name += "_pre%d" % self.prescale
             # Include extension.
             file_name += ".pes"
             return file_name
+
         #
         def write_byte_number(number=0, size=2, offset=None):
             """
@@ -765,8 +849,9 @@ class EyeScanTool(object):
             """
             if offset:
                 pes_file.seek(offset)
-            byte_number = (number).to_bytes(size, 'little', signed=True)
+            byte_number = (number).to_bytes(size, "little", signed=True)
             pes_file.write(byte_number)
+
         #
         # Create the directory to save the pes files if it does not exist.
         if not os.path.isdir(self.SAVE_DIR):
@@ -774,26 +859,26 @@ class EyeScanTool(object):
             os.makedirs(self.SAVE_DIR)
         # Open the binary file which data will be saved to.
         file_name = build_file_name()
-        pes_file  = open(self.SAVE_DIR + file_name, "wb+")
+        pes_file = open(self.SAVE_DIR + file_name, "wb+")
         # Write the metadata header.
-        byte_string = ("PythonEyeScan"+self.VER_MAJOR+"p"+self.VER_MINOR).encode('utf-8')
-        pes_file.write(byte_string)                                # 0x00: signature string.
-        write_byte_number(number=0x0000)                           # 0x10: data_offset (placeholder).
-        write_byte_number(number=self.prescale)                    # 0x12: prescale.
-        write_byte_number(number=self.rxout_div)                   # 0x14: rxout_div.
-        write_byte_number(number=self.rx_int_datawidth)            # 0x16: rx_int_datawidth.
-        write_byte_number(number={'LPM':0, 'DFE':1}[self.eq_mode]) # 0x18: eq_mode.
-        write_byte_number(number=hor_range['start'])               # 0x1A: hor_start.
-        write_byte_number(number=hor_range['stop'])                # 0x1C: hor_stop.
-        write_byte_number(number=hor_range['step'])                # 0x1E: hor_step.
-        write_byte_number(number=ver_range['start'])               # 0x20: ver_start.
-        write_byte_number(number=ver_range['stop'])                # 0x22: ver_stop.
-        write_byte_number(number=ver_range['step'])                # 0x24: ver_step.
-        write_byte_number(number=len(self.lanes))                  # 0x26: number of lanes.
+        byte_string = ("PythonEyeScan" + self.VER_MAJOR + "p" + self.VER_MINOR).encode("utf-8")
+        pes_file.write(byte_string)  # 0x00: signature string.
+        write_byte_number(number=0x0000)  # 0x10: data_offset (placeholder).
+        write_byte_number(number=self.prescale)  # 0x12: prescale.
+        write_byte_number(number=self.rxout_div)  # 0x14: rxout_div.
+        write_byte_number(number=self.rx_int_datawidth)  # 0x16: rx_int_datawidth.
+        write_byte_number(number={"LPM": 0, "DFE": 1}[self.eq_mode])  # 0x18: eq_mode.
+        write_byte_number(number=hor_range["start"])  # 0x1A: hor_start.
+        write_byte_number(number=hor_range["stop"])  # 0x1C: hor_stop.
+        write_byte_number(number=hor_range["step"])  # 0x1E: hor_step.
+        write_byte_number(number=ver_range["start"])  # 0x20: ver_start.
+        write_byte_number(number=ver_range["stop"])  # 0x22: ver_stop.
+        write_byte_number(number=ver_range["step"])  # 0x24: ver_step.
+        write_byte_number(number=len(self.lanes))  # 0x26: number of lanes.
         nibble = 0x0000
         for lane_index in range(0, len(self.lanes)):
-            nibble |= (self.lanes[lane_index] & 0xF) << lane_index*4
-        write_byte_number(number=nibble)                          # 0x28: lane_num array.
+            nibble |= (self.lanes[lane_index] & 0xF) << lane_index * 4
+        write_byte_number(number=nibble)  # 0x28: lane_num array.
         # Write data offset and set pointer ready for data writing.
         data_offset = pes_file.tell()
         write_byte_number(number=data_offset, offset=0x10)
@@ -801,11 +886,12 @@ class EyeScanTool(object):
         # Return the opened file.
         return (file_name, pes_file)
 
-
-    def eyescan_full_scan(self,
-                          scan_lanes=[0],
-                          hor_range={'start':-32 , 'stop':32 , 'step': 1},
-                          ver_range={'start':-127, 'stop':127, 'step': 2}):
+    def eyescan_full_scan(
+        self,
+        scan_lanes=[0],
+        hor_range={"start": -32, "stop": 32, "step": 1},
+        ver_range={"start": -127, "stop": 127, "step": 2},
+    ):
         """
         This function performs all the GT configuration and starts the eye scan sweep.
         The binary file should be open here.

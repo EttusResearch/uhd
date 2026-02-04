@@ -7,12 +7,14 @@
 Utilities for udev lookups
 """
 
-import os
 import glob
-import pyudev
+import os
 from pathlib import Path
 
+import pyudev
+
 DT_BASE = "/proc/device-tree"
+
 
 def get_eeprom_paths_by_symbol(symbol_name_glob):
     """
@@ -47,10 +49,8 @@ def get_eeprom_paths_by_symbol(symbol_name_glob):
         return None
 
     eeproms = glob.glob(os.path.join(symbol_base, symbol_name_glob))
-    paths = {os.path.basename(eeprom): read_symbol_file(eeprom)
-             for eeprom in eeproms}
-    retval = {name: find_device_path(path)
-              for name, path in sorted(paths.items())}
+    paths = {os.path.basename(eeprom): read_symbol_file(eeprom) for eeprom in eeproms}
+    retval = {name: find_device_path(path) for name, path in sorted(paths.items())}
     for name, path in retval.items():
         if path is None:
             raise RuntimeError(f"Could not resolve eeprom path for symbol {name}")
@@ -62,7 +62,7 @@ def get_device_from_dt_symbol(symbol, subsystem=None, context=None):
     Return the device associated with the device tree symbol, which usually
     is a label on a specific node of interest
     """
-    symfile = Path(DT_BASE) / '__symbols__' / symbol
+    symfile = Path(DT_BASE) / "__symbols__" / symbol
     fullname = symfile.read_text()
     if context is None:
         context = pyudev.Context()
@@ -79,17 +79,17 @@ def get_eeprom_paths(address):
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", address)
-    paths = [d.device_node if d.device_node is not None else d.sys_path
-             for d in context.list_devices(parent=parent, subsystem="nvmem")]
+    paths = [
+        d.device_node if d.device_node is not None else d.sys_path
+        for d in context.list_devices(parent=parent, subsystem="nvmem")
+    ]
     if len(paths) == 0:
         return []
     # We need to sort this so 9-0050 comes before 10-0050 (etc.)
     maxlen = max((len(os.path.split(p)[1]) for p in paths))
-    paths = sorted(
-        paths,
-        key=lambda x: "{:>0{maxlen}}".format(os.path.split(x)[1], maxlen=maxlen)
-    )
-    return [os.path.join(x, 'nvmem') for x in paths]
+    paths = sorted(paths, key=lambda x: "{:>0{maxlen}}".format(os.path.split(x)[1], maxlen=maxlen))
+    return [os.path.join(x, "nvmem") for x in paths]
+
 
 def get_spidev_nodes(spi_master):
     """
@@ -99,9 +99,9 @@ def get_spidev_nodes(spi_master):
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", spi_master)
     return [
-        device.device_node
-        for device in context.list_devices(parent=parent, subsystem="spidev")
+        device.device_node for device in context.list_devices(parent=parent, subsystem="spidev")
     ]
+
 
 def get_device_from_symbol(symbol, subsystems):
     """
@@ -109,7 +109,7 @@ def get_device_from_symbol(symbol, subsystems):
     symbol name matches and the hierarchy of subsystems (e.g. ['spi', 'spidev'])
     match
     """
-    assert isinstance(subsystems,list)
+    assert isinstance(subsystems, list)
     context = pyudev.Context()
     device = get_device_from_dt_symbol(symbol, subsystem=subsystems.pop(0), context=context)
     if device is None:
@@ -119,10 +119,11 @@ def get_device_from_symbol(symbol, subsystems):
         if not devices:
             return None
         device = devices[0]
-    return device.properties.get('DEVNAME')
+    return device.properties.get("DEVNAME")
+
 
 def dt_symbol_get_spidev(symbol):
     """
     Return spidev associated with the given device tree symbol
     """
-    return get_device_from_symbol(symbol, ['spi', 'spidev'])
+    return get_device_from_symbol(symbol, ["spi", "spidev"])

@@ -10,10 +10,19 @@ This module handles and responds to Management and Ctrl Packets. It
 also instantiates the registers and acts as an interface between
 the chdr packets on the network and the registers.
 """
-from uhd.chdr import MgmtOpCode, MgmtOpCfg, MgmtOpSelDest
-from .noc_block_regs import NocBlockRegs, NocBlock, StreamEndpointPort, NocBlockPort
-from .rfnoc_common import Node, NodeType, StreamSpec, to_iter, swap_src_dst, RETURN_TO_SENDER
+from uhd.chdr import MgmtOpCfg, MgmtOpCode, MgmtOpSelDest
+
+from .noc_block_regs import NocBlock, NocBlockPort, NocBlockRegs, StreamEndpointPort
+from .rfnoc_common import (
+    RETURN_TO_SENDER,
+    Node,
+    NodeType,
+    StreamSpec,
+    swap_src_dst,
+    to_iter,
+)
 from .stream_endpoint_node import StreamEndpointNode
+
 
 class XportNode(Node):
     """Represents an Xport node
@@ -21,6 +30,7 @@ class XportNode(Node):
     When an Advertise Management op is received, the address and
     src_epid of the packet is placed in self.addr_map
     """
+
     def __init__(self, node_inst):
         super().__init__(node_inst)
         self.downstream = None
@@ -43,15 +53,16 @@ class XportNode(Node):
             elif op.op_code == MgmtOpCode.NOP:
                 pass
             elif op.op_code == MgmtOpCode.ADVERTISE:
-                self.log.info("Advertise: {} | EPID:{} -> EPID:{}"
-                              .format(self.get_id(), payload.src_epid,
-                                      packet.get_header().dst_epid))
+                self.log.info(
+                    "Advertise: {} | EPID:{} -> EPID:{}".format(
+                        self.get_id(), payload.src_epid, packet.get_header().dst_epid
+                    )
+                )
                 self.log.info("addr_map updated: EPID:{} -> {}".format(payload.src_epid, addr))
                 self.addr_map[payload.src_epid] = addr
             else:
                 raise NotImplementedError(op.op_code)
-        self.log.trace("Xport {} processed hop:\n{}"
-                       .format(self.node_inst, our_hop))
+        self.log.trace("Xport {} processed hop:\n{}".format(self.node_inst, our_hop))
         packet.set_payload(payload)
         if send_upstream:
             return RETURN_TO_SENDER
@@ -59,6 +70,7 @@ class XportNode(Node):
 
     def _handle_default_packet(self, packet, **kwargs):
         return self.downstream
+
 
 class XbarNode(Node):
     """Represents a crossbar node
@@ -73,6 +85,7 @@ class XbarNode(Node):
     it is connected to. This differs from its handling of node_inst
     for other types of nodes.
     """
+
     def __init__(self, node_inst, ports, xport_ports):
         super().__init__(node_inst)
         self.nports = len(ports) + len(xport_ports)
@@ -90,8 +103,9 @@ class XbarNode(Node):
         our_hop = payload.pop_hop()
         for op in to_iter(our_hop.get_op, our_hop.get_num_ops()):
             if op.op_code == MgmtOpCode.INFO_REQ:
-                payload.get_hop(0).add_op(self.info_response(
-                    (self.nports_xport << 8) | self.nports))
+                payload.get_hop(0).add_op(
+                    self.info_response((self.nports_xport << 8) | self.nports)
+                )
             elif op.op_code == MgmtOpCode.RETURN:
                 send_upstream = True
                 swap_src_dst(packet, payload)
@@ -103,8 +117,9 @@ class XbarNode(Node):
                 cfg = op.get_op_payload()
                 cfg = MgmtOpCfg.parse(cfg)
                 self.routing_table[cfg.addr] = cfg.data
-                self.log.debug("Xbar {} routing changed: {}"
-                               .format(self.node_inst, self.routing_table))
+                self.log.debug(
+                    "Xbar {} routing changed: {}".format(self.node_inst, self.routing_table)
+                )
             elif op.op_code == MgmtOpCode.SEL_DEST:
                 cfg = op.get_op_payload()
                 cfg = MgmtOpSelDest.parse(cfg)
@@ -112,8 +127,7 @@ class XbarNode(Node):
                 destination = self.ports[dest_port]
             else:
                 raise NotImplementedError(op.op_code)
-        self.log.trace("Xbar {} processed hop:\n{}"
-                       .format(self.node_inst, our_hop))
+        self.log.trace("Xbar {} processed hop:\n{}".format(self.node_inst, our_hop))
         packet.set_payload(payload)
         if send_upstream:
             return RETURN_TO_SENDER
@@ -141,6 +155,7 @@ class XbarNode(Node):
             elif node.__class__ is StreamEndpointNode:
                 node.upstream = self.get_local_id()
 
+
 class RFNoCGraph:
     """This class holds all of the nodes of the NoC core and the Noc
     blocks.
@@ -148,6 +163,7 @@ class RFNoCGraph:
     It serves as an interface between the ChdrEndpoint and the
     individual blocks/nodes.
     """
+
     def __init__(self, graph_list, log, device_id, send_wrapper, chdr_w, rfnoc_device_id):
         self.log = log.getChild("Graph")
         self.device_id = device_id
@@ -156,25 +172,42 @@ class RFNoCGraph:
         for node in graph_list:
             if node.__class__ is StreamEndpointNode:
                 self.stream_ep.append(node)
-            node.graph_init(self.log, self.get_device_id, send_wrapper=send_wrapper,
-                            chdr_w=chdr_w, dst_to_addr=self.dst_to_addr)
+            node.graph_init(
+                self.log,
+                self.get_device_id,
+                send_wrapper=send_wrapper,
+                chdr_w=chdr_w,
+                dst_to_addr=self.dst_to_addr,
+            )
         # These must be done sequentially so that get_device_id is initialized on all nodes
         # before from_index is called on any node
         for node in graph_list:
             node.from_index(graph_list)
-        self.graph_map = {node.get_local_id(): node
-                          for node in graph_list}
+        self.graph_map = {node.get_local_id(): node for node in graph_list}
         # For now, just use one radio block and hardcode it to the first stream endpoint
         radio = NocBlock(1 << 16, 2, 2, 512, 1, 0x12AD1000, 16)
         adj_list = [
             (StreamEndpointPort(0, 0), NocBlockPort(0, 0)),
             (StreamEndpointPort(0, 1), NocBlockPort(0, 1)),
             (NocBlockPort(0, 0), StreamEndpointPort(0, 0)),
-            (NocBlockPort(0, 1), StreamEndpointPort(0, 1))
+            (NocBlockPort(0, 1), StreamEndpointPort(0, 1)),
         ]
-        self.regs = NocBlockRegs(self.log, 1 << 16, True, 1, [radio], len(self.stream_ep), 1,
-                                 rfnoc_device_id, adj_list, 8, 1, self.get_stream_spec,
-                                 self.radio_tx_cmd, self.radio_tx_stop)
+        self.regs = NocBlockRegs(
+            self.log,
+            1 << 16,
+            True,
+            1,
+            [radio],
+            len(self.stream_ep),
+            1,
+            rfnoc_device_id,
+            adj_list,
+            8,
+            1,
+            self.get_stream_spec,
+            self.radio_tx_cmd,
+            self.radio_tx_stop,
+        )
 
     def radio_tx_cmd(self, sep_block_id):
         """Triggers the creation of a ChdrOutputStream in the ChdrEndpoint using
@@ -259,8 +292,9 @@ class RFNoCGraph:
         node_id = xport_input
         response_packet = None
         while node_id is not None:
-            assert len(node_id) == 2, "Node returned non-local node_id of len {}: {}" \
-                .format(len(node_id), node_id)
+            assert len(node_id) == 2, "Node returned non-local node_id of len {}: {}".format(
+                len(node_id), node_id
+            )
 
             if node_id[0] == NodeType.RTS:
                 response_packet = packet
@@ -269,10 +303,11 @@ class RFNoCGraph:
             # If the node returns a value, it is the node id of the
             # node the packet should be passed to next
             # or RETURN_TO_SENDER
-            node_id = node.handle_packet(packet, regs=self.regs, addr=addr,
-                                         sender=sender, num_bytes=num_bytes)
+            node_id = node.handle_packet(
+                packet, regs=self.regs, addr=addr, sender=sender, num_bytes=num_bytes
+            )
         return response_packet
 
     def get_stream_spec(self):
-        """ Get the current output stream configuration """
+        """Get the current output stream configuration"""
         return self.stream_spec

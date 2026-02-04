@@ -10,17 +10,18 @@ Tag-Length-Value (TLV) based EEPROM management code
 import struct
 import zlib
 
+
 class NamedStruct:
     """
     Helper class for unpacking values from bytes
     """
+
     def __init__(self, fmt, keys):
         self.struct = struct.Struct(fmt)
         self.keys = keys
 
         # ensure no duplicate keys
-        assert len(set(keys) - set([None])) == \
-            len([x for x in keys if x is not None])
+        assert len(set(keys) - set([None])) == len([x for x in keys if x is not None])
         # ensure same number of keys as elements
         assert len(self.struct.unpack(bytearray(self.size))) == len(keys)
 
@@ -54,32 +55,32 @@ def tlv_eeprom_validate(eeprom, expected_magic):
     eeprom -- raw eeprom data
     expected_magic -- magic value that's expected
     """
+
     def crc32(data, initial=0):
         initial = initial ^ 0xFFFFFFFF
         crc = zlib.crc32(data, initial)
         return crc ^ 0xFFFFFFFF
 
     size_offset = 8
-    tlv_eeprom_hdr = NamedStruct('< I I I', ['magic', 'crc', 'size'])
+    tlv_eeprom_hdr = NamedStruct("< I I I", ["magic", "crc", "size"])
     hdr = tlv_eeprom_hdr.unpack_from(eeprom)
 
-    if hdr['magic'] != expected_magic:
+    if hdr["magic"] != expected_magic:
         raise RuntimeError(
             "Received incorrect EEPROM magic. "
-            "Read: {:08X} Expected: {:08X}".format(
-                hdr['magic'], expected_magic))
+            "Read: {:08X} Expected: {:08X}".format(hdr["magic"], expected_magic)
+        )
 
-    if hdr['size'] > (len(eeprom) - tlv_eeprom_hdr.size):
-        raise RuntimeError('invalid size')
+    if hdr["size"] > (len(eeprom) - tlv_eeprom_hdr.size):
+        raise RuntimeError("invalid size")
 
-    crc = crc32(eeprom[size_offset:tlv_eeprom_hdr.size+hdr['size']])
-    if hdr['crc'] != crc:
+    crc = crc32(eeprom[size_offset : tlv_eeprom_hdr.size + hdr["size"]])
+    if hdr["crc"] != crc:
         raise RuntimeError(
-            "Received incorrect CRC. "
-            "Read: {:08X} Expected: {:08X}".format(
-                hdr['crc'], crc))
+            "Received incorrect CRC. " "Read: {:08X} Expected: {:08X}".format(hdr["crc"], crc)
+        )
 
-    return hdr, eeprom[tlv_eeprom_hdr.size:tlv_eeprom_hdr.size+hdr['size']]
+    return hdr, eeprom[tlv_eeprom_hdr.size : tlv_eeprom_hdr.size + hdr["size"]]
 
 
 def tlv_eeprom_unpack(tlv, tagmap):
@@ -91,35 +92,30 @@ def tlv_eeprom_unpack(tlv, tagmap):
     """
 
     values = {}
-    hdr_struct = NamedStruct('< B B', ['tag', 'len'])
+    hdr_struct = NamedStruct("< B B", ["tag", "len"])
     idx = 0
 
     while idx < len(tlv):
         hdr = hdr_struct.unpack_from(tlv, idx)
         idx += hdr_struct.size
 
-        if hdr['tag'] in tagmap:
-            val_struct = tagmap[hdr['tag']]
-            if hdr['len'] != val_struct.size:
+        if hdr["tag"] in tagmap:
+            val_struct = tagmap[hdr["tag"]]
+            if hdr["len"] != val_struct.size:
                 raise RuntimeError(
-                    "unexpected size: {:d}, expected: {:d}".format(
-                        hdr['len'], tagmap[hdr['tag']]))
+                    "unexpected size: {:d}, expected: {:d}".format(hdr["len"], tagmap[hdr["tag"]])
+                )
             unpacked = val_struct.unpack_from(tlv, idx)
             # prohibit clobbering existing values
             assert len(set(values.keys()) & set(unpacked.keys())) == 0
             values.update(unpacked)
 
-        idx += hdr['len']
+        idx += hdr["len"]
 
     return values
 
 
-def read_eeprom(
-        nvmem_path,
-        tagmap,
-        expected_magic,
-        max_size=None
-):
+def read_eeprom(nvmem_path, tagmap, expected_magic, max_size=None):
     """
     Read the EEPROM located at nvmem_path and return a tuple (header, data)
     Header is a dictionary of values unpacked from eeprom based upon tagmap

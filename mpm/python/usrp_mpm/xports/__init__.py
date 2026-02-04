@@ -7,6 +7,6 @@
 Transport managers
 """
 
-from .xportmgr_udp import XportMgrUDP
-from .xport_adapter_mgr import XportAdapterMgr
 from .xport_adapter_ctrl import XportAdapterCtrl
+from .xport_adapter_mgr import XportAdapterMgr
+from .xportmgr_udp import XportMgrUDP

@@ -7,11 +7,24 @@
 This is a stream endpoint node, which is used in the RFNoCGraph class.
 It also houses the logic to create output and input streams.
 """
-from uhd.chdr import MgmtOpCode, MgmtOpCfg, MgmtOp, PacketType, CtrlStatus, CtrlOpCode, \
-    ChdrHeader, StrcOpCode, StrcPayload, ChdrPacket, StrsStatus
-from .rfnoc_common import Node, NodeType, to_iter, swap_src_dst, RETURN_TO_SENDER
-from .stream_ep_regs import StreamEpRegs, STRM_STATUS_FC_ENABLED
-from .chdr_stream import ChdrOutputStream, ChdrInputStream
+from uhd.chdr import (
+    ChdrHeader,
+    ChdrPacket,
+    CtrlOpCode,
+    CtrlStatus,
+    MgmtOp,
+    MgmtOpCfg,
+    MgmtOpCode,
+    PacketType,
+    StrcOpCode,
+    StrcPayload,
+    StrsStatus,
+)
+
+from .chdr_stream import ChdrInputStream, ChdrOutputStream
+from .rfnoc_common import RETURN_TO_SENDER, Node, NodeType, swap_src_dst, to_iter
+from .stream_ep_regs import STRM_STATUS_FC_ENABLED, StreamEpRegs
+
 
 class StreamEndpointNode(Node):
     """Represents a Stream endpoint node
@@ -21,6 +34,7 @@ class StreamEndpointNode(Node):
     registers of the noc_blocks which are held in the RFNoCGraph and
     passed into handle_packet as the regs parameter
     """
+
     def __init__(self, node_inst, source_gen, sink_gen):
         super().__init__(node_inst)
         self.epid = node_inst
@@ -41,9 +55,15 @@ class StreamEndpointNode(Node):
         self.sink_gen = sink_gen
         self.downstream_capacity = None
         self.strs_handlers = {}
-        self.ep_regs = StreamEpRegs(self.get_epid, self.set_epid, self.set_dst_epid,
-                                    self.ctrl_status_callback_out, self.ctrl_status_callback_in,
-                                    4, 4 * 8000)
+        self.ep_regs = StreamEpRegs(
+            self.get_epid,
+            self.set_epid,
+            self.set_dst_epid,
+            self.ctrl_status_callback_out,
+            self.ctrl_status_callback_in,
+            4,
+            4 * 8000,
+        )
 
     def ctrl_status_callback_out(self, status):
         """Called by the ep_regs when on a write to the
@@ -54,11 +74,14 @@ class StreamEndpointNode(Node):
             self.log.info("Starting Stream EPID:{} -> EPID:{}".format(self.epid, self.dst_epid))
             addr = self.dst_to_addr(self)
             self.send_strc(addr)
+
             def handle_initial_strs(strs_packet):
                 payload = strs_packet.get_payload_strs()
-                assert payload.status == StrsStatus.OKAY, \
-                    "Received STRS Packet Err: {}".format(payload.status)
+                assert payload.status == StrsStatus.OKAY, "Received STRS Packet Err: {}".format(
+                    payload.status
+                )
                 self.downstream_capacity = (payload.capacity_pkts, payload.capacity_bytes)
+
             self.strs_handlers[self.epid] = handle_initial_strs
         return STRM_STATUS_FC_ENABLED
 
@@ -112,21 +135,21 @@ class StreamEndpointNode(Node):
             elif op.op_code == MgmtOpCode.CFG_RD_REQ:
                 request = MgmtOpCfg.parse(op.get_op_payload())
                 value = self.ep_regs.read(request.addr)
-                payload.get_hop(0).add_op(MgmtOp(MgmtOpCode.CFG_RD_RESP,
-                                                 MgmtOpCfg(request.addr, value)))
+                payload.get_hop(0).add_op(
+                    MgmtOp(MgmtOpCode.CFG_RD_RESP, MgmtOpCfg(request.addr, value))
+                )
             elif op.op_code == MgmtOpCode.CFG_WR_REQ:
                 request = MgmtOpCfg.parse(op.get_op_payload())
                 self.ep_regs.write(request.addr, request.data)
             else:
-                raise NotImplementedError("op_code {} is not implemented for StreamEndpointNode"
-                                          .format(op.op_code))
-        self.log.trace("Stream Endpoint {} processed hop:\n{}"
-                       .format(self.node_inst, our_hop))
+                raise NotImplementedError(
+                    "op_code {} is not implemented for StreamEndpointNode".format(op.op_code)
+                )
+        self.log.trace("Stream Endpoint {} processed hop:\n{}".format(self.node_inst, our_hop))
         packet.set_payload(payload)
         if send_upstream:
             return RETURN_TO_SENDER
-        self.log.trace("Stream Endpoint {} received packet:\n{}"
-                       .format(self.node_inst, packet))
+        self.log.trace("Stream Endpoint {} received packet:\n{}".format(self.node_inst, packet))
 
     def _handle_ctrl_packet(self, packet, regs, **kwargs):
         payload = packet.get_payload_ctrl()
@@ -173,7 +196,7 @@ class StreamEndpointNode(Node):
         payload.src_epid = self.epid
         payload.op_code = StrcOpCode.INIT
         payload.num_pkts = 10
-        payload.num_bytes = 10 * 1024 # 10 KB
+        payload.num_bytes = 10 * 1024  # 10 KB
         packet = ChdrPacket(self.chdr_w, header, payload)
         self.send_wrapper.send_packet(packet, addr)
 
@@ -186,14 +209,16 @@ class StreamEndpointNode(Node):
         """
         # As of now, only one stream endpoint port per stream endpoint
         # is supported.
-        assert self.output_stream is None, \
-            "Output Stream already running on epid: {}".format(self.epid)
+        assert self.output_stream is None, "Output Stream already running on epid: {}".format(
+            self.epid
+        )
         stream_spec.dst_epid = self.dst_epid
         stream_spec.capacity_packets = self.downstream_capacity[0]
         stream_spec.capacity_bytes = self.downstream_capacity[1]
         self.downstream_capacity = None
-        self.output_stream = ChdrOutputStream(self.log, self.chdr_w, self.source_gen(),
-                                              stream_spec, self.send_wrapper)
+        self.output_stream = ChdrOutputStream(
+            self.log, self.chdr_w, self.source_gen(), stream_spec, self.send_wrapper
+        )
 
     def end_output(self):
         """Stops src_epid's current transmission. This opens up the sep
@@ -219,5 +244,6 @@ class StreamEndpointNode(Node):
         # a new one on the same epid, just quietly close the old one.
         if self.input_stream is not None:
             self.input_stream.finish()
-        self.input_stream = ChdrInputStream(self.log, self.chdr_w,
-                                            self.sink_gen(), self.send_wrapper, self.epid)
+        self.input_stream = ChdrInputStream(
+            self.log, self.chdr_w, self.sink_gen(), self.send_wrapper, self.epid
+        )

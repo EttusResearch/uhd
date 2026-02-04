@@ -8,15 +8,18 @@
 Implements decorators and utility functions to be used with the RPC server
 """
 
+
 def no_claim(func):
-    " Decorator for functions that require no token check "
+    "Decorator for functions that require no token check"
     func._notok = True
     return func
 
+
 def no_rpc(func):
-    " Decorator for functions that should not be exposed via RPC "
+    "Decorator for functions that should not be exposed via RPC"
     func._norpc = True
     return func
+
 
 def get_map_for_rpc(map, log):
     """

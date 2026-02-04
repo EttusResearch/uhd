@@ -8,7 +8,9 @@ magnesium dboard implementation module
 """
 
 from builtins import object
+
 from usrp_mpm.dboard_manager import DboardManagerBase
+
 
 class fake_spi(object):
     def __init__(self, addr):
@@ -42,4 +44,3 @@ class test(DboardManagerBase):
     def init_device(self):
         self.log.debug("initialize hardware")
         self._device = test_device(self.dev1, self.dev2, self.dev3)
-

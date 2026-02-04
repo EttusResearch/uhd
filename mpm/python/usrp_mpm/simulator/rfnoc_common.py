@@ -8,12 +8,15 @@ This file contains common classes that are used by both rfnoc_graph.py
 and stream_endpoint_node.py
 """
 from enum import IntEnum
-from uhd.chdr import MgmtOpCode, MgmtOpNodeInfo, MgmtOp, PacketType
+
+from uhd.chdr import MgmtOp, MgmtOpCode, MgmtOpNodeInfo, PacketType
+
 
 def to_iter(index_func, length):
     """Allows looping over an indexed object in a for-each loop"""
     for i in range(length):
         yield index_func(i)
+
 
 def swap_src_dst(packet, payload):
     """Swap the src_epid and the dst_epid of a packet"""
@@ -23,19 +26,23 @@ def swap_src_dst(packet, payload):
     payload.src_epid = our_epid
     packet.set_header(header)
 
+
 class NodeType(IntEnum):
     """The type of a node in a NoC Core
 
     RTS is a magic value used to determine when to return a packet to
     the sender
     """
+
     INVALID = 0
     XBAR = 1
     STRM_EP = 2
     XPORT = 3
     RTS = 0xFF
 
+
 RETURN_TO_SENDER = (NodeType.RTS, 0)
+
 
 class Node:
     """Represents a node in a NoC Core
@@ -45,6 +52,7 @@ class Node:
     list of nodes. The graph calls graph_init and from_index so this
     node can initialize their references to node_ids instead.
     """
+
     def __init__(self, node_inst):
         """node_inst should start at 0 and increase for every Node of
         the same type that is constructed
@@ -114,8 +122,11 @@ class Node:
         return NotImplemented
 
     def _handle_default_packet(self, packet, **kwargs):
-        raise RuntimeError("{} has no operation defined for a {} packet"
-                           .format(self.__class__, packet.get_header().pkt_type))
+        raise RuntimeError(
+            "{} has no operation defined for a {} packet".format(
+                self.__class__, packet.get_header().pkt_type
+            )
+        )
 
     def from_index(self, nodes):
         """Initialize this node's indexes to block_id references"""
@@ -124,10 +135,12 @@ class Node:
     def info_response(self, extended_info):
         """Generate a node info response MgmtOp"""
         return MgmtOp(
-            op_payload=MgmtOpNodeInfo(self.get_device_id(), self.get_type(),
-                                      self.node_inst, extended_info),
-            op_code=MgmtOpCode.INFO_RESP
+            op_payload=MgmtOpNodeInfo(
+                self.get_device_id(), self.get_type(), self.node_inst, extended_info
+            ),
+            op_code=MgmtOpCode.INFO_RESP,
         )
+
 
 class StreamSpec:
     """This class carries the configuration parameters of a Tx stream.
@@ -142,8 +155,10 @@ class StreamSpec:
 
     addr comes from the xport passed through when routing to dst_epid
     """
+
     LOW_MASK = 0xFFFFFFFF
     HIGH_MASK = (0xFFFFFFFF) << 32
+
     def __init__(self):
         self.init_timestamp = 0
         self.is_timed = False
@@ -158,23 +173,27 @@ class StreamSpec:
 
     def set_timestamp_lo(self, low):
         """Set the low 32 bits of the initial timestamp"""
-        self.init_timestamp = (self.init_timestamp & (StreamSpec.HIGH_MASK)) \
-            | (low & StreamSpec.LOW_MASK)
+        self.init_timestamp = (self.init_timestamp & (StreamSpec.HIGH_MASK)) | (
+            low & StreamSpec.LOW_MASK
+        )
 
     def set_timestamp_hi(self, high):
         """Set the high 32 bits of the initial timestamp"""
-        self.init_timestamp = (self.init_timestamp & StreamSpec.LOW_MASK) \
-            | ((high & StreamSpec.LOW_MASK) << 32)
+        self.init_timestamp = (self.init_timestamp & StreamSpec.LOW_MASK) | (
+            (high & StreamSpec.LOW_MASK) << 32
+        )
 
     def set_num_words_lo(self, low):
         """Set the low 32 bits of the total_samples field"""
-        self.total_samples = (self.total_samples & (StreamSpec.HIGH_MASK)) \
-            | (low & StreamSpec.LOW_MASK)
+        self.total_samples = (self.total_samples & (StreamSpec.HIGH_MASK)) | (
+            low & StreamSpec.LOW_MASK
+        )
 
     def set_num_words_hi(self, high):
         """Set the high 32 bits of the total_samples field"""
-        self.total_samples = (self.total_samples & StreamSpec.LOW_MASK) \
-            | ((high & StreamSpec.LOW_MASK) << 32)
+        self.total_samples = (self.total_samples & StreamSpec.LOW_MASK) | (
+            (high & StreamSpec.LOW_MASK) << 32
+        )
 
     def seconds_per_packet(self):
         """Calculates how many seconds should be between each packet
@@ -185,7 +204,14 @@ class StreamSpec:
         return self.packet_samples / self.sample_rate
 
     def __str__(self):
-        return "StreamSpec{{total_samples: {}, is_continuous: {}, packet_samples: {}," \
-               "sample_rate: {}, dst_epid: {}, addr: {}}}" \
-               .format(self.total_samples, self.is_continuous, self.packet_samples,
-                       self.sample_rate, self.dst_epid, self.addr)
+        return (
+            "StreamSpec{{total_samples: {}, is_continuous: {}, packet_samples: {},"
+            "sample_rate: {}, dst_epid: {}, addr: {}}}".format(
+                self.total_samples,
+                self.is_continuous,
+                self.packet_samples,
+                self.sample_rate,
+                self.dst_epid,
+                self.addr,
+            )
+        )

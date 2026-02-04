@@ -10,10 +10,12 @@ from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.gpio import Gpio
 
+
 class X4xxIfTestCCA(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the X4xx IF Test CCA
     """
+
     #########################################################################
     # Overridables
     #
@@ -25,35 +27,34 @@ class X4xxIfTestCCA(DboardManagerBase):
     def __init__(self, slot_idx, **kwargs):
         DboardManagerBase.__init__(self, slot_idx, **kwargs)
         self.log = get_logger("X4xxIfTestCCA-{}".format(slot_idx))
-        self.log.trace("Initializing X4xxIfTestCCA, slot index %d",
-                       self.slot_idx)
+        self.log.trace("Initializing X4xxIfTestCCA, slot index %d", self.slot_idx)
 
         # Interface with MB HW
-        if 'db_iface' not in kwargs:
+        if "db_iface" not in kwargs:
             self.log.error("Required DB Iface was not provided!")
             raise RuntimeError("Required DB Iface was not provided!")
-        self.db_iface = kwargs['db_iface']
+        self.db_iface = kwargs["db_iface"]
 
         # Power on the card
         self.db_iface.enable_daughterboard(enable=True)
         if not self.db_iface.check_enable_daughterboard():
             self.db_iface.enable_daughterboard(enable=False)
-            self.log.error('IF Test CCA {} power up failed'.format(self.slot_idx))
-            raise RuntimeError('IF Test CCA {} power up failed'.format(self.slot_idx))
+            self.log.error("IF Test CCA {} power up failed".format(self.slot_idx))
+            raise RuntimeError("IF Test CCA {} power up failed".format(self.slot_idx))
 
         # [boolean for stage 1 mux , boolean for stage 2 mux]
         self._adc_mux_settings = {
-            "adc0" : [0, 0],
-            "adc1" : [1, 1],
-            "adc2" : [1, 0],
-            "adc3" : [0, 1],
+            "adc0": [0, 0],
+            "adc1": [1, 1],
+            "adc2": [1, 0],
+            "adc3": [0, 1],
         }
 
         self._dac_mux_settings = {
-            "dac0" : [1, 0],
-            "dac1" : [1, 1],
-            "dac2" : [0, 0],
-            "dac3" : [0, 1],
+            "dac0": [1, 0],
+            "dac1": [1, 1],
+            "dac2": [0, 0],
+            "dac3": [0, 1],
         }
 
         # There are 4 possible Tx (DAC) streams that are available to choose
@@ -96,14 +97,15 @@ class X4xxIfTestCCA(DboardManagerBase):
         # Choices are BaseRefClk and PllRefClk
         self.disable_vcm_dac = Gpio("DB{}_REF_CLK_SEL_USR".format(slot_idx), Gpio.OUTPUT, 0)
 
-
     def init(self, args):
         """
         Execute necessary init dance to bring up dboard
         """
-        self.log.debug("init() called with args `{}'".format(
-            ",".join(['{}={}'.format(x, args[x]) for x in args])
-        ))
+        self.log.debug(
+            "init() called with args `{}'".format(
+                ",".join(["{}={}".format(x, args[x]) for x in args])
+            )
+        )
         self.config_tx_path("dac0")
         self.config_rx_path("adc0")
         return True

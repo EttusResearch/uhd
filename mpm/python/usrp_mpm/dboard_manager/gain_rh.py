@@ -8,12 +8,15 @@ Gain table control for Rhodium
 """
 
 from __future__ import print_function
-from usrp_mpm.dboard_manager.gaintables_rh import RX_LOWBAND_GAIN_TABLE
-from usrp_mpm.dboard_manager.gaintables_rh import RX_HIGHBAND_GAIN_TABLE
-from usrp_mpm.dboard_manager.gaintables_rh import TX_LOWBAND_GAIN_TABLE
-from usrp_mpm.dboard_manager.gaintables_rh import TX_HIGHBAND_GAIN_TABLE
 
-#from usrp_mpm.dboard_manager.rhodium import Rhodium
+from usrp_mpm.dboard_manager.gaintables_rh import (
+    RX_HIGHBAND_GAIN_TABLE,
+    RX_LOWBAND_GAIN_TABLE,
+    TX_HIGHBAND_GAIN_TABLE,
+    TX_LOWBAND_GAIN_TABLE,
+)
+
+# from usrp_mpm.dboard_manager.rhodium import Rhodium
 
 ###############################################################################
 # Constants
@@ -33,28 +36,33 @@ GAIN_TBL_SEL_HIGH_BAND = 1
 GAIN_TBL_SEL_LOW_BAND = 0
 
 # convenience data values for GAIN_TBL_SEL
-GAIN_TBL_SEL_DATA_BOTH_HIGH = \
-    (GAIN_TBL_SEL_HIGH_BAND << GAIN_TBL_SEL_TX_SHIFT) | \
-    (GAIN_TBL_SEL_HIGH_BAND << GAIN_TBL_SEL_RX_SHIFT)
-GAIN_TBL_SEL_DATA_BOTH_LOW = \
-    (GAIN_TBL_SEL_LOW_BAND << GAIN_TBL_SEL_TX_SHIFT) | \
-    (GAIN_TBL_SEL_LOW_BAND << GAIN_TBL_SEL_RX_SHIFT)
+GAIN_TBL_SEL_DATA_BOTH_HIGH = (GAIN_TBL_SEL_HIGH_BAND << GAIN_TBL_SEL_TX_SHIFT) | (
+    GAIN_TBL_SEL_HIGH_BAND << GAIN_TBL_SEL_RX_SHIFT
+)
+GAIN_TBL_SEL_DATA_BOTH_LOW = (GAIN_TBL_SEL_LOW_BAND << GAIN_TBL_SEL_TX_SHIFT) | (
+    GAIN_TBL_SEL_LOW_BAND << GAIN_TBL_SEL_RX_SHIFT
+)
 
 ###############################################################################
 # Main class
 ###############################################################################
 
-class GainTableRh():
+
+class GainTableRh:
     """
     CPLD gain table loader for Rhodium daughterboards
     """
+
     def __init__(self, cpld_regs, gain_tbl_regs, parent_log=None):
-        self.log = parent_log.getChild("CPLDGainTbl") if parent_log is not None \
+        self.log = (
+            parent_log.getChild("CPLDGainTbl")
+            if parent_log is not None
             else get_logger("CPLDGainTbl")
+        )
         self.cpld_regs = cpld_regs
         self.gain_tbl_regs = gain_tbl_regs
-        assert hasattr(self.cpld_regs, 'poke16')
-        assert hasattr(self.gain_tbl_regs, 'poke16')
+        assert hasattr(self.cpld_regs, "poke16")
+        assert hasattr(self.gain_tbl_regs, "poke16")
 
     def _load_default_table(self, table, gain_table):
         def _create_spi_loader_message(table, index, dsa1, dsa2):
@@ -66,17 +74,14 @@ class GainTableRh():
                 tableindex = 2
             else:
                 raise RuntimeError("Invalid table selected in gain loader: " + table)
-            addr |= (tableindex << 6)
-            addr |= (index << 0)
-            data |= (dsa1 << 5)
-            data |= (dsa2 << 0)
+            addr |= tableindex << 6
+            addr |= index << 0
+            data |= dsa1 << 5
+            data |= dsa2 << 0
             return addr, data
+
         for i in range(GAIN_TABLE_MIN_INDEX, GAIN_TABLE_MAX_INDEX):
-            addr, data = _create_spi_loader_message(
-                table,
-                i,
-                gain_table[i][0],
-                gain_table[i][1])
+            addr, data = _create_spi_loader_message(table, i, gain_table[i][0], gain_table[i][1])
             self.gain_tbl_regs.poke16(addr, data)
 
     def init(self):

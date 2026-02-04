@@ -8,6 +8,7 @@ White Rabbit Control
 """
 
 from builtins import object
+
 from usrp_mpm.sys_utils.uio import UIO
 
 
@@ -15,6 +16,7 @@ class WhiteRabbitRegsControl(object):
     """
     Control and read the FPGA White Rabbit core registers
     """
+
     # Memory Map
     #  0x00000000: I/D Memory
     #  0x00020000: Peripheral interconnect
@@ -34,12 +36,11 @@ class WhiteRabbitRegsControl(object):
 
     def __init__(self, label, log):
         self.log = log
-        self.regs = UIO(
-            label=label,
-            read_only=False
-        )
+        self.regs = UIO(label=label, read_only=False)
         self.periph_peek32 = lambda addr: self.regs.peek32(addr + self.PERIPH_INTERCON_BASE)
-        self.periph_poke32 = lambda addr, data: self.regs.poke32(addr + self.PERIPH_INTERCON_BASE, data)
+        self.periph_poke32 = lambda addr, data: self.regs.poke32(
+            addr + self.PERIPH_INTERCON_BASE, data
+        )
 
     def get_time_lock_status(self):
         """

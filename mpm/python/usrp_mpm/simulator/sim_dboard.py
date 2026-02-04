@@ -9,8 +9,10 @@ from usrp_mpm.mpmutils import to_native_str
 
 registry = {}
 
+
 def register_dboard_class(cls):
     registry[cls.__name__] = cls
+
 
 class SimulatedDboardBase(DboardManagerBase):
     """
@@ -30,12 +32,12 @@ class SimulatedDboardBase(DboardManagerBase):
         super().__init__(slot_idx, **kwargs)
         self.log = get_logger("sim_db-{}".format(slot_idx))
         self.device_info = {
-            'pid': to_native_str(self.__class__.pids[0]),
-            'serial': to_native_str("todo:serial-here"),
-            'rev': to_native_str("1"),
-            'eeprom_version': to_native_str('0')
+            "pid": to_native_str(self.__class__.pids[0]),
+            "serial": to_native_str("todo:serial-here"),
+            "rev": to_native_str("1"),
+            "eeprom_version": to_native_str("0"),
         }
-        self.rev = int(self.device_info['rev'])
+        self.rev = int(self.device_info["rev"])
 
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         self._make_extra_methods()
@@ -57,26 +59,29 @@ class SimulatedDboardBase(DboardManagerBase):
             else:
                 func = lambda *args: None
                 prop_name = entry
+
             # default values are needed because loop iterations don't create a new scope in python
             def wrapped_func(*args, prop_name=prop_name, func=func):
                 self.log.debug("Called {} with args: {}".format(prop_name, args))
                 return func(*args)
+
             setattr(self, prop_name, wrapped_func)
+
 
 class SimulatedCatalinaDboard(SimulatedDboardBase):
     pids = [0x0110]
 
     # Sensor callback maps (matching neon.py)
     rx_sensor_callback_map = {
-        'ad9361_temperature': 'get_catalina_temp_sensor',
-        'rssi': 'get_rssi_sensor',
-        'lo_lock': 'get_rx_lo_lock_sensor',
-        'lo_locked': 'get_rx_lo_lock_sensor',
+        "ad9361_temperature": "get_catalina_temp_sensor",
+        "rssi": "get_rssi_sensor",
+        "lo_lock": "get_rx_lo_lock_sensor",
+        "lo_locked": "get_rx_lo_lock_sensor",
     }
     tx_sensor_callback_map = {
-        'ad9361_temperature': 'get_catalina_temp_sensor',
-        'lo_lock': 'get_tx_lo_lock_sensor',
-        'lo_locked': 'get_tx_lo_lock_sensor',
+        "ad9361_temperature": "get_catalina_temp_sensor",
+        "lo_lock": "get_tx_lo_lock_sensor",
+        "lo_locked": "get_tx_lo_lock_sensor",
     }
 
     extra_methods = [
@@ -88,7 +93,7 @@ class SimulatedCatalinaDboard(SimulatedDboardBase):
         "set_agc",
         "set_active_chains",
         "set_timing_mode",
-        "data_port_loopback"
+        "data_port_loopback",
     ]
 
     def __init__(self, slot_idx, clock_rate_cb, **kwargs):
@@ -107,37 +112,33 @@ class SimulatedCatalinaDboard(SimulatedDboardBase):
     def get_catalina_temp_sensor(self, _):
         """Return simulated AD9361 temperature sensor"""
         return {
-            'name': 'ad9361_temperature',
-            'type': 'REALNUM',
-            'unit': 'C',
-            'value': '35.0'  # Simulated temperature
+            "name": "ad9361_temperature",
+            "type": "REALNUM",
+            "unit": "C",
+            "value": "35.0",  # Simulated temperature
         }
 
     def get_rssi_sensor(self, chan):
         """Return simulated RSSI sensor"""
-        return {
-            'name': 'rssi',
-            'type': 'REALNUM',
-            'unit': 'dB',
-            'value': '-50.0'  # Simulated RSSI
-        }
+        return {"name": "rssi", "type": "REALNUM", "unit": "dB", "value": "-50.0"}  # Simulated RSSI
 
     def get_rx_lo_lock_sensor(self, chan):
         """Return simulated RX LO lock sensor"""
         return {
-            'name': 'lo_locked',
-            'type': 'BOOLEAN',
-            'unit': '',
-            'value': 'true'  # Always locked in simulation
+            "name": "lo_locked",
+            "type": "BOOLEAN",
+            "unit": "",
+            "value": "true",  # Always locked in simulation
         }
 
     def get_tx_lo_lock_sensor(self, chan):
         """Return simulated TX LO lock sensor"""
         return {
-            'name': 'lo_locked',
-            'type': 'BOOLEAN',
-            'unit': '',
-            'value': 'true'  # Always locked in simulation
+            "name": "lo_locked",
+            "type": "BOOLEAN",
+            "unit": "",
+            "value": "true",  # Always locked in simulation
         }
+
 
 register_dboard_class(SimulatedCatalinaDboard)

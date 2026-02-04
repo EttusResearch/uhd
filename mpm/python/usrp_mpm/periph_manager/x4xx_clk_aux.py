@@ -8,14 +8,14 @@ Drivers for the X410 clocking aux board.
 """
 
 import subprocess
+
 from usrp_mpm import lib  # Pulls in everything from C++-land
 from usrp_mpm import tlv_eeprom
-from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils.gpio import Gpio
-from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
-from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.chips import LMK05318
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils import i2c_dev
+from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev, get_eeprom_paths_by_symbol
 
 # DAC AD5338R provides V_out = V_ref * gain (tune_word / 2^N)
 # We have gain pin enabled (2) and N = 10 for the AD5338 models
@@ -25,8 +25,8 @@ from usrp_mpm.chips import LMK05318
 #       the tuning word is therefore limited to 0x2A4
 X400_CLKAUX_DEFAULT_TUNING_WORD = 0x152
 X400_CLKAUX_DEFAULT_REVISION = 0x1
-X400_CLKAUX_I2C_LABEL = 'clkaux_i2c'
-X400_CLKAUX_SPI_LABEL = 'clkaux_spi'
+X400_CLKAUX_I2C_LABEL = "clkaux_i2c"
+X400_CLKAUX_SPI_LABEL = "clkaux_spi"
 X400_CLKAUX_GPSDO_PID = 0x4004
 X400_CLKAUX_NOGPSDO_PID = 0x4005
 
@@ -39,6 +39,7 @@ def _check_i2c_bus():
     i2c_bus = i2c_dev.dt_symbol_get_i2c_bus(X400_CLKAUX_I2C_LABEL)
     if i2c_bus is None:
         raise RuntimeError("ClockingAuxBrdControl I2C bus not found")
+
 
 def _check_spi_bus():
     """
@@ -56,15 +57,15 @@ class ClkAuxTagMap:
     x4xx main tagmap is in the main class. Only the subset relevant to the
     clocking aux board is included below.
     """
+
     magic = 0x55535250
     tagmap = {
         # 0x23: usrp_eeprom_clkaux_tuning_word
-        0x23: tlv_eeprom.NamedStruct('< H',
-                                     ['tuning_word']),
+        0x23: tlv_eeprom.NamedStruct("< H", ["tuning_word"]),
         # 0x10: usrp_eeprom_board_info
-        0x10: tlv_eeprom.NamedStruct('< H H H 7s 1x',
-                                     ['pid', 'rev', 'rev_compat', 'serial']),
+        0x10: tlv_eeprom.NamedStruct("< H H H 7s 1x", ["pid", "rev", "rev_compat", "serial"]),
     }
+
 
 # We are encapsulating a complicated piece of hardware here, so let's live with
 # the fact that there will be many things hanging off of it.
@@ -74,6 +75,7 @@ class ClockingAuxBrdControl:
     """
     Control interface for the Clocking Aux Board over I2C and SPI
     """
+
     SOURCE_INTERNAL = "internal"
     SOURCE_EXTERNAL = "external"
     SOURCE_GPSDO = "gpsdo"
@@ -89,16 +91,20 @@ class ClockingAuxBrdControl:
     DIRECTION_OUTPUT = "output"
 
     VALID_CLK_EXPORTS = (SOURCE_INTERNAL, SOURCE_GPSDO, SOURCE_NSYNC)
-    VALID_NSYNC_LMK_PRI_REF_SOURCES = (SOURCE_NSYNC_LMK_PRI_FABRIC_CLK,
-                                       SOURCE_NSYNC_LMK_PRI_GTY_RCV_CLK)
+    VALID_NSYNC_LMK_PRI_REF_SOURCES = (
+        SOURCE_NSYNC_LMK_PRI_FABRIC_CLK,
+        SOURCE_NSYNC_LMK_PRI_GTY_RCV_CLK,
+    )
 
     def __init__(self, default_source=None, parent_log=None):
-        self.log = \
-            parent_log.getChild(self.__class__.__name__) if parent_log is not None \
+        self.log = (
+            parent_log.getChild(self.__class__.__name__)
+            if parent_log is not None
             else get_logger(self.__class__.__name__)
+        )
         _check_i2c_bus()
-        self._revision = self._get_eeprom_field('rev', X400_CLKAUX_DEFAULT_REVISION)
-        self._pid = self._get_eeprom_field('pid', X400_CLKAUX_NOGPSDO_PID)
+        self._revision = self._get_eeprom_field("rev", X400_CLKAUX_DEFAULT_REVISION)
+        self._pid = self._get_eeprom_field("pid", X400_CLKAUX_NOGPSDO_PID)
         self._nsync_support = self._revision >= 2
         self._gps_support = self._pid == X400_CLKAUX_GPSDO_PID
         default_source = default_source or ClockingAuxBrdControl.SOURCE_INTERNAL
@@ -151,12 +157,12 @@ class ClockingAuxBrdControl:
             nsync_spi_node = dt_symbol_get_spidev(X400_CLKAUX_SPI_LABEL)
             nsync_lmk_regs_iface = lib.spi.make_spidev_regs_iface(
                 nsync_spi_node,
-                1000000,    # Speed (Hz)
-                0x0,        # SPI mode
-                8,          # Addr shift
-                0,          # Data shift
-                1<<23,      # Read flag
-                0,          # Write flag
+                1000000,  # Speed (Hz)
+                0x0,  # SPI mode
+                8,  # Addr shift
+                0,  # Data shift
+                1 << 23,  # Read flag
+                0,  # Write flag
             )
             self._nsync_pll = LMK05318(nsync_lmk_regs_iface, self.log)
 
@@ -171,12 +177,9 @@ class ClockingAuxBrdControl:
         """
         dac_i2c_bus = i2c_dev.dt_symbol_get_i2c_bus(X400_CLKAUX_I2C_LABEL)
         self._dac_i2c_iface = lib.i2c.make_i2cdev(
-            dac_i2c_bus,
-            0xC,    # addr
-            False,  # ten_bit_addr
-            100
+            dac_i2c_bus, 0xC, False, 100  # addr  # ten_bit_addr
         )
-        tuning_word = self._get_eeprom_field('tuning_word', X400_CLKAUX_DEFAULT_TUNING_WORD)
+        tuning_word = self._get_eeprom_field("tuning_word", X400_CLKAUX_DEFAULT_TUNING_WORD)
         self.config_dac(tuning_word, 0)
         self.config_dac(tuning_word, 1)
 
@@ -185,22 +188,18 @@ class ClockingAuxBrdControl:
         Return the value of the requested eeprom field.
         """
         eeprom_paths = get_eeprom_paths_by_symbol("clkaux_eeprom")
-        path = eeprom_paths['clkaux_eeprom']
+        path = eeprom_paths["clkaux_eeprom"]
         val = default_val
         try:
-            eeprom, _ = tlv_eeprom.read_eeprom(
-                path, ClkAuxTagMap.tagmap, ClkAuxTagMap.magic, None)
+            eeprom, _ = tlv_eeprom.read_eeprom(path, ClkAuxTagMap.tagmap, ClkAuxTagMap.magic, None)
             val = eeprom.get(field_name, default_val)
         except TypeError as err:
             self.log.warning(f"Error reading eeprom; will use defaults. ({err})")
         return val
 
     def store_tuning_word(self, tuning_word):
-        """ Store the dac tuning word in the ID EEPROM"""
-        cmd = ["eeprom-update",
-               "clkaux",
-               "--clkaux_tuning_word",
-               str(tuning_word)]
+        """Store the dac tuning word in the ID EEPROM"""
+        cmd = ["eeprom-update", "clkaux", "--clkaux_tuning_word", str(tuning_word)]
         try:
             subprocess.call(cmd)
         except subprocess.CalledProcessError as ex:
@@ -243,7 +242,7 @@ class ClockingAuxBrdControl:
         return bool(self._gps_rst_n.get())
 
     def _assert_gps_supported(self):
-        """ Throw a RuntimeError if GPS is not supported on this board. """
+        """Throw a RuntimeError if GPS is not supported on this board."""
         if not self.is_gps_supported():
             raise RuntimeError("GPS related features are not supported!")
 
@@ -322,10 +321,9 @@ class ClockingAuxBrdControl:
             self._ref_clk_select_net.set(1)
             self._init_nsync_lmk()
         else:
-            raise RuntimeError('Invalid clock source {}'.format(clock_source))
+            raise RuntimeError("Invalid clock source {}".format(clock_source))
         self._source = clock_source
         self.log.trace("set clock source to: {}".format(self._source))
-
 
     def export_clock(self, enable=True):
         """Export clock source to RefOut"""
@@ -341,7 +339,7 @@ class ClockingAuxBrdControl:
             if self._revision >= 2:
                 self._exportclk_en.set(1)
         else:
-            raise RuntimeError('Invalid source to export: {}'.format(clock_source))
+            raise RuntimeError("Invalid source to export: {}".format(clock_source))
 
     def set_trig(self, enable, direction=None):
         """Enable/disable the Trig IO out"""
@@ -359,8 +357,10 @@ class ClockingAuxBrdControl:
             self._trig_dir.set(1)
         else:
             raise RuntimeError(
-                'Invalid direction {}, valid options are {} and {}'
-                .format(direction, self.DIRECTION_INPUT, self.DIRECTION_OUTPUT))
+                "Invalid direction {}, valid options are {} and {}".format(
+                    direction, self.DIRECTION_INPUT, self.DIRECTION_OUTPUT
+                )
+            )
 
     def get_clock_source(self):
         """Returns the clock source"""
@@ -395,7 +395,7 @@ class ClockingAuxBrdControl:
         value = int(value)
         assert value in (0, 1)
         if value == 1:
-            #Never set REF_CLK_SEL_USR and GPS_RSTn high at the same time, hardware can be damaged
+            # Never set REF_CLK_SEL_USR and GPS_RSTn high at the same time, hardware can be damaged
             self._set_gps_rstn(0)
         self._ref_clk_sel_usr.set(value)
 
@@ -439,8 +439,7 @@ class ClockingAuxBrdControl:
         self._check_nsync_supported()
 
         if source not in self.VALID_NSYNC_LMK_PRI_REF_SOURCES:
-            raise RuntimeError(
-                "Invalid primary reference clock source for LMK05318 NSYNC IC")
+            raise RuntimeError("Invalid primary reference clock source for LMK05318 NSYNC IC")
 
         self.config_dpll(source)
         if source == self.SOURCE_NSYNC_LMK_PRI_FABRIC_CLK:
@@ -456,8 +455,7 @@ class ClockingAuxBrdControl:
         elif source == self.NSYNC_SEC_REF:
             self._nsync_refsel.set(1)
         else:
-            raise RuntimeError(
-                "Invalid setting for LMK05318 NSYNC REFSEL")
+            raise RuntimeError("Invalid setting for LMK05318 NSYNC REFSEL")
 
     def set_nsync_tcxo_en(self, enable):
         """
@@ -542,144 +540,149 @@ class ClockingAuxBrdControl:
         against each other to determine which registers needed to be changed
         """
         if source == self.SOURCE_NSYNC_LMK_PRI_GTY_RCV_CLK:
-            self._nsync_pll.pokes8((
-                (0xC5,0x0B),
-                (0xCC,0x05),
-                (0xD1,0x08),
-                (0xD3,0x0A),
-                (0xD5,0x08),
-                (0xD7,0x0A),
-                (0xDA,0x02),
-                (0xDB,0xFA),
-                (0xDC,0xF1),
-                (0xDE,0x06),
-                (0xDF,0x1A),
-                (0xE0,0x81),
-                (0xE3,0x30),
-                (0xE4,0xD4),
-                (0xE6,0x06),
-                (0xE7,0x1A),
-                (0xE8,0x80),
-                (0x100,0x00),
-                (0x101,0x7D),
-                (0x103,0x08),
-                (0x109,0x0F),
-                (0x10A,0xA0),
-                (0x10F,0x78),
-                (0x110,0x00),
-                (0x111,0x00),
-                (0x112,0x00),
-                (0x113,0x0F),
-                (0x114,0x0E),
-                (0x115,0x0F),
-                (0x116,0x08),
-                (0x118,0x08),
-                (0x119,0x06),
-                (0x11A,0x08),
-                (0x11B,0x06),
-                (0x11E,0x00),
-                (0x11F,0x71),
-                (0x121,0xEB),
-                (0x123,0x09),
-                (0x128,0x03),
-                (0x129,0x05),
-                (0x12A,0x03),
-                (0x12D,0x3E),
-                (0x12E,0x3F),
-                (0x130,0x01),
-                (0x133,0x01),
-                (0x134,0x4D),
-                (0x135,0x55),
-                (0x136,0x55),
-                (0x137,0x55),
-                (0x138,0x55),
-                (0x139,0x55),
-                (0x13A,0xFF),
-                (0x13B,0xFF),
-                (0x13C,0xFF),
-                (0x13D,0xFF),
-                (0x13E,0xFF),
-                (0x141,0x19),
-                (0x145,0x78),
-                (0x147,0x00),
-                (0x148,0x27),
-                (0x149,0x10),
-                (0x14B,0x32),
-                (0x14F,0x78),
-                (0x151,0x00),
-                (0x152,0x27),
-                (0x153,0x10)))
+            self._nsync_pll.pokes8(
+                (
+                    (0xC5, 0x0B),
+                    (0xCC, 0x05),
+                    (0xD1, 0x08),
+                    (0xD3, 0x0A),
+                    (0xD5, 0x08),
+                    (0xD7, 0x0A),
+                    (0xDA, 0x02),
+                    (0xDB, 0xFA),
+                    (0xDC, 0xF1),
+                    (0xDE, 0x06),
+                    (0xDF, 0x1A),
+                    (0xE0, 0x81),
+                    (0xE3, 0x30),
+                    (0xE4, 0xD4),
+                    (0xE6, 0x06),
+                    (0xE7, 0x1A),
+                    (0xE8, 0x80),
+                    (0x100, 0x00),
+                    (0x101, 0x7D),
+                    (0x103, 0x08),
+                    (0x109, 0x0F),
+                    (0x10A, 0xA0),
+                    (0x10F, 0x78),
+                    (0x110, 0x00),
+                    (0x111, 0x00),
+                    (0x112, 0x00),
+                    (0x113, 0x0F),
+                    (0x114, 0x0E),
+                    (0x115, 0x0F),
+                    (0x116, 0x08),
+                    (0x118, 0x08),
+                    (0x119, 0x06),
+                    (0x11A, 0x08),
+                    (0x11B, 0x06),
+                    (0x11E, 0x00),
+                    (0x11F, 0x71),
+                    (0x121, 0xEB),
+                    (0x123, 0x09),
+                    (0x128, 0x03),
+                    (0x129, 0x05),
+                    (0x12A, 0x03),
+                    (0x12D, 0x3E),
+                    (0x12E, 0x3F),
+                    (0x130, 0x01),
+                    (0x133, 0x01),
+                    (0x134, 0x4D),
+                    (0x135, 0x55),
+                    (0x136, 0x55),
+                    (0x137, 0x55),
+                    (0x138, 0x55),
+                    (0x139, 0x55),
+                    (0x13A, 0xFF),
+                    (0x13B, 0xFF),
+                    (0x13C, 0xFF),
+                    (0x13D, 0xFF),
+                    (0x13E, 0xFF),
+                    (0x141, 0x19),
+                    (0x145, 0x78),
+                    (0x147, 0x00),
+                    (0x148, 0x27),
+                    (0x149, 0x10),
+                    (0x14B, 0x32),
+                    (0x14F, 0x78),
+                    (0x151, 0x00),
+                    (0x152, 0x27),
+                    (0x153, 0x10),
+                )
+            )
         elif source == self.SOURCE_NSYNC_LMK_PRI_FABRIC_CLK:
-            self._nsync_pll.pokes8((
-                (0xC5,0x0D),
-                (0xCC,0x07),
-                (0xD1,0x04),
-                (0xD3,0x05),
-                (0xD5,0x04),
-                (0xD7,0x05),
-                (0xDA,0x01),
-                (0xDB,0x2C),
-                (0xDC,0x00),
-                (0xDE,0x03),
-                (0xDF,0x0D),
-                (0xE0,0x40),
-                (0xE3,0x18),
-                (0xE4,0x6A),
-                (0xE6,0x03),
-                (0xE7,0x0D),
-                (0xE8,0x40),
-                (0x100,0x06),
-                (0x101,0x00),
-                (0x103,0x7D),
-                (0x109,0xF4),
-                (0x10A,0x24),
-                (0x10F,0x7A),
-                (0x110,0x1F),
-                (0x111,0x1F),
-                (0x112,0x1F),
-                (0x113,0x13),
-                (0x114,0x10),
-                (0x115,0x13),
-                (0x116,0x04),
-                (0x118,0x04),
-                (0x119,0x02),
-                (0x11A,0x07),
-                (0x11B,0x02),
-                (0x11E,0x02),
-                (0x11F,0x6C),
-                (0x121,0xE7),
-                (0x123,0x25),
-                (0x128,0x00),
-                (0x129,0x06),
-                (0x12A,0x00),
-                (0x12D,0x17),
-                (0x12E,0x1B),
-                (0x130,0x00),
-                (0x133,0x1E),
-                (0x134,0x84),
-                (0x135,0x80),
-                (0x136,0x00),
-                (0x137,0x00),
-                (0x138,0x00),
-                (0x139,0x00),
-                (0x13A,0x00),
-                (0x13B,0x00),
-                (0x13C,0x00),
-                (0x13D,0x00),
-                (0x13E,0x00),
-                (0x141,0x0A),
-                (0x145,0x0A),
-                (0x147,0x03),
-                (0x148,0x0F),
-                (0x149,0x49),
-                (0x14B,0x14),
-                (0x14F,0x9A),
-                (0x151,0x03),
-                (0x152,0x0F),
-                (0x153,0x49)))
+            self._nsync_pll.pokes8(
+                (
+                    (0xC5, 0x0D),
+                    (0xCC, 0x07),
+                    (0xD1, 0x04),
+                    (0xD3, 0x05),
+                    (0xD5, 0x04),
+                    (0xD7, 0x05),
+                    (0xDA, 0x01),
+                    (0xDB, 0x2C),
+                    (0xDC, 0x00),
+                    (0xDE, 0x03),
+                    (0xDF, 0x0D),
+                    (0xE0, 0x40),
+                    (0xE3, 0x18),
+                    (0xE4, 0x6A),
+                    (0xE6, 0x03),
+                    (0xE7, 0x0D),
+                    (0xE8, 0x40),
+                    (0x100, 0x06),
+                    (0x101, 0x00),
+                    (0x103, 0x7D),
+                    (0x109, 0xF4),
+                    (0x10A, 0x24),
+                    (0x10F, 0x7A),
+                    (0x110, 0x1F),
+                    (0x111, 0x1F),
+                    (0x112, 0x1F),
+                    (0x113, 0x13),
+                    (0x114, 0x10),
+                    (0x115, 0x13),
+                    (0x116, 0x04),
+                    (0x118, 0x04),
+                    (0x119, 0x02),
+                    (0x11A, 0x07),
+                    (0x11B, 0x02),
+                    (0x11E, 0x02),
+                    (0x11F, 0x6C),
+                    (0x121, 0xE7),
+                    (0x123, 0x25),
+                    (0x128, 0x00),
+                    (0x129, 0x06),
+                    (0x12A, 0x00),
+                    (0x12D, 0x17),
+                    (0x12E, 0x1B),
+                    (0x130, 0x00),
+                    (0x133, 0x1E),
+                    (0x134, 0x84),
+                    (0x135, 0x80),
+                    (0x136, 0x00),
+                    (0x137, 0x00),
+                    (0x138, 0x00),
+                    (0x139, 0x00),
+                    (0x13A, 0x00),
+                    (0x13B, 0x00),
+                    (0x13C, 0x00),
+                    (0x13D, 0x00),
+                    (0x13E, 0x00),
+                    (0x141, 0x0A),
+                    (0x145, 0x0A),
+                    (0x147, 0x03),
+                    (0x148, 0x0F),
+                    (0x149, 0x49),
+                    (0x14B, 0x14),
+                    (0x14F, 0x9A),
+                    (0x151, 0x03),
+                    (0x152, 0x0F),
+                    (0x153, 0x49),
+                )
+            )
         else:
-            raise RuntimeError(
-                "Invalid source for dpll programming")
+            raise RuntimeError("Invalid source for dpll programming")
 
     def set_ref_lock_led(self, val):
         """

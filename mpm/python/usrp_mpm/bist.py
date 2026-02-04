@@ -7,34 +7,37 @@
 Utilities to write BIST executables for USRPs
 """
 
+import argparse
+import json
 import os
 import re
-import sys
-import time
-import json
 import select
 import socket
-from datetime import datetime
-import argparse
 import subprocess
+import sys
+import time
+from datetime import datetime
+
 from six import iteritems
 from usrp_mpm.sys_utils import ectool
+
 
 ##############################################################################
 # Aurora/SFP BIST code
 ##############################################################################
 def get_sfp_bist_defaults():
-    " Default dictionary for SFP/Aurora BIST dry-runs "
+    "Default dictionary for SFP/Aurora BIST dry-runs"
     return {
-        'elapsed_time': 1.0,
-        'max_roundtrip_latency': 0.8e-6,
-        'throughput': 1000e6,
-        'max_ber': 8.5e-11,
-        'errors': 0,
-        'bits': 12012486656,
+        "elapsed_time": 1.0,
+        "max_roundtrip_latency": 0.8e-6,
+        "throughput": 1000e6,
+        "max_ber": 8.5e-11,
+        "errors": 0,
+        "bits": 12012486656,
     }
 
-def assert_aurora_image(master, slave, device_args, product_id, aurora_image_type='AA'):
+
+def assert_aurora_image(master, slave, device_args, product_id, aurora_image_type="AA"):
     """
     Make sure we have an FPGA image with which we can run the requested tests.
 
@@ -42,35 +45,35 @@ def assert_aurora_image(master, slave, device_args, product_id, aurora_image_typ
     running Aurora tests.
     """
     from usrp_mpm.sys_utils import uio
-    if not uio.find_uio_device(master)[0] or \
-            (slave is not None and not uio.find_uio_device(slave)[0]):
+
+    if not uio.find_uio_device(master)[0] or (
+        slave is not None and not uio.find_uio_device(slave)[0]
+    ):
         load_fpga_image(
             fpga_type=aurora_image_type,
             device_args=device_args,
             product_id=product_id,
         )
 
+
 def aurora_results_to_status(bist_results):
     """
     Convert a dictionary coming from AuroraControl BIST to one that we can use
     for this BIST
     """
-    return bist_results['mst_errors'] == 0, {
-        'elapsed_time': bist_results['time_elapsed'],
-        'max_roundtrip_latency': bist_results['mst_latency_us'],
-        'throughput': bist_results['approx_throughput'],
-        'max_ber': bist_results['max_ber'],
-        'errors': bist_results['mst_errors'],
-        'bits': bist_results['mst_samps'],
+    return bist_results["mst_errors"] == 0, {
+        "elapsed_time": bist_results["time_elapsed"],
+        "max_roundtrip_latency": bist_results["mst_latency_us"],
+        "throughput": bist_results["approx_throughput"],
+        "max_ber": bist_results["max_ber"],
+        "errors": bist_results["mst_errors"],
+        "bits": bist_results["mst_samps"],
     }
 
+
 def run_aurora_bist(
-        device_args,
-        product_id,
-        master,
-        slave=None,
-        requested_rate=1300*8e6,
-        aurora_image_type='AA'):
+    device_args, product_id, master, slave=None, requested_rate=1300 * 8e6, aurora_image_type="AA"
+):
     """
     Spawn a BER test
     """
@@ -79,6 +82,7 @@ def run_aurora_bist(
 
     class DummyContext(object):
         """Dummy class for context managers"""
+
         def __enter__(self):
             return
 
@@ -90,10 +94,12 @@ def run_aurora_bist(
         assert_aurora_image(master, slave, device_args, product_id, aurora_image_type)
         with open_uio(label=master, read_only=False) as master_au_uio:
             master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
-            with open_uio(label=slave, read_only=False)\
-                    if slave is not None else DummyContext() as slave_au_uio:
-                slave_au_ctrl = aurora_control.AuroraControl(slave_au_uio)\
-                    if slave is not None else None
+            with (
+                open_uio(label=slave, read_only=False) if slave is not None else DummyContext()
+            ) as slave_au_uio:
+                slave_au_ctrl = (
+                    aurora_control.AuroraControl(slave_au_uio) if slave is not None else None
+                )
                 return master_au_ctrl.run_ber_loopback_bist(
                     duration=10,
                     requested_rate=requested_rate,
@@ -113,30 +119,27 @@ def post_results(results):
 
     This will print the results as JSON to stdout.
     """
-    print(json.dumps(
-        results,
-        sort_keys=True,
-        indent=4,
-        separators=(',', ': ')
-    ))
+    print(json.dumps(results, sort_keys=True, indent=4, separators=(",", ": ")))
+
 
 def sock_read_line(my_sock, timeout=60, interval=0.1):
     """
     Read from a socket until newline. If there was no newline until the timeout
     occurs, raise an error. Otherwise, return the line.
     """
-    line = b''
+    line = b""
     end_time = time.time() + timeout
     while time.time() < end_time:
         socket_ready = select.select([my_sock], [], [], 0)[0]
         if socket_ready:
             next_char = my_sock.recv(1)
-            if next_char == b'\n':
-                return line.decode('ascii')
+            if next_char == b"\n":
+                return line.decode("ascii")
             line += next_char
         else:
             time.sleep(interval)
     raise RuntimeError("sock_read_line() exceeded read timeout!")
+
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
@@ -153,34 +156,24 @@ def poll_with_timeout(state_check, timeout_ms, interval_ms):
         time.sleep(interval_s)
     return False
 
+
 def expand_options(option_list):
     """
     Turn a list ['foo=bar', 'spam=eggs'] into a dictionary {'foo': 'bar',
     'spam': 'eggs'}.
     """
-    return dict(x.split('=') for x in option_list)
+    return dict(x.split("=") for x in option_list)
 
-def load_fpga_image(
-        fpga_type,
-        device_args,
-        product_id,
-        images_folder='/usr/share/uhd/images/'):
+
+def load_fpga_image(fpga_type, device_args, product_id, images_folder="/usr/share/uhd/images/"):
     """Load an FPGA image (1G, XG, AA, ...)"""
     # cmd = ['uhd_image_loader', '--args', 'type=e3xx,addr=127.0.0.1', '--fpga-path']
-    fpga_file_name = \
-        'usrp_' + product_id + '_fpga_' + fpga_type.upper() + '.bit'
+    fpga_file_name = "usrp_" + product_id + "_fpga_" + fpga_type.upper() + ".bit"
     fpga_image = images_folder + fpga_file_name
-    cmd = [
-        'uhd_image_loader',
-        '--args', device_args,
-        '--fpga-path', fpga_image
-    ]
-    cmd_str = ' '.join(cmd)
-    subprocess.check_output(
-        cmd_str,
-        stderr=subprocess.STDOUT,
-        shell=True
-    )
+    cmd = ["uhd_image_loader", "--args", device_args, "--fpga-path", fpga_image]
+    cmd_str = " ".join(cmd)
+    subprocess.check_output(cmd_str, stderr=subprocess.STDOUT, shell=True)
+
 
 def filter_results_for_lv(results, lv_compat_format):
     """
@@ -192,6 +185,7 @@ def filter_results_for_lv(results, lv_compat_format):
     where either subsystems get renamed, or other architectural changes should
     occur.
     """
+
     def fixup_dict(result_dict, ref_dict):
         """
         Touches up result_dict according to ref_dict by the following rules:
@@ -199,25 +193,27 @@ def filter_results_for_lv(results, lv_compat_format):
         - If a key is in ref_dict that is not in result_dict, use the value
           from ref_dict
         """
-        ref_dict['error_msg'] = ""
-        ref_dict['status'] = False
+        ref_dict["error_msg"] = ""
+        ref_dict["status"] = False
         result_dict = {
-            k: v for k, v in iteritems(result_dict)
-            if k in ref_dict or k in ('error_msg', 'status')
+            k: v for k, v in iteritems(result_dict) if k in ref_dict or k in ("error_msg", "status")
         }
-        result_dict = {
-            k: result_dict.get(k, ref_dict[k]) for k in ref_dict
-        }
+        result_dict = {k: result_dict.get(k, ref_dict[k]) for k in ref_dict}
         return result_dict
+
     # GoGoGo
     results = {
-        testname: fixup_dict(testresults, lv_compat_format[testname]) \
-                    if testname in lv_compat_format else testresults
+        testname: (
+            fixup_dict(testresults, lv_compat_format[testname])
+            if testname in lv_compat_format
+            else testresults
+        )
         for testname, testresults in iteritems(results)
     }
     return results
 
-def get_product_id_from_eeprom(valid_ids, cmd='eeprom-id'):
+
+def get_product_id_from_eeprom(valid_ids, cmd="eeprom-id"):
     """Return the mboard product ID
 
     Returns something like n300, n310, e320...
@@ -227,24 +223,26 @@ def get_product_id_from_eeprom(valid_ids, cmd='eeprom-id'):
         [cmd],
         stderr=subprocess.STDOUT,
         shell=True,
-    ).decode('utf-8')
+    ).decode("utf-8")
     for valid_id in valid_ids:
         if valid_id in output:
             return valid_id
     raise AssertionError("Cannot determine product ID.: `{}'".format(output))
 
+
 def get_tpm_caps_info():
     """Read 'caps' info from TPM subsystem"""
     result = {}
-    props_to_read = ('caps',)
-    base_path = '/sys/class/tpm'
+    props_to_read = ("caps",)
+    base_path = "/sys/class/tpm"
     for tpm_device in os.listdir(base_path):
-        if tpm_device.startswith('tpm'):
+        if tpm_device.startswith("tpm"):
             for key in props_to_read:
-                result['{}_{}'.format(tpm_device, key)] = open(
-                    os.path.join(base_path, tpm_device, key), 'r'
-                ).read().strip()
+                result["{}_{}".format(tpm_device, key)] = (
+                    open(os.path.join(base_path, tpm_device, key), "r").read().strip()
+                )
     return result
+
 
 def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
     """
@@ -259,13 +257,12 @@ def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
         ddr_mask  -- data direction register bit mask. 0 is input; 1 is output.
     """
     ddr_size = bin(ddr_mask).count("1")
-    value_bitstring = \
-        ('{0:0' + str(ddr_size) + 'b}').format(value)[-(gpio_size):]
-    ddr_bitstring = \
-        ('{0:0' + str(gpio_size) + 'b}').format(ddr_mask)[-(gpio_size):]
+    value_bitstring = ("{0:0" + str(ddr_size) + "b}").format(value)[-(gpio_size):]
+    ddr_bitstring = ("{0:0" + str(gpio_size) + "b}").format(ddr_mask)[-(gpio_size):]
     for i in range(gpio_size):
         if ddr_bitstring[gpio_size - 1 - i] == "1":
             gpio_bank.set(i, value_bitstring[i % ddr_size])
+
 
 ##############################################################################
 # Common tests
@@ -276,18 +273,13 @@ def test_ddr3_with_usrp_probe(extra_args=None):
     reporting a good throughput. This is a bit of a roundabout way of testing
     the DDR3, but it uses existing software and also tests the RFNoC pathways.
     """
-    dflt_args = {'addr':'127.0.0.1'}
+    dflt_args = {"addr": "127.0.0.1"}
     extra_args = extra_args or {}
     # merge args dicts, extra_args overrides dflt_args if keys exists in both dicts
     args = {**dflt_args, **extra_args}
-    args_str = ",".join(
-        ['{k}={v}'.format(k=k, v=v) for k, v in iteritems(args)])
-    cmd = [
-        'uhd_usrp_probe',
-        '--args',
-        '{e}'.format(e=args_str)
-    ]
-    ddr3_bist_executor = ' '.join(cmd)
+    args_str = ",".join(["{k}={v}".format(k=k, v=v) for k, v in iteritems(args)])
+    cmd = ["uhd_usrp_probe", "--args", "{e}".format(e=args_str)]
+    ddr3_bist_executor = " ".join(cmd)
     try:
         output = subprocess.check_output(
             ddr3_bist_executor,
@@ -300,16 +292,16 @@ def test_ddr3_with_usrp_probe(extra_args=None):
     output = output.decode("utf-8")
     if re.search(r"DmaFIFO", output) is None:
         return {
-            'error_msg': "DmaFIFO block not enabled. Cannot execute DDR3 BIST!",
-            'throughput': 0,
+            "error_msg": "DmaFIFO block not enabled. Cannot execute DDR3 BIST!",
+            "throughput": 0,
         }
     mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)\s?MB", output)
     if mobj is not None:
-        return {'throughput': float(mobj.group('thrup')) * 1e6}
+        return {"throughput": float(mobj.group("thrup")) * 1e6}
     else:
         return {
-            'throughput': 0,
-            'error_msg': "Failed match throughput regex!",
+            "throughput": 0,
+            "error_msg": "Failed match throughput regex!",
         }
 
 
@@ -319,7 +311,7 @@ def get_gpsd_tpv_result():
     dictionary.
     """
     my_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    my_sock.connect(('localhost', 2947))
+    my_sock.connect(("localhost", 2947))
     sys.stderr.write("Connected to GPSDO socket.\n")
     query_cmd = b'?WATCH={"enable":true,"json":true}'
     my_sock.sendall(query_cmd)
@@ -327,15 +319,14 @@ def get_gpsd_tpv_result():
     sock_read_line(my_sock, timeout=10)
     sys.stderr.write("Received initial newline.\n")
     result = {}
-    while result.get('class', None) != 'TPV':
+    while result.get("class", None) != "TPV":
         json_result = sock_read_line(my_sock, timeout=60)
-        sys.stderr.write(
-            "Received JSON response: {}\n\n".format(json_result)
-        )
+        sys.stderr.write("Received JSON response: {}\n\n".format(json_result))
         result = json.loads(json_result)
     my_sock.sendall(b'?WATCH={"enable":false}')
     my_sock.close()
     return result
+
 
 def get_ref_clock_prop(clock_source, time_source, extra_args=None):
     """
@@ -348,24 +339,22 @@ def get_ref_clock_prop(clock_source, time_source, extra_args=None):
      - <sensor-name>:
        - locked: Boolean lock status
     """
-    dflt_args = {'addr':'127.0.0.1'}
+    dflt_args = {"addr": "127.0.0.1"}
     extra_args = extra_args or {}
     # merge args dicts, extra_args overrides dflt_args if keys exists in both dicts
     args = {**dflt_args, **extra_args}
     result = {}
 
-    args_str = ",".join(
-        ['{k}={v}'.format(k=k, v=v) for k, v in iteritems(args)])
+    args_str = ",".join(["{k}={v}".format(k=k, v=v) for k, v in iteritems(args)])
     cmd = [
-        'uhd_usrp_probe',
-        '--args',
-        'clock_source={c},time_source={t},{e}'.format(
-            c=clock_source, t=time_source, e=args_str),
-        '--sensor'
+        "uhd_usrp_probe",
+        "--args",
+        "clock_source={c},time_source={t},{e}".format(c=clock_source, t=time_source, e=args_str),
+        "--sensor",
     ]
-    sensor_path = '/mboards/0/sensors/ref_locked'
+    sensor_path = "/mboards/0/sensors/ref_locked"
     cmd.append(sensor_path)
-    ref_lock_executor = ' '.join(cmd)
+    ref_lock_executor = " ".join(cmd)
     try:
         output = subprocess.check_output(
             ref_lock_executor,
@@ -378,11 +367,12 @@ def get_ref_clock_prop(clock_source, time_source, extra_args=None):
     output = output.decode("utf-8").strip()
     mobj = re.search(r"true$", output)
     if mobj is not None:
-        result['ref_locked'] = True
+        result["ref_locked"] = True
     else:
-        result['ref_locked'] = False
-        result['error_msg'] = "Reference Clock not locked: " + output
+        result["ref_locked"] = False
+        result["error_msg"] = "Reference Clock not locked: " + output
     return result
+
 
 def get_temp_sensor_value(temp_sensor_map):
     """
@@ -390,13 +380,13 @@ def get_temp_sensor_value(temp_sensor_map):
     form {temp_sensor_lookup(device): $temp}
     """
     import pyudev
+
     context = pyudev.Context()
     return {
-        temp_sensor_map(device): \
-                int(device.attributes.get('temp').decode('ascii'))
-        for device in context.list_devices(subsystem='thermal')
-        if 'temp' in device.attributes.available_attributes \
-                and device.attributes.get('temp') is not None
+        temp_sensor_map(device): int(device.attributes.get("temp").decode("ascii"))
+        for device in context.list_devices(subsystem="thermal")
+        if "temp" in device.attributes.available_attributes
+        and device.attributes.get("temp") is not None
     }
 
 
@@ -407,20 +397,21 @@ def get_iio_temp_sensor_values():
     temperature device name and the temperature is a value in mC.
     """
     import pyudev
+
     context = pyudev.Context()
-    iio_devs = context.list_devices(subsystem='iio')
+    iio_devs = context.list_devices(subsystem="iio")
 
     def is_temp_dev(dev):
-        return 'in_temp_raw' in dev.attributes.available_attributes
+        return "in_temp_raw" in dev.attributes.available_attributes
 
     def get_temp(dev):
-        raw = float(dev.attributes.get('in_temp_raw').decode('ascii'))
-        offset = float(dev.attributes.get('in_temp_offset').decode('ascii'))
-        scale = float(dev.attributes.get('in_temp_scale').decode('ascii'))
+        raw = float(dev.attributes.get("in_temp_raw").decode("ascii"))
+        offset = float(dev.attributes.get("in_temp_offset").decode("ascii"))
+        scale = float(dev.attributes.get("in_temp_scale").decode("ascii"))
         return int(scale * (raw + offset))
 
     def get_name(dev):
-        return dev.attributes.get('name').decode('ascii')
+        return dev.attributes.get("name").decode("ascii")
 
     temp_devs = [dev for dev in iio_devs if is_temp_dev(dev)]
     return {get_name(dev): get_temp(dev) for dev in temp_devs}
@@ -431,40 +422,41 @@ def get_fan_values():
     Return a dict of fan name -> fan speed key/values.
     """
     import pyudev
+
     context = pyudev.Context()
     return {
-        device.sys_name: int(device.attributes.get('cur_state'))
-        for device in context.list_devices(subsystem='thermal')
-        if 'cur_state' in device.attributes.available_attributes \
-                and device.attributes.get('cur_state') is not None
+        device.sys_name: int(device.attributes.get("cur_state"))
+        for device in context.list_devices(subsystem="thermal")
+        if "cur_state" in device.attributes.available_attributes
+        and device.attributes.get("cur_state") is not None
     }
+
 
 def get_ectool_fan_values():
     try:
         return ectool.get_fan_rpm()
     except RuntimeError as ex:
-        return {
-            'error_msg': "{}".format(str(ex))
-        }
+        return {"error_msg": "{}".format(str(ex))}
+
 
 def get_link_up(if_name):
     """
     Return a dictionary {if_name: IFLA_OPERSTATE}
     """
     from pyroute2 import IPRoute
+
     result = {}
     with IPRoute() as ipr:
         links = ipr.link_lookup(ifname=if_name)
         if not links:
-            return {'error_msg': "No interface found"}
+            return {"error_msg": "No interface found"}
         link_info = next(iter(ipr.get_links(links)), None)
         if link_info is None:
-            return {'error_msg': "Error on get_links for sfp0"}
-        result['sfp0'] = link_info.get_attr('IFLA_OPERSTATE')
-        if result['sfp0'] != 'UP':
-            result['error_msg'] = "Link not up for interface"
+            return {"error_msg": "Error on get_links for sfp0"}
+        result["sfp0"] = link_info.get_attr("IFLA_OPERSTATE")
+        if result["sfp0"] != "UP":
+            result["error_msg"] = "Link not up for interface"
     return result
-
 
 
 ##############################################################################
@@ -474,17 +466,20 @@ class UsrpBIST(object):
     """
     BIST parent class
     """
+
     usrp_type = None
-    default_rev = 3 # Because why not
+    default_rev = 3  # Because why not
     # This defines special tests that are really collections of other tests.
     collections = {
-        'standard': ["rtc",],
-        'extended': "*",
+        "standard": [
+            "rtc",
+        ],
+        "extended": "*",
     }
     # Default FPGA image type
     DEFAULT_FPGA_TYPE = None
     lv_compat_format = None
-    device_args = 'addr=127.0.0.1'
+    device_args = "addr=127.0.0.1"
 
     def make_arg_parser(self):
         """
@@ -497,42 +492,52 @@ class UsrpBIST(object):
             """
         )
         parser.add_argument(
-            '-n', '--dry-run', action='store_true',
-            help="Fake out the tests. All tests will return a valid" \
-                 " response, but will not actually interact with hardware.",
+            "-n",
+            "--dry-run",
+            action="store_true",
+            help="Fake out the tests. All tests will return a valid"
+            " response, but will not actually interact with hardware.",
         )
         parser.add_argument(
-            '-v', '--verbose', action='store_true',
+            "-v",
+            "--verbose",
+            action="store_true",
             help="Crank up verbosity level",
         )
         parser.add_argument(
-            '--debug', action='store_true',
+            "--debug",
+            action="store_true",
             help="For debugging this tool.",
         )
         parser.add_argument(
-            '--option', '-o', action='append', default=[],
+            "--option",
+            "-o",
+            action="append",
+            default=[],
             help="Option for individual test.",
         )
         parser.add_argument(
-            '--lv-compat', action='store_true',
+            "--lv-compat",
+            action="store_true",
             help="Provides compatibility with the LV JSON parser. Don't run "
-                 "this mode unless you know what you're doing. The JSON "
-                 "output does not necessarily reflect the actual system "
-                 "status when using this mode.",
+            "this mode unless you know what you're doing. The JSON "
+            "output does not necessarily reflect the actual system "
+            "status when using this mode.",
         )
         parser.add_argument(
-            '--skip-fpga-reload', action='store_true',
+            "--skip-fpga-reload",
+            action="store_true",
             help="Skip reloading the default FPGA image post-test. Note: by"
-                 "specifying this argument, the FPGA image loaded could be "
-                 "anything post-test.",
+            "specifying this argument, the FPGA image loaded could be "
+            "anything post-test.",
         )
         parser.add_argument(
-            'tests',
+            "tests",
             help="List the tests that should be run. Use 'standard' or 'extended' "
-                 "for a collection of tests. The 'extended' test collection might "
-                 "require additional hardware or fixtures.",
-            nargs='+', # There has to be at least one
-            default=['standard'],
+            "for a collection of tests. The 'extended' test collection might "
+            "require additional hardware or fixtures.",
+            nargs="+",  # There has to be at least one
+            default=["standard"],
         )
         return parser
 
@@ -559,7 +564,7 @@ class UsrpBIST(object):
             # This means we're in dry run mode or something like that, so just
             # pick something
             default_rev = self.default_rev
-        self.mb_rev = int(self.args.option.get('mb_rev', default_rev))
+        self.mb_rev = int(self.args.option.get("mb_rev", default_rev))
         self.tests_to_run = set()
         for test in self.args.tests:
             if test in self.collections:
@@ -570,10 +575,12 @@ class UsrpBIST(object):
         try:
             # Keep this import here so we can do dry-runs without any MPM code
             from usrp_mpm import get_main_logger
+
             if not self.args.verbose:
                 from usrp_mpm.mpmlog import WARNING
+
                 get_main_logger().setLevel(WARNING)
-            self.log = get_main_logger().getChild('main')
+            self.log = get_main_logger().getChild("main")
         except ImportError:
             print("No logging capability available.")
 
@@ -583,10 +590,7 @@ class UsrpBIST(object):
         """
         tests = self.collections[coll]
         if tests == "*":
-            tests = {x.replace('bist_', '')
-                     for x in dir(self)
-                     if x.find('bist_') == 0
-                    }
+            tests = {x.replace("bist_", "") for x in dir(self) if x.find("bist_") == 0}
         else:
             tests = set(tests)
         return tests
@@ -597,29 +601,27 @@ class UsrpBIST(object):
 
         Returns True on Success.
         """
+
         def execute_test(testname):
             """
             Actually run a test.
             """
             testmethod_name = "bist_{0}".format(testname)
-            sys.stderr.write(
-                "Executing test method: {0}\n\n".format(testmethod_name)
-            )
+            sys.stderr.write("Executing test method: {0}\n\n".format(testmethod_name))
             if not hasattr(self, testmethod_name):
                 sys.stderr.write("Test not defined: `{}`\n".format(testname))
                 return False, {}
             try:
                 status, data = getattr(self, testmethod_name)()
-                data['status'] = status
-                data['error_msg'] = data.get('error_msg', '')
+                data["status"] = status
+                data["error_msg"] = data.get("error_msg", "")
                 return status, data
             except Exception as ex:
-                sys.stderr.write(
-                    "Test {} failed to execute: {}\n".format(testname, str(ex))
-                )
+                sys.stderr.write("Test {} failed to execute: {}\n".format(testname, str(ex)))
                 if self.args.debug:
                     raise
-                return False, {'error_msg': str(ex)}
+                return False, {"error_msg": str(ex)}
+
         tests_successful = True
         result = {}
         for test in self.tests_to_run:
@@ -637,10 +639,10 @@ class UsrpBIST(object):
             )
         return tests_successful
 
-#############################################################################
-# BISTS
-# All bist_* methods must return True/False success values!
-#############################################################################
+    #############################################################################
+    # BISTS
+    # All bist_* methods must return True/False success values!
+    #############################################################################
     def bist_rtc(self):
         """
         BIST for RTC (real time clock)
@@ -653,9 +655,9 @@ class UsrpBIST(object):
         Return status:
         Unless datetime throws an exception, returns True.
         """
-        assert 'rtc' in self.tests_to_run
+        assert "rtc" in self.tests_to_run
         utc_now = datetime.utcnow()
         return True, {
-            'time': time.mktime(utc_now.timetuple()),
-            'date': utc_now.replace(microsecond=0).isoformat() + "+00:00",
+            "time": time.mktime(utc_now.timetuple()),
+            "date": utc_now.replace(microsecond=0).isoformat() + "+00:00",
         }

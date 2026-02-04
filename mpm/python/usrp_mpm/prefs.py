@@ -8,15 +8,17 @@ MPM preferences management
 """
 
 import configparser
-from usrp_mpm.mpmlog import TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL
+
+from usrp_mpm.mpmlog import CRITICAL, DEBUG, ERROR, INFO, TRACE, WARNING
 
 # Store the global preferences object
 _PREFS = None
 
 ### MPM defaults ##############################################################
-MPM_DEFAULT_CONFFILE_PATH = '/etc/uhd/mpm.conf'
-MPM_DEFAULT_LOG_LEVEL = 'info'
-MPM_DEFAULT_LOG_BUF_SIZE = 100 # Number of log records to buf
+MPM_DEFAULT_CONFFILE_PATH = "/etc/uhd/mpm.conf"
+MPM_DEFAULT_LOG_LEVEL = "info"
+MPM_DEFAULT_LOG_BUF_SIZE = 100  # Number of log records to buf
+
 
 # ConfigParser has too many parents for PyLint's liking, but we don't control
 # that, so disable that warning
@@ -34,14 +36,15 @@ class _MPMPrefs(configparser.ConfigParser):
     Said dictionary needs to be compatible with the ConfigParser.read_dict()
     API call (refer to the Python documentation).
     """
+
     # Note: When changing this, you might also want to update host/docs/configfiles.dox
     default_prefs = {
-        'mpm': {
-            'log_level': MPM_DEFAULT_LOG_LEVEL,
-            'log_buf_size': MPM_DEFAULT_LOG_BUF_SIZE,
+        "mpm": {
+            "log_level": MPM_DEFAULT_LOG_LEVEL,
+            "log_buf_size": MPM_DEFAULT_LOG_BUF_SIZE,
         },
-        'overrides': {
-            'override_db_pids': '',
+        "overrides": {
+            "override_db_pids": "",
         },
     }
 
@@ -52,7 +55,7 @@ class _MPMPrefs(configparser.ConfigParser):
         try:
             self.read(MPM_DEFAULT_CONFFILE_PATH)
         except configparser.Error as ex:
-            self._errors.append('Config file parsing error: {}'.format(str(ex)))
+            self._errors.append("Config file parsing error: {}".format(str(ex)))
 
     def get_log_level(self):
         """
@@ -62,23 +65,20 @@ class _MPMPrefs(configparser.ConfigParser):
         error messages. It will store them in the object itself under the
         __ERRORS__ section, key 'log_level'.
         """
-        log_level = self.get('mpm', 'log_level').lower()
+        log_level = self.get("mpm", "log_level").lower()
         log_level_map = {
-            'trace': TRACE,
-            'debug': DEBUG,
-            'info': INFO,
-            'warning': WARNING,
-            'error': ERROR,
-            'critical': CRITICAL,
+            "trace": TRACE,
+            "debug": DEBUG,
+            "info": INFO,
+            "warning": WARNING,
+            "error": ERROR,
+            "critical": CRITICAL,
         }
         if log_level not in log_level_map:
-            self._errors.append('Invalid log level: {}'.format(log_level))
+            self._errors.append("Invalid log level: {}".format(log_level))
             # Note: After this function returns, we can use the logger so we
             # don't need to use this awkward side channel anymore!
-        return log_level_map.get(
-            log_level,
-            log_level_map[MPM_DEFAULT_LOG_LEVEL]
-        )
+        return log_level_map.get(log_level, log_level_map[MPM_DEFAULT_LOG_LEVEL])
 
     def get_log_errors(self):
         """
@@ -86,7 +86,10 @@ class _MPMPrefs(configparser.ConfigParser):
         because the logger isn't ready yet.
         """
         return self._errors
+
+
 # pylint: enable=too-many-ancestors
+
 
 def get_prefs():
     """

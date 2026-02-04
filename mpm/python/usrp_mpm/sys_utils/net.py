@@ -8,14 +8,17 @@ Network utilities for MPM
 """
 import itertools
 import socket
+
 import pyudev
+from pyroute2 import IPDB, IPRoute
 from six import iteritems
-from pyroute2 import IPRoute, IPDB
 from usrp_mpm.mpmlog import get_logger
+
 
 def get_hostname():
     """Return the current device's hostname"""
     return socket.gethostname()
+
 
 def get_valid_interfaces(iface_list):
     """
@@ -37,9 +40,11 @@ def get_valid_interfaces(iface_list):
             # IFLA_OPERSTATE attribute isn't implemented on WSL
             # Workaround is ignore it in the simulator
             from usrp_mpm import __simulated__
-            if (link_info.get_attr('IFLA_OPERSTATE') == 'UP' or __simulated__) \
-                    and len(get_iface_addrs(link_info.get_attr('IFLA_ADDRESS'))):
-                assert link_info.get_attr('IFLA_IFNAME') == iface
+
+            if (link_info.get_attr("IFLA_OPERSTATE") == "UP" or __simulated__) and len(
+                get_iface_addrs(link_info.get_attr("IFLA_ADDRESS"))
+            ):
+                assert link_info.get_attr("IFLA_IFNAME") == iface
                 valid_ifaces.append(iface)
     return valid_ifaces
 
@@ -54,10 +59,13 @@ def get_iface_info(ifname):
 
     All values are stored as strings.
     """
+
     def is_bridge(link_info_info):
-        " Returns True if link_info_ is a bridge "
-        return (link_info_info is not None) and \
-                (link_info_info.get_attr('IFLA_INFO_KIND') == 'bridge')
+        "Returns True if link_info_ is a bridge"
+        return (link_info_info is not None) and (
+            link_info_info.get_attr("IFLA_INFO_KIND") == "bridge"
+        )
+
     try:
         with IPRoute() as ipr:
             links = ipr.link_lookup(ifname=ifname)
@@ -70,15 +78,15 @@ def get_iface_info(ifname):
             link_speed = get_link_speed(ifname)
     except IndexError:
         raise LookupError(f"Could not get links for interface `{ifname}'")
-    mac_addr = link_info.get_attr('IFLA_ADDRESS')
+    mac_addr = link_info.get_attr("IFLA_ADDRESS")
     ip_addrs = get_iface_addrs(mac_addr)
     return {
-        'mac_addr': mac_addr,
-        'ip_addr': ip_addrs[0] if ip_addrs else '',
-        'ip_addrs': ip_addrs,
-        'link_speed': link_speed,
-        'bridge': is_bridge(link_info.get_attr('IFLA_LINKINFO')),
-        'mtu': link_info.get_attr('IFLA_MTU'),
+        "mac_addr": mac_addr,
+        "ip_addr": ip_addrs[0] if ip_addrs else "",
+        "ip_addrs": ip_addrs,
+        "link_speed": link_speed,
+        "bridge": is_bridge(link_info.get_attr("IFLA_LINKINFO")),
+        "mtu": link_info.get_attr("IFLA_MTU"),
     }
 
 
@@ -93,17 +101,21 @@ def get_link_speed(ifname):
     # This wasn't implemented in WSL or in the linux pc I tested it on
     # We will return a sensible default
     from usrp_mpm import __simulated__
+
     if __simulated__:
         return 1000
-    net_sysfs = [device for device in pyudev.Context().list_devices(subsystem='net')
-                 if device.sys_name == ifname][0]
+    net_sysfs = [
+        device
+        for device in pyudev.Context().list_devices(subsystem="net")
+        if device.sys_name == ifname
+    ][0]
 
-    speed = net_sysfs.attributes.asint('speed')
+    speed = net_sysfs.attributes.asint("speed")
     # FIXME: This sysfs call occasionally returns -1 as the speed if the connection is at all
     #        flaky. Returning 10 Gbs rather than 1 Gbs in this case mitigates negative side
     #        effects in the driver when this occurs on 10GbE ports without breaking mpm
     #        compatability.
-    if (speed < 0):
+    if speed < 0:
         return 10000
 
     # TODO: 1Gige driver returns a bad value (less than 1000). Remove the conditional once the
@@ -121,10 +133,9 @@ def ip_addr_to_iface(ip_addr, iface_list):
                   is another map as returned by net.get_iface_info().
     """
     # Flip around the iface_info map and then use it to look up by IP addr
-    return {
-        iface_info['ip_addr']: iface_name
-        for iface_name, iface_info in iteritems(iface_list)
-    }[ip_addr]
+    return {iface_info["ip_addr"]: iface_name for iface_name, iface_info in iteritems(iface_list)}[
+        ip_addr
+    ]
 
 
 def get_iface_addrs(mac_addr):
@@ -142,9 +153,11 @@ def get_iface_addrs(mac_addr):
             raise ValueError(f"found multiple links for MAC {mac_addr}")
         link_index = links[0] if links else None
         # Only get v4 addresses
-        addresses = [addr.get_attrs('IFA_ADDRESS')
-                     for addr in ip2.get_addr(family=socket.AF_INET)
-                     if addr.get('index', None) == link_index]
+        addresses = [
+            addr.get_attrs("IFA_ADDRESS")
+            for addr in ip2.get_addr(family=socket.AF_INET)
+            if addr.get("index", None) == link_index
+        ]
         # flatten possibly nested list
         return list(itertools.chain.from_iterable(addresses))
 
@@ -153,7 +166,7 @@ def byte_to_mac(byte_str):
     """
     converts a bytestring into nice hex representation
     """
-    return ':'.join(["%02x" % ord(x) for x in byte_str])
+    return ":".join(["%02x" % ord(x) for x in byte_str])
 
 
 def get_mac_addr(ip_addr):
@@ -162,38 +175,40 @@ def get_mac_addr(ip_addr):
     or None if no host entry was found
     """
     with IPRoute() as ip2:
+
         def _get_local_mac_addr(ip_addr):
-            " Lookup MAC addr of local device "
-            if_addr = ip2.get_addr(
-                match=lambda x: x.get_attr('IFA_ADDRESS') == ip_addr
-            )
+            "Lookup MAC addr of local device"
+            if_addr = ip2.get_addr(match=lambda x: x.get_attr("IFA_ADDRESS") == ip_addr)
             if not if_addr:
                 return None
             if len(if_addr) > 1:
-                get_logger('get_mac_addr').warning(
+                get_logger("get_mac_addr").warning(
                     f"More than one device with the same IP address `{ip_addr}' found. "
                     "Picking entry at random."
                 )
-            iface_idx = if_addr[0]['index']
+            iface_idx = if_addr[0]["index"]
             link_list = ip2.get_links(iface_idx)
             if not link_list:
                 return None
             if_info = link_list[0]
-            return if_info.get_attr('IFLA_ADDRESS')
+            return if_info.get_attr("IFLA_ADDRESS")
+
         def _get_remote_mac_addr(remote_addr):
-            " Basically an ARP lookup "
+            "Basically an ARP lookup"
             addrs = ip2.get_neighbours(dst=remote_addr)
             if len(addrs) > 1:
-                get_logger('get_mac_addr').warning(
+                get_logger("get_mac_addr").warning(
                     f"More than one device with the same IP address `{ip_addr}' found. "
                     "Picking entry at random."
                 )
             if not addrs:
                 return None
-            return addrs[0].get_attr('NDA_LLADDR')
+            return addrs[0].get_attr("NDA_LLADDR")
+
         mac_addr = _get_local_mac_addr(ip_addr) or _get_remote_mac_addr(ip_addr)
         ip2.close()
         return mac_addr
+
 
 def get_local_ip_addrs(ipv4_only=False):
     """
@@ -202,9 +217,7 @@ def get_local_ip_addrs(ipv4_only=False):
     with IPDB() as ipdb:
         return {
             ip_subnet[0]
-            for ip_subnet_list
-                in [x['ipaddr'] for x in ipdb.interfaces.values()]
-                    for ip_subnet in ip_subnet_list
-            if not ipv4_only or ip_subnet[0].find(':') == -1
+            for ip_subnet_list in [x["ipaddr"] for x in ipdb.interfaces.values()]
+            for ip_subnet in ip_subnet_list
+            if not ipv4_only or ip_subnet[0].find(":") == -1
         }
-

@@ -10,11 +10,12 @@ Compatible with ADF4001 and ADF4002.
 """
 
 from builtins import object
-from usrp_mpm.mpmlog import get_logger
 
+from usrp_mpm.mpmlog import get_logger
 
 BASE_REF_CLOCK_FREQ = 40e6
 DEFAULT_REF_CLOCK_FREQ = 20e6
+
 
 class ADF400x(object):
     """
@@ -24,12 +25,13 @@ class ADF400x(object):
     freq : frequency of reference input
     parent_log : logger of parent
     """
+
     def __init__(self, regs_iface, freq=None, parent_log=None):
-        self.log = \
-            parent_log.getChild("ADF400x") if parent_log is not None \
-            else get_logger("ADF400x")
+        self.log = (
+            parent_log.getChild("ADF400x") if parent_log is not None else get_logger("ADF400x")
+        )
         self.regs_iface = regs_iface
-        assert hasattr(self.regs_iface, 'transfer24_8')
+        assert hasattr(self.regs_iface, "transfer24_8")
         self.transfer24_8 = regs_iface.transfer24_8
 
         # Instantiate our own copy of the register mapping and update some values
@@ -86,8 +88,12 @@ class ADF400x(object):
         # Calculate R counter fVCO = N * (fREF/R)
         ref_counter = int(self.adf400x_regs.n_counter * freq / BASE_REF_CLOCK_FREQ)
         if self.adf400x_regs.ref_counter == ref_counter:
-            self.log.trace("No change to ref counter value ({}); \
-                returning early".format(ref_counter))
+            self.log.trace(
+                "No change to ref counter value ({}); \
+                returning early".format(
+                    ref_counter
+                )
+            )
             return
         self.log.trace("Setting ref counter to {}".format(ref_counter))
         # Limits from the datasheet
@@ -102,6 +108,7 @@ class ADF400x(object):
 
 class ADF400xRegs(object):
     """Register map for ADF400x"""
+
     # TODO: Move each field into an Enum or something
     # TODO: Add setters/getters for each field
     # anti backlash widths

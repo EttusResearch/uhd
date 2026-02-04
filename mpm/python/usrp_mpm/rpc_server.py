@@ -3,8 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""Implemented RPC Servers.
-"""
+"""Implemented RPC Servers."""
 from __future__ import print_function
 
 import copy
@@ -22,7 +21,11 @@ from gevent.pool import Pool
 from gevent.server import StreamServer
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
-from usrp_mpm.mpmutils import register_chained_signal_handler, to_binary_str, set_proc_title
+from usrp_mpm.mpmutils import (
+    register_chained_signal_handler,
+    set_proc_title,
+    to_binary_str,
+)
 from usrp_mpm.rpc_utils import get_map_for_rpc
 from usrp_mpm.sys_utils import net, watchdog
 

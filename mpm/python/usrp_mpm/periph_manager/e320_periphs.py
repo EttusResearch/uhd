@@ -9,39 +9,43 @@ E320 peripherals
 
 import math
 import time
-from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
+
 from usrp_mpm.periph_manager.common import MboardRegsCommon
+from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank, SysFSGPIO
 
 # Map register values to SFP transport types
 E320_SFP_TYPES = {
-    0: "",    # Port not connected
+    0: "",  # Port not connected
     1: "1G",
     2: "10G",
-    3: "A",   # Aurora
+    3: "A",  # Aurora
 }
 
 E320_FPGA_TYPES_BY_SFP = {
-    (""):    "",
-    ("1G"):  "1G",
+    (""): "",
+    ("1G"): "1G",
     ("10G"): "XG",
-    ("A"):   "AA",
+    ("A"): "AA",
 }
+
 
 class FrontpanelGPIO(GPIOBank):
     """
     Abstraction layer for the front panel GPIO
     """
+
     EMIO_BASE = 54
-    FP_GPIO_OFFSET = 32 # Bit offset within the ps_gpio_* pins
+    FP_GPIO_OFFSET = 32  # Bit offset within the ps_gpio_* pins
 
     def __init__(self, ddr):
         GPIOBank.__init__(
             self,
-            {'label': 'zynq_gpio'},
+            {"label": "zynq_gpio"},
             self.FP_GPIO_OFFSET + self.EMIO_BASE,
-            0xFF, # use_mask
-            ddr
+            0xFF,  # use_mask
+            ddr,
         )
+
 
 class MboardRegsControl(MboardRegsCommon):
     """
@@ -116,21 +120,25 @@ class MboardRegsControl(MboardRegsCommon):
         MboardRegsCommon.__init__(self, label, log)
 
     def enable_fp_gpio(self, enable):
-        """ Enable front panel GPIO buffers and power supply
+        """Enable front panel GPIO buffers and power supply
         and set voltage 3.3 V
         """
         self.set_fp_gpio_voltage(3.3)
-        mask = 0xFFFFFFFF ^ ((0b1 << self.MB_GPIO_CTRL_BUFFER_OE_N) | \
-                             (0b1 << self.MB_GPIO_CTRL_EN_VAR_SUPPLY))
+        mask = 0xFFFFFFFF ^ (
+            (0b1 << self.MB_GPIO_CTRL_BUFFER_OE_N) | (0b1 << self.MB_GPIO_CTRL_EN_VAR_SUPPLY)
+        )
         with self.regs:
             reg_val = self.peek32(self.MB_GPIO_CTRL) & mask
-            reg_val = reg_val | (not enable << self.MB_GPIO_CTRL_BUFFER_OE_N) | \
-                                (enable << self.MB_GPIO_CTRL_EN_VAR_SUPPLY)
+            reg_val = (
+                reg_val
+                | (not enable << self.MB_GPIO_CTRL_BUFFER_OE_N)
+                | (enable << self.MB_GPIO_CTRL_EN_VAR_SUPPLY)
+            )
             self.log.trace("Writing MB_GPIO_CTRL to 0x{:08X}".format(reg_val))
             return self.poke32(self.MB_GPIO_CTRL, reg_val)
 
     def set_fp_gpio_voltage(self, value):
-        """ Set Front Panel GPIO voltage (in volts)
+        """Set Front Panel GPIO voltage (in volts)
         3V3 2V5 | Voltage
         -----------------
          0   0  | 1.8 V
@@ -139,16 +147,16 @@ class MboardRegsControl(MboardRegsCommon):
         Arguments:
             value : 3.3
         """
-        assert any([math.isclose(value, nn, abs_tol=0.1) for nn in (3.3,)]),\
-            "FP GPIO currently only supports 3.3V"
+        assert any(
+            [math.isclose(value, nn, abs_tol=0.1) for nn in (3.3,)]
+        ), "FP GPIO currently only supports 3.3V"
         if math.isclose(value, 1.8, abs_tol=0.1):
             voltage_reg = 0
         elif math.isclose(value, 2.5, abs_tol=0.1):
             voltage_reg = 1
         elif math.isclose(value, 3.3, abs_tol=0.1):
             voltage_reg = 2
-        mask = 0xFFFFFFFF ^ ((0b1 << self.MB_GPIO_CTRL_EN_3V3) | \
-                             (0b1 << self.MB_GPIO_CTRL_EN_2V5))
+        mask = 0xFFFFFFFF ^ ((0b1 << self.MB_GPIO_CTRL_EN_3V3) | (0b1 << self.MB_GPIO_CTRL_EN_2V5))
         with self.regs:
             reg_val = self.peek32(self.MB_GPIO_CTRL) & mask
             reg_val = reg_val | (voltage_reg << self.MB_GPIO_CTRL_EN_2V5)
@@ -177,12 +185,12 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
-           The return value is a bit mask of 8 pins GPIO.
-           0: means the pin is driven by Radio ATR states
-           1: means the pin is driven by PS or user application on PL
+        The return value is a bit mask of 8 pins GPIO.
+        0: means the pin is driven by Radio ATR states
+        1: means the pin is driven by PS or user application on PL
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_MASTER) & 0xff
+            return self.peek32(self.MB_GPIO_MASTER) & 0xFF
 
     def set_fp_gpio_user_mux(self, value):
         """set user mux for front panel GPIO
@@ -215,30 +223,33 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_radio_src(self):
         """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 8 pins GPIO.
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
+        The return value is 2-bit bit mask of 8 pins GPIO.
+        00: means the pin is driven by radio 0
+        01: means the pin is driven by radio 1
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffff
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xFFFF
 
     def set_time_source(self, time_source, ref_clk_freq):
         """
         Set time source
         """
         pps_sel_val = 0x0
-        if time_source == 'internal' or time_source == 'gpsdo':
-            self.log.trace("Setting time source to internal (GPSDO)"
-                           "({:.1f} MHz reference)...".format(ref_clk_freq))
+        if time_source == "internal" or time_source == "gpsdo":
+            self.log.trace(
+                "Setting time source to internal (GPSDO)"
+                "({:.1f} MHz reference)...".format(ref_clk_freq)
+            )
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT
-        elif time_source == 'external':
+        elif time_source == "external":
             self.log.debug("Setting time source to external...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
         else:
             assert False, "Cannot set to invalid time source: {}".format(time_source)
 
-        pps_sel_mask = ((0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT) |
-                        (0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT))
+        pps_sel_mask = (0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT) | (
+            0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
+        )
         with self.regs:
             # prevent glitches by writing a cleared value first, then the final value.
             reg_val = self.peek32(self.MB_CLOCK_CTRL) & ~pps_sel_mask
@@ -252,13 +263,17 @@ class MboardRegsControl(MboardRegsCommon):
         """
         Set clock source
         """
-        if clock_source == 'internal' or clock_source == 'gpsdo':
-            self.log.trace("Setting clock source to internal (GPSDO)"
-                           "({:.1f} MHz reference)...".format(ref_clk_freq))
+        if clock_source == "internal" or clock_source == "gpsdo":
+            self.log.trace(
+                "Setting clock source to internal (GPSDO)"
+                "({:.1f} MHz reference)...".format(ref_clk_freq)
+            )
             ref_sel_val = 0b0
-        elif clock_source == 'external':
-            self.log.debug("Setting clock source to external..."
-                           "({:.1f} MHz reference)...".format(ref_clk_freq))
+        elif clock_source == "external":
+            self.log.debug(
+                "Setting clock source to external..."
+                "({:.1f} MHz reference)...".format(ref_clk_freq)
+            )
             ref_sel_val = 0b1
         else:
             assert False, "Cannot set to invalid clock source: {}".format(clock_source)
@@ -283,8 +298,7 @@ class MboardRegsControl(MboardRegsCommon):
         try:
             return E320_FPGA_TYPES_BY_SFP[(sfp_type)]
         except KeyError:
-            self.log.warning("Unrecognized SFP type: {}"
-                             .format(sfp_type))
+            self.log.warning("Unrecognized SFP type: {}".format(sfp_type))
         return ""
 
     def get_gps_locked_val(self):
@@ -294,7 +308,7 @@ class MboardRegsControl(MboardRegsCommon):
         mask = 0b1 << self.MB_GPS_STATUS_LOCK
         with self.regs:
             reg_val = self.peek32(self.MB_GPS_STATUS) & mask
-            gps_locked = reg_val & 0x1 #FIXME
+            gps_locked = reg_val & 0x1  # FIXME
         if gps_locked:
             self.log.trace("GPS locked!")
         # Can return this value because the gps_locked value is on the LSB
@@ -323,11 +337,9 @@ class MboardRegsControl(MboardRegsCommon):
         factor in the desired state of INITSURV_N. However, we are intentionally
         keeping INITSURV mode off, as it's not intended for stationary use.
         """
-        self.log.trace("{} power to GPS".format(
-            "Enabling" if enable else "Disabling"
-        ))
-        pwr_en_mask = (0b1 << self.MB_GPS_CTRL_PWR_EN)
-        rstn_mask = (0b1 << self.MB_GPS_CTRL_RST_N)
+        self.log.trace("{} power to GPS".format("Enabling" if enable else "Disabling"))
+        pwr_en_mask = 0b1 << self.MB_GPS_CTRL_PWR_EN
+        rstn_mask = 0b1 << self.MB_GPS_CTRL_RST_N
         enabled_mask = pwr_en_mask | rstn_mask
         with self.regs:
             cur_reg_val = self.peek32(self.MB_GPS_CTRL)
@@ -358,8 +370,9 @@ class MboardRegsControl(MboardRegsCommon):
             reg_val = self.peek32(self.MB_CLOCK_CTRL)
         locked = (reg_val & mask) > 0
         if not locked:
-            self.log.warning("Reference Clock reporting unlocked. "
-                             "MB_CLOCK_CTRL reg: 0x{:08X}".format(reg_val))
+            self.log.warning(
+                "Reference Clock reporting unlocked. " "MB_CLOCK_CTRL reg: 0x{:08X}".format(reg_val)
+            )
         else:
             self.log.trace("Reference Clock locked!")
         return locked
@@ -373,19 +386,25 @@ class MboardRegsControl(MboardRegsCommon):
         with self.regs:
             reg_val = self.peek32(self.MB_DBOARD_CTRL)
             if channel_mode == "MIMO":
-                reg_val = (0b1 << self.MB_DBOARD_CTRL_MIMO)
-                self.log.trace("Setting channel mode in AD9361 interface: %s",
-                               "2R2T" if channel_mode == 2 else "1R1T")
+                reg_val = 0b1 << self.MB_DBOARD_CTRL_MIMO
+                self.log.trace(
+                    "Setting channel mode in AD9361 interface: %s",
+                    "2R2T" if channel_mode == 2 else "1R1T",
+                )
             else:
                 # Warn if user tries to set either tx0/tx1 in mimo mode
                 # as both will be set automatically
                 if channel_mode == "SISO_TX1":
                     # in SISO mode, Channel 1
-                    reg_val = (0b1 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (0b0 << self.MB_DBOARD_CTRL_MIMO)
+                    reg_val = (0b1 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (
+                        0b0 << self.MB_DBOARD_CTRL_MIMO
+                    )
                     self.log.trace("Setting TX channel in AD9361 interface to: TX1")
                 elif channel_mode == "SISO_TX0":
                     # in SISO mode, Channel 0
-                    reg_val = (0b0 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (0b0 << self.MB_DBOARD_CTRL_MIMO)
+                    reg_val = (0b0 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (
+                        0b0 << self.MB_DBOARD_CTRL_MIMO
+                    )
                     self.log.trace("Setting TX channel in AD9361 interface to: TX0")
             self.log.trace("Writing MB_DBOARD_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_DBOARD_CTRL, reg_val)

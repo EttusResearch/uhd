@@ -7,13 +7,16 @@
 Base Test Case classes
 """
 
-from test_utilities import on_linux, on_usrp
 import unittest
+
+from test_utilities import on_linux, on_usrp
+
 
 class TestBase(unittest.TestCase):
     """
     Base Test Case class which contains commonly required functionality
     """
+
     def skipUnlessOnLinux():
         """
         Test function decorator which skips tests unless the current

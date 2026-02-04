@@ -4,8 +4,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-import unittest
 import logging
+import unittest
+
 from base_tests import TestBase
 from usrp_mpm.periph_manager.x4xx_clock_policy import X440ClockPolicy
 from usrp_mpm.periph_manager.x4xx_clock_types import Spll1Vco
@@ -21,12 +22,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr = 2e9
@@ -34,7 +35,7 @@ class TestX440ClockConfig(TestBase):
         clk_config = cp.get_config(ref_clock_freq, (mcr, mcr))
         self.assertEqual(clk_config.mmcm_use_defaults, False)
         # We need to calculate if the values lead to what we want
-        for idx, clock_rate in enumerate([mcr,mcr]):
+        for idx, clock_rate in enumerate([mcr, mcr]):
             self.assertTrue(clk_config.rfdc_configs[idx].resampling in X4xxRfdcCtrl.RFDC_RESAMPLER)
             conv_rate = clock_rate * clk_config.rfdc_configs[idx].resampling
             self.assertEqual(clk_config.rfdc_configs[idx].conv_rate, conv_rate)
@@ -42,14 +43,20 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 100e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 1200)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
         self.assertEqual(clk_config.spll_config.pll2_n_cal_div, clk_config.spll_config.pll2_n_div)
-    
+
     def test_2_94912GHz(self):
         """
         Checking values for default 2.94912 GHz converter rate
@@ -57,12 +64,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr = 368.64e6
@@ -72,7 +79,7 @@ class TestX440ClockConfig(TestBase):
         # This should be a rate that we can achieve with PLL bypass:
         self.assertEqual(clk_config.rfdc_configs[0].conv_rate, clk_config.spll_config.output_freq)
         # We need to calculate if the values lead to what we want
-        for idx, clock_rate in enumerate([mcr,mcr]):
+        for idx, clock_rate in enumerate([mcr, mcr]):
             self.assertTrue(clk_config.rfdc_configs[idx].resampling in X4xxRfdcCtrl.RFDC_RESAMPLER)
             conv_rate = clock_rate * clk_config.rfdc_configs[idx].resampling
             self.assertEqual(clk_config.rfdc_configs[idx].conv_rate, conv_rate)
@@ -80,9 +87,15 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 122.88e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO122_88MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 1152)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 250)
@@ -95,12 +108,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr = {253.90625e6}
@@ -117,9 +130,15 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 100e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr[0] / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr[1] / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr[0] / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr[1] / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 6400)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
@@ -132,12 +151,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr = (250e6, 1500e6)
@@ -154,14 +173,19 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 100e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr[0] / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr[1] / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr[0] / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr[1] / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 2400)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
         self.assertEqual(clk_config.spll_config.pll2_n_cal_div, clk_config.spll_config.pll2_n_div)
-    
 
     def test_two_sample_rates_inverted(self):
         """
@@ -171,12 +195,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr0 = [250e6, 1500e6]
@@ -193,21 +217,29 @@ class TestX440ClockConfig(TestBase):
         for idx, clock_rate in enumerate(mcr0):
             self.assertTrue(clk_config0.rfdc_configs[idx].resampling in X4xxRfdcCtrl.RFDC_RESAMPLER)
             conv_rate0 = clock_rate * clk_config0.rfdc_configs[idx].resampling
-            conv_rate1 = mcr1[1-idx] * clk_config1.rfdc_configs[1-idx].resampling
+            conv_rate1 = mcr1[1 - idx] * clk_config1.rfdc_configs[1 - idx].resampling
             self.assertEqual(conv_rate0, conv_rate1)
         lmk_vco_rate = clk_config0.spll_config.output_divider * clk_config1.spll_config.output_freq
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n0 = clk_config0.spll_config.pll2_prescaler * clk_config0.spll_config.pll2_n_div
         pll2_n1 = clk_config1.spll_config.pll2_prescaler * clk_config1.spll_config.pll2_n_div
         self.assertEqual(pll2_n0, pll2_n1)
-        mmcm_vco_rate0 = lmk_vco_rate / clk_config0.spll_config.prc_divider * clk_config0.mmcm_feedback_divider
-        mmcm_vco_rate1 = lmk_vco_rate / clk_config1.spll_config.prc_divider * clk_config1.mmcm_feedback_divider
+        mmcm_vco_rate0 = (
+            lmk_vco_rate / clk_config0.spll_config.prc_divider * clk_config0.mmcm_feedback_divider
+        )
+        mmcm_vco_rate1 = (
+            lmk_vco_rate / clk_config1.spll_config.prc_divider * clk_config1.mmcm_feedback_divider
+        )
         self.assertEqual(mmcm_vco_rate0, mmcm_vco_rate1)
         self.assertEqual(clk_config0.spll_config.sysref_div, clk_config1.spll_config.sysref_div)
         self.assertEqual(clk_config0.spll_config.clkin0_r_div, clk_config1.spll_config.clkin0_r_div)
 
-        self.assertEqual(clk_config0.mmcm_output_div_map['r0_clk'], clk_config1.mmcm_output_div_map['r1_clk'])
-        self.assertEqual(clk_config0.mmcm_output_div_map['r1_clk'], clk_config1.mmcm_output_div_map['r0_clk'])
+        self.assertEqual(
+            clk_config0.mmcm_output_div_map["r0_clk"], clk_config1.mmcm_output_div_map["r1_clk"]
+        )
+        self.assertEqual(
+            clk_config0.mmcm_output_div_map["r1_clk"], clk_config1.mmcm_output_div_map["r0_clk"]
+        )
         self.assertEqual(clk_config0.spll_config.vcxo_freq, clk_config1.spll_config.vcxo_freq)
         self.assertEqual(clk_config0.rfdc_configs[0], clk_config1.rfdc_configs[1])
         self.assertEqual(clk_config0.rfdc_configs[1], clk_config1.rfdc_configs[0])
@@ -219,12 +251,12 @@ class TestX440ClockConfig(TestBase):
         log = logging.getLogger()
         cp = X440ClockPolicy(None, None, {}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         mcr = (1000e6, 368.64e6)
@@ -242,9 +274,15 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 100e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr[0] / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr[1] / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr[0] / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr[1] / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 1200)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)
@@ -256,14 +294,14 @@ class TestX440ClockConfig(TestBase):
         """
         log = logging.getLogger()
         cr = 2e9
-        cp = X440ClockPolicy(None, None, {'converter_rate':cr}, log)
+        cp = X440ClockPolicy(None, None, {"converter_rate": cr}, log)
         dsp_info = {
-            'num_rx_chans': 4,
-            'num_tx_chans': 4,
-            'bw': 1600,
-            'extra_resampling': 1,
-            'spc_rx': 8,
-            'spc_tx': 8,
+            "num_rx_chans": 4,
+            "num_tx_chans": 4,
+            "bw": 1600,
+            "extra_resampling": 1,
+            "spc_rx": 8,
+            "spc_tx": 8,
         }
         cp.set_dsp_info([dsp_info, dsp_info])
         # In theory, for MCR=500e6, the Conv_Rate should go to 4e9. By passing the conv_rate
@@ -283,9 +321,15 @@ class TestX440ClockConfig(TestBase):
         # Overall PLL2 N divider as combination of prescalar and n div
         pll2_n = clk_config.spll_config.pll2_prescaler * clk_config.spll_config.pll2_n_div
         self.assertEqual(lmk_vco_rate, 100e6 * pll2_n)
-        mmcm_vco_rate = lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r0_clk'], mcr[0] / dsp_info['spc_rx'])
-        self.assertEqual(mmcm_vco_rate / clk_config.mmcm_output_div_map['r1_clk'], mcr[1] / dsp_info['spc_rx'])
+        mmcm_vco_rate = (
+            lmk_vco_rate / clk_config.spll_config.prc_divider * clk_config.mmcm_feedback_divider
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r0_clk"], mcr[0] / dsp_info["spc_rx"]
+        )
+        self.assertEqual(
+            mmcm_vco_rate / clk_config.mmcm_output_div_map["r1_clk"], mcr[1] / dsp_info["spc_rx"]
+        )
         self.assertEqual(clk_config.spll_config.vcxo_freq, Spll1Vco.VCO100MHz)
         self.assertEqual(clk_config.spll_config.sysref_div, 1200)
         self.assertEqual(clk_config.spll_config.clkin0_r_div, 200)

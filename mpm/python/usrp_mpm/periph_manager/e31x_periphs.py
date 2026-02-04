@@ -8,26 +8,31 @@
 E310 peripherals
 """
 
-from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
 from usrp_mpm.periph_manager.common import MboardRegsCommon
+from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank, SysFSGPIO
+
 
 # pylint: disable=too-few-public-methods
 class FrontpanelGPIO(GPIOBank):
     """
     Abstraction layer for the front panel GPIO
     """
+
     EMIO_BASE = 54
-    FP_GPIO_OFFSET = 32 # Bit offset within the ps_gpio_* pins
+    FP_GPIO_OFFSET = 32  # Bit offset within the ps_gpio_* pins
 
     def __init__(self, ddr):
         GPIOBank.__init__(
             self,
-            {'label': 'zynq_gpio'},
+            {"label": "zynq_gpio"},
             self.FP_GPIO_OFFSET + self.EMIO_BASE,
-            0xFF, # use_mask
-            ddr
+            0xFF,  # use_mask
+            ddr,
         )
+
+
 # pylint: enable=too-few-public-methods
+
 
 class MboardRegsControl(MboardRegsCommon):
     """
@@ -84,12 +89,12 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
-           The return value is a bit mask of 6 pins GPIO.
-           0: means the pin is driven by Radio ATR states
-           1: means the pin is driven by PS or user application on PL
+        The return value is a bit mask of 6 pins GPIO.
+        0: means the pin is driven by Radio ATR states
+        1: means the pin is driven by PS or user application on PL
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_MASTER) & 0xff
+            return self.peek32(self.MB_GPIO_MASTER) & 0xFF
 
     def set_fp_gpio_user_mux(self, value):
         """set user mux for front panel GPIO
@@ -122,25 +127,25 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_radio_src(self):
         """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 6 pins GPIO.
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
+        The return value is 2-bit bit mask of 6 pins GPIO.
+        00: means the pin is driven by radio 0
+        01: means the pin is driven by radio 1
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xfff
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xFFF
 
     def set_time_source(self, time_source):
         """
         Set time source
         """
         pps_sel_val = 0x0
-        if time_source == 'internal':
+        if time_source == "internal":
             self.log.trace("Setting time source to internal")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_INT
-        elif time_source == 'gpsdo':
+        elif time_source == "gpsdo":
             self.log.trace("Setting time source to gpsdo...")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_GPS
-        elif time_source == 'external':
+        elif time_source == "external":
             self.log.trace("Setting time source to external...")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_EXT
         else:
@@ -173,19 +178,25 @@ class MboardRegsControl(MboardRegsCommon):
         with self.regs:
             reg_val = self.peek32(self.MB_DBOARD_CTRL)
             if channel_mode == "MIMO":
-                reg_val = (0b1 << self.MB_DBOARD_CTRL_MIMO)
-                self.log.trace("Setting channel mode in AD9361 interface: %s",
-                               "2R2T" if channel_mode == 2 else "1R1T")
+                reg_val = 0b1 << self.MB_DBOARD_CTRL_MIMO
+                self.log.trace(
+                    "Setting channel mode in AD9361 interface: %s",
+                    "2R2T" if channel_mode == 2 else "1R1T",
+                )
             else:
                 # Warn if user tries to set either tx0/tx1 in mimo mode
                 # as both will be set automatically
                 if channel_mode == "SISO_TX1":
                     # in SISO mode, Channel 1
-                    reg_val = (0b1 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (0b0 << self.MB_DBOARD_CTRL_MIMO)
+                    reg_val = (0b1 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (
+                        0b0 << self.MB_DBOARD_CTRL_MIMO
+                    )
                     self.log.trace("Setting TX channel in AD9361 interface to: TX1")
                 elif channel_mode == "SISO_TX0":
                     # in SISO mode, Channel 0
-                    reg_val = (0b0 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (0b0 << self.MB_DBOARD_CTRL_MIMO)
+                    reg_val = (0b0 << self.MB_DBOARD_CTRL_TX_CHAN_SEL) | (
+                        0b0 << self.MB_DBOARD_CTRL_MIMO
+                    )
                     self.log.trace("Setting TX channel in AD9361 interface to: TX0")
             self.log.trace("Writing MB_DBOARD_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_DBOARD_CTRL, reg_val)

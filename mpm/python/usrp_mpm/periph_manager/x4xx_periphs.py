@@ -7,17 +7,18 @@
 X4xx peripherals
 """
 
-import time
 import struct
+import time
 from statistics import mean
+
 from usrp_mpm import lib  # Pulls in everything from C++-land
+from usrp_mpm.mpmutils import poll_with_timeout
+from usrp_mpm.periph_manager.common import MboardRegsCommon
 from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
-from usrp_mpm.sys_utils.uio import UIO
-from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
-from usrp_mpm.periph_manager.common import MboardRegsCommon
+from usrp_mpm.sys_utils.uio import UIO
 
 
 class MboardRegsControl(MboardRegsCommon):
@@ -35,6 +36,7 @@ class MboardRegsControl(MboardRegsCommon):
     ...     mb_regs_control.poke32(addr0, data0)
     ...     mb_regs_control.poke32(addr1, data1)
     """
+
     # Motherboard registers
     # pylint: disable=bad-whitespace
     # fmt: off
@@ -89,18 +91,21 @@ class MboardRegsControl(MboardRegsCommon):
 
     def __init__(self, label, log):
         MboardRegsCommon.__init__(self, label, log)
+
         def peek32(address):
             """
             Safe peek (opens and closes UIO).
             """
             with self.regs:
                 return self.regs.peek32(address)
+
         def poke32(address, value):
             """
             Safe poke (opens and closes UIO).
             """
             with self.regs:
                 self.regs.poke32(address, value)
+
         # MboardRegsCommon.poke32() and ...peek32() don't open the UIO, so we
         # overwrite them with "safe" versions that do open the UIO.
         self.peek32 = peek32
@@ -112,7 +117,7 @@ class MboardRegsControl(MboardRegsCommon):
         """
         assert len(serial_number) > 0
         assert len(serial_number) <= 8
-        serial_number = serial_number + b'\x00' * (8 - len(serial_number))
+        serial_number = serial_number + b"\x00" * (8 - len(serial_number))
         (sn_lo, sn_hi) = struct.unpack("II", serial_number)
         with self.regs:
             self.poke32(self.MB_SERIAL_NO_LO, sn_lo)
@@ -137,12 +142,11 @@ class MboardRegsControl(MboardRegsCommon):
         string, hex representation.
         """
         dna_0 = self.peek32(self.MB_DEVICE_DNA_BASE)
-        dna_32 = self.peek32(self.MB_DEVICE_DNA_BASE+4)
-        dna_64 = self.peek32(self.MB_DEVICE_DNA_BASE+8)
+        dna_32 = self.peek32(self.MB_DEVICE_DNA_BASE + 4)
+        dna_64 = self.peek32(self.MB_DEVICE_DNA_BASE + 8)
         dna_str = f"{dna_64:08X}{dna_32:08X}{dna_0:08X}"
         self.log.debug(f"DNA: {dna_str}")
         return dna_str
-
 
     def get_db_gpio_ifc_version(self, slot_id):
         """
@@ -155,14 +159,17 @@ class MboardRegsControl(MboardRegsCommon):
         else:
             raise RuntimeError("Invalid daughterboard slot id: {}".format(slot_id))
 
-        major = (current_version>>23) & 0x1ff
-        minor = (current_version>>12) & 0x7ff
-        build = current_version & 0xfff
+        major = (current_version >> 23) & 0x1FF
+        minor = (current_version >> 12) & 0x7FF
+        build = current_version & 0xFFF
         return (major, minor, build)
 
     def _get_qsfp_lane_value(self, port, lane):
-        addr = self.MB_QSFP_PORT_INFO + (port * self.MB_QSFP_PORT_STRIDE) \
-                                      + (lane * self.MB_QSFP_LANE_STRIDE)
+        addr = (
+            self.MB_QSFP_PORT_INFO
+            + (port * self.MB_QSFP_PORT_STRIDE)
+            + (lane * self.MB_QSFP_LANE_STRIDE)
+        )
         return (self.peek32(addr) >> 8) & 0xFF
 
     def _get_qsfp_type(self, port=0):
@@ -170,12 +177,12 @@ class MboardRegsControl(MboardRegsCommon):
         Read the type of qsfp port is in the specified port
         """
         x4xx_qsfp_types = {
-            0: "",    # Port not connected
+            0: "",  # Port not connected
             1: "1G",
             2: "10G",
-            3: "A",   # Aurora
-            4: "W",   # White Rabbit
-            5: "100G"
+            3: "A",  # Aurora
+            4: "W",  # White Rabbit
+            5: "100G",
         }
 
         lane_0_val = self._get_qsfp_lane_value(port, 0)
@@ -199,18 +206,18 @@ class MboardRegsControl(MboardRegsCommon):
         Returns a string with the type (ie CG, XG, C2, etc.)
         """
         x4xx_fpga_types_by_qsfp = {
-            ("", ""):          "",
-            ("10G", "10G"):    "XG",
-            ("10G", ""):       "X1",
-            ("2x10G", ""):     "X2",
-            ("4x10G", ""):     "X4",
+            ("", ""): "",
+            ("10G", "10G"): "XG",
+            ("10G", ""): "X1",
+            ("2x10G", ""): "X2",
+            ("4x10G", ""): "X4",
             ("4x10G", "100G"): "X4C",
-            ("100G", "100G"):  "CG",
-            ("100G", ""):      "C1",
-            ("", "100G"):      "UC",
-            ("", "10G"):       "UX1",
-            ("", "2x10G"):     "UX2",
-            ("", "4x10G"):     "UX4",
+            ("100G", "100G"): "CG",
+            ("100G", ""): "C1",
+            ("", "100G"): "UC",
+            ("", "10G"): "UX1",
+            ("", "2x10G"): "UX2",
+            ("", "4x10G"): "UX4",
         }
 
         qsfp0_type = self._get_qsfp_type(0)
@@ -219,8 +226,9 @@ class MboardRegsControl(MboardRegsCommon):
         try:
             fpga_type = x4xx_fpga_types_by_qsfp[(qsfp0_type, qsfp1_type)]
         except KeyError:
-            self.log.warning("Unrecognized QSFP type combination: ({}, {})"
-                             .format(qsfp0_type, qsfp1_type))
+            self.log.warning(
+                "Unrecognized QSFP type combination: ({}, {})".format(qsfp0_type, qsfp1_type)
+            )
             fpga_type = ""
 
         if not fpga_type and self.is_pcie_present():
@@ -240,8 +248,7 @@ class MboardRegsControl(MboardRegsCommon):
         """
         Return state of PLL sync bit from motherboard clock control register.
         """
-        return bool(self.peek32(MboardRegsControl.MB_CLOCK_CTRL) & \
-                    self.CLOCK_CTRL_PLL_SYNC_DONE)
+        return bool(self.peek32(MboardRegsControl.MB_CLOCK_CTRL) & self.CLOCK_CTRL_PLL_SYNC_DONE)
 
     def pll_sync_trigger(self, clock_ctrl_pps_src):
         """
@@ -252,16 +259,14 @@ class MboardRegsControl(MboardRegsCommon):
             # Update clock control config register to use the currently relevant
             # PPS source
             config = self.peek32(self.MB_CLOCK_CTRL)
-            trigger_config = \
-                (config & ~MboardRegsControl.CLOCK_CTRL_TRIGGER_PPS_SEL) \
-                | clock_ctrl_pps_src
+            trigger_config = (
+                config & ~MboardRegsControl.CLOCK_CTRL_TRIGGER_PPS_SEL
+            ) | clock_ctrl_pps_src
             # trigger sync with appropriate configuration
-            self.poke32(
-                self.MB_CLOCK_CTRL,
-                trigger_config | self.CLOCK_CTRL_PLL_SYNC_TRIGGER)
+            self.poke32(self.MB_CLOCK_CTRL, trigger_config | self.CLOCK_CTRL_PLL_SYNC_TRIGGER)
             # wait for sync done indication from FPGA
             # The following value is in ms, it was experimentally picked.
-            pll_sync_timeout = 1500 # ms
+            pll_sync_timeout = 1500  # ms
             result = poll_with_timeout(self.is_pll_sync_done, pll_sync_timeout, 10)
             # de-assert sync trigger signal
             self.poke32(self.MB_CLOCK_CTRL, trigger_config)
@@ -319,7 +324,7 @@ class MboardRegsControl(MboardRegsCommon):
         :return:       None, Exception on error
         """
         # delay range check 0 < x <= 1
-        if (delay <= 0 or delay > 1):
+        if delay <= 0 or delay > 1:
             raise RuntimeError("The delay has to be in range 0 < x <= 1")
 
         with self.regs:
@@ -332,14 +337,16 @@ class MboardRegsControl(MboardRegsCommon):
             self.poke32(self.MB_CLOCK_CTRL, value)
 
             # configure clock divider
-            self.log.debug(f"Configuring PPS clock crossing for RC: \
-                          {radio_clock_rate}, prc_rate: {prc_rate}")
+            self.log.debug(
+                f"Configuring PPS clock crossing for RC: \
+                          {radio_clock_rate}, prc_rate: {prc_rate}"
+            )
             value = self.peek32(self.MB_PPS_CROSSING_REG)
 
             # Due to HDL implementation, the value to be written is determined via the formula:
             # value = (radio_clock_rate / prc_rate)*2 - 2.
             div_bitfield = 0 if tk_idx == 0 else 16
-            prc_rc_divider = (int(radio_clock_rate/prc_rate)*2 - 2) & 0x1F
+            prc_rc_divider = (int(radio_clock_rate / prc_rate) * 2 - 2) & 0x1F
             value = value | (prc_rc_divider << div_bitfield)
 
             # write configuration to PPS crossing register
@@ -372,16 +379,15 @@ class MboardRegsControl(MboardRegsCommon):
         clocks. Main use case until we support eCPRI is manufacturing
         testing.
         """
-        valid_clocks_list = ['gty_rcv', 'fabric', 'both']
+        valid_clocks_list = ["gty_rcv", "fabric", "both"]
         assert clock in valid_clocks_list
         clock_enable_sig = 0
-        if clock == 'gty_rcv':
+        if clock == "gty_rcv":
             clock_enable_sig = self.MFG_TEST_CTRL_GTY_RCV_CLK_EN
-        elif clock == 'fabric':
+        elif clock == "fabric":
             clock_enable_sig = self.MFG_TEST_CTRL_FABRIC_CLK_EN
-        else:# 'both' case
-            clock_enable_sig = (self.MFG_TEST_CTRL_GTY_RCV_CLK_EN |
-                                self.MFG_TEST_CTRL_FABRIC_CLK_EN)
+        else:  # 'both' case
+            clock_enable_sig = self.MFG_TEST_CTRL_GTY_RCV_CLK_EN | self.MFG_TEST_CTRL_FABRIC_CLK_EN
         with self.regs:
             clock_ctrl_reg = self.peek32(MboardRegsControl.MB_MFG_TEST_CTRL)
             if enable:
@@ -419,12 +425,14 @@ class CtrlportRegs:
 
     min_mb_cpld_spi_divider = 2
     min_db_cpld_spi_divider = 5
-    class MbPlCpldIface:
-        """ Exposes access to register mapped MB PL CPLD register space """
-        SIGNATURE_OFFSET = 0x0000
-        REVISION_OFFSET  = 0x0004
 
-        SIGNATURE        = 0x3FDC5C47
+    class MbPlCpldIface:
+        """Exposes access to register mapped MB PL CPLD register space"""
+
+        SIGNATURE_OFFSET = 0x0000
+        REVISION_OFFSET = 0x0004
+
+        SIGNATURE = 0x3FDC5C47
         MIN_REQ_REVISION = 0x20082009
 
         def __init__(self, regs_iface, offset, log):
@@ -441,22 +449,30 @@ class CtrlportRegs:
         def check_signature(self):
             read_signature = self.peek32(self.SIGNATURE_OFFSET)
             if self.SIGNATURE != read_signature:
-                self.log.error('MB PL CPLD signature {:X} does not match '
-                               'expected value {:X}'.format(read_signature, self.SIGNATURE))
-                raise RuntimeError('MB PL CPLD signature {:X} does not match '
-                                   'expected value {:X}'.format(read_signature, self.SIGNATURE))
+                self.log.error(
+                    "MB PL CPLD signature {:X} does not match "
+                    "expected value {:X}".format(read_signature, self.SIGNATURE)
+                )
+                raise RuntimeError(
+                    "MB PL CPLD signature {:X} does not match "
+                    "expected value {:X}".format(read_signature, self.SIGNATURE)
+                )
 
         def check_revision(self):
             read_revision = self.peek32(self.REVISION_OFFSET)
             if read_revision < self.MIN_REQ_REVISION:
-                error_message = ('MB PL CPLD revision {:X} is out of date. '
-                                'Expected value {:X}. Update your CPLD image.'
-                                .format(read_revision, self.MIN_REQ_REVISION))
+                error_message = (
+                    "MB PL CPLD revision {:X} is out of date. "
+                    "Expected value {:X}. Update your CPLD image.".format(
+                        read_revision, self.MIN_REQ_REVISION
+                    )
+                )
                 self.log.error(error_message)
                 raise RuntimeError(error_message)
 
     class DbCpldIface:
-        """ Exposes access to register mapped DB CPLD register spaces """
+        """Exposes access to register mapped DB CPLD register spaces"""
+
         def __init__(self, regs_iface, offset):
             self.offset = offset
             self.regs = regs_iface
@@ -471,13 +487,12 @@ class CtrlportRegs:
         self.log = log.getChild("CtrlportRegs")
         self._regs_uio_opened = False
         try:
-            self.regs = UIO(
-                label=label,
-                read_only=False
-            )
+            self.regs = UIO(label=label, read_only=False)
         except RuntimeError:
-            self.log.warning('Ctrlport regs could not be found. ' \
-                             'MPM Endpoint to the FPGA is not part of this image.')
+            self.log.warning(
+                "Ctrlport regs could not be found. "
+                "MPM Endpoint to the FPGA is not part of this image."
+            )
             self.regs = None
         # Initialize SPI interface to MB PL CPLD and DB CPLDs
         self.set_mb_pl_cpld_divider(self.min_mb_cpld_spi_divider)
@@ -500,7 +515,7 @@ class CtrlportRegs:
 
     def peek32(self, addr):
         if self.regs is None:
-            raise RuntimeError('The ctrlport registers were never configured!')
+            raise RuntimeError("The ctrlport registers were never configured!")
         if self._regs_uio_opened:
             return self.regs.peek32(addr)
         else:
@@ -509,7 +524,7 @@ class CtrlportRegs:
 
     def poke32(self, addr, val):
         if self.regs is None:
-            raise RuntimeError('The ctrlport registers were never configured!')
+            raise RuntimeError("The ctrlport registers were never configured!")
         if self._regs_uio_opened:
             return self.regs.poke32(addr, val)
         else:
@@ -518,18 +533,20 @@ class CtrlportRegs:
 
     def set_mb_pl_cpld_divider(self, divider_value):
         if not self.min_mb_cpld_spi_divider <= divider_value <= 0xFFFF:
-            self.log.error('Cannot set MB CPLD SPI divider to invalid value {}'
-                           .format(divider_value))
-            raise RuntimeError('Cannot set MB CPLD SPI divider to invalid value {}'
-                               .format(divider_value))
+            self.log.error(
+                "Cannot set MB CPLD SPI divider to invalid value {}".format(divider_value)
+            )
+            raise RuntimeError(
+                "Cannot set MB CPLD SPI divider to invalid value {}".format(divider_value)
+            )
         self.poke32(self.MB_PL_SPI_CONFIG, divider_value)
 
     def set_db_divider_value(self, divider_value):
         if not self.min_db_cpld_spi_divider <= divider_value <= 0xFFFF:
-            self.log.error('Cannot set DB SPI divider to invalid value {}'
-                           .format(divider_value))
-            raise RuntimeError('Cannot set DB SPI divider to invalid value {}'
-                               .format(divider_value))
+            self.log.error("Cannot set DB SPI divider to invalid value {}".format(divider_value))
+            raise RuntimeError(
+                "Cannot set DB SPI divider to invalid value {}".format(divider_value)
+            )
         self.poke32(self.DB_SPI_CONFIG, divider_value)
 
     def get_db_cpld_iface(self, db_id):
@@ -567,7 +584,7 @@ QSFP_IDENTIFIERS = {
     0x13: "CDFP (Style0x1/Style2)",
     0x14: "Shielded Mini Multilane HD0x4X Fanout Cable",
     0x15: "Shielded Mini Multilane HD0x8X Fanout Cable",
-    0x16: "CDFP (Style0x3)"
+    0x16: "CDFP (Style0x3)",
 }
 
 # QSFP revison compliance according to SFF-8636 rev 2.9 table 6-3
@@ -580,7 +597,7 @@ QSFP_REVISION_COMPLIANCE = {
     0x05: "SFF-8636 Rev 1.5",
     0x06: "SFF-8636 Rev 2.0",
     0x07: "SFF-8636 Rev 2.5, 2.6 and 2.7",
-    0x08: "SFF-8636 Rev 2.8 or later"
+    0x08: "SFF-8636 Rev 2.8 or later",
 }
 
 # QSFP connector types according to SFF-8029 rev 3.2 table 4-3
@@ -603,8 +620,9 @@ QSFP_CONNECTOR_TYPE = {
     0x21: "Copper pigtail",
     0x22: "RJ45 (Registered Jack)",
     0x23: "No separable connector",
-    0x24: "MXC 2x16"
+    0x24: "MXC 2x16",
 }
+
 
 class QSFPModule:
     """
@@ -621,7 +639,7 @@ class QSFPModule:
         devsymbol: Symbol name of the device used for I2C communication
         """
 
-        self.log = log.getChild('QSFP')
+        self.log = log.getChild("QSFP")
 
         # Hold the ModSelL GPIO low for communication over I2C. Because X4xx
         # uses a I2C switch to communicate with the QSFP modules we can keep
@@ -637,11 +655,11 @@ class QSFPModule:
 
         # create an object to access I2C register interface
         self.qsfp_regs = lib.i2c.make_i2cdev_regs_iface(
-            devname, # dev node name
-            0x50,    # start address according to SFF-8486 rev 4.9 chapter 7.6
-            False,   # use 7 bit address schema
-            100,     # timeout_ms
-            1        # reg_addr_size
+            devname,  # dev node name
+            0x50,  # start address according to SFF-8486 rev 4.9 chapter 7.6
+            False,  # use 7 bit address schema
+            100,  # timeout_ms
+            1,  # reg_addr_size
         )
 
     def _peek8(self, address):
@@ -672,7 +690,7 @@ class QSFPModule:
         """
         Checks whether QSFP adapter is available by checking modprs pin
         """
-        return self.modprs.get() == 0 #modprs is active low
+        return self.modprs.get() == 0  # modprs is active low
 
     def enable_i2c(self, enable):
         """
@@ -682,7 +700,7 @@ class QSFPModule:
         I2C communication leads to unwanted result when query module
         state even if the module reports availability.
         """
-        self.modsel.set("0" if enable else "1") #modsel is active low
+        self.modsel.set("0" if enable else "1")  # modsel is active low
 
     def adapter_id(self):
         """
@@ -731,7 +749,7 @@ class QSFPModule:
             self._revision_compliance(status[0]),
             "Flat mem" if status[1] & 0b100 else "Paged mem",
             "IntL asserted" if status[1] & 0b010 else "IntL not asserted",
-            "Data not ready" if status[1] & 0b001 else "Data ready"
+            "Data not ready" if status[1] & 0b001 else "Data ready",
         )
 
     def vendor_name(self):
@@ -740,7 +758,7 @@ class QSFPModule:
         """
         content = [self._peek8(i) for i in range(148, 163)]
 
-        if all(content): # list must not contain any None values
+        if all(content):  # list must not contain any None values
             # convert ASCII codes to string and strip whitespaces at the end
             return "".join([chr(i) for i in content]).rstrip()
 
@@ -768,27 +786,31 @@ class QSFPModule:
         """
         if self.is_available():
             status = self.decoded_status()
-            return "Vendor name:    {}\n" \
-                   "id:             {}\n" \
-                   "Connector type: {}\n" \
-                   "Compliance:     {}\n" \
-                   "Status:         {}".format(
-                       self.vendor_name(), self.adapter_id_name(),
-                       self.connector_type(), status[0], status[1:])
+            return (
+                "Vendor name:    {}\n"
+                "id:             {}\n"
+                "Connector type: {}\n"
+                "Compliance:     {}\n"
+                "Status:         {}".format(
+                    self.vendor_name(),
+                    self.adapter_id_name(),
+                    self.connector_type(),
+                    status[0],
+                    status[1:],
+                )
+            )
 
         return "No module detected"
 
+
 def get_temp_sensor(sensor_names, reduce_fn=mean, log=None):
-    """ Get temperature sensor reading from X4xx. """
+    """Get temperature sensor reading from X4xx."""
     temps = []
     try:
         for sensor_name in sensor_names:
-            temp_raw = read_thermal_sensor_value(
-                sensor_name, 'in_temp_raw', 'iio', 'name')
-            temp_offset = read_thermal_sensor_value(
-                sensor_name, 'in_temp_offset', 'iio', 'name')
-            temp_scale = read_thermal_sensor_value(
-                sensor_name, 'in_temp_scale', 'iio', 'name')
+            temp_raw = read_thermal_sensor_value(sensor_name, "in_temp_raw", "iio", "name")
+            temp_offset = read_thermal_sensor_value(sensor_name, "in_temp_offset", "iio", "name")
+            temp_scale = read_thermal_sensor_value(sensor_name, "in_temp_scale", "iio", "name")
             # sysfs-bus-iio linux kernel API reports temp in milli deg C
             # https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-bus-iio
             temp_in_deg_c = (temp_raw + temp_offset) * temp_scale / 1000
@@ -799,15 +821,9 @@ def get_temp_sensor(sensor_names, reduce_fn=mean, log=None):
         temps = [-1]
     except KeyError:
         if log:
-            log.warning("Can't read %s temp sensor fron iio sub-system.",
-                        str(sensor_name))
+            log.warning("Can't read %s temp sensor fron iio sub-system.", str(sensor_name))
         temps = [-1]
-    return {
-        'name': 'temperature',
-        'type': 'REALNUM',
-        'unit': 'C',
-        'value': str(reduce_fn(temps))
-    }
+    return {"name": "temperature", "type": "REALNUM", "unit": "C", "value": str(reduce_fn(temps))}
 
 
 class FrontpanelGPIO(GPIOBank):
@@ -827,6 +843,4 @@ class FrontpanelGPIO(GPIOBank):
         else:
             raise ValueError(f"Invalid GPIO bank: {bank}")
 
-        GPIOBank.__init__(
-            self, {"label": "zynqmp_gpio"}, self.EMIO_BASE + pin_offset, 0xFFF, ddr
-        )
+        GPIOBank.__init__(self, {"label": "zynqmp_gpio"}, self.EMIO_BASE + pin_offset, 0xFFF, ddr)

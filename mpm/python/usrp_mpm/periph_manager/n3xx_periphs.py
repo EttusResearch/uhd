@@ -9,28 +9,29 @@ N3xx peripherals
 """
 
 from usrp_mpm import lib
-from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
-from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.chips.ds125df410 import DS125DF410
 from usrp_mpm.periph_manager.common import MboardRegsCommon
+from usrp_mpm.sys_utils import i2c_dev
+from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank, SysFSGPIO
 
 # Map register values to SFP transport types
 N3XX_SFP_TYPES = {
-    0: "",    # Port not connected
+    0: "",  # Port not connected
     1: "1G",
     2: "10G",
-    3: "A",   # Aurora
-    4: "W"    # White Rabbit
+    3: "A",  # Aurora
+    4: "W",  # White Rabbit
 }
 
 N3XX_FPGA_TYPES_BY_SFP = {
-    ("", ""):       "",
-    ("1G", "10G"):  "HG",
+    ("", ""): "",
+    ("1G", "10G"): "HG",
     ("10G", "10G"): "XG",
-    ("10G", "A"):   "XA",
-    ("A", "A"):     "AA",
-    ("W", "10G"):   "WX",
+    ("10G", "A"): "XA",
+    ("A", "A"): "AA",
+    ("W", "10G"): "WX",
 }
+
 
 class TCA6424(object):
     """
@@ -38,59 +39,61 @@ class TCA6424(object):
     pins_list is  an array of different version of TCA6424 pins map.
     First element of this array corresponding to revC, second is revD etc...
     """
+
     pins_list = [
         (
-            'PWREN-CLK-MGT156MHz',
-            'NETCLK-CE',         #revC name: 'PWREN-CLK-WB-CDCM',
-            'NETCLK-RESETn',     #revC name: 'WB-CDCM-RESETn',
-            'NETCLK-PR0',        #revC name: 'WB-CDCM-PR0',
-            'NETCLK-PR1',        #revC name: 'WB-CDCM-PR1',
-            'NETCLK-OD0',        #revC name: 'WB-CDCM-OD0',
-            'NETCLK-OD1',        #revC name: 'WB-CDCM-OD1',
-            'NETCLK-OD2',        #revC name: 'WB-CDCM-OD2',
-            'PWREN-CLK-MAINREF',
-            'CLK-MAINSEL-25MHz', #revC name: 'CLK-MAINREF-SEL1',
-            'CLK-MAINSEL-EX_B',  #revC name: 'CLK-MAINREF-SEL0',
-            '12',
-            'CLK-MAINSEL-GPS',   #revC name: '13',
-            'FPGA-GPIO-EN',
-            'PWREN-CLK-WB-20MHz',
-            'PWREN-CLK-WB-25MHz',
-            'GPS-PHASELOCK',
-            'GPS-nINITSURV',
-            'GPS-nRESET',
-            'GPS-WARMUP',
-            'GPS-SURVEY',
-            'GPS-LOCKOK',
-            'GPS-ALARM',
-            'PWREN-GPS',
+            "PWREN-CLK-MGT156MHz",
+            "NETCLK-CE",  # revC name: 'PWREN-CLK-WB-CDCM',
+            "NETCLK-RESETn",  # revC name: 'WB-CDCM-RESETn',
+            "NETCLK-PR0",  # revC name: 'WB-CDCM-PR0',
+            "NETCLK-PR1",  # revC name: 'WB-CDCM-PR1',
+            "NETCLK-OD0",  # revC name: 'WB-CDCM-OD0',
+            "NETCLK-OD1",  # revC name: 'WB-CDCM-OD1',
+            "NETCLK-OD2",  # revC name: 'WB-CDCM-OD2',
+            "PWREN-CLK-MAINREF",
+            "CLK-MAINSEL-25MHz",  # revC name: 'CLK-MAINREF-SEL1',
+            "CLK-MAINSEL-EX_B",  # revC name: 'CLK-MAINREF-SEL0',
+            "12",
+            "CLK-MAINSEL-GPS",  # revC name: '13',
+            "FPGA-GPIO-EN",
+            "PWREN-CLK-WB-20MHz",
+            "PWREN-CLK-WB-25MHz",
+            "GPS-PHASELOCK",
+            "GPS-nINITSURV",
+            "GPS-nRESET",
+            "GPS-WARMUP",
+            "GPS-SURVEY",
+            "GPS-LOCKOK",
+            "GPS-ALARM",
+            "PWREN-GPS",
         ),
         (
-            'NETCLK-PR1',
-            'NETCLK-PR0',
-            'NETCLK-CE',
-            'NETCLK-RESETn',
-            'NETCLK-OD2',
-            'NETCLK-OD1',
-            'NETCLK-OD0',
-            'PWREN-CLK-MGT156MHz',
-            'PWREN-CLK-MAINREF',
-            'CLK-MAINSEL-25MHz',
-            'CLK-MAINSEL-EX_B',
-            '12',
-            'CLK-MAINSEL-GPS',
-            'FPGA-GPIO-EN',
-            'PWREN-CLK-WB-20MHz',
-            'PWREN-CLK-WB-25MHz',
-            'GPS-PHASELOCK',
-            'GPS-nINITSURV',
-            'GPS-nRESET',
-            'GPS-WARMUP',
-            'GPS-SURVEY',
-            'GPS-LOCKOK',
-            'GPS-ALARM',
-            'PWREN-GPS',
-        )]
+            "NETCLK-PR1",
+            "NETCLK-PR0",
+            "NETCLK-CE",
+            "NETCLK-RESETn",
+            "NETCLK-OD2",
+            "NETCLK-OD1",
+            "NETCLK-OD0",
+            "PWREN-CLK-MGT156MHz",
+            "PWREN-CLK-MAINREF",
+            "CLK-MAINSEL-25MHz",
+            "CLK-MAINSEL-EX_B",
+            "12",
+            "CLK-MAINSEL-GPS",
+            "FPGA-GPIO-EN",
+            "PWREN-CLK-WB-20MHz",
+            "PWREN-CLK-WB-25MHz",
+            "GPS-PHASELOCK",
+            "GPS-nINITSURV",
+            "GPS-nRESET",
+            "GPS-WARMUP",
+            "GPS-SURVEY",
+            "GPS-LOCKOK",
+            "GPS-ALARM",
+            "PWREN-GPS",
+        ),
+    ]
 
     def __init__(self, rev):
         # Default state: Turn on GPS power, take GPS out of reset or
@@ -102,7 +105,12 @@ class TCA6424(object):
             self.pins = self.pins_list[1]
 
         default_val = 0x860101 if rev == 2 else 0x860780
-        self._gpios = SysFSGPIO({'device/name': 'tca6424', 'device/of_node/name': 'gpio'}, 0xFFF7FF, 0x86F7FF, default_val)
+        self._gpios = SysFSGPIO(
+            {"device/name": "tca6424", "device/of_node/name": "gpio"},
+            0xFFF7FF,
+            0x86F7FF,
+            default_val,
+        )
 
     def set(self, name, value=None):
         """
@@ -129,22 +137,25 @@ class FrontpanelGPIO(GPIOBank):
     """
     Abstraction layer for the front panel GPIO
     """
+
     EMIO_BASE = 54
-    FP_GPIO_OFFSET = 32 # Bit offset within the ps_gpio_* pins
+    FP_GPIO_OFFSET = 32  # Bit offset within the ps_gpio_* pins
 
     def __init__(self, ddr):
         GPIOBank.__init__(
             self,
-            {'label': 'zynq_gpio'},
+            {"label": "zynq_gpio"},
             self.FP_GPIO_OFFSET + self.EMIO_BASE,
-            0xFFF, # use_mask
-            ddr
+            0xFFF,  # use_mask
+            ddr,
         )
+
 
 class BackpanelGPIO(GPIOBank):
     """
     Abstraction layer for the back panel GPIO
     """
+
     EMIO_BASE = 54
     BP_GPIO_OFFSET = 45
     LED_LINK = 0
@@ -154,11 +165,12 @@ class BackpanelGPIO(GPIOBank):
     def __init__(self):
         GPIOBank.__init__(
             self,
-            {'label': 'zynq_gpio'},
+            {"label": "zynq_gpio"},
             self.BP_GPIO_OFFSET + self.EMIO_BASE,
-            0x7, # use_mask
-            0x7, # ddr
+            0x7,  # use_mask
+            0x7,  # ddr
         )
+
 
 class MboardRegsControl(MboardRegsCommon):
     """
@@ -211,7 +223,7 @@ class MboardRegsControl(MboardRegsCommon):
         1: means the pin is driven by PS or user application
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_MASTER) & 0xfff
+            return self.peek32(self.MB_GPIO_MASTER) & 0xFFF
 
     def set_fp_gpio_user_mux(self, value):
         """set user mux for front panel GPIO
@@ -246,42 +258,41 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_radio_src(self):
         """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 12 pins GPIO.
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
-           10: means the pin is driven by radio 2
-           11: means the pin is driven by radio 3
+        The return value is 2-bit bit mask of 12 pins GPIO.
+        00: means the pin is driven by radio 0
+        01: means the pin is driven by radio 1
+        10: means the pin is driven by radio 2
+        11: means the pin is driven by radio 3
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffffff
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xFFFFFF
 
     def set_time_source(self, time_source, ref_clk_freq):
         """
         Set time source
         """
         pps_sel_val = 0x0
-        if time_source == 'internal':
-            assert ref_clk_freq in (10e6, 25e6), \
-                "Invalid reference frequency for time source 'internal'. Must " \
+        if time_source == "internal":
+            assert ref_clk_freq in (10e6, 25e6), (
+                "Invalid reference frequency for time source 'internal'. Must "
                 "be either 10 MHz or 25 MHz. Check clock and time source match."
+            )
             if ref_clk_freq == 10e6:
-                self.log.debug("Setting time source to internal "
-                               "(10 MHz reference)...")
+                self.log.debug("Setting time source to internal " "(10 MHz reference)...")
                 pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_10
             elif ref_clk_freq == 25e6:
-                self.log.debug("Setting time source to internal "
-                               "(25 MHz reference)...")
+                self.log.debug("Setting time source to internal " "(25 MHz reference)...")
                 pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_25
-        elif time_source == 'external':
+        elif time_source == "external":
             self.log.debug("Setting time source to external...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
-        elif time_source == 'gpsdo':
+        elif time_source == "gpsdo":
             self.log.debug("Setting time source to gpsdo...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_GPSDO
-        elif time_source == 'sfp0':
+        elif time_source == "sfp0":
             self.log.debug("Setting time source to sfp0...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_SFP0
-        elif time_source == 'sfp1':
+        elif time_source == "sfp1":
             self.log.debug("Setting time source to sfp1...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_SFP1
         else:
@@ -299,8 +310,7 @@ class MboardRegsControl(MboardRegsCommon):
         """
         Enables the PPS/Trig output on the back panel
         """
-        self.log.trace("%s PPS/Trig output!",
-                       "Enabling" if enable else "Disabling")
+        self.log.trace("%s PPS/Trig output!", "Enabling" if enable else "Disabling")
         mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN)
         with self.regs:
             # mask the bit to clear it:
@@ -315,8 +325,7 @@ class MboardRegsControl(MboardRegsCommon):
         """
         Enables the reference clock internal to the FPGA
         """
-        self.log.trace("%s the Reference Clock!",
-                       "Enabling" if enable else "Disabling")
+        self.log.trace("%s the Reference Clock!", "Enabling" if enable else "Disabling")
         mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_DISABLE_REF_CLK)
         with self.regs:
             # mask the bit to clear it and therefore enable the clock:
@@ -331,8 +340,7 @@ class MboardRegsControl(MboardRegsCommon):
         """
         Reset or unreset the MMCM for the measurement clock in the FPGA TDC.
         """
-        self.log.trace("%s measurement clock MMCM reset...",
-                       "Asserting" if reset else "Clearing")
+        self.log.trace("%s measurement clock MMCM reset...", "Asserting" if reset else "Clearing")
         mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET)
         with self.regs:
             # mask the bit to clear it
@@ -352,8 +360,10 @@ class MboardRegsControl(MboardRegsCommon):
             reg_val = self.peek32(self.MB_CLOCK_CTRL)
         locked = (reg_val & mask) > 0
         if not locked:
-            self.log.warning("Measurement clock MMCM reporting unlocked. "
-                             "MB_CLOCK_CTRL reg: 0x{:08X}".format(reg_val))
+            self.log.warning(
+                "Measurement clock MMCM reporting unlocked. "
+                "MB_CLOCK_CTRL reg: 0x{:08X}".format(reg_val)
+            )
         else:
             self.log.trace("Measurement clock MMCM locked!")
         return locked
@@ -375,8 +385,9 @@ class MboardRegsControl(MboardRegsCommon):
         try:
             return N3XX_FPGA_TYPES_BY_SFP[(sfp0_type, sfp1_type)]
         except KeyError:
-            self.log.warning("Unrecognized SFP type combination: ({}, {})"
-                             .format(sfp0_type, sfp1_type))
+            self.log.warning(
+                "Unrecognized SFP type combination: ({}, {})".format(sfp0_type, sfp1_type)
+            )
         return ""
 
 
@@ -384,17 +395,10 @@ class RetimerQSFP(DS125DF410):
     """
     Thin wrapper around an I2C device that controls the QSFP retimer
     """
+
     # (deemphasis, swing)
-    DRIVER_PRESETS = {
-        '1m': (0x00, 0x07), '3m': (0x41, 0x06), 'Optical': (0x41, 0x04)
-    }
+    DRIVER_PRESETS = {"1m": (0x00, 0x07), "3m": (0x41, 0x06), "Optical": (0x41, 0x04)}
 
     def __init__(self, i2c_bus):
-        regs_iface = lib.i2c.make_i2cdev_regs_iface(
-            i2c_bus,
-            0x18,
-            False,
-            100,
-            1
-        )
+        regs_iface = lib.i2c.make_i2cdev_regs_iface(i2c_bus, 0x18, False, 100, 1)
         super(RetimerQSFP, self).__init__(regs_iface)
