@@ -60,12 +60,8 @@ stages:
     publish_int_files: ${{ parameters.publish_int_files }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    ${{ if ne(length(parameters.x410_targets_matrix), 0) }}:
-      x410_full_targets_matrix: ${{ parameters.x410_targets_matrix }}
-      x410_reduced_targets_matrix: ${{ parameters.x410_targets_matrix }}
-    ${{ if ne(length(parameters.x440_targets_matrix), 0) }}:
-      x440_full_targets_matrix: ${{ parameters.x440_targets_matrix }}
-      x440_reduced_targets_matrix: ${{ parameters.x440_targets_matrix }}
+    x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     additional_setup_steps: ${{ parameters.additional_setup_steps }}
     rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
