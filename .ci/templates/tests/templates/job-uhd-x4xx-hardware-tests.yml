@@ -276,10 +276,10 @@ jobs:
       fi
       mkdir -p $(Common.TestResultsDirectory)/devtest
       cd $(Common.TestResultsDirectory)/devtest
-      if [ -z "$(master_clock_rate)" ]; then
+      if [ -z "${{ parameters.master_clock_rate }}" ]; then
         args="addr=$(sfp0ip),type=$(dutType)"
       else
-        args="addr=$(sfp0ip),type=$(dutType),master_clock_rate=$(master_clock_rate)"
+        args="addr=$(sfp0ip),type=$(dutType),master_clock_rate=${{ parameters.master_clock_rate }}"
       fi
       echo $args
       uhd_usrp_probe --args $args
