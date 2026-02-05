@@ -1,0 +1,4 @@
+The vcpkg.json manifest file is using vcpkg tag "2026.01.16" as builtin-baseline which provides packages in the following versions:
+
+boost 1.90
+libusb 1.0.29

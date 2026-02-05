@@ -28,6 +28,7 @@ parameters:
 
 steps:
 - script: |
+    call ${{ parameters.uhdSrcDir }}\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
     mkdir ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
     if "${{ parameters.uhdReleaseBinaries }}" == "True" (
@@ -64,7 +65,7 @@ steps:
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
-    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild UHD
 
@@ -76,7 +77,7 @@ steps:
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
-    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe INSTALL.vcxproj -maxCpuCount -p:configuration=release
   displayName: Install uhd to uhdBuildDir-installed
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})
@@ -88,6 +89,7 @@ steps:
 # We need to match the install prefix with the previous step in order to find
 # UHDConfig.cmake.
 - script: |
+    
     SET EXAMPLE_BUILD_DIR="${{ parameters.uhdBuildDir }}/build_init_usrp"
     SET EXAMPLE_SRC_DIR="${{ parameters.uhdSrcDir }}/host/examples/init_usrp"
     mkdir -p %EXAMPLE_BUILD_DIR%
@@ -107,7 +109,7 @@ steps:
       %UHD_CI_CMAKE_PYTHON% ^
       %UHD_CI_CMAKE_SIM% ^
       -G "$(cmakeCompiler)" -A $(cmakeArch)
-    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
   displayName: Build init_usrp
   condition: and(succeeded(), ${{ parameters.uhdGenerateTestBinaries }})

@@ -35,10 +35,16 @@ parameters:
 
 steps:
 - script: |
-    copy /y ${{ parameters.uhdSrcDir }}\.ci\docker\vcpkg\vcpkg.json vcpkg.json
+    call ${{ parameters.uhdSrcDir }}\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
+    copy /y ${{ parameters.uhdSrcDir }}\.ci\docker\vcpkg\%vcpkgManifestFile% vcpkg.json
     %VCPKG_INSTALL_DIR%\vcpkg.exe install --triplet uhd-x64-windows-static-md --clean-after-build
   workingDirectory: ${{ parameters.uhdVcpkgManifestDir }}
   displayName: refresh vcpkg dependencies
+
+- script: |
+    pip config list
+    pip install -r ${{ parameters.uhdSrcDir }}\host\python\requirements.txt
+  displayName: refresh python dependencies
 
 - script: |
     mkdir ${{ parameters.uhdBuildDir }}
@@ -93,7 +99,7 @@ steps:
 
 - script: |
     cd ${{ parameters.uhdBuildDir }}
-    call "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
   displayName: msbuild package
 

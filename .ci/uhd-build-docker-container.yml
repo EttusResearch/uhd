@@ -59,7 +59,16 @@ variables:
       "{'VS2019-x64-py310-builder':{'buildOSName':'win-vs19-v142-x64-py310','dockerImageName':'uhd-builder-vs2019-v142-x64-py310','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python310'},
       'VS2019-x64-py312-builder':{'buildOSName':'win-vs19-v142-x64-py312','dockerImageName':'uhd-builder-vs2019-v142-x64-py312','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python312'},
       'VS2022-x64-py310-builder':{'buildOSName':'win-vs22-v143-x64-py310','dockerImageName':'uhd-builder-vs2022-v143-x64-py310','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python310'},
-      'VS2022-x64-py312-builder':{'buildOSName':'win-vs22-v143-x64-py312','dockerImageName':'uhd-builder-vs2022-v143-x64-py312','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python312'}}"
+      'VS2022-x64-py312-builder':{'buildOSName':'win-vs22-v143-x64-py312','dockerImageName':'uhd-builder-vs2022-v143-x64-py312','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python312'},
+      'VS2026-x64-py310-builder':{'buildOSName':'win-vs26-v145-x64-py310','dockerImageName':'uhd-builder-vs2026-v145-x64-py310','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python310'},
+      'VS2026-x64-py312-builder':{'buildOSName':'win-vs26-v145-x64-py312','dockerImageName':'uhd-builder-vs2026-v145-x64-py312','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python312'},
+      'VS2026-x64-py313-builder':{'buildOSName':'win-vs26-v145-x64-py313','dockerImageName':'uhd-builder-vs2026-v145-x64-py313','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python313'}}"
+  - name: python310_version
+    value: '3.10.11'
+  - name: python312_version
+    value: '3.12.10'
+  - name: python313_version
+    value: '3.13.11'
 - ${{ else }}:
   - name: winDockerImages
     value:
@@ -235,11 +244,36 @@ jobs:
   steps:
   - checkout: self
     clean: true
+  - script: |
+      REM Set DOCKER_CONFIG based on vsYear
+      if "$(vsYear)"=="2026" (
+        echo ##vso[task.setvariable variable=DOCKER_CONFIG]uhd-builder-vs2026-v145-x64
+      ) else (
+        echo ##vso[task.setvariable variable=DOCKER_CONFIG]$(dockerImageName)
+      )
+      
+      REM Set PYTHON_VERSION_ARG based on pythonVersion
+      if "$(pythonVersion)"=="python310" (
+        echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]--build-arg PYTHON_VERSION=$(python310_version)
+      ) else if "$(pythonVersion)"=="python312" (
+        echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]--build-arg PYTHON_VERSION=$(python312_version)
+      ) else if "$(pythonVersion)"=="python313" (
+        echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]--build-arg PYTHON_VERSION=$(python313_version)
+      ) else (
+        echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]
+      )
+    displayName: Set dynamic build variables
+  - script: |
+      call $(Build.SourcesDirectory)\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
+    displayName: Extract VS version info
+  - powershell: |
+      $(Build.SourcesDirectory)\.ci\docker\scripts\check-url.ps1 -Url "$(vsToolsUrl)"
+    displayName: Verify expected VS Tools Installer URL
   - task: Docker@2
     displayName: Build Image
     inputs:
       command: 'build'
-      Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(dockerImageName).Dockerfile'
+      Dockerfile: '$(Build.SourcesDirectory)/.ci/docker/$(DOCKER_CONFIG).Dockerfile'
       ${{ if or(eq(variables['Build.SourceBranch'], 'refs/heads/master'), startsWith(variables['Build.SourceBranch'], 'refs/heads/UHD-')) }}:
         containerRegistry: rnd-docker-niartifacts-sdr-ci-publish
       ${{ else }}:
@@ -247,7 +281,13 @@ jobs:
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(uhdDockerImageVersion)
       buildContext: $(Build.SourcesDirectory)
-      arguments: --no-cache --pull --build-arg PIP_INDEX_HOST=$(pip_index_host) --build-arg PIP_INDEX_URL=$(pip_index_url)
+      arguments: >
+        --no-cache --pull
+        --build-arg VS_BUILD_TOOLS_URL=$(vsToolsUrl)
+        --build-arg PIP_INDEX_HOST=$(pip_index_host)
+        --build-arg PIP_INDEX_URL=$(pip_index_url)
+        --build-arg VCPKG_MANIFEST_FILE=$(vcpkgManifestFile)
+        $(PYTHON_VERSION_ARG)
   - task: Docker@2
     displayName: Push Image
     inputs:
@@ -300,9 +340,10 @@ jobs:
           -DVCPKG_MANIFEST_DIR=c:\uhd-vcpkg ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd
-  - script: |
+  - script: | 
+        call $(Build.SourcesDirectory)\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
         cd c:\uhddev\build
-        "C:\Program Files (x86)\Microsoft Visual Studio\$(vsYear)\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+        "%vsToolsInstallDir%\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
     displayName: Load Visual C++ Env
 
 - job: export_build_number
