@@ -410,7 +410,10 @@ private:
     //! Returns the length of the control payload in 32-bit words
     inline static size_t get_payload_size(const ctrl_payload& payload)
     {
-        return 2 + (payload.timestamp.has_value() ? 2 : 0) + payload.data_vtr.size();
+        return 2 // Control packet header, incl. HasTime, SeqNum, etc.
+               + (bool(payload.timestamp) ? 2 : 0) // Timestamp
+               + 1 // Control operation, incl. OpCode, Address, etc.
+               + payload.data_vtr.size(); // Data words
     }
 
     //! Marks the start of a timeout for an operation and returns the expiration time
