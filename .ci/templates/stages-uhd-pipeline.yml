@@ -481,6 +481,7 @@ stages:
         toolset: ubuntu_deb
         installer: deb
         cmake_args: ${{ parameters.cmake_args }}
+        releaseBinaries: ${{ parameters.release_binaries }}
         create_sbom: ${{ parameters.create_sbom }}
 
 - stage: build_uhd_installer_stage_fedora

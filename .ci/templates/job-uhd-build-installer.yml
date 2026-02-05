@@ -41,15 +41,26 @@ jobs:
   ${{ else }}:
     timeoutInMinutes: 120
   variables:
+    # Need to use list format to support inclusion of variable groups.
+    # Variable group used by .ci/templates/steps-windows-sbom.yml@ettus-rts 
+    - group: meta-ettus-vars
     # Docker vars from job-get-latest-uhd-docker.yml
-    dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
-    dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
-    dockerImageMatrixLin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
-    dockerImageMatrixWin: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
-    dockerImageMatrixUbuntuDeb: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
-    macOSBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
-    dockerImageMatrixSourcePackageBuilders: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
-    dockerImageMatrixFedoraRpm: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
+    - name: dockerBuildNumber
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
+    - name: dockerImagePrefix
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
+    - name: dockerImageMatrixLin
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixLin'] ]
+    - name: dockerImageMatrixWin
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixWin'] ]
+    - name: dockerImageMatrixUbuntuDeb
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixUbuntuDeb'] ]
+    - name: macOSBuilders
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.macOSBuilders'] ]
+    - name: dockerImageMatrixSourcePackageBuilders
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixSourcePackageBuilders'] ]
+    - name: dockerImageMatrixFedoraRpm
+      value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImageMatrixFedoraRpm'] ]
   pool:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
@@ -131,6 +142,7 @@ jobs:
           osReleaseName: $(fedoraReleaseName)
           uhdSrcDir: $(uhdSrcDir)
           uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
+          releaseBinaries: ${{ parameters.releaseBinaries }}
   - ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
     - template: steps-build-uhd-installer-ubuntu-deb.yml
       parameters:
@@ -148,6 +160,7 @@ jobs:
           osReleaseName: $(ubuntuReleaseName)
           uhdSrcDir: $(uhdSrcDir)
           uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
+          releaseBinaries: ${{ parameters.releaseBinaries }}
   - ${{ if and(eq(parameters.toolset, 'msbuild'), eq(parameters.installer, 'nsis')) }}:
     - template: steps-build-uhd-installer-msbuild-nsis.yml
       parameters:
@@ -175,6 +188,7 @@ jobs:
           uhdInstallerDir: $(Build.BinariesDirectory)\uhddev-installer
           uhdBuildDir: c:\uhddev\build
           uhdVcpkgManifestDir: c:\uhd-vcpkg
+          releaseBinaries: ${{ parameters.releaseBinaries }}
           uhdBuildPythonAPI: True
           vsArch: $(vsArch)
           vsYear: $(vsYear)
