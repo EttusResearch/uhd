@@ -16,6 +16,12 @@
 //   - AXIS_CTRL_MST_EN: Enable an AXIS-Ctrl master
 //   - AXIS_CTRL_SLV_EN: Enable an AXIS-Ctrl slave
 //   - SLAVE_FIFO_SIZE: FIFO depth for the slave port
+//   - SKIP_WR_ACK_WAIT: When set to 1, the AXIS-Ctrl master will ACK on
+//                       CtrlPort immediately without waiting for the
+//                       AXIS-Ctrl response for writes. This should NOT be
+//                       enabled when this endpoint also issues read requests.
+//                       Set to 0 to wait for the response, which is the
+//                       normal behavior.
 //
 // Signals:
 //   - *_rfnoc_ctrl_* : Input/output AXIS-Control stream (AXI-Stream)
@@ -26,7 +32,8 @@ module ctrlport_endpoint #(
   parameter       SYNC_CLKS         = 0,
   parameter [0:0] AXIS_CTRL_MST_EN  = 1,
   parameter [0:0] AXIS_CTRL_SLV_EN  = 1,
-  parameter       SLAVE_FIFO_SIZE   = 5
+  parameter       SLAVE_FIFO_SIZE   = 5,
+  parameter       SKIP_WR_ACK_WAIT  = 0
 )(
   // Clocks, Resets, Misc
   input  wire         rfnoc_ctrl_clk,
@@ -207,7 +214,10 @@ module ctrlport_endpoint #(
 
   generate
     if (AXIS_CTRL_MST_EN == 1'b1) begin : gen_ctrl_master
-      axis_ctrl_master #( .THIS_PORTID(THIS_PORTID) ) axis_ctrl_mst_i (
+      axis_ctrl_master #(
+        .THIS_PORTID     (THIS_PORTID),
+        .SKIP_WR_ACK_WAIT(SKIP_WR_ACK_WAIT)
+      ) axis_ctrl_mst_i (
         .clk                    (ctrlport_clk),
         .rst                    (ctrlport_rst),
         .s_axis_ctrl_tdata      (mst_resp_tdata),
