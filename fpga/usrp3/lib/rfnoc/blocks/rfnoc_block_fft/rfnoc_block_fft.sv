@@ -2,7 +2,7 @@
 // Copyright 2024 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
-//
+// [FFT_FPGA_DOCU] 
 // Module: rfnoc_block_fft
 //
 // Description:
@@ -53,6 +53,7 @@
 //                              and more resource-intensive calculation (0) for
 //                              the magnitude calculation.
 //
+//   [FFT_FPGA_DOCU] 
 
 `default_nettype none
 

@@ -12,7 +12,7 @@ noc_id: 0xFF700002
 # Provide a custom path to Makefile.srcs for this block relative to the
 # FPGA repository
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fft/Makefile.srcs"
-
+# [FFT_YML]
 parameters:
   NIPC: 1
   NUM_PORTS: 1
@@ -29,7 +29,7 @@ parameters:
   EN_MAGNITUDE: 0
   EN_MAGNITUDE_SQ: 1
   USE_APPROX_MAG: 1
-
+# [FFT_YML]
 clocks:
   - name: rfnoc_chdr
     freq: "[]"

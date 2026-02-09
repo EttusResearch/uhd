@@ -15,6 +15,8 @@ namespace uhd { namespace rfnoc {
 
 /*! Moving Average Block Control Class
  *
+ * \ingroup rfnoc_blocks
+ *
  * The Moving Average block is an RFNoC block that computes the running average of an
  * input data stream. The output is the sum of the last SUM_LEN samples divided by DIVISOR
  * which may or may not be equal to SUM_LEN. For example, if SUM_LEN is set to 10 and

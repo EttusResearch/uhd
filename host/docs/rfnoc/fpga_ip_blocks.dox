@@ -1,0 +1,49 @@
+/*! \page page_fpga_ip_blocks FPGA IP Blocks
+
+
+\section fpga_ip_blocks_rfnoc RFNoC Blocks
+
+The RFNoC FPGA IP blocks that ship with UHD are listed below. 
+These blocks can be incorporated into a custom FPGA design by instantiating them 
+in the respective image core yaml file that defines that FPGA design. 
+
+
+\subsection fpga_ip_blocks_rfnoc_intree In-Tree Blocks
+The list of RFNoC IP blocks that are maintained within the UHD repository are 
+listed below.
+
+| Name (Link to Documentation)                                                  | File Name     | Description                                                                                                   |
+|--------------------------------------------------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------|
+| Add / Subtract \ref uhd::rfnoc::addsub_block_control "(Manual)"               | addsub        | Computes the sum and the difference of two input streams                                                     |
+| Digital Down Conversion \ref uhd::rfnoc::ddc_block_control "(Manual)"        | ddc           | Frequency shift and integer sample rate down conversion                                                      |
+| RAM FIFO \ref uhd::rfnoc::dmafifo_block_control "(Manual)"                   | axi_ram_fifo  | A large FIFO buffer that uses DRAM on the USRP for storage.                                                 |
+| Digital Up Conversion \ref uhd::rfnoc::duc_block_control "(Manual)"          | duc           | Integer sample rate upconversion and frequency shift                                                         |
+| FFT \ref uhd::rfnoc::fft_block_control "(Manual)"                            | fft           | (i)FFT with cyclic prefix insertion and removal                                                              |
+| FIR Filter \ref uhd::rfnoc::fir_filter_block_control "(Manual)"              | fir_filter    | FIR filter with compile time configurable length and run time configurable filter coefficients            |
+| Fosphor \ref uhd::rfnoc::fosphor_block_control "(Manual)"                    | fosphor       | Computes histogram and waterfall of FFT-converted input packets                                             |
+| Keep One in N \ref uhd::rfnoc::keep_one_in_n_block_control "(Manual)"        | keep_one_in_n | Keeps 1 sample or packet and drops the following N-1 samples or packets                                     |
+| License Checker \ref uhd::rfnoc::lc_block_control "(Manual)"                 | license_check | Reads and evaluates license keys                                                                             |
+| Log Power \ref uhd::rfnoc::logpwr_block_control "(Manual)"                   | logpwr        | Computes an estimate for 1024 * log2(i^2 + q^2) of a complex-valued input sample                           |
+| Moving Average \ref uhd::rfnoc::moving_average_block_control "(Manual)"       | moving_avg    | Computes the moving average of an input stream.                                                              |
+| Null Source / Sink\ref uhd::rfnoc::null_block_control "(Manual)"             | null_src_sink | Acts as FPGA data source, sink or input-output loopback                                                     |
+| Radio \ref uhd::rfnoc::radio_control "(Manual)"                              | radio         | Interface between RFNoC framework and RF hardware, providing radio control and data streaming capabilities |
+| Replay \ref uhd::rfnoc::replay_block_control "(Manual)"                      | replay        | Records data to DRAM memory or plays data back from DRAM memory                                             |
+| Signal Generation \ref uhd::rfnoc::siggen_block_control "(Manual)"           | siggen        | Generates constant, sinusoidal or uniformly distributed noise signals                                       |
+| Split Stream \ref uhd::rfnoc::split_stream_block_control "(Manual)"          | split_stream  | Replicates a single input stream into multiple output streams                                               |
+| Switchboard \ref uhd::rfnoc::switchboard_block_control "(Manual)"            | switchboard   | Routes any single input to any single output                                                                |
+| Vector IIR \ref uhd::rfnoc::vector_iir_block_control "(Manual)"              | vector_iir    | IIR filter with a single feedforward and feedback tap and a variable delay                                  |
+| Window \ref uhd::rfnoc::window_block_control "(Manual)"                      | window        | Multiplies an input signal by a shaping function (window)                                                   |
+
+
+\subsection fpga_ip_blocks_rfnoc_oot Out-Of-Tree Blocks
+Out-of-tree blocks are RFNoC blocks that are developed and maintained outside of the main UHD 
+repository here: <a href="https://github.com/EttusResearch/rfnoc-oot-blocks">https://github.com/EttusResearch/rfnoc-oot-blocks</a>
+
+| Name (Link to Documentation)                                                                                                                                                                                                                                                                                                              | File Name | Description                                                                        |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|------------------------------------------------------------------------------------|
+| Aurora (<a href="https://github.com/EttusResearch/rfnoc-oot-blocks/blob/main/rfnoc/fpga/oot-blocks/rfnoc_block_aurora/docs/RFNoC_block_Aurora_manual.md">Manual</a>, <a href="https://github.com/EttusResearch/rfnoc-oot-blocks/blob/main/rfnoc/fpga/oot-blocks/rfnoc_block_aurora/README.md">Getting Started</a>) | aurora    | Remote Tx / Rx streaming between X4xx and non-UHD (FPGA) devices using the Aurora protocol |
+
+
+
+*/
+// vim:ft=doxygen:

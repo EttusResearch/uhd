@@ -5,9 +5,9 @@
 \li \subpage page_rfnoc_fpga
 \li \subpage page_rfnoc_sw
 \li \subpage page_rfnoc_tools
+\li \subpage page_fpga_ip_blocks
 
 
-\li \subpage page_rfnoc_blocks
 
 
 */
