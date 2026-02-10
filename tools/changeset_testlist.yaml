@@ -284,6 +284,9 @@
     - fpga.usrp3.x4xx
 
 # Device-specific changes.
+# exclude documentation from triggering FPGA builds
+- re: fpga/usrp3/top/x400/doc
+  stop: True
 - re: fpga/usrp3/top/x400
   add:
     - fpga.usrp3.x4xx
