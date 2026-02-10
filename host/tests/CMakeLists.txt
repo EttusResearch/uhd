@@ -501,6 +501,12 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET "ctrlport_endpoint_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/rfnoc/ctrlport_endpoint.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "complex_gain_3000_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
