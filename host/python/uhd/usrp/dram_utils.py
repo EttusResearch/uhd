@@ -281,17 +281,20 @@ class DramTransmitter:
         if self.tx_streamer.send(waveform, tx_md, 10.0) != num_items:
             raise RuntimeError("Unable to upload all data without errors!")
         # Make sure DRAM is fully populated
-        upload_timeout = time.monotonic() + 20.0
-        while (
-            time.monotonic() < upload_timeout
-            and self.replay_blocks[0].get_record_fullness(in_port) < num_bytes
-        ):
-            time.sleep(0.05)
-        fullness = self.replay_blocks[0].get_record_fullness(in_port)
-        if fullness != num_bytes:
-            raise RuntimeError(
-                f"DRAM fullness did not reach expected levels! " f"{fullness}/{num_bytes} bytes."
-            )
+        upload_timeout = 0.5
+        last_update = time.monotonic()
+        last_fullness = 0
+        while (last_fullness < num_bytes):
+            time.sleep(0.001)
+            fullness = self.replay_blocks[0].get_record_fullness(in_port)
+            if fullness > last_fullness:
+                last_update = time.monotonic()
+            last_fullness = fullness
+            if time.monotonic() - last_update > upload_timeout:
+                raise RuntimeError(
+                    f"DRAM fullness did not reach expected levels! " f"{fullness}/{num_bytes} bytes."
+                )
+
         return num_bytes
 
     def upload(self, waveform, ports=None, mem_regions=None):
