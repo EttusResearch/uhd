@@ -12,6 +12,7 @@
 #include <condition_variable>
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
+#include <algorithm>
 #include <chrono>
 #include <deque>
 #include <mutex>
@@ -306,36 +307,51 @@ public:
                     // provide feedback
                     log_dropped_packet(resp);
                 }
-                // Pop the request from the queue
-                _req_queue.pop_front();
             };
 
-            // Peek at the request queue to check the expected sequence number
             std::unique_lock<std::mutex> lock(_mutex);
-            if (!_req_queue.empty()) {
-                int8_t seq_num_diff =
-                    int8_t(rx_ctrl.seq_num - _req_queue.front().seq_num);
-                if (seq_num_diff == 0) { // No sequence error
-                    process_correct_response();
-                } else if (seq_num_diff > 0) { // Packet(s) dropped
-                    // Tag all dropped packets
-                    for (int8_t i = 0; i < seq_num_diff; i++) {
+            // Peek at the request queue to check the expected sequence number.
+            // If the request queue is empty, then we always have an error so
+            // we simply set a big value in seq_num_diff.
+            const uint8_t seq_num_diff =
+                _req_queue.empty()
+                    ? MAX_SEQ_NUM
+                    : uint8_t(rx_ctrl.seq_num - _req_queue.front().seq_num) % MAX_SEQ_NUM;
+            if (seq_num_diff == 0) { // No sequence error
+                process_correct_response();
+            } else {
+                // Packets were either dropped or reordered. If they were
+                // dropped, then there should be a corresponding packet to
+                // this ACK in the request queue.
+                // If they were reordered, then a previous packet will have
+                // cleared the corresponding packet from the request queue
+                // and we ignore this packet (but log the occurrence)
+                const auto it = std::find_if(_req_queue.begin(),
+                    _req_queue.end(),
+                    [rx_ctrl](const ctrl_payload& req) {
+                        return req.seq_num == rx_ctrl.seq_num
+                               && req.op_code == rx_ctrl.op_code
+                               && req.address == rx_ctrl.address;
+                    });
+                if (it == _req_queue.end()) {
+                    // No corresponding request found, assume this is out of
+                    // sequence.
+                    _ctrl_out_of_seq++;
+                    UHD_LOG_WARNING(_log_prefix,
+                        "Received out-of-sequence ACK: " << rx_ctrl.to_string());
+                } else {
+                    // Drop all packets in the request queue up to and including the
+                    // packet corresponding to this ACK, and log each dropped packet
+                    while (_req_queue.front().seq_num != rx_ctrl.seq_num
+                           || _req_queue.front().op_code != rx_ctrl.op_code
+                           || _req_queue.front().address != rx_ctrl.address) {
                         process_incorrect_response();
+                        _req_queue.pop_front();
                         _ctrl_dropped++;
                     }
                     // Process correct response
                     process_correct_response();
-                } else { // Reordered packet(s)
-                    // Requests are processed in order. If seq_num_diff is negative then
-                    // we have either already seen this response or we have dropped >128
-                    // responses. Either way ignore this packet.
                 }
-            } else {
-                // received a response without any request in queue
-                // ignore the message an report a warning
-                UHD_LOG_WARNING(_log_prefix,
-                    "Received responses with sequence number "
-                        << rx_ctrl.seq_num << " but request queue is empty.");
             }
         } else {
             _async_rcvd++;

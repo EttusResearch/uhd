@@ -573,4 +573,49 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
     BOOST_CHECK_EQUAL(stats.ack_packets_received, 2);
     BOOST_CHECK_EQUAL(stats.buffer_fullness, 0);
     BOOST_CHECK_EQUAL(stats.ctrl_dropped, 1);
+
+    // Add a bunch of pokes to bring the sequence number back around,
+    // ack them all for now
+    for (i = 0; i < 60; i++) {
+        endpoint->poke32(test_addr + (i * 4), test_data + i);
+        send_ack(get_last_sent_packet());
+        // Synchronize ACKs so they all get delivered in order. This is so we
+        // can deterministically check the drop counter later.
+        wait_for_all_responses();
+    }
+
+    wait_for_all_responses();
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 63); // 3 from before + 60 new ones
+    BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
+    BOOST_CHECK_EQUAL(get_last_sent_packet().seq_num, 62);
+
+    // Send two more pokes to bring the counter around, but drop the first ACK
+    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 63
+    i++;
+    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 0
+    i++;
+    // Sequence number should have wrapped around to 0
+    BOOST_CHECK_EQUAL(get_last_sent_packet().seq_num, 0);
+    // ACK sequence number 0, but not 63
+    send_ack(get_last_sent_packet()); // ACK the last one, but not the previous one
+    wait_for_all_responses();
+    BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_dropped, 2);
+
+    // Now ack the seqnum 63 packet. This is too late, and the response queue
+    // should be empty, so we get a warning.
+    auto seqnum_63_pkt = sent_packets[sent_packets.size() - 2];
+    send_ack(seqnum_63_pkt);
+    wait_for_all_responses();
+
+    // Now fill the request queue again, so our algorithm has something to do
+    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 1
+    i++;
+
+    // Now ack the seqnum 63 packet again. This will produce the same warning
+    // again
+    send_ack(seqnum_63_pkt);
+    wait_for_all_responses();
+
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 65);
 }
