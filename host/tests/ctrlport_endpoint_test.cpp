@@ -71,6 +71,7 @@ public:
             max_outstanding_async_msgs,
             client_clk,
             timebase_clk);
+        endpoint->set_log_id("TEST");
     }
 
     ~ctrlport_endpoint_fixture()
@@ -388,6 +389,7 @@ BOOST_FIXTURE_TEST_CASE(test_multi_poke32_mismatched_sizes, ctrlport_endpoint_fi
     const std::vector<uint32_t> test_data  = {0xAABBCCDD}; // Different size
 
     // Test that mismatched sizes throw an exception
+    UHD_LOG_INFO("TEST", "multi_poke32() error incoming:");
     BOOST_CHECK_THROW(endpoint->multi_poke32(test_addrs, test_data), uhd::value_error);
 }
 
@@ -516,6 +518,7 @@ BOOST_FIXTURE_TEST_CASE(test_command_fifo_overflow, small_buffer_fixture)
     }
 
     // This should time out due to overflow
+    UHD_LOG_INFO("TEST", "Timeout error incoming:");
     BOOST_REQUIRE_THROW(endpoint->poke32(0x2000, 0xFA11), uhd::op_timeout);
 
     // Now ACK the first packet we sent out
@@ -525,5 +528,34 @@ BOOST_FIXTURE_TEST_CASE(test_command_fifo_overflow, small_buffer_fixture)
     endpoint->poke32(0x2000, 0x600D);
 
     // But this should fail again
+    UHD_LOG_INFO("TEST", "Timeout error incoming:");
     BOOST_REQUIRE_THROW(endpoint->poke32(0x2004, 0xFA11), uhd::op_timeout);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
+{
+    set_auto_ack(false);
+
+    const uint32_t test_addr = 0x3000;
+    const uint32_t test_data = 0xF00DF00D;
+
+    // Send three pokes without acks
+    for (int i = 0; i < 3; ++i) {
+        endpoint->poke32(test_addr + (i * 4), test_data + i);
+    }
+
+    auto stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 3);
+    BOOST_CHECK_EQUAL(stats.ack_packets_received, 0);
+
+    // Now send ACKs for two of them, but drop the second one
+    send_ack(sent_packets[0]);
+    send_ack(sent_packets[2]);
+
+    wait_for_all_responses();
+
+    stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 3);
+    BOOST_CHECK_EQUAL(stats.ack_packets_received, 2);
+    BOOST_CHECK_EQUAL(stats.buffer_fullness, 0);
 }

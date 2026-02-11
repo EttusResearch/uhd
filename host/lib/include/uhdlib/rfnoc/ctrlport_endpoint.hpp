@@ -36,6 +36,11 @@ public:
     //
     virtual void handle_recv(const chdr::ctrl_payload& rx_ctrl) = 0;
 
+    //! Provide an identifier for logging purposes
+    //
+    // \param log_id The new log identifier to use when logging in this module
+    virtual void set_log_id(const std::string& log_id) = 0;
+
     //! Creates a new register interface (ctrl_portendpoint)
     //
     // \param handle_send The function to call to send a control packet

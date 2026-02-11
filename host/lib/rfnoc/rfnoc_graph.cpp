@@ -755,6 +755,7 @@ private:
             }
             auto block_reg_iface = _gsm->get_block_register_iface(
                 ctrl_sep_addr, portno, *ctrlport_clk_iface.get(), *tb_clk_iface.get());
+            block_reg_iface->set_log_id(block_id.to_string());
             auto make_args_uptr      = std::make_unique<noc_block_base::make_args_t>();
             make_args_uptr->noc_id   = noc_id;
             make_args_uptr->block_id = block_id;

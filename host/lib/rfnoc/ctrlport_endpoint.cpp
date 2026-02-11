@@ -60,6 +60,11 @@ public:
 
     ~ctrlport_endpoint_impl() override = default;
 
+    void set_log_id(const std::string& log_id) override
+    {
+        _log_prefix = log_id + "::CTRLEP";
+    }
+
     void poke32(uint32_t addr,
         uint32_t data,
         uhd::time_spec_t timestamp = uhd::time_spec_t::ASAP,
@@ -69,7 +74,7 @@ public:
              it != _custom_register_spaces.end() && addr >= it->first;
              ++it) {
             if (addr >= it->first && addr < it->second.end_addr) {
-                UHD_LOG_TRACE("CTRLEP",
+                UHD_LOG_TRACE(_log_prefix,
                     "Poking custom register space at address 0x" << std::hex << addr);
                 it->second.poke_fn(addr, data);
                 return;
@@ -85,7 +90,9 @@ public:
         bool ack                   = false) override
     {
         if (addrs.size() != data.size()) {
-            throw uhd::value_error("addrs and data vectors must be of the same length");
+            UHD_LOG_THROW(uhd::value_error,
+                _log_prefix,
+                "multi_poke32(): addrs and data vectors must be of the same length");
         }
         for (size_t i = 0; i < data.size(); i++) {
             poke32(addrs[i],
@@ -120,7 +127,7 @@ public:
              it != _custom_register_spaces.end() && addr >= it->first;
              ++it) {
             if (addr >= it->first && addr < it->second.end_addr) {
-                UHD_LOG_TRACE("CTRLEP",
+                UHD_LOG_TRACE(_log_prefix,
                     "Peeking custom register space at address 0x" << std::hex << addr);
                 return it->second.peek_fn(addr);
             }
@@ -165,7 +172,9 @@ public:
         bool ack                   = false) override
     {
         // TODO: Uncomment when this is implemented in the FPGA
-        throw uhd::not_implemented_error("Control poll not implemented in the FPGA");
+        UHD_LOG_THROW(uhd::not_implemented_error,
+            _log_prefix,
+            "Control poll not implemented in the FPGA");
 
         // Send request and optionally wait for an ACK
         send_request_packet(OP_POLL,
@@ -219,7 +228,9 @@ public:
             _policy.force_acks = DEFAULT_FORCE_ACKS;
         } else {
             // TODO: Uncomment when custom policies are implemented
-            throw uhd::not_implemented_error("Policy implemented in the FPGA");
+            UHD_LOG_THROW(uhd::not_implemented_error,
+                _log_prefix,
+                "Policy implemented in the FPGA");
         }
     }
 
@@ -301,8 +312,8 @@ public:
             } else {
                 // received a response without any request in queue
                 // ignore the message an report a warning
-                UHD_LOG_WARNING("CTRLEP",
-                    "Received respones with sequence number "
+                UHD_LOG_WARNING(_log_prefix,
+                    "Received responses with sequence number "
                         << rx_ctrl.seq_num << " but request queue is empty.");
             }
         } else {
@@ -310,18 +321,18 @@ public:
             ctrl_status_t status = CMD_CMDERR;
             if (rx_ctrl.op_code != OP_WRITE && rx_ctrl.op_code != OP_BLOCK_WRITE) {
                 UHD_LOG_ERROR(
-                    "CTRLEP", "Malformed async message request: Invalid opcode");
+                    _log_prefix, "Malformed async message request: Invalid opcode");
             } else if (rx_ctrl.dst_port != _local_port) {
-                UHD_LOG_ERROR("CTRLEP",
+                UHD_LOG_ERROR(_log_prefix,
                     "Malformed async message request: Invalid port "
                         << rx_ctrl.dst_port << ", expected my local port "
                         << _local_port);
             } else if (rx_ctrl.data_vtr.empty()) {
                 UHD_LOG_ERROR(
-                    "CTRLEP", "Malformed async message request: Invalid num_data");
+                    _log_prefix, "Malformed async message request: Invalid num_data");
             } else {
                 if (!_validate_async_msg(rx_ctrl.address, rx_ctrl.data_vtr)) {
-                    UHD_LOG_ERROR("CTRLEP",
+                    UHD_LOG_ERROR(_log_prefix,
                         "Malformed async message request: Async message was not "
                         "validated by block controller!");
                 } else {
@@ -342,7 +353,7 @@ public:
                 }();
                 _handle_send(tx_ctrl, timeout);
             } catch (...) {
-                UHD_LOG_ERROR("CTRLEP",
+                UHD_LOG_ERROR(_log_prefix,
                     "Encountered an error sending a response for an async message");
                 return;
             }
@@ -351,10 +362,10 @@ public:
                     _handle_async_msg(
                         rx_ctrl.address, rx_ctrl.data_vtr, rx_ctrl.timestamp);
                 } catch (const std::exception& ex) {
-                    UHD_LOG_ERROR("CTRLEP",
+                    UHD_LOG_ERROR(_log_prefix,
                         "Caught exception during async message handling: " << ex.what());
                 } catch (...) {
-                    UHD_LOG_ERROR("CTRLEP",
+                    UHD_LOG_ERROR(_log_prefix,
                         "Caught unknown exception during async message handling!");
                 }
             }
@@ -383,7 +394,8 @@ public:
         // This will be the case if the caller either specifies a zero length space or the
         // end_addr ends up exceeding the maximum value for a uint32_t
         if (end_addr <= start_addr) {
-            throw uhd::value_error(
+            UHD_LOG_THROW(uhd::value_error,
+                _log_prefix,
                 "Length of custom register space causes an invalid register space");
         }
 
@@ -393,7 +405,8 @@ public:
                  ++it) {
                 if ((start_addr >= it->first && start_addr < it->second.end_addr)
                     || (start_addr < it->first && end_addr > it->first)) {
-                    throw uhd::rfnoc_error(
+                    UHD_LOG_THROW(uhd::rfnoc_error,
+                        _log_prefix,
                         "Register space overlaps with existing register space");
                 }
             }
@@ -443,14 +456,16 @@ private:
         const bool require_ack = true)
     {
         if (!_client_clk.is_running()) {
-            throw uhd::system_error("Ctrlport client clock is not running");
+            UHD_LOG_THROW(
+                uhd::system_error, _log_prefix, "Ctrlport client clock is not running");
         }
 
         // Convert from uhd::time_spec to timestamp
         std::optional<uint64_t> timestamp;
         if (time_spec != time_spec_t::ASAP) {
             if (!_timebase_clk.is_running()) {
-                throw uhd::system_error("Timebase clock is not running");
+                UHD_LOG_THROW(
+                    uhd::system_error, _log_prefix, "Timebase clock is not running");
             }
             timestamp = time_spec.to_ticks(_timebase_clk.get_freq());
         }
@@ -488,8 +503,11 @@ private:
                 start_timeout(check_timed_in_queue() ? MASSIVE_TIMEOUT : _policy.timeout);
 
             if (not _buff_free_cond.wait_until(lock, timeout_time, buff_not_full)) {
-                throw uhd::op_timeout(
-                    "Control operation timed out waiting for space in command buffer");
+                UHD_LOG_THROW(uhd::op_timeout,
+                    _log_prefix,
+                    "Control operation timed out waiting for space in command buffer "
+                    "(request: "
+                        << tx_ctrl.to_string() << ")");
             }
         }
         _buff_occupied += pyld_size;
@@ -571,26 +589,39 @@ private:
         } while (
             _resp_ready_cond.wait_until(lock, timeout_time) != std::cv_status::timeout);
 
-        throw uhd::op_timeout("Control operation timed out waiting for ACK");
+        UHD_LOG_THROW(uhd::op_timeout,
+            _log_prefix,
+            "Control operation timed out waiting for ACK. Request sent: "
+                << request.to_string());
     }
 
     const ctrl_payload validate_ack(
         const ctrl_payload& rx_ctrl, response_status_t resp_status) const
     {
         if (rx_ctrl.status == CMD_CMDERR) {
-            throw uhd::op_failed("Control operation returned a failing status");
+            UHD_LOG_THROW(uhd::op_failed,
+                _log_prefix,
+                "Control operation returned a failing status");
         } else if (rx_ctrl.status == CMD_TSERR) {
-            throw uhd::op_timerr("Control operation returned a timestamp error");
+            UHD_LOG_THROW(uhd::op_timerr,
+                _log_prefix,
+                "Control operation returned a timestamp error");
         }
         // Check data vector size
         if (rx_ctrl.data_vtr.empty()) {
-            throw uhd::op_failed("Control operation returned a malformed response");
+            UHD_LOG_THROW(uhd::op_failed,
+                _log_prefix,
+                "Control operation returned a malformed response");
         }
         // Validate response status
         if (resp_status == RESP_DROPPED) {
-            throw uhd::op_seqerr("Response for a control transaction was dropped");
+            UHD_LOG_THROW(uhd::op_seqerr,
+                _log_prefix,
+                "Response for a control transaction was dropped");
         } else if (resp_status == RESP_RTERR) {
-            throw uhd::op_timerr("Control operation encountered a routing error");
+            UHD_LOG_THROW(uhd::op_timerr,
+                _log_prefix,
+                "Control operation encountered a routing error");
         }
         return rx_ctrl;
     }
@@ -599,7 +630,7 @@ private:
     {
         std::string packet = resp.to_string();
         packet.pop_back(); // Remove the trailing \n
-        UHD_LOG_DEBUG("CTRLEP",
+        UHD_LOG_DEBUG(_log_prefix,
             "Control response for ack-less request returned a failing status: "
                 << packet);
     }
@@ -609,7 +640,7 @@ private:
         std::string packet = resp.to_string();
         packet.pop_back(); // Remove the trailing \n
         UHD_LOG_DEBUG(
-            "CTRLEP", "Control response for ack-less request was dropped: " << packet);
+            _log_prefix, "Control response for ack-less request was dropped: " << packet);
     }
 
     //! The parameters associated with the policy that governs this object
@@ -663,6 +694,8 @@ private:
     //! Map of custom defined peek/poke functions with end address for custom register
     // space starting address
     std::map<uint32_t, custom_register_space> _custom_register_spaces;
+
+    std::string _log_prefix = "::CTRLEP";
 };
 
 ctrlport_endpoint::sptr ctrlport_endpoint::make(const send_fn_t& handle_send,
