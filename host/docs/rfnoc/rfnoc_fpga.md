@@ -583,8 +583,8 @@ A detailed description of the fields is listed in the table below. Each control 
     <tr>
       <td> IsACK</td>
       <td> 1</td>
-      <td> Is this an acknowledgement of a transaction <br> 
-          completion?
+      <td> Is this an acknowledgement of a transaction <br>
+          completion? (See following section on ACKs)
       </td>
       <td> Required</td>
     </tr>
@@ -793,6 +793,20 @@ The table below shows the meaning of the OpCode field values.
 The CHDR Control packet is an example of a hierarchical packet format because the control payload itself forms another packet type, called AXIS-Ctrl, that is routed through the control infrastructure. AXIS-Ctrl is a 32-bit bus which is a serialized version of the payload of a CHDR Control packet. The stream endpoint will serialize CHDR to AXIS-Ctrl, where it is passed to the control crossbar. Each NoC Block will also receive and send control transactions/responses in the AXIS-Ctrl format. The stream endpoint will then de-serialize these transactions back to CHDR.
 
 ***NOTE:*** The AXIS-Ctrl data width is always 32 bits, regardless of the value of CHDR_W.
+
+## Control Packet Acknowledgements (ACKs)
+
+Control packets are typically acknowledged by the consumer, e.g., an RFNoC block
+receiving a control packet will send out an acknowledgement after the control
+packet has been moved out of the the RFNoC block's internal control packet queue.
+
+Acknowledgements have the exact same structure as regular control packets, with
+the following requirements:
+
+- The `IsACK` flag must be asserted
+- The `Address`, `OpCode`, and `SeqNum` fields must have the same values as the
+  control packet that is being acknowledged. These fields may be used to
+  validate an acknowledgement packet.
 
 ## Stream Status Packets \[Internal Only\]
 
