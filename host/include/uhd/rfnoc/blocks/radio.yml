@@ -16,6 +16,7 @@ parameters:
   EN_COMP_GAIN_TX: 0
   EN_COMP_GAIN_RX: 0
   EN_FIFO_OUT_REG: 0
+  SKIP_WR_ACK_WAIT: 0
 
 checks:
   - condition: "${parameters['NUM_PORTS'] > 0}"
