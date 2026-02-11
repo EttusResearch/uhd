@@ -18,9 +18,7 @@
 //   - SKIP_WR_ACK_WAIT : When set to 1, write requests will ACK on CtrlPort
 //                        immediately without waiting for the AXIS-Ctrl
 //                        response. The response packets will be discarded.
-//                        This should NOT be enabled when this endpoint also
-//                        issues read requests, otherwise responses may get
-//                        confused. Set to 0 to wait for the response before
+//                        Set to 0 to wait for the response before
 //                        ACK'ing on CtrlPort, which is the normal behavior.
 //
 // Signals:
@@ -118,9 +116,11 @@ module axis_ctrl_master #(
         // ------------------------------------
         ST_IDLE: begin
           if (SKIP_WR_ACK_WAIT && s_axis_ctrl_tvalid) begin
-            // When SKIP_WR_ACK_WAIT is enabled, discard unexpected response
-            // packets.
-            state <= ST_DROP_PKT;
+            // When SKIP_WR_ACK_WAIT is enabled, parse the response header
+            // to decide on the next steps. This may be a delayed response for a
+            // write request that we ACK'ed immediately, or it may be a normal
+            // response for a read request.
+            state <= ST_RESP_HDR_LO;
           end else if (ctrlport_req_wr | ctrlport_req_rd) begin
             // A transaction was posted on the slave ctrlport...
             // Cache the opcode
@@ -240,7 +240,14 @@ module axis_ctrl_master #(
                               (axis_ctrl_get_opcode(s_axis_ctrl_tdata) != req_opcode) ||
                               (axis_ctrl_get_address(s_axis_ctrl_tdata) != req_addr);
               resp_status <= axis_ctrl_get_status(s_axis_ctrl_tdata);
-              state <= ST_RESP_OP_DATA;
+              if (SKIP_WR_ACK_WAIT &&
+                 (axis_ctrl_get_opcode(s_axis_ctrl_tdata) == AXIS_CTRL_OPCODE_WRITE)) begin
+                // For write operations when SKIP_WR_ACK_WAIT is enabled,
+                // we can just drop the rest of the packet
+                state <= ST_DROP_PKT;
+              end else begin
+                state <= ST_RESP_OP_DATA;
+              end
             end else begin
               // Response was too short
               resp_cmd_err <= 1'b1;

@@ -12,30 +12,38 @@
 //
 // Parameters:
 //
-//   THIS_PORTID  : Control crossbar port to which this block is connected
-//   CHDR_W       : AXIS-CHDR data bus width
-//   CTRL_CLK_IDX : The index of the control clock for this block. This is used
-//                  to populate the backend interface, from where UHD can query
-//                  the clock index and thus auto-deduct which clock is used.
-//   TB_CLK_IDX   : The index of the timebase clock for this block. This is used
-//                  to populate the backend interface, from where UHD can query
-//                  the clock index and thus auto-deduct which clock is used.
-//   MTU          : Maximum transmission unit (i.e., maximum packet size in
-//                  CHDR words is 2**MTU).
+//   THIS_PORTID      : Control crossbar port to which this block is connected
+//   CHDR_W           : AXIS-CHDR data bus width
+//   CTRL_CLK_IDX     : The index of the control clock for this block. This is
+//                      used to populate the backend interface, from where UHD
+//                      can query the clock index and thus auto-deduct which
+//                      clock is used.
+//   TB_CLK_IDX       : The index of the timebase clock for this block. This is
+//                      used to populate the backend interface, from where UHD
+//                      can query the clock index and thus auto-deduct which
+//                      clock is used.
+//   MTU              : Maximum transmission unit (i.e., maximum packet size in
+//                      CHDR words is 2**MTU).
+//   SKIP_WR_ACK_WAIT : When set to 1, the AXIS-Ctrl master will ACK on
+//                      CtrlPort immediately without waiting for the AXIS-Ctrl
+//                      response for writes. Set to 0 to wait for the response
+//                      before ACK'ing on CtrlPort, which is the normal
+//                      behavior.
 //
 
 `default_nettype none
 
 
 module noc_shell_radio #(
-  parameter [9:0] THIS_PORTID     = 10'd0,
-  parameter       CHDR_W          = 64,
-  parameter [5:0] CTRL_CLK_IDX    = 6'h3F,
-  parameter [5:0] TB_CLK_IDX      = 6'h3F,
-  parameter [5:0] MTU             = 10,
-  parameter       NUM_PORTS       = 2,
-  parameter       NIPC            = 1,
-  parameter       ITEM_W          = 32
+  parameter [9:0] THIS_PORTID      = 10'd0,
+  parameter       CHDR_W           = 64,
+  parameter [5:0] CTRL_CLK_IDX     = 6'h3F,
+  parameter [5:0] TB_CLK_IDX       = 6'h3F,
+  parameter [5:0] MTU              = 10,
+  parameter       NUM_PORTS        = 2,
+  parameter       NIPC             = 1,
+  parameter       ITEM_W           = 32,
+  parameter       SKIP_WR_ACK_WAIT = 0
 ) (
   //---------------------
   // Framework Interface
@@ -202,7 +210,8 @@ module noc_shell_radio #(
     .SYNC_CLKS        (0),
     .AXIS_CTRL_MST_EN (1),
     .AXIS_CTRL_SLV_EN (1),
-    .SLAVE_FIFO_SIZE  ($clog2(512))
+    .SLAVE_FIFO_SIZE  ($clog2(512)),
+    .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT)
   ) ctrlport_endpoint_i (
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
     .rfnoc_ctrl_rst            (rfnoc_ctrl_rst),
