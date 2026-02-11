@@ -36,6 +36,9 @@ public:
     //
     virtual void handle_recv(const chdr::ctrl_payload& rx_ctrl) = 0;
 
+    //! Tell the endpoint about its associated block ID
+    virtual void set_block_id(const std::string& block_id) = 0;
+
     //! Creates a new register interface (ctrl_portendpoint)
     //
     // \param handle_send The function to call to send a control packet
