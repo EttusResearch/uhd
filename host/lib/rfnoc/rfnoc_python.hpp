@@ -69,6 +69,21 @@ public:
 
 void export_rfnoc(py::module& m)
 {
+#define RIS_FIELD(name) .def_readwrite(#name, &register_iface_stats::name)
+
+    py::class_<register_iface_stats>(m, "register_iface_stats")
+        // clang-format off
+        RIS_FIELD(ctrl_packets_sent)
+        RIS_FIELD(ack_packets_received)
+        RIS_FIELD(async_packets_received)
+        RIS_FIELD(ack_packets_sent)
+        RIS_FIELD(ctrl_dropped)
+        RIS_FIELD(ctrl_out_of_sequence)
+        RIS_FIELD(buffer_fullness)
+                        // clang-format on
+
+                        .def("__repr__", &register_iface_stats::to_string);
+
     py::class_<block_id_t>(m, "block_id")
         // Constructors
         .def(py::init<>())
@@ -481,6 +496,7 @@ void export_rfnoc(py::module& m)
             [](noc_block_base& self) { return self.regs().get_src_epid(); })
         .def("get_port_num",
             [](noc_block_base& self) { return self.regs().get_port_num(); })
+        .def("get_stats", [](noc_block_base& self) { return self.regs().get_stats(); })
         .def("__repr__",
             [](noc_block_base& self) {
                 return "<NocBlock for block ID '" + self.get_unique_id() + "'>";

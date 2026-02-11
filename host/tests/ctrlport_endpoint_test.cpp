@@ -261,6 +261,9 @@ BOOST_FIXTURE_TEST_CASE(test_poke32_basic, ctrlport_endpoint_fixture)
     const uint32_t test_addr = 0x1000;
     const uint32_t test_data = 0xDEADBEEF;
 
+    auto stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.buffer_fullness, 0);
+
     // Test basic poke32 without ACK
     endpoint->poke32(test_addr, test_data);
 
@@ -274,6 +277,11 @@ BOOST_FIXTURE_TEST_CASE(test_poke32_basic, ctrlport_endpoint_fixture)
     BOOST_CHECK_EQUAL(packet.data_vtr[0], test_data);
 
     UHD_LOG_INFO("TEST", "Testing ctrl_payload serialization: " << packet.to_string());
+
+    stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 1);
+    BOOST_CHECK_EQUAL(stats.ack_packets_received, 0);
+    BOOST_CHECK_EQUAL(stats.buffer_fullness, 4);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_poke32_with_ack, ctrlport_endpoint_fixture)
@@ -295,6 +303,10 @@ BOOST_FIXTURE_TEST_CASE(test_poke32_with_ack, ctrlport_endpoint_fixture)
     BOOST_CHECK_EQUAL(packet.address, test_addr);
     BOOST_CHECK_EQUAL(packet.data_vtr.size(), 1);
     BOOST_CHECK_EQUAL(packet.data_vtr[0], test_data);
+
+    auto stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 1);
+    BOOST_CHECK_EQUAL(stats.ack_packets_received, 1);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_poke32_with_timestamp, ctrlport_endpoint_fixture)
@@ -540,13 +552,15 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
     const uint32_t test_data = 0xF00DF00D;
 
     // Send three pokes without acks
-    for (int i = 0; i < 3; ++i) {
+    uint32_t i = 0;
+    for (; i < 3; i++) {
         endpoint->poke32(test_addr + (i * 4), test_data + i);
     }
 
     auto stats = endpoint->get_stats();
     BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 3);
     BOOST_CHECK_EQUAL(stats.ack_packets_received, 0);
+    BOOST_CHECK_EQUAL(stats.ctrl_dropped, 0);
 
     // Now send ACKs for two of them, but drop the second one
     send_ack(sent_packets[0]);
@@ -558,4 +572,5 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
     BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 3);
     BOOST_CHECK_EQUAL(stats.ack_packets_received, 2);
     BOOST_CHECK_EQUAL(stats.buffer_fullness, 0);
+    BOOST_CHECK_EQUAL(stats.ctrl_dropped, 1);
 }
