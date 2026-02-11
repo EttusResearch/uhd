@@ -10,6 +10,7 @@
 #include <uhdlib/rfnoc/chdr_packet_writer.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
+#include <boost/format.hpp>
 #include <boost/optional.hpp>
 #include <chrono>
 #include <deque>
@@ -34,7 +35,24 @@ constexpr double DEFAULT_TIMEOUT = 1.0;
 constexpr double MASSIVE_TIMEOUT = 10.0;
 //! Default value for whether ACKs are always required
 constexpr bool DEFAULT_FORCE_ACKS = false;
+//! Sequence numbers are 6 bits long
+constexpr uint8_t SEQ_NUM_MASK = 0b111111; // 0x3F
+//! Sequence number limit for control packets.
+constexpr uint8_t MAX_SEQ_NUM = SEQ_NUM_MASK + 1;
 } // namespace
+
+
+std::string uhd::rfnoc::register_iface_stats::to_string() const
+{
+    return (
+        boost::format(
+            "ctrl_packets_sent: %1%, ack_packets_received: %2%, async_packets_received: "
+            "%3%, ack_packets_sent: %4%, ctrl_dropped: %5%, ctrl_out_of_sequence: %6%, "
+            "buffer_fullness: %7%")
+        % ctrl_packets_sent % ack_packets_received % async_packets_received
+        % ack_packets_sent % ctrl_dropped % ctrl_out_of_sequence % buffer_fullness)
+        .str();
+}
 
 ctrlport_endpoint::~ctrlport_endpoint() = default;
 
@@ -237,6 +255,8 @@ public:
     void handle_recv(const ctrl_payload& rx_ctrl) override
     {
         if (rx_ctrl.is_ack) {
+            ++_acks_rcvd;
+
             // Function to process a response with no sequence errors
             auto process_correct_response = [this, rx_ctrl]() {
                 response_status_t resp_status = RESP_VALID;
@@ -301,6 +321,7 @@ public:
                     // Tag all dropped packets
                     for (int8_t i = 0; i < seq_num_diff; i++) {
                         process_incorrect_response();
+                        _ctrl_dropped++;
                     }
                     // Process correct response
                     process_correct_response();
@@ -317,6 +338,8 @@ public:
                         << rx_ctrl.seq_num << " but request queue is empty.");
             }
         } else {
+            _async_rcvd++;
+
             // Handle asynchronous message callback
             ctrl_status_t status = CMD_CMDERR;
             if (rx_ctrl.op_code != OP_WRITE && rx_ctrl.op_code != OP_BLOCK_WRITE) {
@@ -352,6 +375,7 @@ public:
                     return _policy.timeout;
                 }();
                 _handle_send(tx_ctrl, timeout);
+                _acks_sent++;
             } catch (...) {
                 UHD_LOG_ERROR(_log_prefix,
                     "Encountered an error sending a response for an async message");
@@ -416,6 +440,18 @@ public:
             start_addr, custom_register_space{end_addr, poke_fn, peek_fn});
     }
 
+    register_iface_stats get_stats() const override
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        return register_iface_stats{_ctrl_sent,
+            _acks_rcvd,
+            _async_rcvd,
+            _acks_sent,
+            _ctrl_dropped,
+            _ctrl_out_of_seq,
+            _buff_occupied};
+    }
+
 private:
     //! The software status (different from the transaction status) of the response
     enum response_status_t { RESP_VALID, RESP_DROPPED, RESP_RTERR, RESP_SIZEERR };
@@ -476,7 +512,7 @@ private:
         ctrl_payload tx_ctrl;
         tx_ctrl.dst_port    = _local_port;
         tx_ctrl.src_port    = _local_port;
-        tx_ctrl.seq_num     = _tx_seq_num;
+        tx_ctrl.seq_num     = _ctrl_sent & SEQ_NUM_MASK;
         tx_ctrl.timestamp   = timestamp;
         tx_ctrl.is_ack      = false;
         tx_ctrl.src_epid    = _my_epid;
@@ -524,7 +560,7 @@ private:
         try {
             // Send the payload as soon as there is room in the buffer
             _handle_send(tx_ctrl, _policy.timeout);
-            _tx_seq_num = (_tx_seq_num + 1) % 64;
+            _ctrl_sent++;
 
             if (require_ack || _policy.force_acks) {
                 auto response = wait_for_ack(tx_ctrl, lock);
@@ -671,8 +707,6 @@ private:
         [](uint32_t, const std::vector<uint32_t>&) { return true; };
     //! The function to call to handle an async message
     async_msg_callback_t _handle_async_msg = async_msg_callback_t();
-    //! The current control sequence number of outgoing packets
-    uint8_t _tx_seq_num = 0;
     //! The number of occupied words in the downstream buffer
     ssize_t _buff_occupied = 0;
     //! The arguments for the policy that governs this register interface
@@ -686,7 +720,7 @@ private:
     //! A condition variable that hold the "response is available" condition
     std::condition_variable _resp_ready_cond;
     //! A mutex to protect all state in this class
-    std::mutex _mutex;
+    mutable std::mutex _mutex;
     //! A set of {opcode, address, sequence numbers} triples associated with
     // request packets for which the client cares about receiving ACKs
     using wanted_ack_key = std::tuple<uint8_t, ctrl_opcode_t, uint32_t>;
@@ -696,6 +730,22 @@ private:
     std::map<uint32_t, custom_register_space> _custom_register_spaces;
 
     std::string _log_prefix = "::CTRLEP";
+
+    //! Number of sent control packets.
+    //
+    // This is also used to calculate the outgoing packet's sequence number, which is the
+    // lower 6 bits of this counter.
+    uint64_t _ctrl_sent = 0;
+    //! Number of received ACK packets.
+    uint64_t _acks_rcvd = 0;
+    //! Number of async packets received
+    uint64_t _async_rcvd = 0;
+    //! Number of ACKs sent out after async packets received
+    uint64_t _acks_sent = 0;
+    //! Number of detected packet drops
+    uint64_t _ctrl_dropped = 0;
+    //! Number of times out-of-sequence packets were detected
+    uint64_t _ctrl_out_of_seq = 0;
 };
 
 ctrlport_endpoint::sptr ctrlport_endpoint::make(const send_fn_t& handle_send,

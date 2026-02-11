@@ -145,6 +145,12 @@ public:
         // nop
     }
 
+    register_iface_stats get_stats() const override
+    {
+        // Mock implementation - return zero stats
+        return {};
+    }
+
     bool force_timeout = false;
 
     //! All pokes end up writing to this map

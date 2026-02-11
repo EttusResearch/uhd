@@ -102,6 +102,12 @@ public:
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
+
+    register_iface_stats get_stats() const override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+        return {};
+    }
 }; // class invalid_register_iface
 
 void register_iface_holder::update_reg_iface(register_iface::sptr new_iface)
