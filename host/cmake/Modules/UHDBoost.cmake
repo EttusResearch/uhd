@@ -91,15 +91,6 @@ if(UHD_BOOST_OPTIONAL_COMPONENTS_LEN EQUAL 0 AND
     return()
 endif()
 
-# if the OS is MINGW and if 'thread' is in the list, change its name
-if(MINGW)
-    list(FIND UHD_BOOST_REQUIRED_COMPONENTS "thread" THREAD_NDX)
-    if(NOT ${THREAD_NDX} EQUAL -1)
-        list(REMOVE_AT UHD_BOOST_REQUIRED_COMPONENTS ${THREAD_NDX})
-        list(INSERT UHD_BOOST_REQUIRED_COMPONENTS ${THREAD_NDX} thread_win32)
-    endif()
-endif()
-
 # special library directory that's used by some Linux
 if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
     list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
