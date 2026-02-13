@@ -186,13 +186,13 @@ std::string ctrl_payload::to_string() const
                    "is_ack:%s, src_epid:%d, address:0x%05x, byte_enable:0x%x, "
                    "op_code:%d, status:%d, num_data:%d")
                % dst_port % src_port % int(seq_num)
-               % (timestamp.has_value() ? str(boost::format("0x%016x") % *timestamp)
-                                        : std::string("<not present>"))
+               % (bool(timestamp) ? str(boost::format("0x%016x") % *timestamp)
+                                  : std::string("<not present>"))
                % (is_ack ? "true" : "false") % src_epid % address % int(byte_enable)
                % op_code % status % int(data_vtr.size()))
            + (data_vtr.empty() ? std::string()
-                               : str(boost::format(" data[0]:%08x") % data_vtr[0]))
-           + "\n";
+                               : str(boost::format(" data[0]:0x%08x") % data_vtr[0]))
+           + "}\n";
 }
 
 //----------------------------------------------------
