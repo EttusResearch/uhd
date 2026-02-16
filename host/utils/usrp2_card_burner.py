@@ -51,8 +51,10 @@ def get_dd_path():
         dd_path = os.path.join(tempfile.gettempdir(), 'dd.exe')
         if not os.path.exists(dd_path):
             print('Downloading dd.exe to %s'%dd_path)
-            dd_bin = urllib.request.urlopen('http://files.ettus.com/dd.exe').read()
-            open(dd_path, 'wb').write(dd_bin)
+            with urllib.request.urlopen('http://files.ettus.com/dd.exe') as response:
+                dd_bin = response.read()
+            with open(dd_path, 'wb') as f:
+                f.write(dd_bin)
         return dd_path
     return 'dd'
 
@@ -143,7 +145,8 @@ def verify_image(image_file, device_file, offset):
     tmp_file = get_tmp_file()
 
     #read the image data
-    img_data = open(image_file, 'rb').read()
+    with open(image_file, 'rb') as f:
+        img_data = f.read()
     count = int_ceil_div(len(img_data), SECTOR_SIZE)
 
     #execute a dd subprocess
@@ -157,7 +160,8 @@ def verify_image(image_file, device_file, offset):
     )
 
     #verfy the data
-    tmp_data = open(tmp_file, 'rb').read(len(img_data))
+    with open(tmp_file, 'rb') as f:
+        tmp_data = f.read(len(img_data))
     if img_data != tmp_data: return 'Verification Failed:\n%s'%verbose
     return 'Verification Passed:\n%s'%verbose
 
@@ -166,11 +170,13 @@ def write_image(image_file, device_file, offset):
     tmp_file = get_tmp_file()
 
     #write the padded image data
-    img_data = open(image_file, 'rb').read()
+    with open(image_file, 'rb') as f:
+        img_data = f.read()
     count = int_ceil_div(len(img_data), SECTOR_SIZE)
     pad_len = SECTOR_SIZE*count - len(img_data)
     padding = bytes(b'\x00')*pad_len #zero-padding
-    open(tmp_file, 'wb').write(img_data + padding)
+    with open(tmp_file, 'wb') as f:
+        f.write(img_data + padding)
 
     #execute a dd subprocess
     verbose = command(

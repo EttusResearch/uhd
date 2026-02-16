@@ -349,14 +349,16 @@ def parse_tmpl(_tmpl_text, **kwargs):
 
 if __name__ == '__main__':
     import sys
-    open(sys.argv[1], 'w').write(parse_tmpl(
-        TMPL_TEXT,
-        file=__file__,
-        sid_p = 0b0000001,
-        cid_p = 0b0000010,
-        tsi_p = 0b0000100,
-        tsf_p = 0b0001000,
-        tlr_p = 0b0010000,
-        sob_p = 0b0100000,
-        eob_p = 0b1000000,
-    ))
+
+    with open(sys.argv[1], 'w') as f:
+        f.write(parse_tmpl(
+            TMPL_TEXT,
+            file=__file__,
+            sid_p = 0b0000001,
+            cid_p = 0b0000010,
+            tsi_p = 0b0000100,
+            tsf_p = 0b0001000,
+            tlr_p = 0b0010000,
+            sob_p = 0b0100000,
+            eob_p = 0b1000000,
+        ))

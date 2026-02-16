@@ -312,4 +312,6 @@ if __name__ == '__main__':
                 width=width, to_host='uhd::wtohx', to_wire='uhd::htowx',
                 cpu_type=cpu_type, do_scale=do_scale
             )
-    open(sys.argv[1], 'w').write(output)
+
+    with open(sys.argv[1], 'w') as f:
+        f.write(output)

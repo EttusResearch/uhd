@@ -102,7 +102,8 @@ def main():
             print('Bitstream Size: ' + str(header['bitstream_len']))
         # Write a bin file
         if args.bin_out:
-            open(args.bin_out, 'wb').write(flip32(data) if args.flip else data)
+            with open(args.bin_out, 'wb') as f:
+                f.write(flip32(data) if args.flip else data)
 
 if __name__ == '__main__':
     main()

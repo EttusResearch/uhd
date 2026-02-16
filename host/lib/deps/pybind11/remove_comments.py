@@ -44,10 +44,11 @@ def main():
         for fname in files:
             path = os.path.join(root, fname)
             print("Modifying {}...".format(path))
-            new_file = comment_remover(open(os.path.join(root, fname)).read())
+            with open(os.path.join(root, fname), 'r') as f:
+                new_file = comment_remover(f.read())
             new_file = remove_trailing_whitespace(new_file)
-            open(os.path.join(root, fname), 'w').write(
-                DEFAULT_HEADER + new_file)
+            with open(os.path.join(root, fname), 'w') as f:
+                f.write(DEFAULT_HEADER + new_file)
 
 if __name__ == "__main__":
     main()

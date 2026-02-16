@@ -238,9 +238,8 @@ def get_tpm_caps_info():
     for tpm_device in os.listdir(base_path):
         if tpm_device.startswith("tpm"):
             for key in props_to_read:
-                result["{}_{}".format(tpm_device, key)] = (
-                    open(os.path.join(base_path, tpm_device, key), "r").read().strip()
-                )
+                with open(os.path.join(base_path, tpm_device, key), "r") as f:
+                    result["{}_{}".format(tpm_device, key)] = f.read().strip()
     return result
 
 

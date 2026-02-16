@@ -22,11 +22,12 @@ def print_timing_constraint_summary(twr_file):
     output = ""
     keep = False
     done = False
-    for line in open(twr_file).readlines():
-        if 'Derived Constraint Report' in line: keep = True
-        if 'constraint' in line and 'met' in line: done = True
-        if not keep and done: keep = True
-        if keep: output += line
+    with open(twr_file) as f:
+        for line in f:
+            if 'Derived Constraint Report' in line: keep = True
+            if 'constraint' in line and 'met' in line: done = True
+            if not keep and done: keep = True
+            if keep: output += line
         if done: break
     print("\n\n"+output)
 

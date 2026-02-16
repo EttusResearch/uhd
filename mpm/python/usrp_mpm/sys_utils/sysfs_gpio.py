@@ -65,7 +65,8 @@ def get_gpio_map_info(gpio_dev):
     for info_file in os.listdir(map_info_path):
         if not os.path.isfile(os.path.join(map_info_path, info_file)):
             continue
-        map_info_value = open(os.path.join(map_info_path, info_file), "r").read().strip()
+        with open(os.path.join(map_info_path, info_file), "r") as f:
+            map_info_value = f.read().strip()
         try:
             map_info[info_file] = int(map_info_value, 0)
         except ValueError:
@@ -92,7 +93,8 @@ def get_map_data(gpio_dev, path, logger=None):
         if logger:
             logger.trace("Couldn't find a device tree file to match: `{0}'".format(map_path))
         return None
-    map_info_value = open(map_path, "r").read().strip().rstrip("\x00")
+    with open(map_path, "r") as f:
+        map_info_value = f.read().strip().rstrip("\x00")
     if logger:
         logger.trace("File at `{0}' has value `{1}'".format(map_path, map_info_value))
     try:
@@ -182,13 +184,15 @@ class SysFSGPIO(object):
             gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, "gpio{}".format(gpio_num))
             if not os.path.exists(gpio_path):
                 self.log.trace("Creating GPIO path `{}'...".format(gpio_path))
-                open(os.path.join(GPIO_SYSFS_BASE_DIR, "export"), "w").write("{}".format(gpio_num))
+                with open(os.path.join(GPIO_SYSFS_BASE_DIR, "export"), "w") as f:
+                    f.write("{}".format(gpio_num))
             ddr_str = "out" if ddr_out else "in"
             ddr_str = "high" if ini_v else ddr_str
             if ini_v and ddr_out:
                 self._out_value |= 1 << gpio_idx
             self.log.trace("On GPIO path `{}', setting DDR mode to {}.".format(gpio_path, ddr_str))
-            open(os.path.join(GPIO_SYSFS_BASE_DIR, gpio_path, "direction"), "w").write(ddr_str)
+            with open(os.path.join(GPIO_SYSFS_BASE_DIR, gpio_path, "direction"), "w") as f:
+                f.write(ddr_str)
 
     def set(self, gpio_idx, value=None):
         """

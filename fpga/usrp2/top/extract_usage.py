@@ -29,10 +29,11 @@ ALL_MAP_FILES = """\
 def extract_map_from_file(path):
     output = ''
     found = False
-    for line in open(path).readlines():
-        if line.strip() == 'Mapping completed.': found = False
-        if line.strip() == 'Logic Utilization:': found = True
-        if found: output += line
+    with open(path) as f:
+        for line in f:
+            if line.strip() == 'Mapping completed.': found = False
+            if line.strip() == 'Logic Utilization:': found = True
+            if found: output += line
     return output
 
 def extract_maps():
@@ -54,5 +55,9 @@ def extract_maps():
 
 if __name__ == '__main__':
     summary = extract_maps()
-    if len(sys.argv) == 1: print(summary)
-    else: open(sys.argv[1], 'w').write(summary)
+    if len(sys.argv) == 1:
+        print(summary)
+    else:
+        with open(sys.argv[1], 'w') as f:
+            f.write(summary)
+
