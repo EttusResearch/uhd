@@ -17,21 +17,21 @@ from eeprom_tests import TestEeprom
 from mpm_utils_tests import TestMpmUtils
 from sys_utils_tests import TestNet
 from usrp_mpm import __simulated__
-from x440_clock_tests import TestX440ClockConfig
 
 if importlib.util.find_spec("xmlrunner"):
     from xmlrunner import XMLTestRunner
 
 TESTS = {
-    "__all__": {TestNet, TestMpmUtils, TestEeprom, TestCompatNum, TestX440ClockConfig},
+    "__all__": {TestNet, TestMpmUtils, TestEeprom, TestCompatNum},
     "n3xx": set(),
     "x4xx": set(),
 }
 
 if not __simulated__:
     from components_tests import TestZynqComponents
+    from x440_clock_tests import TestX440ClockConfig
 
-    TESTS["x4xx"].update({TestZynqComponents})
+    TESTS["x4xx"].update({TestX440ClockConfig, TestZynqComponents})
 
 
 def parse_args():
