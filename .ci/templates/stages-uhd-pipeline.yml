@@ -257,6 +257,10 @@ resources:
     endpoint: EttusResearch
     name: EttusResearch/rfnoc-oot-blocks-dev
     ref: main
+  - repository: usrp4-hw
+    type: git
+    ref: master
+    name: DevCentral/usrp4-hw
 
 stages:
 ###############################################################################
@@ -633,6 +637,23 @@ stages:
       - checkout: rfnoc-oot-blocks
         clean: true
     rfnoc_include_dir: $(Build.SourcesDirectory)/rfnoc-oot-blocks-dev/rfnoc
+
+- stage: usrp4_tests
+  displayName: Simulate + Build usrp4-hw
+  dependsOn: analyze_changeset
+  condition: >
+    and(succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp4-hw')
+      )
+    )
+  jobs:
+  - template: pipelines/templates/build_and_simulate.yml@usrp4-hw
+    parameters:
+      runSimulation: true
+      publish: "false"
 
 ###############################################################################
 # Hardware Test Stages. These require having valid software and FPGA images.
