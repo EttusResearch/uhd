@@ -163,5 +163,71 @@ have direct manual control over GPIO4.
 To modify the example to work with the E31x's internal GPIO bank, use the bank
 name "INT0" instead of "FP0".
 
+\subsection gpio_rfnoc_block Driving GPIO from an RFNoC Block
+
+UHD allows GPIO pins to be driven or read by RFNoC blocks. For this your RFNoC block
+needs additional wires that get later connected to the GPIO pins like so:
+
+~~~
+    // GPIO interface
+    output wire [GPIO_WIDTH-1:0]  gpio_out,
+    output wire [GPIO_WIDTH-1:0]  gpio_ddr,
+    input wire  [GPIO_WIDTH-1:0]  gpio_in
+~~~
+
+This assumes you want to connect `GPIO_WIDTH`'s pins to the block where `GPIO_WIDTH` is a
+parameter of your module. Drive `gpio_ddr[i]` to 1 if you want to use the pin `i` as
+an output, 0 otherwise.
+
+Your block yaml file needs to advertise its ability to connect to GPIO pins like so:
+
+~~~
+parameters:
+    GPIO_WIDTH: ${ config.device.parameters['FP_GPIO_BANK_WIDTH'] }
+io_ports:
+    gpio:
+        type: gpio
+        drive: master
+        parameters:
+            width: "${parameters['GPIO_WIDTH']}"
+~~~
+
+If you block needs a fixed number of pins, it is totally fine to hard code that number in the
+gpio section of the io_ports.
+
+\subsubsection build_gpio_enable_rfnoc_block Build the bitstream
+
+In the image core yaml file you have to connect your block with the pins of the device and build the bitfile.
+Again, UHD supports connecting either all pins of a bank or a subset of it.
+
+~~~
+noc_blocks:
+    my_gpio_block0:
+        block_desc: 'my_gpio_block.yml'
+connections:
+    # either connect all available GPIOs to the RFNoC block
+    - { srcblk: my_gpio_block0, srcport: gpio, dstblk: device,  dstport: fp_gpio }
+    # or a subset, here drive pin 0 and 3 from the RFNoC block
+    - { srcblk: my_gpio_block0, srcport: gpio[0], dstblk: device,  dstport: fp_gpio[0] }
+    - { srcblk: my_gpio_block0, srcport: gpio[1], dstblk: device,  dstport: fp_gpio[3] }
+~~~
+
+\subsubsection use_gpio_enable_rfnoc_block_in_software Using the RFNoC Block in Software
+
+You have to tell the UHD software which pins are controlled by your RFNoC block. This must match your
+definitions in the image core yaml file. You can use either uhd::usrp::multi_usrp::set_gpio_src or
+uhd::rfnoc::mb_controller::set_gpio_src depending on whether you are using the multi_usrp or
+RFNoC API. Example:
+
+~~~{.py}
+    usrp = uhd.usrp.MultiUSRP("addr=<device IP>")
+    bank = usrp.get_gpio_src_banks()[0]
+    srcs = usrp.get_gpio_src(bank)
+    # assumes you connected the subset like above
+    srcs[0] = "USER_APP"
+    srcs[3] = "USER_APP"
+    usrp.set_gpio_src(bank, srcs)
+~~~
+
 */
 // vim:ft=doxygen:
