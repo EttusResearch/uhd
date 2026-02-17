@@ -21,6 +21,14 @@ parameters:
         demands:
         - Agent.OS -equals Linux
       hwhookVersion: 2
+  # include additional sources (e.g. for merging a branch) before the build
+  - name: includeAdditionalSources
+    type: boolean
+    default: false
+  # specific git ref to checkout
+  - name: ref
+    type: string
+    default: ''
 
 steps:
   - template: build/pipelines/helpers/setup_steps.yml@hwtools
@@ -32,4 +40,19 @@ steps:
       repoBase: $(Build.SourcesDirectory)
       directory: uhddev
       name: FPGA build
+  - ${{ if eq(parameters.includeAdditionalSources, true) }}:
+    - bash: |
+        set -e
+        git fetch --unshallow --progress
+        git merge origin/$(hbx-branch-name)
+        git log -1
+      displayName: "Merge HBX branch"
+      workingDirectory: uhddev
+  - ${{ if ne(parameters.ref, '') }}:
+    - bash: |
+        set -e
+        git fetch --progress origin ${{ parameters.ref }}
+        git checkout ${{ parameters.ref }}
+      displayName: "Checkout ref ${{ parameters.ref }}"
+      workingDirectory: uhddev
 

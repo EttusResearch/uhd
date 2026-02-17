@@ -15,8 +15,12 @@ jobs:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
     - Agent.OS -equals Linux
+  variables:
+  - group: sdr-pipeline-vars
   steps:
     - template: setup_steps.yml
+      parameters:
+        includeAdditionalSources: true
 
     - bash: |
         # Set up the hwtools path and run the build script

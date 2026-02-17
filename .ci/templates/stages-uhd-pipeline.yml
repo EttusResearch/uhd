@@ -570,6 +570,8 @@ stages:
 - stage: build_cpld_stage
   displayName: x4xx CPLD Build Stage
   dependsOn: analyze_changeset
+  variables:
+  - group: sdr-pipeline-vars
   condition: >
     and(succeeded(),
       contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.cpld.x4xx')
@@ -579,6 +581,14 @@ stages:
     parameters:
       publish_int_files: true
       cpldBuilds:
+        - displayName: 'HBX CPLD Build'
+          workingDirectory: './top/x400/dboards/hbx/cpld'
+          artifactName: 'CPLD_HBX'
+          ref: $(hbx-branch-name)
+        - displayName: 'HBX CPLD Master Merge'
+          workingDirectory: './top/x400/dboards/hbx/cpld'
+          artifactName: 'CPLD_HBX (Master Merge)'
+          includeAdditionalSources: true
         - displayName: 'MB CPLD Build'
           workingDirectory: './top/x400/cpld'
           artifactName: 'CPLD_MB'

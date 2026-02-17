@@ -37,6 +37,9 @@ jobs:
     - group: sdr-pipeline-vars
     steps:
       - template: setup_steps.yml
+        parameters:
+          includeAdditionalSources: ${{ coalesce(cpldBuild.includeAdditionalSources, false) }}
+          ref: ${{ coalesce(cpldBuild.ref, '') }}
 
       - bash: |
           # Find the directory containing setupenv.sh by searching upwards from the working directory

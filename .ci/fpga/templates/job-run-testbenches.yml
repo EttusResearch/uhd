@@ -28,6 +28,8 @@ jobs:
     value: ${{ iif(eq(parameters.simulator, 'xsim'), 'testbenches', parameters.simulator) }}
   steps:
     - template: setup_steps.yml
+      parameters:
+        includeAdditionalSources: true
 
     - bash: |
         source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh ./top/x300
