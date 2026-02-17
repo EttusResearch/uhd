@@ -12,6 +12,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <memory>
+#include <cstdint>
 
 /*!
  * The B100 codec control:
@@ -36,7 +37,7 @@ public:
     static sptr make(uhd::spi_iface::sptr iface);
 
     //! aux adc identifier constants
-    enum aux_adc_t {
+    enum aux_adc_t : uint32_t {
         AUX_ADC_A2 = 0xA2,
         AUX_ADC_A1 = 0xA1,
         AUX_ADC_B2 = 0xB2,
@@ -53,7 +54,7 @@ public:
     virtual double read_aux_adc(aux_adc_t which) = 0;
 
     //! aux dac identifier constants
-    enum aux_dac_t {
+    enum aux_dac_t : uint32_t {
         AUX_DAC_A = 0xA,
         AUX_DAC_B = 0xB,
         AUX_DAC_C = 0xC,
