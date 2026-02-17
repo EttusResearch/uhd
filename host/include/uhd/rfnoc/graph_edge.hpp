@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <cstdint>
 #include <string>
 #include <tuple>
 

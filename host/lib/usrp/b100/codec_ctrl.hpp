@@ -12,6 +12,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <memory>
+#include <cstdint>
 
 /*!
  * The B100 codec control:

@@ -9,6 +9,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <cstdint>
 
 namespace uhd {
 

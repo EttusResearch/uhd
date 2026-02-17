@@ -11,6 +11,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <cstdint>
 #include <memory>
 
 /*!
