@@ -343,7 +343,7 @@ module x4xx_gpio_spi #(
   // SPI master
   //---------------------------------------------------------------------------
 
-  `ifdef X440
+  `ifndef X410
 
     simple_spi_core #(
       .BASE     (0),
@@ -476,7 +476,7 @@ module x4xx_gpio_spi #(
       assign gated_sclk[i]   = gpio_is_sclk[i] ? sclk : 1'b0;
 
       // register signals once remapping logic is resolved
-      `ifdef X440
+      `ifndef X410
         always @ (posedge ctrlport_clk) begin
           mosi_mux_out_dlyd[i] <= mosi_mux_out[i];
           gpio_is_sclk_dlyd[i] <= gpio_is_sclk[i];

@@ -443,7 +443,7 @@ module x4xx_core_common #(
       ) ctrlport_timer_i (
         .clk                      (radio_clk[db_i]),
         .rst                      (radio_rst[db_i]),
-     `ifdef X440
+     `ifndef X410
         .time_now                 (radio_time[64*db_i+:64]),
         .time_now_stb             (sample_rx_stb[db_i]),
      `else

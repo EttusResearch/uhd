@@ -829,7 +829,7 @@ module x4xx_core #(
     .chdr_aclk                      (rfnoc_chdr_clk),
     .ctrl_aclk                      (rfnoc_ctrl_clk),
     .core_arst                      (areset),
-  `ifdef X440
+  `ifndef X410
     .radio0_clk                     (radio_clk[0]),
     .radio0_2x_clk                  (radio_clk_2x[0]),
     .radio1_clk                     (radio_clk[1]),
@@ -874,7 +874,7 @@ module x4xx_core #(
     .radio_tx_stb_radio0            ({       tx_stb0}),
     .radio_tx_data_radio0           ({      tx_data0}),
     .radio_tx_running_radio0        ({   tx_running0}),
-  `ifdef X440
+  `ifndef X410
     .radio_time0                    (radio_time[0*64+:64]),
     .radio_time1                    (radio_time[1*64+:64]),
     .pps0                           (pps_radioclk[0]     ),

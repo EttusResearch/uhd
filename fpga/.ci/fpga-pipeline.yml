@@ -166,7 +166,7 @@ extends:
   parameters:
     add_tests: ${{
         format(
-          '{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};',
+          '{0};{1};{2};{3};{4};{5};{6};{7};{8};{9};{10};',
           iif(parameters.run_testbenches,'fpga.usrp3.testbenches',''),
           iif(parameters.build_x3x0,'fpga.usrp3.x3xx',''),
           iif(parameters.build_n3xx,'fpga.usrp3.n3xx',''),

@@ -12,7 +12,6 @@
 
 
 module x4xx (
-
   //-----------------------------------
   // RF block signals
   //-----------------------------------
@@ -36,6 +35,15 @@ module x4xx (
   output wire [3:0] DB0_TX_N,
   output wire [3:0] DB1_TX_P,
   output wire [3:0] DB1_TX_N,
+  `elsif X420
+  input  wire [2:0] DB0_RX_P,
+  input  wire [2:0] DB0_RX_N,
+  input  wire [2:0] DB1_RX_P,
+  input  wire [2:0] DB1_RX_N,
+  output wire [2:0] DB0_TX_P,
+  output wire [2:0] DB0_TX_N,
+  output wire [2:0] DB1_TX_P,
+  output wire [2:0] DB1_TX_N,
   `else // X410
   input  wire [1:0] DB0_RX_P,
   input  wire [1:0] DB0_RX_N,
@@ -257,6 +265,8 @@ module x4xx (
   // Variant-dependent register map.
   `ifdef X440
     `include "regmap/x440/versioning_regs_regmap_utils.vh"
+  `elsif X420
+    `include "regmap/x420/versioning_regs_regmap_utils.vh"
   `else // Use X410 as the default variant for regmap.
     `include "regmap/x410/versioning_regs_regmap_utils.vh"
   `endif
@@ -265,6 +275,8 @@ module x4xx (
   // if/else clause for consistency with other includes.
   `ifdef X440
     `include "regmap/x440/rfdc_regs_regmap_utils.vh"
+  `elsif X420
+    `include "regmap/x420/rfdc_regs_regmap_utils.vh"
   `else // Use X410 as the default variant for regmap.
     `include "regmap/x410/rfdc_regs_regmap_utils.vh"
   `endif
@@ -300,15 +312,23 @@ module x4xx (
   `ifdef RF_CORE_100M
     localparam RF_CORE   = "100M";
     localparam RADIO_SPC = 1;
+    localparam RFDC_SPC  = 8;
   `elsif RF_CORE_200M
     localparam RF_CORE   = "200M";
     localparam RADIO_SPC = 2;
+    localparam RFDC_SPC  = 8;
   `elsif RF_CORE_400M
     localparam RF_CORE   = "400M";
     localparam RADIO_SPC = 4;
+    localparam RFDC_SPC  = 8;
+  `elsif RF_CORE_1000M
+    localparam RF_CORE   = "1000M";
+    localparam RADIO_SPC = 4;
+    localparam RFDC_SPC  = 4;
   `elsif RF_CORE_FULL
     localparam RF_CORE   = "FULL";
     localparam RADIO_SPC = 8;
+    localparam RFDC_SPC  = 8;
   `else
     ERROR_RF_CORE_must_be_defined();
     localparam RF_CORE   = "100M";
@@ -317,7 +337,7 @@ module x4xx (
 
   localparam NUM_DBOARDS = 2;
 
-  `ifdef X440
+  `ifndef X410
     localparam NUM_TIMEKEEPERS = NUM_DBOARDS;
   `else
     localparam NUM_TIMEKEEPERS = 1;
@@ -427,7 +447,7 @@ module x4xx (
     end
 
     // Set radio clock and bus clk
-    if (RF_CORE == "FULL") begin: radio_rfdc_clk_gen
+    if (RF_CORE == "FULL" || RF_CORE == "1000M") begin: radio_rfdc_clk_gen
       assign radio_clk    = rfdc_clk; // separate radio clocks for each db
       assign radio_clk_2x = rfdc_clk_2x;
       assign bus_clk = clk200;
@@ -719,11 +739,11 @@ module x4xx (
     localparam NUM_CH_PER_DB = 2;
   `elsif X440
     localparam NUM_CH_PER_DB = 4;
-  `else
-    localparam NUM_CH_PER_DB = 2;
+  `elsif X420
+    localparam NUM_CH_PER_DB = 1;
   `endif
 
-  localparam NUM_CHANNELS            = NUM_DBOARDS*NUM_CH_PER_DB;
+  localparam NUM_CHANNELS = NUM_DBOARDS*NUM_CH_PER_DB;
 
   // RFDC AXI4-Stream interfaces
   //
@@ -743,12 +763,12 @@ module x4xx (
   //           _ _________________________ _________________________ _
   // *_q_tdata _X_q7,q6,q5,q4,q3,q2,q1,q0_X_______q15,...,q8________X_
   //
-  wire [127:0] adc_tile_dout_i_tdata  [0:NUM_CHANNELS-1]; // Up to 8 SPC (I)
-  wire [127:0] adc_tile_dout_q_tdata  [0:NUM_CHANNELS-1]; // Up to 8 SPC (Q)
-  wire [NUM_CHANNELS-1:0]   adc_tile_dout_i_tready;
-  wire [NUM_CHANNELS-1:0]   adc_tile_dout_q_tready;
-  wire [NUM_CHANNELS-1:0]   adc_tile_dout_i_tvalid;
-  wire [NUM_CHANNELS-1:0]   adc_tile_dout_q_tvalid;
+  wire [16*RFDC_SPC-1:0]  adc_tile_dout_i_tdata [0:NUM_CHANNELS-1]; // Up to 8 SPC (I)
+  wire [16*RFDC_SPC-1:0]  adc_tile_dout_q_tdata [0:NUM_CHANNELS-1]; // Up to 8 SPC (Q)
+  wire [NUM_CHANNELS-1:0] adc_tile_dout_i_tready;
+  wire [NUM_CHANNELS-1:0] adc_tile_dout_q_tready;
+  wire [NUM_CHANNELS-1:0] adc_tile_dout_i_tvalid;
+  wire [NUM_CHANNELS-1:0] adc_tile_dout_q_tvalid;
   //
   // DAC:
   //
@@ -762,9 +782,9 @@ module x4xx (
   //          _ _________________________ _________________________ _
   //  *_tdata _X__q7,i7,q6,i6,...,q0,i0__X____q15,i15,...,q8,i8____X_
   //
-  wire [255:0] dac_tile_din_tdata     [0:NUM_CHANNELS-1]; // Up to 8 SPC (I + Q)
-  wire [NUM_CHANNELS-1:0]   dac_tile_din_tready;
-  wire [NUM_CHANNELS-1:0]   dac_tile_din_tvalid;
+  wire [32*RFDC_SPC-1:0]  dac_tile_din_tdata [0:NUM_CHANNELS-1]; // Up to 8 SPC (I + Q)
+  wire [NUM_CHANNELS-1:0] dac_tile_din_tready;
+  wire [NUM_CHANNELS-1:0] dac_tile_din_tvalid;
 
   // Control/status vectors to rf_core (clk40 domain)
   wire [31:0] rf_dsp_info_clk40;
@@ -1328,7 +1348,407 @@ module x4xx (
       .s_axi_hpc1_aruser             (),
       .s_axi_hpc1_awuser             ()
     );
-  `elsif X440
+  `elsif X420
+    x420_ps_rfdc_bd x420_ps_rfdc_bd_i (
+      .adc_enable_data_r0clk         (adc_enable_data_rclk[0]),
+      .adc_enable_data_r1clk         (adc_enable_data_rclk[1]),
+      .adc_reset_pulse_r0clk         (adc_reset_pulse[0]),
+      .adc_reset_pulse_r1clk         (adc_reset_pulse[1]),
+      .adc_rfdc_axi_resetn_r0clk     (adc_rfdc_axi_resetn_rclk[0]),
+      .adc_rfdc_axi_resetn_r1clk     (adc_rfdc_axi_resetn_rclk[1]),
+      .bus_clk                       (bus_clk),
+      .bus_rstn                      (bus_clk_rstn),
+      .clk40                         (clk40),
+      .clk40_rstn                    (clk40_rstn),
+      .dac_data_in_resetn_r0clk      (dac_data_in_resetn_rclk[0]),
+      .dac_data_in_resetn_r1clk      (dac_data_in_resetn_rclk[1]),
+      .dac_data_in_resetn_r0clk2x    (dac_data_in_resetn_rclk2x[0]),
+      .dac_data_in_resetn_r1clk2x    (dac_data_in_resetn_rclk2x[1]),
+      .dac_reset_pulse_r0clk         (dac_reset_pulse[0]),
+      .dac_reset_pulse_r1clk         (dac_reset_pulse[1]),
+      .data_clk                      (data_clk),
+      .data_clk_2x                   (data_clk_2x),
+      .data_clock_locked             (),
+      .enable_gated_clocks_clk40     (1'b1),
+      .enable_sysref_r0clk           (1'b1),
+      .gated_base_clks_valid_clk40   (),
+      .radio0_invert_adc_iq_r0clk    (invert_adc_iq_rclk2[3:0]),
+      .radio0_invert_dac_iq_r0clk    (invert_dac_iq_rclk2[3:0]),
+      .radio1_invert_adc_iq_r1clk    (invert_adc_iq_rclk2[7:4]),
+      .radio1_invert_dac_iq_r1clk    (invert_dac_iq_rclk2[7:4]),
+      .irq0_lpd_rpu_n                (1'b1),
+      .irq1_lpd_rpu_n                (1'b1),
+      .nco_reset_done_r0clk          (nco_reset_done),
+      .pl_clk40                      (clk40),
+      .pl_clk100                     (clk100),
+      .pl_clk166                     (clk166),
+      .pl_clk200                     (clk200),
+      .pl_ps_irq0                    (pl_ps_irq0),
+      .pl_ps_irq1                    (pl_ps_irq1),
+      .pl_resetn0                    (pl_resetn0),
+      .pl_resetn1                    (),
+      .pl_resetn2                    (),
+      .pl_resetn3                    (),
+      .pll_ref_clk_in                (pll_ref_clk_in),
+      .pll_ref_clk_out               (pll_ref_clk),
+      .rf_axi_status_clk40           (rf_axi_status_clk40),
+      .rf_dsp_info_clk40             (rf_dsp_info_clk40),
+      .rf_rfdc_info_clk40            (rf_rfdc_info_clk40),
+      .radio0_rfdc_clk_1x            (rfdc_clk[0]),
+      .radio0_rfdc_clk_2x            (rfdc_clk_2x[0]),
+      .radio1_rfdc_clk_1x            (rfdc_clk[1]),
+      .radio1_rfdc_clk_2x            (rfdc_clk_2x[1]),
+      .rfdc_irq                      (),
+      .s_axi_hp0_aclk                (clk40),
+      .s_axi_hp1_aclk                (clk40),
+      .s_axi_hpc0_aclk               (),
+      .start_nco_reset_r0clk         (start_nco_reset),
+      .sysref_out_pclk               (),
+      .sysref_out_r0clk              (),
+      .sysref_pl_in                  (sysref_pl),
+      .sysref_wait_cycles            (sysref_wait_cycles),
+      .nco_sync_failed_r0clk         (noc_reset_sync_failed),
+    `ifdef QSFP0_0
+      .s_axi_hp0_aruser              (axi_hp0_aruser),
+      .s_axi_hp0_awuser              (axi_hp0_awuser),
+      .s_axi_hp0_awid                (axi_hp0_awid),
+      .s_axi_hp0_awaddr              (axi_hp0_awaddr),
+      .s_axi_hp0_awlen               (axi_hp0_awlen),
+      .s_axi_hp0_awsize              (axi_hp0_awsize),
+      .s_axi_hp0_awburst             (axi_hp0_awburst),
+      .s_axi_hp0_awlock              (axi_hp0_awlock),
+      .s_axi_hp0_awcache             (axi_hp0_awcache),
+      .s_axi_hp0_awprot              (axi_hp0_awprot),
+      .s_axi_hp0_awvalid             (axi_hp0_awvalid),
+      .s_axi_hp0_awready             (axi_hp0_awready),
+      .s_axi_hp0_wdata               (axi_hp0_wdata),
+      .s_axi_hp0_wstrb               (axi_hp0_wstrb),
+      .s_axi_hp0_wlast               (axi_hp0_wlast),
+      .s_axi_hp0_wvalid              (axi_hp0_wvalid),
+      .s_axi_hp0_wready              (axi_hp0_wready),
+      .s_axi_hp0_bid                 (),
+      .s_axi_hp0_bresp               (axi_hp0_bresp),
+      .s_axi_hp0_bvalid              (axi_hp0_bvalid),
+      .s_axi_hp0_bready              (axi_hp0_bready),
+      .s_axi_hp0_arid                (axi_hp0_arid),
+      .s_axi_hp0_araddr              (axi_hp0_araddr),
+      .s_axi_hp0_arlen               (axi_hp0_arlen),
+      .s_axi_hp0_arsize              (axi_hp0_arsize),
+      .s_axi_hp0_arburst             (axi_hp0_arburst),
+      .s_axi_hp0_arlock              (axi_hp0_arlock),
+      .s_axi_hp0_arcache             (axi_hp0_arcache),
+      .s_axi_hp0_arprot              (axi_hp0_arprot),
+      .s_axi_hp0_arvalid             (axi_hp0_arvalid),
+      .s_axi_hp0_arready             (axi_hp0_arready),
+      .s_axi_hp0_rid                 (),
+      .s_axi_hp0_rdata               (axi_hp0_rdata),
+      .s_axi_hp0_rresp               (axi_hp0_rresp),
+      .s_axi_hp0_rlast               (axi_hp0_rlast),
+      .s_axi_hp0_rvalid              (axi_hp0_rvalid),
+      .s_axi_hp0_rready              (axi_hp0_rready),
+      .s_axi_hp0_awqos               (axi_hp0_awqos),
+      .s_axi_hp0_arqos               (axi_hp0_arqos),
+    `else
+      // Disconnect the DMA interface if the associated QSFP port is not used.
+      .s_axi_hp0_awvalid             (1'b0),
+      .s_axi_hp0_wvalid              (1'b0),
+      .s_axi_hp0_bready              (1'b1),
+      .s_axi_hp0_arvalid             (1'b0),
+      .s_axi_hp0_rready              (1'b1),
+    `endif
+      .s_axis_eth_dma_tdata          (e2h_dma_tdata),
+      .s_axis_eth_dma_tkeep          (e2h_dma_tkeep),
+      .s_axis_eth_dma_tlast          (e2h_dma_tlast),
+      .s_axis_eth_dma_tready         (e2h_dma_tready),
+      .s_axis_eth_dma_tvalid         (e2h_dma_tvalid),
+    `ifdef QSFP1_0
+      .s_axi_hp1_aruser              (axi_hp1_aruser),
+      .s_axi_hp1_awuser              (axi_hp1_awuser),
+      .s_axi_hp1_awid                (axi_hp1_awid),
+      .s_axi_hp1_awaddr              (axi_hp1_awaddr),
+      .s_axi_hp1_awlen               (axi_hp1_awlen),
+      .s_axi_hp1_awsize              (axi_hp1_awsize),
+      .s_axi_hp1_awburst             (axi_hp1_awburst),
+      .s_axi_hp1_awlock              (axi_hp1_awlock),
+      .s_axi_hp1_awcache             (axi_hp1_awcache),
+      .s_axi_hp1_awprot              (axi_hp1_awprot),
+      .s_axi_hp1_awvalid             (axi_hp1_awvalid),
+      .s_axi_hp1_awready             (axi_hp1_awready),
+      .s_axi_hp1_wdata               (axi_hp1_wdata),
+      .s_axi_hp1_wstrb               (axi_hp1_wstrb),
+      .s_axi_hp1_wlast               (axi_hp1_wlast),
+      .s_axi_hp1_wvalid              (axi_hp1_wvalid),
+      .s_axi_hp1_wready              (axi_hp1_wready),
+      .s_axi_hp1_bid                 (),
+      .s_axi_hp1_bresp               (axi_hp1_bresp),
+      .s_axi_hp1_bvalid              (axi_hp1_bvalid),
+      .s_axi_hp1_bready              (axi_hp1_bready),
+      .s_axi_hp1_arid                (axi_hp1_arid),
+      .s_axi_hp1_araddr              (axi_hp1_araddr),
+      .s_axi_hp1_arlen               (axi_hp1_arlen),
+      .s_axi_hp1_arsize              (axi_hp1_arsize),
+      .s_axi_hp1_arburst             (axi_hp1_arburst),
+      .s_axi_hp1_arlock              (axi_hp1_arlock),
+      .s_axi_hp1_arcache             (axi_hp1_arcache),
+      .s_axi_hp1_arprot              (axi_hp1_arprot),
+      .s_axi_hp1_arvalid             (axi_hp1_arvalid),
+      .s_axi_hp1_arready             (axi_hp1_arready),
+      .s_axi_hp1_rid                 (),
+      .s_axi_hp1_rdata               (axi_hp1_rdata),
+      .s_axi_hp1_rresp               (axi_hp1_rresp),
+      .s_axi_hp1_rlast               (axi_hp1_rlast),
+      .s_axi_hp1_rvalid              (axi_hp1_rvalid),
+      .s_axi_hp1_rready              (axi_hp1_rready),
+      .s_axi_hp1_awqos               (axi_hp1_awqos),
+      .s_axi_hp1_arqos               (axi_hp1_arqos),
+    `else
+      // Disconnect the DMA interface if the associated QSFP port is not used.
+      .s_axi_hp1_awvalid             (1'b0),
+      .s_axi_hp1_wvalid              (1'b0),
+      .s_axi_hp1_bready              (1'b1),
+      .s_axi_hp1_arvalid             (1'b0),
+      .s_axi_hp1_rready              (1'b1),
+    `endif
+      .s_axi_hpc0_aruser             (),
+      .s_axi_hpc0_awuser             (),
+      .s_axi_hpc0_awid               (),
+      .s_axi_hpc0_awaddr             (),
+      .s_axi_hpc0_awlen              (),
+      .s_axi_hpc0_awsize             (),
+      .s_axi_hpc0_awburst            (),
+      .s_axi_hpc0_awlock             (),
+      .s_axi_hpc0_awcache            (),
+      .s_axi_hpc0_awprot             (),
+      .s_axi_hpc0_awvalid            (),
+      .s_axi_hpc0_awready            (),
+      .s_axi_hpc0_wdata              (),
+      .s_axi_hpc0_wstrb              (),
+      .s_axi_hpc0_wlast              (),
+      .s_axi_hpc0_wvalid             (),
+      .s_axi_hpc0_wready             (),
+      .s_axi_hpc0_bid                (),
+      .s_axi_hpc0_bresp              (),
+      .s_axi_hpc0_bvalid             (),
+      .s_axi_hpc0_bready             (),
+      .s_axi_hpc0_arid               (),
+      .s_axi_hpc0_araddr             (),
+      .s_axi_hpc0_arlen              (),
+      .s_axi_hpc0_arsize             (),
+      .s_axi_hpc0_arburst            (),
+      .s_axi_hpc0_arlock             (),
+      .s_axi_hpc0_arcache            (),
+      .s_axi_hpc0_arprot             (),
+      .s_axi_hpc0_arvalid            (),
+      .s_axi_hpc0_arready            (),
+      .s_axi_hpc0_rid                (),
+      .s_axi_hpc0_rdata              (),
+      .s_axi_hpc0_rresp              (),
+      .s_axi_hpc0_rlast              (),
+      .s_axi_hpc0_rvalid             (),
+      .s_axi_hpc0_rready             (),
+      .s_axi_hpc0_awqos              (),
+      .s_axi_hpc0_arqos              (),
+      .adc0_clk_clk_n                (ADC_CLK_N[0]),
+      .adc0_clk_clk_p                (ADC_CLK_P[0]),
+      .adc1_clk_clk_n                (ADC_CLK_N[1]),
+      .adc1_clk_clk_p                (ADC_CLK_P[1]),
+      .adc2_clk_clk_n                (ADC_CLK_N[2]),
+      .adc2_clk_clk_p                (ADC_CLK_P[2]),
+      .adc3_clk_clk_n                (ADC_CLK_N[3]),
+      .adc3_clk_clk_p                (ADC_CLK_P[3]),
+      .m_axi_app_awaddr              (m_axi_app_awaddr),
+      .m_axi_app_awprot              (m_axi_app_awprot),
+      .m_axi_app_awvalid             (m_axi_app_awvalid),
+      .m_axi_app_awready             (m_axi_app_awready),
+      .m_axi_app_wdata               (m_axi_app_wdata),
+      .m_axi_app_wstrb               (m_axi_app_wstrb),
+      .m_axi_app_wvalid              (m_axi_app_wvalid),
+      .m_axi_app_wready              (m_axi_app_wready),
+      .m_axi_app_bresp               (m_axi_app_bresp),
+      .m_axi_app_bvalid              (m_axi_app_bvalid),
+      .m_axi_app_bready              (m_axi_app_bready),
+      .m_axi_app_araddr              (m_axi_app_araddr),
+      .m_axi_app_arprot              (m_axi_app_arprot),
+      .m_axi_app_arvalid             (m_axi_app_arvalid),
+      .m_axi_app_arready             (m_axi_app_arready),
+      .m_axi_app_rdata               (m_axi_app_rdata),
+      .m_axi_app_rresp               (m_axi_app_rresp),
+      .m_axi_app_rvalid              (m_axi_app_rvalid),
+      .m_axi_app_rready              (m_axi_app_rready),
+      .dac0_clk_clk_n                (DAC_CLK_N[0]),
+      .dac0_clk_clk_p                (DAC_CLK_P[0]),
+      .dac1_clk_clk_n                (DAC_CLK_N[1]),
+      .dac1_clk_clk_p                (DAC_CLK_P[1]),
+      .gpio_0_tri_i                  (gpio_0_tri_i),
+      .gpio_0_tri_o                  (gpio_0_tri_o),
+      .gpio_0_tri_t                  (gpio_0_tri_t),
+      .m_axi_eth_internal_awaddr     (axi_eth_internal_awaddr),
+      .m_axi_eth_internal_awprot     (),
+      .m_axi_eth_internal_awvalid    (axi_eth_internal_awvalid),
+      .m_axi_eth_internal_awready    (axi_eth_internal_awready),
+      .m_axi_eth_internal_wdata      (axi_eth_internal_wdata),
+      .m_axi_eth_internal_wstrb      (axi_eth_internal_wstrb),
+      .m_axi_eth_internal_wvalid     (axi_eth_internal_wvalid),
+      .m_axi_eth_internal_wready     (axi_eth_internal_wready),
+      .m_axi_eth_internal_bresp      (axi_eth_internal_bresp),
+      .m_axi_eth_internal_bvalid     (axi_eth_internal_bvalid),
+      .m_axi_eth_internal_bready     (axi_eth_internal_bready),
+      .m_axi_eth_internal_araddr     (axi_eth_internal_araddr),
+      .m_axi_eth_internal_arprot     (),
+      .m_axi_eth_internal_arvalid    (axi_eth_internal_arvalid),
+      .m_axi_eth_internal_arready    (axi_eth_internal_arready),
+      .m_axi_eth_internal_rdata      (axi_eth_internal_rdata),
+      .m_axi_eth_internal_rresp      (axi_eth_internal_rresp),
+      .m_axi_eth_internal_rvalid     (axi_eth_internal_rvalid),
+      .m_axi_eth_internal_rready     (axi_eth_internal_rready),
+      .m_axis_eth_dma_tdata          (h2e_dma_tdata),
+      .m_axis_eth_dma_tkeep          (h2e_dma_tkeep),
+      .m_axis_eth_dma_tlast          (h2e_dma_tlast),
+      .m_axis_eth_dma_tready         (h2e_dma_tready),
+      .m_axis_eth_dma_tvalid         (h2e_dma_tvalid),
+      .m_axi_rpu_awaddr              (),
+      .m_axi_rpu_awprot              (),
+      .m_axi_rpu_awvalid             (),
+      .m_axi_rpu_awready             (),
+      .m_axi_rpu_wdata               (),
+      .m_axi_rpu_wstrb               (),
+      .m_axi_rpu_wvalid              (),
+      .m_axi_rpu_wready              (),
+      .m_axi_rpu_bresp               (),
+      .m_axi_rpu_bvalid              (),
+      .m_axi_rpu_bready              (),
+      .m_axi_rpu_araddr              (),
+      .m_axi_rpu_arprot              (),
+      .m_axi_rpu_arvalid             (),
+      .m_axi_rpu_arready             (),
+      .m_axi_rpu_rdata               (),
+      .m_axi_rpu_rresp               (),
+      .m_axi_rpu_rvalid              (),
+      .m_axi_rpu_rready              (),
+      .m_axi_core_awaddr             (axi_core_awaddr),
+      .m_axi_core_awprot             (),
+      .m_axi_core_awvalid            (axi_core_awvalid),
+      .m_axi_core_awready            (axi_core_awready),
+      .m_axi_core_wdata              (axi_core_wdata),
+      .m_axi_core_wstrb              (axi_core_wstrb),
+      .m_axi_core_wvalid             (axi_core_wvalid),
+      .m_axi_core_wready             (axi_core_wready),
+      .m_axi_core_bresp              (axi_core_bresp),
+      .m_axi_core_bvalid             (axi_core_bvalid),
+      .m_axi_core_bready             (axi_core_bready),
+      .m_axi_core_araddr             (axi_core_araddr),
+      .m_axi_core_arprot             (),
+      .m_axi_core_arvalid            (axi_core_arvalid),
+      .m_axi_core_arready            (axi_core_arready),
+      .m_axi_core_rdata              (axi_core_rdata),
+      .m_axi_core_rresp              (axi_core_rresp),
+      .m_axi_core_rvalid             (axi_core_rvalid),
+      .m_axi_core_rready             (axi_core_rready),
+      .m_axi_mpm_ep_awaddr           (m_axi_mpm_ep_awaddr),
+      .m_axi_mpm_ep_awprot           (),
+      .m_axi_mpm_ep_awvalid          (m_axi_mpm_ep_awvalid),
+      .m_axi_mpm_ep_awready          (m_axi_mpm_ep_awready),
+      .m_axi_mpm_ep_wdata            (m_axi_mpm_ep_wdata),
+      .m_axi_mpm_ep_wstrb            (m_axi_mpm_ep_wstrb),
+      .m_axi_mpm_ep_wvalid           (m_axi_mpm_ep_wvalid),
+      .m_axi_mpm_ep_wready           (m_axi_mpm_ep_wready),
+      .m_axi_mpm_ep_bresp            (m_axi_mpm_ep_bresp),
+      .m_axi_mpm_ep_bvalid           (m_axi_mpm_ep_bvalid),
+      .m_axi_mpm_ep_bready           (m_axi_mpm_ep_bready),
+      .m_axi_mpm_ep_araddr           (m_axi_mpm_ep_araddr),
+      .m_axi_mpm_ep_arprot           (),
+      .m_axi_mpm_ep_arvalid          (m_axi_mpm_ep_arvalid),
+      .m_axi_mpm_ep_arready          (m_axi_mpm_ep_arready),
+      .m_axi_mpm_ep_rdata            (m_axi_mpm_ep_rdata),
+      .m_axi_mpm_ep_rresp            (m_axi_mpm_ep_rresp),
+      .m_axi_mpm_ep_rvalid           (m_axi_mpm_ep_rvalid),
+      .m_axi_mpm_ep_rready           (m_axi_mpm_ep_rready),
+      .adc_tile224_ch0_dout_i_tdata  (adc_tile_dout_i_tdata[0]),
+      .adc_tile224_ch0_dout_i_tready (adc_tile_dout_i_tready[0]),
+      .adc_tile224_ch0_dout_i_tvalid (adc_tile_dout_i_tvalid[0]),
+      .adc_tile224_ch0_dout_q_tdata  (adc_tile_dout_q_tdata[0]),
+      .adc_tile224_ch0_dout_q_tready (adc_tile_dout_q_tready[0]),
+      .adc_tile224_ch0_dout_q_tvalid (adc_tile_dout_q_tvalid[0]),
+      .adc_tile226_ch0_dout_i_tdata  (adc_tile_dout_i_tdata[1]),
+      .adc_tile226_ch0_dout_i_tready (adc_tile_dout_i_tready[1]),
+      .adc_tile226_ch0_dout_i_tvalid (adc_tile_dout_i_tvalid[1]),
+      .adc_tile226_ch0_dout_q_tdata  (adc_tile_dout_q_tdata[1]),
+      .adc_tile226_ch0_dout_q_tready (adc_tile_dout_q_tready[1]),
+      .adc_tile226_ch0_dout_q_tvalid (adc_tile_dout_q_tvalid[1]),
+      .dac_tile228_ch0_vout_v_n      (DB0_TX_N[0]),
+      .dac_tile228_ch0_vout_v_p      (DB0_TX_P[0]),
+      .dac_tile228_ch1_vout_v_n      (DB0_TX_N[1]),
+      .dac_tile228_ch1_vout_v_p      (DB0_TX_P[1]),
+      .dac_tile228_ch3_vout_v_n      (DB0_TX_N[2]),
+      .dac_tile228_ch3_vout_v_p      (DB0_TX_P[2]),
+      .dac_tile229_ch0_vout_v_n      (DB1_TX_N[0]),
+      .dac_tile229_ch0_vout_v_p      (DB1_TX_P[0]),
+      .dac_tile229_ch1_vout_v_n      (DB1_TX_N[1]),
+      .dac_tile229_ch1_vout_v_p      (DB1_TX_P[1]),
+      .dac_tile229_ch3_vout_v_n      (DB1_TX_N[2]),
+      .dac_tile229_ch3_vout_v_p      (DB1_TX_P[2]),
+      .dac_tile228_ch0_din_tdata     (dac_tile_din_tdata[0]),
+      .dac_tile228_ch0_din_tvalid    (dac_tile_din_tvalid[0]),
+      .dac_tile228_ch0_din_tready    (dac_tile_din_tready[0]),
+      .dac_tile229_ch0_din_tdata     (dac_tile_din_tdata[1]),
+      .dac_tile229_ch0_din_tvalid    (dac_tile_din_tvalid[1]),
+      .dac_tile229_ch0_din_tready    (dac_tile_din_tready[1]),
+      .s_axi_hpc1_awid               (),
+      .s_axi_hpc1_awaddr             (),
+      .s_axi_hpc1_awlen              (),
+      .s_axi_hpc1_awsize             (),
+      .s_axi_hpc1_awburst            (),
+      .s_axi_hpc1_awlock             (),
+      .s_axi_hpc1_awcache            (),
+      .s_axi_hpc1_awprot             (),
+      .s_axi_hpc1_awqos              (),
+      .s_axi_hpc1_awvalid            (),
+      .s_axi_hpc1_awready            (),
+      .s_axi_hpc1_wdata              (),
+      .s_axi_hpc1_wstrb              (),
+      .s_axi_hpc1_wlast              (),
+      .s_axi_hpc1_wvalid             (),
+      .s_axi_hpc1_wready             (),
+      .s_axi_hpc1_bid                (),
+      .s_axi_hpc1_bresp              (),
+      .s_axi_hpc1_bvalid             (),
+      .s_axi_hpc1_bready             (),
+      .s_axi_hpc1_arid               (),
+      .s_axi_hpc1_araddr             (),
+      .s_axi_hpc1_arlen              (),
+      .s_axi_hpc1_arsize             (),
+      .s_axi_hpc1_arburst            (),
+      .s_axi_hpc1_arlock             (),
+      .s_axi_hpc1_arcache            (),
+      .s_axi_hpc1_arprot             (),
+      .s_axi_hpc1_arqos              (),
+      .s_axi_hpc1_arvalid            (),
+      .s_axi_hpc1_arready            (),
+      .s_axi_hpc1_rid                (),
+      .s_axi_hpc1_rdata              (),
+      .s_axi_hpc1_rresp              (),
+      .s_axi_hpc1_rlast              (),
+      .s_axi_hpc1_rvalid             (),
+      .s_axi_hpc1_rready             (),
+      .sysref_rf_in_diff_n           (SYSREF_RF_N),
+      .sysref_rf_in_diff_p           (SYSREF_RF_P),
+      .adc_tile224_ch0_vin_v_n       (DB0_RX_N[0]),
+      .adc_tile224_ch0_vin_v_p       (DB0_RX_P[0]),
+      .adc_tile224_ch1_vin_v_n       (DB0_RX_N[1]),
+      .adc_tile224_ch1_vin_v_p       (DB0_RX_P[1]),
+      .adc_tile225_ch0_vin_v_n       (DB0_RX_N[2]),
+      .adc_tile225_ch0_vin_v_p       (DB0_RX_P[2]),
+      .adc_tile226_ch0_vin_v_n       (DB1_RX_N[0]),
+      .adc_tile226_ch0_vin_v_p       (DB1_RX_P[0]),
+      .adc_tile226_ch1_vin_v_n       (DB1_RX_N[1]),
+      .adc_tile226_ch1_vin_v_p       (DB1_RX_P[1]),
+      .adc_tile227_ch0_vin_v_n       (DB1_RX_N[2]),
+      .adc_tile227_ch0_vin_v_p       (DB1_RX_P[2]),
+      .s_axi_hpc1_aruser             (),
+      .s_axi_hpc1_awuser             (),
+      .clk_adc0                      ()
+    );
+`elsif X440
     x440_ps_rfdc_bd x440_ps_rfdc_bd_i (
       .adc_enable_data_r0clk         (adc_enable_data_rclk[0]),
       .adc_enable_data_r1clk         (adc_enable_data_rclk[1]),
@@ -2000,22 +2420,22 @@ module x4xx (
           .data_clk                  (data_clk),
           .data_clk_2x               (data_clk_2x),
           .s_axi_config_clk          (clk40),
-          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tready_0    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tvalid_0    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tready_0    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tvalid_0    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tready_1    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tvalid_1    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tready_1    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tvalid_1    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tready_0     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tvalid_0     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tready_1     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tvalid_1     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+1]),
           .adc_data_out_tdata_0      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+0]),
@@ -2043,30 +2463,28 @@ module x4xx (
           .version_info              (rf_core_version[db_i])
         );
       end else if (RF_CORE == "200M") begin : gen_rf_core_200m
-        localparam ADC_AXIS_W = 128;
-        localparam DAC_AXIS_W = 256;
         rf_core_200m rf_core_200m_i (
           .rfdc_clk                  (rfdc_clk[0]),
           .rfdc_clk_2x               (rfdc_clk_2x[0]),
           .data_clk                  (data_clk),
           .data_clk_2x               (data_clk_2x),
           .s_axi_config_clk          (clk40),
-          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tready_0    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tvalid_0    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tready_0    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tvalid_0    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tready_1    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tvalid_1    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tready_1    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tvalid_1    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tready_0     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tvalid_0     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tready_1     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tvalid_1     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+1]),
           .adc_data_out_tdata_0      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+0]),
@@ -2094,30 +2512,28 @@ module x4xx (
           .version_info              (rf_core_version[db_i])
         );
       end else if (RF_CORE == "400M") begin : gen_rf_core_400m
-        localparam ADC_AXIS_W = 128;
-        localparam DAC_AXIS_W = 256;
         rf_core_400m rf_core_400m_i (
           .rfdc_clk                  (rfdc_clk[0]),
           .rfdc_clk_2x               (rfdc_clk_2x[0]),
           .data_clk                  (data_clk),
           .data_clk_2x               (data_clk_2x),
           .s_axi_config_clk          (clk40),
-          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tready_0    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_i_tvalid_0    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tready_0    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+0]),
           .adc_data_in_q_tvalid_0    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tready_1    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_i_tvalid_1    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1][ADC_AXIS_W-1:0]),
+          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tready_1    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+1]),
           .adc_data_in_q_tvalid_1    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tready_0     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+0]),
           .dac_data_out_tvalid_0     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1][DAC_AXIS_W-1:0]),
+          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tready_1     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+1]),
           .dac_data_out_tvalid_1     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+1]),
           .adc_data_out_tdata_0      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+0]),
@@ -2130,8 +2546,8 @@ module x4xx (
           .dac_data_in_tdata_1       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+1]),
           .dac_data_in_tready_1      (dac_data_in_tready[NUM_CH_PER_DB*db_i+1]),
           .dac_data_in_tvalid_1      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .invert_adc_iq_rclk2       (swapped_invert_adc_iq_rclk2[4*db_i+:4]),
-          .invert_dac_iq_rclk2       (swapped_invert_dac_iq_rclk2[4*db_i+:4]),
+          .invert_adc_iq_rclk2       (swapped_invert_adc_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
+          .invert_dac_iq_rclk2       (swapped_invert_dac_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
           .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
           .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
           .axi_status_sclk           (rf_axi_status_clk40[16*db_i+:16]),
@@ -2142,6 +2558,43 @@ module x4xx (
           .dac_data_in_resetn_dclk2x (dac_data_in_resetn_dclk2x),
           .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
           .fir_resetn_rclk2x         (fir_resetn_rclk2x),
+          .version_info              (rf_core_version[db_i])
+        );
+      end else if (RF_CORE == "1000M") begin : gen_rf_core_1000m
+        rf_core_1000m #(
+          .RADIO_SPC(RADIO_SPC)
+        ) rf_core_1000m_i (
+          .rfdc_clk                  (rfdc_clk[db_i]),
+          .s_axi_config_clk          (clk40),
+          .ctrlport_rst              (radio_rst[db_i]),
+          .s_ctrlport_req_wr         (rf_core_ctrlport_req_wr[db_i]),
+          .s_ctrlport_req_rd         (rf_core_ctrlport_req_rd[db_i]),
+          .s_ctrlport_req_addr       (rf_core_ctrlport_req_addr[db_i]),
+          .s_ctrlport_req_data       (rf_core_ctrlport_req_data[db_i]),
+          .s_ctrlport_resp_ack       (rf_core_ctrlport_resp_ack[db_i]),
+          .s_ctrlport_resp_status    (rf_core_ctrlport_resp_status[db_i]),
+          .s_ctrlport_resp_data      (rf_core_ctrlport_resp_data[db_i]),
+          .adc_data_in_i_tdata       (adc_tile_dout_i_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_in_i_tready      (adc_tile_dout_i_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_in_i_tvalid      (adc_tile_dout_i_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_in_q_tdata       (adc_tile_dout_q_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_in_q_tready      (adc_tile_dout_q_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_in_q_tvalid      (adc_tile_dout_q_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_out_tdata        (dac_tile_din_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_out_tready       (dac_tile_din_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_out_tvalid       (dac_tile_din_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_out_tdata        (adc_data_out_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .adc_data_out_tvalid       (adc_data_out_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_in_tdata         (dac_data_in_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_in_tready        (dac_data_in_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .dac_data_in_tvalid        (dac_data_in_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .invert_adc_iq_rclk        (swapped_invert_adc_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
+          .invert_dac_iq_rclk        (swapped_invert_dac_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
+          .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
+          .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
+          .axi_status_sclk           (rf_axi_status_clk40[16*db_i +: 16]),
+          .adc_enable_data_rclk      (adc_enable_data_rclk[db_i]),
+          .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk[db_i]),
           .version_info              (rf_core_version[db_i])
         );
       end else if (RF_CORE == "FULL") begin : gen_rf_core_full
@@ -2166,8 +2619,8 @@ module x4xx (
           .dac_data_in_tdata         (dac_data_in_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
           .dac_data_in_tready        (dac_data_in_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
           .dac_data_in_tvalid        (dac_data_in_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
-          .invert_adc_iq_rclk        (swapped_invert_adc_iq_rclk2[NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
-          .invert_dac_iq_rclk        (swapped_invert_dac_iq_rclk2[NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+          .invert_adc_iq_rclk        (swapped_invert_adc_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
+          .invert_dac_iq_rclk        (swapped_invert_dac_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
           .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
           .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
           .axi_status_sclk           (rf_axi_status_clk40[16*db_i +: 16]),
@@ -2177,21 +2630,23 @@ module x4xx (
         );
       end // gen_rf_core_full
 
-    // terminate unused rf core ctrlport interfaces
-    ctrlport_terminator #(
-      .START_ADDRESS (0),
-      .LAST_ADDRESS  (2**CTRLPORT_ADDR_W-1)
-    ) pl_terminator (
-      .ctrlport_clk           (rfdc_clk[db_i]),
-      .ctrlport_rst           (radio_rst[db_i]),
-      .s_ctrlport_req_wr      (rf_core_ctrlport_req_wr[db_i]),
-      .s_ctrlport_req_rd      (rf_core_ctrlport_req_rd[db_i]),
-      .s_ctrlport_req_addr    (rf_core_ctrlport_req_addr[db_i]),
-      .s_ctrlport_req_data    (rf_core_ctrlport_req_data[db_i]),
-      .s_ctrlport_resp_ack    (rf_core_ctrlport_resp_ack[db_i]),
-      .s_ctrlport_resp_status (rf_core_ctrlport_resp_status[db_i]),
-      .s_ctrlport_resp_data   (rf_core_ctrlport_resp_data[db_i])
-    );
+      // terminate unused rf core ctrlport interfaces
+      if (RF_CORE != "1000M") begin : gen_rf_core_ctrlport_terminator
+        ctrlport_terminator #(
+          .START_ADDRESS (0),
+          .LAST_ADDRESS  (2**CTRLPORT_ADDR_W-1)
+        ) pl_terminator (
+          .ctrlport_clk           (rfdc_clk[db_i]),
+          .ctrlport_rst           (radio_rst[db_i]),
+          .s_ctrlport_req_wr      (rf_core_ctrlport_req_wr[db_i]),
+          .s_ctrlport_req_rd      (rf_core_ctrlport_req_rd[db_i]),
+          .s_ctrlport_req_addr    (rf_core_ctrlport_req_addr[db_i]),
+          .s_ctrlport_req_data    (rf_core_ctrlport_req_data[db_i]),
+          .s_ctrlport_resp_ack    (rf_core_ctrlport_resp_ack[db_i]),
+          .s_ctrlport_resp_status (rf_core_ctrlport_resp_status[db_i]),
+          .s_ctrlport_resp_data   (rf_core_ctrlport_resp_data[db_i])
+        );
+      end
     end // gen_rf_cores
 
     `ifdef X440
@@ -2345,6 +2800,10 @@ module x4xx (
         db_gpio_interface db_gpio_interface_i (
           .radio_clk               (radio_clk[db_i]),
           .pll_ref_clk             (pll_ref_clk),
+        `ifdef X420
+          .base_ref_clk            (base_ref_clk),
+          .pps_refclk              (pps_refclk),
+        `endif
           .db_state                (db_state[db_i]),
           .ctrlport_rst            (radio_rst[db_i]),
           .s_ctrlport_req_wr       (db_ctrlport_req_wr[db_i]),
@@ -2636,8 +3095,17 @@ module x4xx (
   wire mfg_test_en_gty_rcv_clk;
 
   // Map RFDC ports to x4xx_core ports
-  `ifdef X440
+  `ifdef X420
+    assign rx_data_qi = { adc_data_out_tdata [1], adc_data_out_tdata [0]};
+    assign rx_stb     = { adc_data_out_tvalid[1], adc_data_out_tvalid[0]};
 
+    assign { dac_data_in_tdata[1], dac_data_in_tdata[0]} = tx_data_qi;
+    assign { tx_stb           [1], tx_stb           [0]} = dac_data_in_tready;
+
+
+    assign swapped_invert_adc_iq_rclk2 = invert_adc_iq_rclk2;
+    assign swapped_invert_dac_iq_rclk2 = invert_dac_iq_rclk2;
+  `elsif X440
     `include "regmap/x440/rfdc_mapping_regmap_utils.vh"
 
     assign rx_data_qi = { adc_data_out_tdata [CH7_RX_MAPPING], adc_data_out_tdata [CH6_RX_MAPPING],
@@ -3033,7 +3501,6 @@ module x4xx (
     .version_info                  (x4xx_core_version_info)
   );
 
-
   //---------------------------------------------------------------------------
   // eCPRI Clock Output Test
   //---------------------------------------------------------------------------
@@ -3085,15 +3552,15 @@ module x4xx (
   // This output on (MGTREFCLK1 128)(QUAD128 is QSFP1).
   // The input is MGT_REFCLK_LMK3_P (MGT_REFCLK1 129)(QUAD 129 not used).
   `ifdef QSFP1_0
-  OBUFDS_GTE4 #(
-    .REFCLK_EN_TX_PATH (1'b1),
-    .REFCLK_ICNTL_TX   (5'b00111)
-  ) gty_rcv_clk_OBUFDS (
-    .O   (GTY_RCV_CLK_P),               // 1-bit output: Diff_p output (connect directly to top-level port)
-    .OB  (GTY_RCV_CLK_N),               // 1-bit output: Diff_n output (connect directly to top-level port)
-    .I   (rx_rec_clk_out1),             // 1-bit input: Buffer input
-    .CEB (!mfg_test_en_gty_rcv_clk_dc)  // 1-bit input: Clock Enable
-  );
+    OBUFDS_GTE4 #(
+      .REFCLK_EN_TX_PATH (1'b1),
+      .REFCLK_ICNTL_TX   (5'b00111)
+    ) gty_rcv_clk_OBUFDS (
+      .O   (GTY_RCV_CLK_P),               // 1-bit output: Diff_p output (connect directly to top-level port)
+      .OB  (GTY_RCV_CLK_N),               // 1-bit output: Diff_n output (connect directly to top-level port)
+      .I   (rx_rec_clk_out1),             // 1-bit input: Buffer input
+      .CEB (!mfg_test_en_gty_rcv_clk_dc)  // 1-bit input: Clock Enable
+    );
   `endif
 
 endmodule
@@ -3108,6 +3575,13 @@ endmodule
 //    This documentation provides a description of the different register spaces available
 //    for the USRP X4xx Open-Source FPGA target implementation, accessible through the
 //    embedded ARM A53 processor in the RFSoC chip, and other UHD hosts.
+//  </info>
+//</top>
+//
+//<top name="X420_FPGA" removeunreferenced="true">
+//  <info>
+//    This documentation provide a full register map from the X420 FPGA design and the
+//    associated CPLDs.
 //  </info>
 //</top>
 //

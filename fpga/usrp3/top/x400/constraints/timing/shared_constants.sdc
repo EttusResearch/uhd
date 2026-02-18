@@ -32,6 +32,8 @@ set clock_translate_max 1.8
 # The output is currently driven on the falling edge of the clock.
 set db_gpio_fpga_min_out -8.500
 set db_gpio_fpga_max_out  4.000
+set db_gpio_fpga_min_in   0.000
+set db_gpio_fpga_max_in  13.750
 
 # CPLD output constraints
 set db_gpio_cpld_min_out -2.000

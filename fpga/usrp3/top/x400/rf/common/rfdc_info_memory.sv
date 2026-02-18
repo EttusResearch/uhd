@@ -36,6 +36,8 @@ module rfdc_info_memory
   import rfdc_info_pkg::*;
   `ifdef X410
     import x410_rfdc_memory_content_pkg::*;
+  `elsif X420
+    import x420_rfdc_memory_content_pkg::*;
   `else
     import x440_rfdc_memory_content_pkg::*;
   `endif

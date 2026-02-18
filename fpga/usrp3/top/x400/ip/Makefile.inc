@@ -33,6 +33,11 @@ include $(IP_DIR)/dac_400m_bd/Makefile.inc
 include $(IP_DIR)/x4xx_ps_rfdc_bd/x410_ps_rfdc_bd/Makefile.inc
 endif
 
+ifdef X420
+include $(IP_DIR)/ddr4_64bits/Makefile.inc
+include $(IP_DIR)/x4xx_ps_rfdc_bd/x420_ps_rfdc_bd/Makefile.inc
+endif
+
 ifdef X440
 include $(IP_DIR)/adc_100m_bd/Makefile.inc
 include $(IP_DIR)/dac_100m_bd/Makefile.inc
@@ -75,7 +80,6 @@ endif
 
 ifdef X440
 BD_SRCS += \
-$(IP_ADC_FULL_HDL_SRCS)  \
 $(IP_ADC_100M_BD_SRCS)   \
 $(IP_ADC_100M_HDL_SRCS)  \
 $(IP_DAC_100M_BD_SRCS)   \
@@ -91,6 +95,11 @@ $(IP_HB47_1TO2_SRCS) \
 $(IP_HB47_2TO1_SRCS) \
 
 ifdef X410
+IP_XCI_SRCS += \
+$(IP_DDR4_64BITS_SRCS)
+endif
+
+ifdef X420
 IP_XCI_SRCS += \
 $(IP_DDR4_64BITS_SRCS)
 endif
@@ -139,6 +148,11 @@ $(IP_HB47_1TO2_OUTS) \
 $(IP_HB47_2TO1_OUTS) \
 
 ifdef X410
+IP_SYNTH_OUTPUTS += \
+$(IP_DDR4_64BITS_OUTS)
+endif
+
+ifdef X420
 IP_SYNTH_OUTPUTS += \
 $(IP_DDR4_64BITS_OUTS)
 endif

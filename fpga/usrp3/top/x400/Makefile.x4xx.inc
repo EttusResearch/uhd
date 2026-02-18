@@ -87,6 +87,25 @@ rf/x410/x410_rf_reset_controller.vhd \
 dboards/zbx/db_gpio_interface.v
 endif
 
+ifdef X420
+TOP_SRCS += \
+rf/full/rf_core_full.sv \
+rf/common/adc_iq_repacker.v \
+rf/x420/x420_rf_reset_controller.vhd \
+rf/1000m/XmlSvPkgIQ_IMPAIRMENT_REGMAP.sv \
+rf/1000m/XmlSvPkgRF_CORE_REGMAP.sv \
+rf/1000m/XmlSvPkgDC_OFFSET_REGMAP.sv \
+rf/1000m/impairment_correction_dsp.sv \
+rf/1000m/impairment_correction.sv \
+rf/1000m/dc_offset.sv \
+rf/1000m/rf_core_1000m.sv \
+regmap/x420/XmlSvPkgDB_WINDOW_REGMAP.sv \
+regmap/x420/XmlSvPkgFPGA_GPIO_REGMAP.sv\
+regmap/x420/XmlSvPkgHBX_SYNC_INJECTION_REGMAP.sv \
+dboards/hbx/db_gpio_interface.sv \
+dboards/hbx/hbx_sync_injection.sv
+endif
+
 ifdef X440
 TOP_SRCS += \
 rf/100m/rf_core_100m.v \
@@ -103,6 +122,15 @@ endif
 ifdef X410
 MB_XDC += \
 constraints/timing/x410_clocks.xdc
+endif
+
+ifdef X420
+ifneq (,$(findstring RF_BW=200,$(RFNOC_IMAGE_CORE_DEFS)))
+MB_XDC += \
+constraints/timing/x420_clocks_200.xdc
+endif
+MB_XDC += \
+constraints/timing/x420_clocks.xdc
 endif
 
 ifdef X440
@@ -130,6 +158,13 @@ MB_XDC += \
 constraints/pins/rfdc_2x2.xdc \
 constraints/pins/x410/db_gpio.xdc \
 constraints/timing/x410.xdc
+endif
+
+ifdef X420
+MB_XDC += \
+constraints/pins/rfdc_3x3.xdc \
+constraints/pins/x420/db_gpio.xdc \
+constraints/timing/x420.xdc
 endif
 
 ifdef X440
