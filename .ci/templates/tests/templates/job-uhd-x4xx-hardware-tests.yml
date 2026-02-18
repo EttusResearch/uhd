@@ -18,6 +18,9 @@ parameters:
 - name: runRfnocBlockTest
   type: boolean
   default: false
+- name: forceIQCorrections
+  type: boolean
+  default: false
 - name: master_clock_rate
   type: string
   default: ''
@@ -191,6 +194,13 @@ jobs:
     displayName: Copy FPGA pipeline images to device
     condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
 
+  # This removes all binaries in /lib/firmware/ to avoid mpm failing to start
+  # because the fpga in there is too old (from the last uhd release) 
+  # It then restarts mpm (here the logs would give out errors about no fpga)
+  # Then flashes the latest pipeline-built bitfile already copied over
+  # Then stops mpm and deletes all the journalctl logs once to ignore
+  # all errors in there and then starts mpm again
+  # finally prints out information to confirm which fpga is flashed
   - script: |
         set -e
         ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
@@ -311,6 +321,41 @@ jobs:
       echo ""
     displayName: cat devtest log
     condition: and(succeeded(), ${{ parameters.runDevTest }})
+
+  - script: |
+      # Set UHD installation path
+      export UHD_INSTALL_PATH=$(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+      export CAL_DIR="$HOME/.local/share/uhd/cal"
+      export PYTHON_VERSION=$(python3 -c "import sys; print('python' + str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
+      
+      # Setup UHD environment
+      export PATH=$UHD_INSTALL_PATH/bin:$PATH
+      if [ -d "$UHD_INSTALL_PATH/lib64" ]; then
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib64:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        UHD_UTILS_DIR="$UHD_INSTALL_PATH/lib64/$PYTHON_VERSION/site-packages/uhd/utils"
+      else
+        export LD_LIBRARY_PATH=$UHD_INSTALL_PATH/lib:$LD_LIBRARY_PATH
+        export PYTHONPATH=$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages:$PYTHONPATH
+        UHD_UTILS_DIR="$UHD_INSTALL_PATH/lib/$PYTHON_VERSION/site-packages/uhd/utils"
+      fi
+      
+      # Activate virtual environment and install dependencies
+      source $USRP_EMB_VENV/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/ettus-rts/.ci/utils/x420_iq_dc_correction_requirements.txt
+      
+      # Run the X420 IQ correction script
+      python3 $(Build.SourcesDirectory)/ettus-rts/.ci/utils/x420_iq_dc_correction.py \
+        --device-ip $(sfp0ip) \
+        --mgmt-ip $USRP_EMB_TARGET_IP \
+        --uhd-utils-dir "$UHD_UTILS_DIR" \
+        --cal-dir "$CAL_DIR" \
+        --test-results-dir "$(Common.TestResultsDirectory)" \
+        --force-run-iq-corrections ${{ parameters.forceIQCorrections }}
+      
+      echo "X420 IQ correction completed"
+    displayName: Run IQ correction on $(pytestDUT)
+    condition: and(succeeded(), ${{ parameters.runPyTest }}, eq(variables['pytestDUT'], 'x420'))
 
   - template: step-uhd-run-pytest-on-host.yml
     parameters:

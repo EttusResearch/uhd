@@ -1,0 +1,41 @@
+parameters:
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+- name: extra_rf_test_args
+  type: string
+  default: ''
+- name: testLength
+  type: string
+
+jobs:
+- template: templates/job-uhd-x4xx-hardware-tests.yml
+  parameters:
+    suiteName: 'ettus_dre_s156_x420'
+    toolset: 'make'
+    runPyTest: true
+    runPyTestNonRF: false
+    runDevTest: false
+    runSystemImageTest: false
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
+    testLength: '${{ parameters.testLength }}'
+    dutMatrix:
+      dre_s156-x420-0:
+        dutName: 'dre_s156-x420-0'
+        dutType: 'x4xx'
+        devtestPattern: 'x4x0'
+        dutFPGA: 'CG_1000'
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '2516353BE43C'
+        pipelineAgent: pebbles-agent-2-dre
+        pytestAtsConfig: ec21_ats
+        pytestDUT: 'x420'
+        sfp0ip: '192.168.31.242'

@@ -83,6 +83,10 @@ parameters:
   type: boolean
   displayName: Build x4xx image
   default: true
+- name: ext_fpga
+  type: boolean
+  displayName: Use pipeline FPGA build
+  default: true
   # This is the source of FPGA images only if they're not being built in this
   # pipeline. If they are being built, the source is the pipeline itself.
 - name: fpga_imgs_source

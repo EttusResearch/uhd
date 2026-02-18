@@ -51,6 +51,10 @@ parameters:
 - name: build_x4xx
   type: boolean
   default: true
+- name: ext_fpga
+  type: boolean
+  displayName: Use pipeline FPGA build
+  default: true
 - name: cmake_args
   type: string
   default: " "
@@ -142,6 +146,29 @@ parameters:
       artifact_name: X410_FFT_BLOCK_TEST
       timeout: 720
       attempt_timeout: 360
+      max_attempts: 2
+# Requested X420 targets
+- name: x420_targets_matrix
+  type: object
+  displayName: X420 Targets
+  default:
+    X420_CG_1000:
+      image_core: x420_CG_1000_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_CG_1000
+      artifact_name: X420_CG_1000
+      timeout: 720
+      max_attempts: 2
+    X420_X4_1000:
+      image_core: x420_X4_1000_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_X4_1000
+      artifact_name: X420_X4_1000
+      timeout: 720
+      max_attempts: 2
+    X420_X4_200:
+      image_core: x420_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_X4_200
+      artifact_name: X420_X4_200
+      timeout: 720
       max_attempts: 2
 # Requested X440 targets
 - name: x440_targets_matrix
@@ -417,6 +444,22 @@ stages:
                 path: host
               - package: mpmd
                 path: mpm
+        - ${{ if parameters.ext_fpga }}:
+            - template: .ci/templates/oe_localconf_externalsrc_pipeline.yml@meta-ettus
+              parameters:
+                conf_file: $AUTO_CONF
+                pipeline: uhd_mono_pipeline
+                patterns: |
+                  usrp_e310_*_fpga.*
+                  usrp_e320_fpga_*.*
+                  usrp_n3??_fpga_*.*
+                  usrp_x4??_fpga_*.*
+                packages:
+                - uhd-fpga-images
+                flatten: true
+            - script: |
+                ls -l $(Agent.BuildDirectory)/uhd_mono_pipeline
+              displayName: list fpga images
         # If requested, we set a variable "UHD_BASE_URL", which is consumed by
         # the uhd-fpga-images recipe to an internal file server which is closer
         # to the build machines. It is simply appended to auto.conf, where
@@ -636,6 +679,7 @@ stages:
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x420_targets_matrix: ${{ parameters.x420_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
     additional_setup_steps:
       - checkout: rfnoc-oot-blocks
@@ -786,6 +830,39 @@ stages:
         fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
   - template: tests/job-uhd-x440-hardware-tests-pebbles.yml
+    parameters:
+      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+        fpga_imgs_source: 'Pipeline'
+      ${{ else }}:
+        fpga_imgs_source: 'Filesystem'
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_uhd_x4xx_s156_stage
+  displayName: RF Test UHD x4xx s156
+  dependsOn:
+  - analyze_changeset
+  - build_uhd_stage_linux
+  - build_uhd_embedded_system_images
+  - build_gnuradio_stage_linux
+  - provide_x420_fpga_images_stage
+  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+  # condition.
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+  condition: >
+    and(
+      succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+    ))
+  jobs:
+  - template: tests/job-uhd-x420-hardware-tests-s156.yml
     parameters:
       ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
         fpga_imgs_source: 'Pipeline'

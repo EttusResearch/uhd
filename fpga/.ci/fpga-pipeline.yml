@@ -41,6 +41,10 @@ parameters:
   type: boolean
   displayName: Build X410
   default: false
+- name: build_x420
+  type: boolean
+  displayName: Build X420
+  default: false
 - name: build_x440
   type: boolean
   displayName: Build X440
@@ -113,6 +117,29 @@ parameters:
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
+# Requested X420 targets
+- name: x420_targets_matrix
+  type: object
+  displayName: X420 Targets
+  default:
+    X420_CG_1000:
+      image_core: x420_CG_1000_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_CG_1000
+      artifact_name: X420_CG_1000
+      timeout: 720
+      max_attempts: 2
+    X420_X4_1000:
+      image_core: x420_X4_1000_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_X4_1000
+      artifact_name: X420_X4_1000
+      timeout: 720
+      max_attempts: 2
+    X420_X4_200:
+      image_core: x420_X4_200_rfnoc_image_core.yml
+      image_core_name: usrp_x420_fpga_X4_200
+      artifact_name: X420_X4_200
+      timeout: 720
+      max_attempts: 2
 - name: x440_targets_matrix
   displayName: X440 Targets
   type: object
@@ -173,6 +200,7 @@ extends:
           iif(parameters.build_e31x,'fpga.usrp3.e31x',''),
           iif(parameters.build_e320,'fpga.usrp3.e320',''),
           iif(parameters.build_x410,'fpga.usrp3.x410',''),
+          iif(parameters.build_x420,'fpga.usrp3.x420',''),
           iif(parameters.build_x440,'fpga.usrp3.x440',''),
           iif(parameters.build_x4xx_cplds,'fpga.usrp3.cpld.x4xx',''),
           iif(parameters.build_regmaps,'fpga.usrp3.regmaps',''),
@@ -184,6 +212,7 @@ extends:
     clean_ip_build: ${{ parameters.clean_ip_build }}
     publish_int_files: true
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x420_targets_matrix: ${{ parameters.x420_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}

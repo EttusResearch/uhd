@@ -39,6 +39,9 @@ parameters:
 - name: x410_targets_matrix
   type: object
   default: {}
+- name: x420_targets_matrix
+  type: object
+  default: {}
 - name: x440_targets_matrix
   type: object
   default: {}
@@ -61,6 +64,7 @@ stages:
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
+    x420_targets_matrix: ${{ parameters.x420_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     additional_setup_steps: ${{ parameters.additional_setup_steps }}

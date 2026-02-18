@@ -43,6 +43,18 @@ parameters:
   type: boolean
   displayName: Run X440 RF tests
   default: false
+- name: run_x410_rf_tests_dre_ats
+  type: boolean
+  displayName: Run X410 RF tests on Dresden ATS
+  default: false
+- name: run_x440_rf_tests_dre_ats
+  type: boolean
+  displayName: Run X440 RF tests on Dresden ATS
+  default: false
+- name: run_x420_rf_tests_dre_ats
+  type: boolean
+  displayName: Run X420 RF tests on Dresden ATS
+  default: false
 - name: run_x440_phase_tests
   type: boolean
   displayName: Run X440 Phase tests
@@ -143,9 +155,6 @@ resources:
   - pipeline: uhd_mono_pipeline
     source: 'uhddev mono pipeline'
     branch: master
-  - pipeline: uhd_mono_pipeline_pr
-    source: 'uhddev mono pipeline PR'
-    branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: kirkstone
@@ -153,6 +162,9 @@ resources:
   # fully populated.
   - pipeline: uhd_fpga_pipeline
     source: 'uhddev fpga pipeline'
+    branch: master
+  - pipeline: uhd_fpga_pr_pipeline
+    source: 'uhddev fpga pipeline PR'
     branch: master
   repositories:
   - repository: meta-ettus
@@ -305,13 +317,51 @@ stages:
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
 
-
 - stage: test_x440_rf_tests
   displayName: Run X440 RF tests
   dependsOn: []
   condition: ${{ parameters.run_x440_rf_tests }}
   jobs:
   - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_x410_rf_tests_dre_ats
+  displayName: Run X410 RF tests on Dresden ATS
+  dependsOn: []
+  condition: ${{ parameters.run_x410_rf_tests_dre_ats }}
+  jobs:
+  - template: templates/tests/job-uhd-x410-hardware-tests-s156.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_x440_rf_tests_dre_ats
+  displayName: Run X440 RF tests on Dresden ATS
+  dependsOn: []
+  condition: ${{ parameters.run_x440_rf_tests_dre_ats }}
+  jobs:
+  - template: templates/tests/job-uhd-x440-hardware-tests-s156.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+      testLength: ${{ parameters.testLength }}
+
+- stage: test_x420_rf_tests_dre_ats
+  displayName: Run X420 RF tests on Dresden ATS
+  dependsOn: []
+  condition: ${{ parameters.run_x420_rf_tests_dre_ats }}
+  jobs:
+  - template: templates/tests/job-uhd-x420-hardware-tests-s156.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}

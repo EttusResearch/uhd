@@ -95,6 +95,10 @@ parameters:
   type: boolean
   displayName: Build x4xx filesystem image
   default: true
+- name: ext_fpga
+  type: boolean
+  displayName: Use pipeline FPGA build
+  default: true
 - name: cmake_args
   type: string
   displayName: Additional CMake arguments (optional)

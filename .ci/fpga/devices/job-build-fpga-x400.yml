@@ -41,6 +41,10 @@ parameters:
 - name: x410_targets_matrix
   type: object
   default: {}
+# X420 FPGA targets to build
+- name: x420_targets_matrix
+  type: object
+  default: {}
 # X440 FPGA targets to build
 - name: x440_targets_matrix
   type: object
@@ -54,8 +58,6 @@ parameters:
   displayName: RFNoC OOT module path
 
 stages:
-
-### START: X410 stages
 
 - stage: provide_x410_fpga_images_stage
   displayName: Provide X410 FPGA Images
@@ -82,6 +84,34 @@ stages:
       top_dir: uhddev/fpga/usrp3/top/x400
       target_full_matrix: ${{ parameters.x410_targets_matrix }}
       target_reduced_matrix: ${{ parameters.x410_targets_matrix }}
+      additional_setup_steps: ${{ parameters.additional_setup_steps }}
+      rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
+
+- stage: provide_x420_fpga_images_stage
+  displayName: Provide X420 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x420'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.x4xx'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: x420
+      device_name: X420
+      ip_target: X420_IP
+      package_name: x4xx_x420_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/x400
+      target_full_matrix: ${{ parameters.x420_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.x420_targets_matrix }}
       additional_setup_steps: ${{ parameters.additional_setup_steps }}
       rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
