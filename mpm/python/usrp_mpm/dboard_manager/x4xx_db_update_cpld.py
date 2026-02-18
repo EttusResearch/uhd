@@ -4,9 +4,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Update the CPLD image for a ZBX daughterboard
-"""
+"""Update the CPLD image for a ZBX or HBX daughterboard."""
 
 import argparse
 import os
@@ -20,7 +18,6 @@ from usrp_mpm.mpmlog import get_logger, get_main_logger
 from usrp_mpm.mpmutils import check_fpga_state
 from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_periphs import CtrlportRegs
-from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 
 OPENOCD_DIR = "/usr/share/openocd/scripts"
@@ -32,29 +29,30 @@ AXI_BITQ_BUS_CLK = 50000000
 DAUGHTERBOARD0_OFFSET = CtrlportRegs.MB_PL_CPLD + 0x60
 DAUGHTERBOARD1_OFFSET = CtrlportRegs.MB_PL_CPLD + 0x80
 
-# ZBX flash reconfiguration engine specific offsets
+# *BX flash reconfiguration engine specific offsets
 RECONFIG_ENGINE_OFFSET = 0x20
 CPLD_MIN_REVISION = 0x20052016
 
-ZBX_PID = 0x4002
+# PID to DB name mapping
+PID_TO_DB = {0x4002: "zbx", 0x4008: "hbx"}
 
 
 def check_openocd_files(files, logger=None):
-    """
-    Check if all file required by OpenOCD exist
+    """Check if all file required by OpenOCD exist.
+
     :param logger: logger object
     """
     for ocd_file in files:
         if not os.path.exists(os.path.join(OPENOCD_DIR, ocd_file)):
             if logger is not None:
-                logger.error("Missing file %s" % os.path.join(OPENOCD_DIR, ocd_file))
+                logger.error(f"Missing file {os.path.join(OPENOCD_DIR, ocd_file)}")
             return False
     return True
 
 
 def find_offset(dboard):
-    """
-    Find the AXI Bitq UIO device
+    """Find the AXI Bitq UIO device.
+
     :param dboard: the dboard, can be either 0 or 1
     """
     assert dboard in (0, 1)
@@ -62,9 +60,7 @@ def find_offset(dboard):
 
 
 def find_axi_bitq_uio():
-    """
-    Find the AXI Bitq UIO device
-    """
+    """Find the AXI Bitq UIO device."""
     label = "ctrlport-mboard-regs"
 
     logger = get_logger("update_cpld")
@@ -74,26 +70,23 @@ def find_axi_bitq_uio():
         for uio in context.list_devices(subsystem="uio"):
             uio_label = uio.attributes.asstring("maps/map0/name")
             logger.trace(
-                "UIO label: {}, match: {} number: {}".format(
-                    uio_label, uio_label == label, uio.sys_number
-                )
+                f"UIO label: {uio_label}, match: {uio_label == label} " f"number: {uio.sys_number}"
             )
             if uio_label == label:
                 return int(uio.sys_number)
         return None
     except OSError as ex:
-        logger.error("Error while looking for axi_bitq uio nodes: {}".format(ex))
+        logger.error(f"Error while looking for axi_bitq uio nodes: {ex}")
         return None
 
 
 def do_update_cpld(dboard_update_settings):
-    """
-    Carry out update process for the CPLD
-    :param dboard_update_settings: list of db and corresponding path (on device) to the new CPLD image
-    and updater mode to use
+    """Carry out update process for the CPLD.
+
+    :param dboard_update_settings: list of db and corresponding path (on device) to the new
+    CPLD image and updater mode to use
     :return: True on success, False otherwise
     """
-
     logger = get_logger("update_cpld")
 
     if not dboard_update_settings:
@@ -111,21 +104,20 @@ def do_update_cpld(dboard_update_settings):
         cpld_update_strategies = dboard_update_setting[3]
 
         logger.info(
-            "Programming CPLD of dboard {} with image {} using {} mode".format(
-                dboard, filename, updater_mode
-            )
+            f"Programming CPLD of dboard {dboard} with image {filename} "
+            f"using {updater_mode} mode"
         )
 
         if not os.path.exists(filename):
-            logger.error("CPLD image file {} not found".format(filename))
+            logger.error(f"CPLD image file {filename} not found")
             return False
 
         if updater_mode == "legacy":
             success = jtag_cpld_update(filename, dboard, cpld_update_strategies, logger)
         elif updater_mode == "flash":
-            success = flash_cpld_update(filename, dboard, cpld_update_strategies, logger)
+            success = flash_cpld_update(filename, dboard, logger)
         else:
-            raise NotImplementedError("Unknown updater mode {}".format(updater_mode))
+            raise NotImplementedError(f"Unknown updater mode {updater_mode}")
 
         if not success:
             return success
@@ -133,48 +125,37 @@ def do_update_cpld(dboard_update_settings):
     return True
 
 
-def get_db_pid(slot):
+def get_db_pid_rev(slot):
+    """Get the PID and revision of the daughterboard in the specified slot."""
     assert slot in [0, 1]
-    cmd = ["eeprom-dump", "db{}".format(slot)]
+    cmd = ["eeprom-dump", f"db{slot}"]
     output = subprocess.check_output(
         cmd,
         stderr=subprocess.STDOUT,
     ).decode("utf-8")
-    expression = re.compile(r"^usrp_eeprom_board_info \(0x..\) pid: 0x([0-9A-Fa-f]+)")
+    expression = re.compile(
+        "^usrp_eeprom_board_info.*pid: 0x([0-9A-Fa-f]+).*rev: 0x([0-9A-Fa-f]+).*compat_rev:.*"
+    )
     for line in output.splitlines():
         match = expression.match(line)
         if match:
             pid = int(match.group(1), 16)
-            return pid
-    raise AssertionError("Cannot get pid from DB{} eeprom.: `{}'".format(slot, output))
+            rev = int(match.group(2), 16)
+            return pid, rev
+    raise AssertionError(f"Cannot get pid and rev from DB{slot} eeprom.: `{output}'")
 
 
-def get_db_rev(slot):
-    assert slot in [0, 1]
-    cmd = ["eeprom-dump", "db{}".format(slot)]
-    output = subprocess.check_output(
-        cmd,
-        stderr=subprocess.STDOUT,
-    ).decode("utf-8")
-    expression = re.compile("^usrp_eeprom_board_info.*rev: 0x([0-9A-Fa-f]+).*compat_rev:.*")
-    for line in output.splitlines():
-        match = expression.match(line)
-        if match:
-            rev = int(match.group(1), 16)
-            return rev
-    raise AssertionError("Cannot get rev from DB{} eeprom.: `{}'".format(slot, output))
-
-
-def get_cpld_update_strategies(rev):
-    """Determine the CPLD update strategies based on the rev"""
+def get_cpld_update_strategies(pid, rev):
+    """Determine the CPLD update strategies based on the pid and rev."""
+    dboard = PID_TO_DB[pid]
 
     cpld_image_10m04_update_strategies = {
         "cpld_model": "10m04",
         "updaters": ["flash", "legacy"],
         "default_updater": "flash",
         "image_names": {
-            "flash": ["cpld-zbx-10m04.rpd", "usrp_zbx_cpld_10m04.rpd"],
-            "legacy": ["cpld-zbx-10m04.svf", "usrp_zbx_cpld_10m04.svf"],
+            "flash": [f"cpld-{dboard}-10m04.rpd", f"usrp_{dboard}_cpld_10m04.rpd"],
+            "legacy": [f"cpld-{dboard}-10m04.svf", f"usrp_{dboard}_cpld_10m04.svf"],
         },
         "updater_config": {
             "legacy": {
@@ -191,7 +172,7 @@ def get_cpld_update_strategies(rev):
         "cpld_model": "xo3lf",
         "updaters": ["legacy"],
         "default_updater": "legacy",
-        "image_names": {"legacy": ["cpld-zbx-xo3lf.svf", "usrp_zbx_cpld_xo3lf.svf"]},
+        "image_names": {"legacy": [f"cpld-{dboard}-xo3lf.svf", f"usrp_{dboard}_cpld_xo3lf.svf"]},
         "updater_config": {
             "legacy": {
                 "files": ["fpga/lattice-xo3lf.cfg"],
@@ -202,27 +183,36 @@ def get_cpld_update_strategies(rev):
             }
         },
     }
+
     cpld_update_strategies = {
-        1: cpld_image_10m04_update_strategies,  # revA
-        2: cpld_image_10m04_update_strategies,  # revB
-        3: cpld_image_10m04_update_strategies,  # revC
-        4: cpld_image_xo3lf_update_strategies,  # revD
-        5: cpld_image_xo3lf_update_strategies,  # revE
-        6: cpld_image_10m04_update_strategies,  # revF
-        "10m04": cpld_image_10m04_update_strategies,  # 10m04
-        "xo3lf": cpld_image_xo3lf_update_strategies,  # xo3lf
+        "zbx": {
+            1: cpld_image_10m04_update_strategies,  # revA
+            2: cpld_image_10m04_update_strategies,  # revB
+            3: cpld_image_10m04_update_strategies,  # revC
+            4: cpld_image_xo3lf_update_strategies,  # revD
+            5: cpld_image_xo3lf_update_strategies,  # revE
+            6: cpld_image_10m04_update_strategies,  # revF
+            "10m04": cpld_image_10m04_update_strategies,  # 10m04
+            "xo3lf": cpld_image_xo3lf_update_strategies,  # xo3lf
+        },
+        "hbx": {
+            1: cpld_image_xo3lf_update_strategies,  # revA
+            2: cpld_image_xo3lf_update_strategies,  # revB
+            "xo3lf": cpld_image_xo3lf_update_strategies,  # xo3lf
+        },
     }
 
-    if rev not in cpld_update_strategies:
+    if rev not in cpld_update_strategies[dboard]:
         raise NotImplementedError(
-            "The CPLD update strategy for rev or CPLD model {} is not available".format(rev)
+            f"The CPLD update strategy for pid {pid} and "
+            f"rev or CPLD model {rev} is not available"
         )
-    return cpld_update_strategies[rev]
+    return cpld_update_strategies[dboard][rev]
 
 
-def flash_cpld_update(filename, dboard, cpld_update_strategies=None, logger=None):
-    """
-    Carry out update process for the CPLD using flash mode
+def flash_cpld_update(filename, dboard, logger=None):
+    """Carry out update process for the CPLD using flash mode.
+
     :param filename: path (on device) to the new CPLD image
     :param dboard: dboard to update
     :return: True on success, False otherwise
@@ -247,8 +237,8 @@ def flash_cpld_update(filename, dboard, cpld_update_strategies=None, logger=None
 
 
 def jtag_cpld_update(filename, dboard, cpld_update_strategies, logger=None):
-    """
-    Carry out update process for the CPLD
+    """Carry out update process for the CPLD.
+
     :param filename: path (on device) to the new CPLD image
     :param dboard: dboard to update
     :param cpld_update_strategies: a data struct containing updaters, image names, metadata.
@@ -262,7 +252,7 @@ def jtag_cpld_update(filename, dboard, cpld_update_strategies, logger=None):
         # check_openocd_files logs errors
         return False
 
-    logger.info("Updating daughterboard slot {}...".format(dboard))
+    logger.info(f"Updating daughterboard slot {dboard}...")
 
     uio_id = find_axi_bitq_uio()
     offset = find_offset(int(dboard, 10))
@@ -280,22 +270,31 @@ def jtag_cpld_update(filename, dboard, cpld_update_strategies, logger=None):
         config["cmd"][1] % filename,
     ]
 
-    logger.trace("Update CPLD CMD: {}".format(" ".join(cmd)))
+    logger.trace(f"Update CPLD CMD: {' '.join(cmd)}")
     subprocess.call(cmd)
 
     logger.trace("Done programming CPLD...")
     return True
 
 
-def main():
-    """
-    Go, go, go!
-    """
+def check_mpm_status(logger=None):
+    logger.info("Checking MPM status...")
+    cmd = ["check-filesystem", "--mpm-init-successful"]
+    try:
+        subprocess.check_call(cmd)
+        logger.info("MPM is ready.")
+    except subprocess.CalledProcessError:
+        logger.error("MPM not started successfully, cannot proceed with CPLD update.")
+        sys.exit(1)
 
-    # Do some setup
+def main():
+    """Go, go, go!"""
+
     def parse_args():
-        """Parse the command-line arguments"""
-        parser = argparse.ArgumentParser(description="Update the CPLD image on ZBX daughterboard")
+        """Parse the command-line arguments."""
+        parser = argparse.ArgumentParser(
+            description="Update the CPLD image on ZBX or HBX daughterboard"
+        )
         parser.add_argument(
             "--file",
             help="Filename of CPLD image. Also specify the updater using"
@@ -316,8 +315,8 @@ def main():
         )
         parser.add_argument(
             "--force",
-            help="Force installing the CPLD image specified by the --file "
-            "argument if it does not match the name of the default CPLD image. "
+            help="Force installing the CPLD image specified by the "
+            "--file argument if it does not match the name of the default CPLD image. "
             "Using the wrong CPLD image may brick your device.",
             action="store_true",
             default=False,
@@ -325,11 +324,11 @@ def main():
         )
         parser.add_argument(
             "--cpld_type",
-            help="Specify the CPLD type. Currently supported types are '10m04' or 'xo3lf'."
-            " Use this argument to explicitly specify the CPLD hardware type and"
-            " skip internal revision compatibilty checks. Use this only if you"
-            " fully understand the hardware being used."
-            " e.g. zbx_update_cpld --cpld_type '10m04' ",
+            help="Specify the CPLD type. Currently supported types are '10m04' "
+            "or 'xo3lf'. Use this argument to explicitly specify the CPLD "
+            "hardware type and skip internal revision compatibilty checks. "
+            "Use this only if you fully understand the hardware being used."
+            " e.g. x4xx_db_update_cpld --cpld_type '10m04' ",
             default=None,
         )
 
@@ -346,31 +345,31 @@ def main():
 
         if args.file and not args.updater:
             parser.epilog = (
-                "\nERROR: When setting --file, please also specify the updater to use "
-                "using the --updater argument."
+                "\nERROR: When setting --file, please also specify "
+                "the updater to use using the --updater argument."
             )
             parser.print_help()
             parser.epilog = None
             sys.exit(1)
 
         for dboard in dboards:
-            dboard_pid = get_db_pid(int(dboard, 10))
-            if dboard_pid != ZBX_PID:
+            dboard_pid, dboard_rev = get_db_pid_rev(int(dboard, 10))
+            if dboard_pid not in PID_TO_DB:
                 parser.epilog = (
-                    "\nERROR: Daughterboard in slot {} is not a ZBX  daughterboard "
-                    "(expected PID 0x{:04x} but found 0x{:04x})".format(dboard, ZBX_PID, dboard_pid)
+                    f"\nERROR: Daughterboard in slot {dboard} is not supported. "
+                    f"(Supported PIDs: {', '.join(f'0x{pid:04x}' for pid in PID_TO_DB)}, "
+                    f"but found {hex(dboard_pid)})"
                 )
                 parser.print_help()
                 sys.exit(1)
-            dboard_rev = get_db_rev(int(dboard, 10))
-            cpld_update_strategies = get_cpld_update_strategies(dboard_rev)
+
+            cpld_update_strategies = get_cpld_update_strategies(dboard_pid, dboard_rev)
 
             if args.updater and args.updater not in cpld_update_strategies["updaters"]:
                 parser.epilog = (
-                    "\nERROR: Valid updaters for zbx rev {} are {}, "
-                    "but you selected {}.".format(
-                        dboard_rev, " and ".join(cpld_update_strategies["updaters"]), args.updater
-                    )
+                    f"\nERROR: Valid updaters for {PID_TO_DB[dboard_pid]} "
+                    f"rev {dboard_rev} are {' and '.join(cpld_update_strategies['updaters'])}, "
+                    f"but you selected {args.updater}."
                 )
                 parser.print_help()
                 parser.epilog = None
@@ -385,11 +384,10 @@ def main():
                 and not args.force
             ):
                 parser.epilog = (
-                    "\nERROR: Valid CPLD image names for zbx rev {} are {}, "
-                    "but you selected {}. Using the wrong CPLD image may brick your device. "
-                    "Please use the --force option if you are really sure.".format(
-                        dboard_rev, " and ".join(default_image_names), args.file
-                    )
+                    f"\nERROR: Valid CPLD image names for {PID_TO_DB[dboard_pid]} "
+                    f"rev {dboard_rev} are {' and '.join(default_image_names)}, "
+                    f"but you selected {args.file}. Using the wrong CPLD image may brick your "
+                    "device. Please use the --force option if you are really sure."
                 )
                 parser.print_help()
                 parser.epilog = None
@@ -405,11 +403,9 @@ def main():
                 and not args.force
             ):
                 parser.epilog = (
-                    "\nERROR: Invalid CPLD image name and updater mode combination for zbx rev {}"
-                    "Using the wrong CPLD image may brick your device. "
-                    "Please use the --force option if you are really sure.".format(
-                        dboard_rev,
-                    )
+                    f"\nERROR: Invalid CPLD image name and updater mode combination "
+                    f" for {PID_TO_DB[dboard_pid]} rev {dboard_rev}. Using the wrong CPLD image "
+                    "may brick your device. Please use the --force option if you are really sure."
                 )
                 parser.print_help()
                 parser.epilog = None
@@ -418,14 +414,14 @@ def main():
         return args
 
     def get_dboard_update_settings(args, dboards):
-        """Determine the dboard cpld image and updater mappings"""
+        """Determine the dboard cpld image and updater mappings."""
         dboard_update_settings = []
         for dboard in dboards:
-            dboard_rev = get_db_rev(int(dboard, 10))
+            dboard_pid, dboard_rev = get_db_pid_rev(int(dboard, 10))
             if args.cpld_type:
-                cpld_update_strategies = get_cpld_update_strategies(args.cpld_type)
+                cpld_update_strategies = get_cpld_update_strategies(dboard_pid, args.cpld_type)
             else:
-                cpld_update_strategies = get_cpld_update_strategies(dboard_rev)
+                cpld_update_strategies = get_cpld_update_strategies(dboard_pid, dboard_rev)
 
             if args.updater:
                 updater = args.updater
@@ -444,6 +440,8 @@ def main():
     args = parse_args()
 
     log = get_main_logger(log_default_delta=args.verbose - args.quiet)
+
+    check_mpm_status(log)
 
     dboards = args.dboards.split(",")
     return do_update_cpld(get_dboard_update_settings(args, dboards))

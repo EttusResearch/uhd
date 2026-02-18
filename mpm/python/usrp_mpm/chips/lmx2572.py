@@ -10,10 +10,17 @@ LMX2572 parent driver class
 import math
 from builtins import object
 
-from usrp_mpm.chips.ic_reg_maps import lmx2572_regs_t
-from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.chips.ic_reg_maps.lmx2572_regs import lmx2572_regs_t
 
+# Highest LO / output frequency
+MAX_OUT_FREQ = 6.4e9  # Hz
+# Lowest LO / output frequency
+MIN_OUT_FREQ = 12.5e6  # Hz
 NUMBER_OF_LMX2572_REGISTERS = 126
+# Target loop bandwidth
+TARGET_LOOP_BANDWIDTH = 75e3  # Hz
+# Loop Filter gain setting resistor
+LOOP_GAIN_SETTING_RESISTANCE = 150  # ohm
 
 
 class LMX2572(object):
@@ -23,18 +30,15 @@ class LMX2572(object):
 
     READ_ONLY_REGISTERS = [107, 108, 109, 110, 111, 112, 113]
 
-    def __init__(self, regs_iface, parent_log=None):
+    def __init__(self, poke_fnct, peek_fnct, parent_log=None):
         self.log = parent_log
 
-        self.regs_iface = regs_iface
-        assert hasattr(self.regs_iface, "peek16")
-        assert hasattr(self.regs_iface, "poke16")
-        self._poke16 = regs_iface.poke16
-        self._peek16 = regs_iface.peek16
+        self._poke16 = poke_fnct
+        self._peek16 = peek_fnct
 
         self._lmx2572_regs = lmx2572_regs_t()
 
-        self._need_recalculation = True
+        self._need_recalculation = False
         self._enabled = False
 
     @property
@@ -56,6 +60,7 @@ class LMX2572(object):
         self._lmx2572_regs.reset = lmx2572_regs_t.reset_t.RESET_NORMAL_OPERATION
         self._set_default_values()
         self._power_up_sequence()
+        self._lmx2572_regs.save_state()
 
     def commit(self):
         """
@@ -109,6 +114,206 @@ class LMX2572(object):
         self._set_output_a_enable(enable_output)
         self._set_output_b_enable(enable_output)
 
+    def set_output_power(self, output, power):
+        """
+        Sets the output power for the specified output
+        """
+        if output == "RF_OUTPUT_A":
+            self._set_output_a_power(power)
+        elif output == "RF_OUTPUT_B":
+            self._set_output_b_power(power)
+        else:
+            raise ValueError("Invalid output specified")
+
+    def set_frequency(self, target_freq, fOSC, spur_dodging):
+        """
+        Sets the frequency of the LMX2572.
+        """
+        # Sanity check
+        if target_freq > MAX_OUT_FREQ or target_freq < MIN_OUT_FREQ:
+            raise ValueError("Invalid LMX2572 target frequency!")
+
+        if fOSC not in {61.44e6, 64e6, 62.5e6, 50e6, 46.08e6}:
+            raise ValueError("Invalid fOSC value!")
+
+        # Create an integer version of fOSC for some of the following calculations
+        fOSC_int = int(fOSC)
+
+        # 1. Set up output/channel divider value and the output mux
+        out_D = self._set_output_divider(target_freq)
+        fVCO = target_freq * out_D
+        assert 3200e6 <= fVCO <= 6400e6
+
+        # 2. Configure the reference dividers/multipliers
+        self._set_pll_div_and_mult(target_freq, fVCO, fOSC_int)
+
+        # Calculate phase detector frequency
+        fPD = (
+            fOSC
+            * (self._lmx2572_regs.osc_2x.value + 1)
+            * self._lmx2572_regs.mult
+            / (self._lmx2572_regs.pll_r_pre * self._lmx2572_regs.pll_r)
+        )
+
+        # pre-3. Identify SYNC category.
+        p = self._set_phase_sync(
+            self._get_sync_cat(self._lmx2572_regs.mult, fOSC, target_freq, out_D)
+        )
+
+        # 3. Calculate N, PLL_NUM and PLL_DEN
+        delta_fVCO = 2e6 if spur_dodging else 1.0
+        PLL_DEN = max(1, min(math.ceil(fPD * p / delta_fVCO), 0xFFFFFFFF))
+        assert PLL_DEN > 0
+
+        N_real = fVCO / (fPD * p)
+        N = int(math.floor(N_real))
+        PLL_NUM = round((N_real - N) * PLL_DEN)
+
+        fVCO_actual = fPD * p * (N + (PLL_NUM / PLL_DEN))
+        assert 3200e6 <= fVCO_actual <= 6400e6
+        actual_freq = fVCO_actual / out_D
+
+        # 4. Set frequency dependent registers
+        self._compute_and_set_mult_hi(fOSC)
+        self._set_pll_n(N)
+        self._set_pll_num(PLL_NUM)
+        self._set_pll_den(PLL_DEN)
+        self._set_fcal_hpfd_adj(fPD)
+        self._set_fcal_lpfd_adj(fPD)
+        self._set_pfd_dly(fVCO_actual)
+        self._set_mash_seed(spur_dodging, PLL_NUM, fPD)
+
+        if self.get_synchronization():
+            period = (1 if self._lmx2572_regs.cal_clk_div == 0 else 2) / fOSC
+            mash_rst_count = math.ceil(4 * 200e-6 / period)
+            self._set_mash_rst_count(mash_rst_count)
+
+        # 5. Calculate charge pump gain
+        self._compute_and_set_charge_pump_gain(fVCO_actual, N_real)
+
+        # 6. Calculate VCO calibration values
+        self._compute_and_set_vco_cal(fVCO_actual)
+
+        # 7. Set amplitude on enabled outputs
+        if self._get_output_enabled("RF_OUTPUT_A"):
+            self._find_and_set_lo_power(actual_freq, "RF_OUTPUT_A")
+        if self._get_output_enabled("RF_OUTPUT_B"):
+            self._find_and_set_lo_power(actual_freq, "RF_OUTPUT_B")
+
+        return actual_freq
+
+    def _set_output_divider(self, freq):
+        """
+        Sets the output divider registers.
+        """
+        out_div_map = {
+            25e6: (256, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_256),
+            50e6: (128, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_128),
+            100e6: (64, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_64),
+            200e6: (32, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_32),
+            400e6: (16, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_16),
+            800e6: (8, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_8),
+            1.6e9: (4, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_4),
+            3.2e9: (2, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_2),
+            6.4e9 + 1: (1, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_2),
+        }
+
+        out_D, chdiv = next(
+            (v for k, v in out_div_map.items() if freq <= k),
+            (1, lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_2),
+        )
+        self._lmx2572_regs.chdiv = chdiv
+
+        input_mux = (
+            lmx2572_regs_t.outa_mux_t.OUTA_MUX_CHANNEL_DIVIDER
+            if out_D > 1
+            else lmx2572_regs_t.outa_mux_t.OUTA_MUX_VCO
+        )
+        if self._get_output_enabled("RF_OUTPUT_A"):
+            self._lmx2572_regs.outa_mux = input_mux
+        if self._get_output_enabled("RF_OUTPUT_B"):
+            self._lmx2572_regs.outb_mux = input_mux
+
+        return out_D
+
+    def _set_pll_div_and_mult(self, target_freq, fVCO, fOSC_int):
+        """
+        Sets the PLL divider and multiplier values.
+        """
+        self._lmx2572_regs.pll_r_pre = 1
+        self._lmx2572_regs.mult = 1
+        self._lmx2572_regs.osc_2x = lmx2572_regs_t.osc_2x_t.OSC_2X_DISABLED
+
+        pll_r = 1
+        if self.get_synchronization() and target_freq < 3200e6:
+            if fOSC_int == 61440000:
+                pll_r = 2 if 3200e6 <= fVCO < 3950e6 else 1
+            elif fOSC_int == 64000000:
+                pll_r = 2 if 3200e6 <= fVCO < 4100e6 else 1
+            elif fOSC_int == 62500000:
+                pll_r = 2 if 3200e6 <= fVCO < 4000e6 else 1
+            elif fOSC_int == 50000000:
+                pll_r = 1
+
+        self._lmx2572_regs.pll_r = pll_r
+
+    def _set_phase_sync(self, cat):
+        """
+        Sets the phase synchronization mode.
+        """
+        P = 1
+        self._lmx2572_regs.vco_phase_sync_en = (
+            lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_NORMAL_OPERATION
+        )
+
+        if cat == "CAT1A":
+            pass
+        elif cat == "CAT1B":
+            self._lmx2572_regs.vco_phase_sync_en = (
+                lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE
+            )
+            P = 2
+        elif cat == "CAT2":
+            pass
+        elif cat == "CAT3":
+            if (
+                self._lmx2572_regs.outa_mux == lmx2572_regs_t.outa_mux_t.OUTA_MUX_CHANNEL_DIVIDER
+                or self._lmx2572_regs.outb_mux == lmx2572_regs_t.outb_mux_t.OUTB_MUX_CHANNEL_DIVIDER
+            ):
+                P = 2
+            self._lmx2572_regs.vco_phase_sync_en = (
+                lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE
+            )
+        elif cat == "CAT4":
+            raise ValueError("PLL programming does not allow reliable phase synchronization!")
+        elif cat == "NONE":
+            pass
+        else:
+            raise ValueError("Invalid sync category")
+
+        return P
+
+    def _get_sync_cat(self, M, fOSC, fOUT, CHDIV):
+        """
+        Identify sync category according to Section 8.1.6 of the datasheet.
+        """
+        if not self.get_synchronization():
+            return "NONE"
+
+        if M > 1:
+            if CHDIV > 2:
+                return "CAT4"
+            if fOUT % (fOSC * M) != 0:
+                return "CAT4"
+
+        if M == 1 and fOUT % fOSC != 0:
+            return "CAT3"
+        if M == 1 and CHDIV > 2:
+            return "CAT2"
+        if CHDIV == 2:
+            return "CAT1B"
+        return "CAT1A"
+
     def _set_chip_enable(self, chip_enable):
         """
         Enables or disables the LMX2572 using the powerdown register
@@ -152,7 +357,119 @@ class LMX2572(object):
         The register map has all base class defaults.
         Subclasses can override this function to have the values populated on reset.
         """
-        pass
+        self._lmx2572_regs.ramp_en = lmx2572_regs_t.ramp_en_t.RAMP_EN_NORMAL_OPERATION
+        self._lmx2572_regs.vco_phase_sync_en = (
+            lmx2572_regs_t.vco_phase_sync_en_t.VCO_PHASE_SYNC_EN_NORMAL_OPERATION
+        )
+        self._lmx2572_regs.add_hold = 0
+        self._lmx2572_regs.out_mute = lmx2572_regs_t.out_mute_t.OUT_MUTE_MUTED
+        self._lmx2572_regs.fcal_hpfd_adj = 1
+        self._lmx2572_regs.fcal_lpfd_adj = 0
+        self._lmx2572_regs.fcal_en = lmx2572_regs_t.fcal_en_t.FCAL_EN_ENABLE
+        self._lmx2572_regs.muxout_ld_sel = lmx2572_regs_t.muxout_ld_sel_t.MUXOUT_LD_SEL_LOCK_DETECT
+        self._lmx2572_regs.reset = lmx2572_regs_t.reset_t.RESET_NORMAL_OPERATION
+        self._lmx2572_regs.powerdown = lmx2572_regs_t.powerdown_t.POWERDOWN_NORMAL_OPERATION
+
+        self._lmx2572_regs.cal_clk_div = 0
+
+        self._lmx2572_regs.ipbuf_type = lmx2572_regs_t.ipbuf_type_t.IPBUF_TYPE_DIFFERENTIAL
+        self._lmx2572_regs.ipbuf_term = lmx2572_regs_t.ipbuf_term_t.IPBUF_TERM_INTERNALLY_TERMINATED
+
+        self._lmx2572_regs.out_force = lmx2572_regs_t.out_force_t.OUT_FORCE_USE_OUT_MUTE
+
+        self._lmx2572_regs.vco_daciset_force = (
+            lmx2572_regs_t.vco_daciset_force_t.VCO_DACISET_FORCE_NORMAL_OPERATION
+        )
+        self._lmx2572_regs.vco_capctrl_force = (
+            lmx2572_regs_t.vco_capctrl_force_t.VCO_CAPCTRL_FORCE_NORMAL_OPERATION
+        )
+        self._lmx2572_regs.vco_sel_force = lmx2572_regs_t.vco_sel_force_t.VCO_SEL_FORCE_DISABLED
+        self._lmx2572_regs.vco_daciset_strt = 0x096
+        self._lmx2572_regs.vco_sel = 0x6
+        self._lmx2572_regs.vco_capctrl_strt = 0
+
+        self._lmx2572_regs.mult_hi = lmx2572_regs_t.mult_hi_t.MULT_HI_LESS_THAN_EQUAL_TO_100M
+        self._lmx2572_regs.osc_2x = lmx2572_regs_t.osc_2x_t.OSC_2X_DISABLED
+
+        self._lmx2572_regs.mult = 1
+
+        self._lmx2572_regs.pll_r = 1
+
+        self._lmx2572_regs.pll_r_pre = 1
+
+        self._lmx2572_regs.cpg = 7
+
+        self._lmx2572_regs.pll_n_upper_3_bits = 0
+        self._lmx2572_regs.pll_n_lower_16_bits = 0x28
+
+        self._lmx2572_regs.mash_seed_en = lmx2572_regs_t.mash_seed_en_t.MASH_SEED_EN_ENABLED
+        self._lmx2572_regs.pfd_dly_sel = 0x2
+
+        self._lmx2572_regs.pll_den_upper = 0
+        self._lmx2572_regs.pll_den_lower = 0
+
+        self._lmx2572_regs.mash_seed_upper = 0
+        self._lmx2572_regs.mash_seed_lower = 0
+
+        self._lmx2572_regs.pll_num_upper = 0
+        self._lmx2572_regs.pll_num_lower = 0
+
+        self._lmx2572_regs.outa_pwr = 0
+        self._lmx2572_regs.outb_pd = lmx2572_regs_t.outb_pd_t.OUTB_PD_POWER_DOWN
+        self._lmx2572_regs.outa_pd = lmx2572_regs_t.outa_pd_t.OUTA_PD_POWER_DOWN
+        self._lmx2572_regs.mash_reset_n = (
+            lmx2572_regs_t.mash_reset_n_t.MASH_RESET_N_NORMAL_OPERATION
+        )
+        self._lmx2572_regs.mash_order = lmx2572_regs_t.mash_order_t.MASH_ORDER_THIRD_ORDER
+
+        self._lmx2572_regs.outa_mux = lmx2572_regs_t.outa_mux_t.OUTA_MUX_VCO
+        self._lmx2572_regs.outb_pwr = 0
+
+        self._lmx2572_regs.outb_mux = lmx2572_regs_t.outb_mux_t.OUTB_MUX_VCO
+
+        self._lmx2572_regs.inpin_ignore = 0
+        self._lmx2572_regs.inpin_hyst = lmx2572_regs_t.inpin_hyst_t.INPIN_HYST_DISABLED
+        self._lmx2572_regs.inpin_lvl = lmx2572_regs_t.inpin_lvl_t.INPIN_LVL_INVALID
+        self._lmx2572_regs.inpin_fmt = (
+            lmx2572_regs_t.inpin_fmt_t.INPIN_FMT_SYNC_EQUALS_SYSREFREQ_EQUALS_CMOS2
+        )
+
+        self._lmx2572_regs.ld_type = lmx2572_regs_t.ld_type_t.LD_TYPE_VTUNE_AND_VCOCAL
+
+        self._lmx2572_regs.ld_dly = 100
+        self._lmx2572_regs.ldo_dly = 3
+
+        self._lmx2572_regs.dblbuf_en_0 = lmx2572_regs_t.dblbuf_en_0_t.DBLBUF_EN_0_ENABLED
+        self._lmx2572_regs.dblbuf_en_1 = lmx2572_regs_t.dblbuf_en_1_t.DBLBUF_EN_1_ENABLED
+        self._lmx2572_regs.dblbuf_en_2 = lmx2572_regs_t.dblbuf_en_2_t.DBLBUF_EN_2_ENABLED
+        self._lmx2572_regs.dblbuf_en_3 = lmx2572_regs_t.dblbuf_en_3_t.DBLBUF_EN_3_ENABLED
+        self._lmx2572_regs.dblbuf_en_4 = lmx2572_regs_t.dblbuf_en_4_t.DBLBUF_EN_4_ENABLED
+        self._lmx2572_regs.dblbuf_en_5 = lmx2572_regs_t.dblbuf_en_5_t.DBLBUF_EN_5_ENABLED
+
+        self._lmx2572_regs.mash_rst_count_upper = 0
+        self._lmx2572_regs.mash_rst_count_lower = 0
+
+        self._lmx2572_regs.chdiv = lmx2572_regs_t.chdiv_t.CHDIV_DIVIDE_BY_2
+
+        self._lmx2572_regs.ramp_thresh_33rd = 0
+        self._lmx2572_regs.quick_recal_en = 0
+
+        self._lmx2572_regs.ramp_thresh_upper = 0
+        self._lmx2572_regs.ramp_thresh_lower = 0
+
+        self._lmx2572_regs.ramp_limit_high_33rd = 0
+        self._lmx2572_regs.ramp_limit_high_upper = 0
+        self._lmx2572_regs.ramp_limit_high_lower = 0
+
+        self._lmx2572_regs.ramp_limit_low_33rd = 0
+        self._lmx2572_regs.ramp_limit_low_upper = 0
+        self._lmx2572_regs.ramp_limit_low_lower = 0
+
+        self._lmx2572_regs.reg29_reserved0 = 0
+        self._lmx2572_regs.reg30_reserved0 = 0x18A6
+        self._lmx2572_regs.reg52_reserved0 = 0x421
+        self._lmx2572_regs.reg57_reserved0 = 0x20
+        self._lmx2572_regs.reg78_reserved0 = 1
 
     def _pokes16(self, addr_vals):
         """
@@ -240,10 +557,24 @@ class LMX2572(object):
         self._lmx2572_regs.pll_den_upper = (den >> 16) & self._lmx2572_regs.pll_den_upper_mask
         self._lmx2572_regs.pll_den_lower = den & self._lmx2572_regs.pll_den_lower_mask
 
-    def _set_mash_seed(self, mash_seed):
+    def _set_mash_seed(self, spur_dodging, PLL_NUM, fPD):
         """
-        Sets the mash seed register
+        Sets the mash seed value based on fPD and whether spur dodging is enabled
         """
+        mash_seed = 0
+        if not spur_dodging and PLL_NUM != 0:
+            seed_map = {
+                25e6: 4999,
+                30.72e6: 5531,
+                31.25e6: 5591,
+                32e6: 5657,
+                50e6: 7096,
+                61.44e6: 7841,
+                62.5e6: 7907,
+                64e6: 7993,
+            }
+            mash_seed = seed_map[min(seed_map, key=lambda x: abs(x - fPD))]
+
         self._lmx2572_regs.mash_seed_upper = (
             mash_seed >> 16
         ) & self._lmx2572_regs.mash_seed_upper_mask
@@ -267,6 +598,115 @@ class LMX2572(object):
             mash_rst_count & self._lmx2572_regs.mash_rst_count_lower_mask
         )
 
+    def _compute_and_set_charge_pump_gain(self, fVCO_actual, N_real):
+        """
+        Compute and set charge pump gain register
+        """
+        # Table 135 (VCO Gain)
+        vco_gain_map = {
+            3.65e9: (3.2e9, 3.65e9, 1, 32, 47),
+            4.2e9: (3.65e9, 4.2e9, 2, 35, 54),
+            4.65e9: (4.2e9, 4.65e9, 3, 47, 64),
+            5.2e9: (4.65e9, 5.2e9, 4, 50, 73),
+            5.75e9: (5.2e9, 5.75e9, 5, 61, 82),
+            6.4e9: (5.75e9, 6.4e9, 6, 57, 79),
+        }
+
+        fmin, fmax, _, KvcoMin, KvcoMax = vco_gain_map[
+            min(k for k in vco_gain_map if k >= fVCO_actual)
+        ]
+        Kvco = ((KvcoMax - KvcoMin) / (fmax - fmin)) * (fVCO_actual - fmin) + KvcoMin
+
+        # Calculate the optimal charge pump current (uA)
+        icp = 2 * math.pi * TARGET_LOOP_BANDWIDTH * N_real / (Kvco * LOOP_GAIN_SETTING_RESISTANCE)
+
+        # Table 2 (Charge Pump Gain)
+        cpg_map = {
+            0: 0,
+            625: 1,
+            1250: 2,
+            1875: 3,
+            2500: 4,
+            3125: 5,
+            3750: 6,
+            4375: 7,
+            5000: 12,
+            5625: 13,
+            6250: 14,
+            6875: 15,
+        }
+
+        cpg = cpg_map.get(min(cpg_map, key=lambda x: abs(x - icp)))
+        self._lmx2572_regs.cpg = cpg
+
+    def _compute_and_set_vco_cal(self, fVCO_actual):
+        """
+        Compute and set VCO calibration values
+        """
+        # Table 136
+        vco_partial_assist_map = {
+            3.65e9: (3.2e9, 3.65e9, 1, 131, 19, 138, 137),
+            4.2e9: (3.65e9, 4.2e9, 2, 143, 25, 162, 142),
+            4.65e9: (4.2e9, 4.65e9, 3, 135, 34, 126, 114),
+            5.2e9: (4.65e9, 5.2e9, 4, 136, 25, 195, 172),
+            5.75e9: (5.2e9, 5.75e9, 5, 133, 20, 190, 163),
+            6.4e9: (5.75e9, 6.4e9, 6, 151, 27, 256, 204),
+        }
+
+        fmin, fmax, VCO_CORE, Cmin, Cmax, Amin, Amax = vco_partial_assist_map[
+            min(k for k in vco_partial_assist_map if k >= fVCO_actual)
+        ]
+
+        VCO_CAPCTRL_STRT = round(Cmin - (fVCO_actual - fmin) * (Cmin - Cmax) / (fmax - fmin))
+        VCO_CAPCTRL_STRT = min(VCO_CAPCTRL_STRT, 183)  # VCO_CAPCTRL_STRT_MAX
+
+        VCO_DACISET_STRT = round(Amin - (fVCO_actual - fmin) * (Amin - Amax) / (fmax - fmin))
+        VCO_DACISET_STRT = min(VCO_DACISET_STRT, 511)  # VCO_DACISET_STRT_MAX
+
+        self._lmx2572_regs.vco_sel = VCO_CORE
+        self._lmx2572_regs.vco_capctrl_strt = VCO_CAPCTRL_STRT
+        self._lmx2572_regs.vco_daciset_strt = VCO_DACISET_STRT
+
+    def _get_output_enabled(self, output):
+        """
+        Returns the output enabled status of the specified output
+        """
+        if output == "RF_OUTPUT_A":
+            return self._lmx2572_regs.outa_pd == lmx2572_regs_t.outa_pd_t.OUTA_PD_NORMAL_OPERATION
+        elif output == "RF_OUTPUT_B":
+            return self._lmx2572_regs.outb_pd == lmx2572_regs_t.outb_pd_t.OUTB_PD_NORMAL_OPERATION
+        else:
+            raise ValueError("Invalid output specified")
+
+    def _find_and_set_lo_power(self, freq, output):
+        if freq < 3e9:
+            self.set_output_power(output, 25)
+        elif 3e9 <= freq < 4e9:
+            slope = 5.0
+            segment_range = 1e9
+            power_base = 25
+            offset = freq - 3e9
+            power = round(power_base + ((offset / segment_range) * slope))
+            self.set_output_power(output, power)
+        elif 4e9 <= freq < 5e9:
+            slope = 10.0
+            segment_range = 1e9
+            power_base = 30
+            offset = freq - 4e9
+            power = round(power_base + ((offset / segment_range) * slope))
+            self.set_output_power(output, power)
+        elif 5e9 <= freq < 6.4e9:
+            slope = 5 / 1.4
+            segment_range = 1.4e9
+            power_base = 40
+            offset = freq - 5e9
+            power = round(power_base + ((offset / segment_range) * slope))
+            self.set_output_power(output, power)
+        elif freq >= 6.4e9:
+            self.set_output_power(output, 45)
+        else:
+            raise ValueError("Invalid frequency value")
+
     def _compute_and_set_mult_hi(self, reference_frequency):
         multiplier_output_frequency = (
             reference_frequency
@@ -279,6 +719,23 @@ class LMX2572(object):
             else lmx2572_regs_t.mult_hi_t.MULT_HI_LESS_THAN_EQUAL_TO_100M
         )
         self._lmx2572_regs.mult_hi = new_mult_hi
+
+    def _set_pfd_dly(self, fVCO_actual):
+        """
+        Sets the PFD Delay value based on fVCO
+        """
+        assert (
+            self._lmx2572_regs.mash_order == self._lmx2572_regs.mash_order_t.MASH_ORDER_THIRD_ORDER
+        )
+        # These constants / values come from the data sheet (Table 3)
+        if 3.2e9 <= fVCO_actual < 4e9:
+            self._lmx2572_regs.pfd_dly_sel = 2
+        elif 4e9 <= fVCO_actual < 4.9e9:
+            self._lmx2572_regs.pfd_dly_sel = 2
+        elif 4.9e9 <= fVCO_actual <= 6.4e9:
+            self._lmx2572_regs.pfd_dly_sel = 3
+        else:
+            raise ValueError("Invalid fVCO_actual value")
 
     def _power_up_sequence(self):
         """

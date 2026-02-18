@@ -98,7 +98,7 @@ void rfdc_ctrl::init(uint16_t rfdc_device_id)
     for (int tile_id = 0; tile_id <= XRFDC_TILE_ID_MAX; tile_id++) {
         for (int block_id = 0; block_id <= XRFDC_BLOCK_ID_MAX; block_id++) {
             for (int threshold_id = 0; threshold_id < THRESHOLDS_PER_BLOCK;
-                 threshold_id++) {
+                threshold_id++) {
                 threshold_clr_modes[tile_id][block_id][threshold_id] =
                     THRESHOLD_CLRMD_UNKNOWN;
             }

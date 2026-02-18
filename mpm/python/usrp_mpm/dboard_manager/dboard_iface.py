@@ -82,6 +82,12 @@ class DboardIface(object):
         """
         raise NotImplementedError("DboardIface::enable_iq_swap() not supported!")
 
+    def set_data_path(self, mode, direction):
+        """
+        Set the data path to be taken depending on the mode (IQ=0 or Real=1).
+        """
+        raise NotImplementedError("DboardIface::set_data_path() not supported!")
+
     def get_sample_rate(self):
         """
         Gets the sample rate of the RFDCs.

@@ -62,7 +62,11 @@ class X4xxDboardIface(DboardIface):
         """
         if self.db_flash and not enable:
             self.db_flash.deinit()
-        self._power_enable.set(enable)
+        # Writing the GPIO when already being enabled will lead to a falling edge
+        # followed by a rising edge, which is not what we want.
+        # So we only write the GPIO if we are changing the state.
+        if self._power_status.get() != enable:
+            self._power_enable.set(enable)
         self.mboard.cpld_control.enable_daughterboard(self.slot_idx, enable)
         if self.db_flash and enable:
             self.db_flash.init()
@@ -106,3 +110,9 @@ class X4xxDboardIface(DboardIface):
         Note: The PRC rate will change if the sample clock frequency is modified.
         """
         return self.mboard.clk_mgr.get_prc_rate()
+
+    def set_data_path(self, mode, direction):
+        """
+        Set the data path to be used by the channels of a daughterboard.
+        """
+        return self.mboard.rfdc.set_data_path(self.slot_idx, mode, direction == "tx")

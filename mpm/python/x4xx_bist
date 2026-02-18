@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from usrp_mpm import bist
 from usrp_mpm.periph_manager.x4xx_periphs import FrontpanelGPIO
 
+
 # Timeout values are in seconds:
 GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
 GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes. Because our test
@@ -113,7 +114,7 @@ class X4XXBIST(bist.UsrpBIST):
     def __init__(self):
         bist.UsrpBIST.__init__(self)
         self.product_id = bist.get_product_id_from_eeprom(
-            valid_ids=['x410', 'x440'],
+            valid_ids=['x410', 'x420', 'x440'],
             cmd='eeprom-id mb')
 
     def get_mb_periph_mgr(self):
@@ -178,6 +179,7 @@ class X4XXBIST(bist.UsrpBIST):
             100: [122.88e6, 125e6],
             200: [122.88e6*2, 125e6*2],
             400: [122.88e6*4, 125e6*4],
+            1000: [1250e6],
             1600: [122.88e6*4, 125e6*4, 2000e6],
         }[bandwidth]
 
@@ -431,10 +433,10 @@ class X4XXBIST(bist.UsrpBIST):
         """
         BIST for testing the fabric_clk signal from the motherboard
 
-        Description: Checks to see if the LMK will detect the experimental fabric_clk 
+        Description: Checks to see if the LMK will detect the experimental fabric_clk
 
         External Equipment: None
-        
+
         Return dictionary:
         - fabric_clk successfully enabled and validated: signal has been validated
         - fabric_clk successfully disabled: signal has been disabled
@@ -454,7 +456,7 @@ class X4XXBIST(bist.UsrpBIST):
             }
 
         mpm_c = usrp_dev.get_mpm_client()
-        
+
         # Make sure fabric_clk is turned off
         mpm_c.enable_ecpri_clocks(False)
         # Check validation bit - reg 0x19B second bit as per datasheet
@@ -472,7 +474,7 @@ class X4XXBIST(bist.UsrpBIST):
         mpm_c.enable_ecpri_clocks(False)
         # Check validation bit - reg 0x19B second bit as per datasheet
         pri_ref_disabled = not (int(mpm_c.peek_clkaux(0x19B),16) & 0x4)
-         
+
         result = pri_ref_disabled and using_pri_ref and pri_ref_enabled and pri_ref_disabled_condition
 
         return result, {"fabric_clock_successfully_enabled": pri_ref_enabled,
@@ -527,7 +529,7 @@ class X4XXBIST(bist.UsrpBIST):
         # for locking to the gty_rcv_clk cause the mboard to lose ref_lock
         # to the nsync lmk. For x440 setting clock source must be done
         # at device initialization.
-        if self.product_id == 'x440':
+        if self.product_id in {'x420', 'x440'}:
             usrp_dev = None
             usrp_dev = multi_usrp.MultiUSRP("type=x4xx,addr=localhost,clock_source=internal,"
                                             "master_clock_rate={}".format(str(mcr)))
@@ -1130,10 +1132,10 @@ class X4XXBIST(bist.UsrpBIST):
     def bist_lmx_lo(self):
         """
         BIST for testing the LMX2572 LO on X410 and X420.
-        
-        Description: Checks if all LOs are accessible by creating 
+
+        Description: Checks if all LOs are accessible by creating
         a SPI connection to them and poking/peeking the scratch register.
-        
+
         External Equipment: None
         Return dictionary:
         - <LO name>: {
@@ -1143,9 +1145,12 @@ class X4XXBIST(bist.UsrpBIST):
         """
         assert 'lmx_lo' in self.tests_to_run
 
+        if self.args.dry_run:
+            return True, {}
+
         from uhd.utils import mpmtools
         from time import sleep
-        
+
         # default MPM port
         MPM_PORT = 49601
 
@@ -1203,23 +1208,35 @@ class X4XXBIST(bist.UsrpBIST):
             status = int(mpm_c.peek_db(db, spi_conf.peek_addr), 0)
             return status & ((1 << spi_conf.data_width) - 1)
 
-        if self.product_id == 'x410':
+        if self.product_id == 'x420':
+            los_to_test = {'TX_LO': 0x1000, 'RX_LO': 0x1010}
+            def get_spi_info(db, lo):
+                spi_info = int(mpm_c.peek_db(db, lo[1]), 0)
+                data_width = spi_info & 0xFF
+                addr_width = (spi_info >> 8) & 0xFF
+                return SpiConfig(start_bit = 31,
+                                 read_bit = 30,
+                                 addr_width = addr_width,
+                                 data_width = data_width,
+                                 poke_addr = lo[1]+0x4,
+                                 peek_addr = lo[1]+0x8)
+        elif self.product_id == 'x410':
             los_to_test = {"TX0_LO1" : 0,
-                        "TX0_LO2" : 1, 
-                        "TX1_LO1" : 2, 
-                        "TX1_LO2" : 3, 
-                        "RX0_LO1" : 4, 
-                        "RX0_LO2" : 5, 
-                        "RX1_LO1" : 6, 
+                        "TX0_LO2" : 1,
+                        "TX1_LO1" : 2,
+                        "TX1_LO2" : 3,
+                        "RX0_LO1" : 4,
+                        "RX0_LO2" : 5,
+                        "RX1_LO1" : 6,
                         "RX1_LO2" : 7}
             def get_spi_info(_db, lo):
-                return SpiConfig(start_bit = 28, 
-                                 read_bit = 23, 
-                                 addr_width = 0x7f, 
-                                 data_width = 16, 
-                                 poke_addr = 0x1020, 
-                                 peek_addr = 0x1020, 
-                                 lo_select_bit = 24, 
+                return SpiConfig(start_bit = 28,
+                                 read_bit = 23,
+                                 addr_width = 0x7f,
+                                 data_width = 16,
+                                 poke_addr = 0x1020,
+                                 peek_addr = 0x1020,
+                                 lo_select_bit = 24,
                                  lo_select = lo[1])
 
         if los_to_test is not None:
@@ -1241,10 +1258,134 @@ class X4XXBIST(bist.UsrpBIST):
                         error = str(ex)
                         data[f"db{db}-{lo}"] =  False
 
+        try:
+            mpm_c.unclaim()
+        except Exception as ex:
+            pass
         data["error_msg"] = error
         data["status"] = result
         return result, data
 
+    def bist_db_connector(self):
+        """
+        BIST for testing the daughterboard connectors from X4xx motherboard to 
+        the daughterboards. The methodology is to create a loopback between TX and RX,
+        use the cal mux as TX tone, set static gains (if possible) and query the
+        RX threshold value that we are able to exceed with this. If we are above
+        a certain threshold we assume that the connector is working.
+        """
+        assert 'db_connector' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {"0 Real": True,
+                          "1 Real": True}
+
+        import uhd
+        data = {}
+        THRESHOLD = 4000
+
+        def is_x410(usrp):
+            """Returns True if executed on X410."""
+            return usrp.get_mboard_name() == "x410"
+
+        def is_x420(usrp):
+            """Returns True if executed on X420."""
+            return usrp.get_mboard_name() == "x420"
+
+        def is_x440(usrp):
+            """Returns True if executed on X440."""
+            return usrp.get_mboard_name() == "x440"
+
+        def get_mixmode_name(mode):
+            """Returns the name of the mixer mode."""
+            return (
+                ("Real", "I", "Q", "Disable", "IQ", "All")[mode] if mode in range(6) else "Unknown"
+            )
+
+        def settings(usrp):
+            """Returns the settings matching the X4xx device."""
+            if is_x410(usrp):
+                return [{"gain": 30, "rx_freq": 2.5e9, "tx_freq": 2.5e9}]
+            if is_x440(usrp):
+                return [{"gain": None, "rx_freq": 397.55e6, "tx_freq": 397.55e6}]
+            if is_x420(usrp):
+                # Gain values taken from ADC self-cal auto-leveling
+                return [
+                    {"gain": 27, "rx_freq": 397.55e6, "tx_freq": 397.55e6},
+                    {"gain": 25, "rx_freq": 1000e6, "tx_freq": 1397.55e6},
+                    {"gain": 25, "rx_freq": 1000e6, "tx_freq": 1397.55e6},
+                ]
+            sys.exit(1)
+
+        def set_gain(usrp, gain, channel):
+            """Sets the gain for X410 and X420 (X440 has no gain stages)."""
+            if is_x410(usrp):
+                usrp.set_rx_gain_profile("default", channel)
+                usrp.set_tx_gain_profile("default", channel)
+                usrp.set_rx_gain(gain, channel)
+                usrp.set_tx_gain(gain, channel)
+                usrp.set_rx_gain_profile("table_noatr", channel)
+                usrp.set_tx_gain_profile("table_noatr", channel)
+                usrp.set_rx_gain(0b11, "TABLE", channel)
+                usrp.set_rx_gain(0b11, "TABLE", channel)
+            elif is_x420(usrp):
+                radio = usrp.get_radio_control(channel)
+                radio.poke32(0x810A4, 0)  # Switch to SW ATR mode
+                radio.poke32(0x810A8, 3)  # Switch to TRX to have the chain active
+                usrp.set_tx_gain(46, channel)  # Approx. 0 dB
+                usrp.set_rx_gain(gain, channel)
+                time.sleep(0.1)  # Let the gain settle
+
+        def reset_gain(usrp, channel):
+            """Resets the gain values for X410 after running this script."""
+            if is_x410(usrp):
+                usrp.set_rx_gain_profile("default", channel)
+                usrp.set_tx_gain_profile("default", channel)
+                usrp.set_rx_gain(0, channel)
+                usrp.set_tx_gain(0, channel)
+            elif is_x420(usrp):
+                usrp.set_tx_gain(0, channel)
+                usrp.set_rx_gain(0, channel)
+                radio = usrp.get_radio_control(channel)
+                radio.poke32(0x810A4, 1)  # Switch back to Classic ATR mode
+
+
+        def check(mc, board, channel, mode, value):
+            """Checks if the given threshold value returns a valid threshold status."""
+            mc.setup_threshold(board, channel, mode, 0, "hysteresis", 10000, value - 100, value)
+            time.sleep(0.01)
+            return mc.get_threshold_status(board, channel, mode, 0)
+
+        usrp = uhd.usrp.MultiUSRP(self.device_args)
+        settings = settings(usrp)
+        mc = usrp.get_mpm_client()
+        mc.set_dac_mux_data(0x7FFF, 0)
+        ch_per_board = usrp.get_rx_num_channels() // 2
+        num_modes = 3 if is_x420(usrp) else 1
+        result = True
+        for i in range(usrp.get_rx_num_channels()):
+            for j in range(num_modes):
+                ch_name = f"{i} {get_mixmode_name(j)}"
+                set_gain(usrp, settings[j]["gain"], i)
+                usrp.set_rx_antenna("CAL_LOOPBACK", i)
+                usrp.set_tx_antenna("CAL_LOOPBACK", i)
+                usrp.set_rx_freq(settings[j]["rx_freq"], i)
+                usrp.set_tx_freq(settings[j]["tx_freq"], i)
+                slot = i // ch_per_board
+                chan = i % ch_per_board
+                # I DAC Mux needs to be enabled for both I and Q subchannels,
+                # so just turn them all on (5: All)
+                mc.set_dac_mux_enable(slot, chan, 1, 5)
+                if check(mc, slot, chan, j, THRESHOLD):
+                    data[ch_name] = True
+                else:
+                    data[ch_name] = False
+                    result = False
+                mc.set_dac_mux_enable(slot, chan, 0, 5)
+                reset_gain(usrp, i)
+
+        data["error_msg"] = "" if result else "One or more channels failed"
+        data["status"] = result
+        return result, data
 ##############################################################################
 # main
 ##############################################################################

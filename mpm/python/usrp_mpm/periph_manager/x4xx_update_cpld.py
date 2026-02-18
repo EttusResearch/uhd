@@ -4,9 +4,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Update the CPLD image for the X4xx
-"""
+"""Update the CPLD image for the X4xx."""
 
 import argparse
 import os
@@ -33,11 +31,13 @@ CONFIGS = {
 
 AXI_BITQ_ADAPTER_SPEED = 5000
 AXI_BITQ_BUS_CLK = 40000000
+CPLD_JTAG_OE_N_PIN = 0
+PL_CPLD_JTAGEN_PIN = 1
 
 
 def check_openocd_files(files, logger=None):
-    """
-    Check if all file required by OpenOCD exist
+    """Check if all file required by OpenOCD exist.
+
     :param logger: logger object
     """
     for ocd_file in files:
@@ -49,8 +49,8 @@ def check_openocd_files(files, logger=None):
 
 
 def check_fpga_state(which=0):
-    """
-    Check if the FPGA is operational
+    """Check if the FPGA is operational.
+
     :param which: the FPGA to check
     """
     logger = get_logger("update_cpld")
@@ -68,9 +68,7 @@ def check_fpga_state(which=0):
 
 
 def find_axi_bitq_uio():
-    """
-    Find the AXI Bitq UIO device
-    """
+    """Find the AXI Bitq UIO device."""
     label = "jtag-0"
 
     logger = get_logger("update_cpld")
@@ -93,8 +91,8 @@ def find_axi_bitq_uio():
 
 
 def get_gpio_controls():
-    """
-    Instantiates an object to control JTAG related GPIO pins
+    """Instantiates an object to control JTAG related GPIO pins.
+
     Bank 3 - Pin 0: Allows toggle of JTAG Enable and additional signals
     Bank 3 - Pin 1: JTAG Enable signal to the CPLD
     """
@@ -106,22 +104,18 @@ def get_gpio_controls():
 
 
 def enable_jtag_gpio(gpios, disable=False):
-    """
-    Toggle JTAG Enable line to the CPLD
-    """
-    CPLD_JTAG_OE_n_pin = 0
-    PL_CPLD_JTAGEN_pin = 1
+    """Toggle JTAG Enable line to the CPLD."""
     if not disable:
-        gpios.set(CPLD_JTAG_OE_n_pin, 0)  # CPLD_JTAG_OE_n is active low
-        gpios.set(PL_CPLD_JTAGEN_pin, 1)  # PL_CPLD_JTAGEN is active high
+        gpios.set(CPLD_JTAG_OE_N_PIN, 0)  # CPLD_JTAG_OE_n is active low
+        gpios.set(PL_CPLD_JTAGEN_PIN, 1)  # PL_CPLD_JTAGEN is active high
     else:
-        gpios.set(CPLD_JTAG_OE_n_pin, 0)  # CPLD_JTAG_OE_n is active low
-        gpios.set(PL_CPLD_JTAGEN_pin, 0)  # PL_CPLD_JTAGEN is active high
+        gpios.set(CPLD_JTAG_OE_N_PIN, 0)  # CPLD_JTAG_OE_n is active low
+        gpios.set(PL_CPLD_JTAGEN_PIN, 0)  # PL_CPLD_JTAGEN is active high
 
 
 def do_update_cpld(filename, updater_mode):
-    """
-    Carry out update process for the CPLD
+    """Carry out update process for the CPLD.
+
     :param filename: path (on device) to the new CPLD image
     :param updater_mode: the updater method to use- Either flash or legacy
     :return: True on success, False otherwise
@@ -149,8 +143,8 @@ def do_update_cpld(filename, updater_mode):
 
 
 def jtag_cpld_update(filename, logger):
-    """
-    Update the MB CPLD via dedicated JTAG lines in the FPGA
+    """Update the MB CPLD via dedicated JTAG lines in the FPGA.
+
     Note: To use this update mechanism, a FPGA image with JTAG
     lines must be loaded.
     """
@@ -208,6 +202,7 @@ def jtag_cpld_update(filename, logger):
 
 
 def get_mb_info(item):
+    """Get the motherboard information."""
     valid_items = {"pid", "rev", "compat_rev"}
     assert item in valid_items
     import re
@@ -227,8 +222,8 @@ def get_mb_info(item):
 
 
 def get_default_cpld_image_names(pid, compat_rev):
-    """Determine the default CPLD image name based on the compat_rev"""
-    if pid == 0x410:
+    """Determine the default CPLD image name based on the compat_rev."""
+    if pid == 0x410 or pid == 0x420:
 
         default_cpld_image_10m04 = ["cpld-x410-10m04.rpd", "usrp_x410_cpld_10m04.rpd"]
         default_cpld_image_10m08 = ["cpld-x410-10m08.rpd", "usrp_x410_cpld_10m08.rpd"]
@@ -255,12 +250,10 @@ def get_default_cpld_image_names(pid, compat_rev):
 
 
 def main():
-    """
-    Go, go, go!
-    """
+    """Go, go, go!"""
 
     def parse_args():
-        """Parse the command-line arguments"""
+        """Parse the command-line arguments."""
         parser = argparse.ArgumentParser(description="Update the CPLD image on the X4xx")
         pid = get_mb_info("pid")
         default_image_names = get_default_cpld_image_names(pid, get_mb_info("compat_rev"))
@@ -288,7 +281,7 @@ def main():
         )
         args = parser.parse_args()
         if (os.path.basename(args.file) not in default_image_names) and not args.force:
-            devices = {0x410: "X410", 0x440: "X440"}
+            devices = {0x410: "X410", 0x420: "X420", 0x440: "X440"}
             device = devices.get(pid, "unknown device")
             parser.epilog = (
                 f"\nERROR: Valid CPLD image names for {device} compat_rev "
@@ -306,7 +299,7 @@ def main():
     # We need to make a logger if we're running stand-alone
     from usrp_mpm.mpmlog import get_main_logger
 
-    log = get_main_logger(log_default_delta=args.verbose - args.quiet)
+    get_main_logger(log_default_delta=args.verbose - args.quiet)
 
     return do_update_cpld(args.file, args.updater)
 

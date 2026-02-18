@@ -11,7 +11,7 @@ import inspect
 import sys
 
 from usrp_mpm import lib  # Pulls in everything from C++-land
-from usrp_mpm.dboard_manager import FBX, ZBX
+from usrp_mpm.dboard_manager import FBX, HBX, ZBX
 from usrp_mpm.mpmutils import parse_encoded_git_hash
 
 
@@ -21,6 +21,7 @@ class X4xxMboardCPLD:
 
     Derive from this class for a specific implementation of the X4xx MB CPLD.
     """
+
     # pylint: disable=bad-whitespace
     # fmt: off
     SIGNATURE_OFFSET         = 0x0000
@@ -204,18 +205,19 @@ class X4xxMboardCPLD:
         return bool(self.peek32(self.CMI_OFFSET))
 
 
-class X410MboardCPLD(X4xxMboardCPLD):
+class X410X420MboardCPLD(X4xxMboardCPLD):
     """
-    MB CPLD Image for USRP X410 (which means there are ZBX daughterboards
-    installed).
+    MB CPLD Image for USRP X410/X420 (which means there are ZBX or HBX
+    daughterboards installed).
     """
+
     # pylint: disable=bad-whitespace
     # fmt: off
     # change these revisions only on breaking changes
     OLDEST_REQ_COMPAT_REV   = 0x20122114
     REQ_COMPAT_REV          = 0x20122114
     SIGNATURE               = 0x0A522D27
-    COMPATIBLE_DB_PIDS      = ZBX.pids
+    COMPATIBLE_DB_PIDS      = ZBX.pids + HBX.pids
     # pylint: enable=bad-whitespace
     # fmt: on
 
@@ -225,6 +227,7 @@ class X440MboardCPLD(X4xxMboardCPLD):
     MB CPLD Image for USRP X440 (which means there are FBX daughterboards
     installed).
     """
+
     # pylint: disable=bad-whitespace
     # fmt: off
     # change these revisions only on breaking changes

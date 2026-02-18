@@ -35,7 +35,7 @@ monkey.patch_all()
 TIMEOUT_INTERVAL = 5.0  # Seconds before claim expires (default value)
 LOCK_ACQ_TIMEOUT = 1  # Seconds to wait for acquiring shared lock (default value)
 TOKEN_LEN = 16  # Length of the token string
-MPM_COMPAT_NUM = (6, 0)  # Compatibility number for MPM
+MPM_COMPAT_NUM = (6, 1)  # Compatibility number for MPM
 
 
 class MPMServer(RPCServer):

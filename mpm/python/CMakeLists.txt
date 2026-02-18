@@ -160,9 +160,9 @@ if(NOT ENABLE_SIM)
             DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
         install(PROGRAMS
-            usrp_mpm/dboard_manager/zbx_update_cpld.py
+            usrp_mpm/dboard_manager/x4xx_db_update_cpld.py
             DESTINATION ${CMAKE_INSTALL_BINDIR}
-            RENAME zbx_update_cpld
+            RENAME x4xx_db_update_cpld
         )
         install(PROGRAMS
             usrp_mpm/periph_manager/x4xx_update_cpld.py

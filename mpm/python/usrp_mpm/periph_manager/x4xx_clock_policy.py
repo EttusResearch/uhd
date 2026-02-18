@@ -13,7 +13,6 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 
 from usrp_mpm.chips import LMK04832
-from usrp_mpm.dboard_manager import FBX, ZBX
 from usrp_mpm.mpmutils import parse_multi_device_arg
 from usrp_mpm.periph_manager.x4xx_clock_lookup import MCR_LMK_VCO, RFDC_PLL_CONFIGS
 from usrp_mpm.periph_manager.x4xx_clock_types import Spll1Vco
@@ -870,10 +869,35 @@ class X440ClockPolicy(X4xxClockPolicy):
         return True
 
 
+class X420ClockPolicy(X440ClockPolicy):
+    """This is the clocking policy for X420."""
+
+    # Lookup table for setting up the correct master clock rate
+    # depending on the DSP bandwidth (in MHz) of the FPGA image.
+    bandwidth_to_default_mcr = {
+        200: 250e6,
+        1000: 1250e6,
+    }
+
+    def get_config(self, ref_clock_freq, master_clock_rates):
+        """X420 modification of the X440 method.
+
+        Since X440 had passive daughterboards, we didn't want the PRC to be
+        routed to the them. In X420 this is different again, but we want to
+        leverage everything else of the X440 clock policy. So we just set
+        the prc_to_db flag to True.
+        """
+        cfg = super().get_config(ref_clock_freq, master_clock_rates)
+        cfg.spll_config.prc_to_db = True
+        return cfg
+
+
 def get_clock_policy(mboard_info, dboard_infos, args, log):
     """Return a clocking policy object based on the available hardware."""
-    if dboard_infos[0]["pid"] in ZBX.pids:
+    if mboard_info["product"] == "x410":
         return X410ClockPolicy(mboard_info, dboard_infos, args, log)
-    if dboard_infos[0]["pid"] in FBX.pids:
+    if mboard_info["product"] == "x440":
         return X440ClockPolicy(mboard_info, dboard_infos, args, log)
+    if mboard_info["product"] == "x420":
+        return X420ClockPolicy(mboard_info, dboard_infos, args, log)
     raise RuntimeError("Could not resolve clock policy.")

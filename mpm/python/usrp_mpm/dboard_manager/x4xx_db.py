@@ -150,6 +150,12 @@ class X4xxDbMixin:
         """
         self.db_iface.enable_iq_swap(enable, trx, channel)
 
+    def set_data_path(self, mode, direction):
+        """
+        Set the data path mode of the RFDCs
+        """
+        self.db_iface.set_data_path(mode, direction)
+
     def get_dboard_sample_rate(self):
         """
         Return the RFDC rate. For ZBX, this is usually a big number in the

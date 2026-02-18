@@ -236,6 +236,17 @@ class RfdcRegsControl:
         setattr(self._regs, addr_name, getattr(self._regs, enum_name)(enable))
         self._commit()
 
+    def set_data_path(self, db_idx, mode, is_dac):
+        """
+        Set the data path for the given daughterboard.
+        """
+        assert db_idx in (0, 1)
+        assert mode in (0, 1)
+        addr_name = f'DATA_PATH_DB{db_idx}_{"TX" if is_dac else "RX"}_SELECT'
+        enum_name = addr_name + "_t"
+        setattr(self._regs, addr_name, getattr(self._regs, enum_name)(mode))
+        self._commit()
+
     ###########################################################################
     # MMCM control
     ###########################################################################

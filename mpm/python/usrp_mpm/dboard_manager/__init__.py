@@ -16,6 +16,7 @@ if not __simulated__:
     from .e31x_db import E31x_db
     from .empty_slot import EmptySlot
     from .fbx import FBX
+    from .hbx import HBX
     from .magnesium import Magnesium
     from .neon import Neon
     from .rhodium import Rhodium

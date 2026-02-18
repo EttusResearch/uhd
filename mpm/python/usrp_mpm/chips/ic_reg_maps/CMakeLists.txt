@@ -46,6 +46,10 @@ if(ENABLE_REGMAPS)
         ${UHD_SOURCE_DIR}/lib/ic_reg_maps/gen_x4xx_rfdc_regs.py
         ${CMAKE_CURRENT_BINARY_DIR}/x4xx_rfdc_regmap.py
     )
+    REG_MAPS_GEN_SOURCE(
+        ${UHD_SOURCE_DIR}/lib/ic_reg_maps/gen_hbx_cpld_regs.py
+        ${CMAKE_CURRENT_BINARY_DIR}/hbx_cpld_regs.py
+    )
 
     # add an ic_reg_maps target which can be referenced outside of this subdirectory
     add_custom_target(ic_reg_maps DEPENDS ${IC_REG_MAPS})

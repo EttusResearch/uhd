@@ -749,6 +749,13 @@ class X4xxRfdcCtrl:
         self._rfdc_regs.enable_iq_swap(enable, db_idx, channel, is_dac)
 
     @no_rpc
+    def set_data_path(self, db_idx, mode, is_dac):
+        """
+        Set the data path for the RFDCs.
+        """
+        self._rfdc_regs.set_data_path(db_idx, mode, is_dac)
+
+    @no_rpc
     def get_converter_rate(self, db_idx, channel=0, is_dac=None):
         """
         Return the converter rate on a given daughterboard/channel.
@@ -1016,5 +1023,5 @@ class X4xxRfdcCtrl:
         # Translate from the MixerMode enum to the values of the lengthy enum from the regmap that
         # _rfdc_regs uses
         if MixerMode(mode) == MixerMode.IQ:
-            mode = MixerMode.I.value
+            mode = int(MixerMode.I.value)
         return self._rfdc_regs.get_threshold_status(slot_id, channel, mode, threshold_idx) != 0
