@@ -596,7 +596,7 @@ stages:
       contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'fpga.usrp3.cpld.x3xx')
     )
   jobs:
-  - template: ../fpga/templates/job-cpld-build.yml
+  - template: ../fpga/templates/job-build-cpld.yml
     parameters:
       publish_int_files: false
       cpldBuilds:
