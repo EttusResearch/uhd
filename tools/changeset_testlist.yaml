@@ -396,19 +396,19 @@
     - fpga.usrp3.testbenches
     - fpga.usrp3.regmaps
 # Device-specific pipeline changes.
-- re: .ci/fpga/devices/job-build-x400.yml
+- re: .ci/fpga/devices/job-build-fpga-x400.yml
   add:
     - fpga.usrp3.x4xx
-- re: .ci/fpga/devices/job-build-x300.yml
+- re: .ci/fpga/devices/job-build-fpga-x300.yml
   add:
     - fpga.usrp3.x3xx
-- re: .ci/fpga/devices/job-build-e31x.yml
+- re: .ci/fpga/devices/job-build-fpga-e31x.yml
   add:
     - fpga.usrp3.e31x
-- re: .ci/fpga/devices/job-build-e320.yml
+- re: .ci/fpga/devices/job-build-fpga-e320.yml
   add:
     - fpga.usrp3.e320
-- re: .ci/fpga/devices/job-build-n3xx.yml
+- re: .ci/fpga/devices/job-build-fpga-n3xx.yml
   add:
     - fpga.usrp3.n3xx
 
