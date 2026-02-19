@@ -58,7 +58,7 @@ DECLARE_CONVERTER_AVX2(fc64, 1, sc16_item32_le, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // dispatch according to alignment
-    if ((size_t(input) & 0xf) == 0) {
+    if ((size_t(input) & 0x1f) == 0) {
         convert_fc64_1_to_item32_1_nswap_guts(_)
     } else {
         convert_fc64_1_to_item32_1_nswap_guts(u_)
@@ -114,7 +114,7 @@ DECLARE_CONVERTER_AVX2(fc64, 1, sc16_item32_be, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // dispatch according to alignment
-    if ((size_t(input) & 0xf) == 0) {
+    if ((size_t(input) & 0x1f) == 0) {
         convert_fc64_1_to_item32_1_bswap_guts(_)
     } else {
         convert_fc64_1_to_item32_1_bswap_guts(u_)
@@ -168,7 +168,7 @@ DECLARE_CONVERTER_AVX2(fc64, 1, sc16_chdr, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // dispatch according to alignment
-    if ((size_t(input) & 0xf) == 0) {
+    if ((size_t(input) & 0x1f) == 0) {
         convert_fc64_1_to_chdr_1_guts(_)
     } else {
         convert_fc64_1_to_chdr_1_guts(u_)

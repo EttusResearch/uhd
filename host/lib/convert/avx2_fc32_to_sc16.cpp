@@ -49,7 +49,7 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc16_item32_le, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // need to dispatch according to alignment for fastest conversion
-    switch (size_t(input) & 0xf) {
+    switch (size_t(input) & 0x1f) {
         case 0x0:
             // the data is 16-byte aligned, so do the fast processing of the bulk of the
             // samples
@@ -110,7 +110,7 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc16_item32_be, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // need to dispatch according to alignment for fastest conversion
-    switch (size_t(input) & 0xf) {
+    switch (size_t(input) & 0x1f) {
         case 0x0:
             // the data is 16-byte aligned, so do the fast processing of the bulk of the
             // samples
@@ -169,7 +169,7 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc16_chdr, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // need to dispatch according to alignment for fastest conversion
-    switch (size_t(input) & 0xf) {
+    switch (size_t(input) & 0x1f) {
         case 0x0:
             // the data is 16-byte aligned, so do the fast processing of the bulk of the
             // samples

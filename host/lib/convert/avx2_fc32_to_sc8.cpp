@@ -72,7 +72,7 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // dispatch according to alignment
-    if ((size_t(input) & 0xf) == 0) {
+    if ((size_t(input) & 0x1f) == 0) {
         convert_fc32_1_to_sc8_item32_1_bswap_guts(_)
     } else {
         convert_fc32_1_to_sc8_item32_1_bswap_guts(u_)
@@ -112,7 +112,7 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD_AVX2)
     size_t i = 0;
 
     // dispatch according to alignment
-    if ((size_t(input) & 0xf) == 0) {
+    if ((size_t(input) & 0x1f) == 0) {
         convert_fc32_1_to_sc8_item32_1_nswap_guts(_)
     } else {
         convert_fc32_1_to_sc8_item32_1_nswap_guts(u_)
