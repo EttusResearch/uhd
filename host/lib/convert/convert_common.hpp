@@ -8,6 +8,7 @@
 #ifndef INCLUDED_LIBUHD_CONVERT_COMMON_HPP
 #define INCLUDED_LIBUHD_CONVERT_COMMON_HPP
 
+#include "simd_features.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/utils/static.hpp>
 #include <stdint.h>
@@ -63,7 +64,110 @@
         prio)
 
 /***********************************************************************
+ * SIMD converter macros with runtime CPU feature detection
+ *
+ * These macros are similar to DECLARE_CONVERTER but wraps the registration
+ * with a runtime check for CPU SIMD support. This allows building all
+ * SIMD variants unconditionally and enabling them only at runtime on
+ * hardware that supports them.
+ *
+ **********************************************************************/
+
+// Internal macro for SIMD converters with runtime feature check
+#define _DECLARE_CONVERTER_SIMD(                                              \
+    name, in_form, num_in, out_form, num_out, prio, feature_check, simd_name) \
+    struct name : public uhd::convert::converter                              \
+    {                                                                         \
+        static sptr make(void)                                                \
+        {                                                                     \
+            return sptr(new name());                                          \
+        }                                                                     \
+        double scale_factor;                                                  \
+        void set_scalar(const double s)                                       \
+        {                                                                     \
+            scale_factor = s;                                                 \
+        }                                                                     \
+        void operator()(const input_type&, const output_type&, const size_t); \
+    };                                                                        \
+    UHD_STATIC_BLOCK(__register_##name##_##prio)                              \
+    {                                                                         \
+        if (!(feature_check)) {                                               \
+            return;                                                           \
+        }                                                                     \
+        uhd::convert::id_type id;                                             \
+        id.input_format  = #in_form;                                          \
+        id.num_inputs    = num_in;                                            \
+        id.output_format = #out_form;                                         \
+        id.num_outputs   = num_out;                                           \
+        uhd::convert::register_converter(id, &name::make, prio);              \
+        uhd::convert::log_simd_converter_registered(                          \
+            simd_name, #in_form, #out_form, prio);                            \
+    }                                                                         \
+    void name::operator()(                                                    \
+        const input_type& inputs, const output_type& outputs, const size_t nsamps)
+
+/*! SSE2 support */
+#define DECLARE_CONVERTER_SSE2(in_form, num_in, out_form, num_out, prio)       \
+    _DECLARE_CONVERTER_SIMD(                                                   \
+        __convert_sse2_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
+        in_form,                                                               \
+        num_in,                                                                \
+        out_form,                                                              \
+        num_out,                                                               \
+        prio,                                                                  \
+        uhd::convert::cpu_has_sse2(),                                          \
+        "SSE2")
+
+/*! SSSE3 support */
+#define DECLARE_CONVERTER_SSSE3(in_form, num_in, out_form, num_out, prio)       \
+    _DECLARE_CONVERTER_SIMD(                                                    \
+        __convert_ssse3_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
+        in_form,                                                                \
+        num_in,                                                                 \
+        out_form,                                                               \
+        num_out,                                                                \
+        prio,                                                                   \
+        uhd::convert::cpu_has_ssse3(),                                          \
+        "SSSE3")
+
+/*! AVX2 support */
+#define DECLARE_CONVERTER_AVX2(in_form, num_in, out_form, num_out, prio)       \
+    _DECLARE_CONVERTER_SIMD(                                                   \
+        __convert_avx2_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
+        in_form,                                                               \
+        num_in,                                                                \
+        out_form,                                                              \
+        num_out,                                                               \
+        prio,                                                                  \
+        uhd::convert::cpu_has_avx2(),                                          \
+        "AVX2")
+
+/*! AVX512F support */
+#define DECLARE_CONVERTER_AVX512(in_form, num_in, out_form, num_out, prio)       \
+    _DECLARE_CONVERTER_SIMD(                                                     \
+        __convert_avx512_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
+        in_form,                                                                 \
+        num_in,                                                                  \
+        out_form,                                                                \
+        num_out,                                                                 \
+        prio,                                                                    \
+        uhd::convert::cpu_has_avx512f(),                                         \
+        "AVX512")
+
+/***********************************************************************
  * Setup priorities
+ *
+ * Higher priority = preferred implementation
+ * When get_converter() is called with priority=-1, it returns the
+ * highest priority converter available.
+ *
+ * Priority hierarchy:
+ *   PRIORITY_EMPTY   = -1  (empty/null converter)
+ *   PRIORITY_GENERAL =  0  (generic C++ implementation)
+ *   PRIORITY_TABLE   =  1  (table lookup)
+ *   PRIORITY_SIMD    =  3  (SSE2/NEON - baseline SIMD)
+ *   PRIORITY_SIMD_AVX2   = 4  (AVX2 - 256-bit SIMD)
+ *   PRIORITY_SIMD_AVX512 = 5  (AVX512 - 512-bit SIMD)
  **********************************************************************/
 static const int PRIORITY_GENERAL = 0;
 static const int PRIORITY_EMPTY   = -1;
@@ -72,10 +176,14 @@ static const int PRIORITY_EMPTY   = -1;
 static const int PRIORITY_SIMD = 2;
 static const int PRIORITY_TABLE =
     1; // tables require large cache, so they are slower on arm
+static const int PRIORITY_SIMD_AVX2   = 2; // Not applicable on ARM
+static const int PRIORITY_SIMD_AVX512 = 2; // Not applicable on ARM
 #else
 // We used to have ORC, too, so SIMD is 3
-static const int PRIORITY_SIMD  = 3;
-static const int PRIORITY_TABLE = 1;
+static const int PRIORITY_SIMD        = 3;
+static const int PRIORITY_TABLE       = 1;
+static const int PRIORITY_SIMD_AVX2   = 4;
+static const int PRIORITY_SIMD_AVX512 = 5;
 #endif
 
 /***********************************************************************
