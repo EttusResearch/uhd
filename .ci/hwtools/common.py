@@ -19,7 +19,7 @@ def revert_year_only_changes(file_path):
     if lines:
         # skip the unified header of 5 lines
         lines = lines[5:]
-        remaining_lines = [line for line in lines if not "Copyright" in line]
+        remaining_lines = [line for line in lines if not ("Copyright" in line or "(c)" in line)]
         if not remaining_lines:
             cmd.run("git", "checkout", file_path, raise_on_err=False)
 
@@ -27,15 +27,21 @@ def revert_year_only_changes(file_path):
 def update_xmlparse_files():
     if vapi.is_xmlparse():
         # copy the register map to the correct location
-        variant = Path.cwd().name
-        project_name = f"{variant}_FPGA"
+        project_name = vapi.get_project_name()
         src_file = pathapi.get_abs_path(
             f"{project_name}/xmlparse/pri1/{project_name}.htm", base="objects"
         )
-        # search the file recusively in the current directory
-        dest_file = pathapi.get_abs_path(
-            f"fpga/usrp3/top/x400/doc/{variant}/{project_name}.htm", base="repo"
-        )
+        # determine FPGA and CPLD destination location
+        variant = project_name.split("_")[0]
+        if ("FPGA" in project_name):
+            dest_file = pathapi.get_abs_path(
+                f"fpga/usrp3/top/x400/doc/{variant}/{project_name}.htm", base="repo"
+            )
+        else:
+            dest_file = pathapi.get_abs_path(
+                f"fpga/usrp3/top/x400/dboards/{variant.lower()}/cpld/doc/{project_name}.htm",
+                base="repo"
+            )
         shutil.copy(src_file, dest_file)
         revert_year_only_changes(dest_file)
 
