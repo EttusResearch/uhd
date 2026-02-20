@@ -2,3 +2,8 @@
 objects/
 # Ignore Python bytecode cache files
 __pycache__/
+# Ignore modelsim related files
+**/modelsim/
+**/transcript
+# Ignore python version file created by pyenv
+.python-version
