@@ -227,11 +227,6 @@ resources:
     endpoint: EttusResearch
     # 3.2.0 is the latest release as of Feb. 2025
     ref: refs/tags/v3.2.0
-  - repository: gnuradio-3-8
-    type: github
-    name: gnuradio/gnuradio
-    endpoint: EttusResearch
-    ref: maint-3.8
   - repository: gr-ettus
     type: github
     name: EttusResearch/gr-ettusdev
