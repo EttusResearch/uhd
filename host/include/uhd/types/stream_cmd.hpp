@@ -40,7 +40,7 @@ namespace uhd {
  */
 struct UHD_API stream_cmd_t
 {
-    enum stream_mode_t {
+    enum stream_mode_t : uint32_t {
         STREAM_MODE_START_CONTINUOUS   = int('a'),
         STREAM_MODE_STOP_CONTINUOUS    = int('o'),
         STREAM_MODE_NUM_SAMPS_AND_DONE = int('d'),
