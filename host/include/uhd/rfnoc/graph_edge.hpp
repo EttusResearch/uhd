@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <cstdint>
 #include <string>
 #include <tuple>
 
@@ -21,7 +22,7 @@ namespace uhd { namespace rfnoc {
  */
 struct UHD_API graph_edge_t
 {
-    enum edge_t {
+    enum edge_t : uint32_t {
         STATIC, ///< A static connection between two blocks in the FPGA
         DYNAMIC, ///< A user (dynamic) connection between two blocks in the FPGA
         RX_STREAM, ///< A connection from an FPGA block to a software RX streamer

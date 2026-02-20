@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include <memory>
 
-enum b200_product_t { B200, B210, B200MINI, B205MINI, B206MINI };
+enum b200_product_t : uint32_t { B200, B210, B200MINI, B205MINI, B206MINI };
 
 // These are actual USB PIDs (not Ettus Product IDs)
 const static uint16_t B200_VENDOR_ID      = 0x2500;

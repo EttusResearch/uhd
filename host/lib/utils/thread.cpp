@@ -179,10 +179,9 @@ void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 
 void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
 {
-#ifdef HAVE_PTHREAD_SETNAME
+#if defined(HAVE_PTHREAD_SETNAME) && defined(BOOST_HAS_PTHREADS)
     pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
-#endif /* HAVE_PTHREAD_SETNAME */
-#ifdef HAVE_THREAD_SETNAME_DUMMY
+#else
     // Then we can't set the thread name. This function may get called
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
@@ -194,10 +193,9 @@ void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
 
 void uhd::set_thread_name(std::thread* thrd, const std::string& name)
 {
-#ifdef HAVE_PTHREAD_SETNAME
+#if defined(HAVE_PTHREAD_SETNAME)
     pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
-#endif /* HAVE_PTHREAD_SETNAME */
-#ifdef HAVE_THREAD_SETNAME_DUMMY
+#else
     // Then we can't set the thread name. This function may get called
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
