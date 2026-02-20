@@ -66,6 +66,13 @@ elseif(MPM_DEVICE STREQUAL "x4xx")
 endif(MPM_DEVICE STREQUAL "n3xx")
 
 if(NOT ENABLE_SIM)
+    # Place the built .so directly in the build-tree Python package directory so
+    # that `make test` (CTest) can import it.
+    if(NOT WIN32)
+        set_target_properties(pyusrp_periphs PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/python/usrp_mpm"
+        )
+    endif(NOT WIN32)
     target_include_directories(pyusrp_periphs PUBLIC
         ${PYTHON_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/lib/
