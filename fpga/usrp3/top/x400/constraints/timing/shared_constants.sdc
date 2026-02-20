@@ -26,9 +26,12 @@ set clock_translate_max 1.8
 # (Quartus). Values are chosen as those that provide the most slack for FPGA
 # timing, while still meeting timing on the CPLD.
 
-# FPGA output constraints
-set db_gpio_fpga_min_out  0.000
-set db_gpio_fpga_max_out  3.250
+# FPGA constraints
+# Data taken from existing FPGA design checkpoint, rounded to the next quarter
+# of a nanosecond.
+# The output is currently driven on the falling edge of the clock.
+set db_gpio_fpga_min_out -8.500
+set db_gpio_fpga_max_out  4.000
 
 # CPLD output constraints
 set db_gpio_cpld_min_out -2.000
