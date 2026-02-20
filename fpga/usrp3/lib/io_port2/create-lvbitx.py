@@ -116,7 +116,13 @@ def main():
     if options.input_bin is not None:
         with open(os.path.abspath(options.input_bin), 'rb') as bin_file:
             bitstream = bin_file.read()
-            bitstream_md5 = md5(bitstream).hexdigest()
+            try:
+                # allow the md5 call to work on FIPS systems
+                # try python3.9+ keyword, which is also supported on some earlier versions
+                bitstream_md5 = md5(bitstream, usedforsecurity=False).hexdigest()
+            except TypeError:
+                # unknown keywords trigger TypeError so default back to basic call
+                bitstream_md5 = md5(bitstream).hexdigest()
             bitstream_b64 = base64.b64encode(bitstream)
             bitstream_b64_lb = b'\n'.join([
                 bitstream_b64[i:i+76]
@@ -127,8 +133,17 @@ def main():
 
     # Write BIN file
     bitstream = base64.b64decode(root.find('Bitstream').text)
+
+    try:
+        # allow the md5 call to work on FIPS systems
+        # try python3.9+ keyword, which is also supported on some earlier versions
+        bitstream_md5 = md5(bitstream, usedforsecurity=False).hexdigest()
+    except TypeError:
+        # unknown keywords trigger TypeError so default back to basic call
+        bitstream_md5 = md5(bitstream).hexdigest()
+    
     if options.output_lvbitx_path is not None \
-            and md5(bitstream).hexdigest() != root.find('BitstreamMD5').text:
+            and bitstream_md5 != root.find('BitstreamMD5').text:
         print('ERROR: The MD5 sum for the output LVBITX was incorrect. '
               'Make sure that the bitstream in the input LVBITX or BIN file is valid.')
         exit(1)
