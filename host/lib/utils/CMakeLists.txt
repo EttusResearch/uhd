@@ -70,6 +70,35 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_PTHREAD_SETNAME
 )
+
+# Add Boost.Thread for boost::thread tests
+list(APPEND CMAKE_REQUIRED_LIBRARIES ${Boost_THREAD_LIBRARY})
+CHECK_CXX_SOURCE_COMPILES("
+    #include <pthread.h>
+    #include <boost/thread/thread.hpp>
+    int main(){
+        boost::thread t;
+        const char* t_name = \"test\";
+        pthread_setname_np(t.native_handle(), t_name);
+        return 0;
+    }
+    " HAVE_BOOST_PTHREAD_SETNAME
+)
+
+# Reset to just pthread for std::thread test
+set(CMAKE_REQUIRED_LIBRARIES "pthread")
+CHECK_CXX_SOURCE_COMPILES("
+    #include <pthread.h>
+    #include <thread>
+    int main(){
+        std::thread t;
+        const char* t_name = \"test\";
+        pthread_setname_np(t.native_handle(), t_name);
+        return 0;
+    }
+    " HAVE_STD_PTHREAD_SETNAME
+)
+
 unset(CMAKE_REQUIRED_LIBRARIES)
 
 if(CYGWIN)
@@ -78,12 +107,30 @@ if(CYGWIN)
 endif(CYGWIN)
 
 if(HAVE_PTHREAD_SETNAME)
-    message(STATUS "  Setting thread names is supported through pthread_setname_np.")
+    message(STATUS "  Setting pthread names is supported through pthread_setname_np.")
     list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETNAME)
     LIBUHD_APPEND_LIBS(pthread)
 else()
-    message(STATUS "  Setting thread names is not supported.")
+    message(STATUS "  Setting pthread names is not supported.")
     list(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETNAME_DUMMY)
+endif()
+
+if(HAVE_BOOST_PTHREAD_SETNAME)
+    message(STATUS "  Setting boost::thread names is supported through pthread_setname_np.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_BOOST_PTHREAD_SETNAME)
+    LIBUHD_APPEND_LIBS(pthread)
+else()
+    message(STATUS "  Setting boost::thread names is not supported.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_BOOST_THREAD_SETNAME_DUMMY)
+endif()
+
+if(HAVE_STD_PTHREAD_SETNAME)
+    message(STATUS "  Setting std::thread names is supported through pthread_setname_np.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_STD_PTHREAD_SETNAME)
+    LIBUHD_APPEND_LIBS(pthread)
+else()
+    message(STATUS "  Setting std::thread names is not supported.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_STD_THREAD_SETNAME_DUMMY)
 endif()
 
 ########################################################################

@@ -10,6 +10,13 @@
 #include <uhd/utils/thread.hpp>
 #include <vector>
 
+#if defined(HAVE_PTHREAD_SETSCHEDPARAM) || defined(HAVE_PTHREAD_SETNAME)
+#    include <pthread.h>
+#endif
+#ifdef _WIN32
+#    include <windows.h>
+#endif
+
 bool uhd::set_thread_priority_safe(float priority, bool realtime)
 {
     try {
@@ -37,8 +44,6 @@ static void check_priority_range(float priority)
  * Pthread API to set priority
  **********************************************************************/
 #ifdef HAVE_PTHREAD_SETSCHEDPARAM
-#    include <pthread.h>
-
 void uhd::set_thread_priority(float priority, bool realtime)
 {
     check_priority_range(priority);
@@ -69,7 +74,6 @@ void uhd::set_thread_priority(float priority, bool realtime)
  * Pthread API to set affinity
  **********************************************************************/
 #ifdef HAVE_PTHREAD_SETAFFINITY_NP
-#    include <pthread.h>
 void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 {
     if (cpu_affinity_list.empty()) {
@@ -97,8 +101,6 @@ void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
  * Windows API to set priority
  **********************************************************************/
 #ifdef HAVE_WIN_SETTHREADPRIORITY
-#    include <windows.h>
-
 void uhd::set_thread_priority(float priority, UHD_UNUSED(bool realtime))
 {
     check_priority_range(priority);
@@ -132,7 +134,6 @@ void uhd::set_thread_priority(float priority, UHD_UNUSED(bool realtime))
  * Windows API to set affinity
  **********************************************************************/
 #ifdef HAVE_WIN_SETTHREADAFFINITYMASK
-#    include <windows.h>
 void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 {
     if (cpu_affinity_list.empty()) {
@@ -179,30 +180,28 @@ void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 
 void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
 {
-#ifdef HAVE_PTHREAD_SETNAME
+#ifdef HAVE_BOOST_PTHREAD_SETNAME
     pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
-#endif /* HAVE_PTHREAD_SETNAME */
-#ifdef HAVE_THREAD_SETNAME_DUMMY
+#else
     // Then we can't set the thread name. This function may get called
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
     // thread names.
     static_cast<void>(thrd);
     static_cast<void>(name);
-#endif /* HAVE_THREAD_SETNAME_DUMMY */
+#endif /* HAVE_BOOST_PTHREAD_SETNAME */
 }
 
 void uhd::set_thread_name(std::thread* thrd, const std::string& name)
 {
-#ifdef HAVE_PTHREAD_SETNAME
+#ifdef HAVE_STD_PTHREAD_SETNAME
     pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
-#endif /* HAVE_PTHREAD_SETNAME */
-#ifdef HAVE_THREAD_SETNAME_DUMMY
+#else
     // Then we can't set the thread name. This function may get called
     // before the logger starts, and thus can't log any error messages.
     // Note that CMake will also tell the user about not being able to set
     // thread names.
     static_cast<void>(thrd);
     static_cast<void>(name);
-#endif /* HAVE_THREAD_SETNAME_DUMMY */
+#endif /* HAVE_STD_PTHREAD_SETNAME */
 }

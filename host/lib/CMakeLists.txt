@@ -187,6 +187,10 @@ target_link_libraries(uhd
     PRIVATE uhd_rc
 )
 
+if(MINGW)
+    target_link_libraries(uhd PRIVATE mswsock)
+endif(MINGW)
+
 function(UHD_LIB_ADD_RPCLIB uhd_lib_name)
     target_include_directories(${uhd_lib_name} PRIVATE deps/rpclib/include)
     target_sources(${uhd_lib_name} PRIVATE $<TARGET_OBJECTS:uhd_rpclib>)
