@@ -17,21 +17,57 @@ message(STATUS "")
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(EMMINTRIN_FLAGS -msse2)
     set(TMMINTRIN_FLAGS -mssse3)
+    set(IMMINTRIN_FLAGS -mavx2)
 elseif(MSVC)
     set(EMMINTRIN_FLAGS /arch:SSE2)
+    set(TMMINTRIN_FLAGS /arch:AVX)    # SSSE3 requires AVX flag in MSVC
+    set(IMMINTRIN_FLAGS /arch:AVX2)   # AVX2 flag
 endif()
 
 set(CMAKE_REQUIRED_FLAGS ${EMMINTRIN_FLAGS})
-CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
+check_include_file_cxx(emmintrin.h HAVE_EMMINTRIN_H)
 unset(CMAKE_REQUIRED_FLAGS)
 
 if(ENABLE_SSSE3)
 set(CMAKE_REQUIRED_FLAGS ${TMMINTRIN_FLAGS})
-CHECK_INCLUDE_FILE_CXX(tmmintrin.h HAVE_TMMINTRIN_H)
+check_include_file_cxx(tmmintrin.h HAVE_TMMINTRIN_H)
 unset(CMAKE_REQUIRED_FLAGS)
-endif(ENABLE_SSSE3)
+endif()
 
-if(HAVE_EMMINTRIN_H)
+if(ENABLE_AVX2)
+set(CMAKE_REQUIRED_FLAGS ${IMMINTRIN_FLAGS})
+check_include_file_cxx(immintrin.h HAVE_IMMINTRIN_H)
+unset(CMAKE_REQUIRED_FLAGS)
+endif()
+
+if(HAVE_IMMINTRIN_H)
+    message(STATUS "AVX2 converters enabled. Runtime target must support AVX2!")
+    if(HAVE_EMMINTRIN_H)
+        set(convert_with_sse2_sources
+            ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc8_to_fc64.cpp
+        )
+        set_source_files_properties(
+            ${convert_with_sse2_sources}
+            PROPERTIES COMPILE_FLAGS "${EMMINTRIN_FLAGS}"
+        )
+        LIBUHD_APPEND_SOURCES(${convert_with_sse2_sources})
+    endif(HAVE_EMMINTRIN_H)
+    set(convert_with_avx2_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_sc16.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_fc64.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_fc32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc8_to_fc32.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc64_to_sc16.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc32_to_sc16.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc64_to_sc8.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/avx2_fc32_to_sc8.cpp
+    )
+    set_source_files_properties(
+        ${convert_with_avx2_sources}
+        PROPERTIES COMPILE_FLAGS "${IMMINTRIN_FLAGS}"
+    )
+    LIBUHD_APPEND_SOURCES(${convert_with_avx2_sources})
+elseif(HAVE_EMMINTRIN_H)
     set(convert_with_sse2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc64.cpp
