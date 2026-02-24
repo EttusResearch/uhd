@@ -357,12 +357,14 @@ void export_rfnoc(py::module& m)
         .def("get_block_args", &noc_block_base::get_block_args)
         .def("set_command_time", &noc_block_base::set_command_time)
         .def("clear_command_time", &noc_block_base::clear_command_time)
-        .def("get_tree",
+        .def(
+            "get_tree",
             [](noc_block_base::sptr& self) {
                 // Force the non-const `get_tree`
-                uhd::property_tree::sptr tree = self->get_tree();
+                auto tree = self->get_tree().get();
                 return tree;
-            })
+            },
+            py::return_value_policy::reference_internal)
         .def(
             "poke32",
             [](noc_block_base& self, uint32_t addr, uint32_t data) {
