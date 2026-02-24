@@ -323,8 +323,17 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     serialization
     #system Boost.System is used, but explicitly listing it causes errors on some systems.
     thread
-    unit_test_framework
+    #unit_test_framework Boost.Test is used, but listing it here causes problems when 
+    #                    using static linking (the  Windows default).
+    #                    Package detection for 'Boost::unit_test_framework' is handled
+    #                    separately in UHDBoost.cmake to work around this issue.
 )
+if(MSVC)
+    # Appending Boost::regex, required on Windows.
+    # (variablee also used in lib/CMakeLists.txt)
+    set(UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS regex)
+endif(MSVC)
+list(APPEND UHD_BOOST_REQUIRED_COMPONENTS ${UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS})
 
 include(UHDBoost)
 

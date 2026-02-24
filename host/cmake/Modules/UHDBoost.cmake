@@ -115,7 +115,6 @@ if(MSVC)
             add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
         else(BOOST_ALL_DYN_LINK)
             message(STATUS "  Static Libs")
-            set(UHD_BOOST_REQUIRED_COMPONENTS) #empty components list for static link
         endif(BOOST_ALL_DYN_LINK)
     endif(VCPKG_TARGET_TRIPLET)
 endif(MSVC)

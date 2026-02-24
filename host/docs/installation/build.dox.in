@@ -290,8 +290,10 @@ extensions:
   - Set "Visual Studio 17 2022" as the compiler. Select the latest MSVC that is available on the machine. Leave other settings as default.
   - Click “Finish” and allow CMake to Generate
 - Set or add the build variables with type PATH
-  - `Boost_INCLUDE_DIR` should point to the `PATH` where the Boost .hpp files are, e.g. `C:\local\boost_version\`
-  - `Boost_LIBRARY_DIR` should point to the pre-built libraries, e.g. `C:\local\boost_version\lib64-msvc-14.3`)
+  - `Boost_DIR` should point to the `PATH` where the generic (Boost module agnostic) BoostConfig.cmake files are located,
+    e.g. `C:\local\&lt;boost_version&gt;\lib64-msvc-14.3\cmake\Boost-&lt;boost_version&gt;`.
+  NOTE: Tested with Boost 1.73.0 and later.
+  NOTE: Variables are different for UHD 4.9.0 and earlier.
 - If a release UHD build is required:
   - Click on "Generate", and a project file will be created in the build directory.
 - If a debug UHD build is required:

@@ -175,6 +175,15 @@ endif(MSVC)
 # Setup libuhd library
 ########################################################################
 add_library(uhd SHARED ${libuhd_sources})
+if(DEFINED UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS)
+    # Define variable to expand target_link_libraries for
+    # both static and dynamic builds.
+    # Note: libuhd_libs is limited to dynamic linked build
+    set(libuhd_boost_msvc_libs "")
+    foreach(comp ${UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS})
+        list(APPEND libuhd_boost_msvc_libs Boost::${comp})
+    endforeach()
+endif(DEFINED UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS)
 target_link_libraries(uhd
     PUBLIC
     Boost::boost
@@ -183,6 +192,7 @@ target_link_libraries(uhd
     Boost::filesystem
     Boost::serialization
     Boost::thread
+    ${libuhd_boost_msvc_libs}
     ${libuhd_libs}
     PRIVATE uhd_rc
 )
@@ -269,6 +279,11 @@ endif(NOT UHDHOST_PKG)
 # Create a function so we have a separate variable scope for Boost_USE_STATIC_LIBS
 function(UHD_ADD_STATIC_LIB)
     set(Boost_USE_STATIC_LIBS ON) # only find static libs
+    message(STATUS "Boost_USE_STATIC_LIBS=${Boost_USE_STATIC_LIBS}")
+    if(MSVC)
+        # On Windows appending Boost::system to ensure successful linking
+        list(APPEND UHD_BOOST_REQUIRED_COMPONENTS system)
+    endif(MSVC)
     include(UHDBoost)
     add_library(uhd_static STATIC ${libuhd_sources} $<TARGET_OBJECTS:uhd_rc>)
     set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
@@ -282,6 +297,7 @@ function(UHD_ADD_STATIC_LIB)
         Boost::serialization
         Boost::system
         Boost::thread
+        ${libuhd_boost_msvc_libs}
     )
     target_include_directories(uhd_static
         PRIVATE

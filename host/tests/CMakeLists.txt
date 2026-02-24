@@ -81,6 +81,51 @@ set(pytest_sources
 #turn each test cpp file into an executable with an int main() function
 add_definitions(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
+if(Boost_VERBOSE OR Boost_DEBUG)
+    if(DEFINED Boost_USE_STATIC_LIBS)
+        # Optional variable used to override default Boost linking
+        message(STATUS "UHDUnitTest: Variable Boost_USE_STATIC_LIBS DEFINED with value '${Boost_USE_STATIC_LIBS}'")
+        if(Boost_USE_STATIC_LIBS)
+            message(STATUS "UHDUnitTest: Variable Boost_USE_STATIC_LIBS evaluates to TRUE")
+        endif(Boost_USE_STATIC_LIBS)
+    endif(DEFINED Boost_USE_STATIC_LIBS)
+endif(Boost_VERBOSE OR Boost_DEBUG)
+
+# Deferred detecting Boost::unit_test_framework via 
+# UHD_BOOST_REQUIRED_COMPONENTS (in UHDBoost.cmake) so doing it now.
+if(NOT DEFINED Boost_USE_STATIC_LIBS OR Boost_USE_STATIC_LIBS)
+    # Using static linking for Boost dependencies, but 
+    # needing to link dynamically to Boost::unit_test_framework
+    # - Win: Default - Boost_USE_STATIC_LIBS=ON
+    # - Lin: Default - Boost_USE_STATIC_LIBS=OFF
+    if (TARGET Boost::unit_test_framework)
+        message(WARNING "Target: Boost::unit_test_framework already defined.")
+    endif(TARGET Boost::unit_test_framework)
+    message(STATUS "Switching to dynamic linking for Boost::unit_test_framework")
+    set(Boost_USE_STATIC_LIBS OFF)
+endif()
+# Duplicate find_package(Boost) arguments used in UHDBoost.cmake
+find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
+    COMPONENTS unit_test_framework ${UHD_BOOST_REQUIRED})
+
+if(Boost_VERBOSE OR Boost_DEBUG)
+    # After: find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+    # The actual library file(s) per-config
+    get_target_property(_utf_loc_rel Boost::unit_test_framework IMPORTED_LOCATION_RELEASE)
+    get_target_property(_utf_loc_dbg Boost::unit_test_framework IMPORTED_LOCATION_DEBUG)
+    message(STATUS "Boost::unit_test_framework IMPORTED_LOCATION_RELEASE = ${_utf_loc_rel}")
+    message(STATUS "Boost::unit_test_framework IMPORTED_LOCATION_DEBUG   = ${_utf_loc_dbg}")
+    # This variable should only be set when linking dynamically (on Windows?)
+    get_target_property(_utf_loc Boost::unit_test_framework IMPORTED_IMPLIB_RELEASE)
+    message(STATUS "Boost::unit_test_framework IMPORTED_IMPLIB_RELEASE = ${_utf_loc}")
+
+    # The generic default (whatever BoostConfig resolved to)
+    if (TARGET Boost::unit_test_framework)
+        message(STATUS "Found target: Boost::unit_test_framework")
+    endif(TARGET Boost::unit_test_framework)
+
+endif(Boost_VERBOSE OR Boost_DEBUG)
+
 if(ENABLE_C_API)
     list(APPEND test_sources
         eeprom_c_test.c
