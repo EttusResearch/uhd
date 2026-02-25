@@ -1,15 +1,18 @@
 //
-// Copyright 2018-2019 Ettus Research, A National Instruments Company
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: ctrlport_endpoint
+//
 // Description:
-//   A bidirectional AXIS-Control to Control-Port converter.
-//   Use this module in noc_shell to interface between the user
-//   logic (using ctrlport) and the rfnoc infrastructure (axis_ctrl)
+//
+//   A bidirectional AXIS-Control to Control-Port converter. Use this module in
+//   noc_shell to interface between the user logic (using ctrlport) and the
+//   rfnoc infrastructure (axis_ctrl).
 //
 // Parameters:
+//
 //   THIS_PORTID        : The 10-bit ID of the control XB port that is
 //                        connected to this converter.
 //   SYNC_CLKS          : Is rfnoc_ctrl_clk and ctrlport_clk the same clock?
@@ -25,8 +28,10 @@
 //                        normal behavior.
 //
 // Signals:
+//
 //   - *_rfnoc_ctrl_* : Input/output AXIS-Control stream (AXI-Stream)
 //   - *_ctrlport_*   : Input/output control-port bus
+//
 
 module ctrlport_endpoint #(
   parameter [9:0] THIS_PORTID        = 10'd0,

@@ -26,9 +26,9 @@ package rfnoc_chdr_utils_pkg;
     CHDR_MANAGEMENT   = 3'd0,
     CHDR_STRM_STATUS  = 3'd1,
     CHDR_STRM_CMD     = 3'd2,
-    CHDR_RESERVED_0   = 3'd3,
+    CHDR_RESERVED_3   = 3'd3,
     CHDR_CONTROL      = 3'd4,
-    CHDR_RESERVED_1   = 3'd5,
+    CHDR_RESERVED_5   = 3'd5,
     CHDR_DATA_NO_TS   = 3'd6,
     CHDR_DATA_WITH_TS = 3'd7
   } chdr_pkt_type_t;                    // CHDR Packet Type
@@ -59,16 +59,16 @@ package rfnoc_chdr_utils_pkg;
   typedef logic [31:0] ctrl_word_t;
 
   typedef enum bit [3:0] {
-    CTRL_OP_SLEEP      = 4'd0,
-    CTRL_OP_WRITE      = 4'd1,
-    CTRL_OP_READ       = 4'd2,
-    CTRL_OP_WRITE_READ = 4'd3,
-    CTRL_OP_RESERVED_0 = 4'd4,
-    CTRL_OP_RESERVED_1 = 4'd5,
-    CTRL_OP_RESERVED_2 = 4'd6,
-    CTRL_OP_RESERVED_3 = 4'd7,
-    CTRL_OP_RESERVED_4 = 4'd8,
-    CTRL_OP_RESERVED_5 = 4'd9
+    CTRL_OP_SLEEP       = 4'd0,
+    CTRL_OP_WRITE       = 4'd1,
+    CTRL_OP_READ        = 4'd2,
+    CTRL_OP_READ_WRITE  = 4'd3,
+    CTRL_OP_BLOCK_WRITE = 4'd4,
+    CTRL_OP_BLOCK_READ  = 4'd5,
+    CTRL_OP_POLL        = 4'd6,
+    CTRL_OP_RESERVED_7  = 4'd7,
+    CTRL_OP_RESERVED_8  = 4'd8,
+    CTRL_OP_RESERVED_9  = 4'd9
   } ctrl_opcode_t;                    // Control OpCode Type
 
   typedef enum bit [1:0] {
@@ -80,6 +80,7 @@ package rfnoc_chdr_utils_pkg;
 
   typedef bit [ 5:0] ctrl_seq_num_t;  // AXIS-Ctrl SeqNum field
   typedef bit [ 3:0] ctrl_num_data_t; // AXIS-Ctrl NumData field
+  typedef bit [ 3:0] ctrl_data_len_t; // AXIS-Ctrl DataLength field
   typedef bit [ 9:0] ctrl_port_t;     // AXIS-Ctrl source/destination port field
   typedef bit [ 3:0] ctrl_byte_en_t;  // AXIS-Ctrl ByteEnable field
   typedef bit [19:0] ctrl_address_t;  // AXIS-Ctrl Address field
@@ -167,7 +168,8 @@ package rfnoc_chdr_utils_pkg;
   // AXIS-Ctrl packet header
   typedef struct packed {
     // Word 1
-    bit [ 5:0]      _rsvd_0;
+    bit [ 1:0]      _rsvd_0;
+    ctrl_data_len_t data_length;
     ctrl_port_t     rem_dst_port;
     chdr_epid_t     rem_dst_epid;
     // Word 0

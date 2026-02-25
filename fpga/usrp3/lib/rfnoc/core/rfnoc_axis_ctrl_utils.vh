@@ -63,10 +63,13 @@ localparam [1:0] AXIS_CTRL_STS_WARNING = 2'b11;
 
 // AXIS-Ctrl Opcode Definitions
 //
-localparam [3:0] AXIS_CTRL_OPCODE_SLEEP      = 4'd0;
-localparam [3:0] AXIS_CTRL_OPCODE_WRITE      = 4'd1;
-localparam [3:0] AXIS_CTRL_OPCODE_READ       = 4'd2;
-localparam [3:0] AXIS_CTRL_OPCODE_WRITE_READ = 4'd3;
+localparam [3:0] AXIS_CTRL_OPCODE_SLEEP       = 4'd0;
+localparam [3:0] AXIS_CTRL_OPCODE_WRITE       = 4'd1;
+localparam [3:0] AXIS_CTRL_OPCODE_READ        = 4'd2;
+localparam [3:0] AXIS_CTRL_OPCODE_READ_WRITE  = 4'd3;
+localparam [3:0] AXIS_CTRL_OPCODE_BLOCK_WRITE = 4'd4;
+localparam [3:0] AXIS_CTRL_OPCODE_BLOCK_READ  = 4'd5;
+localparam [3:0] AXIS_CTRL_OPCODE_POLL        = 4'd6;
 
 // AXIS-Ctrl Getter Functions
 //
@@ -96,6 +99,10 @@ endfunction
 
 function [15:0] axis_ctrl_get_rem_dst_epid(input [31:0] header);
   axis_ctrl_get_rem_dst_epid = header[15:0];
+endfunction
+
+function [3:0] axis_ctrl_get_data_length(input [31:0] header);
+  axis_ctrl_get_data_length = header[29:26];
 endfunction
 
 function [9:0] axis_ctrl_get_rem_dst_port(input [31:0] header);
@@ -132,10 +139,24 @@ function [31:0] axis_ctrl_build_hdr_lo(
 endfunction
 
 function [31:0] axis_ctrl_build_hdr_hi(
+  input [3:0]  data_length,
   input [9:0]  rem_dst_port,
   input [15:0] rem_dst_epid
 );
-  axis_ctrl_build_hdr_hi = {6'h0, rem_dst_port, rem_dst_epid};
+  axis_ctrl_build_hdr_hi = {
+    2'b00, data_length, rem_dst_port, rem_dst_epid
+  };
+endfunction
+
+function [31:0] chdr_ctrl_build_hdr_lo(
+  input [0:0]  is_ack,
+  input [0:0]  has_time,
+  input [5:0]  seq_num,
+  input [3:0]  num_data,
+  input [9:0]  src_port,
+  input [9:0]  dst_port
+);
+  chdr_ctrl_build_hdr_lo = {is_ack, has_time, seq_num, num_data, src_port, dst_port};
 endfunction
 
 function [31:0] chdr_ctrl_build_hdr_hi(

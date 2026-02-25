@@ -20,7 +20,7 @@ ctrlport_if.sv \
 rfnoc_chdr_utils_pkg.sv \
 axis_ctrl_endpoint.v \
 axis_ctrl_master.v \
-axis_ctrl_slave.v \
+axis_ctrl_slave.sv \
 chdr_compute_tkeep.v \
 chdr_to_chdr_data.v \
 chdr_to_axis_pyld_ctxt.v \

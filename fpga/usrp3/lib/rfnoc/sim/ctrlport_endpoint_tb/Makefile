@@ -20,6 +20,7 @@ include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
 
 DESIGN_SRCS += $(abspath \
 $(RFNOC_CORE_SRCS) \
+$(RFNOC_CORE_HEADERS) \
 )
 
 #-------------------------------------------------

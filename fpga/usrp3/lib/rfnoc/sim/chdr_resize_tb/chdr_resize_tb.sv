@@ -505,7 +505,7 @@ module chdr_resize_tb #(
           // Start with a random header. Make sure the packet type is legal.
           do begin
             header = Rand#($bits(chdr_header_t))::rand_logic();
-          end while (header.pkt_type == CHDR_RESERVED_0 || header.pkt_type == CHDR_RESERVED_1);
+          end while (header.pkt_type == CHDR_RESERVED_3 || header.pkt_type == CHDR_RESERVED_5);
 
           // Generate timestamp
           if (header.pkt_type == CHDR_DATA_WITH_TS) begin
