@@ -80,7 +80,7 @@ public:
 
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimation
-        for (size_t hb = 0; hb < _num_halfbands; hb++) {
+        for (size_t hb = 0; hb <= _num_halfbands; hb++) {
             for (size_t cic_decim = 1; cic_decim <= _cic_max_decim; cic_decim++) {
                 decims.insert((1 << hb) * cic_decim);
             }
