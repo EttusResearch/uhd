@@ -119,6 +119,16 @@ module ctrlport_endpoint_tb;
   // Test Helpers
   // ----------------------------------------
 
+  wire [31:0] m_ctrl_tdata;
+  wire        m_ctrl_tlast;
+  wire        m_ctrl_tvalid;
+  wire        m_ctrl_tready;
+
+  assign m_ctrl_tdata  = m_ctrl.tdata;
+  assign m_ctrl_tlast  = m_ctrl.tlast;
+  assign m_ctrl_tvalid = m_ctrl.tvalid;
+  assign m_ctrl.tready = m_ctrl_tready;
+
   // Add a MUX and DEMUX on the ctrlport logic to loop responses
   // back into the endpoint and to allow external access from the
   // master and slave BFM.
@@ -126,15 +136,25 @@ module ctrlport_endpoint_tb;
     .WIDTH(32), .SIZE(2), .PRIO(0), .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(0)
   ) mux_i (
     .clk(rfnoc_ctrl_clk), .reset(rfnoc_ctrl_rst), .clear(1'b0),
-    .i_tdata ({m_ctrl.slave.tdata , axis_resp_tdata }),
-    .i_tlast ({m_ctrl.slave.tlast , axis_resp_tlast }),
-    .i_tvalid({m_ctrl.slave.tvalid, axis_resp_tvalid}),
-    .i_tready({m_ctrl.slave.tready, axis_resp_tready}),
+    .i_tdata ({m_ctrl_tdata , axis_resp_tdata }),
+    .i_tlast ({m_ctrl_tlast , axis_resp_tlast }),
+    .i_tvalid({m_ctrl_tvalid, axis_resp_tvalid}),
+    .i_tready({m_ctrl_tready, axis_resp_tready}),
     .o_tdata (axis_mst_tdata ),
     .o_tlast (axis_mst_tlast ),
     .o_tvalid(axis_mst_tvalid),
     .o_tready(axis_mst_tready)
   );
+
+  wire [31:0] s_ctrl_tdata;
+  wire        s_ctrl_tlast;
+  wire        s_ctrl_tvalid;
+  wire        s_ctrl_tready;
+
+  assign s_ctrl.tdata  = s_ctrl_tdata;
+  assign s_ctrl.tlast  = s_ctrl_tlast;
+  assign s_ctrl.tvalid = s_ctrl_tvalid;
+  assign s_ctrl_tready = s_ctrl.tready;
 
   wire [31:0] in_hdr;
   axi_demux #(
@@ -146,10 +166,10 @@ module ctrlport_endpoint_tb;
     .i_tlast (axis_slv_tlast ),
     .i_tvalid(axis_slv_tvalid),
     .i_tready(axis_slv_tready),
-    .o_tdata ({s_ctrl.master.tdata , axis_req_tdata }),
-    .o_tlast ({s_ctrl.master.tlast , axis_req_tlast }),
-    .o_tvalid({s_ctrl.master.tvalid, axis_req_tvalid}),
-    .o_tready({s_ctrl.master.tready, axis_req_tready})
+    .o_tdata ({s_ctrl_tdata , axis_req_tdata }),
+    .o_tlast ({s_ctrl_tlast , axis_req_tlast }),
+    .o_tvalid({s_ctrl_tvalid, axis_req_tvalid}),
+    .o_tready({s_ctrl_tready, axis_req_tready})
   );
 
   // --------------------------
