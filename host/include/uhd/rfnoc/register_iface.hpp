@@ -188,10 +188,11 @@ public:
      * This function will only allow writes to adjacent registers, in increasing
      * order. If addr is set to 0, and the length of data is 8, then this method
      * triggers eight writes, in order, to addresses 0, 4, 8, 12, 16, 20, 24, 28.
+     * For repeated writes to the same address (e.g. a FIFO), cf. burst_poke32().
      * For arbitrary addresses, cf. multi_poke32().
      *
-     * Note: There is no guarantee that under the hood, the implementation won't
-     * separate the writes.
+     * Note: Under the hood, the implementation may separate writes into
+     * multiple packets.
      *
      * \param first_addr The byte addresses of the first register to write
      * \param data New values of these registers
@@ -204,6 +205,32 @@ public:
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
     virtual void block_poke32(uint32_t first_addr,
+        const std::vector<uint32_t> data,
+        uhd::time_spec_t time = uhd::time_spec_t::ASAP,
+        bool ack              = false) = 0;
+
+    /*! Write multiple 32-bit values to the same register in the NoC block.
+     *
+     * This function repeatedly writes to the same address. This is useful for
+     * streaming data into a FIFO-mapped register or any hardware port where
+     * successive writes should not increment the address.
+     *
+     * For writes to consecutive addresses, cf. block_poke32().
+     *
+     * Note: Under the hood, the implementation may separate writes into
+     * multiple packets.
+     *
+     * \param addr The byte address of the register to write to
+     * \param data Values to write
+     * \param time The time at which the first transaction should be executed.
+     * \param ack Should transaction completion be acknowledged?
+     *
+     * \throws op_failed if an ACK is requested and the transaction fails
+     * \throws op_timeout if an ACK is requested and no response is received
+     * \throws op_seqerr if an ACK is requested and a sequence error occurs
+     * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
+     */
+    virtual void burst_poke32(uint32_t addr,
         const std::vector<uint32_t> data,
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
         bool ack              = false) = 0;
@@ -251,9 +278,10 @@ public:
      * Example: If \p first_addr is set to 0, and length is 8, then this
      * function will return a vector of length 8, with the content of registers
      * at addresses 0, 4, 8, 12, 16, 20, 24, and 28 respectively.
+     * For repeated reads from the same address (e.g. a FIFO), cf. burst_peek32().
      *
-     * Note: There is no guarantee that under the hood, the implementation won't
-     * separate the reads.
+     * Note: Under the hood, the implementation may separate reads into
+     * multiple packets.
      *
      * \throws op_failed if the transaction fails
      * \throws op_timeout if no response is received
@@ -263,6 +291,29 @@ public:
         size_t length,
         time_spec_t time = uhd::time_spec_t::ASAP) = 0;
 
+    /*! Read multiple 32-bit values from the same register address.
+     *
+     * This function repeatedly reads from the same address. This is useful for
+     * draining a FIFO-mapped register or any hardware port where successive
+     * reads should not increment the address.
+     *
+     * For reads from consecutive addresses, cf. block_peek32().
+     *
+     * Note: Under the hood, the implementation may separate reads into
+     * multiple packets.
+     *
+     * \param addr The byte address of the register to read from (truncated to 20 bits).
+     * \param length The number of 32-bit values to read
+     * \param time The time at which the transaction should be executed.
+     * \return Vector of \p length values read from \p addr.
+     *
+     * \throws op_failed if the transaction fails
+     * \throws op_timeout if no response is received
+     * \throws op_seqerr if a sequence error occurs
+     */
+    virtual std::vector<uint32_t> burst_peek32(
+        uint32_t addr, size_t length, time_spec_t time = uhd::time_spec_t::ASAP) = 0;
+
     /*! Poll a 32-bit register until its value for all bits in mask match data&mask
      *
      * This will insert a command into the command queue to wait until a
@@ -270,8 +321,10 @@ public:
      * lock pin before executing the next command. It is related to sleep(),
      * except it has a condition to wait on, rather than an unconditional stall
      * duration. The timeout is hardware-timed.
-     * If the register does not attain the requested value within the requested
-     * duration, ${something bad happens}.
+     *
+     * If ack is true and the register does not attain the requested value
+     * within the requested duration, an op_failed exception is thrown. If ack
+     * is false, the timeout is not reported.
      *
      * Example: Assume readback register 16 is a status register, and bit 0
      * indicates a lock is in place (i.e., we want it to be 1) and bit 1 is an
@@ -291,16 +344,20 @@ public:
      * \param timeout The max duration that the register is allowed to take
      *                before reaching its new state.
      * \param time When the poll should be executed
-     * \param ack Should transaction completion be acknowledged? This is
-     *            typically only necessary if the software needs a condition to
-     *            be fulfilled before continueing, or during debugging.
+     * \param ack If true, wait for the hardware response and return the last
+     *            sampled register value. If false, send the command without
+     *            waiting and return std::nullopt. This is typically only
+     *            necessary if the software needs a condition to be fulfilled
+     *            before continuing, or during debugging.
      *
+     * \returns The last sampled value of the register if ack is true,
+     *          otherwise std::nullopt.
      * \throws op_failed if an ACK is requested and the transaction fails
      * \throws op_timeout if an ACK is requested and no response is received
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    virtual void poll32(uint32_t addr,
+    virtual std::optional<uint32_t> poll32(uint32_t addr,
         uint32_t data,
         uint32_t mask,
         time_spec_t timeout,

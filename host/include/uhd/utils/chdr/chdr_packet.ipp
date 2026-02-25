@@ -43,35 +43,75 @@ chdr_packet chdr_packet::deserialize(uhd::rfnoc::chdr_w_t chdr_w,
     return deserialize_ptr(chdr_w, endianness, start, end);
 }
 
+// Generic get_payload for 64-bit-serialized payload types: strs_payload,
+// strc_payload, and mgmt_payload.
 template <typename payload_t>
 payload_t chdr_packet::get_payload(uhd::endianness_t endianness) const
 {
     payload_t payload;
-    // Only Data Packets are allowed to have end on a incomplete CHDR_W length.
-    // This method is never called on a data packet. (They don't have a payload_t)
-    UHD_ASSERT_THROW(this->_payload.size() % sizeof(uint64_t) == 0)
-    auto conv_byte_order = [endianness](uint64_t x) -> uint64_t {
+    UHD_ASSERT_THROW(this->_payload.size() % sizeof(uint64_t) == 0);
+    const size_t buff_size_words = this->_payload.size() / sizeof(uint64_t);
+    auto conv_byte_order         = [endianness](uint64_t x) -> uint64_t {
         return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint64_t>(x)
-                                                   : uhd::htowx<uint64_t>(x);
+                                                           : uhd::htowx<uint64_t>(x);
     };
     payload.deserialize(reinterpret_cast<const uint64_t*>(this->_payload.data()),
-        this->_payload.size(),
+        buff_size_words,
         conv_byte_order);
     return payload;
 }
 
+// Generic set_payload for 64-bit-serialized payload types: strs_payload,
+// strc_payload, and mgmt_payload.
 template <typename payload_t>
 void chdr_packet::set_payload(payload_t payload, uhd::endianness_t endianness)
 {
     _header.set_pkt_type(chdr_rfnoc::payload_to_packet_type<payload_t>());
-    // Meaning a 64 bit word (The basic unit of data for payloads)
-    size_t payload_len_words = payload.get_length();
-    this->_payload.resize(payload_len_words * sizeof(uint64_t), 0);
+    const size_t payload_len_bytes = payload.get_length();
+    this->_payload.resize(payload_len_bytes, 0);
     auto conv_byte_order = [endianness](uint64_t x) -> uint64_t {
         return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint64_t>(x)
                                                    : uhd::htowx<uint64_t>(x);
     };
     payload.serialize(reinterpret_cast<uint64_t*>(this->_payload.data()),
+        this->_payload.size(),
+        conv_byte_order);
+    set_header_lengths();
+}
+
+// get_payload specialization for 32-bit ctrl_payload words.
+template <>
+chdr_rfnoc::ctrl_payload chdr_packet::get_payload<chdr_rfnoc::ctrl_payload>(
+    uhd::endianness_t endianness) const
+{
+    chdr_rfnoc::ctrl_payload payload;
+    UHD_ASSERT_THROW(this->_payload.size() % sizeof(uint32_t) == 0);
+    const size_t buff_size_words = this->_payload.size() / sizeof(uint32_t);
+    auto conv_byte_order         = [endianness](uint32_t x) -> uint32_t {
+        return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint32_t>(x)
+                                                           : uhd::htowx<uint32_t>(x);
+    };
+    payload.deserialize(reinterpret_cast<const uint32_t*>(this->_payload.data()),
+        buff_size_words,
+        conv_byte_order);
+    return payload;
+}
+
+// get_payload specialization for 32-bit ctrl_payload words.
+template <>
+void chdr_packet::set_payload<chdr_rfnoc::ctrl_payload>(
+    chdr_rfnoc::ctrl_payload payload, uhd::endianness_t endianness)
+{
+    _header.set_pkt_type(chdr_rfnoc::payload_to_packet_type<chdr_rfnoc::ctrl_payload>());
+    // ctrl_payload::serialize() returns exactly get_length() bytes with no
+    // padding, so allocate precisely that amount.
+    const size_t payload_len_bytes = payload.get_length();
+    this->_payload.resize(payload_len_bytes, 0);
+    auto conv_byte_order = [endianness](uint32_t x) -> uint32_t {
+        return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint32_t>(x)
+                                                   : uhd::htowx<uint32_t>(x);
+    };
+    payload.serialize(reinterpret_cast<uint32_t*>(this->_payload.data()),
         this->_payload.size(),
         conv_byte_order);
     set_header_lengths();

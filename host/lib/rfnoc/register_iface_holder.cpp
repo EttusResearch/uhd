@@ -40,6 +40,12 @@ public:
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
+    void burst_poke32(
+        uint32_t, const std::vector<uint32_t>, uhd::time_spec_t, bool) override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+    }
+
     uint32_t peek32(uint32_t, uhd::time_spec_t) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
@@ -52,10 +58,17 @@ public:
         return {};
     }
 
-    void poll32(
+    std::vector<uint32_t> burst_peek32(uint32_t, size_t, uhd::time_spec_t) override
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+        return {};
+    }
+
+    std::optional<uint32_t> poll32(
         uint32_t, uint32_t, uint32_t, uhd::time_spec_t, uhd::time_spec_t, bool) override
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+        return std::nullopt;
     }
 
     void sleep(uhd::time_spec_t, bool) override

@@ -9,6 +9,7 @@
 #include <uhd/types/endianness.hpp>
 #include <boost/format.hpp>
 #include <cassert>
+#include <iomanip>
 #include <sstream>
 
 using namespace uhd;
@@ -28,6 +29,18 @@ static inline constexpr field_t get_field_u64(
     uint64_t flat_hdr, size_t offset, size_t width)
 {
     return static_cast<field_t>((flat_hdr >> offset) & mask_u64(width));
+}
+
+static inline constexpr uint32_t mask_u32(size_t width)
+{
+    return ((uint32_t(1) << width) - 1);
+}
+
+template <typename field_t>
+static inline constexpr field_t get_field_u32(
+    uint32_t flat_hdr, size_t offset, size_t width)
+{
+    return static_cast<field_t>((flat_hdr >> offset) & mask_u32(width));
 }
 
 //----------------------------------------------------
@@ -58,115 +71,156 @@ void ctrl_payload::populate_header(chdr_header& header) const
     header.set_num_mdata(0);
 }
 
-size_t ctrl_payload::serialize(uint64_t* buff,
+size_t ctrl_payload::serialize(uint32_t* buff,
     size_t max_size_bytes,
-    const std::function<uint64_t(uint64_t)>& conv_byte_order) const
+    const std::function<uint32_t(uint32_t)>& conv_byte_order) const
 {
-    // Ctrl Packet Payload can't have more than 15 data -> 8 CHDR_W (RFNoC Spec.
-    // Section 2.2.3)
-    UHD_ASSERT_THROW((!data_vtr.empty() && data_vtr.size() < 16));
-    UHD_ASSERT_THROW(get_length() * sizeof(uint64_t) <= max_size_bytes);
+    // Ctrl Packet NumData can be from 0 to 15. NumData = 0 is only valid for
+    // write/sleep responses, which carry no data words. We only put data words
+    // in write requests and read responses.
+    UHD_ASSERT_THROW(
+        num_data <= MAX_DATA_WORDS && (num_data >= 1 || is_write_response()));
+    UHD_ASSERT_THROW((is_read_request() || is_write_response())
+                         ? data_vtr.empty()
+                         : (!data_vtr.empty() && data_vtr.size() <= MAX_DATA_WORDS));
+    UHD_ASSERT_THROW(get_length() <= max_size_bytes);
     size_t ptr = 0;
 
-    // Populate control header
+    // Populate control header word 0: dst_port, src_port, num_data, seq_num,
+    // has_time, is_ack
     buff[ptr++] = conv_byte_order(
-        ((static_cast<uint64_t>(dst_port) & mask_u64(DST_PORT_WIDTH)) << DST_PORT_OFFSET)
-        | ((static_cast<uint64_t>(src_port) & mask_u64(SRC_PORT_WIDTH))
+        ((static_cast<uint32_t>(dst_port) & mask_u32(DST_PORT_WIDTH)) << DST_PORT_OFFSET)
+        | ((static_cast<uint32_t>(src_port) & mask_u32(SRC_PORT_WIDTH))
             << SRC_PORT_OFFSET)
-        | ((static_cast<uint64_t>(data_vtr.size()) & mask_u64(NUM_DATA_WIDTH))
+        | ((static_cast<uint32_t>(num_data) & mask_u32(NUM_DATA_WIDTH))
             << NUM_DATA_OFFSET)
-        | ((static_cast<uint64_t>(seq_num) & mask_u64(SEQ_NUM_WIDTH)) << SEQ_NUM_OFFSET)
-        | ((static_cast<uint64_t>(bool(timestamp) ? 1 : 0) & mask_u64(HAS_TIME_WIDTH))
+        | ((static_cast<uint32_t>(seq_num) & mask_u32(SEQ_NUM_WIDTH)) << SEQ_NUM_OFFSET)
+        | ((static_cast<uint32_t>(bool(timestamp) ? 1 : 0) & mask_u32(HAS_TIME_WIDTH))
             << HAS_TIME_OFFSET)
-        | ((static_cast<uint64_t>(is_ack) & mask_u64(IS_ACK_WIDTH)) << IS_ACK_OFFSET)
-        | ((static_cast<uint64_t>(src_epid) & mask_u64(SRC_EPID_WIDTH))
-            << SRC_EPID_OFFSET));
+        | ((static_cast<uint32_t>(is_ack) & mask_u32(IS_ACK_WIDTH)) << IS_ACK_OFFSET));
 
-    // Populate optional timestamp
+    // Populate control header word 1: src_epid
+    buff[ptr++] =
+        conv_byte_order(static_cast<uint32_t>(src_epid) & mask_u32(SRC_EPID_WIDTH));
+
+    // Populate optional timestamp (low word first, then high word)
     if (bool(timestamp)) {
-        buff[ptr++] = conv_byte_order(*timestamp);
-    }
-
-    // Populate control operation word
-    buff[ptr++] = conv_byte_order(
-        ((static_cast<uint64_t>(address) & mask_u64(ADDRESS_WIDTH)) << ADDRESS_OFFSET)
-        | ((static_cast<uint64_t>(byte_enable) & mask_u64(BYTE_ENABLE_WIDTH))
-            << BYTE_ENABLE_OFFSET)
-        | ((static_cast<uint64_t>(op_code) & mask_u64(OPCODE_WIDTH)) << OPCODE_OFFSET)
-        | ((static_cast<uint64_t>(status) & mask_u64(STATUS_WIDTH)) << STATUS_OFFSET)
-        | (static_cast<uint64_t>(data_vtr[0]) << HI_DATA_OFFSET));
-
-    // Populate the rest of the data
-    for (size_t i = 1; i < data_vtr.size(); i += 2) {
-        const uint32_t hi_data =
-            (((i + 2) >= data_vtr.size()) && (data_vtr.size() % 2 == 0))
-                ? 0
-                : data_vtr[i + 1];
+        buff[ptr++] = conv_byte_order(static_cast<uint32_t>(*timestamp & 0xFFFFFFFF));
         buff[ptr++] =
-            conv_byte_order(static_cast<uint64_t>(hi_data) << HI_DATA_OFFSET
-                            | static_cast<uint64_t>(data_vtr[i]) << LO_DATA_OFFSET);
+            conv_byte_order(static_cast<uint32_t>((*timestamp >> 32) & 0xFFFFFFFF));
     }
 
-    // This really should be impossible but we'll leave it for safety's sake
-    UHD_ASSERT_THROW(ptr * sizeof(uint64_t) <= max_size_bytes);
-    // Return bytes written
-    return (ptr * sizeof(uint64_t));
+    // Populate op-word: address, byte_enable, op_code, status
+    buff[ptr++] = conv_byte_order(
+        ((static_cast<uint32_t>(address) & mask_u32(ADDRESS_WIDTH)) << ADDRESS_OFFSET)
+        | ((static_cast<uint32_t>(byte_enable) & mask_u32(BYTE_ENABLE_WIDTH))
+            << BYTE_ENABLE_OFFSET)
+        | ((static_cast<uint32_t>(op_code) & mask_u32(OPCODE_WIDTH)) << OPCODE_OFFSET)
+        | ((static_cast<uint32_t>(status) & mask_u32(STATUS_WIDTH)) << STATUS_OFFSET));
+
+    // For read requests and write/sleep responses, no data words follow.
+    if (!is_read_request() && !is_write_response()) {
+        for (size_t word_idx = 0; word_idx < data_vtr.size(); word_idx++) {
+            buff[ptr++] = conv_byte_order(data_vtr[word_idx]);
+        }
+    }
+
+    UHD_ASSERT_THROW(ptr * sizeof(uint32_t) == get_length());
+    return ptr * sizeof(uint32_t);
 }
 
-void ctrl_payload::deserialize(const uint64_t* buff,
+void ctrl_payload::deserialize(const uint32_t* buff,
     size_t buff_size,
-    const std::function<uint64_t(uint64_t)>& conv_byte_order)
+    const std::function<uint32_t(uint32_t)>& conv_byte_order)
 {
-    // We assume that buff has room to hold the entire packet
     size_t ptr = 0;
 
-    // Read control header
-    uint64_t ctrl_header = conv_byte_order(buff[ptr++]);
-    data_vtr.resize(get_field_u64<size_t>(ctrl_header, NUM_DATA_OFFSET, NUM_DATA_WIDTH));
-    UHD_ASSERT_THROW((!data_vtr.empty() && data_vtr.size() < 16));
-    dst_port = get_field_u64<uint16_t>(ctrl_header, DST_PORT_OFFSET, DST_PORT_WIDTH);
-    src_port = get_field_u64<uint16_t>(ctrl_header, SRC_PORT_OFFSET, SRC_PORT_WIDTH);
-    seq_num  = get_field_u64<uint8_t>(ctrl_header, SEQ_NUM_OFFSET, SEQ_NUM_WIDTH);
-    is_ack   = get_field_u64<bool>(ctrl_header, IS_ACK_OFFSET, IS_ACK_WIDTH);
-    src_epid = get_field_u64<uint16_t>(ctrl_header, SRC_EPID_OFFSET, SRC_EPID_WIDTH);
+    // Minimum: ctrl header (2 words) + op-word (1 word)
+    UHD_ASSERT_THROW(buff_size >= 3);
 
-    // Read optional timestamp
-    if (get_field_u64<bool>(ctrl_header, HAS_TIME_OFFSET, HAS_TIME_WIDTH)) {
-        timestamp = conv_byte_order(buff[ptr++]);
+    // Read control header word 0: dst_port, src_port, num_data, seq_num,
+    // has_time, is_ack
+    const uint32_t hdr_lo = conv_byte_order(buff[ptr++]);
+    const size_t num_data_from_hdr =
+        get_field_u32<size_t>(hdr_lo, NUM_DATA_OFFSET, NUM_DATA_WIDTH);
+    UHD_ASSERT_THROW(num_data_from_hdr <= MAX_DATA_WORDS);
+    num_data = num_data_from_hdr;
+    dst_port = get_field_u32<uint16_t>(hdr_lo, DST_PORT_OFFSET, DST_PORT_WIDTH);
+    src_port = get_field_u32<uint16_t>(hdr_lo, SRC_PORT_OFFSET, SRC_PORT_WIDTH);
+    seq_num  = get_field_u32<uint8_t>(hdr_lo, SEQ_NUM_OFFSET, SEQ_NUM_WIDTH);
+    const bool has_time = get_field_u32<bool>(hdr_lo, HAS_TIME_OFFSET, HAS_TIME_WIDTH);
+    is_ack              = get_field_u32<bool>(hdr_lo, IS_ACK_OFFSET, IS_ACK_WIDTH);
+
+    // Read control header word 1: src_epid
+    const uint32_t hdr_hi = conv_byte_order(buff[ptr++]);
+    src_epid = get_field_u32<uint16_t>(hdr_hi, SRC_EPID_OFFSET, SRC_EPID_WIDTH);
+
+    // Read optional timestamp (low word first, then high word)
+    if (has_time) {
+        UHD_ASSERT_THROW(buff_size >= ptr + 2);
+        const uint32_t ts_lo = conv_byte_order(buff[ptr++]);
+        const uint32_t ts_hi = conv_byte_order(buff[ptr++]);
+        timestamp = (static_cast<uint64_t>(ts_hi) << 32) | static_cast<uint64_t>(ts_lo);
     } else {
         timestamp = {};
     }
 
-    // Read control operation word
-    uint64_t op_word = conv_byte_order(buff[ptr++]);
-    if (!data_vtr.empty()) {
-        data_vtr[0] = get_field_u64<uint32_t>(op_word, HI_DATA_OFFSET, 32);
-    }
-    address     = get_field_u64<uint32_t>(op_word, ADDRESS_OFFSET, ADDRESS_WIDTH);
-    byte_enable = get_field_u64<uint8_t>(op_word, BYTE_ENABLE_OFFSET, BYTE_ENABLE_WIDTH);
-    op_code     = get_field_u64<ctrl_opcode_t>(op_word, OPCODE_OFFSET, OPCODE_WIDTH);
-    status      = get_field_u64<ctrl_status_t>(op_word, STATUS_OFFSET, STATUS_WIDTH);
+    // Read op-word: address, byte_enable, op_code, status
+    UHD_ASSERT_THROW(buff_size >= ptr + 1);
+    const uint32_t op_lo = conv_byte_order(buff[ptr++]);
+    address              = get_field_u32<uint32_t>(op_lo, ADDRESS_OFFSET, ADDRESS_WIDTH);
+    byte_enable = get_field_u32<uint8_t>(op_lo, BYTE_ENABLE_OFFSET, BYTE_ENABLE_WIDTH);
+    op_code     = get_field_u32<ctrl_opcode_t>(op_lo, OPCODE_OFFSET, OPCODE_WIDTH);
+    status      = get_field_u32<ctrl_status_t>(op_lo, STATUS_OFFSET, STATUS_WIDTH);
 
-    // Read the rest of the data
-    for (size_t i = 1; i < data_vtr.size(); i += 2) {
-        uint64_t data_word = conv_byte_order(buff[ptr++]);
-        if (((i + 2) < data_vtr.size()) || (data_vtr.size() % 2 != 0)) {
-            data_vtr[i + 1] = get_field_u64<uint32_t>(data_word, HI_DATA_OFFSET, 32);
-        }
-        data_vtr[i] = get_field_u64<uint32_t>(data_word, LO_DATA_OFFSET, 32);
+    // NumData = 0 is only valid for write/sleep responses, which carry no data
+    // words. All other packets must have NumData >= 1.
+    UHD_ASSERT_THROW(num_data >= 1 || is_write_response());
+
+    // For read requests, num_data encodes the requested word count. No data follows.
+    if (is_read_request()) {
+        data_vtr.clear();
+        return;
     }
+
+    // Write and sleep ACKs carry no data words.
+    if (is_write_response()) {
+        data_vtr.clear();
+        return;
+    }
+
+    // Read data words
+    const size_t num_data_present = buff_size - ptr;
+    const size_t actual_words     = std::min(num_data_present, num_data_from_hdr);
+    data_vtr.resize(actual_words);
+    for (size_t word_idx = 0; word_idx < actual_words; word_idx++) {
+        data_vtr[word_idx] = conv_byte_order(buff[ptr++]);
+    }
+
+    // For read responses, the word count must equal the requested count
+    if (is_read_response()) {
+        UHD_ASSERT_THROW(data_vtr.size() == num_data_from_hdr);
+    }
+
     UHD_ASSERT_THROW(ptr <= buff_size);
 }
 
 size_t ctrl_payload::get_length() const
 {
-    size_t length = 1;
+    // Control packets are always a multiple of 32 bits (4 bytes). The control
+    // header is 64 bits (2 words), timestamp is 64 bits (2 words) if present,
+    // the op-word is 32 bits (1 word), and data words are 32 bits each. Read
+    // requests and write/sleep responses carry no data words on the wire.
+    size_t num_32bit_words = 2; // ctrl header = 64 bits = two 32-bit words
     if (this->has_timestamp()) {
-        length += 1;
+        num_32bit_words += 2; // timestamp = 64 bits
     }
-    size_t operations = 1 + this->data_vtr.size();
-    length += operations / 2 + operations % 2;
-    return length;
+    if (is_read_request() || is_write_response()) {
+        num_32bit_words += 1; // op-word only
+    } else {
+        num_32bit_words += 1 + this->data_vtr.size(); // op-word + data
+    }
+    return num_32bit_words * sizeof(uint32_t);
 }
 
 bool ctrl_payload::operator==(const ctrl_payload& rhs) const
@@ -176,7 +230,7 @@ bool ctrl_payload::operator==(const ctrl_payload& rhs) const
            && (is_ack == rhs.is_ack) && (src_epid == rhs.src_epid)
            && (address == rhs.address) && (data_vtr == rhs.data_vtr)
            && (byte_enable == rhs.byte_enable) && (op_code == rhs.op_code)
-           && (status == rhs.status);
+           && (status == rhs.status) && (num_data == rhs.num_data);
 }
 
 std::string ctrl_payload::to_string() const
@@ -189,9 +243,16 @@ std::string ctrl_payload::to_string() const
                % (bool(timestamp) ? str(boost::format("0x%016x") % *timestamp)
                                   : std::string("<not present>"))
                % (is_ack ? "true" : "false") % src_epid % address % int(byte_enable)
-               % op_code % status % int(data_vtr.size()))
-           + (data_vtr.empty() ? std::string()
-                               : str(boost::format(" data[0]:0x%08x") % data_vtr[0]))
+               % op_code % status % int(num_data))
+           +
+           [&]() {
+               std::ostringstream oss;
+               for (size_t i = 0; i < data_vtr.size(); i++) {
+                   oss << " data[" << i << "]:0x" << std::hex << std::setw(8)
+                       << std::setfill('0') << data_vtr[i];
+               }
+               return oss.str();
+           }()
            + "}\n";
 }
 
@@ -273,7 +334,7 @@ void strs_payload::deserialize(const uint64_t* buff,
 
 size_t strs_payload::get_length() const
 {
-    return 4;
+    return 4 * sizeof(uint64_t);
 }
 
 bool strs_payload::operator==(const strs_payload& rhs) const
@@ -347,7 +408,7 @@ void strc_payload::deserialize(const uint64_t* buff,
 
 size_t strc_payload::get_length() const
 {
-    return 2;
+    return 2 * sizeof(uint64_t);
 }
 
 bool strc_payload::operator==(const strc_payload& rhs) const
@@ -571,7 +632,7 @@ size_t mgmt_payload::get_length() const
     for (const auto& hop : this->_hops) {
         length += hop.get_num_ops() + _padding_size;
     }
-    return length;
+    return length * sizeof(uint64_t);
 }
 
 std::string mgmt_payload::to_string() const

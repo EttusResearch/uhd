@@ -272,6 +272,9 @@ public: // Members
     uint32_t address = 0;
     //! Data for transaction (vector of 32 bits)
     std::vector<uint32_t> data_vtr = {0};
+    //! Number of 32-bit data words present in the packet, or the requested
+    //! word count for read requests (4 bits)
+    size_t num_data = 1;
     //! Byte-enable mask for transaction (4 bits)
     uint8_t byte_enable = 0xF;
     //! Operation code (4 bits)
@@ -289,54 +292,79 @@ public: // Functions
     //! Populate the header for this type of packet
     void populate_header(chdr_header& header) const;
 
-    //! Serialize the payload to a uint64_t buffer
-    size_t serialize(uint64_t* buff,
+    //! Serialize the payload to a uint32_t buffer
+    size_t serialize(uint32_t* buff,
         size_t max_size_bytes,
-        const std::function<uint64_t(uint64_t)>& conv_byte_order) const;
+        const std::function<uint32_t(uint32_t)>& conv_byte_order) const;
 
-    //! Serialize the payload to a uint64_t buffer (no conversion function)
+    //! Serialize the payload to a uint32_t buffer (no conversion function)
     template <endianness_t endianness>
-    size_t serialize(uint64_t* buff, size_t max_size_bytes) const
+    size_t serialize(uint32_t* buff, size_t max_size_bytes) const
     {
-        auto conv_byte_order = [](uint64_t x) -> uint64_t {
-            return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint64_t>(x)
-                                                       : uhd::htowx<uint64_t>(x);
+        auto conv_byte_order = [](uint32_t x) -> uint32_t {
+            return (endianness == uhd::ENDIANNESS_BIG) ? uhd::htonx<uint32_t>(x)
+                                                       : uhd::htowx<uint32_t>(x);
         };
         return serialize(buff, max_size_bytes, conv_byte_order);
     }
 
-    /*! \brief Deserialize the payload from a uint64_t buffer.
+    /*! \brief Deserialize the payload from a uint32_t buffer.
      *
      * \param buff Buffer to deserialize the payload from
      * \param buff_size Number of elements in the buffer
      * \param conv_byte_order Byte order converter function (buffer to host endianness)
      */
-    void deserialize(const uint64_t* buff,
+    void deserialize(const uint32_t* buff,
         size_t buff_size,
-        const std::function<uint64_t(uint64_t)>& conv_byte_order);
+        const std::function<uint32_t(uint32_t)>& conv_byte_order);
 
-    /*! \brief Deserialize the payload from a uint64_t buffer (no conversion function).
+    /*! \brief Deserialize the payload from a uint32_t buffer (no conversion function).
      *
      * \param buff Buffer to deserialize the payload from
      * \param buff_size Number of elements in the buffer
      */
     template <endianness_t endianness>
-    void deserialize(const uint64_t* buff, size_t buff_size)
+    void deserialize(const uint32_t* buff, size_t buff_size)
     {
-        auto conv_byte_order = [](uint64_t x) -> uint64_t {
-            return (endianness == uhd::ENDIANNESS_BIG) ? uhd::ntohx<uint64_t>(x)
-                                                       : uhd::wtohx<uint64_t>(x);
+        auto conv_byte_order = [](uint32_t x) -> uint32_t {
+            return (endianness == uhd::ENDIANNESS_BIG) ? uhd::ntohx<uint32_t>(x)
+                                                       : uhd::wtohx<uint32_t>(x);
         };
         deserialize(buff, buff_size, conv_byte_order);
     }
 
-    //! Get the serialized size of this payload in 64 bit words
+    //! Get the serialized size of this payload in bytes
     size_t get_length() const;
 
     // Return whether or not we have a valid timestamp
     bool has_timestamp() const
     {
         return bool(timestamp);
+    }
+
+    //! Returns true if this is a read request (OP_READ or OP_BLOCK_READ, not
+    //! an ACK). For such packets, num_data in the header encodes the requested
+    //! word count, but no data beats are transmitted on the wire.
+    bool is_read_request() const
+    {
+        return !is_ack && (op_code == OP_READ || op_code == OP_BLOCK_READ);
+    }
+
+    //! Returns true if this is a write ACK (OP_WRITE, OP_BLOCK_WRITE, or
+    //! OP_SLEEP, with is_ack set). For such packets, no data beats are
+    //! transmitted on the wire.
+    bool is_write_response() const
+    {
+        return is_ack
+               && (op_code == OP_WRITE || op_code == OP_BLOCK_WRITE
+                   || op_code == OP_SLEEP);
+    }
+
+    //! Returns true if this is a read ACK (OP_READ or OP_BLOCK_READ, with
+    //! is_ack set). For such packets, data beats are transmitted on the wire.
+    bool is_read_response() const
+    {
+        return is_ack && (op_code == OP_READ || op_code == OP_BLOCK_READ);
     }
 
     //! Comparison operator (==)
@@ -364,20 +392,25 @@ private:
     static constexpr size_t OPCODE_WIDTH      = 4;
     static constexpr size_t STATUS_WIDTH      = 2;
 
-    // Offsets assume 64-bit alignment
-    static constexpr size_t DST_PORT_OFFSET    = 0;
-    static constexpr size_t SRC_PORT_OFFSET    = 10;
-    static constexpr size_t NUM_DATA_OFFSET    = 20;
-    static constexpr size_t SEQ_NUM_OFFSET     = 24;
-    static constexpr size_t HAS_TIME_OFFSET    = 30;
-    static constexpr size_t IS_ACK_OFFSET      = 31;
-    static constexpr size_t SRC_EPID_OFFSET    = 32;
+    // Bit offsets within each 32-bit wire word
+    // Ctrl header word 0
+    static constexpr size_t DST_PORT_OFFSET = 0;
+    static constexpr size_t SRC_PORT_OFFSET = 10;
+    static constexpr size_t NUM_DATA_OFFSET = 20;
+    static constexpr size_t SEQ_NUM_OFFSET  = 24;
+    static constexpr size_t HAS_TIME_OFFSET = 30;
+    static constexpr size_t IS_ACK_OFFSET   = 31;
+    // Ctrl header word 1
+    static constexpr size_t SRC_EPID_OFFSET = 0;
+    // Op-word
     static constexpr size_t ADDRESS_OFFSET     = 0;
     static constexpr size_t BYTE_ENABLE_OFFSET = 20;
     static constexpr size_t OPCODE_OFFSET      = 24;
     static constexpr size_t STATUS_OFFSET      = 30;
-    static constexpr size_t LO_DATA_OFFSET     = 0;
-    static constexpr size_t HI_DATA_OFFSET     = 32;
+
+public: // Constants (depend on private members, so must be declared here)
+    //! Maximum number of 32-bit data words in a CTRL payload
+    static constexpr size_t MAX_DATA_WORDS = (size_t(1) << NUM_DATA_WIDTH) - 1;
 };
 
 //----------------------------------------------------

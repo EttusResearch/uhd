@@ -12,11 +12,11 @@ CHDR_W = chdr.ChdrWidth.W64
 def make_control_packet0():
     header = chdr.ChdrHeader()
     header.pkt_type = chdr.PacketType.CTRL
-    header.length = 24
+    header.length = 20
     header.dst_epid = 2
     payload = chdr.CtrlPayload()
     payload.src_epid = 1
-    payload.set_data([0])
+    payload.set_data([])
     payload.op_code = chdr.CtrlOpCode.READ
     return chdr.ChdrPacket(CHDR_W, header, payload)
 

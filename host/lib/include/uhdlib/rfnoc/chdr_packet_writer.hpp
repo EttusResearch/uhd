@@ -292,6 +292,43 @@ private:
 //! CHDR control packet
 typedef chdr_packet_writer_specific<ctrl_payload> chdr_ctrl_packet;
 
+// ctrl_payload uses 32-bit serialize/deserialize, so we specialize the three
+// methods that pass the raw buffer pointer and byte-order converter.
+template <>
+inline void chdr_ctrl_packet::refresh(void* pkt_buff,
+    size_t pkt_buff_size,
+    chdr_header& header,
+    const ctrl_payload& payload)
+{
+    payload.populate_header(header);
+    _chdr_pkt->refresh(pkt_buff, header);
+    size_t bytes_copied = payload.serialize(_chdr_pkt->get_payload_ptr_as<uint32_t>(),
+        (pkt_buff_size > _chdr_pkt->get_header_size())
+            ? pkt_buff_size - _chdr_pkt->get_header_size()
+            : 0,
+        _chdr_pkt->conv_from_host<uint32_t>());
+    _chdr_pkt->update_payload_size(bytes_copied);
+    header = _chdr_pkt->get_chdr_header();
+}
+
+template <>
+inline ctrl_payload chdr_ctrl_packet::get_payload() const
+{
+    ctrl_payload payload;
+    payload.deserialize(_chdr_pkt->get_payload_const_ptr_as<uint32_t>(),
+        _chdr_pkt->get_payload_size() / sizeof(uint32_t),
+        _chdr_pkt->conv_to_host<uint32_t>());
+    return payload;
+}
+
+template <>
+inline void chdr_ctrl_packet::fill_payload(ctrl_payload& payload) const
+{
+    payload.deserialize(_chdr_pkt->get_payload_const_ptr_as<uint32_t>(),
+        _chdr_pkt->get_payload_size() / sizeof(uint32_t),
+        _chdr_pkt->conv_to_host<uint32_t>());
+}
+
 //! CHDR stream status packet
 typedef chdr_packet_writer_specific<strs_payload> chdr_strs_packet;
 

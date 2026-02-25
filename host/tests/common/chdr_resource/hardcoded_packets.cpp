@@ -20,11 +20,11 @@ chdr_util::chdr_packet make_control_packet0()
 {
     auto header = chdr_rfnoc::chdr_header();
     header.set_pkt_type(chdr_rfnoc::PKT_TYPE_CTRL);
-    header.set_length(24);
+    header.set_length(20);
     header.set_dst_epid(2);
     auto payload     = chdr_rfnoc::ctrl_payload();
     payload.src_epid = 1;
-    payload.data_vtr = {0};
+    payload.data_vtr = {};
     payload.op_code  = chdr_rfnoc::OP_READ;
     return chdr_util::chdr_packet(CHDR_W, header, payload);
 }

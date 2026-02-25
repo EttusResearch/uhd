@@ -157,6 +157,28 @@ public:
             _get_addr(first_addr, instance), data, time, ack);
     }
 
+    /*! Write multiple 32-bit values to the same register address.
+     *
+     * \param addr The byte address of the register to write to
+     * \param data Values to write to this register
+     * \param instance The index of the block of registers to which the writes apply.
+     * \param time The time at which the first transaction should be executed.
+     * \param ack Should transaction completion be acknowledged?
+     *
+     * \throws op_failed if an ACK is requested and the transaction fails
+     * \throws op_timeout if an ACK is requested and no response is received
+     * \throws op_seqerr if an ACK is requested and a sequence error occurs
+     * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
+     */
+    inline void burst_poke32(uint32_t addr,
+        const std::vector<uint32_t> data,
+        const size_t instance = 0,
+        uhd::time_spec_t time = uhd::time_spec_t::ASAP,
+        bool ack              = false)
+    {
+        _reg_iface_holder.regs().burst_poke32(_get_addr(addr, instance), data, time, ack);
+    }
+
     /*! Read a 32-bit register implemented in the NoC block.
      *
      * \param addr The byte address of the register to read from (truncated to 20 bits).
@@ -226,6 +248,28 @@ public:
             _get_addr(first_addr, instance), length, time);
     }
 
+    /*! Read multiple 32-bit values from the same register address.
+     *
+     * \param addr The byte address of the register to read from
+     *             (truncated to 20 bits).
+     * \param length The number of 32-bit values to read
+     * \param instance The index of the block of registers to which the reads apply.
+     * \param time The time at which the transaction should be executed.
+     * \return Vector of \p length values read from \p addr.
+     *
+     * \throws op_failed if the transaction fails
+     * \throws op_timeout if no response is received
+     * \throws op_seqerr if a sequence error occurs
+     */
+    inline std::vector<uint32_t> burst_peek32(uint32_t addr,
+        size_t length,
+        const size_t instance = 0,
+        time_spec_t time      = uhd::time_spec_t::ASAP)
+    {
+        return _reg_iface_holder.regs().burst_peek32(
+            _get_addr(addr, instance), length, time);
+    }
+
     /*! Poll a 32-bit register until its value for all bits in mask match data&mask
      *
      * This will insert a command into the command queue to wait until a
@@ -233,8 +277,10 @@ public:
      * lock pin before executing the next command. It is related to sleep(),
      * except it has a condition to wait on, rather than an unconditional stall
      * duration. The timeout is hardware-timed.
-     * If the register does not attain the requested value within the requested
-     * duration, ${something bad happens}.
+     *
+     * If ack is true and the register does not attain the requested value
+     * within the requested duration, an op_failed exception is thrown. If ack
+     * is false, the timeout is not reported.
      *
      * Example: Assume readback register 16 is a status register, and bit 0
      * indicates a lock is in place (i.e., we want it to be 1) and bit 1 is an
@@ -255,16 +301,20 @@ public:
      *                before reaching its new state.
      * \param instance The index of the block of registers to which the poll applies.
      * \param time When the poll should be executed
-     * \param ack Should transaction completion be acknowledged? This is
-     *            typically only necessary if the software needs a condition to
-     *            be fulfilled before continueing, or during debugging.
+     * \param ack If true, wait for the hardware response and return the last
+     *            sampled register value. If false, send the command without
+     *            waiting and return std::nullopt. This is typically only
+     *            necessary if the software needs a condition to be fulfilled
+     *            before continuing, or during debugging.
      *
+     * \returns The last sampled value of the register if ack is true,
+     *          otherwise std::nullopt.
      * \throws op_failed if an ACK is requested and the transaction fails
      * \throws op_timeout if an ACK is requested and no response is received
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      * \throws op_timeerr if an ACK is requested and a time error occurs (late command)
      */
-    inline void poll32(uint32_t addr,
+    inline std::optional<uint32_t> poll32(uint32_t addr,
         uint32_t data,
         uint32_t mask,
         time_spec_t timeout,
@@ -272,7 +322,7 @@ public:
         time_spec_t time      = uhd::time_spec_t::ASAP,
         bool ack              = false)
     {
-        _reg_iface_holder.regs().poll32(
+        return _reg_iface_holder.regs().poll32(
             _get_addr(addr, instance), data, mask, timeout, time, ack);
     }
 

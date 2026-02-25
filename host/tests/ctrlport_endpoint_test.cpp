@@ -52,13 +52,14 @@ public:
             sent_packets.push_back(pkt);
             last_timeout = timeout;
 
-            // Simulate peek
-            if (pkt.op_code == OP_READ) {
+            // Simulate peek (single or block read)
+            if (pkt.op_code == OP_READ || pkt.op_code == OP_BLOCK_READ) {
                 schedule_async_response(create_read_response(pkt));
             }
 
             // Simulate ACK response for write operations if auto_ack is enabled
-            if (auto_ack_enabled && pkt.op_code == OP_WRITE) {
+            if (auto_ack_enabled
+                && (pkt.op_code == OP_WRITE || pkt.op_code == OP_BLOCK_WRITE)) {
                 schedule_async_response(create_write_ack(pkt));
             }
         }; // end of send_fn
@@ -178,6 +179,7 @@ private:
         ctrl_payload response;
         response.dst_port  = request.src_port;
         response.src_port  = request.dst_port;
+        response.num_data  = request.num_data;
         response.seq_num   = request.seq_num;
         response.timestamp = request.timestamp;
         response.is_ack    = true;
@@ -186,7 +188,11 @@ private:
         response.address   = request.address;
         response.status    = CMD_OKAY;
         // Echo back the address as the data for predictable testing
-        response.data_vtr = {static_cast<uint32_t>(request.address + 0xDEADBEEF)};
+        response.data_vtr.clear();
+        for (size_t i = 0; i < request.num_data; i++) {
+            uint32_t addr = request.address + static_cast<uint32_t>(i * sizeof(uint32_t));
+            response.data_vtr.push_back(static_cast<uint32_t>(addr + 0xDEADBEEF));
+        }
         return response;
     }
 
@@ -197,6 +203,7 @@ private:
         ctrl_payload response;
         response.dst_port  = request.src_port;
         response.src_port  = request.dst_port;
+        response.num_data  = 0;
         response.seq_num   = request.seq_num;
         response.timestamp = request.timestamp;
         response.is_ack    = true;
@@ -204,7 +211,7 @@ private:
         response.op_code   = request.op_code;
         response.address   = request.address;
         response.status    = status;
-        response.data_vtr  = request.data_vtr;
+        response.data_vtr  = {}; // Write/sleep responses do not echo data
         return response;
     }
 
@@ -344,10 +351,8 @@ BOOST_FIXTURE_TEST_CASE(test_peek32_basic, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
     BOOST_CHECK_EQUAL(packet.address, test_addr);
-    BOOST_CHECK_EQUAL(packet.data_vtr.size(), 1);
-    BOOST_CHECK_EQUAL(packet.data_vtr[0], 0); // Read operations send dummy data
-
-    // Verify the mock response value (address + 0xDEADBEEF)
+    BOOST_CHECK_EQUAL(packet.num_data, 1);
+    BOOST_CHECK(packet.data_vtr.empty());
     BOOST_CHECK_EQUAL(result, test_addr + 0xDEADBEEF);
 }
 
@@ -365,8 +370,8 @@ BOOST_FIXTURE_TEST_CASE(test_peek32_with_timestamp, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
     BOOST_CHECK_EQUAL(packet.address, test_addr);
-    BOOST_CHECK_EQUAL(packet.data_vtr.size(), 1);
-    BOOST_CHECK_EQUAL(packet.data_vtr[0], 0); // Read operations send dummy data
+    BOOST_CHECK_EQUAL(packet.num_data, 1);
+    BOOST_CHECK(packet.data_vtr.empty());
     BOOST_CHECK(packet.has_timestamp());
 
     // Verify the mock response value
@@ -413,18 +418,17 @@ BOOST_FIXTURE_TEST_CASE(test_block_poke32, ctrlport_endpoint_fixture)
     // Test block_poke32
     endpoint->block_poke32(base_addr, test_data);
 
-    // Verify correct number of packets were sent (currently implemented as individual
-    // pokes)
-    BOOST_CHECK_EQUAL(get_sent_packet_count(), test_data.size());
+    // Verify correct number of packets were sent
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 1);
 
     // Check each packet has the correct address and data
-    std::lock_guard<std::mutex> lock(sent_packets_mutex);
+    auto packet = get_last_sent_packet();
+    BOOST_CHECK_EQUAL(packet.op_code, OP_BLOCK_WRITE);
+    BOOST_CHECK_EQUAL(packet.address, base_addr);
+    BOOST_CHECK_EQUAL(packet.num_data, test_data.size());
+    BOOST_REQUIRE_EQUAL(packet.data_vtr.size(), test_data.size());
     for (size_t i = 0; i < test_data.size(); ++i) {
-        auto& packet = sent_packets[i];
-        BOOST_CHECK_EQUAL(packet.op_code, OP_WRITE);
-        BOOST_CHECK_EQUAL(packet.address, base_addr + (i * sizeof(uint32_t)));
-        BOOST_CHECK_EQUAL(packet.data_vtr.size(), 1);
-        BOOST_CHECK_EQUAL(packet.data_vtr[0], test_data[i]);
+        BOOST_CHECK_EQUAL(packet.data_vtr[i], test_data[i]);
     }
 }
 
@@ -437,7 +441,13 @@ BOOST_FIXTURE_TEST_CASE(test_block_peek32, ctrlport_endpoint_fixture)
     auto result = endpoint->block_peek32(base_addr, length);
 
     // Verify correct number of packets were sent
-    BOOST_CHECK_EQUAL(get_sent_packet_count(), length);
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 1);
+
+    auto packet = get_last_sent_packet();
+    BOOST_CHECK_EQUAL(packet.op_code, OP_BLOCK_READ);
+    BOOST_CHECK_EQUAL(packet.address, base_addr);
+    BOOST_CHECK_EQUAL(packet.num_data, length);
+    BOOST_CHECK(packet.data_vtr.empty()); // No data in read request
 
     // Verify result vector has correct size
     BOOST_CHECK_EQUAL(result.size(), length);
@@ -447,6 +457,115 @@ BOOST_FIXTURE_TEST_CASE(test_block_peek32, ctrlport_endpoint_fixture)
         uint32_t expected_addr = base_addr + (i * sizeof(uint32_t));
         BOOST_CHECK_EQUAL(result[i], expected_addr + 0xDEADBEEF);
     }
+}
+
+BOOST_FIXTURE_TEST_CASE(test_block_poke32_with_ack, ctrlport_endpoint_fixture)
+{
+    const uint32_t base_addr              = 0x8100;
+    const std::vector<uint32_t> test_data = {0xAAAA, 0xBBBB, 0xCCCC};
+
+    set_auto_ack(true);
+
+    // Test block_poke32 with ACK - this should not timeout
+    endpoint->block_poke32(base_addr, test_data, uhd::time_spec_t::ASAP, true);
+
+    auto packet = get_last_sent_packet();
+    BOOST_CHECK_EQUAL(packet.op_code, OP_BLOCK_WRITE);
+    BOOST_CHECK_EQUAL(packet.address, base_addr);
+    BOOST_CHECK_EQUAL(packet.num_data, test_data.size());
+
+    auto stats = endpoint->get_stats();
+    BOOST_CHECK_EQUAL(stats.ctrl_packets_sent, 1);
+    BOOST_CHECK_EQUAL(stats.ack_packets_received, 1);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_burst_poke32, ctrlport_endpoint_fixture)
+{
+    const uint32_t addr                   = 0xA000;
+    const std::vector<uint32_t> test_data = {0x1111, 0x2222, 0x3333, 0x4444};
+
+    // Test burst_poke32
+    endpoint->burst_poke32(addr, test_data);
+
+    // Verify correct number of packets were sent (fits within one OP_WRITE packet)
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 1);
+
+    // Check opcode, address, and data
+    auto packet = get_last_sent_packet();
+    BOOST_CHECK_EQUAL(packet.op_code, OP_WRITE);
+    BOOST_CHECK_EQUAL(packet.address, addr);
+    BOOST_CHECK_EQUAL(packet.num_data, test_data.size());
+    BOOST_REQUIRE_EQUAL(packet.data_vtr.size(), test_data.size());
+    for (size_t i = 0; i < test_data.size(); ++i) {
+        BOOST_CHECK_EQUAL(packet.data_vtr[i], test_data[i]);
+    }
+}
+
+BOOST_FIXTURE_TEST_CASE(test_burst_poke32_same_address, ctrlport_endpoint_fixture)
+{
+    // Verify that when burst_poke32 must split into multiple packets (more than
+    // MAX_DATA_WORDS words), ALL packets still go to the same address.
+    const uint32_t addr = 0xB000;
+
+    // Build a payload larger than one packet to force chunking.
+    std::vector<uint32_t> test_data(ctrl_payload::MAX_DATA_WORDS + 3, 0xDEAD);
+    for (size_t i = 0; i < test_data.size(); ++i)
+        test_data[i] = static_cast<uint32_t>(i);
+
+    endpoint->burst_poke32(addr, test_data);
+
+    // Should produce exactly 2 packets.
+    BOOST_REQUIRE_EQUAL(get_sent_packet_count(), 2);
+
+    std::lock_guard<std::mutex> lock(sent_packets_mutex);
+    for (const auto& pkt : sent_packets) {
+        BOOST_CHECK_EQUAL(pkt.op_code, OP_WRITE);
+        // All packets must use the same address
+        BOOST_CHECK_EQUAL(pkt.address, addr);
+    }
+}
+
+BOOST_FIXTURE_TEST_CASE(test_burst_peek32, ctrlport_endpoint_fixture)
+{
+    const uint32_t addr = 0xC000;
+    const size_t length = 3;
+
+    // Test burst_peek32
+    auto result = endpoint->burst_peek32(addr, length);
+
+    // Verify correct number of packets were sent (fits within one OP_READ packet)
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 1);
+
+    auto packet = get_last_sent_packet();
+    BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
+    BOOST_CHECK_EQUAL(packet.address, addr);
+    BOOST_CHECK_EQUAL(packet.num_data, length);
+    BOOST_CHECK(packet.data_vtr.empty()); // No data in read request
+
+    // Verify result vector has correct size
+    BOOST_CHECK_EQUAL(result.size(), length);
+}
+
+BOOST_FIXTURE_TEST_CASE(test_burst_peek32_same_address, ctrlport_endpoint_fixture)
+{
+    // Verify that when burst_peek32 must split into multiple packets, ALL
+    // packets still go to the same address.
+    const uint32_t addr = 0xD000;
+    const size_t length = ctrl_payload::MAX_DATA_WORDS + 2;
+
+    auto result = endpoint->burst_peek32(addr, length);
+
+    // Should produce exactly 2 request packets.
+    BOOST_REQUIRE_EQUAL(get_sent_packet_count(), 2);
+
+    std::lock_guard<std::mutex> lock(sent_packets_mutex);
+    for (const auto& pkt : sent_packets) {
+        BOOST_CHECK_EQUAL(pkt.op_code, OP_READ);
+        // All packets must use the same address
+        BOOST_CHECK_EQUAL(pkt.address, addr);
+    }
+
+    BOOST_CHECK_EQUAL(result.size(), length);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_sleep, ctrlport_endpoint_fixture)
@@ -654,44 +773,6 @@ BOOST_FIXTURE_TEST_CASE(test_stale_ack_op_addr_mismatch, ctrlport_endpoint_fixtu
     BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_out_of_sequence, 1);
 
     // Deliver the correct ACK — must be accepted
-    send_ack(correct_pkt);
-    wait_for_all_responses();
-    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 2);
-    BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
-}
-
-// Verify that a stale WRITE ACK with matching seq_num, op_code, and address but
-// wrong data payload is silently dropped and the real ACK is still accepted.
-BOOST_FIXTURE_TEST_CASE(test_stale_ack_data_mismatch, ctrlport_endpoint_fixture)
-{
-    set_auto_ack(false);
-
-    const uint32_t test_addr = 0x81020; // SPI_READY register (real-world collision addr)
-    const uint32_t test_data = 0xD64E0089;
-
-    endpoint->poke32(test_addr, test_data);
-    auto correct_pkt = get_last_sent_packet();
-
-    // Build a stale WRITE ACK: seq_num, op_code, address all match, but data differs
-    ctrl_payload stale_ack;
-    stale_ack.dst_port = correct_pkt.src_port;
-    stale_ack.src_port = correct_pkt.dst_port;
-    stale_ack.seq_num  = correct_pkt.seq_num;
-    stale_ack.is_ack   = true;
-    stale_ack.src_epid = correct_pkt.src_epid;
-    stale_ack.op_code  = OP_WRITE;
-    stale_ack.address  = correct_pkt.address;
-    stale_ack.status   = CMD_OKAY;
-    stale_ack.data_vtr = {0xD600629C}; // stale data from previous session
-
-    // Deliver stale ACK — must be ignored
-    endpoint->handle_recv(stale_ack);
-    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 1);
-    BOOST_CHECK_GT(endpoint->get_stats().buffer_fullness, 0u);
-    // Out-of-sequence counter must be incremented
-    BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_out_of_sequence, 1);
-
-    // Deliver correct ACK with matching data — must be accepted
     send_ack(correct_pkt);
     wait_for_all_responses();
     BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 2);

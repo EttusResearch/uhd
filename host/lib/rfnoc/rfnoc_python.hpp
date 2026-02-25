@@ -455,6 +455,24 @@ void export_rfnoc(py::module& m)
             py::arg("time"),
             py::arg("ack") = false)
         .def(
+            "burst_poke32",
+            [](noc_block_base& self, uint32_t addr, std::vector<uint32_t> data) {
+                self.regs().burst_poke32(addr, data);
+            },
+            py::arg("addr"),
+            py::arg("data"))
+        .def(
+            "burst_poke32",
+            [](noc_block_base& self,
+                uint32_t addr,
+                std::vector<uint32_t> data,
+                uhd::time_spec_t time,
+                bool ack = false) { self.regs().burst_poke32(addr, data, time, ack); },
+            py::arg("addr"),
+            py::arg("data"),
+            py::arg("time"),
+            py::arg("ack") = false)
+        .def(
             "peek32",
             [](noc_block_base& self, uint32_t addr) { return self.regs().peek32(addr); },
             py::arg("addr"))
@@ -492,6 +510,24 @@ void export_rfnoc(py::module& m)
                 return self.regs().block_peek32(first_addr, length, time);
             },
             py::arg("first_addr"),
+            py::arg("length"),
+            py::arg("time"))
+        .def(
+            "burst_peek32",
+            [](noc_block_base& self, uint32_t addr, size_t length) {
+                return self.regs().burst_peek32(addr, length);
+            },
+            py::arg("addr"),
+            py::arg("length"))
+        .def(
+            "burst_peek32",
+            [](noc_block_base& self,
+                uint32_t addr,
+                size_t length,
+                uhd::time_spec_t time) {
+                return self.regs().burst_peek32(addr, length, time);
+            },
+            py::arg("addr"),
             py::arg("length"),
             py::arg("time"))
         .def(
