@@ -133,6 +133,11 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
         "scaling", {res_source_info::OUTPUT_EDGE, 0});
     BOOST_CHECK_EQUAL(doubled_input_scaling, 2 * initial_input_scaling);
 
+    BOOST_CHECK_CLOSE(test_duc->get_input_rates(0).start(),
+        DEFAULT_RATE / ((1 << num_hb) * max_cic),
+        1e-6);
+    BOOST_CHECK_CLOSE(test_duc->get_input_rates(0).stop(), DEFAULT_RATE, 1e-6);
+
     BOOST_CHECK_CLOSE(test_duc->get_frequency_range(0).start(), -DEFAULT_RATE / 2, 1e-6);
     BOOST_CHECK_CLOSE(test_duc->get_frequency_range(0).stop(), DEFAULT_RATE / 2, 1e-6);
     UHD_LOG_INFO("TEST",
