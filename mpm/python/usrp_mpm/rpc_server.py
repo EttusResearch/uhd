@@ -11,6 +11,7 @@ import signal
 import sys
 import threading
 import traceback
+import weakref
 from contextlib import contextmanager
 from multiprocessing import Process, RLock, current_process
 from random import choice
@@ -111,14 +112,7 @@ class MPMServer(RPCServer):
         First clears out all previously registered RPC calls.
         """
         # Clear old calls:
-        for meth_list in (self._db_methods, self._mb_methods):
-            for method in meth_list:
-                if hasattr(self, method):
-                    delattr(self, method)
-                else:
-                    self.log.warning("Attempted to remove non-existent method: %s", method)
-        self._db_methods = []
-        self._mb_methods = []
+        self._clear_rpc_calls()
         # Register new ones:
         self._update_component_commands(mgr, "", "_mb_methods")
         for db_slot, dboard in enumerate(mgr.dboards):
@@ -129,6 +123,22 @@ class MPMServer(RPCServer):
             len(self._mb_methods),
             len(self._db_methods),
         )
+    
+    def _clear_rpc_calls(self):
+        """Clear all RPC calls.
+
+        This is a helper function that clears all RPC calls. This is used in the
+        case where we want to reset the peripheral manager, and we want to make
+        sure that no calls to the old peripheral manager are possible.
+        """
+        for meth_list in (self._db_methods, self._mb_methods):
+            for method in meth_list:
+                if hasattr(self, method):
+                    delattr(self, method)
+                else:
+                    self.log.warning("Attempted to remove non-existent method: %s", method)
+        self._db_methods = []
+        self._mb_methods = []
 
     def _update_component_commands(self, component, namespace, storage):
         """Detect available methods for an object and add them to the RPC server.
@@ -515,13 +525,34 @@ class MPMServer(RPCServer):
         The peripheral manager is torn down and re-initialized from scratch.
         """
         self.log.info("Resetting peripheral manager.")
+        # Keep a weak reference so we can verify the old manager is truly
+        # destroyed after we clear all references. A weak reference does not
+        # prevent garbage collection, so if it returns None afterwards we know
+        # __del__ was called and all handles were released.
+        _old_mgr_ref = weakref.ref(self.periph_manager)
         self.periph_manager.tear_down()
         self.periph_manager = None
+        # Remove the RPC method closures to remove references to old
+        # periph_manager.
+        # There are TWO places where old periph_manager references hide:
+        # 1. Instance attributes: _add_claimed_command/_add_safe_command attach
+        #    closures via setattr(self, command, fn). Each closure captures a
+        #    bound method of the old periph_manager (via __self__).
+        self._clear_rpc_calls()
+        # 2. mprpc RPCServer._methods dict (Cython cdef field): _parse_request()
+        #    caches getattr(self, method_name) on first call. Those cached
+        #    closures also hold a reference to the old periph_manager.
+        #    clear_method_registry() empties that dict.
+        self.clear_method_registry()
+        if _old_mgr_ref() is not None:
+            self.log.warning(
+                "Peripheral manager was NOT garbage collected after reset! "
+                "There is probably a lingering reference keeping it alive. "
+                "GPIO/SPI/pipe handles may have leaked."
+            )
+        # Create a new manager and register RPC calls for it.
         self.periph_manager = self._mgr_generator()
         self._init_rpc_calls(self.periph_manager)
-        # Clear the method cache in order to remove stale references to
-        # methods from the old peripheral manager (the one before reset)
-        self.clear_method_registry()
         # update the FPGA type information in the state
         device_info = self.periph_manager.get_device_info()
         self._state.dev_fpga_type.value = to_binary_str(device_info.get("fpga", "n/a"))

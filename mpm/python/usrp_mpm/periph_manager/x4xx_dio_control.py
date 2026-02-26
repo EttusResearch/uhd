@@ -7,6 +7,7 @@
 
 import re
 import signal
+import weakref
 from multiprocessing import Event, Process, Value, current_process
 
 from usrp_mpm.mpmutils import (
@@ -316,8 +317,15 @@ class DioControl:
             name="DIO1 fault monitor",
             args=("B", "DIO_INT1", self._tear_down_monitor, self._dio_fault["PORTB"]),
         )
-        register_chained_signal_handler(signal.SIGINT, self._monitor_int_handler)
-        register_chained_signal_handler(signal.SIGTERM, self._monitor_int_handler)
+        # Use a weakref-based signal handler wrapper so the global signal
+        # handler chain does not keep this DioControl instance alive.
+        self_ref = weakref.ref(self)
+        def _weak_monitor_int_handler(signum, frame):
+            obj = self_ref()
+            if obj is not None:
+                obj._monitor_int_handler(signum, frame)
+        register_chained_signal_handler(signal.SIGINT, _weak_monitor_int_handler)
+        register_chained_signal_handler(signal.SIGTERM, _weak_monitor_int_handler)
         self._dio0_fault_monitor.start()
         self._dio1_fault_monitor.start()
 
