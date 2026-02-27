@@ -22326,8 +22326,34 @@ Sets I/O state to control Sync Switch 5.
                             <td class="l">0x0</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|ENABLED"></a>
-                                    ENABLED
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|REAL_MODE"></a>
+                                    REAL_MODE
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">1</td>
+                            <td class="l">0x1</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|I_MODE"></a>
+                                    I_MODE
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">2</td>
+                            <td class="l">0x2</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|Q_MODE"></a>
+                                    Q_MODE
                                 </p>
                                 
                             </td>
@@ -24787,8 +24813,9 @@ Sets I/O state to control Sync Switch 5.
                     <tr class="byte" valign="top">
                         <td class="bits">7..6</td>
                         <td>
-                            <p><span class="name"><a name="RFDC_REGS_REGMAP|RFDC_INFO_MEM|RESERVED2"></a>RESERVED2</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p>Reserved for later use.</p>
+                            <p><span class="name"><a name="RFDC_REGS_REGMAP|RFDC_INFO_MEM|SUBCHANNEL"></a>SUBCHANNEL</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
+                            <p>If there are multiple physical paths per RFNoC channel this index is used to separate them.
+          I/Q converters linked together should share the same subchannel index.</p>
                         </td>
                     </tr>
                     
@@ -24814,7 +24841,7 @@ Sets I/O state to control Sync Switch 5.
                         <td class="bits">1..0</td>
                         <td>
                             <p><span class="name"><a name="RFDC_REGS_REGMAP|RFDC_INFO_MEM|BLOCK_MODE"></a>BLOCK_MODE</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p>The state of this ADC/DAC.</p>
+                            <p>The mixer setting of this ADC/DAC.</p>
                                 
                                     <div class="sh">
                                         <p class="sh-enum">
@@ -24842,8 +24869,34 @@ Sets I/O state to control Sync Switch 5.
                             <td class="l">0x0</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
-                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|ENABLED"></a>
-                                    ENABLED
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|REAL_MODE"></a>
+                                    REAL_MODE
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">1</td>
+                            <td class="l">0x1</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|I_MODE"></a>
+                                    I_MODE
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">2</td>
+                            <td class="l">0x2</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="RFDC_REGS_REGMAP|RFDC_BLOCK_INFO_ENUM|Q_MODE"></a>
+                                    Q_MODE
                                 </p>
                                 
                             </td>
@@ -27442,8 +27495,34 @@ used with 100Gb ethernet</p></div></p>
                             <td class="l">0x00000000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
+                                    FPGA_CURRENT_VERSION_MINOR
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">0</td>
+                            <td class="l">0x00000000</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_BUILD"></a>
                                     FPGA_CURRENT_VERSION_BUILD
+                                </p>
+                                
+                            </td>
+            </tr>
+            <tr valign="top">
+                
+                    
+                        <td class="value">0</td>
+                            <td class="l">0x00000000</td>
+                            <td class="l" style="text-align: left;">
+                                <p class="name">
+                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
+                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
                                 </p>
                                 
                             </td>
@@ -27464,34 +27543,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">1</td>
-                            <td class="l">0x00000001</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
-                                    FPGA_CURRENT_VERSION_MINOR
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">1</td>
-                            <td class="l">0x00000001</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
-                                    <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
-                                    FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">10</td>
-                            <td class="l">0x0000000A</td>
+                        <td class="value">11</td>
+                            <td class="l">0x0000000B</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MAJOR"></a>
@@ -27503,8 +27556,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">10</td>
-                            <td class="l">0x0000000A</td>
+                        <td class="value">11</td>
+                            <td class="l">0x0000000B</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR"></a>
@@ -27516,8 +27569,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">621938963</td>
-                            <td class="l">0x25120913</td>
+                        <td class="value">637675285</td>
+                            <td class="l">0x26022715</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME"></a>

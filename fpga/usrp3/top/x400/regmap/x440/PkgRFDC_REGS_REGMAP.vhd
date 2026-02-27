@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------
 --
--- Copyright 2025 Ettus Research, a National Instruments Brand
+-- Copyright 2026 Ettus Research, a National Instruments Brand
 --
 -- SPDX-License-Identifier: LGPL-3.0-or-later
 --
@@ -170,9 +170,9 @@ package PkgRFDC_REGS_REGMAP is
   constant kTILESize       : integer := 2;  --RFDC_INFO_MEMTYPE:TILE
   constant kTILEMsb        : integer := 5;  --RFDC_INFO_MEMTYPE:TILE
   constant kTILE           : integer := 4;  --RFDC_INFO_MEMTYPE:TILE
-  constant kRESERVED2Size       : integer := 2;  --RFDC_INFO_MEMTYPE:RESERVED2
-  constant kRESERVED2Msb        : integer := 7;  --RFDC_INFO_MEMTYPE:RESERVED2
-  constant kRESERVED2           : integer := 6;  --RFDC_INFO_MEMTYPE:RESERVED2
+  constant kSUBCHANNELSize       : integer := 2;  --RFDC_INFO_MEMTYPE:SUBCHANNEL
+  constant kSUBCHANNELMsb        : integer := 7;  --RFDC_INFO_MEMTYPE:SUBCHANNEL
+  constant kSUBCHANNEL           : integer := 6;  --RFDC_INFO_MEMTYPE:SUBCHANNEL
   constant kCHANNELSize       : integer := 2;  --RFDC_INFO_MEMTYPE:CHANNEL
   constant kCHANNELMsb        : integer := 9;  --RFDC_INFO_MEMTYPE:CHANNEL
   constant kCHANNEL           : integer := 8;  --RFDC_INFO_MEMTYPE:CHANNEL
@@ -221,9 +221,11 @@ package PkgRFDC_REGS_REGMAP is
   constant kFABRIC_DSP_BW_FULL : integer := 1000;  -- FABRIC_DSP_BW_ENUM:FABRIC_DSP_BW_FULL
 
   -- Enumerated type RFDC_BLOCK_INFO_ENUM
-  constant kRFDC_BLOCK_INFO_ENUMSize : integer := 2;
-  constant kENABLED  : integer := 0;  -- RFDC_BLOCK_INFO_ENUM:ENABLED
-  constant kDISABLED : integer := 3;  -- RFDC_BLOCK_INFO_ENUM:DISABLED
+  constant kRFDC_BLOCK_INFO_ENUMSize : integer := 4;
+  constant kREAL_MODE : integer := 0;  -- RFDC_BLOCK_INFO_ENUM:REAL_MODE
+  constant kI_MODE    : integer := 1;  -- RFDC_BLOCK_INFO_ENUM:I_MODE
+  constant kQ_MODE    : integer := 2;  -- RFDC_BLOCK_INFO_ENUM:Q_MODE
+  constant kDISABLED  : integer := 3;  -- RFDC_BLOCK_INFO_ENUM:DISABLED
 
   -- MMCM Window (from x440_rfdc_regs.v)
   constant kMMCM : integer := 16#0#; -- Window Offset

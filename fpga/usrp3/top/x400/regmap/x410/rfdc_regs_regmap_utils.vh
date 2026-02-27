@@ -1,5 +1,5 @@
 //
-// Copyright 2025 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -161,9 +161,9 @@
   localparam TILE_SIZE = 2;  //RFDC_INFO_MEMTYPE:TILE
   localparam TILE_MSB  = 5;  //RFDC_INFO_MEMTYPE:TILE
   localparam TILE      = 4;  //RFDC_INFO_MEMTYPE:TILE
-  localparam RESERVED2_SIZE = 2;  //RFDC_INFO_MEMTYPE:RESERVED2
-  localparam RESERVED2_MSB  = 7;  //RFDC_INFO_MEMTYPE:RESERVED2
-  localparam RESERVED2      = 6;  //RFDC_INFO_MEMTYPE:RESERVED2
+  localparam SUBCHANNEL_SIZE = 2;  //RFDC_INFO_MEMTYPE:SUBCHANNEL
+  localparam SUBCHANNEL_MSB  = 7;  //RFDC_INFO_MEMTYPE:SUBCHANNEL
+  localparam SUBCHANNEL      = 6;  //RFDC_INFO_MEMTYPE:SUBCHANNEL
   localparam CHANNEL_SIZE = 2;  //RFDC_INFO_MEMTYPE:CHANNEL
   localparam CHANNEL_MSB  = 9;  //RFDC_INFO_MEMTYPE:CHANNEL
   localparam CHANNEL      = 8;  //RFDC_INFO_MEMTYPE:CHANNEL
@@ -212,9 +212,11 @@
   localparam FABRIC_DSP_BW_FULL  = 'h3E8;  // FABRIC_DSP_BW_ENUM:FABRIC_DSP_BW_FULL
 
   // Enumerated type RFDC_BLOCK_INFO_ENUM
-  localparam RFDC_BLOCK_INFO_ENUM_SIZE = 2;
-  localparam ENABLED   = 'h0;  // RFDC_BLOCK_INFO_ENUM:ENABLED
-  localparam DISABLED  = 'h3;  // RFDC_BLOCK_INFO_ENUM:DISABLED
+  localparam RFDC_BLOCK_INFO_ENUM_SIZE = 4;
+  localparam REAL_MODE  = 'h0;  // RFDC_BLOCK_INFO_ENUM:REAL_MODE
+  localparam I_MODE     = 'h1;  // RFDC_BLOCK_INFO_ENUM:I_MODE
+  localparam Q_MODE     = 'h2;  // RFDC_BLOCK_INFO_ENUM:Q_MODE
+  localparam DISABLED   = 'h3;  // RFDC_BLOCK_INFO_ENUM:DISABLED
 
   // MMCM Window (from x410_rfdc_regs.v)
   localparam MMCM = 'h0; // Window Offset

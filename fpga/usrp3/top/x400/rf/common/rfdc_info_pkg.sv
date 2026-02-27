@@ -14,15 +14,17 @@
 package rfdc_info_pkg;
 
   typedef enum logic [1:0] {
-    ENABLED  = 2'b00,
-    DISABLED = 2'b11
+    REAL_MODE = 2'b00,
+    I_MODE    = 2'b01,
+    Q_MODE    = 2'b10,
+    DISABLED  = 2'b11
   } block_mode_t;
 
   typedef struct packed {
     logic        is_adc;
     logic        db;
     logic [1:0]  channel;
-    logic [1:0]  reserved2;
+    logic [1:0]  subchannel;
     logic [1:0]  tile;
     logic [1:0]  block;
     block_mode_t block_mode;
@@ -33,7 +35,7 @@ package rfdc_info_pkg;
     is_adc: 0,
     db: 0,
     channel: 0,
-    reserved2: 0,
+    subchannel: 0,
     tile: 0,
     block: 0,
     block_mode: DISABLED
@@ -48,7 +50,9 @@ endpackage
 //<regmap name="RFDC_REGS_REGMAP" generatesv="false">
 //  <group name="RFDC_REGS">
 //    <enumeratedtype name="RFDC_BLOCK_INFO_ENUM" showhex="true">
-//      <value name="ENABLED" integer="0"/>
+//      <value name="REAL_MODE" integer="0"/>
+//      <value name="I_MODE" integer="1"/>
+//      <value name="Q_MODE" integer="2"/>
 //      <value name="DISABLED" integer="3"/>
 //    </enumeratedtype>
 //    <regtype name="RFDC_INFO_MEMTYPE" size="32" writable="false">
@@ -59,7 +63,7 @@ endpackage
 //        Python register interface.
 //      </info>
 //      <bitfield name="BLOCK_MODE" range="1..0" type="RFDC_BLOCK_INFO_ENUM">
-//        <info>The state of this ADC/DAC.</info>
+//        <info>The mixer setting of this ADC/DAC.</info>
 //      </bitfield>
 //      <bitfield name="BLOCK" range="3..2">
 //        <info>Index of the ADC/DAC within the FPGA tile.</info>
@@ -71,9 +75,10 @@ endpackage
 //          For ADC index i equals to FPGA tile 224+i.
 //        </info>
 //      </bitfield>
-//      <bitfield name="RESERVED2" range="7..6">
+//      <bitfield name="SUBCHANNEL" range="7..6">
 //        <info>
-//          Reserved for later use.
+//          If there are multiple physical paths per RFNoC channel this index is used to separate them.
+//          I/Q converters linked together should share the same subchannel index.
 //        </info>
 //      </bitfield>
 //      <bitfield name="CHANNEL" range="9..8">

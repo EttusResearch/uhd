@@ -3129,13 +3129,13 @@ endmodule
 //        <li> Oldest compatible version: @.VERSIONING_REGS_REGMAP..OLDEST_COMPATIBLE_VERSION
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
-//      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="10"/>
-//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="1"/>
+//      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="11"/>
+//      <value name="FPGA_CURRENT_VERSION_MINOR"           integer="0"/>
 //      <value name="FPGA_CURRENT_VERSION_BUILD"           integer="0"/>
-//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="10"/>
-//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="1"/>
+//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="11"/>
+//      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x25120913"/>
+//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x26022715"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

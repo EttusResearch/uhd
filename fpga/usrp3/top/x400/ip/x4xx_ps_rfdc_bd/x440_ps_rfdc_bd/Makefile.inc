@@ -17,7 +17,6 @@ $(addprefix $(BASE_DIR)/x400/rf/x440/, \
 x440_clock_gates.vhd \
 x440_rf_reset_controller.vhd \
 x440_rfdc_memory_content_pkg.sv \
-x440_rfdc_tx_control_remap.v \
 ) \
 $(addprefix $(BASE_DIR)/x400/rf/common/, \
 capture_sysref.v \

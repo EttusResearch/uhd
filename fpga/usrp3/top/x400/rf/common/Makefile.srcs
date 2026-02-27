@@ -4,6 +4,9 @@
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
 
+# This makefile is supposed to be included in simulation only.
+# There is no test for the rfdc memory yet.
+# The *rfdc* files are therefore not included in the list below.
 RF_COMMON_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/common/, \
 PkgRf.vhd \
 adc_iq_repacker.v \
