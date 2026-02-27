@@ -28,6 +28,7 @@ namespace eval ::vivado_utils {
     variable g_part_name    $::env(VIV_PART_NAME)
     variable g_output_dir   $::env(VIV_OUTPUT_DIR)
     variable g_source_files $::env(VIV_DESIGN_SRCS)
+    variable g_oot_srcs_file $::env(VIV_OOT_SRCS_FILE)
     variable g_vivado_mode  $::env(VIV_MODE)
     variable g_project_save $::env(VIV_PROJECT)
     variable g_secure_key   $::env(VIV_SECURE_KEY)
@@ -51,6 +52,7 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
     variable g_part_name
     variable g_output_dir
     variable g_source_files
+    variable g_oot_srcs_file
     variable g_project_save
 
     variable bd_files ""
@@ -63,6 +65,18 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
     } else {
         puts "BUILDER: Creating Vivado project in memory for part $g_part_name"
         create_project -in_memory -part $g_part_name
+    }
+
+    # Get OOT sources from resources file to avoid ARG_MAX issue
+    if {[info exists g_oot_srcs_file] && [file exists $g_oot_srcs_file]} {
+        puts "BUILDER: Reading sources from $g_oot_srcs_file"
+        set fh [open $g_oot_srcs_file r];
+        while {[gets $fh line] >= 0} {
+            if {$line ne ""} {
+                append g_source_files " " $line
+            }
+        }
+        close $fh
     }
 
     # Expand directories to include their contents (needed for HLS outputs)
@@ -97,7 +111,9 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
         } elseif [expr [lsearch {.xci} $src_ext] >= 0] {
             puts "BUILDER: Adding IP: $src_file"
             read_ip $src_file
-            set_property generate_synth_checkpoint true [get_files $src_file]
+            if {[catch {set_property generate_synth_checkpoint true [get_files $src_file]} errorstring]} {
+                puts "BUILDER: Failed to set synth checkpoint generation ($errorstring). The process will continue."
+            }
         } elseif [expr [lsearch {.ngc .edif .edf} $src_ext] >= 0] {
             puts "BUILDER: Adding Netlist: $src_file"
             read_edif $src_file
