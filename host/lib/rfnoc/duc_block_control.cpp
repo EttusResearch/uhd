@@ -79,7 +79,7 @@ public:
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid interpolation values
         std::set<size_t> interps{1}; // 1 is always a valid interpolation
-        for (size_t hb = 0; hb < _num_halfbands; hb++) {
+        for (size_t hb = 0; hb <= _num_halfbands; hb++) {
             for (size_t cic_interp = 1; cic_interp <= _cic_max_interp; cic_interp++) {
                 interps.insert((1 << hb) * cic_interp);
             }
