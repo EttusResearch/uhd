@@ -113,17 +113,17 @@ public:
         return {};
     }
 
-    void set_cal_frozen(bool, size_t, size_t) override
+    void set_cal_frozen(bool, size_t, size_t, size_t) override
     {
         // nop
     }
 
-    std::vector<int> get_cal_frozen(size_t, size_t) override
+    std::vector<int> get_cal_frozen(size_t, size_t, size_t) override
     {
         return {};
     }
 
-    void set_calibration_mode(size_t, size_t, std::string) override
+    void set_calibration_mode(size_t, size_t, size_t, std::string) override
     {
         // nop
     }
@@ -149,7 +149,8 @@ public:
     double rfdc_set_nco_freq(const std::string& trx,
         const size_t /*db_id*/,
         const size_t chan,
-        const double freq) override
+        const double freq,
+        const size_t /*ch_mode*/) override
     {
         BOOST_REQUIRE(trx == "rx" || trx == "tx");
         BOOST_REQUIRE(chan < uhd::usrp::zbx::ZBX_NUM_CHANS);
@@ -157,8 +158,10 @@ public:
         return freq;
     }
 
-    double rfdc_get_nco_freq(
-        const std::string& trx, const size_t /*db_id*/, const size_t chan) override
+    double rfdc_get_nco_freq(const std::string& trx,
+        const size_t /*db_id*/,
+        const size_t chan,
+        const size_t /*ch_mode*/) override
     {
         BOOST_REQUIRE(trx == "rx" || trx == "tx");
         BOOST_REQUIRE(chan < uhd::usrp::zbx::ZBX_NUM_CHANS);
@@ -177,8 +180,7 @@ public:
         static const std::map<double, double> spll_map{
             // One line per entry
             {122.88e6, 2.94912e9},
-            {122.88e6 * 4, 2.94912e9}
-            // End of entries
+            {122.88e6 * 4, 2.94912e9} // End of entries
         };
         return spll_map.at(mcr);
     }
@@ -301,14 +303,16 @@ public:
         // nop
     }
 
-    bool get_threshold_status(
-        size_t /*db_number*/, size_t /*chan*/, size_t /*threshold_block*/) override
+    bool get_threshold_status(size_t /*db_number*/,
+        size_t /*chan*/,
+        size_t /*mode*/,
+        size_t /*threshold_block*/) override
     {
         return false;
     }
 
     void set_dac_mux_enable(
-        size_t /*db_number*/, size_t /*chan*/, int /*enable*/) override
+        size_t /*db_number*/, size_t /*chan*/, int /*enable*/, size_t /*mode*/) override
     {
         // nop
     }
@@ -325,6 +329,7 @@ public:
 
     void setup_threshold(size_t /*db_number*/,
         size_t /*chan*/,
+        size_t /*mix_mode*/,
         size_t /*threshold_block*/,
         const std::string& /*mode*/,
         size_t /*delay*/,
