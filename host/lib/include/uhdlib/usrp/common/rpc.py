@@ -117,6 +117,9 @@ IFACES = [
                 "std::vector<int> get_cal_frozen(size_t block_count, size_t chan, size_t mode)"
             ),
             fn_from_string(
+                "std::vector<std::vector<double>> get_cal_coefs(size_t channel, size_t slot_id, size_t cal_block, size_t mode)"
+            ),
+            fn_from_string(
                 "double rfdc_set_nco_freq(const std::string& trx, size_t block_count, size_t chan, double freq, size_t mixer_mode)"
             ),
             fn_from_string(
@@ -192,6 +195,18 @@ IFACES = [
             fn_from_string(
                 "void enable_iq_swap(bool is_band_inverted, const std::string& trx, size_t chan)"
             ),
+        ],
+        has_rpcprefix=True,
+    ),
+    Interface(
+        "hbx_rpc",
+        [
+            fn_from_string("double get_dboard_prc_rate()"),
+            fn_from_string("double get_dboard_sample_rate()"),
+            fn_from_string(
+                "void enable_iq_swap(bool is_band_inverted, const std::string& trx, size_t chan)"
+            ),
+            fn_from_string("void set_data_path(size_t mode, const std::string& trx)"),
         ],
         has_rpcprefix=True,
     ),

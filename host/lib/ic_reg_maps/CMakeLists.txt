@@ -151,5 +151,26 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_fbx_regs.py
     ${CMAKE_CURRENT_BINARY_DIR}/fbx_regs.hpp
     )
-    
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_hbx_cpld_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/hbx_cpld_regs.hpp
+    )
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_ltc5594_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/ltc5594_regs.hpp
+    )
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_admv1320_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/admv1320_regs.hpp
+    )
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_admv1420_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/admv1420_regs.hpp
+    )
+
+
 set(LIBUHD_PYTHON_GEN_SOURCE_DEPS)

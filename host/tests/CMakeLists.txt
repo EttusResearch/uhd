@@ -28,6 +28,7 @@ set(test_sources
     cast_test.cpp
     cal_database_test.cpp
     cal_data_iq_test.cpp
+    cal_data_iq_dc_test.cpp
     cal_data_gain_pwr_test.cpp
     chdr_parse_test.cpp
     cal_data_dsa_test.cpp
@@ -382,6 +383,31 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET admv1320_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/admv1320.cpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET admv1420_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/admv1420.cpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
+    TARGET hbx_lo_pd_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_pd.cpp
+    ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_cpld_ctrl.cpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET adf535x_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/usrp/common/adf535x.cpp
@@ -418,6 +444,9 @@ IF(ENABLE_X400)
             TARGET x4xx_radio_block_test.cpp
             EXTRA_SOURCES
             ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/ltc5594.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1320.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1420.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_gpio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
@@ -437,6 +466,16 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_demod_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1320_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1420_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_pd.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_cpld_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/apply_corrections.cpp
             ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
@@ -454,6 +493,9 @@ IF(ENABLE_X400)
             TARGET ferrum_radio_block_test.cpp
             EXTRA_SOURCES
             ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/ltc5594.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1320.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1420.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_gpio_control.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
@@ -468,6 +510,16 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_demod_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1320_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1420_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_pd.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_cpld_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/apply_corrections.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
             ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp

@@ -40,6 +40,14 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/pwr_cal_mgr.cpp
 )
 
+if(ENABLE_X400)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/admv1320.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/admv1420.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ltc5594.cpp
+    )
+endif(ENABLE_X400)
+
 if(ENABLE_DPDK)
     set_property(
         SOURCE

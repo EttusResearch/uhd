@@ -14,6 +14,8 @@ UHD_INSTALL(FILES
     dboard_id.hpp
     dboard_iface.hpp
     dboard_manager.hpp
+    hbx_tune_map_item.hpp
+    hbx_gain_map_item.hpp
     zbx_tune_map_item.hpp
 
     ### utilities ###

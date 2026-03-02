@@ -48,6 +48,7 @@ DEVICE_DIR_MAP = {
     "n320": "n3xx",
     "x400": "x400",
     "x410": "x400",
+    "x420": "x400",
     "x440": "x400",
 }
 
@@ -56,6 +57,7 @@ DEVICE_DEFAULTTARGET_MAP = {
     "x300": "X300_HG",
     "x310": "X310_HG",
     "x410": "X410",
+    "x420": "X420",
     "x440": "X440",
     "e310": "E310_SG3",
     "e320": "E320_1G",
@@ -75,6 +77,7 @@ SECURE_CORE_INST_PATH = {
     "n320": "n3xx_core/rfnoc_sandbox_i/secure_image_core_i",
     "x400": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
     "x410": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
+    "x420": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
     "x440": "x4xx_core_i/rfnoc_image_core_i/secure_image_core_i",
 }
 

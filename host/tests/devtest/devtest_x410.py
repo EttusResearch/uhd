@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""Run device tests for the x4x0 series."""
+"""Run device tests for the x410."""
 
 # pylint: disable=wrong-import-position
 # pylint: disable=unused-import

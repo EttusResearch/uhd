@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Register map for the X4xx RFDC space.
+""" Register map for the X4xx RFDC space.
 
 The ground truth for this register map is mostly encoded in the x4xx_ps_rfdc_bd
 block diagram.
@@ -130,6 +129,11 @@ IQ_SWAP_DAC_DB1_CHAN0       0x10800[ 8]             0           disable, enable
 IQ_SWAP_DAC_DB1_CHAN1       0x10800[ 9]             0           disable, enable
 IQ_SWAP_DAC_DB1_CHAN2       0x10800[10]             0           disable, enable
 IQ_SWAP_DAC_DB1_CHAN3       0x10800[11]             0           disable, enable
+## Data paths select is X420 only
+DATA_PATH_DB0_TX_SELECT     0x10000[16]             0           iq, real
+DATA_PATH_DB1_TX_SELECT     0x10800[16]             0           iq, real
+DATA_PATH_DB0_RX_SELECT     0x10000[20]             0           iq, real
+DATA_PATH_DB1_RX_SELECT     0x10800[20]             0           iq, real
 ## MMCM reset is active low
 MMCM_RESET                  0x11000[0]              0           enable, disable
 RFDC_DB0_ADC_RESET          0x12000[4]              0           disable, enable

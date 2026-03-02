@@ -35,9 +35,10 @@ constexpr double PLL_LOCK_TIME = 200e-6; // s
 
 // Valid input/reference frequencies (fOSC)
 //
-// NOTE: These frequencies are valid for X400/ZBX. If we need to use this
+// NOTE: These frequencies are valid for X400 (ZBX and HBX). If we need to use this
 // driver elsewhere, this part needs to be refactored.
-const std::set<double> VALID_FOSC{61.44e6, 64e6, 62.5e6, 50e6};
+const std::set<double> VALID_FOSC{
+    61.44e6, 64e6, 62.5e6, 50e6, 39.0625e6, 31.25e6, 30.72e6};
 
 
 }; // namespace
@@ -549,6 +550,7 @@ private:
                 {30.72e6, 5531},
                 {31.25e6, 5591},
                 {32e6, 5657},
+                {39.0625e6, 6247},
                 {50e6, 7096},
                 {61.44e6, 7841},
                 {62.5e6, 7907},

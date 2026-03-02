@@ -416,7 +416,9 @@ error message.
 If you need to update the ZBX CPLD, you can do so by running the following command
 on the device:
 
-    zbx_update_cpld
+    x4xx_db_update_cpld
+
+Note: Before UHD 4.9.1, this command was called `zbx_update_cpld`.
 
 By default, this command will update the the CPLDs on both daughterboards with
 the image from the default path.  To specify the image or daughterboards to
@@ -441,7 +443,7 @@ the new filesystem first and copy the image over:
 Note that the other filesystem may be either `/dev/mmcblk0p2` or `/dev/mmcblk0p3`.
 You can now update to the new CPLD image:
 
-    zbx_update_cpld --updater=legacy --file=~/cpld-zbx-x03lf.svf 
+    x4xx_db_update_cpld --updater=legacy --file=~/cpld-zbx-x03lf.svf 
 
 Note: non-x03lf variant do not require the updater argument
 
@@ -478,7 +480,7 @@ the daughterboard is working before attempting this.
 To specify a programming mode, use the `--updater` argument. For example, to
 force the legacy mode, use the following command:
 
-    zbx_update_cpld --updater=legacy --file=/lib/firmware/ni/cpld-zbx-x03lf.svf 
+    x4xx_db_update_cpld --updater=legacy --file=/lib/firmware/ni/cpld-zbx-x03lf.svf 
 
 Note: non-x03lf variant do not require the updater argument
 

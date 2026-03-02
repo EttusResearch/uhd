@@ -17,6 +17,7 @@
 #include <uhdlib/usrp/cores/spi_core_4000.hpp>
 #include <uhdlib/usrp/dboard/debug_dboard.hpp>
 #include <uhdlib/usrp/dboard/fbx/fbx_dboard.hpp>
+#include <uhdlib/usrp/dboard/hbx/hbx_dboard.hpp>
 #include <uhdlib/usrp/dboard/null_dboard.hpp>
 #include <uhdlib/usrp/dboard/zbx/zbx_dboard.hpp>
 #include <uhdlib/utils/prefs.hpp>
@@ -161,6 +162,44 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
             RFNOC_LOG_DEBUG("Registering internal sync feature")
             auto int_sync = std::make_shared<uhd::features::internal_sync>(
                 uhd::features::internal_sync(fbx_dboard->get_fbx_ctrl()));
+            register_feature(int_sync);
+        }
+    } else if (std::stol(pid) == uhd::usrp::hbx::HBX_PID) {
+        const auto args      = get_block_args();
+        bool ignore_cal_file = false;
+        if (args.has_key("ignore-cal-file")) {
+            ignore_cal_file = args.get("ignore-cal-file") == "1";
+        }
+        if (ignore_cal_file) {
+            RFNOC_LOG_WARNING("Ignoring IQ correction and Power calibration files.");
+        }
+
+        auto hbx_rpc_sptr = _mb_control->dynamic_cast_rpc_as<uhd::usrp::hbx_rpc_iface>();
+        if (!hbx_rpc_sptr) {
+            hbx_rpc_sptr = std::make_shared<uhd::usrp::hbx_rpc>(
+                _mb_control->get_rpc_client(), _rpc_prefix);
+        }
+        _daughterboard = std::make_shared<uhd::usrp::hbx::hbx_dboard_impl>(
+            regs(),
+            regmap::PERIPH_BASE,
+            [this](const size_t instance) { return get_command_time(instance); },
+            get_block_id().get_block_count(),
+            _radio_slot,
+            _rpc_prefix,
+            get_unique_id(),
+            _rpcc,
+            hbx_rpc_sptr,
+            _rfdcc,
+            get_tree(),
+            ignore_cal_file,
+            master_clock_rate);
+
+        auto hbx_dboard =
+            std::dynamic_pointer_cast<uhd::usrp::hbx::hbx_dboard_impl>(_daughterboard);
+        if (hbx_dboard != NULL) {
+            RFNOC_LOG_DEBUG("Registering internal sync feature")
+            auto int_sync = std::make_shared<uhd::features::internal_sync>(
+                uhd::features::internal_sync(hbx_dboard->get_hbx_cpld_ctrl()));
             register_feature(int_sync);
         }
     } else if (std::stol(pid) == uhd::rfnoc::DEBUG_DB_PID) {

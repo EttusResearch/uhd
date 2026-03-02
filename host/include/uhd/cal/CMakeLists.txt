@@ -7,6 +7,7 @@
 set(FLATBUFFER_SCHEMA_FILES
     "cal_metadata.fbs"
     "iq_cal.fbs"
+    "iq_dc_cal.fbs"
     "pwr_cal.fbs"
     "dsa_cal.fbs"
 )
@@ -14,6 +15,7 @@ set(FLATBUFFER_SCHEMA_FILES
 set(FLATBUFFER_GEN_HEADER_FILES
     "cal_metadata_generated.h"
     "iq_cal_generated.h"
+    "iq_dc_cal_generated.h"
     "pwr_cal_generated.h"
     "dsa_cal_generated.h"
 )
@@ -22,6 +24,7 @@ UHD_INSTALL(FILES
     container.hpp
     database.hpp
     iq_cal.hpp
+    iq_dc_cal.hpp
     pwr_cal.hpp
     dsa_cal.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/cal

@@ -224,23 +224,30 @@ def list_test(usrp, prop, error_handling, post_hook=None, safe_values=None):
     getter = "get_{}".format(prop)
     setter = "set_{}".format(prop)
 
-    # lo_source function does not take int as argument
-    names = getattr(usrp, get_range)(0) if "lo_source" not in prop else getattr(usrp, get_range)()
+    # lo_source functions take (lo_name, chan) instead of just (chan)
+    is_lo_source = "lo_source" in prop
+    names = getattr(usrp, get_range)() if is_lo_source else getattr(usrp, get_range)(0)
     # Try to set every possible value.
     for name in names:
         if safe_values and name not in safe_values:
             print(f"Skipping value `{name}' for prop {prop}, considered unsafe.")
             continue
-        initial_value = getattr(usrp, getter)(0)
+        initial_value = (
+            getattr(usrp, getter)("all", 0) if is_lo_source else getattr(usrp, getter)(0)
+        )
         try:
-            getattr(usrp, setter)(name)
+            getattr(usrp, setter)(name, "all", 0) if is_lo_source else getattr(usrp, setter)(name)
         except RuntimeError as ex:
             raise Exception("error found in setting {} to {} => {}".format(prop, name, str(ex)))
         # Check if get function returns set value.
-        get_value = getattr(usrp, getter)(0)
+        get_value = getattr(usrp, getter)("all", 0) if is_lo_source else getattr(usrp, getter)(0)
         if get_value != name:
             raise Exception("Error in setting acceptable value in {}".format(prop))
-        getattr(usrp, setter)(initial_value)
+        (
+            getattr(usrp, setter)(initial_value, "all", 0)
+            if is_lo_source
+            else getattr(usrp, setter)(initial_value)
+        )
     if post_hook:
         post_hook()
     return True
@@ -785,6 +792,29 @@ def get_device_config(usrp_type, device_config_path=None):
                 "set_tx_lo_export_enabled",
             ],
             "clock_sources": ["internal", "mboard"],
+        }
+    if usrp_type == "x420":
+        return {
+            "skip": [
+                # No AGC on HBX
+                "set_rx_agc",
+                # IQ imbalance not via API
+                "set_rx_iq_balance",
+                "set_tx_iq_balance",
+                # DC offset not via API
+                "set_rx_dc_offset",
+                "set_tx_dc_offset",
+                # No Filters on HBX
+                "get_rx_filter",
+                "set_rx_filter",
+                "get_rx_filter_names",
+                "get_tx_filter",
+                "set_tx_filter",
+                "get_tx_filter_names",
+                # Changing clock or time source after device init throws an error
+                "set_clock_source",
+                "set_time_source",
+            ]
         }
     if usrp_type == "x440":
         return {

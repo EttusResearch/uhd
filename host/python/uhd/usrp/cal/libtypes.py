@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Import cal types into Python
-"""
+"""Import cal types into Python."""
 
 from ... import libpyuhd as lib
 
@@ -17,6 +15,7 @@ from ... import libpyuhd as lib
 database = lib.cal.database
 Source = lib.cal.source
 IQCal = lib.cal.iq_cal
+IQDCCal = lib.cal.iq_dc_cal
 PwrCal = lib.cal.pwr_cal
 ZbxTxDsaCal = lib.cal.zbx_tx_dsa_cal
 ZbxRxDsaCal = lib.cal.zbx_rx_dsa_cal

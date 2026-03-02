@@ -40,6 +40,11 @@ def is_x410(usrp):
     return usrp.get_mboard_name() == "x410"
 
 
+def is_x420(usrp):
+    """Returns True if executed on a X420."""
+    return usrp.get_mboard_name() == "x420"
+
+
 def is_x440(usrp):
     """Returns True if executed on a X440."""
     return usrp.get_mboard_name() == "x440"
@@ -49,6 +54,8 @@ def get_mixmodes(usrp):
     """Returns the name of the mixer mode."""
     if is_x410(usrp) or is_x440(usrp):
         return ["Real"]
+    if is_x420(usrp):
+        return ["Real", "I", "Q"]
     print("Unknown x4xx device")
     sys.exit(1)
 
@@ -59,12 +66,19 @@ def settings(usrp):
         return [{"gain": 30, "rx_freq": 2.5e9, "tx_freq": 2.5e9}]
     if is_x440(usrp):
         return [{"gain": None, "rx_freq": 397.55e6, "tx_freq": 397.55e6}]
+    if is_x420(usrp):
+        # Gain values taken from ADC self-cal auto-leveling
+        return [
+            {"gain": 27, "rx_freq": 397.55e6, "tx_freq": 397.55e6},
+            {"gain": 25, "rx_freq": 1000e6, "tx_freq": 1397.55e6},
+            {"gain": 25, "rx_freq": 1000e6, "tx_freq": 1397.55e6},
+        ]
     print("Unknown x4xx device")
     sys.exit(1)
 
 
 def set_gain(usrp, gain, channel):
-    """Sets the gain for X410 (X440 has no gain stages)."""
+    """Sets the gain for X410 and X420 (X440 has no gain stages)."""
     if is_x410(usrp):
         usrp.set_rx_gain_profile("default", channel)
         usrp.set_tx_gain_profile("default", channel)
@@ -74,15 +88,27 @@ def set_gain(usrp, gain, channel):
         usrp.set_tx_gain_profile("table_noatr", channel)
         usrp.set_rx_gain(0b11, "TABLE", channel)
         usrp.set_rx_gain(0b11, "TABLE", channel)
+    elif is_x420(usrp):
+        radio = usrp.get_radio_control(channel)
+        radio.poke32(0x810A4, 0)  # Switch to SW ATR mode
+        radio.poke32(0x810A8, 3)  # Switch to TRX to have the chain active
+        usrp.set_tx_gain(46, channel)  # Approx. 0 dB
+        usrp.set_rx_gain(gain, channel)
+        time.sleep(0.1)  # Let the gain settle
 
 
 def reset_gain(usrp, channel):
-    """Resets the gain values for X410 after running this script."""
+    """Resets the gain values for X410 and X420 after running this script."""
     if is_x410(usrp):
         usrp.set_rx_gain_profile("default", channel)
         usrp.set_tx_gain_profile("default", channel)
         usrp.set_rx_gain(0, channel)
         usrp.set_tx_gain(0, channel)
+    elif is_x420(usrp):
+        usrp.set_tx_gain(0, channel)
+        usrp.set_rx_gain(0, channel)
+        radio = usrp.get_radio_control(channel)
+        radio.poke32(0x810A4, 1)  # Switch back to Classic ATR mode
 
 
 def check(mc, board, channel, mode, value):
@@ -141,3 +167,8 @@ if __name__ == "__main__":
             print(f"{bisect(mc, slot, chan, j):9}")
             mc.set_dac_mux_enable(slot, chan, 0, 5)
             reset_gain(usrp, i)
+    if is_x420(usrp):
+        # I and Q tiles tend to report random max threshold values. Therefore warn the user.
+        print(
+            "Ran on X420: I and Q may randomly report maximum threshold values. Re-run the script if necessary."
+        )

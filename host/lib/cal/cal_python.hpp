@@ -7,9 +7,11 @@
 #ifndef INCLUDED_UHD_CAL_PYTHON_HPP
 #define INCLUDED_UHD_CAL_PYTHON_HPP
 
+#include <uhd/cal/cal_utils.hpp>
 #include <uhd/cal/database.hpp>
 #include <uhd/cal/dsa_cal.hpp>
 #include <uhd/cal/iq_cal.hpp>
+#include <uhd/cal/iq_dc_cal.hpp>
 #include <uhd/cal/pwr_cal.hpp>
 #include <uhd/utils/interpolation.hpp>
 #include <uhd/utils/pybind_adaptors.hpp>
@@ -89,6 +91,30 @@ void export_cal(py::module& m)
             py::arg("suppression_delta") = 0)
         .def("clear", &iq_cal::clear);
 
+    py::class_<iq_dc_cal, container, iq_dc_cal::sptr>(m, "iq_dc_cal")
+        .def(py::init([](const std::string& name,
+                          const std::string& serial,
+                          const uint64_t timestamp) {
+            return iq_dc_cal::make(name, serial, timestamp);
+        }))
+        .def(py::init([]() { return iq_dc_cal::make(); }))
+        .def(py::init([](const py::bytes data) {
+            return container::make<iq_dc_cal>(pybytes_to_vector(data));
+        }))
+        .def("set_interp_mode", &iq_dc_cal::set_interp_mode)
+        .def("get_cal_coeff", &iq_dc_cal::get_cal_coeff)
+        .def("get_group_delay", &iq_dc_cal::get_group_delay)
+        .def("set_cal_coeff",
+            &iq_dc_cal::set_cal_coeff,
+            py::arg("freq"),
+            py::arg("scaling_factor"),
+            py::arg("icross"),
+            py::arg("qinline"),
+            py::arg("delay")          = 0,
+            py::arg("dc_offset_real") = 0,
+            py::arg("dc_offset_imag") = 0)
+        .def("clear", &iq_dc_cal::clear);
+
     py::class_<pwr_cal, container, pwr_cal::sptr>(m, "pwr_cal")
         .def(py::init([](const std::string& name,
                           const std::string& serial,
@@ -167,6 +193,12 @@ void export_cal(py::module& m)
             &zbx_rx_dsa_cal::get_dsa_setting,
             py::arg("freq"),
             py::arg("gain_index"));
+
+    // Free function for clearing the front-end correction cache
+    m.def("clear_fe_correction_cache",
+        &uhd::usrp::cal::clear_fe_correction_cache,
+        "Clear the front-end correction cache. "
+        "This will ensure that any available data is reloaded.");
 }
 
 #endif /* INCLUDED_UHD_CAL_PYTHON_HPP */

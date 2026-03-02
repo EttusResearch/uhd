@@ -126,6 +126,14 @@ public:
         // nop
     }
 
+    std::vector<std::vector<double>> get_cal_coefs(
+        size_t, size_t, size_t, size_t) override
+    {
+        return {{
+            0.0,
+        }};
+    }
+
     std::map<std::string, std::vector<uint8_t>> get_db_eeprom(const size_t) override
     {
         return {{
@@ -327,6 +335,14 @@ public:
         size_t /*delay*/,
         size_t /*under*/,
         size_t /*over*/) override
+    {
+        // nop
+    }
+
+    void restart_converter(const std::string& /*trx*/,
+        size_t /*block_count*/,
+        size_t /*chan*/,
+        size_t /*mixer_mode*/)
     {
         // nop
     }

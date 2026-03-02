@@ -57,6 +57,7 @@ UHD_INSTALL(FILES
     tune_result.hpp
     wb_iface.hpp
     filters.hpp
+    iq_dc_cal_coeffs.hpp
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/uhd/types
     COMPONENT headers
 )

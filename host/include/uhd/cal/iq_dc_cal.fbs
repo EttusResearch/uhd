@@ -1,0 +1,36 @@
+//
+// Copyright 2026 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+// Calibration Table for wideband IQ and DC correction coefficients
+// This extends the original IQ calibration with support for:
+// - Wideband (multi-tap) IQ correction coefficients
+// - DC offset correction
+// - Scaling factor and group delay per frequency
+
+include "cal_metadata.fbs";
+
+namespace uhd.usrp.cal;
+
+table IQDCCalCoeff
+{
+    freq: double;
+    scaling_factor: double;
+    coeff_real: [double];
+    coeff_imag: [double];
+    delay: double;
+    dc_offset_real: double;
+    dc_offset_imag: double;
+}
+
+table IQDCCalCoeffs
+{
+    metadata: Metadata;
+    coeffs: [IQDCCalCoeff];
+}
+
+root_type IQDCCalCoeffs;
+file_identifier "IQDC"; // IQ + DC correction data per frequency
+file_extension "cal";
