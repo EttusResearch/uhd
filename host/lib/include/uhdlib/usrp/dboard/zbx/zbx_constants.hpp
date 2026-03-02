@@ -8,6 +8,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/usrp/zbx_tune_map_item.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <unordered_map>
 #include <array>
 #include <cstddef>
@@ -18,6 +19,7 @@
 #include <vector>
 
 namespace uhd { namespace usrp { namespace zbx {
+using uhd::usrp::x400::ch_mode;
 
 //! Which LO to address when peeking/poking
 //  This must match the LO_SELECT values in gen_zbx_cpld_regs.py
@@ -240,6 +242,9 @@ static const std::vector<zbx_tune_map_item_t> tx_tune_map = {
 
 // Turn clang-format back on just for posterity
 // clang-format on
+
+// In which mode do we operate channels on this device
+static const ch_mode ZBX_CH_MODE = ch_mode::REAL;
 
 }}} // namespace uhd::usrp::zbx
 

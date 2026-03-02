@@ -27,6 +27,7 @@
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <uhdlib/usrp/dboard/x400_dboard_iface.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <stddef.h>
@@ -35,6 +36,7 @@
 #include <vector>
 
 using namespace uhd::rfnoc;
+using uhd::usrp::x400::ch_mode;
 
 namespace uhd { namespace usrp { namespace zbx {
 
@@ -111,7 +113,12 @@ public:
         };
     }
 
-    bool select_adc_self_cal_gain(size_t chan) final;
+    bool select_adc_self_cal_gain(size_t chan, size_t mode) final;
+
+    std::vector<ch_mode> get_ch_modes() const override
+    {
+        return {ZBX_CH_MODE};
+    }
 
     rf_control::gain_profile_iface::sptr get_tx_gain_profile_api() final
     {

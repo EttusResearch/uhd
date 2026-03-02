@@ -125,8 +125,11 @@ void fbx_rfdc_freq_expert::resolve()
         return FBX_FREQ_RANGE.clip(_frequency_desired);
     }();
 
-    _rfdc_freq_coerced = _rpcc->rfdc_set_nco_freq(
-        _get_trx_string(_trx), _db_idx, _chan, desired_rfdc_freq);
+    _rfdc_freq_coerced    = _rpcc->rfdc_set_nco_freq(_get_trx_string(_trx),
+        _db_idx,
+        _chan,
+        desired_rfdc_freq,
+        static_cast<size_t>(FBX_CH_MODE));
     _if_frequency_coerced = _rfdc_freq_coerced;
     _coerced_frequency    = _if_frequency_coerced;
 

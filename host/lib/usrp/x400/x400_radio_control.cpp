@@ -13,6 +13,7 @@
 #include <uhd/utils/math.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <uhdlib/usrp/cores/spi_core_4000.hpp>
 #include <uhdlib/usrp/dboard/debug_dboard.hpp>
 #include <uhdlib/usrp/dboard/fbx/fbx_dboard.hpp>
@@ -21,6 +22,7 @@
 #include <uhdlib/utils/prefs.hpp>
 #include <future>
 
+using uhd::usrp::x400::ch_mode;
 namespace uhd { namespace rfnoc {
 
 x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
@@ -263,8 +265,8 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                                 cal_futures.push_back(std::async(std::launch::async,
                                     [&self_cal, i, args]() { self_cal.run(i, args); }));
                             } else {
-                                self_cal.run(i, args);
                                 RFNOC_LOG_INFO("Calibrating channel " << abs_ch << "...");
+                                self_cal.run(i, args);
                             }
                             num_calibrations++;
                         }
@@ -299,7 +301,6 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
 void x400_radio_control_impl::_init_prop_tree()
 {
     auto subtree = get_tree()->subtree(fs_path("mboard"));
-
     for (size_t chan_idx = 0; chan_idx < get_num_output_ports(); chan_idx++) {
         const fs_path rx_codec_path =
             fs_path("rx_codec") / get_dboard_fe_from_chan(chan_idx, uhd::RX_DIRECTION);
@@ -312,28 +313,35 @@ void x400_radio_control_impl::_init_prop_tree()
         // ADC calibration state attributes
         subtree->create<bool>(rx_codec_path / "calibration_frozen")
             .add_coerced_subscriber([this, chan_idx](bool state) {
-                _rpcc->set_cal_frozen(state, get_block_id().get_block_count(), chan_idx);
+                _rpcc->set_cal_frozen(state,
+                    get_block_id().get_block_count(),
+                    chan_idx,
+                    size_t(ch_mode::ALL));
             })
             .set_publisher([this, chan_idx]() {
-                const auto freeze_states =
-                    _rpcc->get_cal_frozen(get_block_id().get_block_count(), chan_idx);
+                const auto freeze_states = _rpcc->get_cal_frozen(
+                    get_block_id().get_block_count(), chan_idx, size_t(ch_mode::ALL));
                 return freeze_states.at(0) == 1;
             });
 
         // RFDC NCO
+        // The NCO is typically only used for converters used in Real mode, therefore we
+        // expose it on the FE path that corresponds to the current channel in Real mode.
         // RX
         subtree->create<double>(rx_codec_path / "rfdc" / "freq/value")
             .add_desired_subscriber([this, chan_idx](double freq) {
                 _rpcc->rfdc_set_nco_freq(_get_trx_string(RX_DIRECTION),
                     get_block_id().get_block_count(),
                     chan_idx,
-                    freq);
+                    freq,
+                    static_cast<size_t>(ch_mode::REAL));
             })
             .set_publisher([this, chan_idx]() {
                 const auto nco_freq =
                     _rpcc->rfdc_get_nco_freq(_get_trx_string(RX_DIRECTION),
                         get_block_id().get_block_count(),
-                        chan_idx);
+                        chan_idx,
+                        static_cast<size_t>(ch_mode::REAL));
                 return nco_freq;
             });
 
@@ -343,13 +351,15 @@ void x400_radio_control_impl::_init_prop_tree()
                 _rpcc->rfdc_set_nco_freq(_get_trx_string(TX_DIRECTION),
                     get_block_id().get_block_count(),
                     chan_idx,
-                    freq);
+                    freq,
+                    static_cast<size_t>(ch_mode::REAL));
             })
             .set_publisher([this, chan_idx]() {
                 const auto nco_freq =
                     _rpcc->rfdc_get_nco_freq(_get_trx_string(TX_DIRECTION),
                         get_block_id().get_block_count(),
-                        chan_idx);
+                        chan_idx,
+                        static_cast<size_t>(ch_mode::REAL));
                 return nco_freq;
             });
     }

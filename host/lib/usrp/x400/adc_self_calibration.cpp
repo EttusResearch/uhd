@@ -39,11 +39,11 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
                                  "profile for RX or TX is not 'default'.");
     }
 
-    // The frequency that we need to feed into the ADC is, by decree and if not specified
-    // differently by the user, 13109 / 32768 times the ADC sample rate for X410.
-    // (approx. 1.2GHz for a 3Gsps rate) This is at 0.4 * Fs, right on the boundary
-    // between modes 1 and 2 for the ADC self-cal. But devices may also specify different
-    // values in their ADC self cal params.
+    // The frequency that we need to feed into the ADC is, by decree and if not
+    // specified differently by the user, 13109 / 32768 times the ADC sample rate for
+    // X410. (approx. 1.2GHz for a 3Gsps rate) This is at 0.4 * Fs, right on the
+    // boundary between modes 1 and 2 for the ADC self-cal. But devices may also
+    // specify different values in their ADC self cal params.
     const double cal_tone_freq = _daughterboard->get_converter_rate() * 13109.0 / 32768.0;
 
     auto cal_params = _daughterboard->get_adc_self_cal_params(cal_tone_freq);
@@ -134,58 +134,6 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
     _rpcc->set_dac_mux_data(
         cal_params.dac_iq_values.real(), cal_params.dac_iq_values.imag());
 
-    _rpcc->set_dac_mux_enable(_db_number, chan, 1);
-    auto disable_dac_mux = uhd::utils::scope_exit::make(
-        [&]() { _rpcc->set_dac_mux_enable(_db_number, chan, 0); });
-
-    // Save all of the LO frequencies & sources
-    const double original_rx_freq = _daughterboard->get_rx_frequency(chan);
-    std::map<std::string, std::tuple<std::string, double>> rx_lo_state;
-    for (auto rx_lo : _daughterboard->get_rx_lo_names(chan)) {
-        const std::string source(_daughterboard->get_rx_lo_source(rx_lo, chan));
-        const double freq = _daughterboard->get_rx_lo_freq(rx_lo, chan);
-        rx_lo_state.emplace(std::piecewise_construct,
-            std::forward_as_tuple(rx_lo),
-            std::forward_as_tuple(source, freq));
-    }
-    auto restore_rx_los = uhd::utils::scope_exit::make([&]() {
-        _daughterboard->set_rx_frequency(original_rx_freq, chan);
-        for (auto entry : rx_lo_state) {
-            auto& lo    = std::get<0>(entry);
-            auto& state = std::get<1>(entry);
-
-            auto& source      = std::get<0>(state);
-            const double freq = std::get<1>(state);
-            _daughterboard->set_rx_lo_source(source, lo, chan);
-            _daughterboard->set_rx_lo_freq(freq, lo, chan);
-        }
-    });
-
-    const double original_tx_freq = _daughterboard->get_tx_frequency(chan);
-    std::map<std::string, std::tuple<std::string, double>> tx_lo_state;
-    for (auto tx_lo : _daughterboard->get_tx_lo_names(chan)) {
-        const std::string source(_daughterboard->get_tx_lo_source(tx_lo, chan));
-        const double freq = _daughterboard->get_tx_lo_freq(tx_lo, chan);
-        tx_lo_state.emplace(std::piecewise_construct,
-            std::forward_as_tuple(tx_lo),
-            std::forward_as_tuple(source, freq));
-    }
-    auto restore_tx_los = uhd::utils::scope_exit::make([&]() {
-        _daughterboard->set_tx_frequency(original_tx_freq, chan);
-        for (auto entry : tx_lo_state) {
-            auto& lo    = std::get<0>(entry);
-            auto& state = std::get<1>(entry);
-
-            auto& source      = std::get<0>(state);
-            const double freq = std::get<1>(state);
-            _daughterboard->set_tx_lo_source(source, lo, chan);
-            _daughterboard->set_tx_lo_freq(freq, lo, chan);
-        }
-    });
-
-    _daughterboard->set_tx_frequency(cal_params.tx_freq, chan);
-    _daughterboard->set_rx_frequency(cal_params.rx_freq, chan);
-
     // Set & restore the gain
     const double tx_gain = _daughterboard->get_tx_gain(chan);
     const double rx_gain = _daughterboard->get_rx_gain(chan);
@@ -197,32 +145,95 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
         _daughterboard->set_rx_gain(rx_gain, chan);
     });
 
-    _rpcc->setup_threshold(_db_number,
-        chan,
-        0,
-        "hysteresis",
-        cal_params.threshold_delay,
-        cal_params.threshold_under,
-        cal_params.threshold_over);
+    for (const auto& mode : _daughterboard->get_ch_modes()) {
+        RFNOC_LOG_DEBUG("Running ADC self calibration for channel "
+                        << chan << " in mode " << static_cast<size_t>(mode));
+        _rpcc->set_dac_mux_enable(_db_number, chan, 1, static_cast<size_t>(mode));
+        auto disable_dac_mux = uhd::utils::scope_exit::make([&, mode]() {
+            _rpcc->set_dac_mux_enable(_db_number, chan, 0, static_cast<size_t>(mode));
+        });
 
-    bool found_gain = _daughterboard->select_adc_self_cal_gain(chan);
-    if (!found_gain) {
-        throw uhd::runtime_error(
-            "Could not find appropriate gain for performing ADC self cal");
+        // Save all of the LO frequencies & sources
+        const double original_rx_freq = _daughterboard->get_rx_frequency(chan);
+        std::map<std::string, std::tuple<std::string, double>> rx_lo_state;
+        for (auto rx_lo : _daughterboard->get_rx_lo_names(chan)) {
+            const std::string source(_daughterboard->get_rx_lo_source(rx_lo, chan));
+            const double freq = _daughterboard->get_rx_lo_freq(rx_lo, chan);
+            rx_lo_state.emplace(std::piecewise_construct,
+                std::forward_as_tuple(rx_lo),
+                std::forward_as_tuple(source, freq));
+        }
+        auto restore_rx_los = uhd::utils::scope_exit::make([&]() {
+            _daughterboard->set_rx_frequency(original_rx_freq, chan);
+            for (auto entry : rx_lo_state) {
+                auto& lo    = std::get<0>(entry);
+                auto& state = std::get<1>(entry);
+
+                auto& source      = std::get<0>(state);
+                const double freq = std::get<1>(state);
+                _daughterboard->set_rx_lo_source(source, lo, chan);
+                _daughterboard->set_rx_lo_freq(freq, lo, chan);
+            }
+        });
+
+        const double original_tx_freq = _daughterboard->get_tx_frequency(chan);
+        std::map<std::string, std::tuple<std::string, double>> tx_lo_state;
+        for (auto tx_lo : _daughterboard->get_tx_lo_names(chan)) {
+            const std::string source(_daughterboard->get_tx_lo_source(tx_lo, chan));
+            const double freq = _daughterboard->get_tx_lo_freq(tx_lo, chan);
+            tx_lo_state.emplace(std::piecewise_construct,
+                std::forward_as_tuple(tx_lo),
+                std::forward_as_tuple(source, freq));
+        }
+        auto restore_tx_los = uhd::utils::scope_exit::make([&]() {
+            _daughterboard->set_tx_frequency(original_tx_freq, chan);
+            for (auto entry : tx_lo_state) {
+                auto& lo    = std::get<0>(entry);
+                auto& state = std::get<1>(entry);
+
+                auto& source      = std::get<0>(state);
+                const double freq = std::get<1>(state);
+                _daughterboard->set_tx_lo_source(source, lo, chan);
+                _daughterboard->set_tx_lo_freq(freq, lo, chan);
+            }
+        });
+
+        _daughterboard->set_tx_frequency(cal_params.tx_freq, chan);
+        _daughterboard->set_rx_frequency(cal_params.rx_freq, chan);
+
+        _rpcc->setup_threshold(_db_number,
+            chan,
+            static_cast<size_t>(mode),
+            0,
+            "hysteresis",
+            cal_params.threshold_delay,
+            cal_params.threshold_under,
+            cal_params.threshold_over);
+
+        bool found_gain =
+            _daughterboard->select_adc_self_cal_gain(chan, static_cast<size_t>(mode));
+        if (!found_gain) {
+            throw uhd::runtime_error(
+                "Could not find appropriate gain for performing ADC self cal");
+        }
+
+        _rpcc->set_calibration_mode(
+            _db_number, chan, static_cast<size_t>(mode), cal_params.calibration_mode);
+
+        // (if required) unfreeze calibration
+        const std::vector<int> current_frozen_state =
+            _rpcc->get_cal_frozen(_db_number, chan, static_cast<size_t>(mode));
+        _rpcc->set_cal_frozen(0, _db_number, chan, static_cast<size_t>(mode));
+        auto refreeze_adcs = uhd::utils::scope_exit::make([&]() {
+            _rpcc->set_cal_frozen(
+                current_frozen_state[0], _db_number, chan, static_cast<size_t>(mode));
+        });
+
+        // Let the ADC calibrate
+        // 2000ms was found experimentally to be sufficient
+        auto calibration_time = std::chrono::milliseconds(cal_params.calibration_time);
+        std::this_thread::sleep_for(calibration_time);
     }
-
-    _rpcc->set_calibration_mode(_db_number, chan, cal_params.calibration_mode);
-
-    // (if required) unfreeze calibration
-    const std::vector<int> current_frozen_state = _rpcc->get_cal_frozen(_db_number, chan);
-    _rpcc->set_cal_frozen(0, _db_number, chan);
-    auto refreeze_adcs = uhd::utils::scope_exit::make(
-        [&]() { _rpcc->set_cal_frozen(current_frozen_state[0], _db_number, chan); });
-
-    // Let the ADC calibrate
-    // 2000ms was found experimentally to be sufficient
-    auto calibration_time = std::chrono::milliseconds(cal_params.calibration_time);
-    std::this_thread::sleep_for(calibration_time);
 }
 
 void adc_self_calibration::run(size_t chan)

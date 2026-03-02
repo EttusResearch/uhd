@@ -678,7 +678,7 @@ std::string zbx_dboard_impl::get_dboard_fe_from_chan(
 /*********************************************************************
  * ADC Self Cal API
  **********************************************************************/
-bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan)
+bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan, size_t mode)
 {
     constexpr double min_gain = 10.0;
     constexpr double max_gain = 50.0;
@@ -707,7 +707,7 @@ bool zbx_dboard_impl::select_adc_self_cal_gain(size_t chan)
 
         try {
             const bool threshold_status =
-                _mb_rpcc->get_threshold_status(_db_idx, chan, 0);
+                _mb_rpcc->get_threshold_status(_db_idx, chan, mode, 0);
             if (threshold_status) {
                 found_gain = true;
                 break;

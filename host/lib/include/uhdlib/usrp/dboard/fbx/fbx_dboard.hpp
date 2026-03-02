@@ -22,6 +22,7 @@
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <uhdlib/usrp/dboard/x400_dboard_iface.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <string>
@@ -124,7 +125,12 @@ public:
         };
     }
 
-    bool select_adc_self_cal_gain(size_t) override;
+    bool select_adc_self_cal_gain(size_t, size_t) override;
+
+    std::vector<ch_mode> get_ch_modes() const override
+    {
+        return {FBX_CH_MODE};
+    }
 
     double get_converter_rate() const override
     {

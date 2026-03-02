@@ -7,11 +7,13 @@
 #pragma once
 
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <complex>
 #include <memory>
 #include <string>
 
 namespace uhd { namespace usrp { namespace x400 {
+using uhd::usrp::x400::ch_mode;
 
 /*! Parameters used for ADC self cal on the X400.
  *
@@ -47,7 +49,10 @@ public:
     //! Ask the dboard to search for a gain within the current device settings
     //! that is suitable for ADC self calibration.
     //! Returns true, if a suitable gain was found, false otherwise.
-    virtual bool select_adc_self_cal_gain(size_t chan) = 0;
+    virtual bool select_adc_self_cal_gain(size_t chan, size_t mode) = 0;
+
+    //! Returns which mixer mode(s) to expect in subchannels of a X4xx device
+    virtual std::vector<ch_mode> get_ch_modes() const = 0;
 
     //! Returns the RFdc converter rate, i.e., the rate at which the converters
     //! are clocked. May be different from the actual sampling rate, if the RFdc

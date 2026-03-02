@@ -7,6 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <unordered_map>
 #include <array>
 #include <cstddef>
@@ -18,6 +19,7 @@
 #include <vector>
 
 namespace uhd { namespace usrp { namespace fbx {
+using uhd::usrp::x400::ch_mode;
 
 /******************************************************************************
  * Important: When changing values here, check if that also requires updating
@@ -80,5 +82,8 @@ static constexpr uint32_t ATR_ADDR_XX    = 3; // Full-duplex
 static constexpr uint32_t NUM_ATR_STATES = 4;
 // Helper for looping
 static constexpr std::array<uint32_t, NUM_ATR_STATES> ATR_ADDRS{0, 1, 2, 3};
+
+// In which mode do we operate channels on this device
+static const ch_mode FBX_CH_MODE = ch_mode::REAL;
 
 }}} // namespace uhd::usrp::fbx

@@ -648,7 +648,10 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         subtree,
         fe_path / "los" / RFDC_NCO / "freq" / "value",
         // Initialize with current value
-        _mb_rpcc->rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx", _db_idx, chan_idx),
+        _mb_rpcc->rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
+            _db_idx,
+            chan_idx,
+            static_cast<size_t>(ZBX_CH_MODE)),
         AUTO_RESOLVE_ON_WRITE);
 
     expert_factory::add_prop_node<zbx_lo_source_t>(expert,

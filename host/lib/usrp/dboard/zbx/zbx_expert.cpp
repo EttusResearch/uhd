@@ -492,8 +492,11 @@ void zbx_rfdc_freq_expert::resolve()
         return _if2_frequency_desired;
     }();
 
-    _rfdc_freq_coerced = _rpcc->rfdc_set_nco_freq(
-        _get_trx_string(_trx), _db_idx, _chan, desired_rfdc_freq);
+    _rfdc_freq_coerced     = _rpcc->rfdc_set_nco_freq(_get_trx_string(_trx),
+        _db_idx,
+        _chan,
+        desired_rfdc_freq,
+        static_cast<size_t>(ZBX_CH_MODE));
     _if2_frequency_coerced = _rfdc_freq_coerced;
 }
 

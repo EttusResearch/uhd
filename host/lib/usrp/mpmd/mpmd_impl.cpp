@@ -30,7 +30,7 @@ namespace {
 //! Most pessimistic time for a CHDR query to go to device and back
 const double MPMD_CHDR_MAX_RTT = 0.02;
 //! MPM Compatibility number {MAJOR, MINOR}
-const std::vector<size_t> MPM_COMPAT_NUM = {5, 3};
+const std::vector<size_t> MPM_COMPAT_NUM = {6, 0};
 
 /*************************************************************************
  * Helper functions

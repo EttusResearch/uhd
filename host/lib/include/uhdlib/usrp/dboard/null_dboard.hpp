@@ -9,9 +9,11 @@
 #include "x400_dboard_iface.hpp"
 #include <uhd/exception.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
+#include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <string>
 
 namespace uhd { namespace rfnoc {
+using uhd::usrp::x400::ch_mode;
 
 /*! \brief Implementation of dboard_iface for unpopulated or unsupported daughterboards
  */
@@ -49,9 +51,14 @@ public:
         };
     }
 
-    bool select_adc_self_cal_gain(size_t) final
+    bool select_adc_self_cal_gain(size_t, size_t) final
     {
         return true;
+    }
+
+    std::vector<ch_mode> get_ch_modes() const override
+    {
+        return {};
     }
 
     double get_converter_rate() const final
