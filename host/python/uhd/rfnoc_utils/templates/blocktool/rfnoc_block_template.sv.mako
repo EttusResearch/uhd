@@ -203,6 +203,28 @@ module rfnoc_block_${config['module_name']} #(
   //---------------------------------------------------------------------------
 
   // < Replace this section with your logic >
+<%
+  i_cfg = config['data']['inputs']
+  o_cfg = config['data']['outputs']
+  connect_loopback = bool(
+      len(i_cfg) == 1 and
+      len(o_cfg) == 1 and
+      list(i_cfg.values())[0].get('num_ports', 1) == list(o_cfg.values())[0].get('num_ports', 1))
+%>
+%if connect_loopback:
+  // Default assignment: The input and output ports are connected in a loopback
+  // fashion. This will make all port pairs act as a passthrough (e.g., data
+  // sent into input port 0 will be forwarded to output port 0 directly). This
+  // is to show off basic RFNoC functionality, and should be removed when the
+  // block's desired logic is connected here.
+%if fpga_data_iface == "axis_chdr":
+<%include file="/modules/axis_chdr_loopback_template.mako"/>\
+%elif fpga_data_iface == "axis_pyld_ctxt":
+<%include file="/modules/axis_pyld_ctxt_loopback_template.mako"/>\
+%elif fpga_data_iface == "axis_data":
+<%include file="/modules/axis_data_loopback_template.mako"/>\
+%endif
+%endif
 
   // Nothing to do yet, so just drive control signals to default values
 %if config['control']['fpga_iface'] == "ctrlport":
@@ -218,6 +240,7 @@ module rfnoc_block_${config['module_name']} #(
   assign m_axis_ctrl_tready = 1'b0;
   assign s_axis_ctrl_tvalid = 1'b0;
 %endif
+%if not connect_loopback:
 %if fpga_data_iface == "axis_chdr":
   %for port_name, port_info in config['data']['inputs'].items():
     %if 'num_ports' in port_info:
@@ -267,6 +290,7 @@ module rfnoc_block_${config['module_name']} #(
   assign s_${port_name}_axis_tvalid = 1'b0;
     %endif
   %endfor
+%endif
 %endif
 
 endmodule // rfnoc_block_${config['module_name']}

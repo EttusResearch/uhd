@@ -244,8 +244,47 @@ module rfnoc_block_${config['module_name']}_tb;
     //--------------------------------
 
     // <Add your test code here>
+<%
+  i_cfg = config['data']['inputs']
+  o_cfg = config['data']['outputs']
+  connect_loopback = bool(
+      len(i_cfg) == 1 and
+      len(o_cfg) == 1 and
+      list(i_cfg.values())[0].get('num_ports', 1) == list(o_cfg.values())[0].get('num_ports', 1))
+%>
+%if connect_loopback:
+    test.start_test("Loopback test", 100us);
+    begin
+      item_t send_samples[$];    // Sample words to send
+      item_t recv_samples[$];    // Sample words to receive
+
+      // Generate test data - simple incrementing pattern
+      send_samples = {};
+      for (int i = 0; i < SPP; i++) begin
+        send_samples.push_back(32'h00010000 * i + i);
+      end
+
+      // Send the packet through the block
+      blk_ctrl.send_items(0, send_samples);
+
+      // Receive the output packet
+      blk_ctrl.recv_items(0, recv_samples);
+
+      // Verify we received the correct number of samples
+      `ASSERT_ERROR(recv_samples.size() == SPP,
+        "Received payload didn't match size of payload sent");
+
+      // Verify the data matches (loopback behavior)
+      for (int i = 0; i < SPP; i++) begin
+        `ASSERT_ERROR(recv_samples[i] == send_samples[i],
+          $sformatf("Sample %0d: received 0x%X, expected 0x%X",
+                    i, recv_samples[i], send_samples[i]));
+      end
+    end
+%else:
     test.start_test("<Name your first test>", 100us);
     `ASSERT_WARNING(0, "This testbench doesn't test anything yet!");
+%endif
     test.end_test();
 
     //--------------------------------
