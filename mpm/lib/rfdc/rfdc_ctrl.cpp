@@ -14,6 +14,16 @@
 
 #define BUS_NAME "platform"
 
+namespace {
+//! Helper to check if a channel type represents complex (IQ) data
+bool is_complex_mode(mpm::rfdc::rfdc_ctrl::ch_type_options ch_type)
+{
+    return ch_type == mpm::rfdc::rfdc_ctrl::ch_type_options::I
+           || ch_type == mpm::rfdc::rfdc_ctrl::ch_type_options::Q
+           || ch_type == mpm::rfdc::rfdc_ctrl::ch_type_options::IQ;
+}
+} // namespace
+
 namespace mpm { namespace rfdc {
 
 rfdc_ctrl::rfdc_ctrl()
@@ -108,52 +118,60 @@ bool rfdc_ctrl::is_adc_enabled(uint32_t tile_id, uint32_t block_id) const
     return XRFdc_IsADCBlockEnabled(rfdc_inst_ptr, tile_id, block_id) == 1;
 }
 
-bool rfdc_ctrl::startup_tile(int tile_id, bool is_dac)
+bool rfdc_ctrl::startup_tile(int tile_id, converter_options conv_option)
 {
-    return XRFdc_StartUp(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;
+    return XRFdc_StartUp(rfdc_inst_ptr, conv_option, tile_id) == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::shutdown_tile(int tile_id, bool is_dac)
+bool rfdc_ctrl::shutdown_tile(int tile_id, converter_options conv_option)
 {
-    return XRFdc_Shutdown(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;
+    return XRFdc_Shutdown(rfdc_inst_ptr, conv_option, tile_id) == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::reset_tile(int tile_id, bool is_dac)
+bool rfdc_ctrl::reset_tile(int tile_id, converter_options conv_option)
 {
-    return XRFdc_Reset(rfdc_inst_ptr, is_dac, tile_id) == XRFDC_SUCCESS;
+    return XRFdc_Reset(rfdc_inst_ptr, conv_option, tile_id) == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::trigger_update_event(
-    uint32_t tile_id, uint32_t block_id, bool is_dac, event_type_options event_type)
+bool rfdc_ctrl::trigger_update_event(uint32_t tile_id,
+    uint32_t block_id,
+    converter_options conv_option,
+    event_type_options event_type)
 {
-    return XRFdc_UpdateEvent(rfdc_inst_ptr, is_dac, tile_id, block_id, event_type)
+    return XRFdc_UpdateEvent(rfdc_inst_ptr, conv_option, tile_id, block_id, event_type)
            == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool is_dac)
+bool rfdc_ctrl::reset_mixer_settings(uint32_t tile_id,
+    uint32_t block_id,
+    converter_options conv_option,
+    ch_type_options ch_type)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
     mixer_settings.Freq           = 200;
     mixer_settings.PhaseOffset    = 0;
     mixer_settings.EventSource    = XRFDC_EVNT_SRC_SYSREF;
-    mixer_settings.CoarseMixFreq  = 16;
-    mixer_settings.MixerMode      = is_dac ? MIXER_MODE_C2R : MIXER_MODE_R2C;
+    mixer_settings.CoarseMixFreq  = XRFDC_COARSE_MIX_BYPASS;
+    mixer_settings.MixerMode      = is_complex_mode(ch_type)
+                                        ? MIXER_MODE_C2C
+                                        : (conv_option ? MIXER_MODE_C2R : MIXER_MODE_R2C);
     mixer_settings.FineMixerScale = 0;
-    mixer_settings.MixerType      = XRFDC_MIXER_TYPE_FINE;
+    mixer_settings.MixerType      = is_complex_mode(ch_type) ? XRFDC_MIXER_TYPE_COARSE
+                                                             : XRFDC_MIXER_TYPE_FINE;
 
-    return (
-        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-        == XRFDC_SUCCESS);
+    return (XRFdc_SetMixerSettings(
+                rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_gain_enable(
-    uint32_t tile_id, uint32_t block_id, bool is_dac, bool enable)
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option, bool enable)
 {
     XRFdc_QMC_Settings qmc_settings;
 
     // Get current QMC settings for the values that will not be changed
-    if (XRFdc_GetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
+    if (XRFdc_GetQMCSettings(rfdc_inst_ptr, conv_option, tile_id, block_id, &qmc_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
@@ -162,16 +180,18 @@ bool rfdc_ctrl::set_gain_enable(
     // Update the setting on a SYSREF trigger
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
-    return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-            == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetQMCSettings(rfdc_inst_ptr, conv_option, tile_id, block_id, &qmc_settings)
+        == XRFDC_SUCCESS);
 }
 
-bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, double gain)
+bool rfdc_ctrl::set_gain(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option, double gain)
 {
     XRFdc_QMC_Settings qmc_settings;
 
     // Get current QMC settings for the values that will not be changed
-    if (XRFdc_GetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
+    if (XRFdc_GetQMCSettings(rfdc_inst_ptr, conv_option, tile_id, block_id, &qmc_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
@@ -181,8 +201,9 @@ bool rfdc_ctrl::set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, doubl
     // Update the setting on a SYSREF trigger
     qmc_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
-    return (XRFdc_SetQMCSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &qmc_settings)
-            == XRFDC_SUCCESS);
+    return (
+        XRFdc_SetQMCSettings(rfdc_inst_ptr, conv_option, tile_id, block_id, &qmc_settings)
+        == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_threshold_settings(uint32_t tile_id,
@@ -347,12 +368,14 @@ bool rfdc_ctrl::set_decoder_mode(
            == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::reset_nco_phase(uint32_t tile_id, uint32_t block_id, bool is_dac)
+bool rfdc_ctrl::reset_nco_phase(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
     // Get current mixer settings for the values that will not be changed
-    if (XRFdc_GetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_GetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
@@ -361,44 +384,46 @@ bool rfdc_ctrl::reset_nco_phase(uint32_t tile_id, uint32_t block_id, bool is_dac
     mixer_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     // Set the mixer settings to set the NCO event source
-    if (XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_SetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
 
-    return (
-        XRFdc_ResetNCOPhase(rfdc_inst_ptr, is_dac, tile_id, block_id) == XRFDC_SUCCESS);
+    return (XRFdc_ResetNCOPhase(rfdc_inst_ptr, conv_option, tile_id, block_id)
+            == XRFDC_SUCCESS);
 }
 
 bool rfdc_ctrl::set_nco_freq(
-    uint32_t tile_id, uint32_t block_id, bool is_dac, double freq)
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option, double freq)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
     // Get current mixer settings for the values that will not be changed
-    if (XRFdc_GetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_GetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
 
     // The XRFdc API expects the NCO frequency in MHz
     mixer_settings.Freq = freq / 1e6;
-    // Only the fine mixer uses an NCO to shift the data frequency
-    mixer_settings.MixerType = XRFDC_MIXER_TYPE_FINE;
     // Update the setting on a tile-wide event trigger
     mixer_settings.EventSource = XRFDC_EVNT_SRC_TILE;
 
     return (XRFdc_SetMixerSettings(
-                rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+                rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, conv_option, MIXER_EVENT);
 }
 
-double rfdc_ctrl::get_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac)
+double rfdc_ctrl::get_nco_freq(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
-    if (XRFdc_GetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_GetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get mixer settings");
     }
@@ -406,12 +431,14 @@ double rfdc_ctrl::get_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac)
     return mixer_settings.Freq * 1e6;
 }
 
-bool rfdc_ctrl::set_nco_event_src(uint32_t tile_id, uint32_t block_id, bool is_dac)
+bool rfdc_ctrl::set_nco_event_src(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
     // Get current mixer settings for the values that will not be changed
-    if (XRFdc_GetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_GetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
@@ -420,36 +447,48 @@ bool rfdc_ctrl::set_nco_event_src(uint32_t tile_id, uint32_t block_id, bool is_d
     mixer_settings.EventSource = XRFDC_EVNT_SRC_SYSREF;
 
     // Set the mixer settings to set the NCO event source
-    return (
-        XRFdc_SetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
-        == XRFDC_SUCCESS);
+    return (XRFdc_SetMixerSettings(
+                rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
+            == XRFDC_SUCCESS);
 }
 
-bool rfdc_ctrl::set_mixer_mode(
-    uint32_t tile_id, uint32_t block_id, bool is_dac, mixer_mode_options mixer_mode)
+bool rfdc_ctrl::set_mixer_mode(uint32_t tile_id,
+    uint32_t block_id,
+    converter_options conv_option,
+    mixer_mode_options mixer_mode)
 {
     XRFdc_Mixer_Settings mixer_settings;
 
     // Get current mixer settings for the values that will not be changed
-    if (XRFdc_GetMixerSettings(rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+    if (XRFdc_GetMixerSettings(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
         != XRFDC_SUCCESS) {
         return false;
     }
 
     mixer_settings.MixerMode = mixer_mode;
+    if (mixer_mode == MIXER_MODE_C2C) {
+        mixer_settings.MixerType     = XRFDC_MIXER_TYPE_COARSE;
+        mixer_settings.CoarseMixFreq = XRFDC_COARSE_MIX_BYPASS;
+    } else {
+        mixer_settings.MixerType = XRFDC_MIXER_TYPE_FINE;
+    }
     // Update the setting on a tile-wide event trigger
     mixer_settings.EventSource = XRFDC_EVNT_SRC_TILE;
 
     return (XRFdc_SetMixerSettings(
-                rfdc_inst_ptr, is_dac, tile_id, block_id, &mixer_settings)
+                rfdc_inst_ptr, conv_option, tile_id, block_id, &mixer_settings)
                == XRFDC_SUCCESS)
-           && trigger_update_event(tile_id, block_id, is_dac, MIXER_EVENT);
+           && trigger_update_event(tile_id, block_id, conv_option, MIXER_EVENT);
 }
 
-bool rfdc_ctrl::set_nyquist_zone(
-    uint32_t tile_id, uint32_t block_id, bool is_dac, nyquist_zone_options nyquist_zone)
+bool rfdc_ctrl::set_nyquist_zone(uint32_t tile_id,
+    uint32_t block_id,
+    converter_options conv_option,
+    nyquist_zone_options nyquist_zone)
 {
-    return XRFdc_SetNyquistZone(rfdc_inst_ptr, is_dac, tile_id, block_id, nyquist_zone)
+    return XRFdc_SetNyquistZone(
+               rfdc_inst_ptr, conv_option, tile_id, block_id, nyquist_zone)
            == XRFDC_SUCCESS;
 }
 
@@ -478,11 +517,12 @@ bool rfdc_ctrl::enable_inverse_sinc_filter(
     return XRFdc_SetInvSincFIR(rfdc_inst_ptr, tile_id, block_id, enable) == XRFDC_SUCCESS;
 }
 
-double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac)
+double rfdc_ctrl::get_sample_rate(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     XRFdc_BlockStatus block_status;
 
-    if (XRFdc_GetBlockStatus(rfdc_inst_ptr, is_dac, tile_id, block_id, &block_status)
+    if (XRFdc_GetBlockStatus(rfdc_inst_ptr, conv_option, tile_id, block_id, &block_status)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get Block status");
     }
@@ -490,20 +530,28 @@ double rfdc_ctrl::get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_d
     return block_status.SamplingFreq * 1e9;
 }
 
-bool rfdc_ctrl::configure_pll(
-    uint32_t tile_id, bool is_dac, uint8_t source, double ref_freq, double sample_rate)
+bool rfdc_ctrl::configure_pll(uint32_t tile_id,
+    converter_options conv_option,
+    uint8_t source,
+    double ref_freq,
+    double sample_rate)
 {
     // The XRFdc API expects the sample rate / reference freq in MHz
-    return XRFdc_DynamicPLLConfig(
-               rfdc_inst_ptr, is_dac, tile_id, source, ref_freq / 1e6, sample_rate / 1e6)
+    return XRFdc_DynamicPLLConfig(rfdc_inst_ptr,
+               conv_option,
+               tile_id,
+               source,
+               ref_freq / 1e6,
+               sample_rate / 1e6)
            == XRFDC_SUCCESS;
 }
 
-rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, bool is_dac)
+rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, converter_options conv_option)
 {
     XRFdc_PLL_Settings settings;
     rfdc_pll_config result;
-    if (XRFdc_GetPLLConfig(rfdc_inst_ptr, is_dac, tile_id, &settings) != XRFDC_SUCCESS) {
+    if (XRFdc_GetPLLConfig(rfdc_inst_ptr, conv_option, tile_id, &settings)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get PLL status");
     }
     result.status           = settings.Enabled == 0 ? rfdc_pll_config::PLL_bypassed
@@ -516,31 +564,38 @@ rfdc_pll_config rfdc_ctrl::get_pll_config(uint32_t tile_id, bool is_dac)
     return result;
 }
 
-bool rfdc_ctrl::set_if(uint32_t tile_id, uint32_t block_id, bool is_dac, double if_freq)
+bool rfdc_ctrl::set_if(uint32_t tile_id,
+    uint32_t block_id,
+    converter_options conv_option,
+    ch_type_options ch_type,
+    double if_freq)
 {
     nyquist_zone_options nyquist_zone;
     mixer_mode_options mixer_mode;
     bool enable_inverse_sinc;
     double nco_freq;
 
-    double nyquist_cutoff = get_sample_rate(tile_id, block_id, is_dac) / 2;
+    double nyquist_cutoff = get_sample_rate(tile_id, block_id, conv_option) / 2;
 
     if (if_freq <= nyquist_cutoff) { // First Nyquist Zone
         nyquist_zone        = ODD_NYQUIST_ZONE;
-        mixer_mode          = is_dac ? MIXER_MODE_C2R : MIXER_MODE_R2C;
         enable_inverse_sinc = true;
     } else { // Second Nyquist Zone
         nyquist_zone        = EVEN_NYQUIST_ZONE;
-        mixer_mode          = is_dac ? MIXER_MODE_C2R : MIXER_MODE_R2C;
         enable_inverse_sinc = false;
     }
 
-    return set_nyquist_zone(tile_id, block_id, is_dac, nyquist_zone)
-           && set_mixer_mode(tile_id, block_id, is_dac, mixer_mode)
-           && (is_dac ? enable_inverse_sinc_filter(tile_id, block_id, enable_inverse_sinc)
-                      : true)
-           && set_nco_freq(tile_id, block_id, is_dac, if_freq)
-           && set_nco_event_src(tile_id, block_id, is_dac);
+    mixer_mode = is_complex_mode(ch_type)
+                     ? MIXER_MODE_C2C
+                     : (conv_option ? MIXER_MODE_C2R : MIXER_MODE_R2C);
+
+    return set_nyquist_zone(tile_id, block_id, conv_option, nyquist_zone)
+           && set_mixer_mode(tile_id, block_id, conv_option, mixer_mode)
+           && (conv_option
+                   ? enable_inverse_sinc_filter(tile_id, block_id, enable_inverse_sinc)
+                   : true)
+           && set_nco_freq(tile_id, block_id, conv_option, if_freq)
+           && set_nco_event_src(tile_id, block_id, conv_option);
 }
 
 bool rfdc_ctrl::set_decimation_factor(
@@ -589,11 +644,12 @@ bool rfdc_ctrl::set_data_read_rate(
            == XRFDC_SUCCESS;
 }
 
-uint32_t rfdc_ctrl::get_data_read_rate(uint32_t tile_id, uint32_t block_id, bool is_dac)
+uint32_t rfdc_ctrl::get_data_read_rate(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     uint32_t valid_read_words;
     if (XRFdc_GetFabRdVldWords(
-            rfdc_inst_ptr, is_dac, tile_id, block_id, &valid_read_words)
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &valid_read_words)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get data read rate");
     }
@@ -607,11 +663,12 @@ bool rfdc_ctrl::set_data_write_rate(
            == XRFDC_SUCCESS;
 }
 
-uint32_t rfdc_ctrl::get_data_write_rate(uint32_t tile_id, uint32_t block_id, bool is_dac)
+uint32_t rfdc_ctrl::get_data_write_rate(
+    uint32_t tile_id, uint32_t block_id, converter_options conv_option)
 {
     uint32_t valid_write_words;
     if (XRFdc_GetFabWrVldWords(
-            rfdc_inst_ptr, is_dac, tile_id, block_id, &valid_write_words)
+            rfdc_inst_ptr, conv_option, tile_id, block_id, &valid_write_words)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get data write rate");
     }
@@ -619,17 +676,17 @@ uint32_t rfdc_ctrl::get_data_write_rate(uint32_t tile_id, uint32_t block_id, boo
 }
 
 bool rfdc_ctrl::set_fabric_clk_div(
-    uint32_t tile_id, bool is_dac, fabric_clk_div_options divider)
+    uint32_t tile_id, converter_options conv_option, fabric_clk_div_options divider)
 {
-    return XRFdc_SetFabClkOutDiv(rfdc_inst_ptr, is_dac, tile_id, divider)
+    return XRFdc_SetFabClkOutDiv(rfdc_inst_ptr, conv_option, tile_id, divider)
            == XRFDC_SUCCESS;
 }
 
 rfdc_ctrl::fabric_clk_div_options rfdc_ctrl::get_fabric_clk_div(
-    uint32_t tile_id, bool is_dac)
+    uint32_t tile_id, converter_options conv_option)
 {
     uint16_t divider;
-    if (XRFdc_GetFabClkOutDiv(rfdc_inst_ptr, is_dac, tile_id, &divider)
+    if (XRFdc_GetFabClkOutDiv(rfdc_inst_ptr, conv_option, tile_id, &divider)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error(
             "Error in RFDC code: Failed to get fabric clock divider");
@@ -637,28 +694,27 @@ rfdc_ctrl::fabric_clk_div_options rfdc_ctrl::get_fabric_clk_div(
     return (fabric_clk_div_options)divider;
 }
 
-bool rfdc_ctrl::set_data_fifo_state(uint32_t tile_id, bool is_dac, bool enable)
+bool rfdc_ctrl::set_data_fifo_state(
+    uint32_t tile_id, converter_options conv_option, bool enable)
 {
-    return XRFdc_SetupFIFO(rfdc_inst_ptr, is_dac, tile_id, enable) == XRFDC_SUCCESS;
+    return XRFdc_SetupFIFO(rfdc_inst_ptr, conv_option, tile_id, enable) == XRFDC_SUCCESS;
 }
 
-bool rfdc_ctrl::get_data_fifo_state(uint32_t tile_id, bool is_dac)
+bool rfdc_ctrl::get_data_fifo_state(uint32_t tile_id, converter_options conv_option)
 {
     uint8_t enabled;
-    if (XRFdc_GetFIFOStatus(rfdc_inst_ptr, is_dac, tile_id, &enabled) != XRFDC_SUCCESS) {
+    if (XRFdc_GetFIFOStatus(rfdc_inst_ptr, conv_option, tile_id, &enabled)
+        != XRFDC_SUCCESS) {
         throw mpm::runtime_error("Error in RFDC code: Failed to get FIFO status");
     }
     return (bool)enabled;
 }
 
 void rfdc_ctrl::clear_data_fifo_interrupts(
-    const uint32_t tile_id, const uint32_t block_id, const bool is_dac)
+    const uint32_t tile_id, const uint32_t block_id, const converter_options conv_option)
 {
-    if (XRFdc_IntrClr(rfdc_inst_ptr,
-            static_cast<u32>(is_dac),
-            tile_id,
-            block_id,
-            XRFDC_IXR_FIFOUSRDAT_MASK)
+    if (XRFdc_IntrClr(
+            rfdc_inst_ptr, conv_option, tile_id, block_id, XRFDC_IXR_FIFOUSRDAT_MASK)
         != XRFDC_SUCCESS) {
         throw mpm::runtime_error(
             "Error in RFDC code: Failed to clear data FIFO interrupts");
@@ -666,10 +722,10 @@ void rfdc_ctrl::clear_data_fifo_interrupts(
 }
 
 bool rfdc_ctrl::sync_tiles(
-    const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency)
+    const std::vector<uint32_t>& tiles, converter_options conv_option, int32_t latency)
 {
-    XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
-                                                           : &rfdc_adc_sync_config;
+    XRFdc_MultiConverter_Sync_Config* sync_config = conv_option ? &rfdc_dac_sync_config
+                                                                : &rfdc_adc_sync_config;
     sync_config->Tiles                            = 0;
     sync_config->Target_Latency                   = static_cast<int>(latency);
 
@@ -681,35 +737,35 @@ bool rfdc_ctrl::sync_tiles(
 
     return XRFDC_MTS_OK
            == XRFdc_MultiConverter_Sync(
-               &rfdc_inst, is_dac ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
+               &rfdc_inst, conv_option ? XRFDC_DAC_TILE : XRFDC_ADC_TILE, sync_config);
 }
 
-uint32_t rfdc_ctrl::get_tile_latency(uint32_t tile_index, bool is_dac)
+uint32_t rfdc_ctrl::get_tile_latency(uint32_t tile_index, converter_options conv_option)
 {
-    XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
-                                                           : &rfdc_adc_sync_config;
+    XRFdc_MultiConverter_Sync_Config* sync_config = conv_option ? &rfdc_dac_sync_config
+                                                                : &rfdc_adc_sync_config;
     // If user has called sync with this tile_index, this
     // attribute should be populated in our sync config
     if ((1 << tile_index) & sync_config->Tiles) {
         return sync_config->Latency[tile_index];
     }
-    if (is_dac) {
+    if (conv_option) {
         throw mpm::runtime_error("rfdc_ctrl: Failed to get DAC Tile Latency");
     } else {
         throw mpm::runtime_error("rfdc_ctrl: Failed to get ADC Tile Latency");
     }
 }
 
-uint32_t rfdc_ctrl::get_tile_offset(uint32_t tile_index, bool is_dac)
+uint32_t rfdc_ctrl::get_tile_offset(uint32_t tile_index, converter_options conv_option)
 {
-    XRFdc_MultiConverter_Sync_Config* sync_config = is_dac ? &rfdc_dac_sync_config
-                                                           : &rfdc_adc_sync_config;
+    XRFdc_MultiConverter_Sync_Config* sync_config = conv_option ? &rfdc_dac_sync_config
+                                                                : &rfdc_adc_sync_config;
     // If user has called sync with this tile_index, this
     // attribute should be populated in our sync config
     if ((1 << tile_index) & sync_config->Tiles) {
         return sync_config->Offset[tile_index];
     }
-    if (is_dac) {
+    if (conv_option) {
         throw mpm::runtime_error("rfdc_ctrl: Failed to get DAC Tile Offset");
     } else {
         throw mpm::runtime_error("rfdc_ctrl: Failed to get ADC Tile Offset");

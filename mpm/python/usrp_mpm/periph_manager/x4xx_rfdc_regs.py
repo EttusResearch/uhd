@@ -47,7 +47,7 @@ class RfdcRegsControl:
         # need to read out here. Note that we can't yet read all registers when
         # this class is instantiated, as the RFDC itself is still being held in
         # reset. See also reset().
-        self._update_reg("CAL_ENABLE_DB0_CHAN0")
+        self._update_reg("CAL_ENABLE_TILE0_BLOCK0")
         self._update_reg("FABRIC_DSP_INFO_BW")
         self._update_reg("RFDC_INFO_DB0_XTRA_RESAMP")
         for conv in range(NUM_CONVERTERS):
@@ -62,7 +62,7 @@ class RfdcRegsControl:
         Resets the state of the register object. Call this after pulling the
         RFDC out of reset.
         """
-        self._update_reg("CAL_ENABLE_DB0_CHAN0")
+        self._update_reg("CAL_ENABLE_TILE0_BLOCK0")
         self._update_reg("IQ_SWAP_DAC_DB0_CHAN0")
         self._update_reg("IQ_SWAP_DAC_DB1_CHAN0")
         self._regs.save_state()
@@ -96,40 +96,53 @@ class RfdcRegsControl:
         For example, adc_mapping might be of value:
         (
             (
-                (0, 1), (0, 0)
+                ((0,1,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_I_MODE),(0,0,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_Q_MODE)),
+                ((1,1,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_I_MODE),(2,0,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_Q_MODE))
             ), (
-                (2, 1), (2, 0)
+                ((3,0,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_REAL_MODE)),
+                ((4,1,RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_REAL_MODE))
             )
         )
 
-        This means there are 2 dboards. On the first dboard, we have 2 channels,
-        and channel 0 uses tile 0, block 1.
+        The example tuple would mean that there are two daughterboards with two
+        channels each, and each channel on DB0 using two subchannels/data paths with
+        the third element always being the mixer mode.
+        Daughterboard 1 has only two channels with one subchannel each in Real Mode.
         """
+        num_rx_channels = self.get_num_rx_channels()
+        num_tx_channels = self.get_num_tx_channels()
+        # Assuming that the number of channels is the same for both DBs
+        adc_mapping = [[[] for _ in range(num_rx_channels[0])] for _ in range(len(num_rx_channels))]
+        dac_mapping = [[[] for _ in range(num_tx_channels[0])] for _ in range(len(num_tx_channels))]
 
-        # define helper function to extract content from device memory
-        def get_tuple(db, channel, is_adc):
-            for i in range(NUM_CONVERTERS):
-                if (
-                    (
-                        self._regs.RFDC_INFO_BLOCK_MODE[i]
-                        == self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_ENABLED
+        for conv in range(NUM_CONVERTERS):
+            # Skip converters that are disabled
+            if (
+                self._regs.RFDC_INFO_BLOCK_MODE[conv]
+                != self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_DISABLED
+            ):
+                # Sort into ADC or DAC
+                if self._regs.RFDC_INFO_IS_ADC[conv]:
+                    adc_mapping[self._regs.RFDC_INFO_DB[conv]][
+                        self._regs.RFDC_INFO_CHANNEL[conv]
+                    ].append(
+                        (
+                            self._regs.RFDC_INFO_TILE[conv],
+                            self._regs.RFDC_INFO_BLOCK[conv],
+                            self._regs.RFDC_INFO_BLOCK_MODE[conv],
+                        )
                     )
-                    and (self._regs.RFDC_INFO_DB[i] == db)
-                    and (self._regs.RFDC_INFO_CHANNEL[i] == channel)
-                    and (self._regs.RFDC_INFO_IS_ADC[i] == is_adc)
-                ):
-                    return tuple((self._regs.RFDC_INFO_TILE[i], self._regs.RFDC_INFO_BLOCK[i]))
-            else:
-                raise ValueError(f"Could not find mapping for {db}, {channel}, {is_adc}")
+                else:
+                    dac_mapping[self._regs.RFDC_INFO_DB[conv]][
+                        self._regs.RFDC_INFO_CHANNEL[conv]
+                    ].append(
+                        (
+                            self._regs.RFDC_INFO_TILE[conv],
+                            self._regs.RFDC_INFO_BLOCK[conv],
+                            self._regs.RFDC_INFO_BLOCK_MODE[conv],
+                        )
+                    )
 
-        adc_mapping = tuple(
-            tuple(get_tuple(db, chan, True) for chan in range(num_channels))
-            for db, num_channels in enumerate(self.get_num_rx_channels())
-        )
-        dac_mapping = tuple(
-            tuple(get_tuple(db, chan, False) for chan in range(num_channels))
-            for db, num_channels in enumerate(self.get_num_tx_channels())
-        )
         return adc_mapping, dac_mapping
 
     def get_rfdc_info(self, db_idx):
@@ -146,20 +159,44 @@ class RfdcRegsControl:
             "spc_tx": 2 ** getattr(self._regs, f"RFDC_INFO_DB{db_idx}_SPC_TX"),
         }
 
-    def get_threshold_status(self, db_idx, channel, threshold_idx):
+    def get_threshold_status(self, db_idx, channel, mode, threshold_idx):
         """
-        Retrieves the status bit for the given threshold block
+        Retrieves the status bit for the given threshold block(s). In
+        Real mode only one block is used, while if I or Q are passed as
+        argument both I and Q will be queried and returned as compound result.
         """
         adc_mapping, _ = self.get_converter_mapping()
+        if isinstance(mode, int):
+            assert mode in [mixmode.value for mixmode in self._regs.RFDC_INFO_BLOCK_MODE_t]
+            mode = self._regs.RFDC_INFO_BLOCK_MODE_t(mode)
+        else:
+            assert any(mode == mixmode for mixmode in self._regs.RFDC_INFO_BLOCK_MODE_t)
         assert len(adc_mapping) > 0
         assert 0 <= db_idx < len(adc_mapping)
         assert 0 <= channel < len(adc_mapping[0])
         assert threshold_idx in [0, 1]
 
-        adc, block = adc_mapping[db_idx][channel]
-        reg_name = f"THRESHOLD_ADC{adc}_BLOCK{block}_IDX{threshold_idx}"
-        self._update_reg(reg_name)
-        status = getattr(self._regs, reg_name)
+        def get_status(self, db_idx, channel, threshold_idx, mode):
+            adc, block, _ = next(
+                ch for ch in adc_mapping[db_idx][channel] if ch[2].value == mode.value
+            )
+            reg_name = f"THRESHOLD_ADC{adc}_BLOCK{block}_IDX{threshold_idx}"
+            self._update_reg(reg_name)
+            status = getattr(self._regs, reg_name)
+            return bool(status)
+
+        # Assuming a maximum of 1 Real sub-channel per channel
+        if mode == self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_REAL_MODE:
+            status = get_status(self, db_idx, channel, threshold_idx, mode)
+        else:
+            # ... and a maximum of 1 I and 1 Q sub-channel per channel
+            status = 1
+            for mixmode in [
+                self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_I_MODE,
+                self._regs.RFDC_INFO_BLOCK_MODE_t.RFDC_INFO_BLOCK_MODE_Q_MODE,
+            ]:
+                status &= get_status(self, db_idx, channel, threshold_idx, mixmode)
+
         return bool(status)
 
     def set_cal_data(self, i, q):
@@ -173,18 +210,21 @@ class RfdcRegsControl:
         self._regs.CAL_DATA_Q = q
         self._commit()
 
-    def set_cal_enable(self, db_idx, channel, enable):
+    def set_cal_enable(self, tile, block, enable):
         """
         Enable the cal tone for the specified TX channel. The cal tone is
         muxed into the TX signal path.
         """
-        info = self.get_rfdc_info(db_idx)
-        assert 0 <= channel < info["num_tx_chans"]
+        assert 0 <= tile < 2  # Two DAC tiles in RFDC on X4xx platform
+        assert 0 <= block < 4  # Four blocks per DAC tile in RFDC on X4xx platform
         assert enable in [False, True]
-        setattr(self._regs, f"CAL_ENABLE_DB{db_idx}_CHAN{channel}", int(enable))
+        setattr(self._regs, f"CAL_ENABLE_TILE{tile}_BLOCK{block}", int(enable))
         self._commit()
 
     def enable_iq_swap(self, enable, db_id, chan_idx, is_dac):
+        """
+        Enable or disable IQ swap for a given channel.
+        """
         assert db_id in (0, 1)
         num_channels = (
             self.get_num_tx_channels()[db_id] if is_dac else self.get_num_rx_channels()[db_id]

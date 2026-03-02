@@ -119,6 +119,11 @@ public:
         DIV_16 = XRFDC_FAB_CLK_DIV16,
     };
 
+    enum converter_options { ADC = false, DAC = true };
+
+    enum ch_type_options { REAL = 0, I = 1, Q = 2, DISABLED = 3, IQ = 4, ALL = 5 };
+
+
     /**
      * Assignes the rfdc_inst_ptr to an instance of the Xilinx RFdc driver
      */
@@ -166,72 +171,76 @@ public:
      *
      * @param    tile_id the ID of the tile to start.
      *           Pass -1 to select all tiles.
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if the operation was successful
      */
-    bool startup_tile(int tile_id, bool is_dac);
+    bool startup_tile(int tile_id, converter_options conv_option);
 
     /**
      * Shuts down the requested tile while retaining register values.
      *
      * @param    tile_id the ID of the tile to stop.
      *           Pass -1 to select all tiles.
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if the operation was successful
      */
-    bool shutdown_tile(int tile_id, bool is_dac);
+    bool shutdown_tile(int tile_id, converter_options conv_option);
 
     /**
      * Restarts the requested tile while resetting registers to default values.
      *
      * @param    tile_id the ID of the tile to restart.
      *           Pass -1 to select all tiles.
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if the operation was successful
      */
-    bool reset_tile(int tile_id, bool is_dac);
+    bool reset_tile(int tile_id, converter_options conv_option);
 
     /**
      * Triggers an update event for a given component.
      *
      * @param    tile_id the tile ID of the block to trigger
      * @param    block_id the block ID of the block to trigger
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    event_type which component of block to update
      *           See event_type_options for valid values.
      *
      * @return   true if the operation was successful
      */
-    bool trigger_update_event(
-        uint32_t tile_id, uint32_t block_id, bool is_dac, event_type_options event_type);
+    bool trigger_update_event(uint32_t tile_id,
+        uint32_t block_id,
+        converter_options conv_option,
+        event_type_options event_type);
 
     /**
      * Enable/Disable gain correction for a given block.
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    enable whether to enable or disable gain correction
      *
      * @return   true if the operation was successful
      */
-    bool set_gain_enable(uint32_t tile_id, uint32_t block_id, bool is_dac, bool enable);
+    bool set_gain_enable(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option, bool enable);
 
     /**
      * Set gain correction on a given ADC or DAC block
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    gain the gain correction to set.
      *           Valid values are 0.0-2.0
      *
      * @return   true if the operation was successful
      */
-    bool set_gain(uint32_t tile_id, uint32_t block_id, bool is_dac, double gain);
+    bool set_gain(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option, double gain);
 
     /**
      * Set the threshold settings for a given ADC
@@ -326,67 +335,73 @@ public:
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if the operation was successful
      */
-    bool reset_nco_phase(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    bool reset_nco_phase(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Sets the NCO event source for a given DAC or ADC
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if the operation was successful
      */
-    bool set_nco_event_src(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    bool set_nco_event_src(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Sets the NCO frequency for a given DAC or ADC
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    freq the NCO frequency to set
      *           Frequencies are specified in Hz.
      *
      * @return   true if the operation was successful
      */
-    bool set_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac, double freq);
+    bool set_nco_freq(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option, double freq);
 
     /**
      * Gets the NCO frequency for a given DAC or ADC
      *
      * @param    tile_id the tile ID of the block
      * @param    block_id the block ID of the block
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   freq of the NCO in Hz
      */
-    double get_nco_freq(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    double get_nco_freq(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Sets the mixer mode of the given block
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    mixer_mode the mixer mode to set.
      *           See mixer_mode_options for valid values
      *
      * @return   true if the operation was successful
      */
-    bool set_mixer_mode(
-        uint32_t tile_id, uint32_t block_id, bool is_dac, mixer_mode_options mixer_mode);
+    bool set_mixer_mode(uint32_t tile_id,
+        uint32_t block_id,
+        converter_options conv_option,
+        mixer_mode_options mixer_mode);
 
     /**
      * Sets the Nyquist Zone of a give block
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    nyquist_zone the nyquist zone to set
      *           See nyquist_zone_options for valid values.
      *
@@ -394,7 +409,7 @@ public:
      */
     bool set_nyquist_zone(uint32_t tile_id,
         uint32_t block_id,
-        bool is_dac,
+        converter_options conv_option,
         nyquist_zone_options nyquist_zone);
 
     /**
@@ -439,11 +454,12 @@ public:
      *
      * @param    tile_id the ID of the tile to set
      * @param    block_id the ID of the block to set
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   sample rate of the block in Hz
      */
-    double get_sample_rate(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    double get_sample_rate(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Configures PLL by passing a reference frequency and a destination sample
@@ -452,7 +468,7 @@ public:
      * by Xilinx IP.
      *
      * @param    tile_id the ID of the tile to configure
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the tile is a DAC or ADC
      * @param    source clock source to use could be XRFDC_EXTERNAL_CLK for
      *           external clock or XRFDC_INTERNAL_PLL_CLK for internal
      * @param    ref_freq reference frequency to be used
@@ -461,7 +477,7 @@ public:
      * @return   true if the operation was successful
      */
     bool configure_pll(uint32_t tile_id,
-        bool is_dac,
+        converter_options conv_option,
         uint8_t source,
         double ref_freq,
         double sample_rate);
@@ -474,7 +490,7 @@ public:
      *
      * @return  struct containing current PLL configuration
      */
-    rfdc_pll_config get_pll_config(uint32_t tile_id, bool is_dac);
+    rfdc_pll_config get_pll_config(uint32_t tile_id, converter_options conv_option);
 
     /**
      * Specifies the IF for the given ADC or DAC.
@@ -483,13 +499,18 @@ public:
      *
      * @param    tile_id the tile ID of the block to set
      * @param    block_id the block ID of the block to set
-     * @param    is_dac whether the block is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
+     * @param    ch_type the channel type options for the block
      * @param    if_freq the IF frequency expected for the block.
      *           Frequencies are specified in Hz.
      *
      * @return   true all resulting settings were successfully changed
      */
-    bool set_if(uint32_t tile_id, uint32_t block_id, bool is_dac, double if_freq);
+    bool set_if(uint32_t tile_id,
+        uint32_t block_id,
+        converter_options conv_option,
+        ch_type_options ch_type,
+        double if_freq);
 
     /**
      * Sets the decimation factor for a given ADC block
@@ -556,11 +577,12 @@ public:
      *
      * @param    tile_id the ID of the tile to get
      * @param    block_id the block ID of the block to get
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   the valid read words
      */
-    uint32_t get_data_read_rate(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    uint32_t get_data_read_rate(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Sets the number of valid write words for a given DAC block
@@ -579,99 +601,103 @@ public:
      *
      * @param    tile_id the ID of the tile to get
      * @param    block_id the block ID of the block to get
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
-
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   the valid write words
      */
-    uint32_t get_data_write_rate(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    uint32_t get_data_write_rate(
+        uint32_t tile_id, uint32_t block_id, converter_options conv_option);
 
     /**
      * Sets the clock fabric output divider of a given tile
      *
      * @param    tile_id the ID of the tile to set
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    divider the divider to set
      *           See fabric_clk_div_options for valid values
      *
      * @return   true if the operation was successful
      */
     bool set_fabric_clk_div(
-        uint32_t tile_id, bool is_dac, fabric_clk_div_options divider);
+        uint32_t tile_id, converter_options conv_option, fabric_clk_div_options divider);
 
     /**
      * Gets the fabric clock divider rate of a Tile
      *
      * @param    tile_id the ID of the tile to get
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   the fabric clock divider
      *           See fabric_clk_div_options for valid values
      */
-    fabric_clk_div_options get_fabric_clk_div(uint32_t tile_id, bool is_dac);
+    fabric_clk_div_options get_fabric_clk_div(
+        uint32_t tile_id, converter_options conv_option);
 
     /**
      * Sets the FIFO for an ADC/DAC
      *
      * @param    tile_id the ID of the tile to get
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      * @param    enable enables (true) or disables (false) the FIFO
 
      *
      * @return   true if the operation was successful
      */
-    bool set_data_fifo_state(uint32_t tile_id, bool is_dac, bool enable);
+    bool set_data_fifo_state(
+        uint32_t tile_id, converter_options conv_option, bool enable);
 
     /**
      * Gets the FIFO for an ADC/DAC
      *
      * @param    tile_id the ID of the tile to get
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
-
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if FIFO is enabled, false if it is disabled
      */
-    bool get_data_fifo_state(uint32_t tile_id, bool is_dac);
+    bool get_data_fifo_state(uint32_t tile_id, converter_options conv_option);
 
     /**
      * Clears the interrupts for the data FIFO (FIFOUSRDAT)
      *
      * @param    tile_id the ID of the tile to get
      * @param    block_id specify ADC/DAC block
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      */
-    void clear_data_fifo_interrupts(
-        const uint32_t tile_id, const uint32_t block_id, const bool is_dac);
+    void clear_data_fifo_interrupts(const uint32_t tile_id,
+        const uint32_t block_id,
+        const converter_options conv_option);
 
     /**
      * Perform Multi-tile Synchronization on ADC or DAC tiles
      *
      * @param    tiles tiles vector to specify which DAC/ADC tiles to synchronize
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   true if synchronization completed successfully
      */
-    bool sync_tiles(const std::vector<uint32_t>& tiles, bool is_dac, int32_t latency);
+    bool sync_tiles(const std::vector<uint32_t>& tiles,
+        converter_options conv_option,
+        int32_t latency);
 
     /**
      * Get post-sync latency between ADC or DAC tiles
      *
      * @param    tile_index specify ADC or DAC target tile
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   the measured relative latency value of each tile
      */
-    uint32_t get_tile_latency(uint32_t tile_index, bool is_dac);
+    uint32_t get_tile_latency(uint32_t tile_index, converter_options conv_option);
 
     /**
      * Get post-sync offset between ADC or DAC tile and reference tile
      *
      * @param    tile_index specify ADC or DAC target tile
-     * @param    is_dac whether the tile is a DAC (true) or ADC (false)
+     * @param    conv_option whether the block is a DAC or ADC
      *
      * @return   value the interface data was delayed to achieve alignment
      */
-    uint32_t get_tile_offset(uint32_t tile_index, bool is_dac);
+    uint32_t get_tile_offset(uint32_t tile_index, converter_options conv_option);
 
     /**
      * Sets whether or not the ADC calibration blocks are frozen
@@ -702,7 +728,10 @@ public:
     /**
      * Resets an internal mixer with known valid settings.
      */
-    bool reset_mixer_settings(uint32_t tile_id, uint32_t block_id, bool is_dac);
+    bool reset_mixer_settings(uint32_t tile_id,
+        uint32_t block_id,
+        converter_options conv_option,
+        ch_type_options ch_type);
 
     /**
      * Returns the version of libmetal as a string
@@ -854,6 +883,18 @@ void export_rfdc(py::module& top_module)
         .value("DIV_4", mpm::rfdc::rfdc_ctrl::DIV_4)
         .value("DIV_8", mpm::rfdc::rfdc_ctrl::DIV_8)
         .value("DIV_16", mpm::rfdc::rfdc_ctrl::DIV_16);
+
+    py::enum_<mpm::rfdc::rfdc_ctrl::converter_options>(m, "converter_options")
+        .value("ADC", mpm::rfdc::rfdc_ctrl::ADC)
+        .value("DAC", mpm::rfdc::rfdc_ctrl::DAC);
+
+    py::enum_<mpm::rfdc::rfdc_ctrl::ch_type_options>(m, "ch_type_options")
+        .value("REAL", mpm::rfdc::rfdc_ctrl::REAL)
+        .value("I", mpm::rfdc::rfdc_ctrl::I)
+        .value("Q", mpm::rfdc::rfdc_ctrl::Q)
+        .value("DISABLED", mpm::rfdc::rfdc_ctrl::DISABLED)
+        .value("IQ", mpm::rfdc::rfdc_ctrl::IQ)
+        .value("ALL", mpm::rfdc::rfdc_ctrl::ALL);
 
     py::enum_<rfdc_pll_config::pll_status>(m, "pll_status")
         .value("PLL_bypassed", rfdc_pll_config::PLL_bypassed)

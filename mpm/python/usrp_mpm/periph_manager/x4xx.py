@@ -32,14 +32,14 @@ from usrp_mpm.periph_manager.x4xx_periphs import (
     QSFPModule,
     get_temp_sensor,
 )
-from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import X4xxRfdcCtrl
+from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
 from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.sys_utils import dtoverlay, ectool, i2c_dev
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
 
-X400_FPGA_COMPAT = (10, 0)
+X400_FPGA_COMPAT = (11, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 # The compat number at which DNA support was added:
@@ -315,8 +315,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
         # Freeze the RFDC calibration by default
-        self.rfdc.set_cal_frozen(1, 1, "all")
-        self.rfdc.set_cal_frozen(1, 0, "all")
+        self.rfdc.set_cal_frozen(1, 1, "all", MixerMode.ALL)
+        self.rfdc.set_cal_frozen(1, 0, "all", MixerMode.ALL)
 
     # The parent class versions of these functions require access to self, but
     # these versions don't.

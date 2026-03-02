@@ -166,14 +166,14 @@ FABRIC_DSP_INFO_DB1_TX_CNT     0x13008[14:17]       ro
 FABRIC_DSP_INFO_BW             0x13008[20:31]       ro
 CAL_DATA_I                     0x14000[0:15]        0
 CAL_DATA_Q                     0x14000[16:31]       0
-CAL_ENABLE_DB0_CHAN0           0x14008[0]           0
-CAL_ENABLE_DB0_CHAN1           0x14008[1]           0
-CAL_ENABLE_DB0_CHAN2           0x14008[2]           0
-CAL_ENABLE_DB0_CHAN3           0x14008[3]           0
-CAL_ENABLE_DB1_CHAN0           0x14008[4]           0
-CAL_ENABLE_DB1_CHAN1           0x14008[5]           0
-CAL_ENABLE_DB1_CHAN2           0x14008[6]           0
-CAL_ENABLE_DB1_CHAN3           0x14008[7]           0
+CAL_ENABLE_TILE0_BLOCK0        0x14008[0]           0
+CAL_ENABLE_TILE0_BLOCK1        0x14008[1]           0
+CAL_ENABLE_TILE0_BLOCK2        0x14008[2]           0
+CAL_ENABLE_TILE0_BLOCK3        0x14008[3]           0
+CAL_ENABLE_TILE1_BLOCK0        0x14008[4]           0
+CAL_ENABLE_TILE1_BLOCK1        0x14008[5]           0
+CAL_ENABLE_TILE1_BLOCK2        0x14008[6]           0
+CAL_ENABLE_TILE1_BLOCK3        0x14008[7]           0
 THRESHOLD_ADC0_BLOCK0_IDX0     0x15000[0]           ro
 THRESHOLD_ADC0_BLOCK0_IDX1     0x15000[1]           ro
 THRESHOLD_ADC0_BLOCK1_IDX0     0x15000[2]           ro
@@ -207,9 +207,10 @@ RFDC_INFO_DB1_SPC_TX           0x18000[23:25]       ro
 ########################################################################
 ## RFDC information
 ########################################################################
-RFDC_INFO_BLOCK_MODE[16]       0x17000[0:1]         0   ENABLED, RESERVED1, RESERVED2, DISABLED
+RFDC_INFO_BLOCK_MODE[16]       0x17000[0:1]         0   REAL_MODE, I_MODE, Q_MODE, DISABLED
 RFDC_INFO_BLOCK[16]            0x17000[2:3]         0
 RFDC_INFO_TILE[16]             0x17000[4:5]         0
+RFDC_INFO_SUBCHANNEL[16]       0x17000[6:7]         0
 RFDC_INFO_CHANNEL[16]          0x17000[8:9]         0
 RFDC_INFO_DB[16]               0x17000[10]          0
 RFDC_INFO_IS_ADC[16]           0x17000[11]          0
