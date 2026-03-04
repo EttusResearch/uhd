@@ -13,7 +13,7 @@
 
 namespace uhd { namespace rfnoc {
 
-constexpr uint16_t RFNOC_PROTO_VER = 0x0100;
+constexpr uint16_t RFNOC_PROTO_VER = 0x0200;
 
 static const size_t CMD_FIFO_SIZE    = 256; // Lines == multiples of 8 bytes
 static const size_t MAX_CMD_PKT_SIZE = 3; // Lines == multiples of 8 bytes

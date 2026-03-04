@@ -6,7 +6,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 """
 
 # Supported protocol version
-RFNOC_PROTO_VERSION = "1.0"
+RFNOC_PROTO_VERSION = "2.0"
 
 DEVICE_NAME = "_device_"
 
