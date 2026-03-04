@@ -27,6 +27,8 @@ steps:
     glob: "**/*gain*"
     pattern: gain
     repl: newmod
+- run_subprocess:
+    cmd: ["chmod","-R","u+w","."]
 - comment_out:
     file: apps/CMakeLists.txt
     range: [7, -1]
