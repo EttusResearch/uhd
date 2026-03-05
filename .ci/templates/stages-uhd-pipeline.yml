@@ -26,6 +26,10 @@ parameters:
 - name: testLength
   type: string
   default: 'smoke'
+- name: selected_streaming_tests
+  type: string
+  displayName: Streaming Tests Multi-Select (comma-separated)
+  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 - name: create_sbom
   type: boolean
   displayName: Create SBOMs
@@ -979,36 +983,19 @@ stages:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
-- stage: test_streaming_beauty_stage
-  displayName: Test UHD Streaming beauty
+- stage: uhd_streaming_tests_stage
+  displayName: UHD Streaming Tests
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
   - build_uhd_embedded_system_images
+  - provide_e320_fpga_images_stage
+  - provide_n300_fpga_images_stage
+  - provide_n310_fpga_images_stage
+  - provide_n320_fpga_images_stage
   - provide_x300_fpga_images_stage
   - provide_x310_fpga_images_stage
   - provide_x410_fpga_images_stage
-  condition: >
-    and(
-      succeeded(),
-      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
-    )
-  jobs:
-  - template: job-uhd-streaming-tests-beauty.yml
-    parameters:
-      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      testLength: ${{ parameters.testLength }}
-  - template: job-uhd-streaming-tests-s175.yml
-    parameters:
-      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
-      testLength: ${{ parameters.testLength }}
-
-- stage: test_streaming_x440_stage
-  displayName: Test UHD Streaming x440
-  dependsOn:
-  - analyze_changeset
-  - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
   - provide_x440_fpga_images_stage
   condition: >
     and(
@@ -1016,10 +1003,11 @@ stages:
       contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming')
     )
   jobs:
-  - template: job-uhd-streaming-tests-x440.yml
+  - template: job-uhd-streaming-tests.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       testLength: ${{ parameters.testLength }}
+      selectedTests: ${{ split(replace(parameters.selected_streaming_tests, ' ', ''), ',') }}
 
 - stage: test_labview_usrp_examples
   displayName: Test LabVIEW USRP Examples

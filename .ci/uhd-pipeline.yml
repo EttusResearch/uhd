@@ -118,6 +118,10 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
+- name: selected_streaming_tests
+  type: string
+  displayName: Streaming Tests Multi-Select (comma-separated)
+  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 
 trigger:
   batch: true
@@ -161,3 +165,4 @@ extends:
     publish_int_files: true
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
+    selected_streaming_tests: ${{ parameters.selected_streaming_tests }}
