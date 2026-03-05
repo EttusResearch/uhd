@@ -7,4 +7,6 @@
 ##################################################
 SIM_CONTROL_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/control/, \
 sim_set_rb_lib.svh \
+spi_if.sv \
+spi_slave_bfm_pkg.sv \
 ))
