@@ -155,7 +155,7 @@ def args_parser(argv):
     parser.add_argument("--systemd-init-successful", help="Check if systemd init was successful", action="store_true")
     parser.add_argument("--mpm-init-successful", help="Check if MPM init was successful", action="store_true")
     parser.add_argument("--filesystem-root", help="Root of the filesystem to use", default="/")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     # if not args.filesystem_root:
     #     args.filesystem_root='/'
     return args
@@ -172,12 +172,14 @@ def get_tests(args):
     return tests
 
 def main(argv):
-    if len(argv) == 1:
+    cli_argv = argv[1:]
+    if not cli_argv:
         # display help if no arguments were provided
-        argv.append('-h')
-    args = args_parser(argv)
+        cli_argv = ['-h']
+    args = args_parser(cli_argv)
     test_runner = unittest.TextTestRunner(verbosity=0, resultclass=SimpleResult)
     test_result = test_runner.run(get_tests(args))
+    return 0 if test_result.wasSuccessful() else 1
 
 if __name__ == '__main__':
-    main(sys.argv)
+    sys.exit(main(sys.argv))
