@@ -388,12 +388,15 @@
     - fpga.usrp3.cpld.x3xx
     - fpga.usrp3.testbenches
     - fpga.usrp3.regmaps
-- re: .ci/hwtools
+- re: .ci/hwtools/root.py
   add:
     - fpga.usrp3.all
     - fpga.usrp3.cpld.x4xx
     - fpga.usrp3.cpld.x3xx
     - fpga.usrp3.testbenches
+    - fpga.usrp3.regmaps
+- re: .ci/hwtools
+  add:
     - fpga.usrp3.regmaps
 # Device-specific pipeline changes.
 - re: .ci/fpga/devices/job-build-fpga-x400.yml
