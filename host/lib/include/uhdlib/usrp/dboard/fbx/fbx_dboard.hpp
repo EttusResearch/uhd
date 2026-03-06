@@ -77,28 +77,9 @@ public:
         return true;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(const double) override
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params() override
     {
-        // FBX uses a fixed low freq for both TX and RX
         return {
-            // Some conditions were considered for choosing the correct
-            // cal_freq, mainly using the PG269 manual as reference. These
-            // conditions ensure that the cal_freq or its harmonics don't
-            // interfere with the background (BG) calibration mechanism on
-            // the RFSoC.
-            //
-            // 1. In calib_mode2 the highest supported frequency is
-            //    0.4 * converter rate (fc).
-            //    The minimum fc that X440 supports is 1GHz. So our highest
-            //    cal_freq is 400MHz.
-            // 2. We need to choose as high a cal_freq as we can
-            // 3. The converter rate (fc) should not be a multiple of the cal_freq
-            // 4. The converter rate (fc) / 8 should not be a multiple the cal_freq
-            // 5. cal_freq should not be of a form k * (fc / 1024) where k = 1 to 1024
-            // 6. The specified hysteresis threshold values work with the chosen
-            //    cal_freq
-            397.55e6, // rx_freq
-            397.55e6, // tx_freq
             {0x7FFF, 0}, // output full scale dac mux
             100, // delay
             // From PG.269: "Threshold levels are set as 14-bit unsigned values,
@@ -123,6 +104,28 @@ public:
             "calib_mode2",
             2000, // 2 seconds were found to be sufficient
         };
+    }
+
+    uhd::usrp::x400::adc_self_cal_freqs_t get_adc_self_cal_freqs(
+        uhd::usrp::x400::ch_mode) override
+    {
+        // Some conditions were considered for choosing the correct
+        // cal_freq, mainly using the PG269 manual as reference. These
+        // conditions ensure that the cal_freq or its harmonics don't
+        // interfere with the background (BG) calibration mechanism on
+        // the RFSoC.
+        //
+        // 1. In calib_mode2 the highest supported frequency is
+        //    0.4 * converter rate (fc).
+        //    The minimum fc that X440 supports is 1GHz. So our highest
+        //    cal_freq is 400MHz.
+        // 2. We need to choose as high a cal_freq as we can
+        // 3. The converter rate (fc) should not be a multiple of the cal_freq
+        // 4. The converter rate (fc) / 8 should not be a multiple the cal_freq
+        // 5. cal_freq should not be of a form k * (fc / 1024) where k = 1 to 1024
+        // 6. The specified hysteresis threshold values work with the chosen
+        //    cal_freq
+        return {397.55e6, 397.55e6, uhd::usrp::x400::custom_freq_t::ALLOW};
     }
 
     bool select_adc_self_cal_gain(size_t, size_t) override;

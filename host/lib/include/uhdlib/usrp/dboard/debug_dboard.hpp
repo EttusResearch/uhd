@@ -49,11 +49,9 @@ public:
         return false;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(double) final
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params() final
     {
         return {
-            0.0,
-            0.0,
             {0, 0},
             0,
             0,
@@ -61,6 +59,12 @@ public:
             "calib_mode1",
             2000,
         };
+    }
+
+    uhd::usrp::x400::adc_self_cal_freqs_t get_adc_self_cal_freqs(
+        uhd::usrp::x400::ch_mode) final
+    {
+        return {0.0, 0.0, uhd::usrp::x400::custom_freq_t::ALLOW};
     }
 
     std::vector<ch_mode> get_ch_modes() const override

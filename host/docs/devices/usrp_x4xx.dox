@@ -1401,7 +1401,7 @@ For a list of which arguments can be passed into make(), see Section
  rpc_port              | Override default value for MPM RPC port.                                        | rpc_port=49701
  force_reinit          | Force reinitialization of clocking.                                             | force_reinit=1
  converter_rate        | Specify the rate of the ADC/DAC. X440 only. UHD may choose to ignore this.      | master_clock_rate=500e6,converter_rate=1e9
- cal_freq              | Frequency to use for self-calibration. Mainly for X440, but works on X410, too. | cal_freq=400e6
+ cal_freq              | Frequency to use for self-calibration. For X440 only.                           | cal_freq=400e6
  cal_dac_mux_i         | 16 bit I value for self calibration tone.                                       | cal_dac_mux_i=0x7FFF
  cal_dac_mux_q         | 16 bit Q value for self calibration tone.                                       | cal_dac_mux_q=0x0
  cal_tone_duration     | Duration in ms for how long the self-calibration shall run per channel.         | cal_tone_duration=2000

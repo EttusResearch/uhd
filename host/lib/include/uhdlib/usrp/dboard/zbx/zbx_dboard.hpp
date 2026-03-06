@@ -89,9 +89,29 @@ public:
         return true;
     }
 
-    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params(
-        const double tone_freq) final
+    uhd::usrp::x400::adc_self_cal_params_t get_adc_self_cal_params() final
     {
+        return {
+            {32768 / 2, 0}, // Configure the output DAC mux to output
+                            // 1/2 full scale dac data (only I, no Q)
+            100, // delay
+            8000, // under
+            8192, //  over, Set the threshold to detect half-scale
+                  //  setup_threshold call uses 14-bit ADC values
+            "calib_mode2", // calibration_mode
+            2000, // 2 seconds were found to be sufficent
+        };
+    }
+
+    uhd::usrp::x400::adc_self_cal_freqs_t get_adc_self_cal_freqs(
+        uhd::usrp::x400::ch_mode) final
+    {
+        // The frequency that we need to feed into the ADC is, by decree,
+        // 13109 / 32768 times the ADC sample rate for X410. (approx. 1.2GHz
+        // for a 3Gsps rate) This is at 0.4 * Fs, right on the boundary
+        // between modes 1 and 2 for the ADC self-cal.
+        const double tone_freq = get_converter_rate() * 13109.0 / 32768.0;
+
         // This is chosen such that the IF2 frequency is 1.06G
         const double rx_freq  = 4.7e9 - 5.12e6;
         const double if2_freq = 1.06e9;
@@ -102,14 +122,7 @@ public:
         return {
             rx_freq, // rx_freq
             tx_freq, // tx_freq
-            {32768 / 2, 0}, // Configure the output DAC mux to output
-                            // 1/2 full scale dac data (only I, no Q)
-            100, // delay
-            8000, // under
-            8192, //  over, Set the threshold to detect half-scale
-                  //  setup_threshold call uses 14-bit ADC values
-            "calib_mode2", // calibration_mode
-            2000, // 2 seconds were found to be sufficent
+            uhd::usrp::x400::custom_freq_t::DISALLOW,
         };
     }
 
