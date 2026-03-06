@@ -56,10 +56,18 @@ public:
         // Sanity check the protocol version and CHDR width
         if ((_pkt_factory.get_protover() & 0xFF00)
             != (_mb_iface.get_proto_ver() & 0xFF00)) {
-            throw uhd::rfnoc_error("RFNoC protocol mismatch between SW and HW");
+            const uint16_t sw_ver = _pkt_factory.get_protover();
+            const uint16_t hw_ver = _mb_iface.get_proto_ver();
+            throw uhd::rfnoc_error("RFNoC protocol mismatch between SW and HW (SW: "
+                                   + std::to_string(sw_ver >> 8) + "."
+                                   + std::to_string(sw_ver & 0xFF)
+                                   + ", HW: " + std::to_string(hw_ver >> 8) + "."
+                                   + std::to_string(hw_ver & 0xFF) + ")");
         }
         if (_pkt_factory.get_chdr_w() != _mb_iface.get_chdr_w()) {
-            throw uhd::rfnoc_error("RFNoC CHDR width mismatch between SW and HW");
+            throw uhd::rfnoc_error("RFNoC CHDR width mismatch between SW and HW (SW: "
+                                   + std::to_string(_pkt_factory.get_chdr_w()) + ", HW: "
+                                   + std::to_string(_mb_iface.get_chdr_w()) + ")");
         }
 
         // Create a transport and EPID for management and control traffic
