@@ -10,7 +10,12 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
+#include <type_traits>
+#include <cstdint>
 #include <iomanip>
+#include <ios>
+#include <limits>
+#include <locale>
 #include <sstream>
 #include <string>
 
@@ -83,5 +88,91 @@ UHD_API std::string from_str(const std::string& val);
 
 //! Create an ordinal string from a number.
 UHD_API std::string to_ordinal_string(int val);
+
+//! Template implementations for `uhd::cast::to_str()` for common types
+//
+// These template implementations provide consistent string conversion
+// for integer and floating-point types commonly used in UHD, particularly
+// for device_addr_t parameter handling.
+
+// Type trait to detect if a type has a to_string() method
+namespace detail {
+template <typename T>
+auto has_to_string_method_impl(int)
+    -> decltype(std::declval<T>().to_string(), std::true_type{});
+template <typename T>
+auto has_to_string_method_impl(...) -> std::false_type;
+template <typename T>
+using has_to_string_method = decltype(has_to_string_method_impl<T>(0));
+} // namespace detail
+
+//! SFINAE-based template for integer types that std::to_string can handle
+//
+// This template will automatically work for integer types that std::to_string supports
+// (int, unsigned int, long, unsigned long, long long, unsigned long long, size_t, etc.),
+// excluding int8_t and uint8_t which need special handling, and floating-point types
+// which need precision handling, and excluding types that have their own to_string()
+// method.
+template <typename T>
+auto to_str(const T& val) -> std::enable_if_t<
+    std::is_arithmetic_v<
+        T> && !std::is_floating_point_v<T> && !std::is_same_v<T, int8_t> && !std::is_same_v<T, uint8_t> && !detail::has_to_string_method<T>::value,
+    decltype(std::to_string(val))>
+{
+    return std::to_string(val);
+}
+
+//! Template for floating-point types with round-trip safe precision
+//
+// Uses ostringstream with max_digits10 precision and classic locale to ensure
+// round-trip safety for floating-point values.
+template <typename T>
+auto to_str(const T& val) -> std::enable_if_t<
+    std::is_floating_point_v<T> && !detail::has_to_string_method<T>::value,
+    std::string>
+{
+    std::ostringstream oss;
+    oss.imbue(std::locale::classic());
+    oss.precision(std::numeric_limits<T>::max_digits10);
+    oss << val;
+    return oss.str();
+}
+
+// Special handling for int8_t and uint8_t since std::to_string treats them as chars
+
+//! Overload of `uhd::cast::to_str()` for int8_t
+inline std::string to_str(const int8_t& val)
+{
+    return std::to_string(static_cast<int>(val));
+}
+
+//! Overload of `uhd::cast::to_str()` for uint8_t
+inline std::string to_str(const uint8_t& val)
+{
+    return std::to_string(static_cast<unsigned int>(val));
+}
+
+//! SFINAE-based template for any type that has a to_string() method
+//
+// This template will automatically work for any type T that has a to_string()
+// method that returns a type convertible to std::string.
+template <typename T>
+auto to_str(const T& val)
+    -> std::enable_if_t<std::is_convertible_v<decltype(val.to_string()), std::string>,
+        std::string>
+{
+    return val.to_string();
+}
+
+//! Overload for std::string and C-style strings
+inline std::string to_str(const std::string& val)
+{
+    return val;
+}
+
+inline std::string to_str(const char* val)
+{
+    return std::string(val);
+}
 
 }} // namespace uhd::cast
