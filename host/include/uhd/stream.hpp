@@ -350,6 +350,16 @@ public:
      */
     virtual void post_input_action(
         const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port) = 0;
+
+    /*! Return information about the current streamer object
+     *
+     * The contents of the returned dictionary depend on the current hardware
+     * setup, the arguments with which this streamer was created, etc.
+     *
+     * \param chan The channel number for which to get stream info
+     * \returns dictionary of streamer information
+     */
+    virtual device_addr_t get_stream_info(const size_t chan = 0) const = 0;
 };
 
 /*!
@@ -422,6 +432,16 @@ public:
      */
     virtual void post_output_action(
         const std::shared_ptr<uhd::rfnoc::action_info>& action, const size_t port) = 0;
+
+    /*! Return information about the current streamer object
+     *
+     * The contents of the returned dictionary depend on the current hardware
+     * setup, the arguments with which this streamer was created, etc.
+     *
+     * \param chan The channel number for which to get stream info
+     * \returns dictionary of streamer information
+     */
+    virtual device_addr_t get_stream_info(const size_t chan = 0) const = 0;
 };
 
 } // namespace uhd

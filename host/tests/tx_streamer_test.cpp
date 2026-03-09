@@ -70,6 +70,14 @@ public:
         return get_mtu() - get_chdr_hdr_len();
     }
 
+    uhd::device_addr_t get_xport_info() const
+    {
+        uhd::device_addr_t info;
+        info["type"] = "mock_tx_data_xport";
+        info["mtu"]  = std::to_string(get_mtu());
+        return info;
+    }
+
 
 private:
     mock_send_link::sptr _send_link;
@@ -698,4 +706,56 @@ BOOST_AUTO_TEST_CASE(test_spp)
         BOOST_CHECK_EQUAL(
             streamer->get_max_num_samps(), max_pyld / sizeof(std::complex<uint16_t>));
     }
+}
+
+BOOST_AUTO_TEST_CASE(test_get_stream_info)
+{
+    const std::string cpu_format("fc32");
+    const std::string otw_format("sc16");
+    const size_t num_chans = 3;
+
+    auto send_links = make_links(num_chans);
+
+    // Create stream args with both formats
+    uhd::stream_args_t stream_args(cpu_format, otw_format);
+    auto streamer = std::make_shared<mock_tx_streamer>(num_chans, stream_args);
+    streamer->set_tick_rate(TICK_RATE);
+    streamer->set_samp_rate(SAMP_RATE);
+
+    // Connect channels with different scale factors
+    for (size_t i = 0; i < num_chans; i++) {
+        mock_tx_data_xport::uptr xport(
+            std::make_unique<mock_tx_data_xport>(send_links[i]));
+        const double scale = SCALE_FACTOR * (i + 1); // Different scale per channel
+        streamer->set_scale_factor(i, scale);
+        streamer->connect_channel(i, std::move(xport));
+    }
+
+    // Test stream info for each channel
+    for (size_t chan = 0; chan < num_chans; chan++) {
+        uhd::device_addr_t stream_info = streamer->get_stream_info(chan);
+
+        // Check basic stream info
+        BOOST_CHECK_EQUAL(stream_info["cpu_format"], cpu_format);
+        BOOST_CHECK_EQUAL(stream_info["otw_format"], otw_format);
+        const double expected_scale = SCALE_FACTOR * (chan + 1);
+        BOOST_CHECK_EQUAL(stream_info["scale_factor"], std::to_string(expected_scale));
+
+        // Check transport info is merged
+        BOOST_CHECK_EQUAL(stream_info["type"], "mock_tx_data_xport");
+        BOOST_CHECK_EQUAL(stream_info["mtu"], std::to_string(FRAME_SIZE));
+
+        // Test that no underscore-prefixed keys are present
+        for (const auto& key : stream_info.keys()) {
+            BOOST_CHECK(key.empty() || key[0] != '_');
+        }
+
+        std::cout << "TX Channel " << chan << " stream info:" << std::endl;
+        for (const auto& key : stream_info.keys()) {
+            std::cout << "  " << key << " = " << stream_info[key] << std::endl;
+        }
+    }
+
+    // Test invalid channel index
+    BOOST_CHECK_THROW(streamer->get_stream_info(num_chans), uhd::index_error);
 }

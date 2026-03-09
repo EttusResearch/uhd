@@ -14,6 +14,7 @@
 #include <uhd/stream.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
@@ -802,9 +803,18 @@ private:
 class recv_packet_streamer : public recv_packet_handler, public rx_streamer
 {
 public:
-    recv_packet_streamer(const size_t max_num_samps)
+    recv_packet_streamer(const size_t max_num_samps, uhd::device_addr_t stream_args)
+        : _max_num_samps(max_num_samps)
+        , _base_stream_args(stream_args)
+        , _stream_info(this->size(), stream_args)
     {
-        _max_num_samps = max_num_samps;
+    }
+
+    //! Override resize to also resize stream info
+    void resize(const size_t size)
+    {
+        recv_packet_handler::resize(size);
+        _stream_info.resize(size, _base_stream_args);
     }
 
     size_t get_num_channels(void) const override
@@ -839,8 +849,28 @@ public:
         throw uhd::not_implemented_error("post_input_action is not implemented here!");
     }
 
+    uhd::device_addr_t get_stream_info(const size_t chan) const override
+    {
+        if (chan >= _stream_info.size()) {
+            throw uhd::index_error("Invalid channel index for get_stream_info");
+        }
+        return _stream_info[chan];
+    }
+
+    void update_stream_info(
+        const size_t chan, const std::string& key, const std::string& value)
+    {
+        if (chan >= _stream_info.size()) {
+            throw uhd::index_error("Invalid channel index for update_stream_info");
+        }
+        _stream_info[chan][key] = value;
+    }
+
 private:
     size_t _max_num_samps;
+
+    uhd::device_addr_t _base_stream_args;
+    std::vector<uhd::device_addr_t> _stream_info;
 };
 
 }}} // namespace uhd::transport::sph

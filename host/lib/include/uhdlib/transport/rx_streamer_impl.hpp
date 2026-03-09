@@ -10,6 +10,7 @@
 #include <uhd/convert.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/stream.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/rx_streamer_zero_copy.hpp>
@@ -79,6 +80,7 @@ public:
         : _zero_copy_streamer(num_ports)
         , _in_buffs(num_ports)
         , _chans_connected(num_ports, false)
+        , _stream_info(num_ports, stream_args.args)
     {
         if (stream_args.cpu_format.empty()) {
             throw uhd::value_error("[rx_stream] Must provide a cpu_format!");
@@ -125,6 +127,49 @@ public:
     size_t get_max_num_samps() const override
     {
         return _spp;
+    }
+
+    //! Get stream info
+    uhd::device_addr_t get_stream_info(const size_t chan) const override
+    {
+        if (chan >= _stream_info.size()) {
+            throw uhd::index_error("Invalid channel index for get_stream_info");
+        }
+
+        // Start with filtered base stream info (exclude underscore keys)
+        uhd::device_addr_t stream_info;
+        for (const auto& key : _stream_info[chan].keys()) {
+            if (!key.empty() && key[0] != '_') {
+                stream_info[key] = _stream_info[chan][key];
+            }
+        }
+
+        // Try to get transport info and merge it
+        try {
+            uhd::device_addr_t xport_info = _zero_copy_streamer.get_xport_info(chan);
+            // Merge transport info into stream info, filtering out keys starting with
+            // underscore
+            for (const auto& key : xport_info.keys()) {
+                if (!key.empty() && key[0] != '_') {
+                    stream_info[key] = xport_info[key];
+                }
+            }
+        } catch (const std::exception&) {
+            // If getting transport info fails, just return the basic stream info
+            // This handles cases where transport doesn't support get_xport_info()
+        }
+
+        return stream_info;
+    }
+
+    //! Update stream info
+    void update_stream_info(
+        const size_t chan, const std::string& key, const std::string& value)
+    {
+        if (chan >= _stream_info.size()) {
+            throw uhd::index_error("Invalid channel index for update_stream_info");
+        }
+        _stream_info[chan][key] = value;
     }
 
     /*! Get width of each over-the-wire item component. For complex items,
@@ -208,6 +253,7 @@ protected:
     void set_scale_factor(const size_t chan, const double scale_factor)
     {
         _converters[chan]->set_scalar(scale_factor);
+        _stream_info[chan]["scale_factor"] = std::to_string(scale_factor);
     }
 
     //! set maximum number of sample (per packet)
@@ -404,6 +450,8 @@ private:
         for (size_t i = 0; i < num_ports; i++) {
             _converters.push_back(convert::get_converter(id)());
             _converters.back()->set_scalar(1 / 32767.0);
+            _stream_info[i]["cpu_format"] = stream_args.cpu_format;
+            _stream_info[i]["otw_format"] = stream_args.otw_format;
         }
     }
 
@@ -452,6 +500,9 @@ private:
     // Flag to store if all channels are connected. This is to speed up the lookup
     // of all channels' connected-status.
     bool _all_chans_connected = false;
+
+    // Stream information storage
+    std::vector<uhd::device_addr_t> _stream_info;
 };
 
 }} // namespace uhd::transport

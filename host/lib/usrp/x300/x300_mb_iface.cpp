@@ -277,6 +277,7 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         epids,
         recv_link->get_num_recv_frames(),
         fc_params,
+        xport_args,
         [io_srv_mgr, recv_link, send_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

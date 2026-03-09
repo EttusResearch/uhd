@@ -375,6 +375,13 @@ public:
             "post_input_action is currently not implemented here!");
     }
 
+    uhd::device_addr_t get_stream_info(const size_t /*chan*/) const override
+    {
+        uhd::device_addr_t info;
+        info["max_num_samps"] = std::to_string(_max_num_samps);
+        return info;
+    }
+
 private:
     size_t _max_num_samps;
     soft_time_ctrl::sptr _stc;
@@ -443,6 +450,13 @@ public:
     {
         throw uhd::not_implemented_error(
             "post_output_action is currently not implemented here!");
+    }
+
+    uhd::device_addr_t get_stream_info(const size_t /*chan*/) const override
+    {
+        uhd::device_addr_t info;
+        info["max_num_samps"] = std::to_string(_max_num_samps);
+        return info;
     }
 
 private:

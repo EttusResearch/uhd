@@ -299,6 +299,13 @@ public:
     }
 
     /*!
+     * Get transport configuration information
+     *
+     * \return device_addr_t containing transport configuration parameters
+     */
+    uhd::device_addr_t get_xport_info() const;
+
+    /*!
      * Writes header into frame buffer and returns payload pointer
      *
      * \param buff Frame buffer to write header into
@@ -491,6 +498,9 @@ private:
 
     //! The size of the send frame
     size_t _frame_size;
+
+    // Flow control parameters
+    fc_params_t _fc_params;
 
     // Disconnect callback
     disconnect_callback_t _disconnect;

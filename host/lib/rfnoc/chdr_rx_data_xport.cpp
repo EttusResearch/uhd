@@ -38,12 +38,16 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
     const uhd::rfnoc::sep_id_pair_t& epids,
     const size_t num_recv_frames,
     const fc_params_t& fc_params,
+    const uhd::device_addr_t& xport_args,
     disconnect_callback_t disconnect)
     : _fc_state(epids, fc_params.freq)
     , _mtu(recv_link->get_recv_frame_size())
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.second)
+    , _remote_epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
+    , _fc_params(fc_params)
+    , _xport_args(xport_args)
     , _disconnect(disconnect)
 {
     UHD_LOG_TRACE("XPORT::RX_DATA_XPORT",

@@ -332,6 +332,7 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
         epids,
         recv_link->get_num_recv_frames(),
         fc_params,
+        xport_args,
         [io_srv_mgr, recv_link, send_link]() {
             io_srv_mgr->disconnect_links(recv_link, send_link);
         });

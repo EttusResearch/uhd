@@ -9,6 +9,7 @@
 #include "../../transport/super_send_packet_handler.hpp"
 #include "b200_impl.hpp"
 #include "b200_regs.hpp"
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
@@ -213,6 +214,10 @@ void b200_impl::update_rx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].ddc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
+    // Update scale factor for all channels
+    for (size_t chan = 0; chan < my_streamer->get_num_channels(); chan++) {
+        my_streamer->update_stream_info(chan, "scale_factor", uhd::cast::to_str(adj));
+    }
     _codec_mgr->check_bandwidth(rate, "Rx");
 }
 
@@ -240,6 +245,10 @@ void b200_impl::update_tx_samp_rate(const size_t dspno, const double rate)
     my_streamer->set_samp_rate(rate);
     const double adj = _radio_perifs[dspno].duc->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
+    // Update scale factor for all channels
+    for (size_t chan = 0; chan < my_streamer->get_num_channels(); chan++) {
+        my_streamer->update_stream_info(chan, "scale_factor", uhd::cast::to_str(adj));
+    }
     _codec_mgr->check_bandwidth(rate, "Tx");
 }
 
@@ -440,7 +449,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t& args_)
 
         // make the new streamer given the samples per packet
         if (not my_streamer)
-            my_streamer = std::make_shared<sph::recv_packet_streamer>(spp);
+            my_streamer = std::make_shared<sph::recv_packet_streamer>(spp, args.args);
         my_streamer->resize(args.channels.size());
 
         // init some streamer stuff
@@ -453,6 +462,8 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t& args_)
         id.output_format = args.cpu_format;
         id.num_outputs   = 1;
         my_streamer->set_converter(id);
+        my_streamer->update_stream_info(stream_i, "cpu_format", args.cpu_format);
+        my_streamer->update_stream_info(stream_i, "otw_format", args.otw_format);
 
         perif.framer->clear();
         perif.framer->set_nsamps_per_packet(spp);
@@ -472,6 +483,7 @@ rx_streamer::sptr b200_impl::get_rx_stream(const uhd::stream_args_t& args_)
             std::bind(&rx_vita_core_3000::issue_stream_command,
                 perif.framer,
                 std::placeholders::_1));
+        my_streamer->update_stream_info(stream_i, "sid", uhd::cast::to_str(sid));
         perif.rx_streamer = my_streamer; // store weak pointer
 
         // sets all tick and samp rates on this streamer
@@ -569,7 +581,7 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
         // make the new streamer given the samples per packet
         if (not my_streamer)
-            my_streamer = std::make_shared<sph::send_packet_streamer>(spp);
+            my_streamer = std::make_shared<sph::send_packet_streamer>(spp, args.args);
         my_streamer->resize(args.channels.size());
 
         // init some streamer stuff
@@ -582,6 +594,8 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t& args_)
         id.output_format = args.otw_format + "_item32_le";
         id.num_outputs   = 1;
         my_streamer->set_converter(id);
+        my_streamer->update_stream_info(stream_i, "cpu_format", args.cpu_format);
+        my_streamer->update_stream_info(stream_i, "otw_format", args.otw_format);
 
         perif.deframer->clear();
         perif.deframer->setup(args);
@@ -594,8 +608,9 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t& args_)
             _async_task_data->async_md,
             std::placeholders::_1,
             std::placeholders::_2));
-        my_streamer->set_xport_chan_sid(
-            stream_i, true, radio_index ? B200_TX_DATA1_SID : B200_TX_DATA0_SID);
+        const auto sid = radio_index ? B200_TX_DATA1_SID : B200_TX_DATA0_SID;
+        my_streamer->set_xport_chan_sid(stream_i, true, sid);
+        my_streamer->update_stream_info(stream_i, "sid", uhd::cast::to_str(sid));
         my_streamer->set_enable_trailer(false); // TODO not implemented trailer support
                                                 // yet
         perif.tx_streamer = my_streamer; // store weak pointer

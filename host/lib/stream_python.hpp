@@ -134,6 +134,7 @@ void export_stream(py::module& m)
             py::arg("timeout") = 0.1)
         .def("get_num_channels", &uhd::rx_streamer::get_num_channels)
         .def("get_max_num_samps", &uhd::rx_streamer::get_max_num_samps)
+        .def("get_stream_info", &uhd::rx_streamer::get_stream_info, py::arg("chan") = 0)
         .def("issue_stream_cmd", &uhd::rx_streamer::issue_stream_cmd);
 
     py::class_<tx_streamer, tx_streamer::sptr>(m, "tx_streamer", "See: uhd::tx_streamer")
@@ -145,6 +146,7 @@ void export_stream(py::module& m)
             py::arg("timeout") = 0.1)
         .def("get_num_channels", &tx_streamer::get_num_channels)
         .def("get_max_num_samps", &tx_streamer::get_max_num_samps)
+        .def("get_stream_info", &uhd::tx_streamer::get_stream_info, py::arg("chan") = 0)
         .def("recv_async_msg",
             &wrap_recv_async_msg,
             py::arg("async_metadata"),

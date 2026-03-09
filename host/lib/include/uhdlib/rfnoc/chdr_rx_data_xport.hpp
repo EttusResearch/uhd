@@ -166,6 +166,7 @@ public:
      * \param epids Source and destination endpoint IDs
      * \param num_recv_frames Num frames to reserve from the recv link
      * \param fc_params Parameters for flow control
+     * \param xport_args Stream transport arguments
      * \param disconnect Callback function to disconnect the links
      */
     chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
@@ -175,6 +176,7 @@ public:
         const uhd::rfnoc::sep_id_pair_t& epids,
         const size_t num_recv_frames,
         const fc_params_t& fc_params,
+        const uhd::device_addr_t& xport_args,
         disconnect_callback_t disconnect);
 
     /*! Destructor
@@ -216,6 +218,37 @@ public:
     size_t get_max_payload_size() const
     {
         return _mtu - _hdr_len;
+    }
+
+    /*!
+     * Get transport configuration information
+     *
+     * \return device_addr_t containing transport configuration parameters
+     */
+    uhd::device_addr_t get_xport_info() const
+    {
+        uhd::device_addr_t info       = _xport_args;
+        info["fc_freq_bytes"]         = std::to_string(_fc_params.freq.bytes);
+        info["fc_freq_packets"]       = std::to_string(_fc_params.freq.packets);
+        info["recv_capacity_bytes"]   = std::to_string(_fc_params.buff_capacity.bytes);
+        info["recv_capacity_packets"] = std::to_string(_fc_params.buff_capacity.packets);
+        info["mtu"]                   = std::to_string(_mtu);
+        info["chdr_hdr_len"]          = std::to_string(_hdr_len);
+        info["src_epid"]              = std::to_string(_remote_epid);
+        info["dst_epid"]              = std::to_string(_epid);
+
+        // Determine flow control mode
+        if (_fc_params.freq.bytes == 0 && _fc_params.freq.packets == 0) {
+            info["fc_mode"] = "off";
+        } else if (_fc_params.freq.packets == MAX_FC_FREQ_PKTS) {
+            info["fc_mode"] = "byte";
+        } else if (_fc_params.freq.bytes == MAX_FC_FREQ_BYTES) {
+            info["fc_mode"] = "packet";
+        } else {
+            info["fc_mode"] = "mixed";
+        }
+
+        return info;
     }
 
     /*!
@@ -442,8 +475,17 @@ private:
     // Local / Sink EPID
     sep_id_t _epid;
 
+    // Remote / Source EPID
+    sep_id_t _remote_epid;
+
     //! The CHDR width in bytes.
     size_t _chdr_w_bytes;
+
+    // Flow control parameters
+    fc_params_t _fc_params;
+
+    // Transport arguments
+    uhd::device_addr_t _xport_args;
 
     // Disconnect callback
     disconnect_callback_t _disconnect;

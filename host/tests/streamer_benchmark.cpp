@@ -91,6 +91,14 @@ public:
         return get_mtu() - sizeof(packet_info_t);
     }
 
+    uhd::device_addr_t get_xport_info() const
+    {
+        uhd::device_addr_t info;
+        info["type"] = "mock_rx_data_xport";
+        info["mtu"]  = std::to_string(get_mtu());
+        return info;
+    }
+
 private:
     size_t _buff_size;
     buff_t::uptr _buff;
@@ -162,6 +170,14 @@ public:
     size_t get_max_payload_size() const
     {
         return get_mtu() - sizeof(packet_info_t);
+    }
+
+    uhd::device_addr_t get_xport_info() const
+    {
+        uhd::device_addr_t info;
+        info["type"] = "mock_tx_data_xport";
+        info["mtu"]  = std::to_string(get_mtu());
+        return info;
     }
 
 
@@ -335,6 +351,7 @@ static std::shared_ptr<rx_streamer_mock_link> make_rx_streamer_mock_link(
         epids,
         send_link->get_num_send_frames(),
         fc_params,
+        uhd::device_addr_t(), // Empty xport_args for test
         [io_srv = io_srv, recv_link, send_link]() {
             io_srv->detach_recv_link(recv_link);
             io_srv->detach_send_link(send_link);

@@ -7,6 +7,7 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/metadata.hpp>
 #include <vector>
@@ -74,6 +75,18 @@ public:
     void set_bytes_per_item(const size_t bpi)
     {
         _bytes_per_item = bpi;
+    }
+
+    //! Get transport configuration information for the specified channel
+    uhd::device_addr_t get_xport_info(const size_t channel) const
+    {
+        if (channel >= _xports.size()) {
+            throw uhd::index_error("Invalid channel index for get_xport_info");
+        }
+        if (!_xports[channel]) {
+            throw uhd::runtime_error("Channel not connected");
+        }
+        return _xports[channel]->get_xport_info();
     }
 
     /*!

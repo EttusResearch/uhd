@@ -109,6 +109,14 @@ public:
         return get_mtu() - get_chdr_hdr_len();
     }
 
+    uhd::device_addr_t get_xport_info() const
+    {
+        uhd::device_addr_t info;
+        info["type"] = "mock_rx_data_xport";
+        info["mtu"]  = std::to_string(get_mtu());
+        return info;
+    }
+
 private:
     mock_recv_link::sptr _recv_link;
     size_t _seq_num = 0;
@@ -900,4 +908,54 @@ BOOST_AUTO_TEST_CASE(test_recv_zero_samples)
     // Ensure that the `recv()` of zero samples waited for a bit longer than
     // 1 seconds
     BOOST_CHECK_LE(elapsed_time.count(), 1.5);
+}
+
+BOOST_AUTO_TEST_CASE(test_get_stream_info)
+{
+    const std::string cpu_format("fc32");
+    const std::string otw_format("sc16");
+    const size_t num_chans = 2;
+
+    auto recv_links = make_links(num_chans);
+
+    // Create stream args with both formats
+    uhd::stream_args_t stream_args(cpu_format, otw_format);
+    auto streamer = std::make_shared<mock_rx_streamer>(num_chans, stream_args);
+    streamer->set_tick_rate(TICK_RATE);
+    streamer->set_samp_rate(SAMP_RATE);
+
+    // Connect channels
+    for (size_t i = 0; i < num_chans; i++) {
+        mock_rx_data_xport::uptr xport(
+            std::make_unique<mock_rx_data_xport>(recv_links[i]));
+        streamer->set_scale_factor(i, SCALE_FACTOR);
+        streamer->connect_channel(i, std::move(xport));
+    }
+
+    // Test stream info for each channel
+    for (size_t chan = 0; chan < num_chans; chan++) {
+        uhd::device_addr_t stream_info = streamer->get_stream_info(chan);
+
+        // Check basic stream info
+        BOOST_CHECK_EQUAL(stream_info["cpu_format"], cpu_format);
+        BOOST_CHECK_EQUAL(stream_info["otw_format"], otw_format);
+        BOOST_CHECK_EQUAL(stream_info["scale_factor"], std::to_string(SCALE_FACTOR));
+
+        // Check transport info is merged
+        BOOST_CHECK_EQUAL(stream_info["type"], "mock_rx_data_xport");
+        BOOST_CHECK_EQUAL(stream_info["mtu"], std::to_string(FRAME_SIZE));
+
+        // Test that no underscore-prefixed keys are present
+        for (const auto& key : stream_info.keys()) {
+            BOOST_CHECK(key.empty() || key[0] != '_');
+        }
+
+        std::cout << "RX Channel " << chan << " stream info:" << std::endl;
+        for (const auto& key : stream_info.keys()) {
+            std::cout << "  " << key << " = " << stream_info[key] << std::endl;
+        }
+    }
+
+    // Test invalid channel index
+    BOOST_CHECK_THROW(streamer->get_stream_info(num_chans), uhd::index_error);
 }

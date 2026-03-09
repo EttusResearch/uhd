@@ -144,7 +144,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t& args_)
 
     // make the new streamer given the samples per packet
     std::shared_ptr<sph::recv_packet_streamer> my_streamer =
-        std::make_shared<sph::recv_packet_streamer>(spp);
+        std::make_shared<sph::recv_packet_streamer>(spp, args.args);
 
     // init some streamer stuff
     my_streamer->resize(args.channels.size());
@@ -209,7 +209,7 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
     // make the new streamer given the samples per packet
     std::shared_ptr<sph::send_packet_streamer> my_streamer =
-        std::make_shared<sph::send_packet_streamer>(spp);
+        std::make_shared<sph::send_packet_streamer>(spp, args.args);
 
     // init some streamer stuff
     my_streamer->resize(args.channels.size());

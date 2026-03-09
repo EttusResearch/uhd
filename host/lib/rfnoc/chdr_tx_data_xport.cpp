@@ -42,6 +42,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     , _epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
     , _frame_size(send_link->get_send_frame_size())
+    , _fc_params(fc_params)
     , _disconnect(disconnect)
 {
     UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
@@ -298,4 +299,34 @@ chdr_tx_data_xport::configure_sep(io_service::sptr io_srv,
         xport_args,
         fc_freq_ratio,
         fc_headroom_ratio);
+}
+
+uhd::device_addr_t chdr_tx_data_xport::get_xport_info() const
+{
+    uhd::device_addr_t info;
+    info["mtu"]                   = std::to_string(_mtu);
+    info["frame_size"]            = std::to_string(_frame_size);
+    info["src_epid"]              = std::to_string(_epid);
+    info["dst_epid"]              = std::to_string(_send_header.get_dst_epid());
+    info["send_capacity_bytes"]   = std::to_string(_fc_params.buff_capacity.bytes);
+    info["send_capacity_packets"] = std::to_string(_fc_params.buff_capacity.packets);
+
+    // For TX transport, flow control mode is determined by buffer capacity
+    // TX sends strc packets for resync, so if buff_capacity is non-zero, FC is enabled
+    if (_fc_params.buff_capacity.bytes == 0 && _fc_params.buff_capacity.packets == 0) {
+        info["fc_mode"] = "off";
+    } else {
+        // TX uses buffer-based flow control - mode depends on non-zero capacity field
+        if (_fc_params.buff_capacity.packets > 0
+            && _fc_params.buff_capacity.bytes == MAX_FC_CAPACITY_BYTES) {
+            info["fc_mode"] = "packet";
+        } else if (_fc_params.buff_capacity.bytes > 0
+                   && _fc_params.buff_capacity.packets == MAX_FC_CAPACITY_PKTS) {
+            info["fc_mode"] = "byte";
+        } else {
+            info["fc_mode"] = "mixed";
+        }
+    }
+
+    return info;
 }
