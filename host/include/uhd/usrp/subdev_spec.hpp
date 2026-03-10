@@ -35,8 +35,13 @@ struct UHD_API subdev_spec_pair_t : boost::equality_comparable<subdev_spec_pair_
     //! overloaded equality operator
     bool operator==(const subdev_spec_pair_t& other);
 
-    //! overloaded inquality operator
+    //! overloaded inequality operator
     bool operator!=(const subdev_spec_pair_t& other);
+
+    std::string to_string() const
+    {
+        return db_name + ":" + sd_name;
+    }
 };
 
 //! overloaded comparison operator for subdev_spec_pair_t

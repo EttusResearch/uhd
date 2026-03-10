@@ -82,7 +82,7 @@ std::string subdev_spec_t::to_string(void) const
     std::string markup;
     size_t count = 0;
     for (const subdev_spec_pair_t& pair : *this) {
-        markup += ((count++) ? " " : "") + pair.db_name + ":" + pair.sd_name;
+        markup += ((count++) ? " " : "") + pair.to_string();
     }
     return markup;
 }
