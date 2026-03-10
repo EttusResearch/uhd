@@ -9,8 +9,8 @@
 #pragma once
 
 #include <uhd/exception.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <iterator>
 #include <typeinfo>
 
@@ -21,9 +21,9 @@ template <typename Key, typename Val>
 struct key_not_found : uhd::key_error
 {
     key_not_found(const Key& key)
-        : uhd::key_error(str(boost::format("key \"%s\" not found in dict(%s, %s)")
-                             % boost::lexical_cast<std::string>(key) % typeid(Key).name()
-                             % typeid(Val).name()))
+        : uhd::key_error(boost::str(boost::format("key \"%s\" not found in dict(%s, %s)")
+                                    % uhd::cast::to_str(key) % typeid(Key).name()
+                                    % typeid(Val).name()))
     {
         /* NOP */
     }

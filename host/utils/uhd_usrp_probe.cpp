@@ -19,7 +19,7 @@
 #include <uhd/version.hpp>
 #include <boost/algorithm/string.hpp> //for split
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
+
 #include <boost/program_options.hpp>
 #include <cstdlib>
 #include <iostream>
@@ -340,7 +340,7 @@ uint32_t str2uint32(const std::string& str)
     if (str.find("0x") == 0) {
         return cast::hexstr_cast<uint32_t>(str);
     }
-    return boost::lexical_cast<uint32_t>(str);
+    return uhd::cast::from_str<uint32_t>(str);
 }
 
 void shell_print_help()

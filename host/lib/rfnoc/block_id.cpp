@@ -10,8 +10,8 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <regex>
 
@@ -70,12 +70,12 @@ bool block_id_t::match(const std::string& block_str)
         return false;
     }
     try {
-        return (matches[1] == "" or boost::lexical_cast<size_t>(matches[1]) == _device_no)
+        return (matches[1] == "" or uhd::cast::from_str<size_t>(matches[1]) == _device_no)
                and (matches[2] == "" or matches[2] == _block_name)
                and (matches[3] == ""
-                    or boost::lexical_cast<size_t>(matches[3]) == _block_ctr)
+                    or uhd::cast::from_str<size_t>(matches[3]) == _block_ctr)
                and not(matches[1] == "" and matches[2] == "" and matches[3] == "");
-    } catch (const std::bad_cast&) {
+    } catch (const uhd::runtime_error&) {
         return false;
     }
     return false;
@@ -89,13 +89,13 @@ bool block_id_t::set(const std::string& new_name)
         return false;
     }
     if (not(matches[1] == "")) {
-        _device_no = boost::lexical_cast<size_t>(matches[1]);
+        _device_no = uhd::cast::from_str<size_t>(matches[1]);
     }
     if (not(matches[2] == "")) {
         _block_name = matches[2];
     }
     if (not(matches[3] == "")) {
-        _block_ctr = boost::lexical_cast<size_t>(matches[3]);
+        _block_ctr = uhd::cast::from_str<size_t>(matches[3]);
     }
     return true;
 }

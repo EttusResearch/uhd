@@ -8,9 +8,9 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/byte_vector.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <algorithm>
 #include <sstream>
 
@@ -115,7 +115,7 @@ void dboard_eeprom_t::store(i2c_iface& iface, uint8_t addr) const
 
     // load the revision bytes
     if (not revision.empty()) {
-        const uint16_t rev_num   = boost::lexical_cast<uint16_t>(revision);
+        const uint16_t rev_num   = uhd::cast::from_str<uint16_t>(revision);
         bytes[DB_EEPROM_REV_LSB] = uint8_t(rev_num >> 0);
         bytes[DB_EEPROM_REV_MSB] = uint8_t(rev_num >> 8);
     }

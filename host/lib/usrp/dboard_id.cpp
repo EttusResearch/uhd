@@ -6,8 +6,8 @@
 //
 
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -57,7 +57,7 @@ dboard_id_t dboard_id_t::from_string(const std::string& string)
         interpreter >> hh;
         return dboard_id_t::from_uint16(hh);
     }
-    return dboard_id_t::from_uint16(boost::lexical_cast<uint16_t>(string));
+    return dboard_id_t::from_uint16(uhd::cast::from_str<uint16_t>(string));
 }
 
 std::string dboard_id_t::to_string(void) const

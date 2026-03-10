@@ -23,7 +23,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/lexical_cast.hpp>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -152,7 +151,7 @@ b200_product_t get_b200_product(
     if (mb_eeprom["product"].empty()) {
         throw uhd::runtime_error("B200: Missing product ID on EEPROM.");
     }
-    product_id = boost::lexical_cast<uint16_t>(mb_eeprom["product"]);
+    product_id = uhd::cast::from_str<uint16_t>(mb_eeprom["product"]);
     if (not B2XX_PRODUCT_ID.has_key(product_id)) {
         throw uhd::runtime_error(
             str(boost::format("B200 unknown product code: 0x%04x") % product_id));
@@ -426,7 +425,7 @@ b200_impl::b200_impl(
         product_name = "B200?";
     }
     if (not mb_eeprom["revision"].empty()) {
-        _revision = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
+        _revision = uhd::cast::from_str<size_t>(mb_eeprom["revision"]);
     }
 
     UHD_LOGGER_INFO("B200") << "Detected Device: " << B2XX_STR_NAMES[_product];

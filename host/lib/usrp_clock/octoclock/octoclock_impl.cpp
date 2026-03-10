@@ -15,6 +15,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
@@ -465,7 +466,7 @@ uint32_t octoclock_impl::_get_time(const std::string& oc)
 {
     if (_oc_dict[oc].state.gps_detected) {
         std::string time_str = _oc_dict[oc].gps->get_sensor("gps_time").value;
-        return boost::lexical_cast<uint32_t>(time_str);
+        return uhd::cast::from_str<uint32_t>(time_str);
     } else
         throw uhd::runtime_error("This device cannot return a time.");
 }

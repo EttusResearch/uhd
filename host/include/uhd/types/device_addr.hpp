@@ -9,7 +9,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
-#include <boost/lexical_cast.hpp>
+#include <uhd/utils/cast.hpp>
 #include <algorithm>
 #include <map>
 #include <stdexcept>
@@ -83,8 +83,8 @@ public:
         if (not this->has_key(key))
             return def;
         try {
-            return boost::lexical_cast<T>((*this)[key]);
-        } catch (const boost::bad_lexical_cast&) {
+            return uhd::cast::from_str<T>((*this)[key]);
+        } catch (const uhd::runtime_error&) {
             throw std::runtime_error("cannot cast " + key + " = " + (*this)[key]);
         }
     }

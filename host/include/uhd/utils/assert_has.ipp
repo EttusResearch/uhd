@@ -9,8 +9,8 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace uhd {
 
@@ -24,13 +24,13 @@ UHD_INLINE void assert_has(const Range& range, const T& value, const std::string
     for (const T& v : range) {
         if (i++ > 0)
             possible_values += ", ";
-        possible_values += boost::lexical_cast<std::string>(v);
+        possible_values += uhd::cast::to_str(v);
     }
     throw uhd::assertion_error(
-        str(boost::format("assertion failed:\n"
-                          "  %s is not a valid %s.\n"
-                          "  possible values are: [%s].\n")
-            % boost::lexical_cast<std::string>(value) % what % possible_values));
+        boost::str(boost::format("assertion failed:\n"
+                                 "  %s is not a valid %s.\n"
+                                 "  possible values are: [%s].\n")
+                   % uhd::cast::to_str(value) % what % possible_values));
 }
 
 } // namespace uhd

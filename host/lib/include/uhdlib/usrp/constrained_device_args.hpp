@@ -117,7 +117,7 @@ public: // Types
         inline void parse(const std::string& str_rep)
         {
             try {
-                _value = boost::lexical_cast<data_t>(str_rep);
+                _value = uhd::cast::from_str<data_t>(str_rep);
             } catch (std::exception& ex) {
                 throw uhd::value_error(
                     str(boost::format("Error parsing numeric parameter %s: %s.") % key()

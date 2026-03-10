@@ -9,6 +9,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/scope_exit.hpp>
@@ -17,7 +18,6 @@
 #include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <cmath>
@@ -110,7 +110,7 @@ uint16_t atoh(const std::string& string)
         interpreter >> hh;
         return hh.value;
     }
-    return boost::lexical_cast<uint16_t>(string);
+    return uhd::cast::from_str<uint16_t>(string);
 }
 
 int reset_usb()

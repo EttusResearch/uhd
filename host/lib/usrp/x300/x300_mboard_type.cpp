@@ -8,8 +8,8 @@
 #include "x300_fw_common.h"
 #include "x300_regs.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/lexical_cast.hpp>
 
 using namespace uhd::usrp::x300;
 
@@ -80,7 +80,7 @@ size_t uhd::usrp::x300::get_and_check_hw_rev(const mboard_eeprom_t& mb_eeprom)
     size_t hw_rev;
     if (mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
-            hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
+            hw_rev = uhd::cast::from_str<size_t>(mb_eeprom["revision"]);
         } catch (...) {
             throw uhd::runtime_error(
                 "Revision in EEPROM is invalid! Please reprogram your EEPROM.");
@@ -94,7 +94,7 @@ size_t uhd::usrp::x300::get_and_check_hw_rev(const mboard_eeprom_t& mb_eeprom)
         if (mb_eeprom.has_key("revision_compat")
             and not mb_eeprom["revision_compat"].empty()) {
             try {
-                hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
+                hw_rev_compat = uhd::cast::from_str<size_t>(mb_eeprom["revision_compat"]);
             } catch (...) {
                 throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please "
                                          "reprogram your EEPROM.");
@@ -131,8 +131,8 @@ x300_mboard_t uhd::usrp::x300::get_mb_type_from_eeprom(
     if (not mb_eeprom["product"].empty()) {
         uint16_t product_num = 0;
         try {
-            product_num = boost::lexical_cast<uint16_t>(mb_eeprom["product"]);
-        } catch (const boost::bad_lexical_cast&) {
+            product_num = uhd::cast::from_str<uint16_t>(mb_eeprom["product"]);
+        } catch (const uhd::runtime_error&) {
             product_num = 0;
         }
 

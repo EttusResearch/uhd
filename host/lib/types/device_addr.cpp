@@ -7,6 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/tokenizer.hpp>
@@ -121,7 +122,7 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t& dev_addr)
             global_keys.push_back(key);
             continue;
         }
-        const size_t num = boost::lexical_cast<size_t>(num_part);
+        const size_t num = uhd::cast::from_str<size_t>(num_part);
         dev_addrs.resize(std::max(num + 1, dev_addrs.size()));
         dev_addrs[num][key_part] = dev_addr[key];
     }

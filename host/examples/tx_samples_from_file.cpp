@@ -7,6 +7,7 @@
 
 #include <uhd/types/tune_request.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/algorithm/string.hpp>
@@ -247,9 +248,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // Split string into 1 or more channels
         boost::split(channels_split, channels, boost::is_any_of("\"',"));
         for (std::string channel : channels_split) {
-            if (boost::lexical_cast<size_t>(channel) >= usrp->get_tx_num_channels())
+            if (uhd::cast::from_str<size_t>(channel) >= usrp->get_tx_num_channels())
                 throw std::runtime_error("Invalid channel(s) specified.");
-            channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+            channel_nums.push_back(uhd::cast::from_str<size_t>(channel));
         }
     }
 

@@ -11,6 +11,7 @@
 #include "usrp2_regs.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/platform.hpp>
@@ -330,7 +331,7 @@ public:
         std::string hw = mb_eeprom["hardware"];
         if (hw.empty())
             return USRP_NXXX;
-        switch (boost::lexical_cast<uint16_t>(hw)) {
+        switch (uhd::cast::from_str<uint16_t>(hw)) {
             case 0x0300:
             case 0x0301:
                 return USRP2_REV3;

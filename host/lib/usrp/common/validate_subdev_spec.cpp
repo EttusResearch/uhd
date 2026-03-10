@@ -9,19 +9,10 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include <boost/format.hpp>
+#include <sstream>
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-namespace uhd { namespace usrp {
-
-static std::ostream& operator<<(std::ostream& out, const subdev_spec_pair_t& pair)
-{
-    out << pair.db_name << ":" << pair.sd_name;
-    return out;
-}
-
-}} // namespace uhd::usrp
 
 void uhd::usrp::validate_subdev_spec(property_tree::sptr tree,
     const subdev_spec_t& spec,

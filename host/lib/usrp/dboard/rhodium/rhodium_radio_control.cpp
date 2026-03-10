@@ -12,6 +12,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
@@ -579,7 +580,7 @@ size_t rhodium_radio_control_impl::get_chan_from_dboard_fe(
     const std::string& fe, const direction_t /* dir */
 ) const
 {
-    UHD_ASSERT_THROW(boost::lexical_cast<size_t>(fe) == 0);
+    UHD_ASSERT_THROW(uhd::cast::from_str<size_t>(fe) == 0);
     return 0;
 }
 

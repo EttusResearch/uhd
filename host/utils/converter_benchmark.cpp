@@ -8,11 +8,11 @@
 #include <uhd/convert.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <stdint.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <complex>
@@ -241,21 +241,21 @@ std::string item_to_string(
     if (type == "sc16") {
         const std::complex<int16_t>* ptr =
             reinterpret_cast<const std::complex<int16_t>*>(v_ptr);
-        return boost::lexical_cast<std::string>(ptr[index]);
+        return uhd::cast::to_str(ptr[index]);
     } else if (type == "sc8") {
         const std::complex<int8_t>* ptr =
             reinterpret_cast<const std::complex<int8_t>*>(v_ptr);
-        return boost::lexical_cast<std::string>(ptr[index]);
+        return uhd::cast::to_str(ptr[index]);
     } else if (type == "fc32") {
         const std::complex<float>* ptr =
             reinterpret_cast<const std::complex<float>*>(v_ptr);
-        return boost::lexical_cast<std::string>(ptr[index]);
+        return uhd::cast::to_str(ptr[index]);
     } else if (type == "item32") {
         const uint32_t* ptr = reinterpret_cast<const uint32_t*>(v_ptr);
-        return boost::lexical_cast<std::string>(ptr[index]);
+        return uhd::cast::to_str(ptr[index]);
     } else if (type == "s16") {
         const int16_t* ptr = reinterpret_cast<const int16_t*>(v_ptr);
-        return boost::lexical_cast<std::string>(ptr[index]);
+        return uhd::cast::to_str(ptr[index]);
     } else {
         return str(boost::format("<unhandled data type: %s>") % type);
     }
@@ -360,7 +360,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             boost::token_compress_on // Avoid empty results
         );
         for (const std::string& this_prio : prios_in_list) {
-            size_t prio_index = boost::lexical_cast<size_t>(this_prio);
+            size_t prio_index = uhd::cast::from_str<size_t>(this_prio);
             converter::sptr conv_for_prio =
                 get_converter(converter_id, prio_index)(); // Can throw a uhd::key_error
             conv_list[prio_index] = conv_for_prio;

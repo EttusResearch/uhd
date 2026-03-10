@@ -16,6 +16,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
@@ -211,7 +212,7 @@ public:
         // Get revision if programmed
         const std::string revision_str = get_rx_eeprom().revision;
         if (not revision_str.empty()) {
-            revision = boost::lexical_cast<size_t>(revision_str);
+            revision = uhd::cast::from_str<size_t>(revision_str);
         }
         _high_isolation = false;
         if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID) {

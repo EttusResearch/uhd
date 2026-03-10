@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/utils/cast.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>
-#include <boost/lexical_cast.hpp>
 
 uhd::byte_vector_t string_to_uint16_bytes(const std::string& num_str)
 {
-    const uint16_t num                 = boost::lexical_cast<uint16_t>(num_str);
+    const uint16_t num                 = uhd::cast::from_str<uint16_t>(num_str);
     const std::vector<uint8_t> lsb_msb = {uint8_t(num >> 0), uint8_t(num >> 8)};
     return lsb_msb;
 }
