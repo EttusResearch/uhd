@@ -11,6 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <type_traits>
+#include <complex>
 #include <cstdint>
 #include <iomanip>
 #include <ios>
@@ -116,10 +117,19 @@ using has_to_string_method = decltype(has_to_string_method_impl<T>(0));
 template <typename T>
 auto to_str(const T& val) -> std::enable_if_t<
     std::is_arithmetic_v<
-        T> && !std::is_floating_point_v<T> && !std::is_same_v<T, int8_t> && !std::is_same_v<T, uint8_t> && !detail::has_to_string_method<T>::value,
+        T> && !std::is_floating_point_v<T> && !std::is_same_v<T, int8_t> && !std::is_same_v<T, uint8_t> && !std::is_enum_v<T> && !detail::has_to_string_method<T>::value,
     decltype(std::to_string(val))>
 {
     return std::to_string(val);
+}
+
+//! SFINAE-based template for enum types
+//
+// Convert enum types to their underlying integral type, then to string
+template <typename T>
+auto to_str(const T& val) -> std::enable_if_t<std::is_enum_v<T>, std::string>
+{
+    return std::to_string(static_cast<std::underlying_type_t<T>>(val));
 }
 
 //! Template for floating-point types with round-trip safe precision
@@ -140,16 +150,39 @@ auto to_str(const T& val) -> std::enable_if_t<
 
 // Special handling for int8_t and uint8_t since std::to_string treats them as chars
 
-//! Overload of `uhd::cast::to_str()` for int8_t
-inline std::string to_str(const int8_t& val)
+//! Template specialization for int8_t with higher priority than enum template
+template <typename T>
+auto to_str(const T& val)
+    -> std::enable_if_t<std::is_same_v<T, int8_t> || std::is_same_v<T, signed char>,
+        std::string>
 {
     return std::to_string(static_cast<int>(val));
 }
 
-//! Overload of `uhd::cast::to_str()` for uint8_t
-inline std::string to_str(const uint8_t& val)
+//! Template specialization for uint8_t with higher priority than enum template
+template <typename T>
+auto to_str(const T& val)
+    -> std::enable_if_t<std::is_same_v<T, uint8_t> || std::is_same_v<T, unsigned char>,
+        std::string>
 {
     return std::to_string(static_cast<unsigned int>(val));
+}
+
+//! SFINAE-based template for std::complex<T> types
+//
+// This template will work for any std::complex<T> where T has a to_str() function
+// Creates a string of the form "a+jb" or "a-jb"
+template <typename T>
+std::string to_str(const std::complex<T>& val)
+{
+    std::string real_str = to_str(val.real());
+    T imag_val           = val.imag();
+
+    if (imag_val >= 0) {
+        return real_str + "+j" + to_str(imag_val);
+    } else {
+        return real_str + "-j" + to_str(-imag_val);
+    }
 }
 
 //! SFINAE-based template for any type that has a to_string() method

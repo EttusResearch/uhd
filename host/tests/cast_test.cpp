@@ -9,6 +9,7 @@
 #include <uhd/utils/cast.hpp>
 #include <stdint.h>
 #include <boost/test/unit_test.hpp>
+#include <complex>
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_mac_addr)
@@ -111,4 +112,136 @@ BOOST_AUTO_TEST_CASE(test_to_str)
     // Test roundtrip conversion for consistency
     BOOST_CHECK_EQUAL(42, from_str<int>(to_str<int>(42)));
     BOOST_CHECK_EQUAL(1024U, from_str<size_t>(to_str<size_t>(1024U)));
+}
+
+BOOST_AUTO_TEST_CASE(test_char_type_to_str)
+{
+    using namespace uhd::cast;
+
+    // Test signed char conversion (may be same as int8_t)
+    BOOST_CHECK_EQUAL("65", to_str(static_cast<signed char>('A')));
+
+    // Test unsigned char conversion (may be same as uint8_t)
+    BOOST_CHECK_EQUAL("65", to_str(static_cast<unsigned char>('A')));
+    BOOST_CHECK_EQUAL("0", to_str(static_cast<unsigned char>(0)));
+    BOOST_CHECK_EQUAL("255", to_str(static_cast<unsigned char>(255)));
+
+    // Test int8_t explicitly
+    BOOST_CHECK_EQUAL("42", to_str(static_cast<int8_t>(42)));
+    BOOST_CHECK_EQUAL("-42", to_str(static_cast<int8_t>(-42)));
+
+    // Test uint8_t explicitly
+    BOOST_CHECK_EQUAL("200", to_str(static_cast<uint8_t>(200)));
+    BOOST_CHECK_EQUAL("0", to_str(static_cast<uint8_t>(0)));
+}
+
+BOOST_AUTO_TEST_CASE(test_complex_to_str)
+{
+    using namespace uhd::cast;
+
+    // Test std::complex<float>
+    std::complex<float> cf1(3.0f, 4.0f);
+    std::string cf1_str = to_str(cf1);
+    BOOST_CHECK(cf1_str.find("+j") != std::string::npos);
+    BOOST_CHECK(cf1_str.find("3") != std::string::npos);
+    BOOST_CHECK(cf1_str.find("4") != std::string::npos);
+
+    std::complex<float> cf2(2.5f, -1.5f);
+    std::string cf2_str = to_str(cf2);
+    BOOST_CHECK(cf2_str.find("-j") != std::string::npos);
+    BOOST_CHECK(cf2_str.find("2.5") != std::string::npos);
+    BOOST_CHECK(cf2_str.find("1.5") != std::string::npos);
+
+    // Test std::complex<double>
+    std::complex<double> cd1(1.23, 4.56);
+    std::string cd1_str = to_str(cd1);
+    BOOST_CHECK(cd1_str.find("+j") != std::string::npos);
+    BOOST_CHECK(cd1_str.find("1.23") != std::string::npos);
+    BOOST_CHECK(
+        cd1_str.find("4.56") != std::string::npos
+        || cd1_str.find("4.559") != std::string::npos); // floating-point precision
+
+    std::complex<double> cd2(-3.14, -2.71);
+    std::string cd2_str = to_str(cd2);
+    BOOST_CHECK(cd2_str.find("-j") != std::string::npos);
+    BOOST_CHECK(cd2_str.find("-3.14") != std::string::npos);
+    BOOST_CHECK(cd2_str.find("2.71") != std::string::npos);
+
+    // Test std::complex<int> (integer types)
+    std::complex<int> ci1(5, 7);
+    std::string ci1_str = to_str(ci1);
+    BOOST_CHECK(ci1_str.find("+j") != std::string::npos);
+    BOOST_CHECK(ci1_str.find("5") != std::string::npos);
+    BOOST_CHECK(ci1_str.find("7") != std::string::npos);
+
+    std::complex<int> ci2(-8, -3);
+    std::string ci2_str = to_str(ci2);
+    BOOST_CHECK(ci2_str.find("-j") != std::string::npos);
+    BOOST_CHECK(ci2_str.find("-8") != std::string::npos);
+    BOOST_CHECK(ci2_str.find("3") != std::string::npos);
+
+    // Test std::complex<int16_t>
+    std::complex<int16_t> cs1(100, 200);
+    std::string cs1_str = to_str(cs1);
+    BOOST_CHECK(cs1_str.find("+j") != std::string::npos);
+    BOOST_CHECK(cs1_str.find("100") != std::string::npos);
+    BOOST_CHECK(cs1_str.find("200") != std::string::npos);
+
+    // Test zero imaginary part
+    std::complex<float> cf_real(5.0f, 0.0f);
+    std::string cf_real_str = to_str(cf_real);
+    BOOST_CHECK(cf_real_str.find("+j0") != std::string::npos);
+
+    // Test zero real part
+    std::complex<float> cf_imag(0.0f, 3.0f);
+    std::string cf_imag_str = to_str(cf_imag);
+    BOOST_CHECK(cf_imag_str.find("0") != std::string::npos);
+    BOOST_CHECK(cf_imag_str.find("+j3") != std::string::npos);
+}
+
+// Test enum to_str conversion
+enum class TestEnum : int { VALUE_A = 10, VALUE_B = 20, VALUE_C = -5 };
+enum OldStyleEnum { OLD_VALUE_X = 100, OLD_VALUE_Y = 200 };
+
+BOOST_AUTO_TEST_CASE(test_enum_to_str)
+{
+    using namespace uhd::cast;
+
+    // Test scoped enum
+    BOOST_CHECK_EQUAL("10", to_str(TestEnum::VALUE_A));
+    BOOST_CHECK_EQUAL("20", to_str(TestEnum::VALUE_B));
+    BOOST_CHECK_EQUAL("-5", to_str(TestEnum::VALUE_C));
+
+    // Test old-style enum
+    BOOST_CHECK_EQUAL("100", to_str(OLD_VALUE_X));
+    BOOST_CHECK_EQUAL("200", to_str(OLD_VALUE_Y));
+}
+
+BOOST_AUTO_TEST_CASE(test_comprehensive_roundtrip)
+{
+    using namespace uhd::cast;
+
+    // Test all new from_str specializations round-trip
+    BOOST_CHECK_EQUAL(123456U, from_str<uint32_t>(to_str(123456U)));
+    BOOST_CHECK_EQUAL(static_cast<uint16_t>(65000),
+        from_str<uint16_t>(to_str(static_cast<uint16_t>(65000))));
+    BOOST_CHECK_EQUAL(
+        static_cast<uint8_t>(250), from_str<uint8_t>(to_str(static_cast<uint8_t>(250))));
+
+    // Test char type round-trips (note: signed/unsigned char don't have from_str, but we
+    // can test consistency)
+    BOOST_CHECK_EQUAL("42", to_str(static_cast<signed char>(42)));
+    BOOST_CHECK_EQUAL("200", to_str(static_cast<unsigned char>(200)));
+    BOOST_CHECK_EQUAL("-100", to_str(static_cast<signed char>(-100)));
+
+    // Test floating-point precision preservation
+    double test_double      = 3.141592653589793;
+    std::string double_str  = to_str(test_double);
+    double recovered_double = from_str<double>(double_str);
+    BOOST_CHECK_CLOSE(test_double, recovered_double, 1e-12);
+
+    float test_float      = 2.718281828f;
+    std::string float_str = to_str(test_float);
+    float recovered_float = std::stof(float_str);
+    BOOST_CHECK_CLOSE(test_float, recovered_float, 1e-5);
 }
