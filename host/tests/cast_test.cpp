@@ -49,6 +49,84 @@ BOOST_AUTO_TEST_CASE(test_from_str)
     BOOST_CHECK_THROW(from_str<bool>(""), uhd::runtime_error);
     BOOST_CHECK_THROW(from_str<bool>("abc"), uhd::runtime_error);
     BOOST_CHECK_THROW(from_str<bool>("deadbeef"), uhd::runtime_error);
+
+    // Test uint32_t specialization
+    BOOST_CHECK_EQUAL(0U, from_str<uint32_t>("0"));
+    BOOST_CHECK_EQUAL(123456U, from_str<uint32_t>("123456"));
+    BOOST_CHECK_EQUAL(4294967295U, from_str<uint32_t>("4294967295")); // UINT32_MAX
+    BOOST_CHECK_THROW(from_str<uint32_t>("-1"), uhd::runtime_error);
+    BOOST_CHECK_THROW(
+        from_str<uint32_t>("4294967296"), uhd::runtime_error); // UINT32_MAX + 1
+    BOOST_CHECK_THROW(from_str<uint32_t>("abc"), uhd::runtime_error);
+
+    // Test uint16_t specialization
+    BOOST_CHECK_EQUAL(static_cast<uint16_t>(0), from_str<uint16_t>("0"));
+    BOOST_CHECK_EQUAL(static_cast<uint16_t>(1234), from_str<uint16_t>("1234"));
+    BOOST_CHECK_EQUAL(
+        static_cast<uint16_t>(65535), from_str<uint16_t>("65535")); // UINT16_MAX
+    BOOST_CHECK_THROW(from_str<uint16_t>("-1"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint16_t>("65536"), uhd::runtime_error); // UINT16_MAX + 1
+    BOOST_CHECK_THROW(from_str<uint16_t>("xyz"), uhd::runtime_error);
+
+    // Test uint8_t specialization
+    BOOST_CHECK_EQUAL(static_cast<uint8_t>(0), from_str<uint8_t>("0"));
+    BOOST_CHECK_EQUAL(static_cast<uint8_t>(123), from_str<uint8_t>("123"));
+    BOOST_CHECK_EQUAL(static_cast<uint8_t>(255), from_str<uint8_t>("255")); // UINT8_MAX
+    BOOST_CHECK_THROW(from_str<uint8_t>("-1"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint8_t>("256"), uhd::runtime_error); // UINT8_MAX + 1
+    BOOST_CHECK_THROW(from_str<uint8_t>("def"), uhd::runtime_error);
+
+    // Test that valid inputs still work (regression test)
+    BOOST_CHECK_EQUAL(123U, from_str<uint32_t>("123"));
+    BOOST_CHECK_EQUAL(456, from_str<int>("456"));
+    BOOST_CHECK_EQUAL(789.0, from_str<double>("789.0"));
+    BOOST_CHECK_EQUAL(static_cast<uint16_t>(100), from_str<uint16_t>("100"));
+    BOOST_CHECK_EQUAL(static_cast<uint8_t>(50), from_str<uint8_t>("50"));
+    BOOST_CHECK_EQUAL(static_cast<size_t>(999), from_str<size_t>("999"));
+    BOOST_CHECK_EQUAL(static_cast<unsigned>(999), from_str<unsigned>("999"));
+    BOOST_CHECK_EQUAL(static_cast<unsigned long>(999), from_str<unsigned long>("999"));
+    BOOST_CHECK_EQUAL(static_cast<unsigned long long>(123456789),
+        from_str<unsigned long long>("123456789"));
+
+    // Test that inputs with trailing characters are rejected (the main fix)
+    BOOST_CHECK_THROW(from_str<uint32_t>("123abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint32_t>("123 "), uhd::runtime_error); // trailing space
+    BOOST_CHECK_THROW(from_str<uint32_t>("123x"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint32_t>("0x10"), uhd::runtime_error); // hex notation
+    BOOST_CHECK_THROW(from_str<uint32_t>("42.5"), uhd::runtime_error); // decimal in uint
+
+    BOOST_CHECK_THROW(from_str<uint16_t>("123abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint16_t>("456 "), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint16_t>("0xFF"), uhd::runtime_error);
+
+    BOOST_CHECK_THROW(from_str<uint8_t>("123abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint8_t>("89 "), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint8_t>("0x42"), uhd::runtime_error);
+
+    BOOST_CHECK_THROW(from_str<int>("123abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<int>("-456xyz"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<int>("789 "), uhd::runtime_error);
+
+    BOOST_CHECK_THROW(from_str<double>("123.45abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<double>("3.14159 "), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<double>("1.23e4x"), uhd::runtime_error);
+
+    BOOST_CHECK_THROW(from_str<size_t>("999abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<size_t>("123 "), uhd::runtime_error);
+
+    // Test mixed whitespace and trailing characters
+    BOOST_CHECK_THROW(from_str<uint32_t>(" 123 "), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<uint32_t>(" 123abc "), uhd::runtime_error);
+
+    // Test empty string edge case
+    BOOST_CHECK_THROW(from_str<uint32_t>(""), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<int>(""), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<double>(""), uhd::runtime_error);
+
+    // Test that purely invalid inputs still throw exceptions
+    BOOST_CHECK_THROW(from_str<uint32_t>("abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<int>("xyz"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<double>("not_a_number"), uhd::runtime_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_to_str)

@@ -53,10 +53,46 @@ inline T fromstr_cast(const std::string& in)
 }
 
 //! Generic cast-from-string function
+//
+// Handles size_t aliases (unsigned long, unsigned long long) via if constexpr
+// when they are not the same type as uint32_t or uint64_t.
+// Explicit specializations below override this for bool, double, int,
+// uint32_t, uint64_t, uint16_t, uint8_t, and std::string.
+//
+// Note that we need this generic template to handle arbitrary types at runtime.
+// However, this means we can't use SFINAE to create template specializations,
+// which means any type that requires template logic needs to go into here and
+// must be explicitly handled with if constexpr.
 template <typename data_t>
-data_t from_str(const std::string&)
+data_t from_str(const std::string& val)
 {
-    throw uhd::runtime_error("Cannot convert from string!");
+    if constexpr (
+        (std::is_same_v<data_t,
+             size_t> || std::is_same_v<data_t, unsigned long> || std::is_same_v<data_t, unsigned long long>)&&!std::
+            is_same_v<data_t, uint32_t> && !std::is_same_v<data_t, uint64_t>) {
+        try {
+            if (!val.empty() && val[0] == '-') {
+                throw std::out_of_range("negative value for unsigned type");
+            }
+            size_t pos;
+            unsigned long long tmp = std::stoull(val, &pos);
+            if (pos != val.length()) {
+                throw std::invalid_argument("trailing characters");
+            }
+            if (tmp > std::numeric_limits<data_t>::max()) {
+                throw std::out_of_range("value out of range");
+            }
+            return static_cast<data_t>(tmp);
+        } catch (std::invalid_argument&) {
+            throw uhd::runtime_error(
+                std::string("Cannot convert `") + val + "' to numeric type!");
+        } catch (std::out_of_range&) {
+            throw uhd::runtime_error(
+                std::string("Cannot convert `") + val + "' to numeric type!");
+        }
+    } else {
+        throw uhd::runtime_error("Cannot convert from string!");
+    }
 }
 
 // Specializations of `uhd::cast::from_str()` for supported data types
@@ -77,15 +113,28 @@ UHD_API double from_str(const std::string& val);
 template <>
 UHD_API int from_str(const std::string& val);
 
-//! Specialization of `uhd::cast::from_str()` for size_t values
+//! Specialization of `uhd::cast::from_str()` for uint8_t values
 template <>
-UHD_API size_t from_str(const std::string& val);
+UHD_API uint8_t from_str(const std::string& val);
+
+//! Specialization of `uhd::cast::from_str()` for uint16_t values
+template <>
+UHD_API uint16_t from_str(const std::string& val);
+
+//! Specialization of `uhd::cast::from_str()` for uint32_t values
+template <>
+UHD_API uint32_t from_str(const std::string& val);
+
+//! Specialization of `uhd::cast::from_str()` for uint64_t values
+template <>
+UHD_API uint64_t from_str(const std::string& val);
 
 //! Specialization of `uhd::cast::from_str()` for strings
-//
-//   This function simply returns the incoming string
 template <>
-UHD_API std::string from_str(const std::string& val);
+inline UHD_API std::string from_str(const std::string& val)
+{
+    return val;
+}
 
 //! Create an ordinal string from a number.
 UHD_API std::string to_ordinal_string(int val);
