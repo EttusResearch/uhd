@@ -20,7 +20,7 @@ RFNoC is a network-on-chip and has a packetized transport network. Utilities are
 
 ### Control-Plane Capabilities
 
-- The control plane is transaction based. RFNoC has pre-defined transactions like reads, writes and sleeps, but it is possible to add more transactions (advanced). Transactions have a bit width of 32 bits and each transaction has a 20-bit address and a payload of up to eight 32-bit data words.
+- The control plane is transaction based. RFNoC has pre-defined transactions like reads, writes and sleeps, but it is possible to add more transactions (advanced). Transactions have a bit width of 32 bits and each transaction has a 20-bit address and a payload of up to fifteen 32-bit data words.
 
 - Transactions are blocking and have an optional execution status.
 
@@ -496,7 +496,7 @@ The rationale for not requiring timestamps mid-burst is twofold: First, timestam
 
 ## Control Packets
 
-When the CHDR PktType field is 0x4, the payload is interpreted as a control packet. The control packet encodes memory-mapped transactions. It has a variable length that can range from 16 bytes (no timestamp and NumData = 1) to 80 bytes (timestamp and NumData = 15).
+When the CHDR PktType field is 0x4, the payload is interpreted as a control packet. The control packet encodes memory-mapped transactions. The length can range from 12 bytes (no timestamp or data words) to 80 bytes (with timestamp and 15 data words).
 
 The table below shows the format of the CHDR payload of a control packet. For simplicity, the rest of the CHDR packet is not shown. Note that a timestamp may be present in both the CHDR packet header and in the control packet contents. This simplifies the parsing of control and data packets.
 
@@ -605,10 +605,12 @@ A detailed description of the fields is listed in the table below. Each control 
       <td> Required</td>
     </tr>
     <tr>
-      <td> NumMData</td>
+      <td> NumData</td>
       <td> 4</td>
-      <td> Number of 32-bit lines in the Data field <br>
-           *NOTE: NumData = 0 is reserved.*
+      <td> The number of 32-bit data words present in the packet. <br>
+           For Read and Block Read requests (IsAck = 0), this field <br>
+           indicates the number of words being requested and no data <br>
+           words are present in the packet.
       </td>
       <td> Required</td>
     </tr>
@@ -674,118 +676,158 @@ A detailed description of the fields is listed in the table below. Each control 
     <tr>
       <td> Data\[i\]</td>
       <td> Variable</td>
-      <td> The transaction data. Number of data values <br>
-           depends on the NumData field and their <br>
-           interpretation depends on the OpCode.
+      <td> The transaction data.
       </td>
       <td> Optional</td>
     </tr>
  </table>
  </div>
 
-A control transaction is a memory mapped transaction that contains a 20-bit Address field and a 4-bit byte-enable field (with behavior similar to tkeep/tstrb in AXI4). It may have one to fifteen 32-bit data fields. A transaction can be timed, i.e., only executed when the sample timestamp matches a command timestamp. The OpCode determines the behavior of the transaction. All register transactions must be acknowledged after they are consumed. The packet size of the response will be the same as the packet size of the request. Using this information, the sender is responsible for flow controlling control transactions to ensure that the control packet FIFO is not overrun.
+A control transaction is a memory-mapped transaction that contains a 20-bit
+Address field and a 4-bit ByteEnable field (with behavior similar to
+tkeep/tstrb in AXI4). It may have one to fifteen 32-bit Data fields. A
+transaction can be timed, i.e., only executed when the sample Timestamp matches
+a command timestamp. The OpCode determines the behavior of the transaction. All
+transactions must be acknowledged after they are consumed. The sender is
+responsible for flow-controlling control transactions to ensure that the
+control packet FIFO is not overrun.
 
 Note that the use of some control transaction features is block-dependent. For example, some NoC blocks may ignore ByteEnable and/or the Timestamp if those blocks do not support those features. This allows NoC blocks to be simpler if such features are not required.
 
-The table below shows the meaning of the OpCode field values.
+The table below shows how the control packet fields are to be used for each
+OpCode in both the request (IsAck = 0) and the response (IsAck = 1).
 
+\anchor control_packet_field_usage
 <div align="center">
 <table>
-  <caption>OpCode definitions for control transactions.</caption>
+  <caption>Control packet field usage.</caption>
     <tr>
       <th>OpCode</th>
       <th>Operation</th>
-      <th>Arguments</th>
+      <th>Request Data</th>
+      <th>Response Data</th>
       <th>Description</th>
     </tr>
     <tr>
-      <td> 0</td>
-      <td> Sleep</td>
-      <td> \[0\]: Stall cycles</td>
+      <td> 0 </td>
+      <td> Sleep </td>
+      <td> NumData = 1 <br>
+           Data\[0\] = Stall cycles </td>
+      <td> NumData = 0 <br>
+           No data is included in the response. </td>
       <td> Do nothing and stall the control endpoint for <br>
-           *Data\[0\]* clock cycles of the control interface <br>
+           *Data*\[0\] clock cycles of the control interface <br>
            clock.
       </td>
     </tr>
     <tr>
-      <td> 1</td>
-      <td> Write</td>
-      <td> \[0\]: Data</td>
-      <td> Write Data to a single register at *Address* at <br>
-           all bytes p where by *ByteEnable*\[p\] = 1.
+      <td> 1 </td>
+      <td> Write </td>
+      <td> NumData = Number of data words to write (1 to 15) <br>
+           Data\[0\] = Value of first word to write <br>
+           ... <br>
+           Data\[*NumData*-1\] = Value of last word to write
       </td>
-    </tr>    
+      <td> NumData = 0 <br>
+           No data words are included in the response.</td>
+      <td> Write *Data*\[*n*\] to a single *Address* at <br>
+           all bytes *p* where *ByteEnable*\[*p*\] = 1.
+      </td>
+    </tr>
     <tr>
       <td> 2</td>
       <td> Read</td>
-      <td> \[0\]: Scratch</td>
-      <td> Read a single register at *Address*.
+      <td> NumData = Number of data words to read (1 to 15) <br>
+           No data words are included in the request.</td>
+      <td> NumData = Number of data words in response <br>
+           Data\[0\] = Value of first word read <br>
+           ... <br>
+           Data\[*NumData*-1\] = Value of last word read
       </td>
-    </tr>    
+      <td> Read *NumData* times from *Address*. <br>
+           The response contains each read result in *Data*\[*n*\]. <br>
+      </td>
+    </tr>
     <tr>
       <td> 3</td>
-      <td> Read then <br> 
+      <td> Read then <br>
            Write
       </td>
-      <td> \[0\]: Data</td>
-      <td> Read the register at *Address* then Write <br>
-           *Data* to it at all bytes p where by <br>
-           *ByteEnable*\[p\] = 1.
+      <td> NumData = 1 <br>
+           Data\[0\] = Value of data word to write </td>
+      <td> NumData = 1 <br>
+           Data\[0\] = Value of data word read </td>
+      <td> Read a data word from *Address*, then write a data <br>
+           word to it at all bytes *p* where *ByteEnable*\[*p*\] = 1. <br>
       </td>
-    </tr>    
+    </tr>
     <tr>
       <td> 4</td>
       <td> Block Write</td>
-      <td> \[0\]: Data\[0\] <br>
+      <td> NumData = Number of data words to write (1 to 15) <br>
+           Data\[0\] = Value of first word to write <br>
            ... <br>
-           \[N-1\]: Data\[N-1\] 
+           Data\[*NumData*-1\] = Value of last word to write
       </td>
-      <td> Write Data[n] to registers sequentially at <br>
-           (*Address + 4n*) at all bytes p where by <br>
-           *ByteEnable*\[p\] = 1 where n = 0 .. N-1.
+      <td> NumData = 0 <br>
+           No data is included in the response.</td>
+      <td> Write *Data*\[*n*\] to registers sequentially at <br>
+           (*Address* + 4⋅*n*) at all bytes *p* where <br>
+           *ByteEnable*\[*p*\] = 1, for n = 0 .. *NumData*-1.
       </td>
-    </tr>    
+    </tr>
     <tr>
       <td> 5</td>
       <td> Block Read</td>
-      <td> \[0\]: Scratch\[0\] <br>
+      <td> NumData = Number of data words to read (1 to 15) <br>
+           No data words are included in the request.</td>
+      <td> NumData = Number of data words in the response <br>
+           Data\[0\] = Value of first word read <br>
            ... <br>
-           \[N-1\]: Scratch\[N-1\] 
+           Data\[*NumData*-1\] = Value of last word read
       </td>
-      <td> Read sequentially from registers at <br>
-           (*Address + 4n*) where n = 0 .. N-1.
+      <td> Read *NumData* registers sequentially starting at *Address*, <br>
+           incrementing by 4 each step (*Address* + 4⋅*n*, <br>
+           n = 0 .. *NumData*-1). The response contains <br>
+           the register values in Data\[0\]..Data\[*NumData*-1\].
       </td>
-    </tr>    
+    </tr>
     <tr>
       <td> 6</td>
       <td> Poll</td>
-      <td> \[0\]: Data <br>
-           \[1\]: Mask <br>
-           \[2\]: Timeout
+      <td> NumData = 3 <br>
+           Data\[0\] = Data <br>
+           Data\[1\] = Mask <br>
+           Data\[2\] = Timeout
       </td>
+      <td> NumData = 1 <br>
+           Data\[0\] = Value of the last data word read</td>
       <td> Poll on *Address* until its value for all bits in <br>
-           *Mask* matches *Data&Mask*, or until *Timeout* <br>
-           cycles of control interface clock have <br>
-           elapsed. Acknowledge with CMDERR if <br>
-           timeout occurs, otherwise with OKAY. 
+           *Mask* matches *Data* & *Mask*, or until *Timeout* <br>
+           cycles of control interface clock have elapsed. <br>
+           The response contains the last value of *Data* <br>
+           that was read. Acknowledged with CMDERR if timeout <br>
+           occurs, otherwise with OKAY.
       </td>
-    </tr>    
+    </tr>
     <tr>
       <td> 7-9</td>
       <td> Reserved</td>
       <td> Reserved</td>
       <td> Reserved</td>
-    </tr>    
+      <td> Reserved</td>
+    </tr>
     <tr>
-      <td> >9 </td>
+      <td> 10-15 </td>
       <td> User Defined</td>
       <td> User Defined</td>
-      <td> 6 opcodes are reserved for user-specific <br>
+      <td> User Defined</td>
+      <td> These opcodes are reserved for user-specific <br>
            implementation.
       </td>
     </tr>
- </table>
- </div>
+  </table>
+</div>
 
 
 ### AXI-Stream Control (AXIS-Ctrl) Interface
@@ -803,10 +845,20 @@ packet has been moved out of the the RFNoC block's internal control packet queue
 Acknowledgements have the exact same structure as regular control packets, with
 the following requirements:
 
-- The `IsACK` flag must be asserted
+- The `IsACK` flag must be asserted.
 - The `Address`, `OpCode`, and `SeqNum` fields must have the same values as the
   control packet that is being acknowledged. These fields may be used to
   validate an acknowledgement packet.
+- For Read (OpCode 2) and Block Read (OpCode 5) operations, the response Data
+  field contains the read result(s): one 32-bit word per register read, in
+  order.
+- For Read-then-Write (OpCode 3) operations, the response contains one data
+  word with the register value read before the write was performed.
+- For Poll (OpCode 6) operations, the response contains one data word with
+  the last sampled register value, regardless of whether the condition was
+  met or timed out.
+- For Write (OpCode 1), Block Write (OpCode 4), and Sleep (OpCode 0)
+  operations, the response contains no data words.
 
 ## Stream Status Packets \[Internal Only\]
 
@@ -1410,7 +1462,7 @@ The control-plane in the FPGA can be exposed using a low-level AXI4-Stream inter
 
 ### AXI-Stream Control (Low-level Interface)
 
-AXI-Stream Control (AXIS-Ctrl) defines an interface and a packet format to encode control transactions in a standard 32-bit wide AXI-Stream bus. Regardless of the CHDR widths, AXIS-Ctrl will always be 32-bit wide. The data transferred over this interface is identical to the payload of a CHDR control packet except for the top 32 bits of the first payload line. All other fields are identical. Table \ref memory_layout_of_an_axis_ctrl_packet_anchor "Memory layout of an AXIS-Ctrl packet" shows the various fields of an AXIS-Ctrl packets formatted with a 32-bit word width. Note that the payload is identical to that of the \ref mem_layout_chdr_payload_ctrl_anchor "CHDR payload of a control packet", except for the second line in the packet. The fields are described in \ref chdr_control_field_definitions_anchor "CHDR control field definitions" and Table \ref additional_axis_ctrl_field_definitions_anchor "Additional AXIS-Ctrl field definitions".
+AXI-Stream Control (AXIS-Ctrl) defines an interface and a packet format to encode control transactions in a standard 32-bit wide AXI-Stream bus. Regardless of the CHDR widths, AXIS-Ctrl will always be 32-bit wide. The data transferred over this interface is identical to the payload of a CHDR control packet except for the top 32 bits of the first payload line. All other fields are identical. Table \ref memory_layout_of_an_axis_ctrl_packet_anchor "Memory layout of an AXIS-Ctrl packet" shows the various fields of an AXIS-Ctrl packets formatted with a 32-bit word width. Note that the payload is identical to that of the \ref mem_layout_chdr_payload_ctrl_anchor "CHDR payload of a control packet", except for the second line in the packet. The fields are described in \ref chdr_control_field_definitions_anchor "CHDR control field definitions", Table \ref control_packet_field_usage "Control transaction field usage", and Table \ref additional_axis_ctrl_field_definitions_anchor "Additional AXIS-Ctrl field definitions".
 
 AXIS-Ctrl packets traverse over the control network which consists of the control crossbar. This network is different for the typical CHDR network in RFNoC. It allows transactions to originate from and terminate in any NoC block in the device, despite the static data connections. The host software can issue an AXIS-Ctrl transaction going to any FPGA block and any FPGA block can send a transaction to any other FPGA block or to software. It is also possible to communicate with blocks in different devices. These are defined as *remote transactions* and require the use of two additional fields, `RemDstEPID` and `RemDstPort`.
 
@@ -1437,7 +1489,8 @@ AXIS-Ctrl packets traverse over the control network which consists of the contro
     </tr>
     <tr>
       <td align="center"> 1 </td>
-      <td align="center" colspan="2"> Reserved <br> (6)</td>
+      <td align="center"> Reserved <br> (2)</td>
+      <td align="center"> DataLength <br> (4)</td>
       <td align="center" colspan="2"> RemDstPort <br> (10) </td>
       <td align="center" colspan="2"> RemDstEPID <br> (16) </td>
       <td align="center"> Y </td>
@@ -1464,7 +1517,7 @@ AXIS-Ctrl packets traverse over the control network which consists of the contro
     <tr>
       <td align="center"> 5 </td>
       <td align="center" colspan="6"> Data\[0\] (32)</td>
-      <td align="center"> Y </td>
+      <td align="center"> N </td>
     </tr>
     <tr>
       <td align="center"> ... </td>
@@ -1493,13 +1546,26 @@ AXIS-Ctrl packets traverse over the control network which consists of the contro
       <th>Type</th>
     </tr>
     <tr>
-      <td> REmDstEPID </td>
-      <td>  16 </td>
-      <td> 
-         Remote Destination Endpoint ID: The ID of the <br>
-         remote stream endpoint that this packet is destined <br>
-         towards. <br>
-         *Note: EPID = 0 implies that the transaction is local*
+      <td> DataLength </td>
+      <td> 4 </td>
+      <td>
+         The number of data words present in the packet. <br>
+         For example, for read requests, DataLength is 0. <br>
+         For read responses, DataLength equals NumData. <br>
+         *Note: This field is not present in a CHDR control* <br>
+         *packet.*
+      </td>
+      <td> Required </td>
+    </tr>
+    <tr>
+      <td> RemDstPort  </td>
+      <td> 10 </td>
+      <td>
+         The port index of the control crossbar downstream of <br>
+         the remote stream endpoint that this packet is <br>
+         destined towards. <br>
+         *Note: This field is not present in a CHDR control* <br>
+         *packet.*
       </td>
       <td> Required </td>
     </tr>
