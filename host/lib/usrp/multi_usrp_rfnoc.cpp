@@ -747,17 +747,33 @@ public:
     void set_master_clock_rate(double rate, size_t mboard) override
     {
         for (auto& chain : _rx_chans) {
-            auto radio = chain.second.radio;
+            auto& rx_chain = chain.second;
+            auto radio     = rx_chain.radio;
             if (radio->get_block_id().get_device_no() == mboard
                 || mboard == ALL_MBOARDS) {
-                radio->set_rate(rate);
+                const double actual_radio_rate = radio->set_rate(rate);
+                if (rx_chain.ddc) {
+                    rx_chain.ddc->set_input_rate(actual_radio_rate, rx_chain.block_chan);
+                    if (_rx_rates.count(chain.first)) {
+                        _rx_rates[chain.first] = rx_chain.ddc->set_output_rate(
+                            _rx_rates.at(chain.first), rx_chain.block_chan);
+                    }
+                }
             }
         }
         for (auto& chain : _tx_chans) {
-            auto radio = chain.second.radio;
+            auto& tx_chain = chain.second;
+            auto radio     = tx_chain.radio;
             if (radio->get_block_id().get_device_no() == mboard
                 || mboard == ALL_MBOARDS) {
-                radio->set_rate(rate);
+                const double actual_radio_rate = radio->set_rate(rate);
+                if (tx_chain.duc) {
+                    tx_chain.duc->set_output_rate(actual_radio_rate, tx_chain.block_chan);
+                    if (_tx_rates.count(chain.first)) {
+                        _tx_rates[chain.first] = tx_chain.duc->set_input_rate(
+                            _tx_rates.at(chain.first), tx_chain.block_chan);
+                    }
+                }
             }
         }
     }
