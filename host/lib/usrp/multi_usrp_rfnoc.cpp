@@ -747,18 +747,41 @@ public:
      ******************************************************************/
     void set_master_clock_rate(double rate, size_t mboard) override
     {
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex);
         for (auto& chain : _rx_chans) {
-            auto radio = chain.second.radio;
+            auto& rx_chain = chain.second;
+            auto radio     = rx_chain.radio;
             if (radio->get_block_id().get_device_no() == mboard
                 || mboard == ALL_MBOARDS) {
-                radio->set_rate(rate);
+                const double actual_radio_rate = radio->set_rate(rate);
+                auto rx_rate_it                = _rx_rates.find(chain.first);
+                if (rx_chain.ddc) {
+                    rx_chain.ddc->set_input_rate(actual_radio_rate, rx_chain.block_chan);
+                    if (rx_rate_it != _rx_rates.end()) {
+                        rx_rate_it->second = rx_chain.ddc->set_output_rate(
+                            rx_rate_it->second, rx_chain.block_chan);
+                    }
+                } else if (rx_rate_it != _rx_rates.end()) {
+                    rx_rate_it->second = actual_radio_rate;
+                }
             }
         }
         for (auto& chain : _tx_chans) {
-            auto radio = chain.second.radio;
+            auto& tx_chain = chain.second;
+            auto radio     = tx_chain.radio;
             if (radio->get_block_id().get_device_no() == mboard
                 || mboard == ALL_MBOARDS) {
-                radio->set_rate(rate);
+                const double actual_radio_rate = radio->set_rate(rate);
+                auto tx_rate_it                = _tx_rates.find(chain.first);
+                if (tx_chain.duc) {
+                    tx_chain.duc->set_output_rate(actual_radio_rate, tx_chain.block_chan);
+                    if (tx_rate_it != _tx_rates.end()) {
+                        tx_rate_it->second = tx_chain.duc->set_input_rate(
+                            tx_rate_it->second, tx_chain.block_chan);
+                    }
+                } else if (tx_rate_it != _tx_rates.end()) {
+                    tx_rate_it->second = actual_radio_rate;
+                }
             }
         }
     }
