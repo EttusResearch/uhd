@@ -199,7 +199,7 @@ auto to_str(const T& val) -> std::enable_if_t<
 
 // Special handling for int8_t and uint8_t since std::to_string treats them as chars
 
-//! Template specialization for int8_t with higher priority than enum template
+//! Template specialization for int8_t
 template <typename T>
 auto to_str(const T& val)
     -> std::enable_if_t<std::is_same_v<T, int8_t> || std::is_same_v<T, signed char>,
@@ -208,7 +208,7 @@ auto to_str(const T& val)
     return std::to_string(static_cast<int>(val));
 }
 
-//! Template specialization for uint8_t with higher priority than enum template
+//! Template specialization for uint8_t
 template <typename T>
 auto to_str(const T& val)
     -> std::enable_if_t<std::is_same_v<T, uint8_t> || std::is_same_v<T, unsigned char>,

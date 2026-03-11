@@ -17,6 +17,7 @@
 #include <uhdlib/transport/io_service.hpp>
 #include <uhdlib/transport/link_if.hpp>
 #include <chrono>
+#include <climits>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
