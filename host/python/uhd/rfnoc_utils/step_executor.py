@@ -16,6 +16,7 @@ import logging
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import traceback
@@ -196,6 +197,15 @@ class StepExecutor:
         if sys.version_info >= (3, 8):
             copytree_kwargs["dirs_exist_ok"] = True
         shutil.copytree(src, dst, **copytree_kwargs)
+        # Ensure the destination root directory itself is writable
+        os.chmod(dst, os.stat(dst).st_mode | stat.S_IWUSR)
+        for root, dirs, files in os.walk(dst):
+            for d in dirs:
+                dir_path = os.path.join(root, d)
+                os.chmod(dir_path, os.stat(dir_path).st_mode | stat.S_IWUSR)
+            for f in files:
+                file_path = os.path.join(root, f)
+                os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IWUSR)
 
     def search_and_replace(self, **kwargs):
         """Search and replace text in a file.
