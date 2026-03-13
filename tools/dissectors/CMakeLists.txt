@@ -105,9 +105,39 @@ endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 set(UHD_INCLUDE_DIR "${UHD_HOST_ROOT}/include")
 set(UHDLIB_INCLUDE_DIR "${UHD_HOST_ROOT}/lib/include")
 
+# Detect host endianness
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+    # Use CMAKE_CXX_BYTE_ORDER for CMake 3.20 and later
+    if(CMAKE_CXX_BYTE_ORDER STREQUAL "BIG_ENDIAN")
+        set(UHD_ENDIANNESS_MACRO "UHD_BIG_ENDIAN")
+    elseif(CMAKE_CXX_BYTE_ORDER STREQUAL "LITTLE_ENDIAN")
+        set(UHD_ENDIANNESS_MACRO "UHD_LITTLE_ENDIAN")
+    else()
+        message(FATAL_ERROR "Unknown byte order: ${CMAKE_CXX_BYTE_ORDER}")
+    endif()
+else()
+    # Use test_big_endian for older CMake versions
+    include(TestBigEndian)
+    test_big_endian(__IS_BIG_ENDIAN)
+    if(__IS_BIG_ENDIAN)
+        set(UHD_ENDIANNESS_MACRO "UHD_BIG_ENDIAN")
+    else()
+        set(UHD_ENDIANNESS_MACRO "UHD_LITTLE_ENDIAN")
+    endif()
+    if(NOT DEFINED __IS_BIG_ENDIAN)
+        message(FATAL_ERROR "Could not determine target endianness!")
+    endif()
+endif()
+message(STATUS "Detected target endianness: ${UHD_ENDIANNESS_MACRO}")
+configure_file(
+    ${UHD_INCLUDE_DIR}/uhd/types/endianness.hpp.in
+    ${CMAKE_BINARY_DIR}/include/uhd/types/endianness.hpp
+)
+
 include_directories(
     ${UHD_INCLUDE_DIR}
     ${UHDLIB_INCLUDE_DIR}
+    ${CMAKE_BINARY_DIR}/include
     ${GLIB2_INCLUDE_DIRS}
     ${Wireshark_INCLUDE_DIR}
 )
