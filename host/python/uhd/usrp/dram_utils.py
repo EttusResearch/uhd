@@ -726,12 +726,16 @@ class DramReceiver:
         tmp_stream_cmd = stream_cmd
         for idx, rcp in enumerate(self.radio_chan_pairs):
             stream_cmd = tmp_stream_cmd
-            # Flush data on output buffer
-            flush_timeout = time.monotonic() + 0.25
-            while time.monotonic() < flush_timeout:
-                if self.replay_blocks[0].get_record_fullness(ports[idx]) == 0:
-                    break
-                self.replay_blocks[0].record_restart(ports[idx])
+            # Flush data on output buffer only if wait_for_buffer_complete is
+            # set. The record and record_restart calls below both reset the FPGA
+            # record engine. When the record engine state is known the flush
+            # loop can be skipped for speedup.
+            if wait_for_buffer_complete:
+                flush_timeout = time.monotonic() + 0.25
+                while time.monotonic() < flush_timeout:
+                    if self.replay_blocks[0].get_record_fullness(ports[idx]) == 0:
+                        break
+                    self.replay_blocks[0].record_restart(ports[idx])
             mem_region = mem_regions[ports[idx]]
             mem_size = min(stream_cmd.num_samps * self.bytes_per_sample, mem_region[1])
             self.replay_blocks[0].record(mem_region[0], mem_size, ports[idx])
