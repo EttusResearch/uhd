@@ -507,9 +507,10 @@ function dissect_ctrl_packet(header_buffer, buffer, pinfo, tree)
   header:add_le(pf_ctrl_src_epid, buffer(4,4))
   local offset = 8
   local has_ts = buffer(3,1):bitfield(1)
+  local is_ack = buffer(3,1):bitfield(0) == 1
   local ack_info = ""
   local time_info = ""
-  if buffer(3,1):bitfield(0) == 1 then
+  if is_ack then
     ack_info = "ACK "
   end
   if has_ts == 1 then
@@ -521,11 +522,57 @@ function dissect_ctrl_packet(header_buffer, buffer, pinfo, tree)
   header:add_le(pf_ctrl_byte_enable, buffer(offset, 4))
   header:add_le(pf_ctrl_op_code, buffer(offset, 4))
   header:add_le(pf_ctrl_status, buffer(offset, 4))
-  header:add(pf_ctrl_data, buffer(offset + 4))
+  local op_code_val = buffer(offset + 3):bitfield(4, 4)
+  local num_data_hdr = buffer(2, 1):bitfield(0, 4)
+  -- Use the buffer length as an upper bound to guard against malformed packets
+  -- where num_data is larger than the data actually present. Note: for CHDR
+  -- widths > 64-bits, this may include trailing padding words, but since
+  -- num_data_hdr is at most 15, the math.min below will dominate for any
+  -- valid or near-valid packet.
+  local buffer_data_words = math.max(0, math.floor((buffer:len() - offset - 4) / 4))
+  -- For write requests and read responses, num_data accurately encodes the
+  -- data word count, so use it (capped by buffer size for safety). For read
+  -- requests and write/sleep ACKs, no data is present on the wire. Using the
+  -- buffer length for those cases is unreliable because CHDR widths > 64 bits
+  -- include trailing padding bytes that are indistinguishable from data.
+  local is_write_request = (not is_ack)
+      and (op_code_val == 0 or op_code_val == 1 or op_code_val == 3
+           or op_code_val == 4 or op_code_val == 6)
+  local is_read_response = is_ack and (op_code_val == 2 or op_code_val == 5)
+  local actual_data_words
+  if is_write_request or is_read_response then
+    actual_data_words = math.min(num_data_hdr, buffer_data_words)
+  else
+    actual_data_words = 0
+  end
+  local data_hex = ""
+  for i = 0, actual_data_words - 1 do
+    local item = header:add_le(pf_ctrl_data, buffer(offset + 4 + i * 4, 4))
+    item:set_text(string.format("Data[%d]: 0x%s", i,
+        bit.tohex(buffer(offset + 4 + i * 4, 4):le_uint())))
+    if i == 0 then
+      data_hex = bit.tohex(buffer(offset + 4 + i * 4, 4):le_uint())
+      if actual_data_words > 1 then
+        data_hex = data_hex .. " ..."
+      end
+    end
+  end
+  -- Flag any bytes beyond the expected payload as unexpected. This can
+  -- indicate a malformed packet or an older firmware implementation that
+  -- sends extra data in read requests or write/sleep responses.
+  local expected_end = offset + 4 + actual_data_words * 4
+  if buffer:len() > expected_end then
+    local extra_item = header:add(pf_ctrl_data,
+        buffer(expected_end, buffer:len() - expected_end))
+    extra_item:set_text(string.format("Unexpected data (%d bytes)",
+        buffer:len() - expected_end))
+    extra_item:add_expert_info(PI_PROTOCOL, PI_NOTE,
+        "Unexpected data beyond expected control payload")
+  end
   return buffer(4, 2):le_uint(), string.format("%s%s %s -> %s%s",
       ack_info,                                                  -- add ACK when is_ack is 1
       ctrl_op_codes[buffer(offset + 3):bitfield(4,4)],           -- op code
-      buffer(offset + 4):bytes():tohex(),                        -- data
+      data_hex,                                                  -- data
       bit.tohex(bit.band(buffer(offset, 4):le_uint(), 0xFFFFF)), -- address
       time_info                                                  -- timestamp if has_ts is 1
   )
