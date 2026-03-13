@@ -22,7 +22,7 @@ register_plugin_files(${CMAKE_CURRENT_BINARY_DIR}/plugin.c
 add_plugin_library(${DISSECTOR_NAME} epan)
 
 set_target_properties(${DISSECTOR_NAME} PROPERTIES PREFIX ""
-    CXX_STANDARD 14
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED YES
 )
 set_target_properties(${DISSECTOR_NAME} PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
