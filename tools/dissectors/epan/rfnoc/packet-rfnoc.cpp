@@ -309,7 +309,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     /* Add dest port */
                     proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_dst_port, tvb, offset, 2, payload.dst_port);
                     /* Add num data */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+2, 1, payload.data_vtr.size());
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+2, 1, payload.num_data);
                     /* Add is_ack */
                     proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+3, 1, payload.is_ack);
                     /* Add sequence number */
@@ -335,9 +335,19 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                         ctrl_tree, hf_rfnoc_ctrl_status, tvb, offset+11, 1,
                         val_to_str(payload.status, RFNOC_CTRL_STATUS, "reserved")
                     );
-                    /* Add data */
-                    for (int i=0; i < payload.data_vtr.size(); i++) {
-                        proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data, tvb, offset+12+i*4, 4, payload.data_vtr[i]);
+                    /* Add data words. The deserialized data_vtr is always
+                     * correct for all packet types, including old firmware,
+                     * since the UHD deserializer handles all cases. Using
+                     * the buffer length directly would include CHDR-width
+                     * padding bytes for widths greater than 64 bits. */
+                    int actual_data_words = (int)payload.data_vtr.size();
+                    for (int i = 0; i < actual_data_words; i++) {
+                        proto_item* data_item = proto_tree_add_uint(ctrl_tree,
+                            hf_rfnoc_ctrl_data, tvb,
+                            offset + 12 + i*4, 4,
+                            tvb_get_letohl(tvb, offset + 12 + i*4));
+                        proto_item_set_text(data_item, "Data[%d]: 0x%08x",
+                            i, tvb_get_letohl(tvb, offset + 12 + i*4));
                     }
                 }
 
