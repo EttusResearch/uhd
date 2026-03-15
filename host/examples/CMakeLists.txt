@@ -10,7 +10,6 @@
 ########################################################################
 set(example_sources
     benchmark_rate.cpp
-    convert_benchmark.cpp
     rx_multi_samples.cpp
     rx_samples_to_file.cpp
     rx_samples_to_udp.cpp
