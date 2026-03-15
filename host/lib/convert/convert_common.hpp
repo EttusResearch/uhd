@@ -63,16 +63,6 @@
         prio)
 
 /***********************************************************************
- * SIMD converter macros with runtime CPU feature detection
- *
- * These macros are similar to DECLARE_CONVERTER but wraps the registration
- * with a runtime check for CPU SIMD support. This allows building all
- * SIMD variants unconditionally and enabling them only at runtime on
- * hardware that supports them.
- *
- **********************************************************************/
-
-/***********************************************************************
  * Setup priorities
  *
  * Higher priority = preferred implementation

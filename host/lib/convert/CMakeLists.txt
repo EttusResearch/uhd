@@ -15,12 +15,6 @@ message(STATUS "")
 
 ########################################################################
 # Check for x86 SIMD compiler support
-#
-# Note: These checks verify that the COMPILER can generate SIMD code,
-# not that the build machine has SIMD support. The actual SIMD converters
-# will check CPU support at runtime and only register if the CPU supports
-# the instruction set. This allows a single binary to work on machines
-# with varying SIMD capabilities.
 ########################################################################
 
 # Check if we're on an x86 platform
@@ -62,10 +56,6 @@ endif()
 
 ########################################################################
 # x86 SIMD converter sources
-#
-# All SIMD variants are compiled unconditionally (if the compiler supports
-# the flags). At runtime, each converter checks if the CPU supports the
-# required instruction set before registering itself.
 ########################################################################
 
 if(COMPILER_SUPPORTS_SSE2)
