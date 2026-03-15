@@ -130,30 +130,6 @@
         uhd::convert::cpu_has_ssse3(),                                          \
         "SSSE3")
 
-/*! AVX2 support */
-#define DECLARE_CONVERTER_AVX2(in_form, num_in, out_form, num_out, prio)       \
-    _DECLARE_CONVERTER_SIMD(                                                   \
-        __convert_avx2_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
-        in_form,                                                               \
-        num_in,                                                                \
-        out_form,                                                              \
-        num_out,                                                               \
-        prio,                                                                  \
-        uhd::convert::cpu_has_avx2(),                                          \
-        "AVX2")
-
-/*! AVX512F support */
-#define DECLARE_CONVERTER_AVX512(in_form, num_in, out_form, num_out, prio)       \
-    _DECLARE_CONVERTER_SIMD(                                                     \
-        __convert_avx512_##in_form##_##num_in##_##out_form##_##num_out##_##prio, \
-        in_form,                                                                 \
-        num_in,                                                                  \
-        out_form,                                                                \
-        num_out,                                                                 \
-        prio,                                                                    \
-        uhd::convert::cpu_has_avx512f(),                                         \
-        "AVX512")
-
 /***********************************************************************
  * Setup priorities
  *
@@ -167,7 +143,6 @@
  *   PRIORITY_TABLE   =  1  (table lookup)
  *   PRIORITY_SIMD    =  3  (SSE2/NEON - baseline SIMD)
  *   PRIORITY_SIMD_AVX2   = 4  (AVX2 - 256-bit SIMD)
- *   PRIORITY_SIMD_AVX512 = 5  (AVX512 - 512-bit SIMD)
  **********************************************************************/
 static const int PRIORITY_GENERAL = 0;
 static const int PRIORITY_EMPTY   = -1;
@@ -176,14 +151,12 @@ static const int PRIORITY_EMPTY   = -1;
 static const int PRIORITY_SIMD = 2;
 static const int PRIORITY_TABLE =
     1; // tables require large cache, so they are slower on arm
-static const int PRIORITY_SIMD_AVX2   = 2; // Not applicable on ARM
-static const int PRIORITY_SIMD_AVX512 = 2; // Not applicable on ARM
+static const int PRIORITY_SIMD_AVX2 = 2; // Not applicable on ARM
 #else
 // We used to have ORC, too, so SIMD is 3
-static const int PRIORITY_SIMD        = 3;
-static const int PRIORITY_TABLE       = 1;
-static const int PRIORITY_SIMD_AVX2   = 4;
-static const int PRIORITY_SIMD_AVX512 = 5;
+static const int PRIORITY_SIMD      = 3;
+static const int PRIORITY_TABLE     = 1;
+static const int PRIORITY_SIMD_AVX2 = 4;
 #endif
 
 /***********************************************************************

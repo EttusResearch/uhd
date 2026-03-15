@@ -36,21 +36,17 @@ if(IS_X86_PLATFORM)
         check_cxx_compiler_flag("-msse2" COMPILER_SUPPORTS_SSE2)
         check_cxx_compiler_flag("-mssse3" COMPILER_SUPPORTS_SSSE3)
         check_cxx_compiler_flag("-mavx2" COMPILER_SUPPORTS_AVX2)
-        check_cxx_compiler_flag("-mavx512f" COMPILER_SUPPORTS_AVX512F)
         set(SSE2_FLAGS -msse2)
         set(SSSE3_FLAGS -mssse3)
         set(AVX2_FLAGS -mavx2)
-        set(AVX512_FLAGS -mavx512f)
     elseif(MSVC)
         # MSVC doesn't need flags for SSE2 on x64, but we can check
         set(COMPILER_SUPPORTS_SSE2 TRUE)
         set(COMPILER_SUPPORTS_SSSE3 TRUE)
         check_cxx_compiler_flag("/arch:AVX2" COMPILER_SUPPORTS_AVX2)
-        check_cxx_compiler_flag("/arch:AVX512" COMPILER_SUPPORTS_AVX512F)
         set(SSE2_FLAGS "")  # Default on x64
         set(SSSE3_FLAGS "") # Default on x64
         set(AVX2_FLAGS /arch:AVX2)
-        set(AVX512_FLAGS /arch:AVX512)
     endif()
 
     if(COMPILER_SUPPORTS_SSE2)
@@ -61,9 +57,6 @@ if(IS_X86_PLATFORM)
     endif()
     if(COMPILER_SUPPORTS_AVX2)
         message(STATUS "Compiler supports AVX2 - will build AVX2 converters")
-    endif()
-    if(COMPILER_SUPPORTS_AVX512F)
-        message(STATUS "Compiler supports AVX512F - will build AVX512 converters")
     endif()
 endif()
 
@@ -106,7 +99,7 @@ if(COMPILER_SUPPORTS_SSSE3)
     LIBUHD_APPEND_SOURCES(${convert_with_ssse3_sources})
 endif()
 
-if(COMPILER_SUPPORTS_AVX2)
+if(ENABLE_AVX2 AND COMPILER_SUPPORTS_AVX2)
     set(convert_with_avx2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/avx2_sc16_to_fc64.cpp

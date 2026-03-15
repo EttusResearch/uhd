@@ -41,7 +41,7 @@ UHD_INLINE __m256i pack_sc32_4x(const __m256& in0,
     return _mm256_packs_epi16(shuf_lo, shuf_hi);
 }
 
-DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD_AVX2)
+DECLARE_CONVERTER(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD_AVX2)
 {
     const fc32_t* input = reinterpret_cast<const fc32_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);
@@ -49,40 +49,27 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_be, 1, PRIORITY_SIMD_AVX2)
     const __m256 scalar = _mm256_set1_ps(float(scale_factor));
     const int shuf      = _MM_SHUFFLE(3, 2, 1, 0);
 
-#define convert_fc32_1_to_sc8_item32_1_bswap_guts(_al_)                            \
-    for (size_t j = 0; i + 15 < nsamps; i += 16, j += 8) {                         \
-        /* load from input */                                                      \
-        __m256 tmp0 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 0));  \
-        __m256 tmp1 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 4));  \
-        __m256 tmp2 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 8));  \
-        __m256 tmp3 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 12)); \
-                                                                                   \
-        /* convert */                                                              \
-        const __m256i tmpi = pack_sc32_4x<shuf>(tmp0, tmp1, tmp2, tmp3, scalar);   \
-                                                                                   \
-        /* store to output */                                                      \
-        _mm256_storeu_si256(reinterpret_cast<__m256i*>(output + j), tmpi);         \
-    }
-
-
     size_t i = 0;
 
-    // dispatch according to alignment
-    if ((size_t(input) & 0x1f) == 0) {
-        convert_fc32_1_to_sc8_item32_1_bswap_guts(_)
-    } else {
-        convert_fc32_1_to_sc8_item32_1_bswap_guts(u_)
+    for (size_t j = 0; i + 15 < nsamps; i += 16, j += 8) {
+        /* load from input */
+        __m256 tmp0 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 0));
+        __m256 tmp1 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 4));
+        __m256 tmp2 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 8));
+        __m256 tmp3 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 12));
+
+        /* convert */
+        const __m256i tmpi = pack_sc32_4x<shuf>(tmp0, tmp1, tmp2, tmp3, scalar);
+
+        /* store to output */
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(output + j), tmpi);
     }
 
     // convert remainder
     xx_to_item32_sc8<uhd::htonx>(input + i, output + (i / 2), nsamps - i, scale_factor);
 }
 
-DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD_AVX2)
+DECLARE_CONVERTER(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD_AVX2)
 {
     const fc32_t* input = reinterpret_cast<const fc32_t*>(inputs[0]);
     item32_t* output    = reinterpret_cast<item32_t*>(outputs[0]);
@@ -90,32 +77,20 @@ DECLARE_CONVERTER_AVX2(fc32, 1, sc8_item32_le, 1, PRIORITY_SIMD_AVX2)
     const __m256 scalar = _mm256_set1_ps(float(scale_factor));
     const int shuf      = _MM_SHUFFLE(0, 1, 2, 3);
 
-#define convert_fc32_1_to_sc8_item32_1_nswap_guts(_al_)                            \
-    for (size_t j = 0; i + 15 < nsamps; i += 16, j += 8) {                         \
-        /* load from input */                                                      \
-        __m256 tmp0 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 0));  \
-        __m256 tmp1 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 4));  \
-        __m256 tmp2 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 8));  \
-        __m256 tmp3 =                                                              \
-            _mm256_load##_al_##ps(reinterpret_cast<const float*>(input + i + 12)); \
-                                                                                   \
-        /* convert */                                                              \
-        const __m256i tmpi = pack_sc32_4x<shuf>(tmp0, tmp1, tmp2, tmp3, scalar);   \
-                                                                                   \
-        /* store to output */                                                      \
-        _mm256_storeu_si256(reinterpret_cast<__m256i*>(output + j), tmpi);         \
-    }
-
     size_t i = 0;
 
-    // dispatch according to alignment
-    if ((size_t(input) & 0x1f) == 0) {
-        convert_fc32_1_to_sc8_item32_1_nswap_guts(_)
-    } else {
-        convert_fc32_1_to_sc8_item32_1_nswap_guts(u_)
+    for (size_t j = 0; i + 15 < nsamps; i += 16, j += 8) {
+        /* load from input */
+        __m256 tmp0 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 0));
+        __m256 tmp1 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 4));
+        __m256 tmp2 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 8));
+        __m256 tmp3 = _mm256_loadu_ps(reinterpret_cast<const float*>(input + i + 12));
+
+        /* convert */
+        const __m256i tmpi = pack_sc32_4x<shuf>(tmp0, tmp1, tmp2, tmp3, scalar);
+
+        /* store to output */
+        _mm256_storeu_si256(reinterpret_cast<__m256i*>(output + j), tmpi);
     }
 
     // convert remainder
