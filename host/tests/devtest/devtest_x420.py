@@ -26,23 +26,30 @@ from rx_samples_to_file_test import RxSamplesToFileTest
 from tx_bursts_test import UhdTxBurstsTest
 from test_pps_test import UhdTestPpsTest
 
-from gpio_test import GpioTest
 
-GpioTest.tests = {}
-for port in ["GPIO0", "GPIO1"]:
-    for bank, driver in [("GPIOA", "DB0_RF0")]:
-        GpioTest.tests[f"{port}_{driver}"] = {
-            "addl_args": [
-                "--src",
-                " ".join([driver] * 12),
-                "--bank",
-                bank,
-                "--port",
-                port,
-                "--bits",
-                "12",
-            ],
-        }
+### The GPIO tests only work either with 100 Gbps NIC and 245.72 MHz master clock rate
+### or with the X4_200 FPGA image which has resamplers enabled. If one of these conditions
+### is not met, the GPIO tests will fail because streaming won't be stable and thus the 
+### ATR states will flicker between the expected and the idle state. Therefore they are 
+## disabled by default.
+
+# from gpio_test import GpioTest
+#
+# GpioTest.tests = {}
+# for port in ["GPIO0", "GPIO1"]:
+#     for bank, driver in [("GPIOA", "DB0_RF0")]:
+#         GpioTest.tests[f"{port}_{driver}"] = {
+#             "addl_args": [
+#                 "--src",
+#                 " ".join([driver] * 12),
+#                 "--bank",
+#                 bank,
+#                 "--port",
+#                 port,
+#                 "--bits",
+#                 "12",
+#             ],
+#         }
 
 from gpio_test import GpioX4xxSetGetSourceTest
 

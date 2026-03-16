@@ -20,8 +20,9 @@ jobs:
     toolset: 'make'
     runPyTest: true
     runPyTestNonRF: false
-    runDevTest: false
+    runDevTest: true
     runSystemImageTest: false
+    master_clock_rate: '245.76e6'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
@@ -31,7 +32,7 @@ jobs:
       dre_s156-x420-0:
         dutName: 'dre_s156-x420-0'
         dutType: 'x4xx'
-        devtestPattern: 'x4x0'
+        devtestPattern: 'x420'
         dutFPGA: 'CG_1000'
         dutEmbeddedImagesArtifact: 'x4xx-images'
         uartSerial: '2516353BE43C'
