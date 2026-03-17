@@ -1,0 +1,33 @@
+From 2e295c52454d5d7de7efbeae635725c9efe66691 Mon Sep 17 00:00:00 2001
+From: "A. Maitland Bottoms" <bottoms@debian.org>
+Date: Thu, 1 Jul 2021 22:25:34 -0400
+Subject: [PATCH 11/11] debian images installation path
+
+Quick fix for the default Debian package location for images.
+---
+ host/include/uhd/utils/paths.hpp | 2 +-
+ host/lib/utils/paths.cpp         | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/host/include/uhd/utils/paths.hpp
++++ b/host/include/uhd/utils/paths.hpp
+@@ -68,7 +68,7 @@
+  *
+  *   1) `UHD_IMAGES_DIR` environment variable
+  *   2) Any paths passed to this function via `search_paths'
+- *   3) UHD package path / share / uhd / images
++ *   3) /usr/share/uhd/images
+  *
+  * The `search_paths` parameter may contain Windows registry keys.  If no
+  * directory is found, an empty string is returned.
+--- a/host/lib/utils/paths.cpp
++++ b/host/lib/utils/paths.cpp
+@@ -422,7 +422,7 @@
+      *   1) `UHD_IMAGES_DIR` environment variable
+      *   2) Any paths passed to this function via `search_paths' (may contain
+      *      Windows registry keys)
+-     *   3) `UHD package path` / share / uhd / images
++     *   3) /usr/share/uhd/images
+      */
+ 
+     std::string possible_dir;

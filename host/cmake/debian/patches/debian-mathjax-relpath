@@ -1,0 +1,26 @@
+From 9cb80c910079dd3a69bfa89898814cc68ff7e3e4 Mon Sep 17 00:00:00 2001
+From: Marian Koop <marian.koop@emerson.com>
+Date: Wed, 18 Mar 2026 15:03:58 +0100
+Subject: [PATCH] debian-mathjax-relpath
+
+Debian packages use locally installed mathjax.
+---
+ host/docs/CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/host/docs/CMakeLists.txt b/host/docs/CMakeLists.txt
+index c0bf4b4015..9ad576c2bf 100644
+--- a/host/docs/CMakeLists.txt
++++ b/host/docs/CMakeLists.txt
+@@ -130,7 +130,7 @@ option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not
+ option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
+ option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
+ set(
+-    MATHJAX_RELPATH https://cdn.jsdelivr.net/npm/mathjax@2/
++    MATHJAX_RELPATH /usr/share/javascript/mathjax
+     CACHE STRING "MATHJAX_RELPATH option for Doxygen")
+ mark_as_advanced(MATHJAX_RELPATH)
+ 
+-- 
+2.43.0
+

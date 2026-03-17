@@ -1,0 +1,91 @@
+From 4d227dae0bfed4f55225f266f8d144310d70cb21 Mon Sep 17 00:00:00 2001
+From: Marian Koop <marian.koop@emerson.com>
+Date: Wed, 18 Mar 2026 14:21:47 +0100
+Subject: [PATCH] doxygen pdf
+
+Generate PDF documentation as part of build.
+---
+ host/docs/CMakeLists.txt | 28 ++++++++++++++++++++++++++--
+ host/docs/Doxyfile.in    |  8 ++++----
+ 2 files changed, 30 insertions(+), 6 deletions(-)
+
+diff --git a/host/docs/CMakeLists.txt b/host/docs/CMakeLists.txt
+index c0bf4b4015..5f3af6b217 100644
+--- a/host/docs/CMakeLists.txt
++++ b/host/docs/CMakeLists.txt
+@@ -190,5 +190,29 @@ if(ENABLE_MANUAL_OR_DOXYGEN)
+ 
+     #make the doxygen generation a built-time dependency
+     add_custom_target(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
+-    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
+-endif(ENABLE_MANUAL_OR_DOXYGEN)
++    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}/html DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
++
++ if(ENABLE_LATEX_DOCS)
++   find_package(LATEX COMPONENTS PDFLATEX)
++   add_custom_command(
++     COMMENT "Generate PDF"
++     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen/latex
++     DEPENDS doxygen_docs
++     COMMAND ${PDFLATEX_COMPILER} refman.tex
++     # || ${PDFLATEX_COMPILER} refman.tex || ${PDFLATEX_COMPILER} refman.tex || true
++     # ${DVIPDF_CONVERTER} ${CMAKE_CURRENT_BINARY_DIR}/latex/refman.dvi COMMAND
++     # /usr/bin/dvipdf refman.dvi
++     # COMMAND cp -p refman.pdf USRP_Hardware_Driver_and_USRP_Manual-4.9.0.0.pdf
++     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen/latex/refman.pdf)
++   add_custom_target(doxygen_pdf ALL
++                     DEPENDS doxygen_docs ${CMAKE_CURRENT_BINARY_DIR}/doxygen/latex/refman.pdf)
++   set_target_properties(doxygen_pdf PROPERTIES ADDITIONAL_CLEAN_FILES
++     "${CMAKE_CURRENT_BINARY_DIR}/doxygen/latex")
++
++   UHD_INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN}/latex/refman.pdf DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
++   #install(
++   #  FILES
++   #  ${CMAKE_CURRENT_BINARY_DIR}/doxygen/latex/refman.pdf
++   #  DESTINATION ${CMAKE_INSTALL_DOCDIR})
++ endif()
++endif()
+
+diff --git a/host/docs/Doxyfile.in b/host/docs/Doxyfile.in
+index 26f128b4dd..b1f2fc7305 100644
+--- a/host/docs/Doxyfile.in
++++ b/host/docs/Doxyfile.in
+@@ -772,7 +772,7 @@ CITE_BIB_FILES         =
+ # messages are off.
+ # The default value is: NO.
+ 
+-QUIET                  = YES
++QUIET                  = NO
+ 
+ # The WARNINGS tag can be used to turn on/off the warning messages that are
+ # generated to standard error (stderr) by doxygen. If WARNINGS is set to YES
+@@ -1720,7 +1720,7 @@ EXTRA_SEARCH_MAPPINGS  =
+ # If the GENERATE_LATEX tag is set to YES, doxygen will generate LaTeX output.
+ # The default value is: YES.
+ 
+-GENERATE_LATEX         = NO
++GENERATE_LATEX         = YES
+ 
+ # The LATEX_OUTPUT tag is used to specify where the LaTeX docs will be put. If a
+ # relative path is entered the value of OUTPUT_DIRECTORY will be put in front of
+@@ -1782,7 +1782,7 @@ COMPACT_LATEX          = NO
+ # The default value is: a4.
+ # This tag requires that the tag GENERATE_LATEX is set to YES.
+ 
+-PAPER_TYPE             = a4
++PAPER_TYPE             = letter
+ 
+ # The EXTRA_PACKAGES tag can be used to specify one or more LaTeX package names
+ # that should be included in the LaTeX output. The package can be specified just
+@@ -1794,7 +1794,7 @@ PAPER_TYPE             = a4
+ # If left blank no extra packages will be included.
+ # This tag requires that the tag GENERATE_LATEX is set to YES.
+ 
+-EXTRA_PACKAGES         =
++EXTRA_PACKAGES         = {amsmath} {pmboxdraw}
+ 
+ # The LATEX_HEADER tag can be used to specify a personal LaTeX header for the
+ # generated LaTeX document. The header should contain everything until the first
+-- 
+2.43.0
+
