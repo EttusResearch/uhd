@@ -83,7 +83,7 @@ class ImageBuilderConfig:
         self._resolve_parameters()
         self._collect_noc_ports()
         self._collect_io_ports()
-        self._collect_clocks()
+        self._collect_clocks_and_resets()
         connections.check_and_sanitize(self)
         self._check_resets()
         self._check_clk_domains()
@@ -778,11 +778,13 @@ class ImageBuilderConfig:
             self.log.error("Error parsing IO ports for _device_: %s", str(ex))
             sys.exit(1)
 
-    def _collect_clocks(self):
-        """Create lookup table for clocks.
+    def _collect_clocks_and_resets(self):
+        """Create lookup table for clocks and sanitize clock/reset definitions.
 
-        The key is a combination of block name (_device_ for clocks of the bsp)
-        and the clock name (e.g., _device_.rfnoc_chdr, or ddc0.ce)
+        For clocks, the lookup table key is a combination of block name
+        (_device_ for clocks of the BSP) and the clock name
+        (e.g., _device_.rfnoc_chdr, or ddc0.ce). In addition, this function
+        normalizes the direction of clocks and resets to sensible defaults.
         """
         min_user_clock_index = 10
         clk_indices = {
@@ -809,22 +811,30 @@ class ImageBuilderConfig:
             clk_indices[clk_index] = clock_id
             return clk_index
 
-        # Go through clocks from device BSP
-        setattr(self.device, "clocks", getattr(self.device, "clocks", {}))
+        # Go through clocks from device BSP and ensure clocks/resets are present
+        setattr(self.device, "clocks", copy.deepcopy(getattr(self.device, "clocks", [])))
+        setattr(self.device, "resets", copy.deepcopy(getattr(self.device, "resets", [])))
+        for rst_name in self.DEFAULT_RST_NAMES:
+            self.device.resets.append({"name": rst_name, "direction": "out"})
         for clock in self.device.clocks:
             # Sanitize the direction field: BSP clocks are by default outputs
             if "direction" not in clock:
                 clock["direction"] = "out"
             clock["index"] = register_clk_index("_device_." + clock["name"], clock)
-        # Go through clocks from blocks, modules, and transport adapters
+        # Go through clocks and resets from blocks, modules, and transport adapters
         for name, block in self.get_module_list("nodevice").items():
-            setattr(block, "clocks", getattr(block.desc, "clocks", {}))
+            setattr(block, "clocks", copy.deepcopy(getattr(block.desc, "clocks", [])))
+            setattr(block, "resets", copy.deepcopy(getattr(block.desc, "resets", [])))
             for clock in block.clocks:
                 # Sanitize the direction field: Block clocks are by default inputs
                 if "direction" not in clock:
                     clock["direction"] = "in"
                 if clock["direction"] == "out":
                     clock["index"] = register_clk_index(name + "." + clock["name"], clock)
+            for reset in block.resets:
+                # Sanitize the direction field: Block resets are by default inputs
+                if "direction" not in reset:
+                    reset["direction"] = "in"
 
     def _check_clk_domains(self):
         """Check/sanitize clock domain connections.
@@ -969,28 +979,23 @@ class ImageBuilderConfig:
         """
         # Go through resets defined directly in the YAML
         failure = ""
-        if not hasattr(self.device, "resets"):
-            setattr(self.device, "resets", [])
         for reset in self.resets:
             src, dst = reset["srcblk"], reset["dstblk"]
             srcport, dstport = reset["srcport"], reset["dstport"]
-            if src != DEVICE_NAME or src not in self.modules:
+            if src != DEVICE_NAME and src not in self.modules:
                 failure += f"Cannot connect reset! Unknown source: {src}\n"
                 continue
-            if dst != DEVICE_NAME or dst not in self.modules:
+            if dst != DEVICE_NAME and dst not in self.modules:
                 failure += f"Cannot connect reset! Unknown destination: {dst}\n"
                 continue
             src_module = self.device if src == DEVICE_NAME else self.modules[src]
             dst_module = self.device if dst == DEVICE_NAME else self.modules[dst]
-            if (
-                srcport not in src_module.resets
-                or src_module.resets[srcport].get("direction", "in") != "out"
-            ):
+            if all(r["name"] != srcport or r.get("direction", "in") != "out"
+                   for r in src_module.resets):
                 failure += f"Invalid reset source: {src}.{srcport}\n"
-            if (
-                dstport not in dst_module.resets
-                or dst_module.resets[srcport].get("direction", "in") != "in"
-            ):
+                failure += f"valid sources are: {src_module.resets}"
+            if all(r["name"] != dstport or r.get("direction", "in") != "in"
+                   for r in dst_module.resets):
                 failure += f"Invalid reset destination: {dst}.{dstport}\n"
         if failure:
             self.log.error("Invalid reset connections:")
@@ -998,23 +1003,23 @@ class ImageBuilderConfig:
             sys.exit(1)
         # Now see if there are resets that need auto-connecting
         for module_name, module in self.modules.items():
-            for reset in (r for r in module.desc.resets if r.get("direction", "in") == "in"):
+            for reset in (r for r in module.resets if r.get("direction", "in") == "in"):
                 if (
                     all(
-                        r["dstblk"] != module_name and r["dstport"] != reset["name"]
+                        r["dstblk"] != module_name or r["dstport"] != reset["name"]
                         for r in self.resets
                     )
                     and "default" in reset
                 ):
                     rst_src, rst_port = reset["default"].split(".", 2)
-                    self.resets.append(
-                        {
-                            "srcblk": rst_src,
-                            "srcport": rst_port,
-                            "dstblk": module_name,
-                            "dstport": reset["name"],
-                        }
-                    )
+                    default_reset = {
+                        "srcblk": rst_src,
+                        "srcport": rst_port,
+                        "dstblk": module_name,
+                        "dstport": reset["name"],
+                    }
+                    self.log.debug("Inferring reset: %s", default_reset)
+                    self.resets.append(default_reset)
 
     def _collect_make_args(self, include_paths):
         """Expand arguments to the make process.

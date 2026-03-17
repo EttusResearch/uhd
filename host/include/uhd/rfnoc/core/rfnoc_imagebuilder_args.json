@@ -47,7 +47,7 @@
         "modules": {
             "type": "object",
             "patternProperties": {
-                ".*": { "$ref": "#/definitions/modules" }
+                ".*": { "$ref": "#/definitions/module" }
             }
         },
 

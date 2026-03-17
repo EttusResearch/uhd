@@ -9,12 +9,12 @@
   //-----------------------------------
   // ${module_name}
   //-----------------------------------
-% for clock in module.desc.clocks:
+% for clock in module.clocks:
 <% if clock['name'] in config.DEFAULT_CLK_NAMES: continue %>\
   wire          ${module_name}_${clock["name"]}_clk${wire_suffix};
 % endfor
-% for reset in module.desc.resets:
-<% if clock['name'] in config.DEFAULT_RST_NAMES: continue %>\
+% for reset in module.resets:
+<% if reset['name'] in config.DEFAULT_RST_NAMES: continue %>\
   wire          ${module_name}_${reset["name"]}_rst${wire_suffix};
 % endfor
 % for name, io_port in getattr(module, 'io_ports', {}).items():
@@ -26,9 +26,9 @@
 <%
   if module.io_ports:
     last_signal_group = 'io_ports'
-  elif module.desc.resets:
+  elif module.resets:
     last_signal_group = 'resets'
-  elif module.desc.clocks:
+  elif module.clocks:
     last_signal_group = 'clocks'
 %>\
   ${module.desc.module_name} #(
@@ -36,10 +36,10 @@
     .${f"{name:20s}"}(${value})${"" if loop.last else ","}
 %endfor
   ) m_${module_name}_${'s' if core_domain == 'secure_core' else ''}${i} (
-% for clock in module.desc.clocks:
+% for clock in module.clocks:
     .${f"{clock['name']:20s}"}(${module_name}_${clock["name"]}_clk${wire_suffix if clock['name'] not in ("rfnoc_chdr", "rfnoc_ctrl") else ""})${"" if loop.last and last_signal_group == 'clocks' else ","}
 % endfor
-% for reset in module.desc.resets:
+% for reset in module.resets:
     .${f"{reset['name']:20s}"}(${module_name}_${reset["name"]}_rst${wire_suffix if reset['name'] not in ("core_arst",) else ""})${"" if loop.last and last_signal_group == 'resets' else ","}
 % endfor
 % for name, io_port in module.io_ports.items():
