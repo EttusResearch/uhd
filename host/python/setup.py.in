@@ -22,7 +22,6 @@ setup(
     description="Universal Software Radio Peripheral (USRP) Hardware Driver Python API",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
         "Programming Language :: C++",
         "Programming Language :: Python",
         "Topic :: System :: Hardware :: Hardware Drivers",

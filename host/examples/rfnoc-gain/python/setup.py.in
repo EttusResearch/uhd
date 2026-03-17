@@ -18,7 +18,6 @@ setup(
     description="rfnoc-gain: An example module for RFNoC OOT Python support",
     classifiers=[
         "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Programming Language :: C++",
         "Programming Language :: Python",
         "Topic :: System :: Hardware :: Hardware Drivers",
@@ -27,7 +26,7 @@ setup(
     author="Ettus Research",
     author_email="uhd.maintainer@emerson.com",
     url="https://www.ettus.com/",
-    license="GPLv3",
+    license="GPL-3.0-or-later",
     package_dir={"": r"${NATIVE_CURRENT_BINARY_DIR}"},
     package_data={"rfnoc_gain": ["*.so"]},
     zip_safe=False,

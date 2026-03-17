@@ -8,7 +8,6 @@ license="GPL-3.0-or-later"
 readme = "README.md"
 classifiers=[
     "@UHD_DEV_STATUS@",
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Programming Language :: C++",
     "Programming Language :: Python",
     "Topic :: System :: Hardware :: Hardware Drivers",
