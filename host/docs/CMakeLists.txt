@@ -115,7 +115,6 @@ set(man_page_sources
     uhd_image_loader.1
     uhd_images_downloader.1
     uhd_usrp_probe.1
-    usrp_n2xx_simple_net_burner.1
     usrp2_card_burner.1
     rfnoc_modtool.1
     rfnoc_image_builder.1
