@@ -7,101 +7,6 @@
 #
 
 ########################################################################
-# List of manual sources
-########################################################################
-
-########################################################################
-# Setup general Doxygen variables
-########################################################################
-find_package(Doxygen)
-set(ENABLE_MANUAL_OR_DOXYGEN false)
-
-########################################################################
-# Setup Manual (using Doxygen)
-########################################################################
-LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
-
-if(ENABLE_MANUAL)
-    set(ENABLE_MANUAL_OR_DOXYGEN true)
-    file(GLOB manual_sources "*.dox")
-    set(DOXYGEN_DEPENDENCIES ${manual_sources})
-    set(DOXYGEN_INPUT_DIRS "${UHD_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
-    set(DOXYGEN_DEP_COMPONENT "manual")
-    set(DOXYGEN_EXCLUDE_DIRS "")
-endif(ENABLE_MANUAL)
-
-########################################################################
-# Setup API documentation (using Doxygen)
-########################################################################
-LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
-option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
-option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
-option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
-set(
-    MATHJAX_RELPATH https://cdn.jsdelivr.net/npm/mathjax@2/
-    CACHE STRING "MATHJAX_RELPATH option for Doxygen")
-mark_as_advanced(MATHJAX_RELPATH)
-
-if(LIBUHDDEV_PKG)
-    set(PKG_DOC_DIR share/doc/libuhd-dev)
-endif(LIBUHDDEV_PKG)
-
-if(ENABLE_DOXYGEN)
-    set(ENABLE_MANUAL_OR_DOXYGEN true)
-    #make doxygen directory depend on the header files
-    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
-    file(GLOB_RECURSE h_files ${UHD_SOURCE_DIR}/include/*.h)
-    list(APPEND header_files ${h_files})
-    set(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files})
-    if(ENABLE_DOXYGEN_FULL)
-        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include ${UHD_SOURCE_DIR}/lib ${UHD_SOURCE_DIR}/python")
-    else(ENABLE_DOXYGEN_FULL)
-        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include")
-    endif(ENABLE_DOXYGEN_FULL)
-
-    set(DOXYGEN_DEP_COMPONENT "doxygen")
-endif(ENABLE_DOXYGEN)
-
-########################################################################
-# Run Doxygen (on code and/or manual, depending on CMake flags)
-########################################################################
-if(ENABLE_MANUAL_OR_DOXYGEN)
-    #generate the doxygen configuration file
-    set(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-    if(ENABLE_DOXYGEN_DOT)
-        set(DOXYGEN_HAVE_DOT "YES")
-    else(ENABLE_DOXYGEN_DOT)
-        set(DOXYGEN_HAVE_DOT "NO")
-    endif(ENABLE_DOXYGEN_DOT)
-    if(ENABLE_DOXYGEN_SHORTNAMES)
-        set(DOXYGEN_SHORT_NAMES "YES")
-    else(ENABLE_DOXYGEN_SHORTNAMES)
-        set(DOXYGEN_SHORT_NAMES "NO")
-    endif(ENABLE_DOXYGEN_SHORTNAMES)
-
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    @ONLY)
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/installation/build.dox.in
-        ${CMAKE_CURRENT_BINARY_DIR}/build.dox
-    @ONLY)
-
-    #make doxygen directory depend on the header files
-    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
-    add_custom_command(
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${DOXYGEN_DEPENDENCIES}
-        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-        COMMENT "Generating documentation with doxygen"
-    )
-
-    #make the doxygen generation a built-time dependency
-    add_custom_target(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
-    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
-endif(ENABLE_MANUAL_OR_DOXYGEN)
-
-########################################################################
 # List of man page sources
 ########################################################################
 
@@ -188,3 +93,102 @@ if(ENABLE_MAN_PAGES)
         UHD_INSTALL(FILES ${man_page_sources} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
     endif(ENABLE_MAN_PAGE_COMPRESSION)
 endif(ENABLE_MAN_PAGES)
+
+########################################################################
+# List of manual sources
+########################################################################
+
+########################################################################
+# Setup general Doxygen variables
+########################################################################
+find_package(Doxygen)
+if (NOT Doxygen_FOUND)
+  message(STATUS "Doxygen not found - skipping API/Doxygen and Manual components.")
+  return()
+endif()
+set(ENABLE_MANUAL_OR_DOXYGEN false)
+
+########################################################################
+# Setup Manual (using Doxygen)
+########################################################################
+LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
+
+if(ENABLE_MANUAL)
+    set(ENABLE_MANUAL_OR_DOXYGEN true)
+    file(GLOB manual_sources "*.dox")
+    set(DOXYGEN_DEPENDENCIES ${manual_sources})
+    set(DOXYGEN_INPUT_DIRS "${UHD_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
+    set(DOXYGEN_DEP_COMPONENT "manual")
+    set(DOXYGEN_EXCLUDE_DIRS "")
+endif(ENABLE_MANUAL)
+
+########################################################################
+# Setup API documentation (using Doxygen)
+########################################################################
+LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
+option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
+option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
+option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
+set(
+    MATHJAX_RELPATH https://cdn.jsdelivr.net/npm/mathjax@2/
+    CACHE STRING "MATHJAX_RELPATH option for Doxygen")
+mark_as_advanced(MATHJAX_RELPATH)
+
+if(LIBUHDDEV_PKG)
+    set(PKG_DOC_DIR share/doc/libuhd-dev)
+endif(LIBUHDDEV_PKG)
+
+if(ENABLE_DOXYGEN)
+    set(ENABLE_MANUAL_OR_DOXYGEN true)
+    #make doxygen directory depend on the header files
+    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
+    file(GLOB_RECURSE h_files ${UHD_SOURCE_DIR}/include/*.h)
+    list(APPEND header_files ${h_files})
+    set(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files})
+    if(ENABLE_DOXYGEN_FULL)
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include ${UHD_SOURCE_DIR}/lib ${UHD_SOURCE_DIR}/python")
+    else(ENABLE_DOXYGEN_FULL)
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${UHD_SOURCE_DIR}/include")
+    endif(ENABLE_DOXYGEN_FULL)
+
+    set(DOXYGEN_DEP_COMPONENT "doxygen")
+endif(ENABLE_DOXYGEN)
+
+########################################################################
+# Run Doxygen (on code and/or manual, depending on CMake flags)
+########################################################################
+if(ENABLE_MANUAL_OR_DOXYGEN)
+    #generate the doxygen configuration file
+    set(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+    if(ENABLE_DOXYGEN_DOT)
+        set(DOXYGEN_HAVE_DOT "YES")
+    else(ENABLE_DOXYGEN_DOT)
+        set(DOXYGEN_HAVE_DOT "NO")
+    endif(ENABLE_DOXYGEN_DOT)
+    if(ENABLE_DOXYGEN_SHORTNAMES)
+        set(DOXYGEN_SHORT_NAMES "YES")
+    else(ENABLE_DOXYGEN_SHORTNAMES)
+        set(DOXYGEN_SHORT_NAMES "NO")
+    endif(ENABLE_DOXYGEN_SHORTNAMES)
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    @ONLY)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/installation/build.dox.in
+        ${CMAKE_CURRENT_BINARY_DIR}/build.dox
+    @ONLY)
+
+    #make doxygen directory depend on the header files
+    file(GLOB_RECURSE header_files ${UHD_SOURCE_DIR}/include/*.hpp)
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${DOXYGEN_DEPENDENCIES}
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+        COMMENT "Generating documentation with doxygen"
+    )
+
+    #make the doxygen generation a built-time dependency
+    add_custom_target(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
+    UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
+endif(ENABLE_MANUAL_OR_DOXYGEN)
