@@ -1,7 +1,7 @@
 etc/security/limits.d
-etc/sysctl.d
 usr/bin
 usr/lib
+usr/lib/sysctl.d
 usr/libexec/uhd/examples
 usr/libexec/uhd/tests
 usr/libexec/uhd/utils
