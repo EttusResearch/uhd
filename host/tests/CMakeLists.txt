@@ -537,6 +537,55 @@ IF(ENABLE_X400)
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
         )
+
+        UHD_ADD_RFNOC_BLOCK_NONAPI_TEST(
+            TARGET hbx_radio_block_test.cpp
+            EXTRA_SOURCES
+            ${UHD_SOURCE_DIR}/lib/usrp/common/lmx2572.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/ltc5594.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1320.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/admv1420.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/pwr_cal_mgr.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_gpio_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_radio_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_rfdc_control.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/adc_self_calibration.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/complex_gain_iface.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
+            ${UHD_SOURCE_DIR}/lib/rfnoc/rf_control/gain_profile.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/mpmd/mpmd_mb_controller.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/fbx/fbx_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_demod_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1320_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_admv1420_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_lo_pd.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/hbx/hbx_cpld_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/common/apply_corrections.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_dboard_init.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_lo_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_cpld_ctrl.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/dboard/zbx/zbx_expert.cpp
+            ${UHD_SOURCE_DIR}/lib/features/discoverable_feature_registry.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/gpio_atr_3000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+            ${UHD_SOURCE_DIR}/lib/usrp/x400/x400_internal_sync.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/prefs.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
+            ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
+            $<TARGET_OBJECTS:uhd_rpclib>
+            INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
+            INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
+        )
     endif(NOT APPLE)
 
     UHD_ADD_NONAPI_TEST(
