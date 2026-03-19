@@ -596,7 +596,7 @@ class HBXCompensator:
         with tqdm.tqdm(
             total=pbar_max_value, unit=" RF frequencies", desc="Measuring DC offsets"
         ) as pbar:
-            for f, center_freq in enumerate(rf_frequencies):
+            for center_freq in rf_frequencies:
                 pbar.update(1)
                 for ch in channels:
                     self._meas_rx[ch] = FreqPoint(center_freq, "RX")
@@ -627,12 +627,12 @@ class HBXCompensator:
 
         pbar_max_value = len(rf_frequencies) * len(bb_frequencies)
         with tqdm.tqdm(
-            total=pbar_max_value, unit=" RF frequencies", desc="Measuring IQ impairments"
+            total=pbar_max_value, unit=" BB frequencies", desc="Measuring IQ impairments"
         ) as pbar:
 
             iterators = {ch: iter(self._storage[ch].freq_points) for ch in channels}
 
-            for f, center_freq in enumerate(rf_frequencies):
+            for center_freq in rf_frequencies:
                 self._gain = {ch: -1 for ch in channels}
                 self._phase = {ch: -1 for ch in channels}
                 self._set_master_lo(center_freq)
@@ -708,7 +708,7 @@ class HBXCompensator:
             for ch in channels:
                 upload_waveform(txs[ch], dc_waveform, mem_region=dc_region)
 
-            for i, freq in enumerate(bb_frequencies):
+            for freq in bb_frequencies:
 
                 rx_waveform = create_complex_sine(
                     freq - TX_OFFSET_FREQUENCY,

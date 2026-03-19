@@ -13,7 +13,6 @@
 #include "hbx_demod_ctrl.hpp"
 #include "hbx_lo_ctrl.hpp"
 #include <uhd/experts/expert_nodes.hpp>
-#include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/types/iq_dc_cal_coeffs.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
@@ -678,6 +677,47 @@ private:
     uhd::experts::data_writer_t<double> _desired_rfdc_frequency;
 };
 
+class hbx_iq_dc_coeffs_expert : public uhd::experts::worker_node_t
+{
+public:
+    /*!---------------------------------------------------------
+     * hbx_iq_dc_coeffs_expert
+     * This expert is responsible for retrieving the IQ and DC correction coefficients
+     * from the database and providing them to the hbx_iq_dc_correction_expert.
+     * ---------------------------------------------------------
+     */
+    hbx_iq_dc_coeffs_expert(const uhd::experts::node_retriever_t& db,
+        const uhd::fs_path fe_path,
+        const uhd::direction_t trx,
+        uhd::property_tree::sptr sub_tree,
+        const std::string& db_serial,
+        const double mcr)
+        : uhd::experts::worker_node_t(fe_path / "hbx_iq_dc_coeffs_expert")
+        , _fe_path(fe_path)
+        , _trx(trx)
+        , _sub_tree(sub_tree)
+        , _db_serial(db_serial)
+        , _mcr(mcr)
+        , _freq(db, fe_path / "freq" / "coerced")
+        , _coeffs(db, fe_path / "iq_balance" / "coeffs" / "value" / "desired")
+    {
+        bind_accessor(_freq);
+        bind_accessor(_coeffs);
+    }
+
+private:
+    void resolve() override;
+    const uhd::fs_path _fe_path;
+    const uhd::direction_t _trx;
+    uhd::property_tree::sptr _sub_tree;
+    const std::string _db_serial;
+    const double _mcr;
+    // Frequency triggers the resolve() method.
+    uhd::experts::data_reader_t<double> _freq;
+    uhd::experts::data_writer_t<iq_dc_cal_coeffs_t> _coeffs;
+};
+
+
 class hbx_iq_dc_correction_expert : public uhd::experts::worker_node_t
 {
 public:
@@ -706,10 +746,8 @@ public:
         , _dc_offset_base(_trx == TX_DIRECTION ? DC_TX_OFFSET : DC_RX_OFFSET)
         , _num_iq_coeffs(_peek32(_iq_offset_base + NUM_COEFFS_REG_OFFSET))
         , _coeffs(db, fe_path / "iq_balance" / "coeffs" / "value" / "desired")
-        , _freq(db, fe_path / "freq" / "coerced")
     {
         bind_accessor(_coeffs);
-        bind_accessor(_freq);
         // Enable usage of DC offset compensation
         _poke32(_dc_offset_base + DC_CTRL_REG_OFFSET, 1);
     }
@@ -732,7 +770,6 @@ private:
     const uint32_t _num_iq_coeffs;
     // Inputs from user/API
     uhd::experts::data_reader_t<iq_dc_cal_coeffs_t> _coeffs;
-    uhd::experts::data_reader_t<double> _freq;
 };
 
 using namespace uhd::rfnoc::x400;

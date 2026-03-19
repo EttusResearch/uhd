@@ -8,6 +8,7 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhdlib/usrp/dboard/hbx/hbx_cpld_ctrl.hpp>
 #include <uhdlib/usrp/dboard/hbx/hbx_expert.hpp>
 #include <uhdlib/utils/interpolation.hpp>
@@ -519,11 +520,25 @@ void hbx_rx_band_expert::resolve()
     UHD_THROW_INVALID_CODE_PATH();
 }
 
+void hbx_iq_dc_coeffs_expert::resolve()
+{
+    if (_freq > HBX_SWITCH_FREQ) {
+        if (_trx == RX_DIRECTION) {
+            _coeffs = get_wideband_rx_iq_dc_corrections(_db_serial, _mcr, 0, _freq.get());
+        } else {
+            _coeffs = get_wideband_tx_iq_dc_corrections(_db_serial, _mcr, 0, _freq.get());
+        }
+        if (_coeffs.get().coeffs.empty()) {
+            _coeffs = IQ_DC_DEFAULT_VALUES;
+        }
+    } else {
+        _coeffs = IQ_DC_DEFAULT_VALUES;
+    }
+}
+
 void hbx_iq_dc_correction_expert::resolve()
 {
-    // If we are in our "real" path, then reset the filter, otherwise take chosen filters.
-    const auto coeffs = (_freq > HBX_SWITCH_FREQ) ? _coeffs.get() : IQ_DC_DEFAULT_VALUES;
-
+    const auto coeffs = _coeffs.get();
     if (_num_iq_coeffs < coeffs.coeffs.size()) {
         throw uhd::runtime_error("Number of coefficients is less than the "
                                  "length of the coefficient arrays.");
@@ -565,10 +580,19 @@ uint32_t hbx_iq_dc_correction_expert::_coeff_to_fixed(const double coeff) const
 uint32_t hbx_iq_dc_correction_expert::_iq_to_dc_offset(
     const std::complex<double>& cplx_offset) const
 {
+    // In case we are in band 0, we get default values handed over to here, which are
+    // 0+0j. In that case we must not normalize them with the RFDC DC conv offset, as that
+    // would result in a non-zero poke value which would look like an LO leakage for RX in
+    // band 0. We can do that because it is highly unlikely that we'd get 0+0j from a real
+    // DC offset measurement.
     const double offset_i =
-        cplx_offset.real() - _rfdc_dc_conv_offset.real() / RFDC_DC_CONV_FACTOR;
+        (cplx_offset.real() == 0 && cplx_offset.imag() == 0)
+            ? 0
+            : cplx_offset.real() - _rfdc_dc_conv_offset.real() / RFDC_DC_CONV_FACTOR;
     const double offset_q =
-        cplx_offset.imag() - _rfdc_dc_conv_offset.imag() / RFDC_DC_CONV_FACTOR;
+        (cplx_offset.real() == 0 && cplx_offset.imag() == 0)
+            ? 0
+            : cplx_offset.imag() - _rfdc_dc_conv_offset.imag() / RFDC_DC_CONV_FACTOR;
     const int32_t i_sample = static_cast<int32_t>(std::lrint(offset_i * (1 << 15)));
     const int32_t q_sample = static_cast<int32_t>(std::lrint(offset_q * (1 << 15)));
 

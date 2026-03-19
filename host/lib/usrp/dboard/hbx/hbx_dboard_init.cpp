@@ -308,6 +308,14 @@ void hbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
         expert_factory::add_worker_node<hbx_rx_gain_expert>(
             expert, expert->node_retriever(), fe_path, get_pwr_mgr(trx).at(0));
     }
+    if (!_ignore_cal_file) {
+        // By not initializing this when ignoring the cal file we don't pick new
+        // coefficients and thus won't write anything.
+        expert_factory::add_worker_node<hbx_iq_dc_coeffs_expert>(
+            expert, expert->node_retriever(), fe_path, trx, subtree, _db_serial, _mcr);
+    }
+    // This expert needs to be added even when ignoring the cal file, so that the default
+    // coefficients get written during init.
     expert_factory::add_worker_node<hbx_iq_dc_correction_expert>(
         expert,
         expert->node_retriever(),

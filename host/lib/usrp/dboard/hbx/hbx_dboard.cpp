@@ -164,14 +164,7 @@ double hbx_dboard_impl::set_tx_frequency(const double req_freq, const size_t cha
                           "available in the default gain profile.");
     }
 
-    auto ret_val = _tree->access<double>(fe_path / "freq").get();
-
-    if (!_ignore_cal_file) {
-        apply_wideband_tx_iq_dc_corrections(
-            _tree, _db_serial, _mcr, chan, fe_path, ret_val);
-    }
-
-    return ret_val;
+    return _tree->access<double>(fe_path / "freq").get();
 }
 
 double hbx_dboard_impl::set_rx_frequency(const double req_freq, const size_t chan)
@@ -195,14 +188,7 @@ double hbx_dboard_impl::set_rx_frequency(const double req_freq, const size_t cha
                           "available in the default gain profile.");
     }
 
-    auto ret_val = _tree->access<double>(fe_path / "freq").get();
-
-    if (!_ignore_cal_file) {
-        apply_wideband_rx_iq_dc_corrections(
-            _tree, _db_serial, _mcr, chan, fe_path, ret_val);
-    }
-
-    return ret_val;
+    return _tree->access<double>(fe_path / "freq").get();
 }
 
 double hbx_dboard_impl::set_tx_bandwidth(const double bandwidth, const size_t chan)

@@ -9,6 +9,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/types/iq_dc_cal_coeffs.hpp>
 #include <string>
 
 namespace uhd { namespace usrp {
@@ -73,37 +74,28 @@ void apply_rx_fe_corrections(property_tree::sptr sub_tree, // starts at mboards/
     const double rx_lo_freq // actual lo freq
 );
 
-/*! Apply wideband TX IQ imbalance and DC offset corrections
+/*! Get wideband TX IQ imbalance and DC offset corrections
  *
- * \param sub_tree Property tree object. It's the motherboard subtree, i.e.,
- *                 what comes after /mboards/X.
  * \param db_serial Daughterboard serial
  * \param sample_rate The current sample rate. Used to construct the cal key.
  * \param chan The channel index.
- * \param tx_fe_path The path under which the correction coefficients are stored.
  * \param tx_freq The current TX frequency.
  */
-void apply_wideband_tx_iq_dc_corrections(property_tree::sptr sub_tree,
-    const std::string& db_serial,
+uhd::iq_dc_cal_coeffs_t get_wideband_tx_iq_dc_corrections(const std::string& db_serial,
     const double sample_rate,
     const size_t chan,
-    const fs_path tx_fe_path,
     const double tx_freq);
 
-/*! Apply wideband RX IQ imbalance and DC offset corrections
+/*! Get wideband RX IQ imbalance and DC offset corrections
  *
- * \param sub_tree Property tree object.
  * \param db_serial Daughterboard serial
  * \param sample_rate The current sample rate. Used to construct the cal key.
  * \param chan The channel index.
- * \param rx_fe_path The path under which the correction coefficients are stored.
  * \param rx_freq The current RX frequency.
  */
-void apply_wideband_rx_iq_dc_corrections(property_tree::sptr sub_tree,
-    const std::string& db_serial,
+uhd::iq_dc_cal_coeffs_t get_wideband_rx_iq_dc_corrections(const std::string& db_serial,
     const double sample_rate,
     const size_t chan,
-    const fs_path rx_fe_path,
     const double rx_freq);
 
 }} // namespace uhd::usrp
