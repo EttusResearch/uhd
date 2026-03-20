@@ -45,7 +45,7 @@ ORIG_RELEASE=`head -1 host/cmake/debian/changelog | sed 's/.*) \(.*\);.*/\1/'`
 # Currently supported versions can be found here:
 # https://launchpad.net/ubuntu/+ppas
 #
-RELEASES="focal jammy noble plucky"
+RELEASES="focal jammy noble questing"
 PPA=ppa:ettusresearch/uhd
 
 #
@@ -70,7 +70,7 @@ fi
 # or are unnecessary for Debian builds
 rm -rf ${UHD_TOP_LEVEL}/../uhd-${VERSION}
 mkdir ${UHD_TOP_LEVEL}/../uhd-${VERSION}
-rsync --exclude='.git*' --exclude='/debian/' --exclude='*.swp' --exclude='/fpga-src/' --exclude='/build' --exclude='/images/*.pyc' --exclude='/images/uhd-*' --exclude='tags' --exclude='/host/cmake/msvc/' --exclude='/host/cmake/vcpkg/' --exclude='/fpga/' -a  ${UHD_TOP_LEVEL}/ ${UHD_TOP_LEVEL}/../uhd-${VERSION}/
+rsync --exclude='.ci' --exclude='.git*' --exclude='/debian/' --exclude='*.swp' --exclude='/fpga-src/' --exclude='/build' --exclude='/images/*.pyc' --exclude='/images/uhd-*' --exclude='tags' --exclude='/host/cmake/msvc/' --exclude='/host/cmake/vcpkg/' --exclude='/fpga/usrp1' --exclude='/fpga/usrp2' --exclude='/fpga/usrp3/top/b200' --exclude='/fpga/usrp3/top/b2xxmini' --exclude='/fpga/usrp3/lib/*_200' -a  ${UHD_TOP_LEVEL}/ ${UHD_TOP_LEVEL}/../uhd-${VERSION}/
 if [ $? != 0 ]
 then
     echo "Failed to copy UHD source."
