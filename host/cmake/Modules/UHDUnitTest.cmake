@@ -88,10 +88,22 @@ function(UHD_ADD_TEST test_name)
         endforeach(arg)
         set(sh_content "${sh_content}\n")
 
-        file(GENERATE OUTPUT ${sh_file} CONTENT ${sh_content})
-
-        #make the shell file executable
-        execute_process(COMMAND chmod +x ${sh_file})
+        if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.20)
+            # Set execute permission to allow manual execution (./script.sh).
+            # ctest does not require this, but it improves developer experience.
+            file(GENERATE
+                OUTPUT ${sh_file}
+                CONTENT ${sh_content}
+                FILE_PERMISSIONS
+                    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                    GROUP_READ GROUP_EXECUTE
+                    WORLD_READ WORLD_EXECUTE
+            )
+        else()
+            # CMake < 3.20 does not support FILE_PERMISSIONS. The script
+            # will not have execute bit, but ctest runs it via ${SHELL} anyway.
+            file(GENERATE OUTPUT ${sh_file} CONTENT ${sh_content})
+        endif()
 
         add_test(${test_name} ${SHELL} ${sh_file})
 
