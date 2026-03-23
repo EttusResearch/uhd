@@ -14,7 +14,6 @@
 #include <uhd/types/iq_dc_cal_coeffs.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/utils/paths.hpp>
 #include <boost/test/unit_test.hpp>
 #include <algorithm>
 #include <cctype>
@@ -54,7 +53,7 @@ void _seed_hbx_mock_power_cal_data(x400_hbx_radio_fixture& fixture)
         return;
     }
 
-    const fs::path cal_path = fs::path(uhd::get_tmp_path()) / "UHD_HBX_MOCK_CAL";
+    const fs::path cal_path = fs::temp_directory_path() / "UHD_HBX_MOCK_CAL";
     std::error_code ec;
     fs::create_directories(cal_path, ec);
     if (ec) {
