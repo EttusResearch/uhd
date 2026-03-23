@@ -68,14 +68,24 @@ def get_iface_info(ifname):
 
     try:
         with IPRoute() as ipr:
-            links = ipr.link_lookup(ifname=ifname)
-            if not links:
-                raise LookupError(f"No interfaces known with name `{ifname}'!")
-            link_list = ipr.get_links(links[0])
-            if not link_list:
-                raise LookupError(f"Could not get link info for interface `{ifname}'")
-            link_info = link_list[0]
-            link_speed = get_link_speed(ifname)
+            if getattr(ipr, "filter_messages", None):
+                # Pyroute version >= 0.7.0
+                link_infos = ipr.filter_messages(
+                    lambda x: x.get_attr("IFLA_IFNAME") == ifname, ipr.link("dump")
+                )
+                if len(link_infos) == 0:
+                    raise LookupError("No interfaces known with name `{}'!".format(ifname))
+                link_info = link_infos[0]
+                link_speed = get_link_speed(ifname)
+            else:
+                links = ipr.link_lookup(ifname=ifname)
+                if not links:
+                    raise LookupError(f"No interfaces known with name `{ifname}'!")
+                link_list = ipr.get_links(links[0])
+                if not link_list:
+                    raise LookupError(f"Could not get link info for interface `{ifname}'")
+                link_info = link_list[0]
+                link_speed = get_link_speed(ifname)
     except IndexError:
         raise LookupError(f"Could not get links for interface `{ifname}'")
     mac_addr = link_info.get_attr("IFLA_ADDRESS")
