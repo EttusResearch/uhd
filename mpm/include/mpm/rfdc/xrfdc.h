@@ -220,7 +220,8 @@
 *       cog    02/21/19 Added XRFdc_SetCalFreeze() and XRFdc_GetCalFreeze() APIs
 *       cog    04/15/19 Rename XRFdc_SetDACMode() and XRFdc_GetDACMode() APIs to
 *                       XRFdc_SetDataPathMode() and XRFdc_GetDataPathMode() respectively.
-*
+* ported from 11.1:
+*       cog    11/26/21 Header file clean up, this fixes a C++ compilation issue.
 * </pre>
 *
 ******************************************************************************/
@@ -228,6 +229,8 @@
 
 #ifndef RFDC_H_
 #define RFDC_H_
+
+#include <metal/device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -245,10 +248,7 @@ extern "C" {
 #include "sleep.h"
 #endif
 #include <metal/sys.h>
-#include <metal/device.h>
 #include <metal/irq.h>
-#include <metal/atomic.h>
-#include <metal/io.h>
 #include <metal/sleep.h>
 #include "metal/alloc.h"
 #include "xrfdc_hw.h"
