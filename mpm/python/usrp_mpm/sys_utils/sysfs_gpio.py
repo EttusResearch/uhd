@@ -76,6 +76,9 @@ def get_gpio_map_info(gpio_dev):
     map_info["sys_number"] = int(
         pyudev.Devices.from_name(context, subsystem="gpio", sys_name=gpio_dev).sys_number
     )
+    map_info["device_number"] = int(
+        pyudev.Devices.from_name(context, subsystem="gpio", sys_name=gpio_dev).device_number
+    )
     return map_info
 
 
@@ -184,8 +187,11 @@ class SysFSGPIO(object):
             gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, "gpio{}".format(gpio_num))
             if not os.path.exists(gpio_path):
                 self.log.trace("Creating GPIO path `{}'...".format(gpio_path))
-                with open(os.path.join(GPIO_SYSFS_BASE_DIR, "export"), "w") as f:
-                    f.write("{}".format(gpio_num))
+                try:
+                    with open(os.path.join(GPIO_SYSFS_BASE_DIR, "export"), "w") as f:
+                        f.write("{}".format(gpio_num))
+                except OSError:
+                    raise RuntimeError(f"Could not create GPIO {gpio_num}")
             ddr_str = "out" if ddr_out else "in"
             ddr_str = "high" if ini_v else ddr_str
             if ini_v and ddr_out:
