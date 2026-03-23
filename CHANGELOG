@@ -1,9 +1,11 @@
 Change Log for Releases
 ==============================
 
-## 004.next
-
-
+## 004.010.000.000
+* Highlights / Main Changes
+  - Support for USRP X420
+  - Addition of timed complex gain feature, which allows setting a complex gain
+    value to fix phase and amplitude of signals from radio blocks
 * New Features
   - CMake:
     - Create UHD::uhd package for improved integration in downstream build
@@ -57,6 +59,11 @@ Change Log for Releases
   - meta_range_t and uhd::dict can now be initialized from initializer lists
   - Add rfnoc_graph::get_chdr_xport_adapters()
   - Python API now allows creating SubdevSpec from a string
+  - Some public APIs that used `boost::optional` now also work with `std::optional`
+  - Unit tests for RFNoC blocks (in-tree and out-of-tree) no longer require a
+    dummy implementation of `~make_args_t()`
+  - `uhd::cast::to_str()` was added and `uhd::cast::from_str()` was extended to
+    be a full replacement for `boost::lexical_cast`
 * Examples
   - Overhauled many of the examples to improve documentation, as well as some
     minor conveniences or bug fixes
@@ -126,11 +133,17 @@ Change Log for Releases
     calls
   - Fix numerous (mostly harmless) compiler and Doxygen warnings
   - Improve CMake linking instructions
+* Validated OS Environments
+  (Versions for build and runtime dependencies can be determined from the
+   docker container definitions in the UHD repository at .ci/docker/...)
+  - Linux:
+    - Ubuntu: jammy (22.04), noble (24.04), questing (25.10)
+    - Fedora: 40, 41, 42
+  - Windows: 10 22H2, 11 24H2
+  - MacOS: Sequoia (15.6)
 
 ## 004.009.000.001
-
 Changes compared to UHD 4.9.0.0:
-
 * Dependency changes
   - Support Boost 1.89.0
   - Drop support for boost below 1.71.0
