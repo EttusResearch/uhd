@@ -10,6 +10,7 @@
 
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
+#include <cstdint>
 
 namespace mpm { namespace ad937x { namespace device {
 enum class build_type_t { RELEASE, DEBUG, TEST_OBJECT };
