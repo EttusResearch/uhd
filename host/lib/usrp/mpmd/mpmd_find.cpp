@@ -259,7 +259,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
                 << "check devices for reachability");
 
     if (check_reachability) {
-        std::vector<std::future<boost::optional<device_addr_t>>> reachability_tasks;
+        std::vector<std::future<std::optional<device_addr_t>>> reachability_tasks;
         for (const auto& mpm_dev : bcast_mpm_devs) {
             if (mpm_dev.get(RPC_VERSION_KEY, DEFAULT_RPC_VERSION) == RPC_VERSION) {
                 reachability_tasks.emplace_back(
@@ -267,8 +267,8 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
                         return mpmd_mboard_impl::is_device_reachable(mpm_dev);
                     }));
             } else {
-                reachability_tasks.emplace_back(std::async(std::launch::async,
-                    []() { return boost::optional<device_addr_t>{}; }));
+                reachability_tasks.emplace_back(std::async(
+                    std::launch::async, []() { return std::optional<device_addr_t>{}; }));
             }
         }
         // Variable i is used to index reachability_tasks as well as bcast_mpm_devs (both
@@ -276,7 +276,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
         for (size_t i = 0; i < reachability_tasks.size(); ++i) {
             const auto reachable_device_addr = reachability_tasks[i].get();
             if (bool(reachable_device_addr)) {
-                filtered_mpm_devs.push_back(reachable_device_addr.get());
+                filtered_mpm_devs.push_back(reachable_device_addr.value());
             } else if (find_all) {
                 filtered_mpm_devs.emplace_back(
                     flag_dev_as_unreachable(bcast_mpm_devs[i]));

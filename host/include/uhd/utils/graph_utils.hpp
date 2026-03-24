@@ -11,23 +11,22 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc_graph.hpp>
-#include <boost/none.hpp>
-#include <boost/optional.hpp>
+#include <optional>
 #include <vector>
 
 
 namespace uhd { namespace rfnoc {
 
 //! Tuple that stores a block ID, as well as an optional port number
-using block_port_def = std::tuple<std::string, boost::optional<size_t>>;
+using block_port_def = std::tuple<std::string, std::optional<size_t>>;
 
 // TODO: Get rid of magic strings
 /*! List of blocks that can terminate chains. Note that some blocks only terminate at
  *  some of their ports, so we can optionally include a port number.
  */
 static const std::vector<block_port_def> TERMINATOR_BLOCKS{
-    block_port_def{NODE_ID_SEP, boost::none},
-    block_port_def{"Radio", boost::none},
+    block_port_def{NODE_ID_SEP, std::nullopt},
+    block_port_def{"Radio", std::nullopt},
     block_port_def{"NullSrcSink", 0}};
 
 /*!

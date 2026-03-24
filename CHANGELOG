@@ -1,6 +1,11 @@
 Change Log for Releases
 ==============================
 
+## 004.next
+* API Changes:
+  - All usage of boost::optional within the library is removed. Public APIs
+    that used boost::optional are retained, but flagged deprecated.
+
 ## 004.010.000.000
 * Highlights / Main Changes
   - Support for USRP X420

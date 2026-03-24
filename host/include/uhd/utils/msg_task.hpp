@@ -16,6 +16,7 @@
 #include <cstring>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 
 namespace uhd {
@@ -25,7 +26,8 @@ public:
     typedef std::shared_ptr<msg_task> sptr;
     typedef std::vector<uint8_t> msg_payload_t;
     typedef std::pair<uint32_t, msg_payload_t> msg_type_t;
-    typedef std::function<boost::optional<msg_type_t>(void)> task_fcn_type;
+    typedef std::function<std::optional<msg_type_t>(void)> task_fcn_type;
+    typedef std::function<boost::optional<msg_type_t>(void)> task_fcn_type_legacy;
 
     /*
      * During shutdown message queues for radio control cores might not be available
@@ -63,5 +65,17 @@ public:
      * \return a new task object
      */
     static sptr make(const task_fcn_type& task_fcn);
+
+    /*! Backward-compatible version to retain boost::optional compatibility.
+     */
+    [[deprecated("Prefer std::optional over boost::optional.")]] static sptr make(
+        const task_fcn_type_legacy& task_fcn)
+    {
+        return make([task_fcn]() -> std::optional<msg_type_t> {
+            auto task_result = task_fcn();
+            return bool(task_result) ? std::make_optional<msg_type_t>(*task_result)
+                                     : std::nullopt;
+        });
+    }
 };
 } // namespace uhd

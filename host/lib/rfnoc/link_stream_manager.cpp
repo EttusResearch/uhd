@@ -460,7 +460,7 @@ private:
         const auto route_to_sep = _mgmt_portal->get_route(src_addr);
         auto route_it           = route_to_sep.begin();
         UHD_ASSERT_THROW(!!route_it->node.epid);
-        const sep_id_t src_epid = route_it->node.epid.get();
+        const sep_id_t src_epid = route_it->node.epid.value();
         route_it++;
         UHD_ASSERT_THROW(route_it->node.type == topo_node_t::node_type::XPORT);
         auto ta_node               = route_it->node;
@@ -525,7 +525,7 @@ private:
                 dst_epid);
             UHD_LOG_DEBUG(LOG_ID,
                 "Adding virtual endpoint: " << virtual_ep.to_string() << " (EPID: "
-                                            << virtual_ep.epid.get() << ")");
+                                            << virtual_ep.epid.value() << ")");
             detail::topo_edge_t virtual_edge;
             virtual_edge.type = detail::topo_edge_t::edge_type::ETHERNET;
             _tgraph->add_edge(ta_node, virtual_ep, virtual_edge);

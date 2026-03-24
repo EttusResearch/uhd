@@ -325,12 +325,12 @@ bool b200_impl::recv_async_msg(async_metadata_t& async_metadata, double timeout)
  * a dump_queue implemented in msg_task. A radio_ctrl_core can search for missing messages
  * there.
  */
-boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
+std::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
     uhd::transport::zero_copy_if::sptr xport, std::shared_ptr<AsyncTaskData> data)
 {
     managed_recv_buffer::sptr buff = xport->get_recv_buff();
     if (not buff or buff->size() < 8)
-        return boost::none;
+        return std::nullopt;
 
     const uint32_t sid = uhd::wtohx(buff->cast<const uint32_t*>()[1]);
     switch (sid) {
@@ -395,7 +395,7 @@ boost::optional<uhd::msg_task::msg_type_t> b200_impl::handle_async_task(
         default:
             UHD_LOGGER_ERROR("B200") << "Got a ctrl packet with unknown SID " << sid;
     }
-    return boost::none;
+    return std::nullopt;
 }
 
 /***********************************************************************

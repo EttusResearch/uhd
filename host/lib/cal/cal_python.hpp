@@ -126,31 +126,40 @@ void export_cal(py::module& m)
             return container::make<pwr_cal>(pybytes_to_vector(data));
         }))
         .def("add_power_table",
-            &pwr_cal::add_power_table,
+            static_cast<void (pwr_cal::*)(const std::map<double, double>&,
+                const double,
+                const double,
+                const double,
+                const std::optional<int>)>(&pwr_cal::add_power_table),
             py::arg("gain_power_map"),
             py::arg("min_power"),
             py::arg("max_power"),
             py::arg("freq"),
-            py::arg("temperature") = boost::optional<int>())
+            py::arg("temperature") = std::optional<int>())
         .def("clear", &pwr_cal::clear)
         .def("set_temperature", &pwr_cal::set_temperature)
         .def("get_temperature", &pwr_cal::get_temperature)
         .def("set_ref_gain", &pwr_cal::set_ref_gain)
         .def("get_ref_gain", &pwr_cal::get_ref_gain)
         .def("get_power_limits",
-            &pwr_cal::get_power_limits,
+            static_cast<uhd::meta_range_t (pwr_cal::*)(const double,
+                const std::optional<int>) const>(&pwr_cal::get_power_limits),
             py::arg("freq"),
-            py::arg("temperature") = boost::optional<int>())
+            py::arg("temperature") = std::optional<int>())
         .def("get_power",
-            &pwr_cal::get_power,
+            static_cast<double (pwr_cal::*)(
+                const double, const double, const std::optional<int>) const>(
+                &pwr_cal::get_power),
             py::arg("gain"),
             py::arg("freq"),
-            py::arg("temperature") = boost::optional<int>())
+            py::arg("temperature") = std::optional<int>())
         .def("get_gain",
-            &pwr_cal::get_gain,
+            static_cast<double (pwr_cal::*)(
+                const double, const double, const std::optional<int>) const>(
+                &pwr_cal::get_gain),
             py::arg("power_dbm"),
             py::arg("freq"),
-            py::arg("temperature") = boost::optional<int>());
+            py::arg("temperature") = std::optional<int>());
 
     py::class_<zbx_tx_dsa_cal, container, zbx_tx_dsa_cal::sptr>(m, "zbx_tx_dsa_cal")
         .def(py::init([](const std::string& name,

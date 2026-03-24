@@ -11,6 +11,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/optional.hpp>
+#include <optional>
 
 namespace uhd { namespace rfnoc {
 
@@ -70,7 +71,21 @@ public:
      */
     virtual double set_freq(const double freq,
         const size_t chan,
-        const boost::optional<uhd::time_spec_t> time = boost::none) = 0;
+        const std::optional<uhd::time_spec_t> time = {}) = 0;
+
+    double set_freq(const double freq, const size_t chan, const uhd::time_spec_t time)
+    {
+        return set_freq(freq, chan, std::make_optional(time));
+    }
+
+    [[deprecated("Prefer std::optional over boost::optional.")]] virtual double set_freq(
+        const double freq,
+        const size_t chan,
+        const boost::optional<uhd::time_spec_t> time)
+    {
+        return set_freq(
+            freq, chan, bool(time) ? std::make_optional(*time) : std::nullopt);
+    }
 
     /*! Return the current DDS frequency
      *

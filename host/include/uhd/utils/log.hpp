@@ -8,10 +8,13 @@
 #pragma once
 
 #include <uhd/config.hpp>
+#include <type_traits>
 #include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/none.hpp>
 #include <boost/optional.hpp>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -123,11 +126,33 @@ enum severity_level {
     off     = 6, /**< logging is turned off */
 };
 
+namespace detail {
 /*! Parses a `severity_level` from a string. If a value could not be parsed,
  * returns none.
+ * Note: All of this is necessary to retain backward-compatibility with
+ * boost::optional. When we deprecate boost::optional from the API
+ * entirely, this can be removed.
  */
-boost::optional<uhd::log::severity_level> UHD_API parse_log_level_from_string(
+UHD_API std::optional<uhd::log::severity_level> parse_log_level_from_string_impl(
     const std::string& log_level_str);
+
+} // namespace detail
+
+template <typename T = boost::optional<uhd::log::severity_level>,
+    std::enable_if_t<
+        std::is_same_v<T,
+            boost::optional<uhd::log::
+                    severity_level>> || std::is_same_v<T, std::optional<uhd::log::severity_level>>,
+        int> = 0>
+T parse_log_level_from_string(const std::string& log_level_str)
+{
+    if constexpr (std::is_same_v<T, boost::optional<uhd::log::severity_level>>) {
+        const auto level = detail::parse_log_level_from_string_impl(log_level_str);
+        return bool(level) ? boost::make_optional(*level) : boost::none;
+    } else {
+        return detail::parse_log_level_from_string_impl(log_level_str);
+    }
+}
 
 /*! Logging info structure
  *

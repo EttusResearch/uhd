@@ -11,7 +11,6 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
 #include <condition_variable>
-#include <boost/optional.hpp>
 #include <atomic>
 #include <exception>
 #include <functional>
@@ -130,15 +129,15 @@ private:
 
         try {
             while (_running) {
-                boost::optional<msg_type_t> buff = task_fcn();
-                if (buff != boost::none) {
+                auto buff = task_fcn();
+                if (bool(buff)) {
                     /*
                      * If a message gets stranded it is returned by task_fcn and then
                      * pushed to the dump_queue. This way ctrl_cores can check dump_queue
                      * for missing messages.
                      */
                     std::lock_guard<std::mutex> lock(_mutex);
-                    _dump_queue.push_back(buff.get());
+                    _dump_queue.push_back(*buff);
                 }
             }
         } catch (const std::exception& e) {

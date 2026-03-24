@@ -78,7 +78,7 @@ struct io_service_args_t
  * struct above is returned.
  *
  * \param args The dictionary from which to read the I/O service args
- * \param defaults Default values (not including boost::optional values)
+ * \param defaults Default values (not including optional values)
  * \return The I/O service args read
  */
 io_service_args_t read_io_service_args(

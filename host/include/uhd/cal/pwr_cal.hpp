@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace uhd { namespace usrp { namespace cal {
@@ -69,7 +70,36 @@ public:
         const double min_power,
         const double max_power,
         const double freq,
-        const boost::optional<int> temperature = boost::none) = 0;
+        const std::optional<int> temperature = {}) = 0;
+
+    // Helper to resolve between the two optional methods
+    void add_power_table(const std::map<double, double>& gain_power_map,
+        const double min_power,
+        const double max_power,
+        const double freq,
+        const int temperature)
+    {
+        add_power_table(gain_power_map,
+            min_power,
+            max_power,
+            freq,
+            std::make_optional<int>(temperature));
+    }
+
+    [[deprecated("Prefer std::optional over boost::optional.")]] void add_power_table(
+        const std::map<double, double>& gain_power_map,
+        const double min_power,
+        const double max_power,
+        const double freq,
+        const boost::optional<int> temperature)
+    {
+        add_power_table(gain_power_map,
+            min_power,
+            max_power,
+            freq,
+            bool(temperature) ? std::make_optional<int>(*temperature) : std::nullopt);
+    }
+
 
     /*! Clear all stored values
      *
@@ -106,8 +136,21 @@ public:
 
     /*! Return the min and max power available for this frequency
      */
-    virtual uhd::meta_range_t get_power_limits(const double freq,
-        const boost::optional<int> temperature = boost::none) const = 0;
+    virtual uhd::meta_range_t get_power_limits(
+        const double freq, const std::optional<int> temperature = {}) const = 0;
+
+    // Helper to resolve between the two optional methods
+    uhd::meta_range_t get_power_limits(const double freq, const int temperature) const
+    {
+        return get_power_limits(freq, std::make_optional<int>(temperature));
+    }
+
+    [[deprecated("Prefer std::optional over boost::optional.")]] uhd::meta_range_t
+    get_power_limits(const double freq, const boost::optional<int> temperature) const
+    {
+        return get_power_limits(freq,
+            bool(temperature) ? std::make_optional<int>(*temperature) : std::nullopt);
+    }
 
     /*! Returns the power at a gain value.
      *
@@ -122,7 +165,22 @@ public:
      */
     virtual double get_power(const double gain,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const = 0;
+        const std::optional<int> temperature = {}) const = 0;
+
+    double get_power(const double gain, const double freq, const int temperature) const
+    {
+        return get_power(gain, freq, std::make_optional<int>(temperature));
+    }
+
+    [[deprecated("Prefer std::optional over boost::optional.")]] double get_power(
+        const double gain,
+        const double freq,
+        const boost::optional<int> temperature) const
+    {
+        return get_power(gain,
+            freq,
+            bool(temperature) ? std::make_optional<int>(*temperature) : std::nullopt);
+    }
 
     /*! Look up a gain value from a power value.
      *
@@ -141,7 +199,23 @@ public:
      */
     virtual double get_gain(const double power_dbm,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const = 0;
+        const std::optional<int> temperature = {}) const = 0;
+
+    double get_gain(
+        const double power_dbm, const double freq, const int temperature) const
+    {
+        return get_gain(power_dbm, freq, std::make_optional<int>(temperature));
+    }
+
+    [[deprecated("Prefer std::optional over boost::optional.")]] double get_gain(
+        const double power_dbm,
+        const double freq,
+        const boost::optional<int> temperature) const
+    {
+        return get_gain(power_dbm,
+            freq,
+            bool(temperature) ? std::make_optional<int>(*temperature) : std::nullopt);
+    }
 
     //! Factory for new cal data sets
     static sptr make(

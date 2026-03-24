@@ -11,7 +11,6 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
 #include <boost/format.hpp>
-#include <boost/optional.hpp>
 #include <algorithm>
 #include <chrono>
 #include <deque>
@@ -225,18 +224,6 @@ public:
     {
         std::unique_lock<std::mutex> lock(_mutex);
         _handle_async_msg = callback_f;
-    }
-
-    // Backward-compatible, legacy version
-    void register_async_msg_handler(async_msg_callback_legacy_t callback_f) override
-    {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _handle_async_msg = [callback_f](uint32_t addr,
-                                const std::vector<uint32_t>& data,
-                                std::optional<uint64_t> timestamp) {
-            return callback_f(
-                addr, data, bool(timestamp) ? *timestamp : boost::optional<uint64_t>{});
-        };
     }
 
     void set_policy(const std::string& name, const uhd::device_addr_t& args) override

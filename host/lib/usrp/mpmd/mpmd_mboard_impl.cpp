@@ -12,6 +12,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <thread>
 
 namespace {
@@ -174,7 +175,7 @@ using namespace uhd::mpmd;
 /******************************************************************************
  * Static Helpers
  *****************************************************************************/
-boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
+std::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
     const device_addr_t& device_addr)
 {
     UHD_LOG_TRACE(
@@ -191,18 +192,18 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
             rpcc->request<dev_info>(MPMD_SHORT_RPC_TIMEOUT, "get_device_info");
     } catch (const uhd::runtime_error& e) {
         UHD_LOG_DEBUG("MPMD", e.what());
-        return boost::optional<device_addr_t>();
+        return std::nullopt;
     } catch (...) {
         UHD_LOG_DEBUG("MPMD",
             "Unexpected exception when trying to query device info. Flagging "
             "device as unreachable.");
-        return boost::optional<device_addr_t>();
+        return std::nullopt;
     }
     // 2) Check for local device
     if (device_info_dict.count("connection")
         and device_info_dict.at("connection") == "local") {
         UHD_LOG_TRACE("MPMD", "Device is local, flagging as reachable.");
-        return boost::optional<device_addr_t>(device_addr);
+        return std::make_optional<device_addr_t>(device_addr);
     }
     // 3) Check for network-reachable device
     // Note: This makes the assumption that devices will always allow RPC
@@ -244,7 +245,7 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
             }
             device_addr_t device_addr_copy = device_addr;
             device_addr_copy["addr"]       = chdr_addr;
-            return boost::optional<device_addr_t>(device_addr_copy);
+            return std::make_optional<device_addr_t>(device_addr_copy);
         } catch (...) {
             UHD_LOG_DEBUG(
                 "MPMD", "Failed to reach device on network addr " << chdr_addr << ".");
@@ -259,12 +260,12 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
         // via Virtual NIC packet fowarding.
         device_addr_t device_addr_copy = device_addr;
         device_addr_copy["addr"]       = rpc_addr;
-        return boost::optional<device_addr_t>(device_addr_copy);
+        return std::make_optional<device_addr_t>(device_addr_copy);
     }
     // If everything fails, we probably can't talk to this chap.
     UHD_LOG_TRACE(
         "MPMD", "All reachability checks failed -- assuming device is not reachable.");
-    return boost::optional<device_addr_t>();
+    return std::nullopt;
 }
 
 /*****************************************************************************

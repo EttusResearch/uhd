@@ -357,8 +357,20 @@ public:
      *
      * \param callback_f The function to call when an asynchronous message is received.
      */
-    [[deprecated("Prefer std::optional over boost::optional.")]] virtual void
-    register_async_msg_handler(async_msg_callback_legacy_t callback_f) = 0;
+    [[deprecated("Prefer std::optional over boost::optional.")]] void
+    register_async_msg_handler(async_msg_callback_legacy_t callback_f)
+    {
+        auto wrapper_f = [callback_f](uint32_t addr,
+                             const std::vector<uint32_t>& data,
+                             std::optional<uint64_t> timestamp) {
+            boost::optional<uint64_t> legacy_timestamp;
+            if (timestamp.has_value()) {
+                legacy_timestamp = timestamp.value();
+            }
+            callback_f(addr, data, legacy_timestamp);
+        };
+        register_async_msg_handler(wrapper_f);
+    }
 
     /*! Set a policy that governs the operational parameters of this register bus.
      *  Policies can be used to make tradeoffs between performance, resilience, latency,

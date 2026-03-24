@@ -9,10 +9,10 @@
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <boost/format.hpp>
 #include <boost/graph/adjacency_list.hpp>
-#include <boost/optional.hpp>
 #include <list>
 #include <map>
 #include <memory>
+#include <optional>
 
 namespace uhd { namespace rfnoc { namespace detail {
 
@@ -52,8 +52,8 @@ struct topo_node_t
     topo_node_t(device_id_t device_id_,
         node_type type_,
         sep_inst_t inst_,
-        uint32_t extended_info_               = 0,
-        const boost::optional<sep_id_t> epid_ = boost::none)
+        uint32_t extended_info_             = 0,
+        const std::optional<sep_id_t> epid_ = {})
         : device_id(device_id_)
         , type(type_)
         , inst(inst_)
@@ -62,8 +62,8 @@ struct topo_node_t
     {
     }
     topo_node_t(const sep_addr_t& sep_addr,
-        const bool is_local_                  = false,
-        const boost::optional<sep_id_t> epid_ = boost::none)
+        const bool is_local_                = false,
+        const std::optional<sep_id_t> epid_ = {})
         : device_id(sep_addr.first)
         , type(node_type::STRM_EP)
         , inst(sep_addr.second)
@@ -89,7 +89,7 @@ struct topo_node_t
 
     //! If applicable, the endpoint ID of this node. This is only set if
     // type == node_type::STRM_EP or node_type::VIRTUAL.
-    boost::optional<sep_id_t> epid;
+    std::optional<sep_id_t> epid;
 
     //! True if this is a stream endpoint (type == node_type::STRM_EP) and the
     // endpoint is local, i.e. based within the UHD session.

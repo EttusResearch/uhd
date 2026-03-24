@@ -6,6 +6,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/config.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/log_add.hpp>
@@ -105,7 +106,7 @@ inline std::string path_to_filename(std::string path)
 
 namespace uhd { namespace log {
 
-boost::optional<uhd::log::severity_level> parse_log_level_from_string(
+std::optional<uhd::log::severity_level> detail::parse_log_level_from_string_impl(
     const std::string& log_level_str)
 {
     if (std::isdigit(log_level_str[0])) {
@@ -115,7 +116,7 @@ boost::optional<uhd::log::severity_level> parse_log_level_from_string(
             return log_level_num;
         } else {
             std::cerr << "[LOG] Failed to set log level to: " << log_level_str;
-            return boost::none;
+            return std::nullopt;
         }
     }
 
@@ -127,7 +128,7 @@ boost::optional<uhd::log::severity_level> parse_log_level_from_string(
     if_loglevel_equal(error);
     if_loglevel_equal(fatal);
     if_loglevel_equal(off);
-    return boost::none;
+    return std::nullopt;
 }
 
 }} // namespace uhd::log
@@ -229,8 +230,7 @@ public:
     {
         // allow override from macro definition
 #ifdef UHD_LOG_MIN_LEVEL
-        this->global_level =
-            _get_log_level(BOOST_STRINGIZE(UHD_LOG_MIN_LEVEL), this->global_level);
+        this->global_level = _get_log_level(STR(UHD_LOG_MIN_LEVEL), this->global_level);
 #endif
         // allow override from environment variables
         const char* log_level_env = std::getenv("UHD_LOG_LEVEL");
@@ -442,13 +442,9 @@ private:
     uhd::log::severity_level _get_log_level(
         const std::string& log_level_str, const uhd::log::severity_level& previous_level)
     {
-        boost::optional<uhd::log::severity_level> parsed_level =
-            uhd::log::parse_log_level_from_string(log_level_str);
-        if (parsed_level) {
-            return *parsed_level;
-        } else {
-            return previous_level;
-        }
+        const auto parsed_level = uhd::log::parse_log_level_from_string<
+            std::optional<uhd::log::severity_level>>(log_level_str);
+        return parsed_level.value_or(previous_level);
     }
 
     void _setup_console_logging()
@@ -456,8 +452,7 @@ private:
 #ifndef UHD_LOG_CONSOLE_DISABLE
         uhd::log::severity_level console_level = uhd::log::trace;
 #    ifdef UHD_LOG_CONSOLE_LEVEL
-        console_level =
-            _get_log_level(BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL), console_level);
+        console_level = _get_log_level(STR(UHD_LOG_CONSOLE_LEVEL), console_level);
 #    endif
         const char* log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
         if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
@@ -472,10 +467,10 @@ private:
         uhd::log::severity_level file_level = uhd::log::trace;
         std::string log_file_target;
 #if defined(UHD_LOG_FILE_LEVEL)
-        file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL), file_level);
+        file_level = _get_log_level(STR(UHD_LOG_FILE_LEVEL), file_level);
 #endif
 #if defined(UHD_LOG_FILE)
-        log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
+        log_file_target = STR(UHD_LOG_FILE);
 #endif
         const char* log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
         if (log_file_level_env != NULL && log_file_level_env[0] != '\0') {

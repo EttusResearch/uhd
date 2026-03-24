@@ -16,9 +16,9 @@
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/utils/rpc.hpp>
-#include <boost/optional.hpp>
 #include <map>
 #include <memory>
+#include <optional>
 
 /*************************************************************************
  * RPC timeout constants for MPMD
@@ -67,7 +67,7 @@ public:
      *
      *  \param device_addr Device args. Must contain an mgmt_addr.
      */
-    static boost::optional<device_addr_t> is_device_reachable(
+    static std::optional<device_addr_t> is_device_reachable(
         const device_addr_t& device_addr);
 
     /*** Structors ***********************************************************/

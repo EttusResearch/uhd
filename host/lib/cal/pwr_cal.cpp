@@ -77,7 +77,7 @@ public:
         const double min_power,
         const double max_power,
         const double freq,
-        const boost::optional<int> temperature = boost::none) override
+        const std::optional<int> temperature) override
     {
         if (min_power > max_power) {
             throw uhd::runtime_error(
@@ -86,7 +86,7 @@ public:
                             + std::to_string(min_power) + " dBm, "
                             + std::to_string(max_power) + " dBm)"));
         }
-        const int temp = bool(temperature) ? temperature.get() : _default_temp;
+        const int temp                           = temperature.value_or(_default_temp);
         _data[temp][static_cast<uint64_t>(freq)] = {
             gain_power_map, reverse_map(gain_power_map), min_power, max_power};
     }
@@ -96,7 +96,7 @@ public:
     // a struct).
     double get_power(const double gain,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const override
+        const std::optional<int> temperature = {}) const override
     {
         UHD_ASSERT_THROW(!_data.empty());
         const uint64_t freqi = static_cast<uint64_t>(freq);
@@ -156,8 +156,8 @@ public:
         return _ref_gain;
     }
 
-    uhd::meta_range_t get_power_limits(const double freq,
-        const boost::optional<int> temperature = boost::none) const override
+    uhd::meta_range_t get_power_limits(
+        const double freq, const std::optional<int> temperature = {}) const override
     {
         const auto table = at_nearest(_get_table(temperature), uint64_t(freq));
         return uhd::meta_range_t(table.min_power, table.max_power);
@@ -165,7 +165,7 @@ public:
 
     double get_gain(const double power_dbm,
         const double freq,
-        const boost::optional<int> temperature = boost::none) const override
+        const std::optional<int> temperature = {}) const override
     {
         UHD_ASSERT_THROW(!_data.empty());
         const uint64_t freqi       = static_cast<uint64_t>(freq);
@@ -314,8 +314,6 @@ private:
     // We map the gain to power, and power to gain, in different data structures.
     // This is suboptimal w.r.t. memory usage (it duplicates the keys/values),
     // but helps us with the algorithms above.
-    // This could also be solved with a Boost.Bimap, but it doesn't seem worth
-    // the additional dependency.
     struct pwr_cal_table
     {
         std::map<double, double> g2p; //!< Maps gain to power
@@ -326,10 +324,9 @@ private:
 
     using freq_table_map = std::map<uint64_t /* freq */, pwr_cal_table>;
 
-    freq_table_map _get_table(const boost::optional<int> temperature) const
+    freq_table_map _get_table(const std::optional<int> temperature) const
     {
-        const int temp = bool(temperature) ? temperature.get() : _default_temp;
-        return at_nearest(_data, temp);
+        return at_nearest(_data, temperature.value_or(_default_temp));
     }
 
     std::string _name;

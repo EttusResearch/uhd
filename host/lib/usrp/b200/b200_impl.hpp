@@ -36,9 +36,9 @@
 #include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
 #include <uhdlib/usrp/gps_ctrl.hpp>
 #include <unordered_map>
-#include <boost/optional.hpp>
 #include <memory>
 #include <mutex>
+#include <optional>
 
 static const uint8_t B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t B200_FW_COMPAT_NUM_MINOR = 0;
@@ -171,7 +171,7 @@ private:
         b200_uart::sptr gpsdo_uart;
     };
     std::shared_ptr<AsyncTaskData> _async_task_data;
-    boost::optional<uhd::msg_task::msg_type_t> handle_async_task(
+    std::optional<uhd::msg_task::msg_type_t> handle_async_task(
         uhd::transport::zero_copy_if::sptr, std::shared_ptr<AsyncTaskData>);
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);

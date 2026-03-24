@@ -109,12 +109,12 @@ public:
 
     double set_freq(const double freq,
         const size_t chan,
-        const boost::optional<uhd::time_spec_t> time) override
+        const std::optional<uhd::time_spec_t> time) override
     {
         // Store the current command time so we can restore it later
         auto prev_cmd_time = get_command_time(chan);
         if (time) {
-            set_command_time(time.get(), chan);
+            set_command_time(*time, chan);
         }
         // This will trigger property propagation:
         set_property<double>("freq", freq, chan);
@@ -479,7 +479,7 @@ private:
 
         if (src.type == res_source_info::OUTPUT_EDGE) {
             auto set_dsp_freq = [this, chan](
-                                    double freq) { set_freq(freq, chan, boost::none); };
+                                    double freq) { set_freq(freq, chan, std::nullopt); };
 
             double clipped_requested_freq = tune_range.clip(tune_request.target_freq);
             tune_request_action->tune_result.target_dsp_freq = std::abs(

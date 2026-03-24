@@ -21,12 +21,12 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/archive/iterators/binary_from_base64.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
-#include <boost/optional.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -105,7 +105,7 @@ uhd::usrp::component_file_t generate_component(const std::string& id,
     return component_file;
 }
 
-boost::optional<std::vector<uint8_t>> parse_dts_from_lvbitx(
+std::optional<std::vector<uint8_t>> parse_dts_from_lvbitx(
     const boost::property_tree::ptree& pt)
 {
     std::string dts;
@@ -115,7 +115,7 @@ boost::optional<std::vector<uint8_t>> parse_dts_from_lvbitx(
     } catch (boost::property_tree::ptree_error&) {
         UHD_LOG_WARNING(
             "MPMD IMAGE LOADER", "Could not find DTS in .lvbitx file, not including it");
-        return boost::none;
+        return std::nullopt;
     }
 
     if (dts.size() % 2 != 0) {
@@ -239,7 +239,7 @@ static uhd::usrp::component_files_t lvbitx_to_component_files(
 
     const auto maybe_dts = parse_dts_from_lvbitx(pt);
     if (maybe_dts) {
-        const auto dts = maybe_dts.get();
+        const auto dts = maybe_dts.value();
 
         uhd::dict<std::string, std::string> dts_metadata;
         dts_metadata.set("filename", "usrp_x410_fpga_LV.dts");

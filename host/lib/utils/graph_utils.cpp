@@ -25,7 +25,7 @@ bool check_terminator_block(const block_id_t blk_id, const size_t port)
     for (auto term_block : TERMINATOR_BLOCKS) {
         auto optional_port = std::get<1>(term_block);
         if (blk_id_str == std::get<0>(term_block)
-            && (!optional_port || port == optional_port.get())) {
+            && (!optional_port || port == *optional_port)) {
             return true;
         }
     }

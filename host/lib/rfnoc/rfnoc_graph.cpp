@@ -21,6 +21,7 @@
 #include <uhdlib/usrp/common/io_service_mgr.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <memory>
+#include <optional>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -170,7 +171,7 @@ public:
             if (!src_static_edge_o) {
                 return false;
             }
-            graph_edge_t src_static_edge = src_static_edge_o.get();
+            graph_edge_t src_static_edge = src_static_edge_o.value();
 
             // Now see if it's already connected to the destination
             if (src_static_edge.dst_blockid == dst_blk.to_string()
@@ -198,7 +199,7 @@ public:
             if (!dst_static_edge_o) {
                 return false;
             }
-            graph_edge_t dst_static_edge = dst_static_edge_o.get();
+            graph_edge_t dst_static_edge = dst_static_edge_o.value();
 
             // If they're not statically connected, the source *must* be connected
             // to an SEP, or this route is impossible
@@ -950,11 +951,11 @@ private:
                 dst_sep_addr, src_sep_addr, false, 0.1, 0.0, false);
 
             UHD_LOGGER_DEBUG(LOG_ID)
-                << boost::format(
-                       "Data stream between EPID %d and EPID %d established "
-                       "where downstream buffer can hold %lu bytes and %u packets")
-                       % std::get<0>(strm_info).first % std::get<0>(strm_info).second
-                       % std::get<1>(strm_info).bytes % std::get<1>(strm_info).packets;
+                << "Data stream between EPID " << std::get<0>(strm_info).first
+                << " and EPID " << std::get<0>(strm_info).second
+                << " established where downstream buffer can hold "
+                << std::get<1>(strm_info).bytes << " bytes and "
+                << std::get<1>(strm_info).packets << " packets";
         }
 
         return route_info.edge_type;
@@ -1003,11 +1004,11 @@ private:
      * \throws uhd::assertion_error if the edge can't be found. So be careful!
      */
     template <typename UnaryPredicate>
-    boost::optional<graph_edge_t> _get_static_edge(UnaryPredicate&& pred)
+    std::optional<graph_edge_t> _get_static_edge(UnaryPredicate&& pred)
     {
         auto edge_it = std::find_if(_static_edges.cbegin(), _static_edges.cend(), pred);
         if (edge_it == _static_edges.cend()) {
-            return boost::none;
+            return std::nullopt;
         }
         return *edge_it;
     }
@@ -1015,7 +1016,7 @@ private:
     /*! Make sure an optional edge info is valid, or throw.
      */
     graph_edge_t _assert_edge(
-        boost::optional<graph_edge_t> edge_o, const std::string& blk_info)
+        std::optional<graph_edge_t> edge_o, const std::string& blk_info)
     {
         if (!bool(edge_o)) {
             const std::string err_msg = std::string("Cannot connect block ") + blk_info
@@ -1023,7 +1024,7 @@ private:
             UHD_LOG_ERROR(LOG_ID, err_msg);
             throw uhd::routing_error(err_msg);
         }
-        return edge_o.get();
+        return edge_o.value();
     }
 
     /**************************************************************************

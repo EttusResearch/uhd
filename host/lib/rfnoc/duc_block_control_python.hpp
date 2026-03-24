@@ -17,10 +17,12 @@ void export_duc_block_control(py::module& m)
         m, "duc_block_control")
         .def(py::init(&block_controller_factory<duc_block_control>::make_from))
         .def("set_freq",
-            &duc_block_control::set_freq,
+            static_cast<double (duc_block_control::*)(
+                const double, const size_t, const std::optional<uhd::time_spec_t>)>(
+                &duc_block_control::set_freq),
             py::arg("freq"),
             py::arg("chan"),
-            py::arg("time") = boost::optional<uhd::time_spec_t>())
+            py::arg("time") = std::optional<uhd::time_spec_t>())
         .def("get_freq", &duc_block_control::get_freq)
         .def("get_frequency_range", &duc_block_control::get_frequency_range)
         .def("get_input_rate", &duc_block_control::get_input_rate)

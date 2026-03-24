@@ -94,20 +94,6 @@ tx_event_action_info::sptr tx_event_action_info::make(
     return std::make_shared<tx_event_action_info_make_shared>(event_code, tsf);
 }
 
-tx_event_action_info::sptr tx_event_action_info::make(
-    uhd::async_metadata_t::event_code_t event_code, uint64_t tsf)
-{
-    return tx_event_action_info::make(event_code, std::optional<uint64_t>{tsf});
-}
-
-tx_event_action_info::sptr tx_event_action_info::make(
-    uhd::async_metadata_t::event_code_t event_code, const boost::optional<uint64_t>& tsf)
-{
-    return tx_event_action_info::make(event_code,
-        bool(tsf) ? std::optional<uint64_t>(*tsf) : std::optional<uint64_t>{});
-}
-
-
 /*** Tune Request Metadata Action Info *************************************************/
 tune_request_action_info::tune_request_action_info(
     const uhd::tune_request_t tune_request_)
