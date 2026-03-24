@@ -16,7 +16,7 @@ parameters:
 jobs:
 - template: job-uhd-devtest.yml
   parameters:
-    suiteName: 'sdr_s175_tests'
+    suiteName: 'sdr_s175_tests_b2xx'
     knownHost: ''
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
@@ -44,6 +44,18 @@ jobs:
           devBus: 'usb'
           devFpga: 'defaultFPGA'
           devtestPattern: 'b2xx'
+- template: job-uhd-devtest.yml
+  parameters:
+    suiteName: 'sdr_s175_tests_x310'
+    knownHost: ''
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    redisHost: 'dre-s175'
+    vivado_dir: $(xilinx_location)
+    dutMatrix:
       ${{ if contains(parameters.testDevices, 'x3xx') }}:
         sdr-s175-dev-tests-x310-4:
           devType: 'x300'

@@ -18,7 +18,7 @@ parameters:
 jobs:
 - template: job-uhd-streaming-tests.yml
   parameters:
-    suiteName: 'sdr_s175_tests'
+    suiteName: 'sdr_s175_tests_b2xx'
     testLength: '${{ parameters.testLength }}'
     toolset: 'make'
     uhdSrcDir: '${{ parameters.uhdSrcDir }}'
