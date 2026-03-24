@@ -53,6 +53,18 @@
     - hw.rf.x410
     - hw.streaming.x410
     - devtest.x410
+- re: host/lib/usrp/dboard/hbx/
+  add:
+    - uhd.build.all
+    - hw.rf.x420
+    - hw.streaming.x420
+    - devtest.x420
+- re: host/lib/usrp/dboard/fbx/
+  add:
+    - uhd.build.all
+    - hw.rf.x440
+    - hw.streaming.x440
+    - devtest.x440
 - re: host/lib/usrp/dboard/e3xx
   add:
     - uhd.build.all
@@ -209,16 +221,21 @@
     - mpm.build.x4xx
     - hw.rf.x4xx
     - devtest.x4xx
+- re: zbx.py$
+  add:
+    - mpm.build.x4xx
+    - hw.rf.x410
+    - devtest.x410
+- re: hbx.py$
+  add:
+    - mpm.build.x4xx
+    - hw.rf.x420
+    - devtest.x420
 - re: fbx.py$
   add:
     - mpm.build.x4xx
     - hw.rf.x440
     - devtest.x440
-- re: zbx.py
-  add:
-    - mpm.build.x4xx
-    - hw.rf.x410
-    - devtest.x410
 - re: e31x_db_manager..pp$|^mpm/.+/periph_manager/e31x|e31x_db.py$
   add:
     - mpm.build.e310
