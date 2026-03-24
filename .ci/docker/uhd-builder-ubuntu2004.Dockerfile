@@ -45,6 +45,7 @@ RUN apt-get update && \
         debhelper \
         libncurses5-dev \
         python3-ruamel.yaml \
+        pkgconf \
     # Install GNURadio dependencies
         python3-sphinx \
         python3-lxml \
