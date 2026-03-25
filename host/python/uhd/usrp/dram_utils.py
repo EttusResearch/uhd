@@ -284,7 +284,7 @@ class DramTransmitter:
         upload_timeout = 0.5
         last_update = time.monotonic()
         last_fullness = 0
-        while (last_fullness < num_bytes):
+        while last_fullness < num_bytes:
             time.sleep(0.001)
             fullness = self.replay_blocks[0].get_record_fullness(in_port)
             if fullness > last_fullness:
@@ -292,7 +292,8 @@ class DramTransmitter:
             last_fullness = fullness
             if time.monotonic() - last_update > upload_timeout:
                 raise RuntimeError(
-                    f"DRAM fullness did not reach expected levels! " f"{fullness}/{num_bytes} bytes."
+                    f"DRAM fullness did not reach expected levels! "
+                    f"{fullness}/{num_bytes} bytes."
                 )
 
         return num_bytes
@@ -749,6 +750,7 @@ class DramReceiver:
                 stream_cmd.num_samps = int(tmp_stream_cmd.num_samps * rate_ratio)
                 stream_cmd.stream_now = tmp_stream_cmd.stream_now
                 stream_cmd.time_spec = tmp_stream_cmd.time_spec
+                stream_cmd.trigger = tmp_stream_cmd.trigger
             rcp[0].issue_stream_cmd(stream_cmd, rcp[1])
 
         if wait_for_buffer_complete:
