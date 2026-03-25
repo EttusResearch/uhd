@@ -98,6 +98,9 @@ that are being tested using the devtests.
 | DEVTEST-X410-X4_200-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-X410-UC_200-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-X410-CG_400-v1  | USRP X410     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X420-X4_200-v1  | USRP X420     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X420-X4_1000-v1 | USRP X420     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
+| DEVTEST-X420-CG_1000-v1 | USRP X420     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-X440-X4_200-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-X440-X4_400-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
 | DEVTEST-X440-CG_400-v1  | USRP X440     | None        | \ref rdtesting_devtest_manual | \ref rdtesting_devtest_auto |
@@ -152,6 +155,7 @@ To run the devtests using UHD make, follow these steps:
 | Device (type) | make test_<devtest-pattern> | FPGA Image | Interface    | Testing                                                                                   |
 |---------------|-----------------------------|------------|--------------|-------------------------------------------------------------------------------------------|
 | X410 (x4xx)   | make test_x410              | X4_200     | 4x10GbE      | Test once on SFP0                                                                         |
+| X420 (x4xx)   | make test_x420              | X4_200     | 4x10GbE      | Test once on SFP0                                                                         |
 | X440 (x4xx)   | make test_x440              | X4_400     | 4x10GbE      | Test once on SFP0                                                                         |
 | X3x0 (x300)   | make test_x3x0              | HG, XG     | 1GbE, 10GbE  | For HG, test once for each connection: 1GbE (SFP0) and 10GbE (SFP1).<br> For XG, test once for either SFP0 or SFP1 is sufficient. In both cases, also test via PCIe.|
 | N3xx (n3xx)   | make test_n3x0              | HG, XG     | 1GbE, 10GbE  | For HG, test once for each connection: 1GbE (SFP0) and 10GbE (SFP1).<br>For XG, test once for either SFP0 or SFP1 is sufficient.|

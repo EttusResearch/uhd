@@ -52,6 +52,7 @@ if(ENABLE_E320)
 endif(ENABLE_E320)
 if(ENABLE_X400)
     ADD_DEVTEST("x410" "x4xx,product=x410" "X410")
+    ADD_DEVTEST("x420" "x4xx,product=x420" "X420")
     ADD_DEVTEST("x440" "x4xx,product=x440" "X440")
 endif(ENABLE_X400)
 # Formatting
