@@ -572,10 +572,26 @@ A detailed description of the fields is listed in the table below. Each control 
       <th>Type</th>
     </tr>
     <tr>
+      <td> Reserved</td>
+      <td> 16</td>
+      <td> This field is not used in a CHDR control packet <br>
+           but could be used in the future. <br>
+           *Note: This field gets used as the RemDstPort* <br>
+           *when the control payload is passed to the* <br>
+           *AXIS-Ctrl bus. See the* \ref control_plane_anchor "Control Plane" <br>
+           *section for details.* <br>
+       </td>
+      <td> N/A</td>
+    </tr>
+    <tr>
       <td> SrcEPID</td>
       <td> 16</td>
       <td> The ID of the stream endpoint that this packet is <br>
            originated from. <br>
+           *Note: This field becomes the RemDstEPID* <br>
+           *when the control payload is passed to the AXIS-Ctrl* <br>
+           *bus. See the* \ref control_plane_anchor "Control Plane" section <br>
+           *for details.* <br>
            *Note: EPID = 0 is reserved*
        </td>
       <td> Required</td>
@@ -1464,7 +1480,15 @@ The control-plane in the FPGA can be exposed using a low-level AXI4-Stream inter
 
 AXI-Stream Control (AXIS-Ctrl) defines an interface and a packet format to encode control transactions in a standard 32-bit wide AXI-Stream bus. Regardless of the CHDR widths, AXIS-Ctrl will always be 32-bit wide. The data transferred over this interface is identical to the payload of a CHDR control packet except for the top 32 bits of the first payload line. All other fields are identical. Table \ref memory_layout_of_an_axis_ctrl_packet_anchor "Memory layout of an AXIS-Ctrl packet" shows the various fields of an AXIS-Ctrl packets formatted with a 32-bit word width. Note that the payload is identical to that of the \ref mem_layout_chdr_payload_ctrl_anchor "CHDR payload of a control packet", except for the second line in the packet. The fields are described in \ref chdr_control_field_definitions_anchor "CHDR control field definitions", Table \ref control_packet_field_usage "Control transaction field usage", and Table \ref additional_axis_ctrl_field_definitions_anchor "Additional AXIS-Ctrl field definitions".
 
-AXIS-Ctrl packets traverse over the control network which consists of the control crossbar. This network is different for the typical CHDR network in RFNoC. It allows transactions to originate from and terminate in any NoC block in the device, despite the static data connections. The host software can issue an AXIS-Ctrl transaction going to any FPGA block and any FPGA block can send a transaction to any other FPGA block or to software. It is also possible to communicate with blocks in different devices. These are defined as *remote transactions* and require the use of two additional fields, `RemDstEPID` and `RemDstPort`.
+AXIS-Ctrl packets traverse over the control network, which consists of the
+control crossbar. This network is different from the typical CHDR network in
+RFNoC. It allows transactions to originate from and terminate in any NoC block
+in the device, regardless of the static data connections. The host software can
+issue an AXIS-Ctrl transaction going to any FPGA block and any FPGA block can
+send a transaction to any other FPGA block or to software. It is also possible
+to communicate with blocks in different devices. These are defined as *remote
+transactions* and require the use of two additional fields, `RemDstEPID` and
+`RemDstPort`.
 
 \anchor memory_layout_of_an_axis_ctrl_packet_anchor
 <div align="center">
@@ -1570,12 +1594,15 @@ AXIS-Ctrl packets traverse over the control network which consists of the contro
       <td> Required </td>
     </tr>
     <tr>
-      <td> RemDstPort  </td>
-      <td> 10 </td>
-      <td> 
-         The port index of the crossbar downstream of the <br>
+      <td> RemDstEPID </td>
+      <td>  16 </td>
+      <td>
+         Remote Destination Endpoint ID: The ID of the <br>
          remote stream endpoint that this packet is destined <br>
-         towards.
+         towards. <br>
+         *Note: This field is used as the SrcEPID field in* <br>
+         *a CHDR control packet.*<br>
+         *Note: EPID = 0 implies that the transaction is local*
       </td>
       <td> Required </td>
     </tr>
