@@ -38,6 +38,12 @@ static constexpr size_t MPMD_SHORT_RPC_TIMEOUT = 2000;
 static constexpr size_t MPMD_CLAIMER_RPC_TIMEOUT = 10000;
 //! Ethernet address for management and RPC communication
 static const std::string MGMT_ADDR_KEY = "mgmt_addr";
+//! RPC version
+static const std::string RPC_VERSION_KEY = "rpc_version";
+static const std::string RPC_VERSION     = "1";
+// Older devices did not provide an RPC version, but they were all using
+// mprpc, aka version 1.
+static const std::string DEFAULT_RPC_VERSION = "1";
 
 namespace uhd { namespace mpmd {
 
