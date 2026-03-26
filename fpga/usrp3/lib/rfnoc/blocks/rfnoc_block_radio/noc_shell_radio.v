@@ -29,6 +29,8 @@
 //                      response for writes. Set to 0 to wait for the response
 //                      before ACK'ing on CtrlPort, which is the normal
 //                      behavior.
+//   CTRL_FIFO_SIZE   : Number of words in the AXI-Stream control slave FIFO.
+//                      Will be rounded up to nearest power of 2.
 //
 
 `default_nettype none
@@ -43,7 +45,8 @@ module noc_shell_radio #(
   parameter       NUM_PORTS        = 2,
   parameter       NIPC             = 1,
   parameter       ITEM_W           = 32,
-  parameter       SKIP_WR_ACK_WAIT = 0
+  parameter       SKIP_WR_ACK_WAIT = 0,
+  parameter       CTRL_FIFO_SIZE   = 512
 ) (
   //---------------------
   // Framework Interface
@@ -144,6 +147,8 @@ module noc_shell_radio #(
   input  wire [NUM_PORTS-1:0]        s_out_axis_teob
 );
 
+  localparam CTRL_FIFO_SIZE_LOG2 = $clog2(CTRL_FIFO_SIZE);
+
   //---------------------------------------------------------------------------
   //  Backend Interface
   //---------------------------------------------------------------------------
@@ -161,7 +166,7 @@ module noc_shell_radio #(
     .NOC_ID        (32'h12AD1000),
     .NUM_DATA_I    (0+NUM_PORTS),
     .NUM_DATA_O    (0+NUM_PORTS),
-    .CTRL_FIFOSIZE ($clog2(512)),
+    .CTRL_FIFOSIZE (CTRL_FIFO_SIZE_LOG2),
     .CTRL_CLK_IDX  (CTRL_CLK_IDX),
     .TB_CLK_IDX    (TB_CLK_IDX),
     .MTU           (MTU)
@@ -210,7 +215,7 @@ module noc_shell_radio #(
     .SYNC_CLKS        (0),
     .AXIS_CTRL_MST_EN (1),
     .AXIS_CTRL_SLV_EN (1),
-    .SLAVE_FIFO_SIZE  ($clog2(512)),
+    .SLAVE_FIFO_SIZE  (CTRL_FIFO_SIZE_LOG2),
     .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT)
   ) ctrlport_endpoint_i (
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),

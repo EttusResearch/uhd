@@ -28,6 +28,8 @@
 //                      messages). This is useful in situations where packet
 //                      loss is expected. Enabling this will prevent the RX
 //                      state machine from hanging due to dropped packets.
+//   CTRL_FIFO_SIZE   : Number of words in the AXI-Stream control slave FIFO.
+//                      Will be rounded up to next power of 2.
 //
 
 
@@ -45,7 +47,8 @@ module rfnoc_block_radio #(
   parameter PERIPH_ADDR_W         = 19,
   parameter [5:0] CTRL_CLK_IDX    = 6'h3F,
   parameter [5:0] TB_CLK_IDX      = 6'h3F,
-  parameter SKIP_WR_ACK_WAIT      = 0
+  parameter SKIP_WR_ACK_WAIT      = 0,
+  parameter CTRL_FIFO_SIZE        = 512
 ) (
   //---------------------------------------------------------------------------
   // AXIS CHDR Port
@@ -192,7 +195,8 @@ module rfnoc_block_radio #(
     .NUM_PORTS        (NUM_PORTS),
     .NIPC             (NIPC),
     .ITEM_W           (ITEM_W),
-    .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT)
+    .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT),
+    .CTRL_FIFO_SIZE   (CTRL_FIFO_SIZE)
   ) noc_shell_radio_i (
     .rfnoc_chdr_clk            (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
