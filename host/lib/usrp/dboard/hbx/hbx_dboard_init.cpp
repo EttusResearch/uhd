@@ -506,6 +506,12 @@ void hbx_dboard_impl::_init_gain_prop_tree(uhd::property_tree::sptr subtree,
     auto& gain_profile           = (trx == TX_DIRECTION) ? _tx_gain_profile_api
                                                          : _rx_gain_profile_api;
     auto gain_profile_subscriber = [this, trx](const std::string& profile, const size_t) {
+        if (profile == HBX_GAIN_PROFILE_MANUAL && trx == RX_DIRECTION) {
+            RFNOC_LOG_WARNING(
+                "When using the manual gain profile in RX and increasing the individual "
+                "gains, it is possible to irreversibly damage components in the RF chain "
+                "even with input powers below the specified damage level.");
+        }
         // Upon changing the gain profile, we need to import the new value into the
         // property tree.
         const auto path = fs_path("dboard")
