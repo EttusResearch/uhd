@@ -84,9 +84,9 @@ def parse_args():
         "-d",
         "--duration",
         type=float,
-        default=5.0,
+        default=0.5,
         help="""specifies the transmit duration in seconds.
-        If duration = -1 and --dram argument is used, the waveform pattern is repeated continuously until stopped.
+        If duration = 0 and --dram argument is used, the waveform pattern is repeated continuously until stopped.
         If duration > 0, the transmission stops after the configured duration.
         [Default = 0.5]""",
     )
