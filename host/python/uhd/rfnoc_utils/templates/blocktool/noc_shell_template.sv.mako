@@ -131,6 +131,8 @@ module noc_shell_${config['module_name']} #(
   output wire [511:0]       rfnoc_core_status
 );
 
+  localparam CTRL_FIFO_SIZE_LOG2 = $clog2(${config['control']['fifo_depth']});
+
   //---------------------------------------------------------------------------
   //  Backend Interface
   //---------------------------------------------------------------------------
@@ -151,7 +153,7 @@ module noc_shell_${config['module_name']} #(
     .NOC_ID        (32'h${format(config['noc_id'], "08X")}),
     .NUM_DATA_I    (${func.num_ports_in_str()}),
     .NUM_DATA_O    (${func.num_ports_out_str()}),
-    .CTRL_FIFOSIZE ($clog2(${config['control']['fifo_depth']})),
+    .CTRL_FIFOSIZE (CTRL_FIFO_SIZE_LOG2),
     .MTU           (MTU)
   ) backend_iface_i (
     .rfnoc_chdr_clk       (rfnoc_chdr_clk),

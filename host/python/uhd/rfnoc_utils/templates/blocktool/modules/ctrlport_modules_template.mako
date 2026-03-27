@@ -6,7 +6,7 @@ import math
     .SYNC_CLKS        (${1 if config['control']['clk_domain'] == "rfnoc_ctrl" else 0}),
     .AXIS_CTRL_MST_EN (${int(config['control']['interface_direction'] != "slave")}),
     .AXIS_CTRL_SLV_EN (1),
-    .SLAVE_FIFO_SIZE  ($clog2(${config['control']['fifo_depth']}))
+    .SLAVE_FIFO_SIZE  (CTRL_FIFO_SIZE_LOG2)
   ) ctrlport_endpoint_i (
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
     .rfnoc_ctrl_rst            (rfnoc_ctrl_rst),
