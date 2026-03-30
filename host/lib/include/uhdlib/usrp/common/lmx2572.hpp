@@ -41,7 +41,11 @@ public:
     // \param write SPI write function object
     // \param read SPI read function object
     // \param sleep sleep function object
-    static sptr make(write_fn_t&& poke16, read_fn_t&& peek16, sleep_fn_t&& sleep);
+    // \param log_id Log identifier
+    static sptr make(write_fn_t&& poke16,
+        read_fn_t&& peek16,
+        sleep_fn_t&& sleep,
+        const std::string& log_id = "");
 
     //! Save state to chip
     virtual void commit() = 0;

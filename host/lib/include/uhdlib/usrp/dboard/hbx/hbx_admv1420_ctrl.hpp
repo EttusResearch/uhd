@@ -21,7 +21,7 @@ public:
         hbx_cpld_ctrl::poke_fn_type&& poke_fn,
         hbx_cpld_ctrl::peek_fn_type&& peek_fn,
         hbx_cpld_ctrl::mixer_callback_t&& init_cb,
-        const std::string& log_id);
+        const std::string& unique_id);
 
     //! The bands according to the HBX frequency plan
     enum class hbx_band_t { BAND_0, BAND_1, BAND_2 };

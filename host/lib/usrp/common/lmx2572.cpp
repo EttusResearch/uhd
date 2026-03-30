@@ -49,19 +49,22 @@ class lmx2572_impl : public lmx2572_iface
 public:
     enum class muxout_state_t { LOCKDETECT, SDO };
 
-    explicit lmx2572_impl(
-        write_fn_t&& poke_fn, read_fn_t&& peek_fn, sleep_fn_t&& sleep_fn)
+    explicit lmx2572_impl(write_fn_t&& poke_fn,
+        read_fn_t&& peek_fn,
+        sleep_fn_t&& sleep_fn,
+        const std::string& unique_id = "")
         : _poke16(std::move(poke_fn))
         , _peek16(std::move(peek_fn))
         , _sleep(std::move(sleep_fn))
         , _regs()
+        , _log_id(unique_id.empty() ? LOG_ID : unique_id + "::" + LOG_ID)
     {
         _regs.save_state();
     }
 
     void commit() override
     {
-        UHD_LOG_TRACE(LOG_ID, "Storing register cache to LMX2572...");
+        UHD_LOG_TRACE(_log_id, "Storing register cache to LMX2572...");
         const auto changed_addrs = _regs.get_changed_addrs<uint8_t>();
         for (const auto addr : changed_addrs) {
             // We write R0 last, for double-buffering
@@ -72,7 +75,7 @@ public:
         }
         _poke16(0, _regs.get_reg(0));
         _regs.save_state();
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Storing cache complete: Updated " << changed_addrs.size() << " registers.");
     }
 
@@ -116,12 +119,12 @@ public:
         // magic constant:
         const auto magic125 = _peek16(125);
         if (magic125 != 0x2288) {
-            UHD_LOG_ERROR(LOG_ID,
+            UHD_LOG_ERROR(_log_id,
                 "Unable to communicate with LMX2572! Expected R125==0x2288, got: "
                     << std::hex << magic125 << std::dec);
             throw uhd::runtime_error("Unable to communicate to LMX2572!");
         }
-        UHD_LOG_TRACE(LOG_ID, "Communication with LMX2572 successful.");
+        UHD_LOG_TRACE(_log_id, "Communication with LMX2572 successful.");
         // Now set _regs into a sensible state
         _set_defaults();
         // Now write the regs in reverse order, skipping RO regs
@@ -248,7 +251,7 @@ public:
     {
         // Sanity check
         if (target_freq > MAX_OUT_FREQ || target_freq < MIN_OUT_FREQ) {
-            UHD_LOG_ERROR(LOG_ID,
+            UHD_LOG_ERROR(_log_id,
                 "Invalid LMX2572 target frequency! Must be in ["
                     << (MIN_OUT_FREQ / 1e6) << " MHz, " << (MAX_OUT_FREQ / 1e6)
                     << " MHz]!");
@@ -318,7 +321,7 @@ public:
         UHD_ASSERT_THROW(3200e6 <= fVCO_actual && fVCO_actual <= 6400e6);
         const double actual_freq = fVCO_actual / out_D;
         // clang-format off
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Calculating settings for fTARGET=" << (target_freq / 1e6)
                 << " MHz, fOSC=" << (fOSC / 1e6)
                 << " MHz: Target fVCO=" << (fVCO / 1e6)
@@ -376,7 +379,8 @@ private:
     read_fn_t _peek16;
     sleep_fn_t _sleep;
     lmx2572_regs_t _regs = lmx2572_regs_t();
-    bool _sync_mode      = false;
+    const std::string _log_id;
+    bool _sync_mode = false;
 
     /**************************************************************************
      * Private Methods
@@ -692,25 +696,25 @@ private:
         // datasheet.
         switch (cat) {
             case CAT1A:
-                UHD_LOG_TRACE(LOG_ID, "Sync Category: 1A");
+                UHD_LOG_TRACE(_log_id, "Sync Category: 1A");
                 // Nothing required in this mode, input and output are always
                 // at a deterministic phase relationship.
                 break;
             case CAT1B:
-                UHD_LOG_TRACE(LOG_ID, "Sync Category: 1B");
+                UHD_LOG_TRACE(_log_id, "Sync Category: 1B");
                 // Set VCO_PHASE_SYNC_EN = 1
                 _regs.vco_phase_sync_en = lmx2572_regs_t::vco_phase_sync_en_t::
                     VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE;
                 P = 2;
                 break;
             case CAT2:
-                UHD_LOG_TRACE(LOG_ID, "Sync Category: 2");
+                UHD_LOG_TRACE(_log_id, "Sync Category: 2");
                 // Note: We assume the existence and usage of the SYNC pin here.
                 // This means there are no more steps required (Steps 3-6 are
                 // skipped).
                 break;
             case CAT3:
-                UHD_LOG_TRACE(LOG_ID, "Sync Category: 3");
+                UHD_LOG_TRACE(_log_id, "Sync Category: 3");
                 // In this category, we assume that the SYNC signal will be
                 // applied afterwards, and that timing requirements are met.
                 if (_regs.outa_mux == lmx2572_regs_t::outa_mux_t::OUTA_MUX_CHANNEL_DIVIDER
@@ -722,8 +726,8 @@ private:
                     VCO_PHASE_SYNC_EN_PHASE_SYNC_MODE;
                 break;
             case CAT4:
-                UHD_LOG_TRACE(LOG_ID, "Sync Category: 4");
-                UHD_LOG_WARNING(LOG_ID,
+                UHD_LOG_TRACE(_log_id, "Sync Category: 4");
+                UHD_LOG_WARNING(_log_id,
                     "PLL programming does not allow reliable phase synchronization!");
                 break;
             case NONE:
@@ -983,8 +987,9 @@ private:
 
 lmx2572_iface::sptr lmx2572_iface::make(lmx2572_iface::write_fn_t&& poke_fn,
     lmx2572_iface::read_fn_t&& peek_fn,
-    lmx2572_iface::sleep_fn_t&& sleep_fn)
+    lmx2572_iface::sleep_fn_t&& sleep_fn,
+    const std::string& log_id)
 {
     return std::make_shared<lmx2572_impl>(
-        std::move(poke_fn), std::move(peek_fn), std::move(sleep_fn));
+        std::move(poke_fn), std::move(peek_fn), std::move(sleep_fn), log_id);
 }

@@ -64,7 +64,7 @@ void hbx_dboard_impl::_init_admv()
         [this](const hbx_cpld_ctrl::init_t step) {
             _cpld->mixer_init_callback(step, TX_DIRECTION);
         },
-        _unique_id + "::ADMV1320");
+        _unique_id);
     UHD_ASSERT_THROW(_admv1320);
 
     RFNOC_LOG_TRACE("Initializing ADMV1420");
@@ -83,13 +83,14 @@ void hbx_dboard_impl::_init_admv()
         [this](const hbx_cpld_ctrl::init_t step) {
             _cpld->mixer_init_callback(step, RX_DIRECTION);
         },
-        _unique_id + "::ADMV1420");
+        _unique_id);
 }
 
 std::shared_ptr<hbx_lo_ctrl> hbx_dboard_impl::_init_lo_ctrl(const uhd::direction_t trx)
 {
     std::shared_ptr<hbx_lo_ctrl> lo_ctrl = std::make_shared<hbx_lo_ctrl>(
         trx,
+        _unique_id,
         trx == RX_DIRECTION ? _cpld->get_addr("RX_LO_SPI_INFO")
                             : _cpld->get_addr("TX_LO_SPI_INFO"),
         [this](
@@ -137,7 +138,8 @@ void hbx_dboard_impl::_init_demod()
         [this](const uint32_t addr) {
             // We don't do timed peeks, so no chan parameter here.
             return _reg_iface.peek32(_reg_base_address + addr);
-        });
+        },
+        _unique_id);
 }
 
 void hbx_dboard_impl::_init_prop_tree()

@@ -26,8 +26,12 @@ constexpr double MAX_IQ_GAIN_ERR_ADJ = 0.475; // dB
 class ltc5594_impl : public ltc5594_iface
 {
 public:
-    explicit ltc5594_impl(write_fn_t&& poke_fn, read_fn_t&& peek_fn)
-        : _poke16(std::move(poke_fn)), _peek16(std::move(peek_fn)), _regs()
+    explicit ltc5594_impl(
+        write_fn_t&& poke_fn, read_fn_t&& peek_fn, const std::string& unique_id)
+        : _poke16(std::move(poke_fn))
+        , _peek16(std::move(peek_fn))
+        , _regs()
+        , _log_id(unique_id + "::" + LOG_ID)
     {
         _regs = ltc5594_regs_t();
         _regs.save_state();
@@ -39,18 +43,18 @@ public:
         UHD_ASSERT_THROW(_regs.HD2IX == random_value);
         // We know that we can talk, now create a clean state
         reset();
-        UHD_LOG_DEBUG(LOG_ID, "Initialized IQ demodulator LTC5594.");
+        UHD_LOG_DEBUG(_log_id, "Initialized IQ demodulator LTC5594.");
     }
 
     void commit() override
     {
-        UHD_LOG_TRACE(LOG_ID, "Storing register cache to LTC5594...");
+        UHD_LOG_TRACE(_log_id, "Storing register cache to LTC5594...");
         const auto changed_addrs = _regs.get_changed_addrs<uint8_t>();
         for (const auto addr : changed_addrs) {
             _poke16(addr, _regs.get_reg(addr));
         }
         _regs.save_state();
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Storing cache complete: Updated " << changed_addrs.size() << " registers.");
     }
 
@@ -63,7 +67,7 @@ public:
 
     void reset() override
     {
-        UHD_LOG_TRACE(LOG_ID, "Resetting LTC5594...");
+        UHD_LOG_TRACE(_log_id, "Resetting LTC5594...");
         _regs = ltc5594_regs_t();
         _regs.save_state();
         _regs.SRST = 1;
@@ -81,7 +85,7 @@ public:
         _regs.CF1     = settings.cf1;
         _regs.LF1     = settings.lf1;
         _regs.CF2     = settings.cf2;
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Setting LO matching for frequency "
                 << lo_freq / 1e6 << " MHz: "
                 << "BAND=" << settings.band << ", CF1=" << settings.cf1
@@ -91,7 +95,7 @@ public:
 
     void enable_sdo_readback(const bool enable) override
     {
-        UHD_LOG_TRACE(LOG_ID, (enable ? "Enabling" : "Disabling") << " SDO readback...");
+        UHD_LOG_TRACE(_log_id, (enable ? "Enabling" : "Disabling") << " SDO readback...");
         _regs.SDO_MODE = enable ? 1 : 0;
         commit();
     }
@@ -101,7 +105,7 @@ public:
         // The datasheet is not completely clear on how to set the phase error adjustment
         // value, so we are making some assumptions here based on the default value and
         // the resolution of the register.
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Setting phase error adjustment to " << phase_error_adj << " degrees...");
         UHD_ASSERT_THROW(phase_error_adj >= MIN_PHASE_ADJ);
         UHD_ASSERT_THROW(phase_error_adj <= MAX_PHASE_ADJ);
@@ -115,7 +119,7 @@ public:
 
     void set_dc_offset_adj(const double dc_off_i_adj, const double dc_off_q_adj) override
     {
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Setting the dc offset adjustment values to " << dc_off_i_adj << " and "
                                                           << dc_off_q_adj << " mV.");
         UHD_ASSERT_THROW(dc_off_i_adj >= MIN_DC_OFFSET_ADJ);
@@ -133,7 +137,7 @@ public:
 
     void set_gain_err_adj(const double gain_err_adj) override
     {
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Setting the gain error adjustment value to " << gain_err_adj << " dB.");
         UHD_ASSERT_THROW(gain_err_adj >= MIN_IQ_GAIN_ERR_ADJ);
         UHD_ASSERT_THROW(gain_err_adj <= MAX_IQ_GAIN_ERR_ADJ);
@@ -151,6 +155,7 @@ private:
     write_fn_t _poke16;
     read_fn_t _peek16;
     ltc5594_regs_t _regs = ltc5594_regs_t();
+    const std::string _log_id;
 
     /*********************************************
      * Private Methods
@@ -177,8 +182,10 @@ private:
     }
 };
 
-ltc5594_iface::sptr ltc5594_iface::make(
-    ltc5594_iface::write_fn_t&& poke_fn, ltc5594_iface::read_fn_t&& peek_fn)
+ltc5594_iface::sptr ltc5594_iface::make(ltc5594_iface::write_fn_t&& poke_fn,
+    ltc5594_iface::read_fn_t&& peek_fn,
+    const std::string& unique_id)
 {
-    return std::make_shared<ltc5594_impl>(std::move(poke_fn), std::move(peek_fn));
+    return std::make_shared<ltc5594_impl>(
+        std::move(poke_fn), std::move(peek_fn), unique_id);
 }

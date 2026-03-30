@@ -14,15 +14,16 @@ hbx_admv1420_ctrl::hbx_admv1420_ctrl(size_t start_address,
     hbx_cpld_ctrl::poke_fn_type&& poke_fn,
     hbx_cpld_ctrl::peek_fn_type&& peek_fn,
     hbx_cpld_ctrl::mixer_callback_t&& init_cb,
-    const std::string& log_id)
+    const std::string& unique_id)
     : hbx_cpld_ctrl::spi_transactor(
         start_address, std::move(poke_fn), std::move(peek_fn), true)
     , _init_cb(std::move(init_cb))
-    , _log_id(log_id)
+    , _log_id(unique_id + "::HBX_ADMV1420")
 {
     _admv = admv1420_iface::make(
         [this](uint16_t addr, uint16_t data) { this->spi_write(addr, data); },
-        [this](uint16_t addr) -> uint16_t { return this->spi_read(addr); });
+        [this](uint16_t addr) -> uint16_t { return this->spi_read(addr); },
+        unique_id);
 
     _init_cb(hbx_cpld_ctrl::init_t::INIT);
     // SPI settings

@@ -21,6 +21,7 @@ public:
 
     // Pass in our lo selection and poke/peek functions
     hbx_lo_ctrl(direction_t trx,
+        const std::string& unique_id,
         size_t start_address,
         hbx_cpld_ctrl::poke_fn_type&& poke_fn,
         hbx_cpld_ctrl::peek_fn_type&& peek_fn,

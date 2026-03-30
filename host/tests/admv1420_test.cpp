@@ -60,7 +60,8 @@ BOOST_AUTO_TEST_CASE(admv1420_init_test)
     auto mem      = admv1420_mem{}; // Mock memory for the ADMV1420
     auto admv1420 = admv1420_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1420_TEST");
 
     // In ADMV1420 we reset first (reg 0x0 = 0x81), but since those registers are latching
     // in HW, we pull them down again in SW but don't actively write that to HW again.
@@ -77,7 +78,8 @@ BOOST_AUTO_TEST_CASE(admv1420_set_rf_band_test)
     auto mem      = admv1420_mem{}; // Mock memory for the ADMV1420
     auto admv1420 = admv1420_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1420_TEST");
 
 
     admv1420->set_rf_band(admv1420_iface::rf_band_t::BAND_2);
@@ -107,7 +109,8 @@ BOOST_AUTO_TEST_CASE(admv1420_set_dsa_test)
     auto mem      = admv1420_mem{}; // Mock memory for the ADMV1420
     auto admv1420 = admv1420_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1420_TEST");
 
     // Test setting DSA1 to a valid value
     uint8_t result = admv1420->set_dsa(admv1420_iface::dsa_t::DSA1, 10);

@@ -21,7 +21,7 @@ public:
         hbx_cpld_ctrl::poke_fn_type&& poke_fn,
         hbx_cpld_ctrl::peek_fn_type&& peek_fn,
         hbx_cpld_ctrl::mixer_callback_t&& init_cb,
-        const std::string& log_id);
+        const std::string& unique_id);
 
     // Set the RF band to be used.
     void set_rf_band(const uint8_t band);

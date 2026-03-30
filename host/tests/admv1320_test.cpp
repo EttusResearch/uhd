@@ -60,7 +60,8 @@ BOOST_AUTO_TEST_CASE(admv1320_init_test)
     auto mem      = admv1320_mem{}; // Mock memory for the ADMV1320
     auto admv1320 = admv1320_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1320_TEST");
 
     // Check against default register values
     // In ADMV1320 we reset first (reg 0x0 = 0x81), but since those registers are latching
@@ -80,7 +81,8 @@ BOOST_AUTO_TEST_CASE(admv1320_set_rf_band_test)
     auto mem      = admv1320_mem{}; // Mock memory for the ADMV1320
     auto admv1320 = admv1320_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1320_TEST");
 
     admv1320->set_rf_band(admv1320_iface::rf_band_t::BAND_2);
     admv1320->commit();
@@ -109,7 +111,8 @@ BOOST_AUTO_TEST_CASE(admv1320_set_dsa_test)
     auto mem      = admv1320_mem{}; // Mock memory for the ADMV1320
     auto admv1320 = admv1320_iface::make(
         [&](const uint16_t addr, const uint16_t data) { mem.poke16(addr, data); },
-        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); });
+        [&](const uint16_t addr) -> uint16_t { return mem.peek16(addr); },
+        "ADMV1320_TEST");
 
     // Test setting DSA1 to a valid value
     uint8_t result = admv1320->set_dsa(admv1320_iface::dsa_t::DSA1, 10);

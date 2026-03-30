@@ -14,11 +14,11 @@ hbx_admv1320_ctrl::hbx_admv1320_ctrl(size_t start_address,
     hbx_cpld_ctrl::poke_fn_type&& poke_fn,
     hbx_cpld_ctrl::peek_fn_type&& peek_fn,
     hbx_cpld_ctrl::mixer_callback_t&& init_cb,
-    const std::string& log_id)
+    const std::string& unique_id)
     : hbx_cpld_ctrl::spi_transactor(
         start_address, std::move(poke_fn), std::move(peek_fn), true)
     , _init_cb(std::move(init_cb))
-    , _log_id(log_id)
+    , _log_id(unique_id + "::HBX_ADMV1320")
 {
     // Prepare in the callback to the CPLD regs
     _init_cb(hbx_cpld_ctrl::INIT);
@@ -26,7 +26,8 @@ hbx_admv1320_ctrl::hbx_admv1320_ctrl(size_t start_address,
     // Create the ADMV object. This will set SDO active in its ctor
     _admv = admv1320_iface::make(
         [this](uint32_t addr, uint16_t data) { this->spi_write(addr, data); },
-        [this](uint32_t addr) -> uint16_t { return this->spi_read(addr); });
+        [this](uint32_t addr) -> uint16_t { return this->spi_read(addr); },
+        unique_id);
 
     // Callback to CPLD for finalization.
     _init_cb(hbx_cpld_ctrl::FINALIZE);

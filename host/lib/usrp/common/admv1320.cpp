@@ -15,8 +15,12 @@ constexpr char LOG_ID[] = "ADMV1320";
 class admv1320_impl : public admv1320_iface
 {
 public:
-    explicit admv1320_impl(write_fn_t&& poke_fn, read_fn_t&& peek_fn)
-        : _poke16(std::move(poke_fn)), _peek16(std::move(peek_fn)), _regs()
+    explicit admv1320_impl(
+        write_fn_t&& poke_fn, read_fn_t&& peek_fn, const std::string& unique_id)
+        : _poke16(std::move(poke_fn))
+        , _peek16(std::move(peek_fn))
+        , _regs()
+        , _log_id(unique_id + "::" + LOG_ID)
     {
         _regs.save_state();
         // Create a clean state
@@ -34,18 +38,18 @@ public:
         const uint8_t random_value = static_cast<uint8_t>(time(NULL));
         _poke16(_regs.get_addr("SCRATCH_PAD"), random_value);
         UHD_ASSERT_THROW(_peek16(_regs.get_addr("SCRATCH_PAD")) == random_value);
-        UHD_LOG_DEBUG(LOG_ID, "Initialized TX mixer ADMV1320.");
+        UHD_LOG_DEBUG(_log_id, "Initialized TX mixer ADMV1320.");
     }
 
     void commit() override
     {
-        UHD_LOG_TRACE(LOG_ID, "Storing register cache to ADMV1320...");
+        UHD_LOG_TRACE(_log_id, "Storing register cache to ADMV1320...");
         const auto changed_addrs = _regs.get_changed_addrs<size_t>();
         for (const auto addr : changed_addrs) {
             _poke16(addr, _regs.get_reg(addr));
         }
         _regs.save_state();
-        UHD_LOG_TRACE(LOG_ID,
+        UHD_LOG_TRACE(_log_id,
             "Storing cache complete: Updated " << changed_addrs.size() << " registers.");
     }
 
@@ -178,10 +182,13 @@ private:
     write_fn_t _poke16;
     read_fn_t _peek16;
     admv1320_regs_t _regs = admv1320_regs_t();
+    const std::string _log_id;
 };
 
-admv1320_iface::sptr admv1320_iface::make(
-    admv1320_iface::write_fn_t&& poke_fn, admv1320_iface::read_fn_t&& peek_fn)
+admv1320_iface::sptr admv1320_iface::make(admv1320_iface::write_fn_t&& poke_fn,
+    admv1320_iface::read_fn_t&& peek_fn,
+    const std::string& unique_id)
 {
-    return std::make_unique<admv1320_impl>(std::move(poke_fn), std::move(peek_fn));
+    return std::make_unique<admv1320_impl>(
+        std::move(poke_fn), std::move(peek_fn), unique_id);
 }

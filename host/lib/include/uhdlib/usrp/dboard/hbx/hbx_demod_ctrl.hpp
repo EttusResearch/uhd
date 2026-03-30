@@ -16,7 +16,8 @@ public:
     // Pass in our demod selection and poke/peek functions
     hbx_demod_ctrl(size_t start_address,
         hbx_cpld_ctrl::poke_fn_type&& poke_fn,
-        hbx_cpld_ctrl::peek_fn_type&& peek_fn);
+        hbx_cpld_ctrl::peek_fn_type&& peek_fn,
+        const std::string& unique_id);
 
     /*! Sets the LO frequency
      *
@@ -26,7 +27,7 @@ public:
     void set_lo_matching(const double lo_freq);
 
 private:
-    const std::string _log_id = "HBX_DEMOD";
+    const std::string _log_id;
     ltc5594_iface::sptr _ltc;
 };
 }}} // namespace uhd::usrp::hbx

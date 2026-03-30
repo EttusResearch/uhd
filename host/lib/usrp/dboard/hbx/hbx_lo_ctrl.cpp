@@ -13,6 +13,7 @@
 namespace uhd { namespace usrp { namespace hbx {
 
 hbx_lo_ctrl::hbx_lo_ctrl(direction_t trx,
+    const std::string& unique_id,
     size_t start_address,
     hbx_cpld_ctrl::poke_fn_type&& poke_fn,
     hbx_cpld_ctrl::peek_fn_type&& peek_fn,
@@ -21,7 +22,7 @@ hbx_lo_ctrl::hbx_lo_ctrl(direction_t trx,
     : hbx_cpld_ctrl::spi_transactor(
         start_address, std::move(poke_fn), std::move(peek_fn), true)
     , _time_accessor(std::move(time_accessor))
-    , _log_id(trx == RX_DIRECTION ? "RX_LO" : "TX_LO")
+    , _log_id(unique_id + "::" + (trx == RX_DIRECTION ? "RX_LO" : "TX_LO"))
     , _lmx()
     , _freq(LMX2572_DEFAULT_FREQ)
     , _db_prc_rate(db_prc_rate)
@@ -32,7 +33,8 @@ hbx_lo_ctrl::hbx_lo_ctrl(direction_t trx,
         [](const uhd::time_spec_t& ts) {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(static_cast<int>(ts.get_real_secs() * 1000)));
-        });
+        },
+        unique_id + "::" + (trx == RX_DIRECTION ? "RX" : "TX"));
     UHD_ASSERT_THROW(_lmx);
     UHD_LOG_TRACE(_log_id, "LO initialized...");
     _lmx->reset();
