@@ -289,7 +289,7 @@ class LMK04832X4xx(LMK04832):
             (0x012A, 0x60), # enable CLKout 10 and 11, set output and input drive level high, enable digital delay for 10 and 11
             (0x012B, 0x74), # select SYSREF clock output for 10, disable CLKout 10 and 11, high performance bypass disabled, duty cycle correction enabled, normal polarity, no half step adjustment
             (0x012C, 0x21), # select SYSREF Clock output for 11, enable SYSREF path, normal SYSREF disable mode, normal SYSREF polarity, enable half step adjustment
-            (0x012D, 0x00), # disable analog SYSREF delay for 10 and 11, default analog delay value set to 125 ps
+            (0x012D, 0x24), # enable analog SYSREF delay for 10 and 11, default analog delay value set to 209 ps
             (0x012E, 0x08), # set local SYSREF SCLK digital delay to 8
             (0x012F, 0x44), # set CLK output 10 and 11 to LVPECL 1600 mV
             (0x0130, cfg.output_divider), # set Device CLKout 12 and 13 divider

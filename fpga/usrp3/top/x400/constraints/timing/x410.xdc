@@ -95,9 +95,8 @@ set_false_path -from [get_cells -hierarchical -regexp -filter {NAME =~ .*/rfdc/c
 # are used by downstream logic for sync purposes.
 # The highest PRC frequency supported in MPM (64 MHz) is used for
 # timing constraints.
-# Set SYSREF LMK Delay to 0 ns as we assume rising edge alignment from the
-# LMK04832 chip.
-set sysref_lmk_delay 0
+# Set SYSREF LMK Delay to 209 ps as this improves RFDC Multi Tile Sync timing.
+set sysref_lmk_delay 0.209
 #
 # These are the signals' lengths and corresponding delays (assuming 170 ps/in):
 #   - SYSREF --> 5794 mils (5.794 inches) = 0.985 ns
