@@ -15,11 +15,14 @@ typedef uint8_t u8;
 
 #define ETH_ALEN 6
 
-/* TODO: Come up with a smarter way to do this when we start using this on
- * another device */
-#define NVMEM_PATH_SLOT_A "/sys/bus/nvmem/devices/9-00500/nvmem"
-#define NVMEM_PATH_SLOT_B "/sys/bus/nvmem/devices/10-00500/nvmem"
-#define NVMEM_PATH_MB     "/sys/bus/nvmem/devices/2-00500/nvmem"
+#ifdef ENABLE_MYKONOS
+#    define NVMEM_PATH_SLOT_A "/sys/bus/nvmem/devices/db00/nvmem"
+#    define NVMEM_PATH_SLOT_B "/sys/bus/nvmem/devices/db11/nvmem"
+#    define NVMEM_PATH_MB     "/sys/bus/nvmem/devices/mb2/nvmem"
+#endif
+#ifdef ENABLE_E320
+#    define NVMEM_PATH_MB "/sys/bus/nvmem/devices/mb0/nvmem"
+#endif
 
 /* Despite the "sulfur" name, this also applies for E320 ("neon")
  */
