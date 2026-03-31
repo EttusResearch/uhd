@@ -35,38 +35,44 @@
   - USRP X410: 4x full-duplex RF channels with a maximum analog bandwidth of
     400 MHz, tunable from 1 MHz - 7.2 GHz center frequency (tunable to 8 GHz)
     using \subpage page_zbx
+  - USRP X420: 2x full-duplex RF channels with a maximum analog bandwidth of
+    1000 MHz, tunable from 10 MHz - 20 GHz center frequency, support for external
+    LOs and LO sharing between multiple devices, using \subpage page_hbx
   - USRP X440: 8x full-duplex direct-sampling channels, configurable center
     frequencies 30 MHz - 4 GHz (tunable 1 MHz - 4 GHz), with a maximum sampling
     rate of 2048 Msps, using \subpage page_fbx
 
 \section x4xx_overview Overview and Features
 
-The X4x0 series of USRPs comes in two variants: The USRP X410, and the USRP X440.
-Both variants share the same enclosure and motherboard, and are collectively
-referred to as X4x0.
+The X4x0 series of USRPs comes in three variants: The USRP X410, the USRP X420,
+and the USRP X440. All three variants share the same enclosure and motherboard,
+and are collectively referred to as X4x0.
 
 \image html x410.png "Ettus USRP X410" width=50%
+\image html x420.png "Ettus USRP X420" width=50%
 \image html x440.png "Ettus USRP X440" width=50%
 
 The Ettus USRP X4x0 is a fourth-generation Software Defined Radio (SDR) out of the USRP
 family of SDRs. Depending on the variant, it contains either two
 \ref page_zbx "ZBX Daughterboards" for a total of 4 channels at up to 400 MHz of
-analog bandwidth each, or two \ref page_fbx "FBX Daughterboards" for a total of
-8 channels at up to 1.6 GHz of analog bandwidth.
-The analog features of the \ref page_zbx and the \ref page_fbx are described in
-a separate manual page.
+analog bandwidth each, two \ref page_hbx "HBX Daughterboards" for a total of 2 channels
+at up to 1000 MHz of analog bandwidth each, or two \ref page_fbx "FBX Daughterboards"
+for a total of 8 channels at up to 1.6 GHz of analog bandwidth.
+The analog features of the \ref page_zbx, \ref page_hbx, and the \ref page_fbx are
+described in a separate manual page.
 
 The USRP X4x0 features a Xilinx RFSoC, running an embedded Linux system. Like
 other USRPs, it is addressable through a 1 GbE RJ45 connector, which allows full
 access to the embedded Linux system, as well as data streaming at low rates. In
 addition, it features two QSFP28 connectors, which allow for up to 4x10 GbE or
-1x100 GbE connections each. The RFSoC used on the USRP X410 is a ZU28DR speed grade 1,
-on the USRP X440 the ZU28DR speed grade 2.
+1x100 GbE connections each. The RFSoC used on the USRP X410 and USRP X420 is a
+ZU28DR speed grade 1, on the USRP X440 the ZU28DR speed grade 2.
 
-The front panel provides access to the RF connectors (SMA for X410, MMPX for
-X440), Tx/Rx status LEDs, programmable GPIOs, and the power button. The rear
-panel is where the power and data connections go (Ethernet, USB) as well as
-time/clock reference signals and GPS antenna.
+The front panel provides access to the RF connectors (SMA for X410 and X420, MMPX for
+X440), Tx/RX LO input and output connectors (SMA, X420 only), Tx/Rx status LEDs,
+programmable GPIOs, and the power button. The rear panel is where the power and
+data connections go (Ethernet, USB) as well as time/clock reference signals and
+GPS antenna.
 
 \subsection x4xx_overview_rfsoc The RFSoC CPU/FPGA and Host Operating System
 
@@ -97,6 +103,9 @@ respectively).
 The X4x0 has a higher maximum analog bandwidth than previous USRPs. The USRP X410
 can provide rates up to 500 Msps, resulting in a usable analog bandwidth of up to 400 MHz.
 
+The USRP X420 can, depending on the FPGA image used, provide up to 1250 Msps of
+sampling rate, resulting in a usable analog bandwidth of up to 1 GHz on two channels.
+
 The USRP X440 can, depending on the FPGA image used, provide up to 2048 Msps of
 sampling rate, resulting in a usable analog bandwidth of up to 1.6 GHz on two
 channels, or 8 channels at 500 Msps.
@@ -110,9 +119,14 @@ See the DPDK page for details on how it can improve streaming, and how to use it
 The Ettus USRP X410 contains two ZBX daughterboards. To find out more about the
 capabilities of these analog front-end cards, see \ref page_zbx.
 
+\subsection x4xx_overview_x420_dboards USRP X420 Daughterboard Connectivity
+
+The Ettus USRP X420 contains two HBX daughterboards. To find out more about the
+capabilities of these analog front-end cards, see \ref page_hbx.
+
 \subsection x4xx_overview_x440_dboards USRP X440 Daughterboard Connectivity
 
-The Ettus USRP X440 contains two FBX daughterboards. Unlike the ZBX daughterboards,
+The Ettus USRP X440 contains two FBX daughterboards. Unlike the ZBX and HBX daughterboards,
 they have no analog mixers or filters, but directly connect the converters to the
 RF connectors. To find out more about the
 capabilities of these analog front-end cards, see \ref page_fbx.
@@ -124,6 +138,12 @@ capabilities of these analog front-end cards, see \ref page_fbx.
 The X410 front panel provides access to the RF ports and status LEDs of the \ref page_zbx.
 It also provides access to the front-panel GPIO connectors (2x HDMI) and the
 power button.
+
+\image html x420_front_panel.png "Ettus USRP X420 Front Panel" width=90%
+
+The X420 front panel provides access to the RF ports, LO ports and status LEDs of
+the \ref page_hbx. It also provides access to the front-panel GPIO connectors (2x HDMI)
+and the power button.
 
 \image html x440_front_panel.png "Ettus USRP X440 Front Panel" width=90%
 
@@ -180,9 +200,11 @@ for whatever reason.
 
 \subsection x4xx_overview_storage eMMC Storage
 
-The main non-volatile storage of the USRP is a 16 GB eMMC storage. This storage
+The main non-volatile storage of the USRP is a 32 GB eMMC storage*. This storage
 can be made accessible as a USB Mass Storage device through the USB-OTG connector
-on the back panel.
+on the back panel. 
+
+\* USRP X410 up until revision H had an NVM storage of 16 GB only.
 
 The entire root file system (Linux kernel, libraries) and any user data are
 stored on the eMMC. It is partitioned into four partitions:
@@ -224,7 +246,7 @@ The DRAM can be run at up to 2.4 GT/s but is clocked at 2.0 GT/s on X410 by
 default to ease FPGA timing closure.
 
 The FPGA memory controller exposes each bank of DRAM as a 512-bit interface,
-which is clocked at 300 MHz for X440 and 250 MHz on X410. This interface is
+which is clocked at 300 MHz for X440 and at 250 MHz for X410 and X420. This interface is
 then presented to RFNoC as multiple AXI interfaces (one interface for each RF
 channel). Each AXI interface is sized in order to match the expected throughput
 for a single channel. For example, on X410 200 MHz images, each AXI interface
@@ -358,6 +380,7 @@ a step-by-step guide is available at \ref page_build_guide.
 The following minimum UHD versions are required:
 
 - The USRP X410 requires UHD version 4.1 or above.
+- The USRP X420 requires UHD version 4.10 or above.
 - The USRP X440 requires UHD version 4.5 or above.
 
 It is generally recommended to use the latest UHD version.
@@ -369,14 +392,15 @@ It is generally recommended to use the latest UHD version.
 <br/>
 \image html x4x0_KitContents.svg "Ettus USRP X4x0 Kit contents" width=50%
 
-1. Ettus USRP X410/X440
+1. Ettus USRP X410/X420/X440
 2. Cat 5E Ethernet Cable
 3. USB-A (m) to USB-C (m) with Jack Screw Cable
 4. Power supply
-5. Ettus USRP X410/X440 Documentation Note
-6. Ettus USRP X410/X440 Safety, Environmental and Regulatory Information
+5. Ettus USRP X410/X420/X440 Documentation Note
+6. Ettus USRP X410/X420/X440 Safety, Environmental and Regulatory Information
 
-Refer the product page [X410](https://www.ettus.com/all-products/usrp-x410/)/
+Refer to the product page [X410](https://www.ettus.com/all-products/usrp-x410/) /
+[X420](https://www.ettus.com/all-products/usrp-x420/) /
 [X440](https://www.ettus.com/all-products/usrp-x440/) for recommended accessories.
 
 Inside the kit you will find the X4x0 and an X4x0 power supply. Plug these in,
@@ -393,7 +417,7 @@ Host system requirements:
 <b>For Network Mode:</b> A host computer with at least one 10 or one 100 Gigabit 
 Ethernet interface available for sample streaming. In addition to the Ethernet interface 
 used for sample streaming, your host computer will require a separate 1 Gigabit 
-Ethernet interface for command and control streaming. Th exact interface requirement 
+Ethernet interface for command and control streaming. The exact interface requirement 
 varies based on the FPGA image from \ref x4xx_updating_fpga_types loaded to the device.
 
 <b>For Stand-Alone Mode:</b> A host computer with an available 1 Gigabit Ethernet 
@@ -409,7 +433,7 @@ subnet network.
 
 <br/>
 \image html x4x0_NetworkMode.svg "Ettus USRP X4x0 Connections (UHD)" width=50%
-1. Ettus USRP X410/X440
+1. Ettus USRP X410/X420/X440
 2. Network Switch (optional)
 3. Host PC
 4. 100 G Ethernet Network Card
@@ -474,7 +498,7 @@ Verify the serial number printed on the devices matches the corresponding
 device serial number returned by the command. 
 
 All X4x0 variants will report their `type` as 'x4xx'. The `product` key can be
-used to identify the X410/X440 variant.
+used to identify the X410/X420/X440 variant.
 
 If a firewall is enabled on the host computer, allow UDP port 49600 to detect X4x0 devices. 
 On a Linux host, add a new bi-directional rule under iptables.
@@ -578,6 +602,14 @@ As of UHD 4.5, the following USRP X410 images flavors are shipped with UHD:
 | UC_200            | 4 (2 per ZBX)         | 200 MHz                  | Unused                  | 100 GbE                 | Yes     | Yes (4 GiB, 4-Ch Replay)   |
 | CG_400            | 4 (2 per ZBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                         |
 
+As of UHD 4.10, the following USRP X420 images flavors are shipped with UHD:
+
+| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                      |
+|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|---------------------------|
+| X4_200            | 2 (1 per HBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | Yes (8 GiB, 2-Ch Replay)  |
+| X4_1000           | 2 (1 per HBX)         | 1000 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay)  |
+| CG_1000           | 2 (1 per HBX)         | 1000 MHz                 | 100 GbE                 | 100 GbE                 | No      | Yes (8 GiB, 2-Ch Replay)  |
+
 As of UHD 4.6, the following USRP X440 images flavors are shipped with UHD:
 
 | FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                      |
@@ -588,12 +620,12 @@ As of UHD 4.6, the following USRP X440 images flavors are shipped with UHD:
 | X4_1600           | 2 (1 per FBX)         | 1600 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay)  |
 | CG_1600           | 2 (1 per FBX)         | 1600 MHz                 | 100 GbE                 | 100 GbE                 | No      | No                        |
 
-* (Implemented as two separate 4-Ch Replay blocks)
+\* (Implemented as two separate 4-Ch Replay blocks)
 
 The following list shows some potential use-cases for different FPGA images:
 
-- `X4_200` or `UC_200`: On X410, 200 MHz analog bandwidth per channel, or below
-  (using RFNoC DDC/DUCs), streaming between the X410 and an external host
+- `X4_200` or `UC_200`: On X410 and X420, 200 MHz analog bandwidth per channel, or below
+  (using RFNoC DDC/DUCs), streaming between the X410/X420 and an external host
   computer, or streaming to/from on-board DRAM using the RFNoC Record/Replay
   block. For more on DRAM, refer \ref x4xx_pl_dram.
 - `X4_200`: On X440, 200 MHz analog bandwidth per channel, or below (using
@@ -612,6 +644,14 @@ The following list shows some potential use-cases for different FPGA images:
   block 1. Cross-connections Record/Replay0 <-> Radio1 and Record/Replay1 <->
   Radio0 are not supported by default.
   (For USRP X410 this design is available as source, and not shipped as precompiled bitfile)
+- `X4_1000`: (USRP X420 only): 1000 MHz analog bandwidth streaming per channel to/from 
+  on-board DRAM using the RFNoC Record/Replay block. Up to 4 x 10 GbE connections may be
+  used to access the DRAM from an external host computer. Note that 10 GbE is
+  not fast enough for continuous full-rate streaming at this rate.
+  Additionally, this image can also be used with master clock rates of 245.76 MHz,
+  250 MHz and 491.52 MHz.
+- `CG_1000`: (USRP X420 only): Like the X4_1000, but with 2x 100 GbE connections
+  for streaming to/from an external host computer. 
 - `CG_1600` (USRP X440 only): Highest bandwidth streaming between the X440 and 
   an external host computer. Streaming requires one 100 GbE connections per 
   channel. Due to the available FPGA bandwidth only 2 channels are enabled,
@@ -630,7 +670,7 @@ experimental (unsupported).</blockquote>
 The analog bandwidth determines the available master clock rates. See section
 \ref x4xx_usage_mcrs for more information on available master clock rates.
 
-Applications that require 200 MHz bandwidth or less (X410 only)
+Applications that require 200 MHz bandwidth or less, 
 should use the 200 MHz images and make use of the DDC/DUC for lower rates. 
 Applications that require higher bandwidth and use limited signal durations 
 should use the DRAM enabled X4_xxx images to ease streaming requirements.
@@ -673,6 +713,10 @@ these images can be loaded by SSH'ing into the device (Stand-alone mode) and run
 X410:
 
     uhd_image_loader --args "type=x4xx,mgmt_addr=127.0.0.1,fpga=X4_200"
+
+X420:
+
+    uhd_image_loader --args "type=x4xx,mgmt_addr=127.0.0.1,fpga=X4_1000"
 
 X440:
 
@@ -910,6 +954,16 @@ You can now use existing UHD examples or applications (such as
 rx_sample_to_file, rx_ascii_art_dft, or tx_waveforms) or other UHD-compatible
 applications to start receiving and transmitting with the device. 
 
+\subsection x4xx_getting_started_iq_dc IQ & DC Offset Correction (X420 only)
+
+The USRP X420 comes with separate I and Q signal paths and dedicated converters
+for each path. This architecture, however, is prone to IQ impairments. Additionally,
+due to the direct conversion architecture, there is LO leakage in the uncorrected
+spectrum. These impairments can be corrected with an FIR filter structure in the FPGA. The
+filter coefficients need to be determined with a measurement procedure that is
+implemented in a Python script. Refer to \ref calibration_iq_dc_utils for more
+details on the correction procedure.
+
 \subsection x4xx_getting_started_handling Proper Care and Handling
 All Ettus Research products are individually tested before shipment. The USRP is guaranteed to be functional 
 at the time it is received by the customer. Improper use or handling of the USRP can cause the device to 
@@ -924,6 +978,8 @@ become non-functional. Take the following precautions to prevent damage to the u
 
 <b> Caution! X410: Never feed a signal at power levels exceeding {+14 dBm continuous <=3GHz, +17 dBm continuous >3GHz, 
 or +20dBm for longer than 5 minutes >3GHz} into any RF input. </b>
+
+<b> Caution! X420: Never feed a signal at power levels exceeding {0 dBm} into any RF input.</b>
 
 <b> Caution! X440: Never feed a signal at power levels exceeding {+13 dBm continuous <=2.5GHz, +17 dBm continuous between 
 2.5GHz and 3.6 GHz, or +20dBm continuous between 3.6 GHz and 4 GHz} into any RF input. </b>
@@ -1236,7 +1292,7 @@ reboot.
 
 \section x4xx_troubleshooting Troubleshooting
 
-Refer [Ettus USRP X410/X440 Getting Started Guide](https://kb.ettus.com/USRP_X410/X440_Getting_Started_Guide) 
+Refer [Ettus USRP X410/X420/X440 Getting Started Guide](https://kb.ettus.com/USRP_X410/X440_Getting_Started_Guide) 
 for Support, Legal Considerations and T&C.
 
 \subsection x4xx_network_troubleshooting Network Troubleshooting
@@ -1261,8 +1317,13 @@ then you will need to download a UHD-compatible FPGA image as described in
 \ref x4xx_updating_fpga or using the following command (it assumes that FPGA
 images have been downloaded previously using uhd_images_downloader, or that the
 command is run on the device itself):
+
 X410:
    uhd_image_loader --args "type=x4xx,addr=<ip address>,fpga=X4_200"
+
+X420:
+   uhd_image_loader --args "type=x4xx,addr=<ip address>,fpga=X4_1000"
+
 X440:
    uhd_image_loader --args "type=x4xx,addr=<ip address>,fpga=X4_400"
 
@@ -1417,12 +1478,26 @@ The available master clock rates (MCR) depend on the FPGA image flavor that is
 currently installed on the device (see \ref x4xx_updating_fpga_types).
 
 \subsubsection x410_usage_mcrs USRP X410
+
 The USRP X410 has a few fixed MCR available for every image type:
 The 200 MHz images allow master clock rates of 245.76 MHz or 250 MHz. The 400
 MHz images allow master clock rates of 491.52 MHz or 500 MHz. Typically it is 
 sufficient to open a UHD session without the master_clock_rate argument as UHD
 will pick a rate that fits the FPGA image loaded. If a non-valid MCR is chosen,
 the session will error out.
+
+\subsubsection x420_usage_mcrs USRP X420
+
+The USRP X420 has a default master clock rate of 1250 MHz for the xx_1000 images, 
+and 250 MHz for the X4_200 image. To accommodate a wider range of applications,
+the X420 also supports a few additional MCRs as listed in the table below.
+
+| Master Clock \n Rate (MCR) | Converter \n Rate (Fc) | RFDC Divider | Digital Bandwidth \n (0.8 * MCR) | Available in\n Default Bitfile |
+|:--:|:--:|:--:|:--:|:--:|
+245.76 MHz | 1966.08 MHz | 8 | 196.608 MHz | X4_200, xx_1000 |
+250 MHz | 2000 MHz | 8 | 200 MHz | X4_200, xx_1000 |
+491.52 MHz| 3932.16 MHz | 8 | 393.216 MHz | xx_1000 |
+1250 MHz (default)| 2500 MHz | 2 | 1000 MHz | xx_1000 |
 
 \subsubsection x440_usage_mcrs USRP X440
 
@@ -1432,7 +1507,7 @@ The USRP X440 has a much broader range of available master clock rates, and
 supports a fixed set of rates between 125 Msps and 2 Gsps. The maximum available 
 MCR is further dependent on the FPGA image type. The master clock rate depends 
 on the converter rate (Fc) and selected RFDC divider, and in the absence of 
-further digital down or up conversation, equals to the IQ sample rate. 
+further digital down or up conversion, equals to the IQ sample rate. 
 \n Simplified signal path block diagram for X440
 ```
 
@@ -1441,7 +1516,7 @@ further digital down or up conversation, equals to the IQ sample rate.
   ┌─────────────┐      ┌───────────────────────────────────────────┐  │  ┌─────────────┐  │
   │             │      │    Xilinx RFDC (RF Digital Converter)     │  │  │             │  │  ┌──────────────────┐
   │             │      │┌─────────┐   ┌─────────┐  ┌──────────────┐│  V  │    RFNoC    │  V  │   Transport      │
-  │ FPX (Balun) │──────││   ADC   │___|   IQ    │__│ Decimation   ││─────│    Radio    │─────│      with        │
+  │ FBX (Balun) │──────││   ADC   │___|   IQ    │__│ Decimation   ││─────│    Radio    │─────│      with        │
   │             │      ││   DAC   │   │  Mixer  │  │ Interpolation││     │    Block    │     │ Data Rate [Bit/s]│
   │             │      │└─────────┘   └─────────┘  └──────────────┘│     │             │     └──────────────────┘
   └─────────────┘      └─────^────────────^────────────────────────┘     └─────────────┘
@@ -1577,9 +1652,10 @@ prevent any unexpected side-effects.
 The USRP X4x0 series can execute \ref page_timedcmds the same way as other USRPs,
 with the following restrictions:
 
-- Timed tuning is not supported (to be accurate, timed tuning of the RFSoC NCO
-  is not supported)
-- The USRP X440 only (this does not apply to the USRP X410!) has two timekeepers
+- Timed tuning is not supported on X410/X440 (to be accurate, timed tuning of
+  the RFSoC NCO is not supported)
+- Timed tuning is supported in X420 for frequencies > 500 MHz.
+- The USRPs X420 and X440 (this does not apply to the USRP X410!) have two timekeepers
   instead of the usual single timekeeper.
   - Timekeeper 0 manages the time for daughterboard 0, timekeeper 1 manages the
     time for daughterboard 1.
@@ -1672,6 +1748,14 @@ DB 0 / RF 0 | A:0
 DB 0 / RF 1 | A:1
 DB 1 / RF 0 | B:0
 DB 1 / RF 1 | B:1
+
+For X420, the RF ports on the front panel of the X420 correspond to the following
+subdev specifications:
+
+Label       | Subdev Spec
+------------|------------
+DB 0 / RF 0 | A:0
+DB 1 / RF 0 | B:0 
 
 The RF ports on the front panel of the X440 + FBX (xx_400 images) correspond 
 to the following subdev specifications:
@@ -1920,21 +2004,26 @@ converter rates are identical and use the same RFDC decimation/interpolation
 settings.
 
 \subsubsection x410_too_convrate USRP X410
-The USRP X410 only supports a few fixed master clock rates (see \ref x4xx_usage_mcrs), 
+The USRP X410 only supports a few fixed master clock rates (see \ref x410_usage_mcrs), 
 with predefined converter rates around 3 GHz, and uses in addition to the RFDC 
 decimation/interpolation block also a 3/2 decimation (2/3 interpolation) block 
 implemented in FPGA fabric.
 
+\subsubsection x420_too_convrate USRP X420
+
+The USRP X420 was designed and tested with a limited number of master clock rates
+and converter rates as described in \ref x420_usage_mcrs.
+
 \subsubsection x440_too_convrate USRP X440
 The USRP X440 supports a large, finite number of master clock rates (see
-\ref x4xx_usage_mcrs), and utilizes converter rates between 1GHz and the maximum 
+\ref x440_usage_mcrs), and utilizes converter rates between 1GHz and the maximum 
 supported converter rate of 4.096 GHz. The resulting master clock rates are
 derived by decimating by 8, 4 or 2 and vice versa. The smallest possible master
 clock rate is thus 125 Msps (1 GHz resampled by eight), and the maximum possible
 master clock rate is 2.048 Gsps (4.096 GHz resampled by two).
 \n By default, UHD will choose the largest converter rate available. This can 
 be overridden by specifying the `converter_rate` device argument (see also 
-\ref x4xx_usage_args).
+\ref x4xx_usage_args). 
 
 After opening a UHD session the current converter rate can be read from the 
 rfdc_rate sensor. Example:

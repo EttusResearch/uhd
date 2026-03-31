@@ -1,0 +1,401 @@
+/*! \page page_hbx HBX Daughterboard
+
+\tableofcontents
+
+\section hbx_overview Overview
+
+The HBX daughterboard is a one-channel transceiver based primarily on direction conversion,
+addressing 5G NR FR3 and X-/KU-Band needs for research and prototyping in a frequency range of
+10 MHz up to 20 GHz. It supports analog bandwidths of up to 1 GHz.
+
+The HBX daughterboard is the daughterboard of the Ettus USRP X420.
+
+Feature list:
+- Frequency range (Tx and Rx): 10 MHz - 20 GHz
+- Number of channels: 1
+- Maximum analog bandwidth: 
+  - 200 MHz between 10 MHz and 2.2 GHz center frequency
+  - 1 GHz between 2.2 GHz and 20 GHz center frequency
+
+See the RF section in the <a href="https://www.ni.com/docs/bundle/usrp-x420-specs/page/specs.html">Ettus
+USRP X420 Specification</a> for a comprehensive HBX daughterboard specification list.
+
+\section hbx_too Theory of Operation
+
+The HBX daughterboard has one transceiver chain. The following simplified block
+diagram shows the structure:
+
+\image html hbx_simplified_blockdiagram.svg "HBX block diagram" width=80%
+
+The HBX daughterboard is a direct sampling transceiver in the frequency range of 10 MHz
+to 500 MHz, and a direct conversion transceiver in the frequency range of >500 MHz
+to 20 GHz.
+On the TX side, bands 0 to 3 are used to create the output signal: 
+- Band 0: 10 MHz to 500 MHz
+  - Direct sampling, no LO used
+- Band 1: > 500 MHz to 6 GHz
+  - LO used directly
+- Band 2: > 6 GHz to 9 GHz
+  - LO multiplied by 2
+  - TX Mixer in bypass mode for gain selection only
+- Band 3: > 9 GHz to 20 GHz
+  - LO multiplied by 4
+  - Upconverter chip used for mixing and gains
+
+On the RX side, bands 0 to 2 are used to receive the input signal:
+- Band 0: 10 MHz to 500 MHz
+  - Direct sampling, no LO used
+- Band 1: > 500 MHz to 9 GHz
+  - LO used directly until 6 GHz, then multiplied by 2
+  - Downconverter chip in bypass mode for gain selection only
+- Band 2: > 9 GHz to 20 GHz
+  - LO multiplied by 4
+  - RX Mixer used for mixing and gains
+
+The LO synthesizers in TX and RX are identical (LMX2572) but independent. When tuning
+to a frequency in band 0, the LO will remain at its last set frequency and its output
+power will be set to the minimum. The various gain stages are spread out along the TX
+and RX paths - see also \ref hbx_gain_control for more details.
+
+\subsection hbx_too_cpld Digital Control
+
+For digital controls, the HBX daughterboard includes a CPLD. The CPLD is controlled via registers. Its
+register space is exposed as a subset of the RFNoC radio blocks' register space (starting
+at address 0x80000). The CPLD is used to control all switches, DSAs, amplifiers, LEDs, LO
+synthesizers and power rails. The CPLD also controls state-dependent behavior of the HBX daughterboard
+(i.e., behavior depending on the RX/TX state). For this purpose, ATR signals from the
+FPGA are routed to the CPLD. Parts of the CPLD feature set are also described in 
+\ref hbx_gain_control.
+
+\subsection hbx_too_lo_control LO Control
+
+The normal operation of the HBX daughterboard is to simply tune it to a desired center
+frequency, and UHD will internally determine the frequency for the corresponding LO.
+However, when using the LO sharing feature it is important to understand what the LO
+is set to and how to use it.
+Firstly, both in TX and RX the LO is only used at frequencies above 500 MHz. Between
+500 MHz and 6 GHz, the LO is used directly. The LO frequency equals the center 
+frequency, in that case. Between 6 GHz and 9 GHz, the LO is multiplied by 2. The
+LO frequency is half of the center frequency in that case. Above 9 GHz, the LO is multiplied by 4,
+so the LO frequency is a quarter of the center frequency.
+If the LO is shared between two or more X420 devices, setting the same TX/RX frequency
+for all channels involved will work as expected, as the LO will be set to the correct
+frequency for all channels.
+
+Nevertheless, the state of the individual LOs can be queried and configured independently.
+Use the following API calls to do so:
+- multi_usrp API:
+  - uhd::usrp::multi_usrp::get_rx_lo_freq()
+  - uhd::usrp::multi_usrp::get_rx_lo_freq_range()
+  - uhd::usrp::multi_usrp::set_rx_lo_freq()
+  - uhd::usrp::multi_usrp::get_tx_lo_freq()
+  - uhd::usrp::multi_usrp::get_tx_lo_freq_range()
+  - uhd::usrp::multi_usrp::set_tx_lo_freq()
+- RFNoC API:
+  - uhd::rfnoc::radio_control::get_rx_lo_freq()
+  - uhd::rfnoc::radio_control::get_rx_lo_freq_range()
+  - uhd::rfnoc::radio_control::set_rx_lo_freq()
+  - uhd::rfnoc::radio_control::get_tx_lo_freq()
+  - uhd::rfnoc::radio_control::get_tx_lo_freq_range()
+  - uhd::rfnoc::radio_control::set_tx_lo_freq()
+
+The name of the LOs will always be "HBX_LO", regardless of RX or TX direction. 
+Note that manually modifying LOs is considered an advanced operation, and may result in
+a bad state of the device. To undo manual changes, use the regular API calls to set
+a center frequency again.
+
+\subsection hbx_too_lo_sharing LO Sharing
+
+The HBX daughterboard supports sharing the LO between multiple X420 channels. LO sharing
+requires external cabling between the LO connectors. One channel acts as the LO master
+and exports the LO, while all other channels import that same LO signal.
+
+As mentioned in \ref hbx_too_lo_control, TX and RX LOs are independent. Therefore,
+LO sharing must be configured separately for TX and RX.
+
+\image html hbx_lo_sharing_1-1_cascaded_lo.svg "LO sharing between two channels (direct channel-to-channel cabling)" width=45%
+
+\image html hbx_lo_sharing_1-2_cascaded_lo_with_external_splitter.svg "Recommended two-channel topology: LO master also imports its exported LO via an external splitter" width=45%
+
+\image html hbx_lo_sharing_1-8_cascaded_lo_with_distribution_module.svg "Multi-device topology using an external LO distribution module" width=80%
+
+The second topology is the recommended setup for two channels: The LO master also imports
+its own exported LO, so all channels see comparable external path delay. This helps avoid
+phase offsets due to asymmetric routing.
+
+For sharing across more than two channels (or across multiple devices), use an external
+LO distribution and amplifier module. 
+
+The following example shows how to set up TX LO sharing, as shown in the second diagram above, 
+where the LO master exports its LO and both channels import this LO, so that both channels 
+see the same external path delay:
+
+~~~{.cpp}
+// Assumption: 'usrp' is a multi_usrp object
+// Export the TX LO (known as "HBX_LO") of channel 0
+usrp->set_tx_lo_export_enabled(true, "HBX_LO", 0);
+// Import the exported LO again to account for external path lengths
+usrp->set_tx_lo_source("external", "HBX_LO", 0);
+// Make the TX LO (also known as "HBX_LO") of channel 1 use the external LO input
+usrp->set_tx_lo_source("external", "HBX_LO", 1);
+~~~
+
+The frequency of an externally-provided LO signal, necessary to get to a target 
+center frequency, can be determined by setting the desired center frequency on 
+the USRP using set_*x_frequency(), and then querying the LO frequency.
+If the LO is shared among multiple X420 channels, it is sufficient to tune them all
+to the same frequency, and the LO will be set to the correct frequency for all channels.
+
+By default, the output power of the exported LO signal will be close to 0 dBm.  If more power
+is required, the LO power can be adjusted by using the \ref hbx_gain_control to set
+the "LO_PWR_EXT" gain stage. This setting controls the output power of the LMX2572
+LO synthesizer. 
+
+The expected input power level at the LO input connector is 0 dBm for best performance as well.
+To read back the LO power going into the chain (after the "LO_DSA" stage), use the
+"lo_pd" sensor described in \ref hbx_sensors. The "lo_pd" readback value is expected to
+vary with frequency, temperature, and voltage, and should therefore be used
+as an uncalibrated reference (not as an absolute calibrated power measurement).
+
+To match an externally-provided LO signal to the internal LO conditions, first measure the 
+internal LO power using the "lo_pd" sensor at your target operating frequency (for example, 
+-10 dBm). Then adjust the external LO power and/or the "LO_DSA" gain stages until "lo_pd"
+reports a similar value at the same frequency. This ensures comparable LO drive levels.
+
+To adjust the "LO_DSA" gain stage, use the manual gain profile (see \ref hbx_gain_manual).
+Note that higher "LO_DSA" gain index values result in more LO power in the RF chain.
+
+\section hbx_ant_ports Antenna Ports
+
+The HBX daughterboard has two physical SMA antenna ports called "TX/RX0"
+and "RX1".
+
+In UHD, antenna values select the different antenna configurations. The supported values are:
+- "TX/RX0": Uses the shared TX/RX0 antenna port,
+- "RX1": Uses the RX1 antenna port,
+- "CAL_LOOPBACK": Loops the TX path into the RX path internally (this is required for calibration purposes),
+- "TERMINATION": Terminates the RX path internally,
+- "SYNC_INT": Feeds a 5 MHz square wave into the ADC for internal reference.
+
+Use the uhd::usrp::multi_usrp::get_rx_antennas() or uhd::usrp::multi_usrp::get_tx_antennas()
+API calls to enumerate the valid antenna names. When using the RFNoC API, use the 
+uhd::rfnoc::radio_control::get_rx_antennas() and uhd::rfnoc::radio_control::get_tx_antennas()
+calls, respectively.
+
+\section hbx_leds Status LEDs
+
+The HBX daughterboard is equipped with four LEDs: 
+- One for "TX/RX0",
+- one for "RX1",
+- one for the TX LO,
+- and one for the RX LO.
+
+The LEDs indicate the status of the corresponding components, providing visual feedback on
+the operation of the HBX daughterboard:
+
+| LED State | TX/RX0               | RX1               |
+|-----------|----------------------|-------------------|
+| Off       | Port is inactive     | Port is inactive  |
+| Green     | Port is receiving    | Port is receiving |
+| Red       | Port is transmitting | N/A               |
+
+| LED State | TX LO               | RX LO               |
+|-----------|---------------------|---------------------|
+| Off       | No LO sharing       | No LO sharing       |
+| Green     | External LO is used | External LO is used |
+| Red       | LO is exported      | LO is exported      |
+
+\section hbx_pwr_cal Power Calibration
+
+The HBX daughterboard supports the UHD power API. To use this, the device needs to be calibrated manually
+as described in \ref page_power.
+
+\section hbx_sensors Sensors
+
+Every channel has two sensors for the LO stages ("lo_locked" and "nco_locked").
+The "lo_locked" sensor indicates whether the LO synthesizer is locked to the desired
+frequency. The "NCO lock" sensor is a special case: The NCO is not located on the daughterboard but on the motherboard's RFSoC FPGA.
+To simplify the API, it was placed together with the
+LO lock sensors. Unlike the (analog) synthesizers on the daughterboard, the NCO "unlock"
+is not used to signify a loss of reference lock, but to signal that the NCO is
+still in reset.
+
+Additionally, the HBX daughterboard has a temperature sensor called "temperature" which returns
+the mean value of the temperature sensors that are placed on the top and the bottom of the dauhterboard. Top and bottom sensors
+can be accessed with "temperature_top" and "temperature_bottom", respectively.
+While the UHD API allows addressing a sensor based on direction (RX/TX) and 
+channel, the return value will be the same regardless of which channel or
+direction is selected.
+
+Furthermore, the HBX daughterboard has a "lo_pd" sensor which gives access to the LO power
+detector. Depending on if the internal LO or an external LO is used, the 
+returned value will be the power of the internal or the external LO, respectively.
+
+The following API calls can be used to enumerate available sensors, and query
+their values:
+- multi_usrp API:
+  - uhd::usrp::multi_usrp::get_rx_sensor_names()
+  - uhd::usrp::multi_usrp::get_rx_sensor()
+  - uhd::usrp::multi_usrp::get_tx_sensor_names()
+  - uhd::usrp::multi_usrp::get_tx_sensor()
+- RFNoC API:
+  - uhd::rfnoc::radio_control::get_rx_sensor_names()
+  - uhd::rfnoc::radio_control::get_rx_sensor()
+  - uhd::rfnoc::radio_control::get_tx_sensor_names()
+  - uhd::rfnoc::radio_control::get_tx_sensor()
+
+\section hbx_gain_control Gain Control
+
+The HBX daughterboard has a sophisticated gain control, capable of controlling either an overall
+gain, or manually controlling its individual gain stages. 
+
+Depending on the frequency band, different gain stages are active. In the RX bands
+from 10 MHz up to 2.9 GHz the gain is controlled by two low-frequency DSAs. In the bands
+above, one RF DSA and a cascade of DSAs in the mixer chip are used. On the TX side below
+6 GHz, the gain is controlled by a single RF DSA. Above 6 GHz, this RF DSA is used
+together with the gain stages in the TX mixer. Refer to the HBX block diagram
+at \ref hbx_too for a visual representation of the gain stages in the signal path.
+
+To switch between gain profiles, use the uhd::usrp::multi_usrp::set_tx_gain_profile()
+or uhd::usrp::multi_usrp::set_rx_gain_profile() API calls. When using the RFNoC
+API, use the uhd::rfnoc::radio_control::set_tx_gain_profile() or
+uhd::rfnoc::radio_control::set_rx_gain_profile() API calls. The main difference
+between these APIs is that the multi_usrp API calls allow a default channel
+value, which the RFNoC API calls do not.
+
+As with all other devices, the following API calls set or query gain values:
+- Multi USRP:
+  - uhd::usrp::multi_usrp::set_tx_gain()
+  - uhd::usrp::multi_usrp::get_tx_gain()
+  - uhd::usrp::multi_usrp::set_rx_gain()
+  - uhd::usrp::multi_usrp::get_rx_gain()
+- RFNoC
+  - uhd::rfnoc::radio_control::set_tx_gain()
+  - uhd::rfnoc::radio_control::get_tx_gain()
+  - uhd::rfnoc::radio_control::set_rx_gain()
+  - uhd::rfnoc::radio_control::get_rx_gain()
+
+These API calls come in different flavours, with an optional "gain name" argument.
+Note the multi_usrp API calls default to setting the overall gain value, which
+is not allowed in all gain profiles. All API calls have a corresponding API call
+to query the supported gain range.
+
+\subsection hbx_gain_default Default Gain Profile
+
+This gain profile is active by default. It allows setting a single, scalar gain 
+value. UHD will internally use a gain table to linearize the overall gain, meaning
+that a 1 dB gain increase will also increase the transmit or receive power by 1 dB.
+Since the RF DSA that is used in the TX path between 10 MHz and 6 GHz only has a step
+width of 2 dB, only every second gain index step will result in an increase of 2 dB
+in power in those bands.
+The UHD-internal gain table is not calibrated per-device, nor does it take 
+into account temperature or other changes. The gain index values that can
+be set via the API are mapped in a way that for the same gain index, across all bands,
+the frequency response will be rather flat. However, this means that while the overall
+gain range is given by the API, the effective gain range may vary across the full
+frequency range depending on the band. For consistency reasons, the API will
+still report values for the full gain range, as changing frequencies could result
+in a changed gain index otherwise.
+
+In this gain profile, it is not possible to set the individual gain stages directly, but
+it is possible to read them back. This may be helpful when trying to fine-tune gain
+settings in software.
+
+~~~{.cpp}
+// Assumption: 'usrp' is a multi_usrp object
+usrp->set_tx_gain_profile("default"); // Only necessary if the gain profile was set to something else before
+usrp->set_tx_gain(50); // Will set the gain to 50 dB on all associated daughterboards
+std::cout << usrp->get_tx_gain() << std::endl; // Should print "50"
+usrp->set_tx_gain(0, "RF_DSA"); // Will cause an exception
+// Individual DSAs may still be queried. Note that even though this is an
+// attenuator, the return value is a gain (higher values mean more TX power):
+auto rf_dsa_gain = usrp->get_tx_gain("RF_DSA");
+~~~
+
+The individual gain names for the individual DSAs can be read out by using the manual gain
+profile. 
+
+<b>ATR Behaviour:</b> The gains will apply to their respective ATR state, i.e.,
+RX gains will be applied to both the RX and full-duplex state, and TX gains will
+be applied to the TX and full-duplex state. In the idle state, gains are set to
+minimum gain.
+
+\subsection hbx_gain_manual Manual Gain Profile
+
+\b Note: The gain tables for the default gain profile have been defined to prevent
+any damage to the device as long as the input signal power level is below the specified maximum input level. However, when
+using the manual gain profile, it is possible to set gain values that could lead to
+device damage, even if the input signal power level is below the specified maximum input power level. It is a good practice
+to first set the desired center frequency and (maximum) gain index using the default gain
+profile, and then switch to the manual gain profile to read out the gain values for the
+individual stages as baseline, and to modify them if desired. 
+
+When more control is desired, the manual gain profile can be applied. Here, it is no longer
+possible to request an overall gain value. However, it is now possible to set the DSA values
+directly.
+
+~~~{.cpp}
+usrp->set_tx_gain_profile("manual");
+usrp->set_tx_gain(30); // ERROR: Now, we have to specify a name
+auto gain_names = usrp->get_tx_gain_names(0); // Returns a list of all TX gain names for channel 0
+// From that list, pick the desired gain stage, e.g. RF_DSA
+usrp->set_tx_gain(5, "RF_DSA"); // Set RF_DSA to 5 dB gain (equals 26 dB attenuation)
+// The following line will return an undefined value and print a warning, but
+// will not throw an exception. That's because calling the overall gain is a common API call
+// done by many utilities, and this behaviour is considered most backward compatible.
+std::cout << usrp->get_tx_gain() << std::endl;
+std::cout << usrp->get_tx_gain("RF_DSA") << std::endl; // Should print '5'
+~~~
+
+\section hbx_atr Auto-Transmit-Receive Registers (ATR)
+
+Like other USRPs, the X420 provides GPIOs to the daughterboards that communicate
+the RX/TX state. The HBX daughterboard is, by default, configured to switch settings based on
+the current state (idle, RX, TX, full duplex). For example, the TX/RX antenna
+is switched between the TX and RX channels depending on the state. A total of 2
+GPIOs between the motherboard FPGA and the daughterboard CPLD are used for this
+purpose.
+
+HBX uses these pins to select between different RF control values
+(e.g., the aforementioned TX/RX antenna switch position; this also includes the
+front-panel LEDs) as well as DSA controls (e.g., when doing RX only, the TX gain
+stages can be set to zero to minimize leakage). Internally, this works by
+converting the ATR pins into a control word. This control word is used to index
+tables that contain different values for RF control/LEDs as well as DSAs.
+
+Example: Assume the device is transmitting, but not receiving, on channel 0. The
+FPGA will set the ATR pins for channel 0 to a binary value of 0b10, which equals
+a decimal value of 2. The transmit gain is controlled by DSA values that are
+stored in tables called e.g. RF_DSA. For the duration of the transmission, the
+DSA values at table position RF_DSA[2] will thus be used.
+Similarly, tables for RF path control and LEDs are used to
+configure those. This mode of using the ATR pins is called the "classic ATR" mode
+and is the default behaviour.
+
+The HBX daughterboard provides one additional mode of utilizing those pins, the
+"Software Defined" mode: In this mode, the ATR pins are ignored. The control word
+is derived from another register. In this case, changing the table index
+requires another register write as opposed to the almost instantaneous tracking
+of the ATR state in the other mode.
+
+Usage of this mode is considered highly advanced usage of HBX. The "Software
+Defined" mode is not supported by UHD without custom modifications (it is
+possible, however, to manually write to the appropriate registers to use this
+mode).
+
+~~~{.cpp}
+// Assumption: 'radio' is a radio_control object
+// Set the software defined mode. This will affect TX and RX channels of the
+// same daughterboard.
+radio->poke32(0x810a4, 0); // Set the ATR mode to "Software Defined" (0)
+// E.g. set receive state (states are: 0: idle, 1: RX, 2: TX, 3: TRX)
+radio->poke32(0x810a0, 1); // Set the control word to 1 for RX
+// Return to classic ATR:
+radio->poke32(0x810a4, 1); // Set the ATR mode to "Classic" (1)
+~~~
+
+For detailed information about the register
+layout and addresses, refer to the <a href="https://github.com/EttusResearch/uhd/blob/master/fpga/usrp3/top/x400/doc/X420/X420_FPGA.htm">X420 FPGA register map documentation</a>.
+
+*/
+// vim:ft=doxygen:

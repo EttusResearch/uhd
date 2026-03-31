@@ -36,6 +36,7 @@ __Daughterboards__
 \li \subpage page_dboards
 \li \ref page_twinrx
 \li \ref page_zbx
+\li \ref page_hbx
 \li \ref page_fbx
 
 __OctoClock__

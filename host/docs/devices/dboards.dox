@@ -558,10 +558,23 @@ Features:
 - Frequency Range: 1 MHz to 8 GHz
 - Relative Gain Range: 0 - 60 dB (RX gain range reduced below 500 MHz)
 
-The ZBX daughterboard only works with the X410 motherboard.
+The ZBX daughterboard is part of the Ettus USRP X410.
 
 More information:
 \li \subpage page_zbx
+
+\subsection dboards_hbx HBX XCVR board
+
+Features:
+- Single channel transceiver
+- TX/RX 0 and RX 1 antenna ports
+- Frequency Range: 10 MHz to 20 GHz
+- Relative gain range: 0 - 68 dB (TX), 0 - 48 dB (RX) - exact ranges depend on frequency band
+
+The HBX daughterboard is part of the Ettus USRP X420.
+
+More information:
+\li \subpage page_hbx
 
 \subsection dboards_fbx FBX XCVR board
 
@@ -571,7 +584,7 @@ Features:
 - Frequency Range: 30 MHz to 4 GHz
 - Relative Gain Range: 0 dB (no gain control)
 
-The FBX daughterboard only works with the X440 motherboard.
+The FBX daughterboard is part of the Ettus USRP X440.
 
 More information:
 \li \subpage page_fbx

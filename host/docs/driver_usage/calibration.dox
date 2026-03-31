@@ -37,6 +37,11 @@ utilities:
 -   OBX Series transceiver boards
 -   USRP N320
 
+The **USRP X420** with its large bandwidth of 1 GHz is not supported by
+the aforementioned calibration utilities. For this device, the
+`uhd_iq_dc_correction.py` utility needs to be used for both IQ imbalance
+and DC offset correction.
+
 \subsection calibration_self_utils Calibration Utilities
 
 UHD software installs the calibration utilities into
@@ -57,6 +62,28 @@ is the case, run the following command to burn a serial number into the
 daughterboard's EEPROM:
 
     <install dir>/lib/uhd/utils/usrp_burn_db_eeprom --ser=<desired serial> --args=<optional device args>
+
+\subsection calibration_iq_dc_utils IQ Imbalance and DC Offset Correction Utilities
+
+Currently, for X420 only, UHD installs the **uhd_iq_dc_correction.py**
+utility into `<Python path>/site-packages/uhd/utils/`. In addition to
+the requirements of UHD, this script requires the Python packages
+`scipy` and `tqdm`. As with the other calibration utilities, it is
+recommended to disconnect any external signals from the RF antenna
+ports before running the utility and to let the device warm up for
+a few minutes. By default, the utility will perform an RX IQ imbalance and DC Offset
+correction only. By adding the `--tx` argument, TX IQ imbalance and DC offset corrections can be enabled
+as well. The utility will take several minutes to complete. See the output
+given by `--help` for more advanced options, such as manually choosing
+the frequency range and step size for the sweeps or switching to a
+different than the default master clock rate.
+
+    python3 uhd_iq_dc_correction.py --args=<optional device args> -c <chan> [--tx --sample_rate=<rate>]
+
+It is recommended to perform the corrections using a 10 or 100 GbE connection between USRP and host computer to minimize
+the measurement time. If that is not possible, the corrections can still be executed using
+the 1 GbE connection, too, but the additional --rj45 parameter must be
+added to disable optimizations that are specific to higher-speed connections.
 
 \subsection calibration_data Calibration Data
 
@@ -88,7 +115,7 @@ https://google.github.io/flatbuffers/.
 Once installed, `.cal` files can be converted to JSON using
 
 	flatc --strict-json -t <install dir>/share/uhd/cal/<foo>_cal.fbs -- <data>.cal
-	
+
 where `<foo>_cal.fbs` is the scheme file used for the data,
 e.g. `pwr_cal.fbs` for power calibration. `data.cal` is a calibration file in
 your working directory. This will generate a `<data>.json` in the same
@@ -97,10 +124,10 @@ directory.
 The JSON data can be converted back to binary using
 
 	flatc -b <install dir>/include/uhd/cal/<foo>_cal.fbs <data>.json
-	
+
 This generates a `<data>.cal` that can be read by the calibration routines
 of UHD.
-	
+
 \subsection calibration_data_csv Converting UHD 3.x calibration data to UHD 4
 
 Older versions of UHD used a CSV-based format for storing calbration data for
@@ -157,7 +184,8 @@ reason, the DC offset compensation consists of a simple adder. The calibration
 tool `uhd_cal_tx_dc_offset` will estimate the value D' which minimizes the DC
 offset for various frequencies (i.e., D' is approximately equal to -D).
 
-To program the adder, set the DC offset correction value using these API calls:
+To program the adder, set the DC offset correction value using these API calls
+(all USRPs, except USRP X420):
 
 - uhd::usrp::multi_usrp::set_tx_dc_offset()
 - uhd::usrp::multi_usrp::set_rx_dc_offset()
@@ -176,7 +204,7 @@ following difference equation:
 The values for \f$\alpha\f$ are device-dependent, but the default value is \f$2^{-20}\f$.
 
 To enable the automatic DC offset correction, call one of these API calls with
-an argument of 'true':
+an argument of 'true' (all USRPs, except USRP X420):
 
 - uhd::usrp::multi_usrp::set_rx_dc_offset()
 - uhd::rfnoc::radio_control::set_rx_dc_offset()
@@ -189,7 +217,13 @@ interest if the LO is within the band of interest.
 Superheterodyne receivers such as the TwinRX do usually not require DC offset
 correction values.
 
-\subsection calibration_fe_corr_iq_offset Single-Point IQ offset compensation
+Because IQ impairments and DC offset measurements are similar in the way how
+they are measured, **in X420**, the same utility is used for both. The API
+calls described above do not apply to X420. Instead, after running the
+`uhd_iq_dc_correction.py` utility, the correction values are automatically applied
+at runtime. Passing them manually is not possible.
+
+\subsection calibration_fe_corr_iq_offset Single-Point IQ offset correction
 
 In order to correct IQ imbalance, the user can specify two real values A and B.
 In the FPGA, the complex signal is modified according to the following equation:
@@ -236,6 +270,46 @@ IQ imbalance is caused by the inphase and quadrature paths of a direct-conversio
 receiver being slightly different in amplitude as well as their phase not being
 exactly 90 degrees apart (due to analog components). It is therefore not
 required for superheterodyne architectures like the TwinRX.
+
+\subsection calibration_fe_dc_iq DC Offset and IQ Imbalance Correction (X420)
+
+The calibration files generated from the uhd_iq_dc_correction utility are
+compensating the DC offset as described in \ref calibration_fe_corr_dc_offset.
+
+The IQ imbalance correction is based on the single-point method described before with an additional compensation of the
+time delay of the Q channel.
+
+The time delay is compensated using a fractional-delay FIR filter.
+The coefficients \f$h\f$ are calculated from the following equation, where \f$d\f$ is the
+desired group delay of the filter (centered by the number of coefficients) and
+\f$F_s\f$ is the sample rate.
+
+\f[
+h(i) = sinc((i-d) - t_{offset} * F_s)
+\f]
+
+The single point IQ correction is using the formula below, where the linear
+gain is \f$g\f$ and the phase skew is \f$\phi\f$.
+
+\f[
+\begin{pmatrix}
+I' \\
+Q'
+\end{pmatrix}
+=
+\begin{pmatrix}
+1 & 0 \\
+-tan(\phi) & \frac{1}{g \cdot cos(\phi)}\\
+\end{pmatrix}
+\begin{pmatrix}
+I \\
+Q
+\end{pmatrix}
+\f]
+
+For the Q inline path
+(\f$Q \rightarrow Q'\f$) the respective factor from the correction matrix and the coefficients \f$h\f$  from the
+FIR filter above are combined into a single FIR filter.
 
 */
 // vim:ft=doxygen:
