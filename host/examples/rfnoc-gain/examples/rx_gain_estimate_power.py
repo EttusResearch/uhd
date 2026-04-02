@@ -9,8 +9,9 @@
 import argparse
 import sys
 
-import uhd
 import rfnoc_gain
+import uhd
+
 
 def parse_args():
     """Parse the command line arguments."""
@@ -99,7 +100,7 @@ def main():
     else:
         radio_block.set_rate(args.rate)
         rate = radio_block.get_rate()
-    print(f"Requested RX rate: {args.rate/1e6} Msps, " f"actual RX rate: {rate} Msps")
+    print(f"Requested RX rate: {args.rate/1e6} Msps, " f"actual RX rate: {rate/1e6} Msps")
     # Now do a power reading
     print(f"Estimating RX power from {args.samps_per_est/rate} s worth of signal...")
     power_dbfs = uhd.dsp.signals.get_usrp_power(rx_streamer, num_samps=int(args.samps_per_est))
