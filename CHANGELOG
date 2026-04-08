@@ -21,7 +21,7 @@ Change Log for Releases
       - Allows specifying complex gain coefficients to be applied to all
         TX and/or RX samples of a radio channel at the specified time.
       - Enabled by default for all TX and RX channels of the radio blocks,
-        but can be disabled at FPGA build time via the`EN_COMP_GAIN_TX`
+        but can be disabled at FPGA build time via the `EN_COMP_GAIN_TX`
         and `EN_COMP_GAIN_RX` parameters of the radio blocks.
       - NOTE: For the x440_X4_400 default FPGA design provided with UHD,
         enabling this feature for all 8 RX and TX channels necessitated
