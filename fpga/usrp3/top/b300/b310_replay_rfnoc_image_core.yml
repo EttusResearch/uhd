@@ -1,0 +1,93 @@
+#
+# Copyright 2026 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2026 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 128                          # Bit width of the CHDR bus for this image
+device: 'b310'
+image_core_name: 'usrp_b310_fpga_replay'  # This is used for the bitfile, DTS, and report
+default_target: 'B310'
+inherit:
+  - 'yaml_include/b310_radio_base.yml'
+
+parameters:
+  NUM_PORTS_PER_RADIO: 2
+  ENABLE_DRAM: True
+  PCIE_LINK_WIDTH: 4
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    buff_size_bytes: 262144             # Ingress buffer size for data
+  ep1:
+    buff_size_bytes: 262144
+  ep2:
+    buff_size_bytes: 65536
+    ctrl: False
+    data: True
+  ep3:
+    buff_size_bytes: 65536
+    ctrl: False
+    data: True
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  replay0:
+    block_desc: 'replay.yml'
+    parameters:
+      NUM_PORTS: 2
+      MEM_DATA_W: 64
+      MEM_ADDR_W: 30
+    priority: 99 # Make sure they come after the blocks defined in b310_radio_base.yml
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A TX
+  - { srcblk: ep0,     srcport: out0,    dstblk: duc0,     dstport: in_0 }
+  - { srcblk: duc0,    srcport: out_0,   dstblk: radio0,   dstport: in_0 }
+  # RF A RX
+  - { srcblk: radio0,  srcport: out_0,   dstblk: ddc0,     dstport: in_0 }
+  - { srcblk: ddc0,    srcport: out_0,   dstblk: ep0,      dstport: in0  }
+  #
+  # RF B TX
+  - { srcblk: ep1,     srcport: out0,    dstblk: duc0,     dstport: in_1 }
+  - { srcblk: duc0,    srcport: out_1,   dstblk: radio0,   dstport: in_1 }
+  # RF B RX
+  - { srcblk: radio0,  srcport: out_1,   dstblk: ddc0,     dstport: in_1 }
+  - { srcblk: ddc0,    srcport: out_1,   dstblk: ep1,      dstport: in0  }
+  #
+  # Replay Connections
+  - { srcblk: ep2,     srcport: out0,    dstblk: replay0,  dstport: in_0 }
+  - { srcblk: replay0, srcport: out_0,   dstblk: ep2,      dstport: in0  }
+  - { srcblk: ep3,     srcport: out0,    dstblk: replay0,  dstport: in_1 }
+  - { srcblk: replay0, srcport: out_1,   dstblk: ep3,      dstport: in0  }
+  #
+  # BSP Connections
+  - { srcblk: replay0, srcport: axi_ram, dstblk: _device_, dstport: dram }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+  - { srcblk: _device_, srcport: dram, dstblk: replay0, dstport: mem  }

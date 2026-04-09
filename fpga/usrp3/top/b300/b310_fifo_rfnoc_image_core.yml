@@ -1,0 +1,79 @@
+#
+# Copyright 2026 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2026 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 128                         # Bit width of the CHDR bus for this image
+device: 'b310'
+image_core_name: 'usrp_b310_fpga_fifo'  # This is used for the bitfile, DTS, and report
+default_target: 'B310'
+inherit:
+  - 'yaml_include/b310_radio_base.yml'
+
+parameters:
+  NUM_PORTS_PER_RADIO: 2
+  ENABLE_DRAM: True
+  PCIE_LINK_WIDTH: 4
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  fifo0:
+    block_desc: 'axi_ram_fifo.yml'
+    parameters:
+      # These parameters match the memory interface on the B310
+      NUM_PORTS: 2
+      MEM_DATA_W: 64
+      MEM_ADDR_W: 30
+      MEM_CLK_RATE: "200e6"
+      # Increase the output buffer size
+      OUT_FIFO_SIZE: 14
+      # Create two non-overlapping 512 MiB buffers by default
+      FIFO_ADDR_BASE: "{30'h20000000, 30'h00000000}"
+      FIFO_ADDR_MASK: "{30'h1FFFFFFF, 30'h1FFFFFFF}"
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+  # RF A TX with DRAM FIFO
+  - { srcblk: ep0,    srcport: out0,    dstblk: fifo0,    dstport: in_0 }
+  - { srcblk: fifo0,  srcport: out_0,   dstblk: duc0,     dstport: in_0 }
+  - { srcblk: duc0,   srcport: out_0,   dstblk: radio0,   dstport: in_0 }
+  # RF A RX
+  - { srcblk: radio0, srcport: out_0,   dstblk: ddc0,     dstport: in_0 }
+  - { srcblk: ddc0,   srcport: out_0,   dstblk: ep0,      dstport: in0  }
+  #
+  # RF B TX with DRAM FIFO
+  - { srcblk: ep1,    srcport: out0,    dstblk: fifo0,    dstport: in_1 }
+  - { srcblk: fifo0,  srcport: out_1,   dstblk: duc0,     dstport: in_1 }
+  - { srcblk: duc0,   srcport: out_1,   dstblk: radio0,   dstport: in_1 }
+  # RF B RX
+  - { srcblk: radio0, srcport: out_1,   dstblk: ddc0,     dstport: in_1 }
+  - { srcblk: ddc0,   srcport: out_1,   dstblk: ep1,      dstport: in0  }
+  #
+  # BSP Connections
+  - { srcblk: fifo0,  srcport: axi_ram, dstblk: _device_, dstport: dram }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+  - { srcblk: _device_, srcport: dram,  dstblk: fifo0,  dstport: mem   }

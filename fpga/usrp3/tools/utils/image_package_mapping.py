@@ -4,9 +4,8 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-Container for the list of image package targets, and the information about them
-"""
+"""Container for the list of image package targets, and the information about them."""
+
 PACKAGE_MAPPING = {
     "e310_sg1": {
         "type": "e3xx",
@@ -347,6 +346,16 @@ PACKAGE_MAPPING = {
         "type": "usrp2",
         "package_name": "usrp2_usrp2_fw_default-g{}.zip",
         "files": ["usrp2_fw.bin"],
+    },
+    "b310": {
+        "type": "b3xx",
+        "package_name": "b3xx_b310_fpga_default-g{}.zip",
+        "files": [
+            "usrp_b310_fpga_replay.bit",
+            "usrp_b310_fpga_replay.rpt",
+            "usrp_b310_fpga_fifo.bit",
+            "usrp_b310_fpga_fifo.rpt",
+        ],
     },
     "b200": {
         "type": "b2xx",

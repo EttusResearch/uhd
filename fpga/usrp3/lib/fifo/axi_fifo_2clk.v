@@ -88,15 +88,16 @@ module axi_fifo_2clk #(
   wire             o_ext_tvalid;
   wire             o_ext_tready;
 
-  // Derive constants based on device.
-  // The XPM based FIFO cannot be used for X300/X310 based devices due to the
-  // timing constraints. Deriving a local parameter to use for later checks.
+  // Derive constants based on device. The XPM-based FIFO is not yet supported
+  // on some devices. Deriving a local parameter to use for later checks.
   `ifdef X300
-    localparam DEVICE_X3XX = 1;
+    localparam USE_LEGACY_FIFO = 1;
   `elsif X310
-    localparam DEVICE_X3XX = 1;
+    localparam USE_LEGACY_FIFO = 1;
+  `elsif B310
+    localparam USE_LEGACY_FIFO = 1;
   `else
-    localparam DEVICE_X3XX = 0;
+    localparam USE_LEGACY_FIFO = 0;
   `endif
 
   // First triple of values is for Intel's MAX10 FPGAs. The FIFO generator for
@@ -121,8 +122,8 @@ module axi_fifo_2clk #(
   assign rd_en         = o_ext_tready & o_ext_tvalid;
 
   generate
-    // XPM based FIFO for Xilinx FPGAs except for the X300/X310 based devices.
-    if (DEVICE != "MAX10" && !DEVICE_X3XX) begin: xpm_fifo_section
+    // XPM-based FIFO for Xilinx FPGAs, except for the certain devices.
+    if (DEVICE != "MAX10" && !USE_LEGACY_FIFO) begin: xpm_fifo_section
       localparam XPM_SIZE = (SIZE < SRL_THRESHOLD) ? SRL_THRESHOLD : SIZE;
 
       fifo_xpm_2clk #(.WIDTH(WIDTH), .DEPTH(1 << XPM_SIZE)) impl_xpm_i (

@@ -1,0 +1,8 @@
+{
+    "warning": { "ignore": ["."]},
+    "critical warning": {
+        "ignore": [
+            "tempmon.v' already exists"
+        ]
+    }
+}

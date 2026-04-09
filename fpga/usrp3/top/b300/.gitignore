@@ -1,0 +1,8 @@
+isim*
+fuse*
+tmp*
+*impact*
+objects
+modelsim
+# Ignore Python bytecode cache files
+__pycache__/
