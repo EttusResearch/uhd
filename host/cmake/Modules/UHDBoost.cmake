@@ -54,6 +54,14 @@
 message(STATUS "")
 message(STATUS "Checking for Boost version ${UHD_BOOST_MIN_VERSION} or greater")
 
+if(CMAKE_MINIMUM_REQUIRED_VERSION VERSION_GREATER_EQUAL "3.30")
+    # Policy automatically set to NEW in CMake 3.30 and later; not need to set it here again.
+    message(WARNING "Unnecessary policy check, remove this!")
+elseif(POLICY CMP0167) # CMP0167 is available in CMake 3.30 and later
+    # Use upstream BoostConfig.cmake implementations instead of deprecated FindBoost module.
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 # unset return variables
 unset(Boost_FOUND)
 unset(Boost_INCLUDE_DIRS)
