@@ -149,19 +149,20 @@ const std::string mpmd_impl::MPM_ECHO_CMD               = "MPM-ECHO";
 mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : rfnoc_device(), _device_args(device_args)
 {
-    UHD_ASSERT_THROW(device_args.has_key(RPC_VERSION_KEY));
-    if (device_args.get(RPC_VERSION_KEY, DEFAULT_RPC_VERSION) != RPC_VERSION) {
-        UHD_LOG_THROW(uhd::runtime_error,
-            "MPMD",
-            "RPC version mismatch. Expected: "
-                << RPC_VERSION
-                << " Actual: " << device_args.get(RPC_VERSION_KEY, DEFAULT_RPC_VERSION)
-                << ". Please update the version of MPM on your USRP device.");
-    }
     const device_addrs_t mb_args_without_prefs = separate_device_addr(device_args);
     device_addrs_t mb_args;
     for (size_t i = 0; i < mb_args_without_prefs.size(); ++i) {
         mb_args.push_back(prefs::get_usrp_args(mb_args_without_prefs[i]));
+        UHD_ASSERT_THROW(mb_args.back().has_key(RPC_VERSION_KEY));
+        if (mb_args.back().get(RPC_VERSION_KEY) != RPC_VERSION) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                "MPMD",
+                "RPC version mismatch on device "
+                    << mb_args.back().to_string() << ". Expected: " << RPC_VERSION
+                    << " Actual: " << device_args.get(RPC_VERSION_KEY)
+                    << ". Please align the version of MPM on your USRP device to the "
+                       "host driver version.");
+        }
     }
     const size_t num_mboards = mb_args.size();
     _mb.reserve(num_mboards);
