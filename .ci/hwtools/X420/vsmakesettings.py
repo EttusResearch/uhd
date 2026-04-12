@@ -17,6 +17,12 @@ def do_options():
     pathapi.set_workspace_base("repo")
 
 def do_files():
+    # Pull in xilinx libraries.
+    if not vapi.is_xmlparse():
+        vapi.find_files_and_add_to_fileset(
+            path="%XILINX%/data/verilog/src/unisims"
+        )
+
     # x400 related files
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400", tree=False)
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/cpld/common")
@@ -30,6 +36,7 @@ def do_files():
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/common/regmap")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/x420_ps_rfdc_bd/regmap")
     # library
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/axi")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/axi4s_sv")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/control")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/dsp")
