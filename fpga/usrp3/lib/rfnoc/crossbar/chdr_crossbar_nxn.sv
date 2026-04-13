@@ -711,7 +711,8 @@ module chdr_crossbar_nxn #(
             .WIDTH         (CHDR_W(n)                   ),
             .SIZE          (USED_PORTS                  ),
             .PRE_FIFO_SIZE (OPTIMIZE == "TIMING" ? 1 : 0),
-            .POST_FIFO_SIZE(1                           )
+            .POST_FIFO_SIZE(1                           ),
+            .ALLOC         (1                           )
           ) axi_mux_i (
             .clk     (clk                                 ),
             .reset   (reset                               ),

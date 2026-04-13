@@ -30,7 +30,7 @@ axi_loopback.v \
 axi_mux4.v \
 axi_mux8.v \
 axi_mux_select.v \
-axi_mux.v \
+axi_mux.sv \
 axi_packet_gate.v \
 fifo64_to_axi4lite.v \
 shortfifo.v \

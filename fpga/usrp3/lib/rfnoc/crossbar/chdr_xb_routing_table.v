@@ -143,7 +143,8 @@ module chdr_xb_routing_table #(
     .WIDTH         (CFG_W    ),
     .SIZE          (CFG_PORTS),
     .PRE_FIFO_SIZE (0        ),
-    .POST_FIFO_SIZE(1        )
+    .POST_FIFO_SIZE(1        ),
+    .ALLOC         (1        )
   ) axi_mux_i (
     .clk     (clk                         ),
     .reset   (reset                       ),
