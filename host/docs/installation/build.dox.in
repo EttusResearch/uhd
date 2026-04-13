@@ -47,13 +47,12 @@ Note: The MSI version of the CMake installer will guide you through these steps.
 ### Boost
 
 - **Purpose:** C++ library
-- **Minimum Version:** @UHD_BOOST_MIN_VERSION@
+- **Minimum Version:** @UHD_BOOST_MIN_VERSION@ (1.76 on Windows)
 - **Usage:** build time + runtime (required)
-- **Download URL:** http://www.boost.org/users/download/
-- **Download URL (Windows installer):** http://sourceforge.net/projects/boost/files/boost-binaries/
+- **Download URL:** http://www.boost.org/releases
 
-The Boost binary installer must be selected to match the architecture of Windows + installed MSVC toolset version and being run. <br>
-Note: The MSVC toolset version is v140 for Visual Studio 2015, v141 for 2017, v142 for 2019, and v143 for 2022.
+On Windows, obtain a Boost release that matches your target architecture and installed MSVC toolset version, or use a package manager such as vcpkg or Conan.<br>
+Note: The MSVC toolset version is v142 for Visual Studio 2019, v143 for 2022, and v145 for 2026.
 
 ### LibUSB
 
