@@ -15,7 +15,7 @@ mesh_2d_dor_router_single_sw.v \
 axis_ingress_vc_buff.v \
 axis_switch.v \
 axis_port_terminator.v \
-chdr_crossbar_nxn.v \
+chdr_crossbar_nxn.sv \
 chdr_xb_ingress_buff.v \
 chdr_xb_routing_table.v \
 ))

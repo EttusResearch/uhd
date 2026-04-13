@@ -218,6 +218,16 @@ module chdr_crossbar_nxn #(
     end
   endfunction
 
+  function automatic [NPORTS-1:0] ROUTES_TO_PORT(input integer j);
+    integer i;
+    begin
+      ROUTES_TO_PORT = {NPORTS{1'b0}};
+      for (i = 0; i < NPORTS; i = i+1) begin
+        ROUTES_TO_PORT[i] = ROUTES[NPORTS*i + j];
+      end
+    end
+  endfunction
+
   //---------------------------------------------------------------------------
   // CHDR Routing Table
   //---------------------------------------------------------------------------
@@ -660,23 +670,53 @@ module chdr_crossbar_nxn #(
             .m_axis_tready (m_axis_tready[n]                    )
           );
         end else begin : gen_not_performance
+
+          // invert routing matrix to get enabled routes for a given output port
+          localparam bit [NPORTS-1:0] OUTPUT_ROUTES = ROUTES_TO_PORT(n);
+          // Number of input ports that can route to this output port.
+          localparam int USED_PORTS = $countones(OUTPUT_ROUTES);
+
+          // Create a new set of AXI signals for the valid input ports.
+          logic [CHDR_W(n)*USED_PORTS-1:0] muxi_compressed_tdata;
+          logic [USED_PORTS-1:0]           muxi_compressed_tlast;
+          logic [USED_PORTS-1:0]           muxi_compressed_tvalid;
+          logic [USED_PORTS-1:0]           muxi_compressed_tready;
+
+          // Check each route to this output port.
+          for (genvar k = 0; k < NPORTS; k++) begin
+            if (OUTPUT_ROUTES[k]) begin
+              // If enabled, the index into the new array is determined by the
+              // number of ones in the routing matrix before this port. The
+              // current port is included in the number of ones so the index
+              // starts at 1, so we need to subtract 1 to get a 0-based index.
+              localparam int idx = $countones(OUTPUT_ROUTES[k:0])-1;
+              assign muxi_compressed_tdata[CHDR_W(n)*idx +: CHDR_W(n)] = muxi_tdata_repacked[CHDR_W(n)*k +: CHDR_W(n)];
+              assign muxi_compressed_tlast[idx] = muxi_tlast[n][k];
+              assign muxi_compressed_tvalid[idx] = muxi_tvalid[n][k];
+              assign muxi_tready[n][k] = muxi_compressed_tready[idx];
+            end else begin
+              // tie off the unused ports so they can be optimized out
+              assign muxi_tready[n][k] = 1'b1;
+            end
+          end
+
           // axi_mux has an additional bubble cycle but the logic
           // to allocate an input port has fewer levels and takes
           // up fewer resources.
           axi_mux #(
             .PRIO          (MUX_ALLOC == "PRIO"         ),
             .WIDTH         (CHDR_W(n)                   ),
-            .SIZE          (NPORTS                      ),
+            .SIZE          (USED_PORTS                  ),
             .PRE_FIFO_SIZE (OPTIMIZE == "TIMING" ? 1 : 0),
             .POST_FIFO_SIZE(1                           )
           ) axi_mux_i (
             .clk     (clk                                 ),
             .reset   (reset                               ),
             .clear   (1'b0                                ),
-            .i_tdata (muxi_tdata_repacked                  ),
-            .i_tlast (muxi_tlast   [n]                    ),
-            .i_tvalid(muxi_tvalid  [n]                    ),
-            .i_tready(muxi_tready  [n]                    ),
+            .i_tdata (muxi_compressed_tdata               ),
+            .i_tlast (muxi_compressed_tlast               ),
+            .i_tvalid(muxi_compressed_tvalid              ),
+            .i_tready(muxi_compressed_tready              ),
             .o_tdata (m_axis_tdata [(n*PORT_W)+:CHDR_W(n)]),
             .o_tlast (m_axis_tlast [n]                    ),
             .o_tvalid(m_axis_tvalid[n]                    ),
