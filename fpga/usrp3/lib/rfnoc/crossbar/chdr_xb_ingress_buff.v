@@ -31,6 +31,7 @@ module chdr_xb_ingress_buff #(
 ) (
   input  wire               clk,
   input  wire               reset,
+  input  wire               reset_cache,
   // CHDR input port
   input  wire [WIDTH-1:0]   s_axis_chdr_tdata,
   input  wire [DEST_W-1:0]  s_axis_chdr_tdest,
@@ -121,6 +122,30 @@ module chdr_xb_ingress_buff #(
   wire [DEST_W-1:0] dest_o_tdata;
   wire              dest_o_tkeep, dest_o_tvalid, dest_o_tready;
 
+  //---------------------------------------------------------------------------
+  // EPID Destination Cache
+  //---------------------------------------------------------------------------
+  //
+  // A small 2-entry fully-associative cache to store recent EPID-to-TDEST
+  // mappings. On a cache hit, the destination is provided directly via the
+  // dest_i_* path, bypassing the shared routing table lookup (find_* path).
+  // This significantly reduces per-packet latency for repeated EPIDs.
+  //
+  // The cache is invalidated whenever the routing table is modified
+  // (reset_cache is asserted) to prevent stale entries.
+  //
+
+  reg                cache_valid [0:1];
+  reg [15:0]         cache_epid  [0:1];
+  reg [DEST_W-1:0]   cache_dest  [0:1];
+  reg                cache_lru;
+
+  wire [15:0]        hdr_epid       = chdr_get_dst_epid(s_axis_chdr_tdata[63:0]);
+  wire               cache_hit_0    = cache_valid[0] && (cache_epid[0] == hdr_epid);
+  wire               cache_hit_1    = cache_valid[1] && (cache_epid[1] == hdr_epid);
+  wire               cache_hit      = cache_hit_0 || cache_hit_1;
+  wire [DEST_W-1:0]  cache_dest_hit = cache_hit_0 ? cache_dest[0] : cache_dest[1];
+
   // The find_fifo holds the lookup requests from the find_* AXI stream and
   // sends them on to the m_axis_find_* stream port. It is required because the
   // input logic (see below) doesn't obey the AXI handshake protocol but this
@@ -158,7 +183,7 @@ module chdr_xb_ingress_buff #(
     .clk      (clk),
     .reset    (reset),
     .clear    (1'b0),
-    .i_tdata  ({dest_i_tkeep, dest_i_tdata, 
+    .i_tdata  ({dest_i_tkeep, dest_i_tdata,
                 s_axis_result_tkeep, s_axis_result_tdata}),
     .i_tlast  (2'b11),
     .i_tvalid ({dest_i_tvalid, s_axis_result_tvalid}),
@@ -201,7 +226,7 @@ module chdr_xb_ingress_buff #(
     if (s_axis_chdr_hdr_valid) begin
       case (s_axis_chdr_tid)
         CHDR_MGMT_ROUTE_EPID:
-          dest_find_tready = find_tready;
+          dest_find_tready = cache_hit ? dest_i_tready : find_tready;
         CHDR_MGMT_ROUTE_TDEST:
           dest_find_tready = dest_i_tready;
         CHDR_MGMT_RETURN_TO_SRC:
@@ -233,19 +258,22 @@ module chdr_xb_ingress_buff #(
   //          of gate_i_*, find_* and dest_i_*
 
   // Here we decide if we need to do a lookup using the find_* path or if the
-  // destination is known and can be put directly on the dest_* path.
+  // destination is known and can be put directly on the dest_* path. If the
+  // EPID cache has a hit, we bypass the find_* path entirely.
   //
-  // Start a lookup request if the TID is CHDR_MGMT_ROUTE_EPID.
-  assign find_tdata  = chdr_get_dst_epid(s_axis_chdr_tdata[63:0]);
-  assign find_tvalid = chdr_header_stb && 
-                       (s_axis_chdr_tid == CHDR_MGMT_ROUTE_EPID);
-  // Set TDEST directly if TID is CHDR_MGMT_ROUTE_TDEST or
-  // CHDR_MGMT_RETURN_TO_SRC.
-  assign dest_i_tdata  = (s_axis_chdr_tid == CHDR_MGMT_ROUTE_TDEST) ? 
-                         s_axis_chdr_tdest : NODE_ID[DEST_W-1:0];
+  // Start a lookup request if the TID is CHDR_MGMT_ROUTE_EPID and no cache hit.
+  assign find_tdata  = hdr_epid;
+  assign find_tvalid = chdr_header_stb &&
+                       (s_axis_chdr_tid == CHDR_MGMT_ROUTE_EPID) &&
+                       !cache_hit;
+  // Set TDEST directly if TID is CHDR_MGMT_ROUTE_TDEST,
+  // CHDR_MGMT_RETURN_TO_SRC, or if the EPID cache has a hit.
+  assign dest_i_tdata  = (s_axis_chdr_tid == CHDR_MGMT_ROUTE_EPID)  ? cache_dest_hit    :
+                         (s_axis_chdr_tid == CHDR_MGMT_ROUTE_TDEST) ? s_axis_chdr_tdest :
+                                                                      NODE_ID[DEST_W-1:0];
   assign dest_i_tkeep  = 1'b1;
-  assign dest_i_tvalid = chdr_header_stb && 
-                         (s_axis_chdr_tid != CHDR_MGMT_ROUTE_EPID);
+  assign dest_i_tvalid = chdr_header_stb &&
+                         ((s_axis_chdr_tid != CHDR_MGMT_ROUTE_EPID) || cache_hit);
 
   // Input logic for axi_packet_gate
   assign gate_i_tdata  = s_axis_chdr_tdata;
@@ -254,6 +282,39 @@ module chdr_xb_ingress_buff #(
 
   //
   // **************************************************************************
+
+
+  //---------------------------------------------------------------------------
+  // EPID Destination Cache Update
+  //---------------------------------------------------------------------------
+
+  // Register to track the EPID of the outstanding find request. Only one
+  // find request can be pending at a time because the ingress buffer blocks
+  // until the routing result is consumed.
+  reg [15:0] pending_epid;
+
+  wire result_consumed = s_axis_result_tvalid && s_axis_result_tready;
+  wire cache_update    = result_consumed && s_axis_result_tkeep;
+
+  always @(posedge clk) begin
+    if (reset || reset_cache) begin
+      cache_valid[0] <= 1'b0;
+      cache_valid[1] <= 1'b0;
+      cache_lru      <= 1'b0;
+    end else begin
+      // Capture the EPID when a find request is issued
+      if (find_tvalid) begin
+        pending_epid <= hdr_epid;
+      end
+      // Update cache with successful routing table results
+      if (cache_update) begin
+        cache_valid[cache_lru] <= 1'b1;
+        cache_epid [cache_lru] <= pending_epid;
+        cache_dest [cache_lru] <= s_axis_result_tdata;
+        cache_lru              <= ~cache_lru;
+      end
+    end
+  end
 
 
   //---------------------------------------------------------------------------

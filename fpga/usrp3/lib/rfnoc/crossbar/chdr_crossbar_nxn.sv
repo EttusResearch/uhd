@@ -243,6 +243,7 @@ module chdr_crossbar_nxn #(
   wire [NPORTS-1:0]            result_tkeep;
   wire [NPORTS-1:0]            result_tvalid;
   wire [NPORTS-1:0]            result_tready;
+  wire                         route_insert_stb;
 
   // Instantiate a single CAM-based routing table that will be shared between
   // all input ports. Configuration and lookup is performed using an AXI-Stream
@@ -269,7 +270,8 @@ module chdr_crossbar_nxn #(
     .axis_result_tdata (result_tdata  ),
     .axis_result_tkeep (result_tkeep  ),
     .axis_result_tvalid(result_tvalid ),
-    .axis_result_tready(result_tready )
+    .axis_result_tready(result_tready ),
+    .route_insert_stb  (route_insert_stb)
   );
 
   wire [PORT_W-1:0]          i_tdata   [0:NPORTS-1];
@@ -396,6 +398,7 @@ module chdr_crossbar_nxn #(
         ) chdr_xb_ingress_buff_i (
           .clk                 (clk                                  ),
           .reset               (reset                                ),
+          .reset_cache         (route_insert_stb                     ),
           .s_axis_chdr_tdata   (i_tdata      [n][CHDR_W(n)-1:0]      ),
           .s_axis_chdr_tdest   (i_tdest      [n][NPORTS_W-1:0]       ),
           .s_axis_chdr_tid     (i_tid        [n]                     ),

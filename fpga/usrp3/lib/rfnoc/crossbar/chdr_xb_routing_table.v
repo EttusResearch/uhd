@@ -53,7 +53,9 @@ module chdr_xb_routing_table #(
   output wire [($clog2(NPORTS)*NPORTS)-1:0] axis_result_tdata,
   output wire [                 NPORTS-1:0] axis_result_tkeep,
   output wire [                 NPORTS-1:0] axis_result_tvalid,
-  input  wire [                 NPORTS-1:0] axis_result_tready
+  input  wire [                 NPORTS-1:0] axis_result_tready,
+  // Route insertion strobe (asserted for 1 cycle when an entry is inserted)
+  output wire                               route_insert_stb
 );
   localparam NPORTS_W  = $clog2(NPORTS);
   localparam CFG_W     = NPORTS_W + 16;
@@ -67,6 +69,8 @@ module chdr_xb_routing_table #(
   wire [NPORTS_W-1:0] insert_tdata;
   wire                insert_tvalid;
   wire                insert_tready;
+
+  assign route_insert_stb = insert_tvalid & insert_tready;
 
   axis_muxed_kv_map #(
     .KEY_WIDTH(16      ),
