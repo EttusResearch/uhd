@@ -96,7 +96,7 @@ module chdr_crossbar_nxn_tb #(
   // DUT default parameters
   localparam [15:0] PROTOVER       = {8'd1, 8'd0};
   localparam [7:0]  DEFAULT_PORT   = 0;
-  localparam        ROUTE_TBL_SIZE = NUM_PORTS**2;  // One route for every port combination
+  localparam        ROUTE_TBL_SIZE = $clog2(NUM_PORTS**2);  // One route for every port combination
   localparam        MUX_ALLOC      = "ROUND-ROBIN";
   localparam        OPTIMIZE       = "AREA";
   localparam [7:0]  NPORTS_MGMT    = USE_MGMT_PORTS ? NUM_PORTS : 0;
