@@ -178,20 +178,6 @@ void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
 }
 #endif /* HAVE_THREAD_SETAFFINITY_DUMMY */
 
-void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
-{
-#ifdef HAVE_BOOST_PTHREAD_SETNAME
-    pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
-#else
-    // Then we can't set the thread name. This function may get called
-    // before the logger starts, and thus can't log any error messages.
-    // Note that CMake will also tell the user about not being able to set
-    // thread names.
-    static_cast<void>(thrd);
-    static_cast<void>(name);
-#endif /* HAVE_BOOST_PTHREAD_SETNAME */
-}
-
 void uhd::set_thread_name(std::thread* thrd, const std::string& name)
 {
 #ifdef HAVE_STD_PTHREAD_SETNAME

@@ -8,9 +8,16 @@
 #pragma once
 
 #include <uhd/config.hpp>
-#include <boost/thread/thread.hpp>
+#include <cstdint>
 #include <string>
 #include <thread>
+#include <vector>
+
+// Forward declaration for set_thread_name(), remove this when deprecated
+// boost::thread APIs are fully removed.
+namespace boost {
+class thread;
+}
 
 namespace uhd {
 
@@ -43,12 +50,18 @@ UHD_API void set_thread_priority(
 UHD_API bool set_thread_priority_safe(
     float priority = DEFAULT_THREAD_PRIORITY, bool realtime = true);
 
-/*!
- * Set the thread name on the given boost thread.
- * \param thread pointer to a boost thread
- * \param name thread name with maximum length of 16 characters
+/*! Backward-compatibility version of set_thread_name()
+ *
+ * This function does nothing, it just avoids software failing to compile that
+ * was using this function. It used to set the thread name on Boost threads,
+ * but those are no longer used in UHD.
  */
-UHD_API void set_thread_name(boost::thread* thread, const std::string& name);
+[[deprecated("This function will be removed in future versions of UHD, and does "
+             "nothing!")]] UHD_API_HEADER void inline set_thread_name(boost::thread*,
+    const std::string&)
+{
+    // nop
+}
 
 /*!
  * Set the thread name on the given std thread.
