@@ -18,6 +18,7 @@
 #include <functional>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 namespace po = boost::program_options;
 
@@ -116,13 +117,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         // Get all times before output
         std::vector<int64_t> usrp_times(usrp->get_num_mboards());
-        boost::thread_group thread_group;
+        std::vector<std::thread> threads;
         clock_time = clock->get_time();
         for (size_t j = 0; j < usrp->get_num_mboards(); j++) {
-            thread_group.create_thread(std::bind(&get_usrp_time, usrp, j, &usrp_times));
+            threads.emplace_back(&get_usrp_time, usrp, j, &usrp_times);
         }
         // Wait for threads to complete
-        thread_group.join_all();
+        for (auto& t : threads) {
+            t.join();
+        }
 
         std::cout << boost::format("Comparison #%d") % (i + 1) << std::endl;
         bool all_match = true;

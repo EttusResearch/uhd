@@ -13,13 +13,13 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
 #include <atomic>
 #include <chrono>
 #include <complex>
 #include <cstdlib>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 namespace po = boost::program_options;
 using namespace std::chrono_literals;
@@ -586,7 +586,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
     int num_mboards = usrp->get_num_mboards();
 
-    boost::thread_group thread_group;
+    std::vector<std::thread> threads;
 
     if (vm.count("ref")) {
         if (ref == "mimo") {
@@ -739,7 +739,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 stream_args.channels             = this_streamer_channels;
                 stream_args.args                 = uhd::device_addr_t(rx_stream_args);
                 uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-                auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                threads.emplace_back([=, &burst_timer_elapsed]() {
                     benchmark_rx_rate(usrp,
                         rx_cpu,
                         rx_stream,
@@ -752,7 +752,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         rx_delay,
                         rx_stream_now);
                 });
-                uhd::set_thread_name(rx_thread, "bmark_rx_strm" + std::to_string(count));
+                uhd::set_thread_name(
+                    &threads.back(), "bmark_rx_strm" + std::to_string(count));
             }
         } else {
             // create a receive streamer
@@ -760,7 +761,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             stream_args.channels             = rx_channel_nums;
             stream_args.args                 = uhd::device_addr_t(rx_stream_args);
             uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-            auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+            threads.emplace_back([=, &burst_timer_elapsed]() {
                 benchmark_rx_rate(usrp,
                     rx_cpu,
                     rx_stream,
@@ -773,7 +774,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     rx_delay,
                     rx_stream_now);
             });
-            uhd::set_thread_name(rx_thread, "bmark_rx_stream");
+            uhd::set_thread_name(&threads.back(), "bmark_rx_stream");
         }
     }
 
@@ -817,7 +818,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     spb = spb - (spb % tx_align);
                 }
                 std::cout << "Setting TX samples per burst (spb) to " << spb << std::endl;
-                auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+                threads.emplace_back([=, &burst_timer_elapsed]() {
                     benchmark_tx_rate(usrp,
                         tx_cpu,
                         tx_stream,
@@ -829,14 +830,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                         adjusted_tx_delay,
                         random_nsamps);
                 });
-                uhd::set_thread_name(tx_thread, "bmark_tx_strm" + std::to_string(count));
-                auto tx_async_thread =
-                    thread_group.create_thread([=, &burst_timer_elapsed]() {
-                        benchmark_tx_rate_async_helper(
-                            tx_stream, start_time, burst_timer_elapsed);
-                    });
                 uhd::set_thread_name(
-                    tx_async_thread, "bmark_tx_hlpr" + std::to_string(count));
+                    &threads.back(), "bmark_tx_strm" + std::to_string(count));
+                threads.emplace_back([=, &burst_timer_elapsed]() {
+                    benchmark_tx_rate_async_helper(
+                        tx_stream, start_time, burst_timer_elapsed);
+                });
+                uhd::set_thread_name(
+                    &threads.back(), "bmark_tx_hlpr" + std::to_string(count));
             }
         } else {
             // create a transmit streamer
@@ -861,7 +862,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 spb = spb - (spb % tx_align);
             }
             std::cout << "Setting TX samples per burst (spb) to " << spb << std::endl;
-            auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
+            threads.emplace_back([=, &burst_timer_elapsed]() {
                 benchmark_tx_rate(usrp,
                     tx_cpu,
                     tx_stream,
@@ -873,13 +874,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     adjusted_tx_delay,
                     random_nsamps);
             });
-            uhd::set_thread_name(tx_thread, "bmark_tx_stream");
-            auto tx_async_thread =
-                thread_group.create_thread([=, &burst_timer_elapsed]() {
-                    benchmark_tx_rate_async_helper(
-                        tx_stream, start_time, burst_timer_elapsed);
-                });
-            uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
+            uhd::set_thread_name(&threads.back(), "bmark_tx_stream");
+            threads.emplace_back([=, &burst_timer_elapsed]() {
+                benchmark_tx_rate_async_helper(
+                    tx_stream, start_time, burst_timer_elapsed);
+            });
+            uhd::set_thread_name(&threads.back(), "bmark_tx_helper");
         }
     }
 
@@ -901,7 +901,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // interrupt and join the threads
     burst_timer_elapsed = true;
-    thread_group.join_all();
+    for (auto& t : threads) {
+        t.join();
+    }
 
     std::cout << "[" << NOW() << "] Benchmark complete." << std::endl << std::endl;
 
