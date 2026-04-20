@@ -25,39 +25,28 @@ computer.
 
 \subsection dpdk_installation DPDK Installation Instructions
 
-As a new and developing technology, the DPDK APIs are unstable. UHD requires
-version 19.11 or a later LTS version. Adjacent non-LTS releases of DPDK may
-work, but are not recommended.
+UHD requires version 19.11 or a later LTS version. Adjacent non-LTS releases of
+DPDK may work, but are not recommended.
 
-On Ubuntu 20.04, Fedora 33-36, or Debian Bullseye/Buster (via backports),
+Starting with Ubuntu 20.04, Fedora 33, or Debian Bullseye/Buster (via backports),
 DPDK is available in your distribution's repositories. For example, on Debian
 systems, it can be obtained with the following command:
 
     sudo apt install dpdk dpdk-dev
 
 Otherwise, you'll need to follow the build guide at
-https://doc.dpdk.org/guides-21.11/linux_gsg/build_dpdk.html . The software
-releases can be found at https://core.dpdk.org/download/. Version >=20.11 builds
+https://doc.dpdk.org/guides-21.11/linux_gsg/build_dpdk.html. The software
+releases can be found at https://core.dpdk.org/download/. Version >=21.11 builds
 with appropriate options when using the default build procedure.
 
 Note that if you are using a Mellanox NIC, the MLNX-OFED drivers available from
 https://www.mellanox.com/products/infiniband-drivers/linux/mlnx_ofed may be
-needed to support dpdk. 
+needed to support DPDK.
 
-Note that if you are building and installing older versions of DPDK from source, 
-you will need to change its configuration to build shared libraries in order for 
-UHD to link successfully. After running `make config` or `make defconfig`, open 
-the `build/.config` file in an editor and find the following line:
+For a detailed getting started guide for using DPDK with UHD and recommended system
+tuning settings, see the application note [Getting_Started_with_DPDK_and_UHD](https://kb.ettus.com/Getting_Started_with_DPDK_and_UHD).
 
-    CONFIG_RTE_BUILD_SHARED_LIB=n
-
-Change the `n` to a `y` to enable the building of shared libraries, then type
-`make` to start the build.
-
-If you are using a Mellanox ConnectX 4 or later NIC, you also need to update the
-following line:
-
-    CONFIG_RTE_LIBRTE_MLX5_PMD=n
+<!-- page_appnotes "Application Notes" titled \ref appnote_dpdk_getting_started "Getting Started with DPDK and UHD". -->
 
 \subsection dpdk_system_configuration System Configuration
 
@@ -107,7 +96,6 @@ If successful, the script might provide an updated status like this:
     0000:02:00.0 '82599ES 10-Gigabit SFI/SFP+ Network Connection 10fb' drv=vfio-pci unused=ixgbe
     [...]
 
-
 See https://doc.dpdk.org/guides-21.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
 for more details.
 
@@ -127,11 +115,12 @@ least while becoming familiar with DPDK. If you use a per-user config file, make
 sure it's in the correct location.
 
 The config file will have 2 different components. First are the global DPDK
-options:
+options (which may also be passed as uhd session arguments):
 
     ;When present in device args, use_dpdk indicates you want DPDK to take over the UDP transports
     ;The value here represents a config, so you could have another section labeled use_dpdk=myconf
     ;instead and swap between them
+    ;
     [use_dpdk=1]
     ;dpdk_mtu is the NIC's MTU setting
     ;This is separate from MPM's maximum packet size
@@ -147,6 +136,9 @@ options:
     ;you can specify multiple cores in the core list (e.g. 0, 1, 2) and then assign
     ;them each to the separate SFP port/NIC.
     dpdk_corelist=0,1
+    ;dpdk_link_timeout specifies the maximum time <b>milliseconds</b> to wait for all DPDK-enabled links
+    ;to come up. The default is 1000 ms. For details, see #dpdk_link_detection.
+    dpdk_link_timeout=1000
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
     ;This will be multiplied by the number of NICs, but NICs on the same
@@ -219,6 +211,8 @@ driver proceeds. The links are checked every 250 ms until all links have
 reported that they are up or until the link timeout expires, which by default
 is 1000 ms. If any of the links have not reported as being up by the time the
 timeout expires, a runtime error is thrown.
+
+    [ERROR] [DPDK] All DPDK links did not report as up!
 
 Users may choose to override the link timeout in cases where particular
 systems and/or network cards take longer to establish stable DPDK links.
