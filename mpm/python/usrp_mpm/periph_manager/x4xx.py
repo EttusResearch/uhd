@@ -27,9 +27,9 @@ from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_periphs import (
     CtrlportRegs,
-    get_temp_sensors,
     MboardRegsControl,
     QSFPModule,
+    get_temp_sensors,
 )
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
 from usrp_mpm.rpc_utils import no_claim, no_rpc
@@ -156,7 +156,14 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # See PeriphManagerBase for documentation on these fields. We try and keep
     # them in the same order as they are in PeriphManagerBase for easier lookup.
     #########################################################################
-    pids = {0x0410: "x410", 0x0420: "x420", 0x0440: "x440"}
+    pids = {
+        0x0410: "x410",
+        0x0420: "x420",
+        0x0440: "x440",
+        0x7410: "x410",
+        0x7420: "x420",
+        0x7440: "x440",
+    }
     description = "X400-Series Device"
     eeprom_search = PeriphManagerBase._EepromSearch.SYMBOL
     # This is not in the overridables section from PeriphManagerBase, but we use
@@ -236,6 +243,10 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Then add X4xx-specific information
         mb_pid = eeprom_md.get("pid")
         device_info["product"] = cls.pids.get(mb_pid, "unknown")
+        if (mb_pid & 0xF000) == 0x7000:
+            device_info["customizable_fpga"] = False
+        else:
+            device_info["customizable_fpga"] = True
         module_serial = eeprom_md.get("module_serial")
         if module_serial is not None:
             device_info["serial"] = module_serial
