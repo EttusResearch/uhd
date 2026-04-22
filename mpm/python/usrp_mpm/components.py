@@ -207,9 +207,9 @@ class ZynqComponents:
         file_name, file_extension = os.path.splitext(filepath)
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
-        if file_extension not in ["bit", "bin"]:
-            self._log_and_raise(f"Invalid FPGA bitfile: {filepath}")
         updc = self._merge_updateable_components()
+        if file_extension not in updc["fpga"].get("supported_file_extensions", ["bit", "bin"]):
+            self._log_and_raise(f"Invalid FPGA bitfile: {filepath}")
         assert "path" in updc["fpga"]
         binfile_path = updc["fpga"]["path"].format(self.device_info.get("product"))
 
