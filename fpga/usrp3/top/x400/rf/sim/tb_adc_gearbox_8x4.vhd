@@ -34,9 +34,10 @@ architecture RTL of tb_adc_gearbox_8x4 is
       valid_out_2x : out std_logic);
   end component;
 
-  signal cDataCheckNxtLo, cDataCheckLo: std_logic_vector(127 downto 0);
+  signal cDataCheckNxtLo : std_logic_vector(127 downto 0);
+  signal cDataCheckLo1, cDataCheckLo2 : std_logic_vector(127 downto 0);
   signal cDataCheckNxtHi : std_logic_vector(127 downto 0);
-  signal cDataCheckHi1, cDataCheckHi2:  std_logic_vector(127 downto 0);
+  signal cDataCheckHi1, cDataCheckHi2, cDataCheckHi3 : std_logic_vector(127 downto 0);
 
   signal adc_i_in_1x  : std_logic_vector(127 downto 0);
   signal adc_out_2x   : std_logic_vector(127 downto 0);
@@ -187,19 +188,24 @@ begin
   begin
     if falling_edge(Clk2x) then
       if Clk = '1' then
-        ExpectedData := cDataCheckLo;
+        ExpectedData := cDataCheckHi3;
       else
-        ExpectedData := cDataCheckHi2;
+        ExpectedData := cDataCheckLo2;
       end if;
       if valid_out_2x = '1' then
         assert adc_out_2x = ExpectedData
-          report "ADC data out mismatch from expected"
+          report "ADC data out mismatch from expected" & LF &
+                 "Expected data is : " & to_hstring(ExpectedData) & LF &
+                 "Received data is : " & to_hstring(adc_out_2x)
           severity error;
         tempout := tempout +1;
       end if;
-      cDataCheckLo  <= cDataCheckNxtLo;
+      cDataCheckLo1 <= cDataCheckNxtLo;
+      cDataCheckLo2 <= cDataCheckLo1;
+
       cDataCheckHi1 <= cDataCheckNxtHi;
       cDataCheckHi2 <= cDataCheckHi1;
+      cDataCheckHi3 <= cDataCheckHi2;
     end if;
   end process;
 
