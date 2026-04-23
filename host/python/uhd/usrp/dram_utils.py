@@ -166,7 +166,7 @@ class DramTransmitter:
                 self.replay_ports[replay_port_idx],
                 rcp[0].get_unique_id(),
                 rcp[1],
-                True,
+                skip_property_propagation=True,
             )
             duc_edge = next(
                 filter(lambda edge: rfnoc.BlockID(edge.dst_blockid).match("DUC"), edge), None
@@ -548,7 +548,7 @@ class DramReceiver:
                 rcp[1],
                 self.replay_blocks[0].get_unique_id(),
                 self.replay_ports[replay_port_idx],
-                True,
+                skip_property_propagation=False,
             )
             ddc_edge = next(
                 filter(lambda edge: rfnoc.BlockID(edge.dst_blockid).match("DDC"), edge), None
