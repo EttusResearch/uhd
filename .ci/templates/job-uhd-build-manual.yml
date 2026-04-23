@@ -16,7 +16,7 @@ jobs:
     # Docker vars from job-get-latest-uhd-docker.yml
     dockerBuildNumber: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]
     dockerImagePrefix: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerImagePrefix'] ]
-    # Define the ManualBuilders variable as subset of dockerImageMatrixLin that is 
+    # Define the ManualBuilders variable as subset of dockerImageMatrixLin that is
     # defined in ../uhd-build-docker-container.yml, to include select Ubuntu version.
     # The ReadTheDocs builder version is defined in ../../.readthedocs.yaml.
     ManualBuilders: "{'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'}}"
@@ -77,31 +77,18 @@ jobs:
       cd ${{ parameters.uhdSrcDir }}/host/docs/sphinx/source
       # Run sphinx and capture output
       python3 -m sphinx -T -b html -d _build/doctrees -D language=en . $READTHEDOCS_OUTPUT/html 2>&1 | tee  $READTHEDOCS_OUTPUT/sphinx.log
-      # Fail if Sphinx log was not generated
-      if [ ! -f "$READTHEDOCS_OUTPUT/sphinx.log" ]; then
-        echo "Sphinx build log file not found."
-        exit 1
+      # Validate build output via common Python script
+      additional_args=()
+      if [ "$(buildOSName)" = "ubuntu2204" ]; then
+          # Treat warnings as errors only for the Ubuntu version we use for ReadTheDocs builds,
+          # to simulate the ReadTheDocs build environment as closely as possible
+          # (BuildOS for ReadTheDocs is defined in ../../.readthedocs.yaml).
+          additional_args+=(--warnings-as-errors)
       fi
-      # Fail if CMake Error is found
-      if grep -q "CMake Error"  $READTHEDOCS_OUTPUT/sphinx.log; then
-        echo "CMake Error detected in Sphinx build. Failing pipeline."
-        grep "CMake Error"  $READTHEDOCS_OUTPUT/sphinx.log -B 3 -A 3
-        exit 1
-      fi
-      # Fail if generated hierarchy tree html file is not found
-      if [ ! -f "$READTHEDOCS_OUTPUT/html/05__driver__api_8dox.html" ]; then
-        echo "Sphinx build did not complete successfully. 05__driver__api_8dox.html not found."
-        exit 1
-      fi
-      # Check for warnings that indicate syntax errors in the generated html files
-      warning_count=$(grep -E '^[^ ]+:[0-9]+: warning:' $READTHEDOCS_OUTPUT/sphinx.log | wc -l)
-      if [ "$warning_count" -gt 0 ]; then
-        echo "WARNING -- Detected $warning_count warnings in Sphinx build log. Please check the log for details."
-        if [ "$(buildOSName)" = "ubuntu2204" ]; then
-          echo "WARNINGS treated as ERROR in ReadTheDocs $(buildOSName) builder OS version. Failing pipeline."
-          exit 1
-        fi
-      fi
+      python3 ${{ parameters.uhdSrcDir }}/.ci/utils/check_doxygen_build.py \
+        --output-dir $READTHEDOCS_OUTPUT \
+        --log-file $READTHEDOCS_OUTPUT/sphinx.log \
+        "${additional_args[@]}"
     displayName: Simulate ReadTheDocs build
 
   - script: |
@@ -118,7 +105,7 @@ jobs:
       artifactName: 'uhddev-manual-$(buildOSName)'
     displayName: Upload uhd user manual package
     condition: always()
-  
+
   - script: |
       rm -rf ${{ parameters.uhdSrcDir }}/host/docs/sphinx/source/_build
       rm -rf ${{ parameters.uhdSrcDir }}/host/docs/sphinx/build_doxygen
