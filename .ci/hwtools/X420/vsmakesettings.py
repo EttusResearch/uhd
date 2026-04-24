@@ -42,6 +42,8 @@ def do_files():
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/dsp")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/fifo")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/rfnoc")
+    vapi.remove_from_fileset("axi_fifo_2clk.v")
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/lib/sim/fifo/axi_fifo_2clk_sim.v")
 
     # regmap files
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/regmap", tree=False)
