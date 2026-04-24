@@ -26,11 +26,11 @@ stream_endpoints:
   ep0:                                  # Stream endpoint name
     ctrl: True                          # Endpoint passes control traffic
     data: True                          # Endpoint passes data traffic
-    buff_size_bytes: 1048576            # Ingress buffer size for data
+    buff_size_bytes: 2097152            # Ingress buffer size for data
   ep1:
     ctrl: False
     data: True
-    buff_size_bytes: 1048576
+    buff_size_bytes: 2097152
   ep2:
     ctrl: False
     data: True
