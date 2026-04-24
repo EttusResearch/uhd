@@ -53,6 +53,7 @@
     .INST_NUM           (${i}),
     .CTRL_XBAR_PORT     (${i+1}),
     .INGRESS_BUFF_SIZE  (INGRESS_BUFF_SIZE_${ep_name}),
+    .MAX_NUM_URAM_BLOCKS(${int(seps[sep]["max_num_uram_blocks"])}),
     .MTU                (${ep_name + "_MTU"}),
     .REPORT_STRM_ERRS   (1)
   ) ${sep}_i (

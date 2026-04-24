@@ -10,6 +10,7 @@ that is passed to the templates.
 
 import copy
 import logging
+import math
 import os
 import sys
 
@@ -78,6 +79,7 @@ class ImageBuilderConfig:
         self._sort_modules()
         self._attach_defs(known_modules)
         self._update_sep_defaults()
+        self._calculate_uram_usage()
         self._check_deprecated_signatures()
         self._set_indices()
         self._resolve_parameters()
@@ -636,6 +638,43 @@ class ImageBuilderConfig:
                 self.stream_endpoints[sep]["num_data_o"] = 1
             if "chdr_width" not in self.stream_endpoints[sep]:
                 self.stream_endpoints[sep]["chdr_width"] = self.chdr_width
+
+
+    def _calculate_uram_usage(self):
+        # recalculate the total number of URAM blocks based on the
+        # family
+        if not (self.device.family == "ULTRASCALE"):
+            for sep in self.stream_endpoints:
+                self.stream_endpoints[sep]["max_num_uram_blocks"] = -1
+        else:
+            # in current devices the xczu28dr is the only Ultrascale
+            # device, which has 80 URAM blocks
+            remaining_uram_blocks = 80
+            uram_max_width = 72
+            uram_max_depth = 4096
+            # sort the requested number of bytes in descending order, so
+            # that we allocate the largest buffers first
+            sorted_seps = sorted(
+                self.stream_endpoints.items(),
+                key=lambda item: item[1].get("buff_size_bytes", 0),
+                reverse=True,
+            )
+            for _, sep in sorted_seps:
+                # each URAM block can hold 4096 word each 72 bit wide
+                number_of_bytes = sep.get("buff_size_bytes", 0)
+                # calculate the number of URAM blocks depending on the
+                # CHDR width (parallel memories to form a word)
+                number_of_uram_per_chdr_word = math.ceil(sep["chdr_width"] / uram_max_width)
+                # calculate the depth to achieve the requested buffer size in bytes
+                chdr_width_bytes = sep["chdr_width"] // 8
+                uram_depth = math.ceil(number_of_bytes / chdr_width_bytes / uram_max_depth)
+                # calculate the number of URAM blocks needed to hold the
+                # buffer
+                needed_uram_blocks = number_of_uram_per_chdr_word * uram_depth
+                allocated_uram_blocks = min(needed_uram_blocks, remaining_uram_blocks)
+                sep["max_num_uram_blocks"] = allocated_uram_blocks
+                remaining_uram_blocks -= allocated_uram_blocks
+
 
     def _set_indices(self):
         """Add an index for each port of each stream endpoint and noc block.
