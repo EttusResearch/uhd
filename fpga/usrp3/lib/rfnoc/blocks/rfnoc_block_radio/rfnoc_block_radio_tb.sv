@@ -315,8 +315,7 @@ module rfnoc_block_radio_tb #(
   task automatic read_radio_64(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
                                output logic [63:0] data);
     addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
-    blk_ctrl.reg_read(addr,   data[31:0]);
-    blk_ctrl.reg_read(addr+4, data[63:32]);
+    blk_ctrl.reg_read64(addr, data);
   endtask : read_radio_64
 
   // Write a 32-bit register at offset "addr" in radio "radio_num"
@@ -330,8 +329,7 @@ module rfnoc_block_radio_tb #(
   task automatic write_radio_64(int radio_num, logic [19:0] addr, logic [RADIO_ADDR_W:0] reg_offset,
                                 logic [63:0] data);
     addr = addr + RADIO_BASE_ADDR + (radio_num * 2 ** RADIO_ADDR_W) + reg_offset;
-    blk_ctrl.reg_write(addr,   data[31:0]);
-    blk_ctrl.reg_write(addr+4, data[63:32]);
+    blk_ctrl.reg_write64(addr, data);
   endtask : write_radio_64
 
   // Apply gain to sample value

@@ -48,28 +48,32 @@ module rfnoc_block_fir_filter_tb #(
   localparam int SKIP_ZERO_COEFFS         = 1;
   localparam int USE_EMBEDDED_REGS_COEFFS = 1;
 
-  localparam logic [COEFF_WIDTH*NUM_COEFFS-1:0] COEFFS_VEC_0 = {
-     16'sd158,   16'sd0,     16'sd33,    -16'sd0,    -16'sd256,
-     16'sd553,   16'sd573,   -16'sd542,  -16'sd1012, 16'sd349,
-     16'sd1536,  16'sd123,   -16'sd2097, -16'sd1012, 16'sd1633,
-     16'sd1608,  -16'sd3077, -16'sd5946, 16'sd3370,  16'sd10513,
-     16'sd19295,
-     16'sd10513, 16'sd3370,  -16'sd5946, -16'sd3077, 16'sd1608,
-     16'sd1633,  -16'sd1012, -16'sd2097, 16'sd123,   16'sd1536,
-     16'sd349,   -16'sd1012, -16'sd542,  16'sd573,   16'sd553,
-     -16'sd256,  -16'sd0,    16'sd33,    16'sd0,     16'sd158
+  localparam logic signed [COEFF_WIDTH-1:0] COEFFS_0 [NUM_COEFFS] = '{
+       158,     0,     33,    -0,  -256,
+       553,   573,   -542, -1012,   349,
+      1536,   123,  -2097, -1012,  1633,
+      1608, -3077,  -5946,  3370, 10513,
+     19295,
+     10513,  3370,  -5946, -3077,  1608,
+      1633, -1012,  -2097,   123,  1536,
+       349, -1012,   -542,   573,   553,
+      -256,    -0,     33,     0,   158
   };
 
-  localparam logic [COEFF_WIDTH*NUM_COEFFS-1:0] COEFFS_VEC_1 = {
-    16'sd32767,  16'sd0,      -16'sd32767, 16'sd0,      16'sd32767,
-    -16'sd32767, 16'sd32767,  -16'sd32767, 16'sd32767,  -16'sd32767,
-    16'sd32767,  16'sd32767,  16'sd32767,  16'sd32767,  16'sd32767,
-    -16'sd32767, -16'sd32767, -16'sd32767, -16'sd32767, -16'sd32767,
-    16'sd32767,
-    -16'sd32767, -16'sd32767, -16'sd32767, -16'sd32767, -16'sd32767,
-    16'sd32767,  16'sd32767,  16'sd32767,  16'sd32767,  16'sd32767,
-    -16'sd32767, 16'sd32767,  -16'sd32767, 16'sd32767,  -16'sd32767,
-    16'sd32767,  16'sd0,      -16'sd32767, 16'sd0,      16'sd32767
+  // Packed vector for Verilog DUT instance
+  localparam logic [COEFF_WIDTH*NUM_COEFFS-1:0] COEFFS_VEC =
+    { << COEFF_WIDTH {COEFFS_0} };
+
+  localparam logic signed [COEFF_WIDTH-1:0] COEFFS_1 [NUM_COEFFS] = '{
+     32767,      0, -32767,      0,  32767,
+    -32767,  32767, -32767,  32767, -32767,
+     32767,  32767,  32767,  32767,  32767,
+    -32767, -32767, -32767, -32767, -32767,
+     32767,
+    -32767, -32767, -32767, -32767, -32767,
+     32767,  32767,  32767,  32767,  32767,
+    -32767,  32767, -32767,  32767, -32767,
+     32767,      0, -32767,      0,  32767
   };
 
   //---------------------------------------------------------------------------
@@ -148,7 +152,7 @@ module rfnoc_block_fir_filter_tb #(
     .MTU                      (MTU),
     .COEFF_WIDTH              (COEFF_WIDTH),
     .NUM_COEFFS               (NUM_COEFFS),
-    .COEFFS_VEC               (COEFFS_VEC_0),
+    .COEFFS_VEC               (COEFFS_VEC),
     .RELOADABLE_COEFFS        (RELOADABLE_COEFFS),
     .SYMMETRIC_COEFFS         (SYMMETRIC_COEFFS),
     .SKIP_ZERO_COEFFS         (SKIP_ZERO_COEFFS),
@@ -188,11 +192,45 @@ module rfnoc_block_fir_filter_tb #(
     blk_ctrl.reg_write(port * (2**FIR_FILTER_ADDR_W) + addr, value);
   endtask : write_reg
 
+
   // Translate the desired register access to a ctrlport read request.
   task automatic read_reg(int port, byte addr, output logic [31:0] value);
     blk_ctrl.reg_read(port * (2**FIR_FILTER_ADDR_W), value);
   endtask : read_reg
 
+
+  // Translate the desired burst register access to a ctrlport burst write
+  // request. Writes all data words to the same address.
+  task automatic write_reg_burst(int port, byte addr, ctrl_word_t data[$]);
+    blk_ctrl.burst_write(port * (2**FIR_FILTER_ADDR_W) + addr, data);
+  endtask : write_reg_burst
+
+
+  // Load coefficients into the FIR filter for the given port. Coefficients are
+  // written in reverse order, with the last one (coeff[0]) being written to
+  // LOAD_COEFF_LAST.
+  //
+  //   port:         Port number to load coefficients into
+  //   coeffs:       Array of coefficients to load
+  //   num_to_send:  Number of coefficients to send (may be less than
+  //                 NUM_COEFFS when SYMMETRIC_COEFFS is enabled)
+  //
+  task automatic load_coeffs(
+    int                            port,
+    logic signed [COEFF_WIDTH-1:0] coeffs [NUM_COEFFS],
+    int                            num_to_send
+  );
+    ctrl_word_t coeff_data[$];
+
+    // Reverse the order of the array
+    for (int i = num_to_send-1; i > 0; i--) begin
+      coeff_data.push_back(ctrl_word_t'(coeffs[i]));
+    end
+
+    // Burst write the coefficients, except the last one.
+    write_reg_burst(port, REG_FIR_LOAD_COEFF, coeff_data);
+    write_reg(port, REG_FIR_LOAD_COEFF_LAST, ctrl_word_t'(coeffs[0]));
+  endtask : load_coeffs
 
 
   //---------------------------------------------------------------------------
@@ -210,7 +248,7 @@ module rfnoc_block_fir_filter_tb #(
     //-------------------------------------------------------------------------
     // Reset
     //-------------------------------------------------------------------------
-    
+
     test.start_test("Wait for Reset", 10us);
     fork
       blk_ctrl.reset_chdr();
@@ -222,7 +260,7 @@ module rfnoc_block_fir_filter_tb #(
     //-------------------------------------------------------------------------
     // Check NoC ID and Block Info
     //-------------------------------------------------------------------------
-    
+
     test.start_test("Verify Block Info", 2us);
     `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect NUM_DATA_I Value");
@@ -253,15 +291,11 @@ module rfnoc_block_fir_filter_tb #(
           num_coeffs_to_send = num_coeffs;
         end
 
-        // If using embedded register, coefficients must be preloaded
+        // If using embedded registers, coefficients must be preloaded
         if (USE_EMBEDDED_REGS_COEFFS) begin
-          int i;
-          for (i = num_coeffs_to_send-1; i > 0; i--) begin
-            write_reg(port, REG_FIR_LOAD_COEFF, COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
-          end
-          write_reg(port, REG_FIR_LOAD_COEFF_LAST, COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
+          load_coeffs(port, COEFFS_0, num_coeffs_to_send);
         end
-        
+
         test.end_test();
       end
 
@@ -313,7 +347,7 @@ module rfnoc_block_fir_filter_tb #(
 
         for (int i = 0; i < NUM_COEFFS; i++) begin
           // Compute the expected sample
-          i_coeff = $signed(COEFFS_VEC_0[COEFF_WIDTH*i +: COEFF_WIDTH]);
+          i_coeff = COEFFS_0[i];
           q_coeff = i_coeff;
 
           // Grab the next sample
@@ -321,12 +355,12 @@ module rfnoc_block_fir_filter_tb #(
 
           // Check I / Q values
           $sformat(
-            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d",
             i, i_coeff, i_samp);
           `ASSERT_ERROR(
             (i_samp == i_coeff) || (i_samp-1 == i_coeff) || (i_samp+1 == i_coeff), s);
           $sformat(
-            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d",
             i, q_coeff, q_samp);
           `ASSERT_ERROR(
             (q_samp == q_coeff) || (q_samp-1 == q_coeff) || (q_samp+1 == q_coeff), s);
@@ -341,7 +375,6 @@ module rfnoc_block_fir_filter_tb #(
       //-----------------------------------------------------------------------
 
       begin
-        int i;
         int num_coeffs_to_send;
 
         // If using symmetric coefficients, send just first half
@@ -352,11 +385,8 @@ module rfnoc_block_fir_filter_tb #(
         end
 
         test.start_test("Load new coefficients", 20us);
-        for (i = num_coeffs_to_send-1; i > 0; i--) begin
-          write_reg(port, REG_FIR_LOAD_COEFF, COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);
-        end
-        write_reg(port, REG_FIR_LOAD_COEFF_LAST, COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);
-        test.end_test();    
+        load_coeffs(port, COEFFS_1, num_coeffs_to_send);
+        test.end_test();
       end
 
 
@@ -412,7 +442,7 @@ module rfnoc_block_fir_filter_tb #(
 
         for (int i = 0; i < NUM_COEFFS; i++) begin
           // Compute the expected sample
-          i_coeff = $signed(COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);
+          i_coeff = COEFFS_1[i];
           q_coeff = i_coeff;
 
           // Grab the next sample
@@ -420,12 +450,12 @@ module rfnoc_block_fir_filter_tb #(
 
           // Check I / Q values
           $sformat(
-            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d",
             i, i_coeff, i_samp);
           `ASSERT_ERROR(
             (i_samp == i_coeff) || (i_samp-1 == i_coeff) || (i_samp+1 == i_coeff), s);
           $sformat(
-            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d",
             i, q_coeff, q_samp);
           `ASSERT_ERROR(
             (q_samp == q_coeff) || (q_samp-1 == q_coeff) || (q_samp+1 == q_coeff), s);
@@ -490,7 +520,7 @@ module rfnoc_block_fir_filter_tb #(
         // Calculate sum of all the coefficients
         coeff_sum = 0;
         for (int i = 0; i < NUM_COEFFS; i++) begin
-            coeff_sum += $signed(COEFFS_VEC_1[COEFF_WIDTH*i +: COEFF_WIDTH]);
+            coeff_sum += COEFFS_1[i];
         end
 
         for (int i = 0; i < NUM_COEFFS; i++) begin
@@ -499,14 +529,14 @@ module rfnoc_block_fir_filter_tb #(
 
           // Check I / Q values
           $sformat(
-            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect I value received on sample %0d! Expected: %0d, Received: %0d",
             i, coeff_sum, i_samp);
           `ASSERT_ERROR(
             (i_samp == coeff_sum) || (i_samp-1 == coeff_sum) || (i_samp+1 == coeff_sum),
             s
           );
           $sformat(
-            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d", 
+            s, "Incorrect Q value received on sample %0d! Expected: %0d, Received: %0d",
             i, coeff_sum, q_samp);
           `ASSERT_ERROR(
             (q_samp == coeff_sum) || (q_samp-1 == coeff_sum) || (q_samp+1 == coeff_sum),

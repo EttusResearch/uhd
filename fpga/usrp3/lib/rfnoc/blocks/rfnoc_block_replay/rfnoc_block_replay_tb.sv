@@ -368,8 +368,7 @@ module rfnoc_block_replay_tb#(
 
   // Write a 64-bit register
   task automatic write_reg_64(int port, bit [19:0] addr, bit [63:0] value);
-    blk_ctrl.reg_write((2**REPLAY_ADDR_W)*port + addr + 0, value[31: 0]);
-    blk_ctrl.reg_write((2**REPLAY_ADDR_W)*port + addr + 4, value[63:32]);
+    blk_ctrl.reg_write64((2**REPLAY_ADDR_W)*port + addr, value);
   endtask : write_reg_64
 
   // Read a 32-bit register
@@ -377,10 +376,9 @@ module rfnoc_block_replay_tb#(
     blk_ctrl.reg_read((2**REPLAY_ADDR_W)*port + addr, value[31: 0]);
   endtask : read_reg
 
-  // Read a 32-bit register
+  // Read a 64-bit register
   task automatic read_reg_64(int port, bit [19:0] addr, output logic [63:0] value);
-    blk_ctrl.reg_read((2**REPLAY_ADDR_W)*port + addr + 0, value[31: 0]);
-    blk_ctrl.reg_read((2**REPLAY_ADDR_W)*port + addr + 4, value[63:32]);
+    blk_ctrl.reg_read64((2**REPLAY_ADDR_W)*port + addr, value);
   endtask : read_reg_64
 
 
