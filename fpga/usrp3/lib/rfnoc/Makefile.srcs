@@ -18,7 +18,6 @@ RFNOC_FRAMEWORK_SRCS = $(RFNOC_CORE_SRCS) $(RFNOC_XBAR_SRCS) $(RFNOC_UTIL_SRCS) 
 # RFNoC Sources
 ##################################################
 RFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/, \
-chdr_fifo_large.v \
 axi_bit_reduce.v \
 null_source.v \
 split_stream.v \
