@@ -4,23 +4,23 @@
 
 `timescale 1ns/1ps
 `define SIM_TIMEOUT_US 1000
-`define NS_PER_TICK 1
-`define NUM_TEST_CASES 4
 
-`include "sim_exec_report.vh"
-`include "sim_clks_rsts.vh"
+`include "test_exec.svh"
 `include "sim_cvita_lib.svh"
 `include "sim_axis_lib.svh"
 `include "sim_set_rb_lib.svh"
 
 module axi_fifo_tb();
+  import PkgTestExec::*;
+
   /*********************************************
   ** Setup Testbench
   *********************************************/
-  `TEST_BENCH_INIT("axi_fifo_tb",`NUM_TEST_CASES,`NS_PER_TICK);
-  localparam CLK_PERIOD = $ceil(1e9/166.67e6);
-  `DEFINE_CLK(clk, CLK_PERIOD, 50);
-  `DEFINE_RESET(reset, 0, 100);
+  localparam CLK_PERIOD = 10; // 100 MHz
+  bit clk, reset;
+
+  sim_clock_gen #(.PERIOD(CLK_PERIOD), .AUTOSTART(0))
+    clk_gen (.clk(clk), .rst(reset));
 
   // 4 variants: axi_fifo_flop, axi_fifo_flop2, axi_fifo_short, axi_fifo_bram
   localparam NUM_FIFOS = 4;
@@ -60,52 +60,63 @@ module axi_fifo_tb();
   initial begin
     clear = 'd0;
 
+    // Stop all clock events for simulation performance until setup is done.
+    clk_gen.kill();
+
+    test.start_tb("axi_fifo_tb", `SIM_TIMEOUT_US * 1us);
+
+    clk_gen.revive();
+
+    // Drive reset sequence.
+    clk_gen.start();
+    clk_gen.reset(20);
+
     /********************************************************
     ** Test 1 -- Reset
     ********************************************************/
-    `TEST_CASE_START("Wait for Reset");
+    test.start_test("Wait for Reset");
     m_axis.reset();
     s_axis.reset();
-    while (reset) @(posedge clk);
-    `TEST_CASE_DONE(~reset);
+    @(negedge reset);
+    test.end_test(~reset);
 
     /********************************************************
     ** Test 2 -- Check filling FIFOs
     ********************************************************/
-    `TEST_CASE_START("Check filling FIFOs");
+    test.start_test("Check filling FIFOs");
     for (int i = 0; i < NUM_FIFOS; i++) begin
       $display("Testing FIFO %0d, SIZE %0d",i,2**FIFO_SIZES[i]);
       for (int k = 0; k < 2**FIFO_SIZES[i]; k++) begin
         $sformat(s,"FIFO size should be %0d entries, but detected %0d!",2**FIFO_SIZES[i],k);
-        `ASSERT_FATAL(m_axis.axis.tready[i],s);
+        test.assert_fatal(m_axis.axis.tready[i], s);
         m_axis.push_word(k,0,i);
       end
       $sformat(s,"FIFO depth appears to be greater than %0d entries! Might be due to output registering.",2**FIFO_SIZES[i]);
-      `ASSERT_WARN(~m_axis.axis.tready[i],s);
+      test.assert_warning(~m_axis.axis.tready[i], s);
     end
-    `TEST_CASE_DONE(1);
+    test.end_test(1);
 
     /********************************************************
     ** Test 3 -- Check emptying FIFOs
     ********************************************************/
-    `TEST_CASE_START("Check emptying FIFOs");
+    test.start_test("Check emptying FIFOs");
     for (int i = 0; i < NUM_FIFOS; i++) begin
       $display("Testing FIFO %0d, SIZE %0d",i,2**FIFO_SIZES[i]);
       for (int k = 0; k < 2**FIFO_SIZES[i]; k = k + 1) begin
         $sformat(s,"FIFO prematurely empty! Occured after %0d reads!",k);
-        `ASSERT_FATAL(s_axis.axis.tvalid[i],s);
+        test.assert_fatal(s_axis.axis.tvalid[i], s);
         s_axis.pull_word(read_word,last,i);
         $sformat(s,"Read invalid FIFO word! Expected: %0d, Actual: %0d",k,read_word);
-        `ASSERT_FATAL(read_word == k,s);
+        test.assert_fatal(read_word == k, s);
       end
-      `ASSERT_FATAL(~s_axis.axis.tvalid[i],"FIFO not empty after reading all entries!");
+      test.assert_fatal(~s_axis.axis.tvalid[i], "FIFO not empty after reading all entries!");
     end
-    `TEST_CASE_DONE(1);
+    test.end_test(1);
 
     /********************************************************
     ** Test 4 -- Randomized Write / Read Timing
     ********************************************************/
-    `TEST_CASE_START("Randomized Write / Read");
+    test.start_test("Randomized Write / Read");
     for (int i = 0; i < NUM_FIFOS; i++) begin
       $display("Testing FIFO %0d, SIZE %0d",i,2**FIFO_SIZES[i]);
       fork
@@ -122,13 +133,14 @@ module axi_fifo_tb();
           while ($signed($random()) > 0) @(posedge clk);
           s_axis.pull_word(read_word,last,i);
           $sformat(s,"Read invalid FIFO word! Expected: %0d, Actual: %0d",read_word,k);
-          `ASSERT_FATAL(read_word == k,s);
+          test.assert_fatal(read_word == k, s);
         end
       end
       join
     end
-    `TEST_CASE_DONE(1);
-    `TEST_BENCH_DONE;
+    test.end_test();
+    test.end_tb(0);
+    clk_gen.kill();
   end
 
 endmodule

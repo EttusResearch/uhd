@@ -22,3 +22,4 @@ top/x400/ip/eth_100g_bd/lbus_tb
 top/x400/rf/sim
 top/x300/dboards/obx/cpld/sim/obx_register_endpoints
 top/x300/dboards/obx/cpld/sim/obx_spi_passthrough
+lib/sim/fifo/axi_fifo

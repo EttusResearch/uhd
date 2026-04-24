@@ -18,6 +18,8 @@ axi_fifo64_to_fifo32.v \
 axi_fifo32_to_fifo16.v \
 axi_fifo16_to_fifo32.v \
 axi_fifo_bram.v \
+axi_fifo_uram.sv \
+axi_fifo_large.sv \
 axi_fifo_cascade.v \
 axi_fifo_flop2.v \
 axi_fifo_flop.v \
