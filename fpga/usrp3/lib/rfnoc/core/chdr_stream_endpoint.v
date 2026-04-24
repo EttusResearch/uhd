@@ -26,6 +26,9 @@
 //   - NUM_DATA_O: Number of AXIS data master ports
 //   - INGRESS_BUFF_SIZE: Buffer size in log2 of the number of words
 //                        in the ingress buffer for the stream
+//   - MAX_NUM_URAM_BLOCKS: Maximum number of URAM primitives to use in
+//                          the ingress buffer. Set to -1 (default) for
+//                          no limit.
 //   - MTU: Log2 of the maximum packet size in CHDR_W words
 //   - REPORT_STRM_ERRS: Report data stream errors upstream
 //   - SIM_SPEEDUP: Set to 1 in simulation, and 0 otherwise
@@ -43,21 +46,22 @@
 
 
 module chdr_stream_endpoint #(
-  parameter        DEVICE_FAMILY     = "7SERIES",
-  parameter [15:0] PROTOVER          = {8'd1, 8'd0},
-  parameter        CHDR_W            = 64,
-  parameter        BLOCK_CHDR_W      = CHDR_W,
-  parameter [ 9:0] INST_NUM          = 0,
-  parameter [ 9:0] CTRL_XBAR_PORT    = 0,
-  parameter [ 0:0] AXIS_CTRL_EN      = 1,
-  parameter [ 0:0] AXIS_DATA_EN      = 1,
-  parameter [ 5:0] NUM_DATA_I        = 1,
-  parameter [ 5:0] NUM_DATA_O        = 1,
-  parameter [ 5:0] INGRESS_BUFF_SIZE = 12,
-  parameter [ 5:0] MTU               = 10,
-  parameter [ 0:0] REPORT_STRM_ERRS  = 1,
-  parameter [ 0:0] THROTTLE          = 1,
-  parameter [ 0:0] SIM_SPEEDUP       = 0
+  parameter        DEVICE_FAMILY       = "7SERIES",
+  parameter [15:0] PROTOVER            = {8'd1, 8'd0},
+  parameter        CHDR_W              = 64,
+  parameter        BLOCK_CHDR_W        = CHDR_W,
+  parameter [ 9:0] INST_NUM            = 0,
+  parameter [ 9:0] CTRL_XBAR_PORT      = 0,
+  parameter [ 0:0] AXIS_CTRL_EN        = 1,
+  parameter [ 0:0] AXIS_DATA_EN        = 1,
+  parameter [ 5:0] NUM_DATA_I          = 1,
+  parameter [ 5:0] NUM_DATA_O          = 1,
+  parameter [ 5:0] INGRESS_BUFF_SIZE   = 12,
+  parameter        MAX_NUM_URAM_BLOCKS = -1,
+  parameter [ 5:0] MTU                 = 10,
+  parameter [ 0:0] REPORT_STRM_ERRS    = 1,
+  parameter [ 0:0] THROTTLE            = 1,
+  parameter [ 0:0] SIM_SPEEDUP         = 0
 )(
   // Clock, reset and settings
   input  wire                           rfnoc_chdr_clk,
@@ -553,6 +557,7 @@ module chdr_stream_endpoint #(
     chdr_stream_input #(
       .DEVICE_FAMILY(DEVICE_FAMILY),
       .CHDR_W(CHDR_W), .BUFF_SIZE(INGRESS_BUFF_SIZE),
+      .MAX_NUM_URAM_BLOCKS(MAX_NUM_URAM_BLOCKS),
       .FLUSH_TIMEOUT_W(INPUT_FLUSH_TIMEOUT_W),
       .MONITOR_EN(0), .SIGNAL_ERRS(REPORT_STRM_ERRS)
     ) strm_input_i (

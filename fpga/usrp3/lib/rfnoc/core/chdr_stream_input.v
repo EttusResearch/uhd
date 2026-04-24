@@ -21,6 +21,8 @@
 //                      to flush the input stream
 //   - SIGNAL_ERRS: If set to 1 then all stream errors will be notified
 //                  upstream, otherwise ALL errors are ignored
+//   - MAX_NUM_URAM_BLOCKS: Maximum number of URAM primitives to use.
+//                          Set to -1 (default) for no limit.
 //
 // Signals:
 //   - s_axis_chdr_* : Input CHDR stream (AXI-Stream)
@@ -30,12 +32,13 @@
 //
 
 module chdr_stream_input #(
-  parameter DEVICE_FAMILY   = "7SERIES",
-  parameter CHDR_W          = 256,
-  parameter BUFF_SIZE       = 14,
-  parameter FLUSH_TIMEOUT_W = 14,
-  parameter MONITOR_EN      = 1,
-  parameter SIGNAL_ERRS     = 1
+  parameter DEVICE_FAMILY       = "7SERIES",
+  parameter CHDR_W              = 256,
+  parameter BUFF_SIZE           = 14,
+  parameter MAX_NUM_URAM_BLOCKS = -1,
+  parameter FLUSH_TIMEOUT_W     = 14,
+  parameter MONITOR_EN          = 1,
+  parameter SIGNAL_ERRS         = 1
 )(
   // Clock, reset and settings
   input  wire              clk,
@@ -78,14 +81,16 @@ module chdr_stream_input #(
   reg               buff_tready;
   wire [15:0]       buff_info;
 
-  chdr_ingress_fifo #(
-    .DEVICE(DEVICE_FAMILY), .WIDTH(CHDR_W), .SIZE(BUFF_SIZE)
+  axi_fifo_large #(
+    .DEVICE(DEVICE_FAMILY), .WIDTH(CHDR_W + 1), .DEPTH(2**BUFF_SIZE),
+    .MAX_NUM_URAM_BLOCKS(MAX_NUM_URAM_BLOCKS)
   ) ingress_fifo_i (
     .clk(clk), .reset(rst), .clear(1'b0),
-    .i_tdata(s_axis_chdr_tdata), .i_tlast(s_axis_chdr_tlast),
+    .i_tdata({s_axis_chdr_tlast, s_axis_chdr_tdata}),
     .i_tvalid(s_axis_chdr_tvalid), .i_tready(s_axis_chdr_tready),
-    .o_tdata(buff_tdata), .o_tlast(buff_tlast),
-    .o_tvalid(buff_tvalid), .o_tready(buff_tready)
+    .o_tdata({buff_tlast, buff_tdata}),
+    .o_tvalid(buff_tvalid), .o_tready(buff_tready),
+    .space(), .occupied()
   );
 
   generate if (MONITOR_EN) begin
