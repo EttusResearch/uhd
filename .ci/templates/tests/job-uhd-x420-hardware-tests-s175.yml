@@ -16,26 +16,27 @@ parameters:
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
   parameters:
-    suiteName: 'ettus_dre_s156_x440'
+    suiteName: 'ettus_dre_s175_x420'
     toolset: 'make'
     runPyTest: true
     runPyTestNonRF: false
-    runDevTest: false
+    runDevTest: true
     runSystemImageTest: false
+    master_clock_rate: '245.76e6'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
     uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
     testLength: '${{ parameters.testLength }}'
     dutMatrix:
-      dre_s156-x440-0:
-        dutName: 'dre_s156-x440-0'
+      dre_s175-x420-3:
+        dutName: 'dre_s175-x420-3'
         dutType: 'x4xx'
-        devtestPattern: 'x4x0'
-        dutFPGA: 'X4_1600'
+        devtestPattern: 'x420'
+        dutFPGA: 'CG_1000'
         dutEmbeddedImagesArtifact: 'x4xx-images'
-        uartSerial: '$(x440_uartSerial)'
-        pipelineAgent: pebbles-agent-2-dre
+        uartSerial: '$(x420_uartSerial)'
+        pipelineAgent: dre-s175-x420-3
         pytestAtsConfig: ec21_ats
-        pytestDUT: 'x440'
-        sfp0ip: '192.168.31.212'
+        pytestDUT: 'x420'
+        sfp0ip: '192.168.175.2'

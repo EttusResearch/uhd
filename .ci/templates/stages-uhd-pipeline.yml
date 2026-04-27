@@ -837,8 +837,8 @@ stages:
         fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
 
-- stage: test_uhd_x4xx_s156_stage
-  displayName: RF Test UHD x4xx s156
+- stage: test_uhd_x4xx_s175_stage
+  displayName: RF Test UHD x4xx s175
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
@@ -860,7 +860,7 @@ stages:
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x420')
     ))
   jobs:
-  - template: tests/job-uhd-x420-hardware-tests-s156.yml
+  - template: tests/job-uhd-x420-hardware-tests-s175.yml
     parameters:
       ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
         fpga_imgs_source: 'Pipeline'
