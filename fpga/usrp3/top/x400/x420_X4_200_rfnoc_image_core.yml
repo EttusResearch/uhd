@@ -73,6 +73,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
+      CTRL_FIFO_SIZE: 1024
+      CTRL_OUT_FIFO_SIZE: 1024
   duc1:
     block_desc: 'duc.yml'
     parameters:
@@ -85,6 +87,8 @@ noc_blocks:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
+      CTRL_FIFO_SIZE: 1024
+      CTRL_OUT_FIFO_SIZE: 1024
   replay0:
     block_desc: 'replay.yml'
     parameters:

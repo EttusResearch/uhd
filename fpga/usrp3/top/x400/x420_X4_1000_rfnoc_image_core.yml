@@ -65,11 +65,15 @@ noc_blocks:
     parameters:
       NUM_PORTS: 1
       EN_FIFO_OUT_REG: 1
+      CTRL_FIFO_SIZE: 1024
+      CTRL_OUT_FIFO_SIZE: 1024
   radio1:
     block_desc: 'radio.yml'
     parameters:
       NUM_PORTS: 1
       EN_FIFO_OUT_REG: 1
+      CTRL_FIFO_SIZE: 1024
+      CTRL_OUT_FIFO_SIZE: 1024
   replay0:
     block_desc: 'replay.yml'
     parameters:
