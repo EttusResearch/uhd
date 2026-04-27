@@ -111,7 +111,7 @@ overrides.
 -   `num_recv_frames:` The number of receive buffers to allocate
 -   `send_frame_size:` The size of a single send buffer in bytes
 -   `num_send_frames:` The number of send buffers to allocate
--   `recv_buff_fullness:` The targeted fullness factor of the the buffer (typically around 90%)
+-   `recv_buff_fullness:` The targeted fullness factor of the buffer (typically around 90%)
 -   `ups_per_sec`: USRP2 only. Flow control ACKs per second on TX.
 -   `ups_per_fifo`: USRP2 only. Flow control ACKs per total buffer size (in packets) on TX.
 
@@ -191,7 +191,7 @@ One can query the maximums and current settings with the following command:
 
     ethtool -g <interface>
 
-Tx pause frame support must be enabled when using 100GigE with X410 to ensure proper streaming performance.
+Tx pause frame support must be enabled when using 100GigE with X4xx to ensure proper streaming performance.
 
 To enable Tx pause frames run the following command on the device in a Linux prompt.
 
@@ -199,7 +199,7 @@ To enable Tx pause frames run the following command on the device in a Linux pro
 
 If you are using both SFP ports, you will need to run the above command separately on both of them.
 
-One can query the the current enable status of TX pause frames by running the following command on the X410 device in a Linux prompt.
+One can query the current enable status of TX pause frames by running the following command on the X4xx device in a Linux prompt.
 
     ethtool -a <interface>
 

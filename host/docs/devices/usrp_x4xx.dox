@@ -1951,6 +1951,151 @@ Below is an excerpt of the FPGA source code, setting the `user0`, `user1`, and
   assign user_led_ctrl[2] = LED_AMBER;
 ~~~
 
+\section x4xx_streaming High-Rate Host-USRP Ethernet Streaming
+
+To stream RF data from the host to the radio or vice versa, the USRP X4x0 series
+offers an interface supporting 10 or 100 GbE connectivity depending on the FPGA
+image. The following sub sections list validated host PC configurations and data
+throughputs that were achieved reliably.
+
+\subsection x4xx_adapters Recommended Host PC Hardware
+
+\subsubsection x4xx_10_100gbe_recommended Recommended 10/100 Gigabit Ethernet Cards
+
+Ettus Research/NI has tested a number of NICs that support 10 and/or 100 GbE connectivity.
+Please refer to the Ettus Knowledge Base to find the [list of NICs](https://kb.ettus.com/Getting_Started_with_DPDK_and_UHD#Host_Network_Cards).
+It is important to note that the maximum performance can only be achieved on
+a Linux host and with DPDK support. Windows-based host systems fall short in
+terms of network performance and do not support DPDK.
+
+\subsubsection x4xx_100gbe_host_pc Recommended Host PC
+
+- At least 16 CPU Cores
+- At least 64 GB RAM
+- Ubuntu 20.04 (5.4.0-89-generic kernel) or greater
+
+\subsection x4xx_qsfp_guidance Recommended QSFP28 Adapters for Fiber Connectivity
+
+Ettus Research currently offers direct-connect, copper cabling accessories for the
+NI Ettus USRP X4x0. However, it is also possible to use multi-mode fiber instead of
+copper connections for these devices. In this section, we will provide general
+guidance on the types of fiber adapters and cables that can be used with these products.
+
+The NI Ettus USRP X4x0 is compatible with most brands of QSFP fiber adapters. In some
+cases, other equipment in the systems such as 1/10/100 Gigabit Ethernet switches are
+only compatible with specific brands of SFP/QSFP adapters and cables. As a general rule,
+we recommend checking compatibility with the switches and network cards in your system
+before purchasing an adapter. 
+
+\subsection x4xx_benchmarks Data Throughput Benchmarks
+
+For all X4x0 devices, data throughput benchmarks have been performed. Maximum performance
+can be achieved when the following conditions are met:
+- Hardware and Software Configurations as listed for each device
+- CPU configured for performance mode: [https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks)
+- Enabling Tx pause frames on X4xx for the SFP port(s) utilized for streaming:
+  - `ethtool -A sfp0 tx on`
+  - `ethtool -A sfp1 tx on`
+- \ref dpdk_setup
+
+Executing [benchmark_rate](https://github.com/EttusResearch/uhd/blob/master/host/examples/benchmark_rate.cpp)
+over multiple iterations as well as over an extended continuous time period (>12 Hours)
+without data loss resulted in the following maximum rates and channel counts.
+- Usage of the `--priority` argument set to `high` in benchmark_rate which requires `benchmark_rate`
+to be executed with root privileges via `sudo`
+- Usage of single versus multiple threads in the benchmark_rate utility - controlled by using the
+`--multi_streamer` argument. Specifying this argument assigns one thread per channel being streamed.
+This was used for all multi-channel benchmarks.
+
+If not stated otherwise, all testing was done using dual 100 GbE ports. For a single 100 GbE port,
+expect around half the number of channels as compared to the dual port equivalent configuration at
+the same streaming rate if the utilization of the dual ports was high.
+
+\subsubsection x410_benchmarks USRP X410
+
+\paragraph x410_benchmark_hw_sw Validated Hardware and Software Configurations
+
+- Ubuntu 20.04 (5.4.0-89-generic kernel), DPDK 20.11, with AMD Ryzen Threadripper 3960X
+24-Core Processor - 48 CPU - 3.6 GHz CPU freq - 64 GB RAM. Mellanox/NVIDIA ConnectX-5 EX
+100 GbE NIC (MCX516A-CDAT (PCIe Gen4 x16)). Mellanox/NVIDIA 3m QSFP28 MCP1600-C003E26N cables.
+
+\paragraph x410_benchmark_results Benchmark Results
+
+All X410 benchmarks were performed using the CG_400 FPGA image.
+
+- Dual Port 100 GbE, DPDK
+  - 4 Rx + 4 Tx @ 491.52 MS/s
+  - 4 Rx @ 491.52 MS/s
+  - 4 Tx @ 491.52 MS/s
+
+- Single Port 100 GbE, DPDK
+  - 2 Rx + 2 Tx @ 491.52 MS/s
+  - 4 Rx @ 491.52 MS/s
+  - 3 Tx @ 491.52 MS/s
+
+- Dual Port 100 GbE, Non-DPDK
+  - 1 Rx + 1 Tx @ 491.52 MS/s
+  - 4 Rx @ 491.52 MS/s
+  - 2 Tx @ 491.52 MS/s
+
+- Single Port 100 GbE, Non-DPDK
+  - 1 Rx + 1 Tx @ 491.52 MS/s
+  - 3 Rx @ 491.52 MS/s
+  - 2 Tx @ 491.52 MS/s
+
+\subsubsection x420_benchmarks USRP X420
+
+\paragraph x420_benchmark_hw_sw Validated Hardware and Software Configurations
+
+- Ubuntu 22.04 (6.8.0-106-generic), DPDK 21.11, with AMD Ryzen Threadripper 3960X 24-Core
+Processor - 48 CPU - 3.6 GHz CPU freq - 64 GB RAM. Mellanox/NVIDIA ConnectX-5 EX 100 GbE
+NIC (MCX516A-CDAT (PCIe Gen4 x16)). Mellanox/NVIDIA 3m QSFP28 MCP1600-C003E26N cables. 
+- Ubuntu 24.04 (6.11.0-25-generic), DPDK 23.11, with Intel I9 13900K 24-Core
+Processor - 32 CPU - 5.4 GHz CPU freq - 64 GB RAM, Mellanox/NVIDIA ConnectX-6 DX, 100 GbE
+NIC (MCX623106AE-CDAT (PCIe Gen4 x16)). Mellanox/NVIDIA 3m QSFP28 MCP1600-C003E26N cables. 
+
+\paragraph x420_benchmark_results Benchmark Results
+
+- Dual Port 100 GbE, DPDK (CG_1000 FPGA image)
+  - 2 Tx @ 1250 MS/s
+  - 2 Rx @ 1250 MS/s
+- Single Port 100 GbE, DPDK (CG_1000 FPGA image)
+  - 1 Tx @ 1250 MS/s
+  - 1 Rx @ 1250 MS/s
+  - 1 Rx + 1 Tx @ 1250 MS/s
+
+- 10 GbE, DPDK (X4_1000 FPGA image)
+  - 2 Tx @ 250 MS/s
+  - 2 Rx @ 250 MS/s
+  - 2 Rx + 2 Tx @ 250 MS/s
+
+- Single Port 100 GbE, Non-DPDK (CG_1000 FPGA image)
+  - 1 Rx @ 1250 MS/s
+
+\subsubsection x440_benchmarks USRP X440
+
+\paragraph x440_benchmark_hw_sw Validated Hardware and Software Configurations
+
+- Ubuntu 20.04 (5.13.0-44-generic kernel), DPDK 20.11, with AMD Ryzen Threadripper
+3960X 24-Core Processor - 48 CPU - 3.6 GHz CPU freq - 64 GB RAM. Mellanox/NVIDIA
+ConnectX-5 EX 100 GbE NIC (MCX516A-CDAT (PCIe Gen4 x16)). Mellanox/NVIDIA 3m QSFP28
+MCP1600-C003E26N cables.
+
+\paragraph x440_benchmark_results Benchmark Results
+
+- Dual Port 100 GbE, DPDK using CG_400 FPGA image
+  - 6 Rx @ 500 MS/s
+  - 8 Rx @ 400 MS/s
+  - 6 Tx @ 500 MS/s
+  - 8 Tx @ 450 MS/s
+  - 4 Rx + 4 Tx @ 500 MS/s
+  - 8 Rx + 8 Tx @ 250 MS/s
+
+- Dual Port 100 GbE, DPDK using CG_1600 FPGA image
+  - 2 Rx @ 1000 MS/s
+  - 2 Tx @ 1800 MS/s
+  - 2 Rx + 2 Tx @ 1000 MS/s
+
 \section x4xx_too Theory of Operation
 
 \image html x4xx_block_diagram.svg "X4x0 Motherboard Block Diagram" width=60%
@@ -2249,7 +2394,7 @@ For different daughterboards, different frequencies and gain values are
 used at which the ADC self-calibration is run.
 
 To cover corner-cases especially in X440, the ADC self calibration can
-be parameterized with the following parameters (ref x4xx_usage_args):
+be parameterized with the following parameters (see \ref x4xx_usage_args):
 - `cal_freq`: The frequency of the cal tone. Must be within the first Nyquist 
   zone (converter rate / 2)
 - `cal_dac_mux_i`: 16 bit I value for the cal tone
