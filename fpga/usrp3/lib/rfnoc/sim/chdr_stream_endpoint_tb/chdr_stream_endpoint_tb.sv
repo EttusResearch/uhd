@@ -815,6 +815,10 @@ module chdr_stream_endpoint_tb#(
       exp_mgmt_op = '{op_payload:48'h0, op_code:MGMT_OP_NOP, ops_pending:8'd0};
       `ASSERT_ERROR(rx_mgmt_pl.ops[0] == exp_mgmt_op,
         "Config Routes: Mgmt response ops were incorrect");
+
+      // Ensure the routes are correctly configured in the CHDR crossbar routing
+      // table. Therefore the insert operations have to be finished.
+      wait (xbar_c.chdr_xb_routing_table_i.insert_tvalid == '0);
     end
     test.end_test();
 
