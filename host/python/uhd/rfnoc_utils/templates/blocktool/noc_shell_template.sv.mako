@@ -131,7 +131,8 @@ module noc_shell_${config['module_name']} #(
   output wire [511:0]       rfnoc_core_status
 );
 
-  localparam CTRL_FIFO_SIZE_LOG2 = $clog2(${config['control']['fifo_depth']});
+  localparam CTRL_FIFO_SIZE_LOG2     = $clog2(${config['control']['fifo_depth']});
+  localparam CTRL_OUT_FIFO_SIZE_LOG2 = $clog2(${config['control']['output_fifo_depth']});
 
   //---------------------------------------------------------------------------
   //  Backend Interface
