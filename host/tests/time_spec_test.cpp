@@ -8,7 +8,6 @@
 #include <uhd/types/time_spec.hpp>
 #include <stdint.h>
 #include <boost/test/unit_test.hpp>
-#include <boost/thread.hpp> //sleep
 #include <iomanip>
 #include <iostream>
 
