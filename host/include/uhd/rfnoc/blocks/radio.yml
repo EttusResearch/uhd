@@ -18,6 +18,7 @@ parameters:
   EN_FIFO_OUT_REG: 0
   SKIP_WR_ACK_WAIT: 0
   CTRL_FIFO_SIZE: 512
+  CTRL_OUT_FIFO_SIZE: 2
 
 checks:
   - condition: "${parameters['NUM_PORTS'] > 0}"
@@ -37,6 +38,7 @@ control:
   fpga_iface: ctrlport
   interface_direction: remote_master_slave
   fifo_depth: CTRL_FIFO_SIZE
+  output_fifo_depth: CTRL_OUT_FIFO_SIZE
   clk_domain: radio
   ctrlport:
     byte_mode: True
