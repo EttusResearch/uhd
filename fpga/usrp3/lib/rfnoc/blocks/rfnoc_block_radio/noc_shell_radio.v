@@ -12,41 +12,44 @@
 //
 // Parameters:
 //
-//   THIS_PORTID      : Control crossbar port to which this block is connected
-//   CHDR_W           : AXIS-CHDR data bus width
-//   CTRL_CLK_IDX     : The index of the control clock for this block. This is
-//                      used to populate the backend interface, from where UHD
-//                      can query the clock index and thus auto-deduct which
-//                      clock is used.
-//   TB_CLK_IDX       : The index of the timebase clock for this block. This is
-//                      used to populate the backend interface, from where UHD
-//                      can query the clock index and thus auto-deduct which
-//                      clock is used.
-//   MTU              : Maximum transmission unit (i.e., maximum packet size in
-//                      CHDR words is 2**MTU).
-//   SKIP_WR_ACK_WAIT : When set to 1, the AXIS-Ctrl master will ACK on
-//                      CtrlPort immediately without waiting for the AXIS-Ctrl
-//                      response for writes. Set to 0 to wait for the response
-//                      before ACK'ing on CtrlPort, which is the normal
-//                      behavior.
-//   CTRL_FIFO_SIZE   : Number of words in the AXI-Stream control slave FIFO.
-//                      Will be rounded up to nearest power of 2.
+//   THIS_PORTID        : Control crossbar port to which this block is connected
+//   CHDR_W             : AXIS-CHDR data bus width
+//   CTRL_CLK_IDX       : The index of the control clock for this block. This is
+//                        used to populate the backend interface, from where UHD
+//                        can query the clock index and thus auto-deduct which
+//                        clock is used.
+//   TB_CLK_IDX         : The index of the timebase clock for this block. This is
+//                        used to populate the backend interface, from where UHD
+//                        can query the clock index and thus auto-deduct which
+//                        clock is used.
+//   MTU                : Maximum transmission unit (i.e., maximum packet size in
+//                        CHDR words is 2**MTU).
+//   SKIP_WR_ACK_WAIT   : When set to 1, the AXIS-Ctrl master will ACK on
+//                        CtrlPort immediately without waiting for the AXIS-Ctrl
+//                        response for writes. Set to 0 to wait for the response
+//                        before ACK'ing on CtrlPort, which is the normal
+//                        behavior.
+//   CTRL_FIFO_SIZE     : Number of words in the AXI-Stream control slave FIFO.
+//                        Will be rounded up to nearest power of 2.
+//   CTRL_OUT_FIFO_SIZE : Number of words in the AXI-Stream control master
+//                        output FIFO. Will be rounded up to nearest power of 2.
 //
 
 `default_nettype none
 
 
 module noc_shell_radio #(
-  parameter [9:0] THIS_PORTID      = 10'd0,
-  parameter       CHDR_W           = 64,
-  parameter [5:0] CTRL_CLK_IDX     = 6'h3F,
-  parameter [5:0] TB_CLK_IDX       = 6'h3F,
-  parameter [5:0] MTU              = 10,
-  parameter       NUM_PORTS        = 2,
-  parameter       NIPC             = 1,
-  parameter       ITEM_W           = 32,
-  parameter       SKIP_WR_ACK_WAIT = 0,
-  parameter       CTRL_FIFO_SIZE   = 512
+  parameter [9:0] THIS_PORTID        = 10'd0,
+  parameter       CHDR_W             = 64,
+  parameter [5:0] CTRL_CLK_IDX       = 6'h3F,
+  parameter [5:0] TB_CLK_IDX         = 6'h3F,
+  parameter [5:0] MTU                = 10,
+  parameter       NUM_PORTS          = 2,
+  parameter       NIPC               = 1,
+  parameter       ITEM_W             = 32,
+  parameter       SKIP_WR_ACK_WAIT   = 0,
+  parameter       CTRL_FIFO_SIZE     = 512,
+  parameter       CTRL_OUT_FIFO_SIZE = 2
 ) (
   //---------------------
   // Framework Interface
@@ -147,7 +150,8 @@ module noc_shell_radio #(
   input  wire [NUM_PORTS-1:0]        s_out_axis_teob
 );
 
-  localparam CTRL_FIFO_SIZE_LOG2 = $clog2(CTRL_FIFO_SIZE);
+  localparam CTRL_FIFO_SIZE_LOG2     = $clog2(CTRL_FIFO_SIZE);
+  localparam CTRL_OUT_FIFO_SIZE_LOG2 = $clog2(CTRL_OUT_FIFO_SIZE);
 
   //---------------------------------------------------------------------------
   //  Backend Interface
@@ -211,12 +215,13 @@ module noc_shell_radio #(
   assign ctrlport_rst = radio_rst;
 
   ctrlport_endpoint #(
-    .THIS_PORTID      (THIS_PORTID),
-    .SYNC_CLKS        (0),
-    .AXIS_CTRL_MST_EN (1),
-    .AXIS_CTRL_SLV_EN (1),
-    .SLAVE_FIFO_SIZE  (CTRL_FIFO_SIZE_LOG2),
-    .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT)
+    .THIS_PORTID        (THIS_PORTID),
+    .SYNC_CLKS          (0),
+    .AXIS_CTRL_MST_EN   (1),
+    .AXIS_CTRL_SLV_EN   (1),
+    .SLAVE_FIFO_SIZE    (CTRL_FIFO_SIZE_LOG2),
+    .CTRL_OUT_FIFO_SIZE (CTRL_OUT_FIFO_SIZE_LOG2),
+    .SKIP_WR_ACK_WAIT   (SKIP_WR_ACK_WAIT)
   ) ctrlport_endpoint_i (
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
     .rfnoc_ctrl_rst            (rfnoc_ctrl_rst),

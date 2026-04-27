@@ -9,27 +9,29 @@
 //
 // Parameters:
 //
-//   THIS_PORTID      : CTRL port ID to which this block is connected
-//   CHDR_W           : CHDR AXI-Stream data bus width
-//   NIPC             : Number of radio samples per radio clock cycle
-//   ITEM_W           : Radio sample width
-//   NUM_PORTS        : Number of radio channels (RX/TX pairs)
-//   EN_COMP_GAIN_TX  : Enable complex gain feature for TX path
-//   EN_COMP_GAIN_RX  : Enable complex gain feature for RX path
-//   EN_FIFO_OUT_REG  : Enable output register on shift register based FIFOs
-//                      to enable higher clock frequencies. Requires more
-//                      resources.
-//   MTU              : Maximum transmission unit (i.e., maximum packet size)
-//                      in CHDR words is 2**MTU.
-//   PERIPH_BASE_ADDR : CTRL port peripheral window base address
-//   PERIPH_ADDR_W    : CTRL port peripheral address space = 2**PERIPH_ADDR_W
-//   SKIP_WR_ACK_WAIT : When set to 1, the radio will not wait for responses to
-//                      control messages (i.e., overrun and late commands async
-//                      messages). This is useful in situations where packet
-//                      loss is expected. Enabling this will prevent the RX
-//                      state machine from hanging due to dropped packets.
-//   CTRL_FIFO_SIZE   : Number of words in the AXI-Stream control slave FIFO.
-//                      Will be rounded up to next power of 2.
+//   THIS_PORTID        : CTRL port ID to which this block is connected
+//   CHDR_W             : CHDR AXI-Stream data bus width
+//   NIPC               : Number of radio samples per radio clock cycle
+//   ITEM_W             : Radio sample width
+//   NUM_PORTS          : Number of radio channels (RX/TX pairs)
+//   EN_COMP_GAIN_TX    : Enable complex gain feature for TX path
+//   EN_COMP_GAIN_RX    : Enable complex gain feature for RX path
+//   EN_FIFO_OUT_REG    : Enable output register on shift register based FIFOs
+//                        to enable higher clock frequencies. Requires more
+//                        resources.
+//   MTU                : Maximum transmission unit (i.e., maximum packet size)
+//                        in CHDR words is 2**MTU.
+//   PERIPH_BASE_ADDR   : CTRL port peripheral window base address
+//   PERIPH_ADDR_W      : CTRL port peripheral address space = 2**PERIPH_ADDR_W
+//   SKIP_WR_ACK_WAIT   : When set to 1, the radio will not wait for responses to
+//                        control messages (i.e., overrun and late commands async
+//                        messages). This is useful in situations where packet
+//                        loss is expected. Enabling this will prevent the RX
+//                        state machine from hanging due to dropped packets.
+//   CTRL_FIFO_SIZE     : Number of words in the AXI-Stream control slave FIFO.
+//                        Will be rounded up to next power of 2.
+//   CTRL_OUT_FIFO_SIZE : Number of words in the AXI-Stream control master
+//                        output FIFO. Will be rounded up to next power of 2.
 //
 
 
@@ -48,7 +50,8 @@ module rfnoc_block_radio #(
   parameter [5:0] CTRL_CLK_IDX    = 6'h3F,
   parameter [5:0] TB_CLK_IDX      = 6'h3F,
   parameter SKIP_WR_ACK_WAIT      = 0,
-  parameter CTRL_FIFO_SIZE        = 512
+  parameter CTRL_FIFO_SIZE        = 512,
+  parameter CTRL_OUT_FIFO_SIZE    = 2
 ) (
   //---------------------------------------------------------------------------
   // AXIS CHDR Port
@@ -187,16 +190,17 @@ module rfnoc_block_radio #(
   wire radio_rst;
 
   noc_shell_radio #(
-    .THIS_PORTID      (THIS_PORTID),
-    .CHDR_W           (CHDR_W),
-    .CTRL_CLK_IDX     (CTRL_CLK_IDX),
-    .TB_CLK_IDX       (TB_CLK_IDX),
-    .MTU              (MTU),
-    .NUM_PORTS        (NUM_PORTS),
-    .NIPC             (NIPC),
-    .ITEM_W           (ITEM_W),
-    .SKIP_WR_ACK_WAIT (SKIP_WR_ACK_WAIT),
-    .CTRL_FIFO_SIZE   (CTRL_FIFO_SIZE)
+    .THIS_PORTID        (THIS_PORTID),
+    .CHDR_W             (CHDR_W),
+    .CTRL_CLK_IDX       (CTRL_CLK_IDX),
+    .TB_CLK_IDX         (TB_CLK_IDX),
+    .MTU                (MTU),
+    .NUM_PORTS          (NUM_PORTS),
+    .NIPC               (NIPC),
+    .ITEM_W             (ITEM_W),
+    .SKIP_WR_ACK_WAIT   (SKIP_WR_ACK_WAIT),
+    .CTRL_FIFO_SIZE     (CTRL_FIFO_SIZE),
+    .CTRL_OUT_FIFO_SIZE (CTRL_OUT_FIFO_SIZE)
   ) noc_shell_radio_i (
     .rfnoc_chdr_clk            (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
