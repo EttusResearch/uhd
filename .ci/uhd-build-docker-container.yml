@@ -49,7 +49,8 @@ variables:
       'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','releaseName':'focal'},
       'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','releaseName':'jammy'},
       'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','releaseName':'noble'},
-      'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','releaseName':'questing'}}"
+      'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','releaseName':'questing'},
+      'Ubuntu-2604-builder':{'buildOSName':'ubuntu2604','dockerImageName':'uhd-builder-ubuntu2604','releaseName':'resolute'}}"
 - ${{ else }}:
   - name: linuxDockerImages
     value:

@@ -41,9 +41,9 @@ jobs:
         docker_image_matrix_windows_python_build=$(sed '9q;d' "$artifact_file")
       elif [ "$line_count" -eq 6 ]; then
         macos_line=5
-        docker_image_matrix_lin=$(python3 "$derive_script" --input "$artifact_file" --type build --os linux)
+        docker_image_matrix_lin=$(python3 "$derive_script" --input "$artifact_file" --type build --os linux --filter-out "resolute")
         docker_image_matrix_win=$(python3 "$derive_script" --input "$artifact_file" --type build --os windows)
-        docker_image_matrix_ubuntu_deb=$(python3 "$derive_script" --input "$artifact_file" --type installer --os linux --package deb --filter-out "focal,questing")
+        docker_image_matrix_ubuntu_deb=$(python3 "$derive_script" --input "$artifact_file" --type installer --os linux --package deb --filter-out "focal,questing,resolute")
         docker_image_matrix_source_package=$(python3 "$derive_script" --input "$artifact_file" --type source --os linux --select noble)
         docker_image_matrix_fedora_rpm=$(python3 "$derive_script" --input "$artifact_file" --type installer --os linux --package rpm)
         docker_image_matrix_windows_python_build=$(python3 "$derive_script" --input "$artifact_file" --section windows-python-build-matrix)
