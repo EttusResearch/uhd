@@ -304,8 +304,28 @@ public:
                 _req_queue.empty()
                     ? MAX_SEQ_NUM
                     : uint8_t(rx_ctrl.seq_num - _req_queue.front().seq_num) % MAX_SEQ_NUM;
-            if (seq_num_diff == 0) { // No sequence error
-                process_correct_response();
+            if (seq_num_diff == 0) { // No sequence error by seq_num
+                // Also verify op_code and address to guard against stale ACKs
+                // that happen to share the same 6-bit seq_num (either from the
+                // previous session or from earlier in the current session when
+                // the 6-bit counter wraps). A genuine ACK always echoes op_code
+                // and address unchanged. For WRITE ops the FPGA also echoes the
+                // data payload, so we can use that as an additional discriminant.
+                const bool op_addr_match = _req_queue.front().op_code == rx_ctrl.op_code
+                                           && _req_queue.front().address
+                                                  == rx_ctrl.address;
+                const bool data_match =
+                    (rx_ctrl.op_code != OP_WRITE && rx_ctrl.op_code != OP_BLOCK_WRITE)
+                    || _req_queue.front().data_vtr == rx_ctrl.data_vtr;
+                if (op_addr_match && data_match) {
+                    process_correct_response();
+                } else {
+                    _ctrl_out_of_seq++;
+                    UHD_LOG_DEBUG(_log_prefix,
+                        "Dropping stale ACK (seq_num match, "
+                            << (op_addr_match ? "data mismatch" : "op/addr mismatch")
+                            << "): " << rx_ctrl.to_string());
+                }
             } else {
                 // Packets were either dropped or reordered. If they were
                 // dropped, then there should be a corresponding packet to

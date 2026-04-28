@@ -619,3 +619,81 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
 
     BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 65);
 }
+
+// Verify that a stale ACK with matching seq_num but wrong op_code/address is
+// silently dropped and the real ACK is still accepted.
+BOOST_FIXTURE_TEST_CASE(test_stale_ack_op_addr_mismatch, ctrlport_endpoint_fixture)
+{
+    set_auto_ack(false);
+
+    const uint32_t test_addr = 0x1000;
+    const uint32_t test_data = 0xABCD1234;
+
+    // Send a non-blocking poke (no ACK requested) and capture the sent packet
+    endpoint->poke32(test_addr, test_data);
+    auto correct_pkt = get_last_sent_packet();
+
+    // Build a stale ACK that matches seq_num but has wrong op_code (OP_READ vs OP_WRITE)
+    ctrl_payload stale_ack;
+    stale_ack.dst_port = correct_pkt.src_port;
+    stale_ack.src_port = correct_pkt.dst_port;
+    stale_ack.seq_num  = correct_pkt.seq_num;
+    stale_ack.is_ack   = true;
+    stale_ack.src_epid = correct_pkt.src_epid;
+    stale_ack.op_code  = OP_READ; // wrong op_code
+    stale_ack.address  = correct_pkt.address + 0x100; // wrong address
+    stale_ack.status   = CMD_OKAY;
+    stale_ack.data_vtr = {0xDEADBEEF};
+
+    // Deliver stale ACK — must be ignored (request queue must not be popped)
+    endpoint->handle_recv(stale_ack);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 1);
+    // Buffer must still be occupied (request not consumed)
+    BOOST_CHECK_GT(endpoint->get_stats().buffer_fullness, 0u);
+    // Out-of-sequence counter must be incremented
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_out_of_sequence, 1);
+
+    // Deliver the correct ACK — must be accepted
+    send_ack(correct_pkt);
+    wait_for_all_responses();
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 2);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
+}
+
+// Verify that a stale WRITE ACK with matching seq_num, op_code, and address but
+// wrong data payload is silently dropped and the real ACK is still accepted.
+BOOST_FIXTURE_TEST_CASE(test_stale_ack_data_mismatch, ctrlport_endpoint_fixture)
+{
+    set_auto_ack(false);
+
+    const uint32_t test_addr = 0x81020; // SPI_READY register (real-world collision addr)
+    const uint32_t test_data = 0xD64E0089;
+
+    endpoint->poke32(test_addr, test_data);
+    auto correct_pkt = get_last_sent_packet();
+
+    // Build a stale WRITE ACK: seq_num, op_code, address all match, but data differs
+    ctrl_payload stale_ack;
+    stale_ack.dst_port = correct_pkt.src_port;
+    stale_ack.src_port = correct_pkt.dst_port;
+    stale_ack.seq_num  = correct_pkt.seq_num;
+    stale_ack.is_ack   = true;
+    stale_ack.src_epid = correct_pkt.src_epid;
+    stale_ack.op_code  = OP_WRITE;
+    stale_ack.address  = correct_pkt.address;
+    stale_ack.status   = CMD_OKAY;
+    stale_ack.data_vtr = {0xD600629C}; // stale data from previous session
+
+    // Deliver stale ACK — must be ignored
+    endpoint->handle_recv(stale_ack);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 1);
+    BOOST_CHECK_GT(endpoint->get_stats().buffer_fullness, 0u);
+    // Out-of-sequence counter must be incremented
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_out_of_sequence, 1);
+
+    // Deliver correct ACK with matching data — must be accepted
+    send_ack(correct_pkt);
+    wait_for_all_responses();
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 2);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
+}
