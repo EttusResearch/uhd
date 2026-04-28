@@ -24,8 +24,7 @@
 //   - AXIS_DATA_EN: Enable data traffic (axis_data port)
 //   - NUM_DATA_I: Number of AXIS data slave ports
 //   - NUM_DATA_O: Number of AXIS data master ports
-//   - INGRESS_BUFF_SIZE: Buffer size in log2 of the number of words
-//                        in the ingress buffer for the stream
+//   - INGRESS_BUFF_DEPTH: Stream ingress buffer size in CHDR_W words
 //   - MAX_NUM_URAM_BLOCKS: Maximum number of URAM primitives to use in
 //                          the ingress buffer. Set to -1 (default) for
 //                          no limit.
@@ -56,7 +55,7 @@ module chdr_stream_endpoint #(
   parameter [ 0:0] AXIS_DATA_EN        = 1,
   parameter [ 5:0] NUM_DATA_I          = 1,
   parameter [ 5:0] NUM_DATA_O          = 1,
-  parameter [ 5:0] INGRESS_BUFF_SIZE   = 12,
+  parameter        INGRESS_BUFF_DEPTH  = 4096,
   parameter        MAX_NUM_URAM_BLOCKS = -1,
   parameter [ 5:0] MTU                 = 10,
   parameter [ 0:0] REPORT_STRM_ERRS    = 1,
@@ -556,7 +555,7 @@ module chdr_stream_endpoint #(
     // Stream endpoint flow-control input module
     chdr_stream_input #(
       .DEVICE_FAMILY(DEVICE_FAMILY),
-      .CHDR_W(CHDR_W), .BUFF_SIZE(INGRESS_BUFF_SIZE),
+      .CHDR_W(CHDR_W), .BUFF_DEPTH(INGRESS_BUFF_DEPTH),
       .MAX_NUM_URAM_BLOCKS(MAX_NUM_URAM_BLOCKS),
       .FLUSH_TIMEOUT_W(INPUT_FLUSH_TIMEOUT_W),
       .MONITOR_EN(0), .SIGNAL_ERRS(REPORT_STRM_ERRS)

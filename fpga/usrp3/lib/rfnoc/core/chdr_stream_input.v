@@ -15,8 +15,7 @@
 // Parameters:
 //   - DEVICE_FAMILY: The FPGA device family (e.g., "7SERIES" or "ULTRASCALE")
 //   - CHDR_W: Width of the CHDR bus in bits
-//   - BUFF_SIZE: Buffer size in log2 of the number of words in the
-//                ingress buffer for the stream
+//   - BUFF_DEPTH: Stream ingress buffer size in CHDR_W words
 //   - FLUSH_TIMEOUT_W: log2 of the number of cycles to wait in order
 //                      to flush the input stream
 //   - SIGNAL_ERRS: If set to 1 then all stream errors will be notified
@@ -34,7 +33,7 @@
 module chdr_stream_input #(
   parameter DEVICE_FAMILY       = "7SERIES",
   parameter CHDR_W              = 256,
-  parameter BUFF_SIZE           = 14,
+  parameter BUFF_DEPTH          = 16384,
   parameter MAX_NUM_URAM_BLOCKS = -1,
   parameter FLUSH_TIMEOUT_W     = 14,
   parameter MONITOR_EN          = 1,
@@ -62,8 +61,10 @@ module chdr_stream_input #(
   input  wire              data_err_stb
 );
 
-  // The buffer size depends on the BUFF_SIZE parameter
-  localparam [40:0] BUFF_SIZE_BYTES = ((41'h1 << BUFF_SIZE) * (CHDR_W / 8)) - 41'h1;
+  localparam BUFF_DEPTH_W = $clog2(BUFF_DEPTH);
+
+  // The buffer size depends on the BUFF_DEPTH parameter
+  localparam [40:0] BUFF_SIZE_BYTES = (BUFF_DEPTH * (CHDR_W / 8)) - 41'h1;
   // This is a flit-buffer. No packet limits
   localparam [23:0] BUFF_SIZE_PKTS  = 24'hFFFFFF;
 
@@ -82,7 +83,7 @@ module chdr_stream_input #(
   wire [15:0]       buff_info;
 
   axi_fifo_large #(
-    .DEVICE(DEVICE_FAMILY), .WIDTH(CHDR_W + 1), .DEPTH(2**BUFF_SIZE),
+    .DEVICE(DEVICE_FAMILY), .WIDTH(CHDR_W + 1), .DEPTH(BUFF_DEPTH),
     .MAX_NUM_URAM_BLOCKS(MAX_NUM_URAM_BLOCKS)
   ) ingress_fifo_i (
     .clk(clk), .reset(rst), .clear(1'b0),
@@ -94,20 +95,22 @@ module chdr_stream_input #(
   );
 
   generate if (MONITOR_EN) begin
-    wire [BUFF_SIZE:0] occ_lines;
-    axis_fifo_monitor #( .COUNT_W(BUFF_SIZE+1) ) fifo_mon_i (
+    wire [BUFF_DEPTH_W:0] occ_lines;
+    axis_fifo_monitor #( .COUNT_W(BUFF_DEPTH_W+1) ) fifo_mon_i (
       .clk(clk), .reset(rst),
       .i_tlast(s_axis_chdr_tlast), .i_tvalid(s_axis_chdr_tvalid), .i_tready(s_axis_chdr_tready),
       .o_tlast(buff_tlast), .o_tvalid(buff_tvalid), .o_tready(buff_tready),
       .i_sop(), .i_eop(), .o_sop(), .o_eop(),
       .occupied(occ_lines), .occupied_pkts()
     );
-    // buff_info represents a fraction of the fullness of the buffer
-    // fullness percentage = (buff_info / 32768) * 100
-    if (BUFF_SIZE + 1 >= 16)
-      assign buff_info = occ_lines[BUFF_SIZE:(BUFF_SIZE-15)];
+    // buff_info represents a fraction of the fullness of the buffer. Fullness
+    // percentage = (buff_info / 32768) * 100. Note that this equation is only
+    // accurate if the buffer depth is a power of 2. If not, software must
+    // correct the fullness using the actual buffer depth.
+    if (BUFF_DEPTH_W + 1 >= 16)
+      assign buff_info = occ_lines[BUFF_DEPTH_W:(BUFF_DEPTH_W-15)];
     else
-      assign buff_info = {occ_lines, {(15-BUFF_SIZE){1'b0}}};
+      assign buff_info = {occ_lines, {(15-BUFF_DEPTH_W){1'b0}}};
   end else begin
     assign buff_info = 16'd0;
   end endgenerate

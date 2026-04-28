@@ -138,7 +138,7 @@ module chdr_stream_endpoint_tb#(
     .NUM_DATA_I         (2),
     .NUM_DATA_O         (2),
     .CTRL_XBAR_PORT     (PORT_A),
-    .INGRESS_BUFF_SIZE  (MTU+1),
+    .INGRESS_BUFF_DEPTH (2**(MTU+1)),
     .MTU                (MTU),
     .REPORT_STRM_ERRS   (1),
     .SIM_SPEEDUP        (1)
@@ -187,7 +187,7 @@ module chdr_stream_endpoint_tb#(
     .NUM_DATA_I         (2),
     .NUM_DATA_O         (2),
     .CTRL_XBAR_PORT     (PORT_B),
-    .INGRESS_BUFF_SIZE  (MTU+1),
+    .INGRESS_BUFF_DEPTH (2**(MTU+1)),
     .MTU                (MTU),
     .REPORT_STRM_ERRS   (1),
     .SIM_SPEEDUP        (1)
