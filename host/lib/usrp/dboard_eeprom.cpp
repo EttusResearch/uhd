@@ -10,7 +10,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/format.hpp>
 #include <algorithm>
 #include <sstream>
 

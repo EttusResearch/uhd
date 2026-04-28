@@ -8,7 +8,6 @@
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <vector>
 
 using namespace uhd::convert;

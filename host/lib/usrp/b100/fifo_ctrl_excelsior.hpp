@@ -13,7 +13,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/utility.hpp>
 #include <memory>
 #include <string>
 
