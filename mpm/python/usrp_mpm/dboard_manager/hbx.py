@@ -9,7 +9,7 @@ from usrp_mpm.chips.ic_reg_maps import hbx_cpld_regs_t
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.x4xx_db import X4xxDbMixin
 from usrp_mpm.mpmutils import parse_encoded_git_hash, poll_with_timeout
-from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
+from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensors
 
 
 ###############################################################################
@@ -89,6 +89,7 @@ class HBX(X4xxDbMixin, DboardManagerBase):
         self.hbx_power_up()
         self._cpld_set_safe_defaults()
         self.commit()
+        self._temp_sensors = get_temp_sensors(log=self.log)
 
     #########################################################################
     # DB-CPLD Interfacing
@@ -388,7 +389,7 @@ class HBX(X4xxDbMixin, DboardManagerBase):
             f"TMP112 DB{self.slot_idx} Top",
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)
 
     def get_rf_temp_sensor_top(self, _):
         """Return the RF temperature value of the sensor on the top of the PCB."""
@@ -396,7 +397,7 @@ class HBX(X4xxDbMixin, DboardManagerBase):
         sensor_names = [
             f"TMP112 DB{self.slot_idx} Top",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)
 
     def get_rf_temp_sensor_bottom(self, _):
         """Return the RF temperature value of the sensor on the bottom of the PCB."""
@@ -404,4 +405,4 @@ class HBX(X4xxDbMixin, DboardManagerBase):
         sensor_names = [
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)

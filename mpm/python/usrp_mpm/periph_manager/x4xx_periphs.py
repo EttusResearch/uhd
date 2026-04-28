@@ -17,7 +17,8 @@ from usrp_mpm.periph_manager.common import MboardRegsCommon
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
-from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
+from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
+from usrp_mpm.sys_utils.sysfs_thermal import SysfsThermalSensors
 from usrp_mpm.sys_utils.uio import UIO
 
 
@@ -412,6 +413,7 @@ class CtrlportRegs:
     """
     Control the FPGA Ctrlport registers
     """
+
     # pylint: disable=bad-whitespace
     # fmt: off
     IPASS_OFFSET        = 0x000010
@@ -803,29 +805,6 @@ class QSFPModule:
         return "No module detected"
 
 
-def get_temp_sensor(sensor_names, reduce_fn=mean, log=None):
-    """Get temperature sensor reading from X4xx."""
-    temps = []
-    try:
-        for sensor_name in sensor_names:
-            temp_raw = read_thermal_sensor_value(sensor_name, "in_temp_raw", "iio", "name")
-            temp_offset = read_thermal_sensor_value(sensor_name, "in_temp_offset", "iio", "name")
-            temp_scale = read_thermal_sensor_value(sensor_name, "in_temp_scale", "iio", "name")
-            # sysfs-bus-iio linux kernel API reports temp in milli deg C
-            # https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-bus-iio
-            temp_in_deg_c = (temp_raw + temp_offset) * temp_scale / 1000
-            temps.append(temp_in_deg_c)
-    except ValueError:
-        if log:
-            log.warning("Error when converting temperature value.")
-        temps = [-1]
-    except KeyError:
-        if log:
-            log.warning("Can't read %s temp sensor fron iio sub-system.", str(sensor_name))
-        temps = [-1]
-    return {"name": "temperature", "type": "REALNUM", "unit": "C", "value": str(reduce_fn(temps))}
-
-
 class FrontpanelGPIO(GPIOBank):
     """
     Abstraction layer for the front panel GPIO
@@ -844,3 +823,13 @@ class FrontpanelGPIO(GPIOBank):
             raise ValueError(f"Invalid GPIO bank: {bank}")
 
         GPIOBank.__init__(self, {"label": "zynqmp_gpio"}, self.EMIO_BASE + pin_offset, 0xFFF, ddr)
+
+
+def get_temp_sensors(log=None):
+    try:
+        temp_sensors = HwmonTempSensors(
+            log, dev_filter={"OF_NAME": "cros-ec"}, sensor_list=["temp", "fan"]
+        )
+    except RuntimeError:
+        temp_sensors = SysfsThermalSensors(log)
+    return temp_sensors

@@ -8,7 +8,7 @@ FBX dboard implementation module
 
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.x4xx_db import X4xxDbMixin
-from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
+from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensors
 
 # pylint: disable=too-few-public-methods
 
@@ -73,6 +73,7 @@ class FBX(X4xxDbMixin, DboardManagerBase):
     #########################################################################
     def __init__(self, slot_idx, **kwargs):
         super().__init__("FBX", slot_idx, **kwargs)
+        self._temp_sensors = get_temp_sensors(log=self.log)
 
     #########################################################################
     # UHD (De-)Initialization
@@ -117,4 +118,4 @@ class FBX(X4xxDbMixin, DboardManagerBase):
             f"TMP112 DB{self.slot_idx} Top",
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)

@@ -207,6 +207,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.apply_idle_overlay()
             self._device_initialized = False
         self._init_gps_sensors()
+        self.mb_temp_sensor_type = None
 
     def _init_gps_sensors(self):
         """
@@ -649,14 +650,33 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         Get temperature sensor reading of the E310.
         """
+        data_probes = ["temp1_input"]
+        if self.mb_temp_sensor_type == None:
+            sensor_types = ["jc-42.4-temp","jc42"]
+            for sensor_type in sensor_types:
+                try:
+                    read_sysfs_sensors_value(
+                            sensor_type, 
+                            data_probes[0], 
+                            "hwmon", 
+                            "name"
+                        )[0]
+                    self.mb_temp_sensor_type = sensor_type
+                    self.log.debug(f"MB temperature sensor type detected: {sensor_type}")
+                    break
+                except IndexError:
+                    continue
+
         self.log.trace("Reading temperature.")
         temp = "-1"
         raw_val = {}
-        data_probes = ["temp1_input"]
         try:
             for data_probe in data_probes:
                 raw_val[data_probe] = read_sysfs_sensors_value(
-                    "jc-42.4-temp", data_probe, "hwmon", "name"
+                    self.mb_temp_sensor_type, 
+                    data_probe, 
+                    "hwmon", 
+                    "name"
                 )[0]
             temp = str(raw_val["temp1_input"] / 1000)
         except ValueError:
@@ -675,7 +695,10 @@ class e31x(ZynqComponents, PeriphManagerBase):
         data_probes = ["in_temp0_raw", "in_temp0_scale", "in_temp0_offset"]
         try:
             for data_probe in data_probes:
-                raw_val[data_probe] = read_sysfs_sensors_value("xadc", data_probe, "iio", "name")[0]
+                raw_val[data_probe] = read_sysfs_sensors_value("xadc",
+                                                               data_probe,
+                                                               "iio",
+                                                               "name")[0]
             temp = str(
                 (raw_val["in_temp0_raw"] + raw_val["in_temp0_offset"])
                 * raw_val["in_temp0_scale"]

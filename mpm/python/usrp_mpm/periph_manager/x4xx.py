@@ -29,7 +29,7 @@ from usrp_mpm.periph_manager.x4xx_periphs import (
     CtrlportRegs,
     MboardRegsControl,
     QSFPModule,
-    get_temp_sensor,
+    get_temp_sensors,
 )
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
 from usrp_mpm.rpc_utils import no_rpc
@@ -37,6 +37,7 @@ from usrp_mpm.sys_utils import dtoverlay, ectool
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
+from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
 
 X400_FPGA_COMPAT = (11, 0)
 # The compat number at which remote streaming was added:
@@ -317,6 +318,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Freeze the RFDC calibration by default
         self.rfdc.set_cal_frozen(1, 1, "all", MixerMode.ALL)
         self.rfdc.set_cal_frozen(1, 0, "all", MixerMode.ALL)
+
+        self._temp_fan_sensors = get_temp_sensors(log=self.log)
+        self._hwmon_based_sensors = isinstance(self._temp_fan_sensors, HwmonTempSensors)
 
     # The parent class versions of these functions require access to self, but
     # these versions don't.
@@ -1052,7 +1056,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     def get_fpga_temp_sensor(self):
         """Get temperature sensor reading of the X4xx FPGA."""
         self.log.trace("Reading FPGA temperature.")
-        return get_temp_sensor(["RFSoC"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["RFSoC"])
 
     def get_main_power_temp_sensor0(self):
         """
@@ -1060,7 +1064,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         0.85V power supply to RFSoC.
         """
         self.log.trace("Reading PMBus 0 Power Supply Chip(s) temperature.")
-        return get_temp_sensor(["PMBUS-0"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["PMBUS-0"])
 
     def get_main_power_temp_sensor1(self):
         """
@@ -1068,43 +1072,51 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         0.85V power supply to RFSoC.
         """
         self.log.trace("Reading PMBus 1 Power Supply Chip(s) temperature.")
-        return get_temp_sensor(["PMBUS-1"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["PMBUS-1"])
 
     def get_scu_internal_temp_sensor(self):
         """Get temperature sensor reading of STM32 SCU's internal sensor."""
         self.log.trace("Reading SCU internal temperature.")
-        return get_temp_sensor(["EC Internal"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["EC Internal"])
 
     def get_sample_clock_pcb_temp_sensor(self):
         """Get temperature sensor reading of the SPLL."""
         self.log.trace("Reading Sample Clock PCB temperature.")
-        return get_temp_sensor(["Sample Clock PCB"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["Sample Clock PCB"])
 
     def get_dram_pcb_temp_sensor(self):
         """Get temperature sensor reading of the DRAM."""
         self.log.trace("Reading DRAM PCB temperature.")
-        return get_temp_sensor(["DRAM PCB"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["DRAM PCB"])
 
     def get_tmp464_internal_temp_sensor(self):
         """Get temperature sensor reading of the internal TMP464 sensor."""
         self.log.trace("Reading TMP464 Internal temperature.")
-        return get_temp_sensor(["TMP464 Internal"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["TMP464 Internal"])
 
     def get_power_supply_pcb_temp_sensor(self):
         """Get temperature sensor reading of the Power Supply PCB sensor."""
         self.log.trace("Reading Power Supply PCB temperature.")
-        return get_temp_sensor(["Power Supply PCB"], log=self.log)
+        return self._temp_fan_sensors.read_thermal_sensor_value(["Power Supply PCB"])
+
 
     def _get_fan_sensor(self, fan="fan0"):
         """Get fan speed."""
-        self.log.trace("Reading {} speed sensor.".format(fan))
-        fan_rpm = -1
+        self.log.trace(f"Reading {fan} speed sensor.")
+        fan_rpm = str(-1)
         try:
-            fan_rpm_all = ectool.get_fan_rpm()
-            fan_rpm = fan_rpm_all[fan]
+            if not self._hwmon_based_sensors:
+                fan_rpm_all = ectool.get_fan_rpm()
+                fan_rpm = str(fan_rpm_all[fan])
+            else:
+                fan_mapping = {
+                    "fan0": "fan1",
+                    "fan1": "fan2",
+                }
+                fan_rpm = self._temp_fan_sensors.read_fan_sensor_value(fan_mapping[fan])["value"]
         except Exception as ex:
-            self.log.warning("Error occurred when getting {} speed value: {} ".format(fan, str(ex)))
-        return {"name": fan, "type": "INTEGER", "unit": "rpm", "value": str(fan_rpm)}
+            self.log.warning(f"Error occurred when getting {fan} speed value: {ex}")
+        return {"name": fan, "type": "INTEGER", "unit": "rpm", "value": fan_rpm}
 
     def get_fan0_sensor(self):
         """Get fan0 speed."""

@@ -22,10 +22,8 @@ from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
 from usrp_mpm.rpc_utils import get_map_for_rpc, no_rpc
 from usrp_mpm.sys_utils import dtoverlay
-from usrp_mpm.sys_utils.sysfs_thermal import (
-    read_thermal_sensor_value,
-    read_thermal_sensors_value,
-)
+from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
+from usrp_mpm.sys_utils.sysfs_thermal import SysfsThermalSensors
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.xports import XportMgrUDP
 
@@ -167,6 +165,22 @@ class e320(ZynqComponents, PeriphManagerBase):
         for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
             if sensor_name[:5] == "temp_":
                 setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
+
+        def get_temp_sensors(log=None):
+            try:
+                temp_sensors = HwmonTempSensors(
+                    log, dev_filter={"OF_NAME": "embedded-controller"}, sensor_list=["temp", "fan"]
+                )
+
+            except RuntimeError:
+                temp_sensors = SysfsThermalSensors(
+                    log, subsystem="thermal", attribute="type", data_probe=["temp", "cur_state"]
+                )
+            return temp_sensors
+
+        self._temp_fan_sensors = get_temp_sensors(log=self.log)
+        self._hwmon_based_sensors = isinstance(self._temp_fan_sensors, HwmonTempSensors)
+
         try:
             self._init_peripherals(args)
         except BaseException as ex:
@@ -587,23 +601,29 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         Get temperature sensor reading of the E320.
         """
-        temp_sensor_map = {
-            "temp_internal": 0,
-            "temp_rf_channelA": 1,
-            "temp_fpga": 2,
-            "temp_rf_channelB": 3,
-            "temp_main_power": 4,
-        }
         self.log.trace("Reading temperature.")
-        return_val = "-1"
-        sensor = temp_sensor_map[sensor_name]
-        try:
-            raw_val = read_thermal_sensors_value("cros-ec-thermal", "temp")[sensor]
-            return_val = str(raw_val / 1000)
-        except ValueError:
-            self.log.warning("Error when converting temperature value")
-        except KeyError:
-            self.log.warning("Can't read temp on thermal_zone {}".format(sensor))
+        if not self._hwmon_based_sensors:
+            temp_sensor_map = {
+                "temp_internal": 0,
+                "temp_rf_channelA": 1,
+                "temp_fpga": 2,
+                "temp_rf_channelB": 3,
+                "temp_main_power": 4,
+            }
+            sensor = lambda x: f"cros-ec-thermal{x}" if x > 0 else "cros-ec-thermal"
+            return_val = self._temp_fan_sensors.read_thermal_sensor_value(
+                [sensor(temp_sensor_map[sensor_name])], "temp"
+            )["value"]
+        else:
+            temp_sensor_map = {
+                "temp_internal": "TMP464_Internal",
+                "temp_rf_channelA": "TMP464_Remote_1",
+                "temp_fpga": "TMP464_Remote_2",
+                "temp_rf_channelB": "TMP464_Remote_3",
+                "temp_main_power": "TMP464_Remote_4",
+            }
+            sensor = temp_sensor_map[sensor_name]
+            return_val = self._temp_fan_sensors.read_thermal_sensor_value([sensor])["value"]
         return {"name": sensor_name, "type": "REALNUM", "unit": "C", "value": return_val}
 
     def get_gps_locked_sensor(self):
@@ -623,15 +643,12 @@ class e320(ZynqComponents, PeriphManagerBase):
         Return a sensor dictionary containing the RPM of the cooling device/fan0
         """
         self.log.trace("Reading cooling device.")
-        return_val = "-1"
-        try:
-            raw_val = read_thermal_sensor_value("Fan", "cur_state")
-            return_val = str(raw_val)
-        except ValueError:
-            self.log.warning("Error when converting fan speed value")
-        except KeyError:
-            self.log.warning("Can't read cur_state on Fan")
-        return {"name": "cooling fan", "unit": "rpm", "type": "INTEGER", "value": return_val}
+        if not self._hwmon_based_sensors:
+            return_val = self._temp_fan_sensors.read_fan_sensor_value("Fan", "cur_state")
+        else:
+            return_val = self._temp_fan_sensors.read_fan_sensor_value("fan1")
+
+        return return_val
 
     ###########################################################################
     # EEPROMs

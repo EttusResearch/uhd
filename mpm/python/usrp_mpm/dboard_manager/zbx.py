@@ -14,7 +14,7 @@ from usrp_mpm.chips.ic_reg_maps import zbx_cpld_regs_t
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.x4xx_db import X4xxDbMixin
 from usrp_mpm.mpmutils import parse_encoded_git_hash
-from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensor
+from usrp_mpm.periph_manager.x4xx_periphs import get_temp_sensors
 from usrp_mpm.sys_utils.udev import get_eeprom_paths_by_symbol
 
 
@@ -100,6 +100,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         self.poke_cpld = self.db_iface.poke_db_cpld
         self.peek_cpld = self.db_iface.peek_db_cpld
         self.regs = zbx_cpld_regs_t()
+        self._temp_sensors = get_temp_sensors(log=self.log)
         self._spi_addr = self.regs.SPI_READY_addr
         # Check register map compatibility
         self._check_compat_version()
@@ -431,7 +432,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         sensor_names = [
             f"TMP112 DB{self.slot_idx} Top",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)
 
     def get_rf_temp_sensor_bottom(self, _):
         """
@@ -441,7 +442,7 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
         sensor_names = [
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)
 
     def get_rf_temp_sensor_average(self, _):
         """
@@ -452,4 +453,4 @@ class ZBX(X4xxDbMixin, DboardManagerBase):
             f"TMP112 DB{self.slot_idx} Top",
             f"TMP112 DB{self.slot_idx} Bottom",
         ]
-        return get_temp_sensor(sensor_names, log=self.log)
+        return self._temp_sensors.read_thermal_sensor_value(sensor_names)

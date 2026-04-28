@@ -30,7 +30,8 @@ from usrp_mpm.periph_manager.n3xx_periphs import (
 from usrp_mpm.rpc_utils import get_map_for_rpc, no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.i2c_dev import dt_symbol_get_i2c_device_node
-from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
+from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
+from usrp_mpm.sys_utils.sysfs_thermal import SysfsThermalSensors
 from usrp_mpm.xports import XportMgrUDP
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
@@ -259,6 +260,24 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 # Don't try and figure out what's going on. Just give up.
                 return
             self._init_peripherals(args)
+
+            def get_temp_sensors(log=None):
+                try:
+                    temp_sensors = HwmonTempSensors(
+                        log,
+                        dev_filter={"OF_NAME": "embedded-controller"},
+                        sensor_list=["temp", "fan"],
+                    )
+
+                except RuntimeError:
+                    temp_sensors = SysfsThermalSensors(
+                        log, subsystem="thermal", attribute="type", data_probe=["temp", "cur_state"]
+                    )
+                return temp_sensors
+
+            self._temp_fan_sensors = get_temp_sensors(log=self.log)
+            self._hwmon_based_sensors = isinstance(self._temp_fan_sensors, HwmonTempSensors)
+
         except BaseException as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
             self._initialization_status = str(ex)
@@ -909,30 +928,26 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         Get temperature sensor reading of the N3xx.
         """
         self.log.trace("Reading FPGA temperature.")
-        return_val = "-1"
-        try:
-            raw_val = read_thermal_sensor_value("fpga-thermal-zone", "temp")
-            return_val = str(raw_val / 1000)
-        except ValueError:
-            self.log.warning("Error when converting temperature value")
-        except KeyError:
-            self.log.warning("Can't read temp on fpga-thermal-zone")
-        return {"name": "temperature", "type": "REALNUM", "unit": "C", "value": return_val}
+        if not self._hwmon_based_sensors:
+            return_val = self._temp_fan_sensors.read_thermal_sensor_value(
+                ["fpga-thermal-zone"], "temp"
+            )
+        else:
+            return_val = self._temp_fan_sensors.read_thermal_sensor_value(["TMP431_Internal"])
+
+        return return_val
 
     def get_fan_sensor(self):
         """
         Get cooling device reading of N3xx. In this case the speed of fan 0.
         """
         self.log.trace("Reading FPGA cooling device.")
-        return_val = "-1"
-        try:
-            raw_val = read_thermal_sensor_value("ec-fan0", "cur_state")
-            return_val = str(raw_val)
-        except ValueError:
-            self.log.warning("Error when converting fan speed value")
-        except KeyError:
-            self.log.warning("Can't read cur_state on ec-fan0")
-        return {"name": "cooling fan", "type": "INTEGER", "unit": "rpm", "value": return_val}
+        if not self._hwmon_based_sensors:
+            return_val = self._temp_fan_sensors.read_fan_sensor_value("ec-fan0", "cur_state")
+        else:
+            return_val = self._temp_fan_sensors.read_fan_sensor_value("fan1")
+
+        return return_val
 
     def get_gps_locked_sensor(self):
         """
