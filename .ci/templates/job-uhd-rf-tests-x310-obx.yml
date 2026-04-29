@@ -32,7 +32,7 @@ jobs:
           devType: 'x300'
           devModel: 'x310'
           devName: x310-obx-0
-          devSerial: '3138E8D'
+          devSerial: $(x310_OBX_devSerial)
           db0Serial: '34A3B9C'
           db1Serial: '34A3BA0'
           supportsCorrections: true
@@ -44,5 +44,5 @@ jobs:
           pytestDUT: 'x310'
           pytestAtsConfig: 'osmium_ats'
           pipelineAgent: 'obx-ats-agent'
-          jtagSerial: '251635138E8D'
+          jtagSerial: $(x310_OBX_jtagSerial)
           jtagServer: 'nitest@sdr-osmium-test'

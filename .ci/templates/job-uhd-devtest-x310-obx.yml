@@ -28,10 +28,10 @@ jobs:
           devType: 'x300'
           devModel: 'x310'
           devName: 'x310-OBX'
-          devSerial: '3138E8D'
+          devSerial: $(x310_OBX_devSerial)
           devBus: 'ip'
-          devAddr: '192.168.40.2'
+          devAddr: $(x310_OBX_devAddr)
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
-          jtagSerial: '251635138E8D'
+          jtagSerial: $(x310_OBX_jtagSerial)
           jtagServer: 'nitest@sdr-osmium-test'
