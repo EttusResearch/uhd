@@ -325,8 +325,8 @@ void hbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
         trx,
         trx == direction_t::RX_DIRECTION ? _rfdc_dc_offset
                                          : std::complex<double>{0.0, 0.0},
-        [this, trx](const uint32_t addr, const uint32_t data) {
-            _reg_iface.poke32(
+        [this, trx](const uint32_t addr, const std::vector<uint32_t>& data) {
+            _reg_iface.burst_poke32(
                 _reg_base_address + RF_CORE_ADDR_OFFSET + addr, data, _time_accessor(0));
         },
         [this, trx](const uint32_t addr) {

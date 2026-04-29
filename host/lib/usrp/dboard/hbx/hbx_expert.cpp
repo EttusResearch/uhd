@@ -549,26 +549,32 @@ void hbx_iq_dc_correction_expert::resolve()
             << " coefficients and group delay: " << coeffs.group_delay);
     // Apply the filter coefficients to the radio.
     const uint32_t iinline_coeff = _coeff_to_fixed(coeffs.scaling_coeff);
-    _poke32(_iq_offset_base + IINLINE_COEFF_REG_OFFSET, iinline_coeff);
+    _burst_poke32(_iq_offset_base + IINLINE_COEFF_REG_OFFSET, {iinline_coeff});
+    std::vector<uint32_t> qinline_coeffs;
+    qinline_coeffs.reserve(_num_iq_coeffs);
+    std::vector<uint32_t> icross_coeffs;
+    icross_coeffs.reserve(_num_iq_coeffs);
     for (size_t i = 0; i < _num_iq_coeffs; ++i) {
         // Write the coefficients in reverse order.
         const size_t idx = _num_iq_coeffs - 1 - i;
         const uint32_t qinline_coeff =
             (idx < coeffs.coeffs.size()) ? _coeff_to_fixed(coeffs.coeffs[idx].imag()) : 0;
-        _poke32(_iq_offset_base + QINLINE_COEFF_REG_OFFSET, qinline_coeff);
+        qinline_coeffs.push_back(qinline_coeff);
         const uint32_t icross_coeff =
             (idx < coeffs.coeffs.size()) ? _coeff_to_fixed(coeffs.coeffs[idx].real()) : 0;
-        _poke32(_iq_offset_base + ICROSS_COEFF_REG_OFFSET, icross_coeff);
+        icross_coeffs.push_back(icross_coeff);
     }
-    _poke32(_iq_offset_base + GROUP_DELAY_REG_OFFSET,
-        static_cast<uint32_t>(coeffs.group_delay));
+    _burst_poke32(_iq_offset_base + QINLINE_COEFF_REG_OFFSET, qinline_coeffs);
+    _burst_poke32(_iq_offset_base + ICROSS_COEFF_REG_OFFSET, icross_coeffs);
+    _burst_poke32(_iq_offset_base + GROUP_DELAY_REG_OFFSET,
+        {static_cast<uint32_t>(coeffs.group_delay)});
 
     // Apply the DC compensation to the radio.
     const uint32_t poke_value = _iq_to_dc_offset(coeffs.dc_offset);
     UHD_LOG_DEBUG(get_name(),
         "DC offset (I: " << coeffs.dc_offset.real() << ", Q: " << coeffs.dc_offset.imag()
                          << ") -> poke value: 0x" << std::hex << poke_value);
-    _poke32(_dc_offset_base + DC_VALUE_OFFSET, poke_value);
+    _burst_poke32(_dc_offset_base + DC_VALUE_OFFSET, {poke_value});
 }
 
 uint32_t hbx_iq_dc_correction_expert::_coeff_to_fixed(const double coeff) const

@@ -724,7 +724,8 @@ public:
      * This expert is responsible for handling IQ and DC correction settings.
      * ---------------------------------------------------------
      */
-    using poke_fn_type = std::function<void(const uint32_t, const uint32_t)>;
+    using poke_fn_type =
+        std::function<void(const uint32_t, const std::vector<uint32_t>&)>;
     using peek_fn_type = std::function<uint32_t(const uint32_t)>;
 
     hbx_iq_dc_correction_expert(const uhd::experts::node_retriever_t& db,
@@ -736,7 +737,7 @@ public:
         : uhd::experts::worker_node_t(fe_path / "hbx_iq_dc_correction_expert")
         , _trx(trx)
         , _peek32(std::move(peek_fn))
-        , _poke32(std::move(poke_fn))
+        , _burst_poke32(std::move(poke_fn))
         , _rfdc_dc_conv_offset(dc_conv_offset)
         , _iq_offset_base(
               _trx == TX_DIRECTION ? IQ_IMPAIRMENTS_TX_OFFSET : IQ_IMPAIRMENTS_RX_OFFSET)
@@ -746,7 +747,7 @@ public:
     {
         bind_accessor(_coeffs);
         // Enable usage of DC offset compensation
-        _poke32(_dc_offset_base + DC_CTRL_REG_OFFSET, 1);
+        _burst_poke32(_dc_offset_base + DC_CTRL_REG_OFFSET, {1});
     }
 
 private:
@@ -759,7 +760,7 @@ private:
     const uhd::direction_t _trx;
     // Peek and poke methods
     peek_fn_type _peek32;
-    poke_fn_type _poke32;
+    poke_fn_type _burst_poke32;
     // Constants that won't change per call to resolve
     const std::complex<double> _rfdc_dc_conv_offset;
     const uint32_t _iq_offset_base;
