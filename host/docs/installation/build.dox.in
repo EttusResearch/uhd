@@ -122,12 +122,10 @@ general.
 
 ### Doxygen
 
-- **Purpose:** generates HTML API documentation
+- **Purpose:** generates HTML UHD manual
 - **Minimum Recommended Version:** 1.8
 - **Usage:** build time (optional)
 - **Download URL:** http://www.doxygen.nl/download.html
-
-- **Alternate method:** Install **setuptools**, and use the **easy_install** command to install Docutils. http://pypi.python.org/pypi/setuptools
 
 ### NSIS
 

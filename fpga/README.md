@@ -46,12 +46,5 @@ command will do the right thing.
 
 ## Building This Manual
 
-This FPGA manual is available on the web at http://files.ettus.com/manual/md_fpga.html for the most
-recent stable version of UHD. If you wish to read documentation for a custom/unstable branch you will
-need to build it and open it locally using a web browser. To do so please install 
-[Doxygen](http://www.stack.nl/~dimitri/doxygen/download.html#srcbin) on your system and run the following commands:
-
-    $ cd docs
-    $ make
-    $ sensible-browser html/index.html
-
+This FPGA manual is now fully integrated into the UHD manual and is built as
+part of the UHD build process.
