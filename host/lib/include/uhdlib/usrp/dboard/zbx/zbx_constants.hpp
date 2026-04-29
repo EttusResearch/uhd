@@ -73,7 +73,7 @@ static constexpr double LMX2572_MAX_FREQ = 6.4e9; // Hz
 // to 3.2 GHz
 static constexpr double LMX2572_MIN_FREQ         = 3.2e9; // Hz
 static constexpr double LMX2572_DEFAULT_FREQ     = 4e9; // Hz
-static constexpr uint32_t ZBX_LO_LOCK_TIMEOUT_MS = 20; // milliseconds
+static constexpr uint32_t ZBX_LO_LOCK_TIMEOUT_MS = 50; // milliseconds
 // This is the step size for the LO tuning relative to the PRC rate:
 static constexpr int ZBX_RELATIVE_LO_STEP_SIZE = 6;
 
