@@ -152,6 +152,11 @@ proc ::vivado_utils::initialize_project { {save_to_disk 0} } {
     # prevents users from using JTAG after the build finishes. It will still
     # give a warning, in case they really do have a legitimate mismatch.
     set_param labtools.override_cs_server_version_check 1
+
+    # Print all the messages from following commands by setting the limit to a
+    # high number (the default is 100 and it can cause important messages to be
+    # missed).
+    set_param messaging.defaultLimit 10000
 }
 
 # ---------------------------------------------------
