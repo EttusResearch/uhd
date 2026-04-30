@@ -44,6 +44,9 @@ jobs:
     # Need to use list format to support inclusion of variable groups.
     # Variable group used by .ci/templates/steps-windows-sbom.yml@ettus-rts 
     - group: meta-ettus-vars
+    # Variable group needed for code signing (signtool-p4-path)
+    - ${{ if eq(parameters.toolset, 'msbuild') }}:
+      - group: sdr-pipeline-vars
     # Docker vars from job-get-latest-uhd-docker.yml
     - name: dockerBuildNumber
       value: $[ dependencies.get_latest_uhd_docker.outputs['setDockerVar.dockerBuildNumber'] ]

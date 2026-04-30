@@ -100,8 +100,94 @@ steps:
 - script: |
     cd ${{ parameters.uhdBuildDir }}
     call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
-    msbuild.exe package.vcxproj -maxCpuCount -p:configuration=release
-  displayName: msbuild package
+    msbuild.exe ALL_BUILD.vcxproj -maxCpuCount -p:configuration=release
+  displayName: msbuild ALL_BUILD
+
+- powershell: |
+    $attemptSigning = "false"
+    if ("$(Build.Reason)" -ne "PullRequest" -and "$(should-sign-binaries)" -eq "yes") {
+      $attemptSigning = "true"
+    }
+
+    Write-Host "##vso[task.setvariable variable=attemptSigning]$attemptSigning"
+    Write-Host "attemptSigning=$attemptSigning (Build.Reason=$(Build.Reason), should-sign-binaries=$(should-sign-binaries))"
+
+    if ("${{ parameters.uhdReleaseBinaries }}" -eq "True" -and $attemptSigning -ne "true") {
+      Write-Host "##vso[task.logissue type=warning]Release binaries are enabled, but signing will not be attempted."
+    }
+  displayName: Determine signing attempt
+
+- powershell: |
+    $stagingDir = "$(Pipeline.Workspace)\signing"
+    New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+
+    $binaries = Get-ChildItem -Path "${{ parameters.uhdBuildDir }}" -Recurse -Include "*.dll","*.exe","*.pyd" -File |
+      Where-Object {
+        ($_.DirectoryName -match '\\Release$' -or $_.DirectoryName -match '\\python\\uhd$') -and
+        $_.Name -notmatch '^libusb' -and
+        $_.Name -notmatch '^boost_unit_test_framework'
+      }
+    Write-Host "Found $($binaries.Count) binaries to stage for signing"
+
+    foreach ($bin in $binaries) {
+      $relativePath = $bin.FullName.Substring("${{ parameters.uhdBuildDir }}".Length)
+      $dest = Join-Path $stagingDir $relativePath
+      New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+      Copy-Item -Path $bin.FullName -Destination $dest -Force
+      Write-Host "Staged $relativePath"
+    }
+  displayName: Stage binaries for signing
+  condition: and(succeeded(), eq(variables['attemptSigning'], 'true'))
+
+- powershell: |
+    p4 sync $(signtool-p4-path)
+    $p4where = p4 -Ztag where $(signtool-p4-path)
+    $LocalSignToolPath = ($p4where[2] -split "... path ")[1]
+    Write-Host "Sign tool: $LocalSignToolPath"
+
+    $stagingDir = "$(Pipeline.Workspace)\signing"
+    $binaries = Get-ChildItem -Path $stagingDir -Recurse -Include "*.dll","*.exe","*.pyd" -File
+    Write-Host "Found $($binaries.Count) binaries to sign"
+
+    foreach ($bin in $binaries) {
+      Write-Host "Signing $($bin.FullName)"
+      & $LocalSignToolPath $bin.FullName $bin.FullName
+      if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to sign $($bin.FullName)"
+        exit 1
+      }
+    }
+  displayName: Sign binaries
+  condition: and(succeeded(), eq(variables['attemptSigning'], 'true'))
+  target: host
+  timeoutInMinutes: 30
+
+- powershell: |
+    $stagingDir = "$(Pipeline.Workspace)\signing"
+    $binaries = Get-ChildItem -Path $stagingDir -Recurse -Include "*.dll","*.exe","*.pyd" -File
+
+    foreach ($bin in $binaries) {
+      $relativePath = $bin.FullName.Substring($stagingDir.Length)
+      $dest = Join-Path "${{ parameters.uhdBuildDir }}" $relativePath
+      Copy-Item -Path $bin.FullName -Destination $dest -Force
+      Write-Host "Restored $relativePath"
+    }
+    Write-Host "Copied $($binaries.Count) signed binaries back to build dir"
+  displayName: Copy signed binaries back to build dir
+  condition: and(succeeded(), eq(variables['attemptSigning'], 'true'))
+
+- ${{ if parameters.uhdBuildPythonAPI }}:
+  - script: |
+      cd ${{ parameters.uhdBuildDir }}
+      call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+      msbuild.exe python\pyuhd_wheel.vcxproj -p:configuration=release
+    displayName: Rebuild Python wheel
+
+- script: |
+    cd ${{ parameters.uhdBuildDir }}
+    call "$(vsToolsInstallDir)\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
+    msbuild.exe PACKAGE.vcxproj -p:configuration=release
+  displayName: Build NSIS installer
 
 - task: CopyFiles@2.246.0
   inputs:
