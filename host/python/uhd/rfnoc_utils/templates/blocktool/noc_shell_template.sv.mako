@@ -132,7 +132,7 @@ module noc_shell_${config['module_name']} #(
 );
 
   localparam CTRL_FIFO_SIZE_LOG2     = $clog2(${config['control']['fifo_depth']});
-  localparam CTRL_OUT_FIFO_SIZE_LOG2 = $clog2(${config['control']['output_fifo_depth']});
+  localparam CTRL_OUT_FIFO_SIZE_LOG2 = $clog2(${config['control'].get('output_fifo_depth', 2)});
 
   //---------------------------------------------------------------------------
   //  Backend Interface
