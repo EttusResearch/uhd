@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: chdr_stream_endpoint_all_tb
+// Module: rfnoc_block_null_src_sink_all_tb
 //
 // Description:
 //
