@@ -136,6 +136,14 @@ parameters:
       run: true
     X440_CG_1600:
       run: true
+- name: uploadSbomArtifacts
+  type: boolean
+  displayName: Publish SBOMs to DepTrack
+  default: false
+- name: sbomExclFromUpload
+  type: string
+  displayName: Don't upload listed SBOMs (space-separated list of image names)
+  default: ' '
 
 variables:
 - name: uhdFpgaArtifactSource
@@ -375,3 +383,10 @@ stages:
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+
+- ${{ if eq(parameters.uploadSbomArtifacts, true) }}:
+  - template: .ci/templates/stages-nisbom-uploads.yml@ettus-rts
+    parameters:
+      sbomExclFromUpload: ${{ parameters.sbomExclFromUpload }}
+      uhdArtifactSource: uhd_mono_pipeline
+      releaseBinaries: false
