@@ -883,17 +883,14 @@ class HBXCompensator:
             PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + IINLINE_COEFF_REG,
             iinline_coeff,
         )
-        for i in reversed(range(num_coeffs)):
-            qinline_coeff = coefficient_to_fixed_point(qinline_factor) if i == 0 else 0
-            radio.poke32(
-                PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + QINLINE_COEFF_REG,
-                qinline_coeff,
-            )
-            icross_coeff = coefficient_to_fixed_point(icross_factor) if i == 0 else 0
-            radio.poke32(
-                PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + ICROSS_COEFF_REG,
-                icross_coeff,
-            )
+        qinline_coeffs = [0] * (num_coeffs - 1) + [coefficient_to_fixed_point(qinline_factor)]
+        icross_coeffs = [0] * (num_coeffs - 1) + [coefficient_to_fixed_point(icross_factor)]
+        radio.burst_poke32(
+            PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + QINLINE_COEFF_REG, qinline_coeffs
+        )
+        radio.burst_poke32(
+            PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + ICROSS_COEFF_REG, icross_coeffs
+        )
         radio.poke32(PERIPH_BASE + RF_CORE_WINDOW + IMP_TX_OFFSET + GROUP_DELAY_REG_OFFSET, 0)
 
     def _measure(self, tx, rx, rx_waveform, waveform_mem_region):
