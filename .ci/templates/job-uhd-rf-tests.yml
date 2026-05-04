@@ -228,6 +228,8 @@ jobs:
       pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements_312.txt
 
       cd "$(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests"
+      rf_test_status=0
+      non_rf_test_status=0
       if [ "$(devType)" = "n3xx" ]; then
         python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
           --sdimage_sdmux $(devType),$(devModel),$(uhd_artifact_directory)/$(devType)-images/$(devSDImage),$(Build.SourcesDirectory)/ettus-rts/$(devLabgridConfig),$(devHostname) \
@@ -237,8 +239,8 @@ jobs:
           "uhd_usrp_probe --args addr=$(devAddr)" \
           "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
             --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests \
-            --results_path "$(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \ 
-            $(parameters.extra_rf_test_args)"
+            --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
+            $(parameters.extra_rf_test_args)" || rf_test_status=$?
       elif [ "$(devType)" = "x300" ]; then
         python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
           --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
@@ -248,13 +250,18 @@ jobs:
           "uhd_usrp_probe --args addr=$(devAddr)" \
           "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
             --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests \
-            --results_path "$(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
-            $(parameters.extra_rf_test_args)"
+            --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
+            $(parameters.extra_rf_test_args)" || rf_test_status=$?
       fi
       python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
         --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests_non_rf \
         --results_path $(Common.TestResultsDirectory)/pytest/non_rf/$(devFpga) \
-        ${{ parameters.extra_rf_test_args }}
+        ${{ parameters.extra_rf_test_args }} || non_rf_test_status=$?
+
+      if [ $rf_test_status -ne 0 ] || [ $non_rf_test_status -ne 0 ]; then
+        echo "At least one pytest invocation failed (rf=$rf_test_status, non_rf=$non_rf_test_status)."
+        exit 1
+      fi
 
     continueOnError: true
     condition: succeeded()
