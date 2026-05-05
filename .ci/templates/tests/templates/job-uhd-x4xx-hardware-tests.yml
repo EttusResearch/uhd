@@ -405,6 +405,20 @@ jobs:
         uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
         fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
         uhdArgs: type=$(dutType),addr=$(USRP_EMB_TARGET_IP)
+        dutFPGA: 'fft_block_test'
+        resultFileNameBase: 'fft_block_test'
+        testSelector: 'test_fft_block_*.py'
+
+    - template: ../../steps-rfnoc-block-test.yml
+      parameters:
+        dutType: $(pytestDUT)
+        uhdInstallPath: $(uhd_artifact_directory)/uhddev-$(testOS)-${{ parameters.toolset }}/uhddev/build-installed
+        uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+        fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+        uhdArgs: type=$(dutType),addr=$(USRP_EMB_TARGET_IP)
+        dutFPGA: 'X4_200'
+        resultFileNameBase: 'complex_gain_block_test'
+        testSelector: 'test_radio_control_complex_gain.py'
 
   # Run the mender tests last because they
   # modify the flashed image on the device

@@ -11,6 +11,15 @@ parameters:
 - name: fpga_imgs_source
   type: string
   default: Pipeline
+- name: dutFPGA
+  type: string
+  default: 'fft_block_test'
+- name: resultFileNameBase
+  type: string
+  default: 'fft_block_test'
+- name: testSelector
+  type: string
+  default: 'test_fft_block*.py'
 
 steps:
   - script: |
@@ -22,27 +31,27 @@ steps:
       echo UHDDEV_LIB_DIR=$UHD_INSTALL_PATH/lib
       echo '##vso[task.setvariable variable=UHDDEV_PYTHONPATH]'$PYTHONPATH
       echo UHDDEV_PYTHONPATH=$PYTHONPATH
-    displayName: "rfnoc block test: set variables"
+    displayName: "${{ parameters.resultFileNameBase }}: Set Variables"
     env:
       UHD_INSTALL_PATH: ${{ parameters.uhdInstallPath }}
 
   - template: steps-download-fpga-artifact.yml
     parameters:
       dutType: ${{ parameters.dutType }}
-      dutFPGA: fft_block_test
+      dutFPGA: ${{ parameters.dutFPGA }}
       fpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
   - script: |
       uhd_image_loader --args ${{ parameters.uhdArgs }} --fpga=$FPGA_ARTIFACT_DIR/$FPGA_BITFILE_NAME.bit
-    displayName: "rfnoc block test: Load FPGA on USRP"
+    displayName: "${{ parameters.resultFileNameBase }}: Load FPGA on USRP"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)
       LD_LIBRARY_PATH: $(UHDDEV_LIB_DIR)
 
   - script: |
       uhd_usrp_probe --args ${{ parameters.uhdArgs }}
-    displayName: "rfnoc block test: Probe USRP"
+    displayName: "${{ parameters.resultFileNameBase }}: Probe USRP"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)
       LD_LIBRARY_PATH: $(UHDDEV_LIB_DIR)
@@ -52,8 +61,8 @@ steps:
       source rfnoc-block-test-venv/bin/activate
       TEST_DIR=$(Build.SourcesDirectory)/uhddev/host/tests/rfnoc_block_tests_on_target
       pip install -r $TEST_DIR/requirements.txt
-      pytest --args ${{ parameters.uhdArgs }} $TEST_DIR/test_fft_block*.py -vv --junitxml=$(Common.TestResultsDirectory)/rfnoc-block-test.xml
-    displayName: "rfnoc block test: Run test"
+      pytest --args ${{ parameters.uhdArgs }} $TEST_DIR/${{ parameters.testSelector }} -vv --junitxml=$(Common.TestResultsDirectory)/${{ parameters.resultFileNameBase }}.xml
+    displayName: "${{ parameters.resultFileNameBase }}: Run test"
     env:
       PATH: /usr/bin/:$(UHDDEV_BIN_DIR)
       LD_LIBRARY_PATH: $(UHDDEV_LIB_DIR)
@@ -62,8 +71,8 @@ steps:
   - task: PublishTestResults@2
     inputs:
       testResultsFormat: 'JUnit'
-      testResultsFiles: '$(Common.TestResultsDirectory)/rfnoc-block-test.xml'
-      testRunTitle: rfnoc-module-test-${{ parameters.dutType }}
+      testResultsFiles: '$(Common.TestResultsDirectory)/${{ parameters.resultFileNameBase }}.xml'
+      testRunTitle: ${{ parameters.resultFileNameBase }}-${{ parameters.dutType }}
       mergeTestResults: true
       failTaskOnFailedTests: true
-    displayName: "rfnoc block test: Upload Test Result"
+    displayName: "${{ parameters.resultFileNameBase }}: Upload Test Result"

@@ -38,14 +38,13 @@ steps:
     echo FPGA_ARTIFACT_DIR=$ARTIFACT_DIR
     echo '##vso[task.setvariable variable=FPGA_BITFILE_NAME]'$BITFILE_NAME
     echo FPGA_BITFILE_NAME=$BITFILE_NAME
-  name: fpga_artifact
-  displayName: "FPGA artifact: Set variables"
+  displayName: "${{ parameters.dutFPGA }}: FPGA artifact: Set variables"
 
 - script: |
     rm -rfv "$FPGA_ARTIFACT_DIR"
-  displayName: "FPGA artifact: Cleanup"
+  displayName: "${{ parameters.dutFPGA }}: FPGA artifact: Cleanup"
 
 - download: ${{ parameters.fpgaArtifactSource }}
   artifact: $(FPGA_ARTIFACT_NAME)
-  displayName: "FPGA artifact: Download"
+  displayName: "${{ parameters.dutFPGA }}: FPGA artifact: Download"
   condition: and(succeeded(), eq('${{ parameters.fpga_imgs_source }}', 'Pipeline'))
