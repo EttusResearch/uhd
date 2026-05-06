@@ -42,8 +42,8 @@ static const uhd::dict<uint16_t, b200_product_t> B2XX_PID_TO_PRODUCT{
 static const std::string B200_FW_FILE_NAME = "usrp_b200_fw.hex";
 static const std::string B200_BL_FILE_NAME = "usrp_b200_bl.img";
 
-//! Map the EEPROM product ID codes to the product
 // clang-format off
+//! Map the EEPROM product ID codes to the product
 static const uhd::dict<uint16_t, b200_product_t> B2XX_PRODUCT_ID{
     {0x0001,             B200    },
     {0x7737,             B200    },

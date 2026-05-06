@@ -24,9 +24,10 @@ namespace uhd { namespace test {
 namespace {
 constexpr double DEFAULT_MCR = 122.88e6;
 }
-//! Mock MPM server for X410/ZBX
-//
-// This is a mock server that mimicks an X410 with a ZBX daughterboard.
+/*! \brief Mock MPM server for X410/ZBX.
+ *
+ * This is a mock server that mimics an X410 with a ZBX daughterboard.
+ */
 class x4xx_mock_rpc_server : public x400_rpc_iface,
                              public mpmd_rpc_iface,
                              public dboard_base_rpc_iface,

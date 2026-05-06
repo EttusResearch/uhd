@@ -13,8 +13,9 @@
 #include <functional>
 #include <string>
 
-//! This macro must be placed inside a block implementation file
-// after the class definition
+/*! \brief This macro must be placed inside a block implementation file
+ * after the class definition.
+ */
 #define UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(                             \
     CLASS_NAME, NOC_ID, DEVICE_ID, BLOCK_NAME, MB_ACCESS, TB_CLOCK, CTRL_CLOCK) \
     uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                         \

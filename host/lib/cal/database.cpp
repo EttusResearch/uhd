@@ -26,11 +26,12 @@ namespace fs = std::filesystem;
 namespace {
 constexpr char LOG_ID[]  = "CAL::DATABASE";
 constexpr char CAL_EXT[] = ".cal";
-//! This value is just for sanity checking. We pick a value (in bytes) that we
-// are guaranteed to never exceed. Its only purpose is to avoid loading files
-// that can't possibly be valid cal data based on the filesize. This can avoid
-// someone bringing down a UHD session by trying to import a huge file, because
-// we first load it entirely into heap space, and then deserialize it from there.
+/*! This value is just for sanity checking. We pick a value (in bytes) that we
+ * are guaranteed to never exceed. Its only purpose is to avoid loading files
+ * that can't possibly be valid cal data based on the filesize. This can avoid
+ * someone bringing down a UHD session by trying to import a huge file, because
+ * we first load it entirely into heap space, and then deserialize it from there.
+ */
 constexpr size_t CALDATA_MAX_SIZE = 10 * 1024 * 1024; // 10 MiB
 
 /******************************************************************************
@@ -42,10 +43,11 @@ std::string get_cal_path_rc(const std::string& key)
     return std::string("cal/") + key + CAL_EXT;
 }
 
-//! Return true if a cal data resource with given key exists
-//
-// The serial parameter is ignored, as serial numbers should, by definition, not
-// matter for RC data
+/*! \brief Return true if a cal data resource with given key exists.
+ *
+ * The serial parameter is ignored, as serial numbers should, by definition, not
+ * matter for RC data
+ */
 bool has_cal_data_rc(const std::string& key, const std::string&)
 {
     auto fs = rc::get_filesystem();
@@ -69,8 +71,9 @@ std::vector<uint8_t> get_cal_data_rc(const std::string& key, const std::string&)
 /******************************************************************************
  * Filesystem implementation
  *****************************************************************************/
-//! Helper: Check a path exists, or create it if not. Does not create recursively,
-// think mkdir, not mkdir -p.
+/*! Helper: Check a path exists, or create it if not. Does not create recursively,
+ * think mkdir, not mkdir -p.
+ */
 void check_or_create_dir(fs::path dir)
 {
     if (fs::exists(dir)) {
@@ -88,20 +91,21 @@ void check_or_create_dir(fs::path dir)
     UHD_LOG_DEBUG(LOG_ID, "Created directory: " << dir);
 }
 
-//! Make sure the calibration storage directory exists.
-//
-// The path returned by uhd::get_cal_data_path() might not exist (e.g., when run
-// for the first time). This directory must be created before we try writing to
-// it, or we won't be able to open the file.
-//
-// C++ doesn't have a mkdir -p equivalent, so we check the parent directory and
-// the directory itself, in that order. Most of the time, the cal data path is
-// in $XDG_DATA_HOME/uhd/cal_data. We assume that $XDG_DATA_HOME exists, and
-// then first check $XDG_DATA_HOME/uhd, then $XDG_DATA_HOME/uhd/cal_data.
-//
-// This will not work if the user sets $UHD_CAL_DATA_PATH to an arbitrary path
-// that requires multiple levels of directories to be created, but they will get
-// a clear error message in that case.
+/*! \brief Make sure the calibration storage directory exists.
+ *
+ * The path returned by uhd::get_cal_data_path() might not exist (e.g., when run
+ * for the first time). This directory must be created before we try writing to
+ * it, or we won't be able to open the file.
+ *
+ * C++ doesn't have a mkdir -p equivalent, so we check the parent directory and
+ * the directory itself, in that order. Most of the time, the cal data path is
+ * in $XDG_DATA_HOME/uhd/cal_data. We assume that $XDG_DATA_HOME exists, and
+ * then first check $XDG_DATA_HOME/uhd, then $XDG_DATA_HOME/uhd/cal_data.
+ *
+ * This will not work if the user sets $UHD_CAL_DATA_PATH to an arbitrary path
+ * that requires multiple levels of directories to be created, but they will get
+ * a clear error message in that case.
+ */
 void assert_cal_dir_exists()
 {
     const auto cal_path = fs::path(uhd::get_cal_data_path());
@@ -111,8 +115,9 @@ void assert_cal_dir_exists()
     check_or_create_dir(cal_path);
 }
 
-//! Helper: Map a cal resource key into a filesystem path name
-// (relative to get_cal_data_path())
+/*! \brief Helper: Map a cal resource key into a filesystem path name
+ * (relative to get_cal_data_path()).
+ */
 std::string get_cal_path_fs(const std::string& key, const std::string& serial)
 {
     return key + "_" + serial + CAL_EXT;

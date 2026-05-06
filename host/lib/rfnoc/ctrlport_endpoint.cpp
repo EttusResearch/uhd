@@ -485,8 +485,9 @@ private:
         return false;
     }
 
-    //! Sends a request control packet to a remote device, optionally waiting
-    // for an ACK, and returns any response if applicable
+    /*! \brief Sends a request control packet to a remote device, optionally waiting
+     * for an ACK, and returns any response if applicable
+     */
     const std::pair<ctrl_payload, std::optional<ctrl_payload>> send_request_packet(
         ctrl_opcode_t op_code,
         uint32_t address,
@@ -704,8 +705,9 @@ private:
     //! The clock that drives the timing logic for the ctrlport endpoint
     const clock_iface& _timebase_clk;
 
-    //! The function to call to validate an async message (by default, all async
-    // messages are considered valid)
+    /*! \brief The function to call to validate an async message (by default, all async
+     * messages are considered valid).
+     */
     async_msg_validator_t _validate_async_msg =
         [](uint32_t, const std::vector<uint32_t>&) { return true; };
     //! The function to call to handle an async message
@@ -724,20 +726,23 @@ private:
     std::condition_variable _resp_ready_cond;
     //! A mutex to protect all state in this class
     mutable std::mutex _mutex;
-    //! A set of {opcode, address, sequence numbers} triples associated with
-    // request packets for which the client cares about receiving ACKs
+    /*! \brief A set of {opcode, address, sequence numbers} triples associated with
+     * request packets for which the client cares about receiving ACKs.
+     */
     using wanted_ack_key = std::tuple<uint8_t, ctrl_opcode_t, uint32_t>;
     std::set<wanted_ack_key> _wanted_acks;
-    //! Map of custom defined peek/poke functions with end address for custom register
-    // space starting address
+    /*! \brief Map of custom defined peek/poke functions with end address for custom
+     * register space starting address.
+     */
     std::map<uint32_t, custom_register_space> _custom_register_spaces;
 
     std::string _log_prefix = "::CTRLEP";
 
-    //! Number of sent control packets.
-    //
-    // This is also used to calculate the outgoing packet's sequence number, which is the
-    // lower 6 bits of this counter.
+    /*! \brief Number of sent control packets.
+     *
+     * This is also used to calculate the outgoing packet's sequence number, which is the
+     * lower 6 bits of this counter.
+     */
     uint64_t _ctrl_sent = 0;
     //! Number of received ACK packets.
     uint64_t _acks_rcvd = 0;

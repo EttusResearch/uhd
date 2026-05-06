@@ -31,8 +31,9 @@ static constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT = 120000;
 static constexpr size_t MPMD_DEFAULT_REBOOT_TIMEOUT = 200000;
 //! Default timeout value for RPC calls (ms)
 static constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT = 2000;
-//! Short timeout value for RPC calls (ms), used for calls that shouldn't
-// take long. This value can be used to quickly determine a link status.
+/*! Short timeout value for RPC calls (ms), used for calls that shouldn't
+ * take long. This value can be used to quickly determine a link status.
+ */
 static constexpr size_t MPMD_SHORT_RPC_TIMEOUT = 2000;
 //! Claimer loop timeout value for RPC calls (ms).
 static constexpr size_t MPMD_CLAIMER_RPC_TIMEOUT = 10000;
@@ -56,9 +57,10 @@ public:
     using uptr     = std::unique_ptr<mpmd_mboard_impl>;
     using dev_info = std::map<std::string, std::string>;
 
-    //! MPMD-specific implementation of the mb_iface
-    //
-    // This handles the transport management
+    /*! \brief MPMD-specific implementation of the mb_iface.
+     *
+     * This handles the transport management
+     */
     class mpmd_mb_iface;
 
     /*** Static helper *******************************************************/
@@ -100,9 +102,10 @@ public:
     //! Device information is read back via MPM and stored here.
     uhd::device_addr_t device_info;
 
-    //! Dboard info is read back via MPM and stored here. There will be one
-    // dictionary per dboard; but there's no requirement for the dictionary
-    // to be populated at all.
+    /*! Dboard info is read back via MPM and stored here. There will be one
+     *  dictionary per dboard; but there's no requirement for the dictionary
+     *  to be populated at all.
+     */
     std::vector<uhd::device_addr_t> dboard_info;
 
     //! Reference to this motherboards mb_iface
@@ -213,24 +216,29 @@ private:
 class mpmd_impl : public uhd::rfnoc::detail::rfnoc_device
 {
 public:
-    //! Device arg key which will allow finding all devices, even those not
-    // reachable via CHDR.
+    /*! Device arg key which will allow finding all devices, even those not
+     * reachable via CHDR.
+     */
     static const std::string MPM_FINDALL_KEY;
-    //! Port on which the discovery process is listening (default value, it is
-    //  user-overridable)
+    /*! Port on which the discovery process is listening (default value, it is
+     *  user-overridable)
+     */
     static const size_t MPM_DISCOVERY_PORT;
     //! Device arg key to override the discovery port
     static const std::string MPM_DISCOVERY_PORT_KEY;
-    //! Port on which the RPC process is listening (default value, it is user-
-    //  overridable)
+    /*! Port on which the RPC process is listening (default value, it is user-
+     *  overridable)
+     */
     static const size_t MPM_RPC_PORT;
     //! Device arg key to override the RPC port
     static const std::string MPM_RPC_PORT_KEY;
-    //! This is the command that needs to be sent to the discovery port to
-    // trigger a response.
+    /*! This is the command that needs to be sent to the discovery port to
+     *  trigger a response.
+     */
     static const std::string MPM_DISCOVERY_CMD;
-    //! This is the command that will let you measure ping responses from the
-    // device via the discovery process. Useful for MTU discovery.
+    /*! This is the command that will let you measure ping responses from the
+     *  device via the discovery process. Useful for MTU discovery.
+     */
     static const std::string MPM_ECHO_CMD;
     //! This is the RPC command that will return the last known error from MPM.
     static const std::string MPM_RPC_GET_LAST_ERROR_CMD;

@@ -27,10 +27,11 @@ struct topo_node_t
     /*** Types ***************************************************************/
     using node_hash_type = uint64_t;
 
-    //! The type of a node in the data-flow graph
-    //
-    // Note: The values for the enum entries must match with those in
-    // rfnoc_chdr_internal_utils.vh.
+    /*! \brief The type of a node in the data-flow graph.
+     *
+     * Note: The values for the enum entries must match with those in
+     * rfnoc_chdr_internal_utils.vh.
+     */
     enum class node_type {
         //! Invalid type. The FPGA will never have a node with type = 0
         INVALID = 0,
@@ -40,8 +41,9 @@ struct topo_node_t
         STRM_EP = 2,
         //! Transport
         XPORT = 3,
-        //! A virtual endpoint is a non-UHD owned endpoint off-device. This has
-        // no correspondence in the FPGA, so we just use a big value for this.
+        /*! A virtual endpoint is a non-UHD owned endpoint off-device. This has
+         * no correspondence in the FPGA, so we just use a big value for this.
+         */
         VIRTUAL = 100
     };
 
@@ -80,19 +82,23 @@ struct topo_node_t
     node_type type = node_type::INVALID;
     //! The instance number of this node in the device
     sep_inst_t inst = 0;
-    //! Extended info about node (not used for comparisons)
-    // The value depends on the node type. For example, this includes number of
-    // ports on a crossbar, data/ctrl capability for SEPs, or transport subtype
-    // for transport adapters.
-    // It contains up to 18 bits of information.
+    /*! \brief Extended info about node (not used for comparisons).
+     *
+     * The value depends on the node type. For example, this includes number of
+     * ports on a crossbar, data/ctrl capability for SEPs, or transport subtype
+     * for transport adapters.
+     * It contains up to 18 bits of information.
+     */
     uint32_t extended_info = 0;
 
-    //! If applicable, the endpoint ID of this node. This is only set if
-    // type == node_type::STRM_EP or node_type::VIRTUAL.
+    /*! If applicable, the endpoint ID of this node. This is only set if
+     * type == node_type::STRM_EP or node_type::VIRTUAL.
+     */
     std::optional<sep_id_t> epid;
 
-    //! True if this is a stream endpoint (type == node_type::STRM_EP) and the
-    // endpoint is local, i.e. based within the UHD session.
+    /*! True if this is a stream endpoint (type == node_type::STRM_EP) and the
+     * endpoint is local, i.e. based within the UHD session.
+     */
     bool is_local_sep = false;
 
     /*** Ops and methods *****************************************************/
@@ -149,20 +155,24 @@ struct topo_edge_t
         INVALID,
         //! End of route: This is not a valid route, but terminates a route
         END_OF_ROUTE,
-        //! Host connection: Meaning this connection goes from a Transport
-        // Adapter (on the device) to an SEP (within the UHD context) or vice-versa
+        /*! Host connection: Meaning this connection goes from a Transport
+         * Adapter (on the device) to an SEP (within the UHD context) or vice-versa
+         */
         HOST,
-        //! On-chip: Direct AXIS connection between two nodes (e.g. between
-        // SEP and crossbar)
+        /*! On-chip: Direct AXIS connection between two nodes (e.g. between
+         * SEP and crossbar)
+         */
         ON_CHIP,
-        //! Off-chip: Direct AXIS connection between two nodes on two different
-        // FPGAs (e.g., via Aurora connection between two crossbars).
+        /*! Off-chip: Direct AXIS connection between two nodes on two different
+         * FPGAs (e.g., via Aurora connection between two crossbars).
+         */
         OFF_CHIP,
-        //! Ethernet connection: This means the connection leaves the device
-        // over an Ethernet transport adapter, and is routed to another device
-        // via external network (could also be point-to-point Ethernet
-        // connection). Such a connection requires additional routing information
-        // to function.
+        /*! Ethernet connection: This means the connection leaves the device
+         * over an Ethernet transport adapter, and is routed to another device
+         * via external network (could also be point-to-point Ethernet
+         * connection). Such a connection requires additional routing information
+         * to function.
+         */
         ETHERNET
     };
 
@@ -225,10 +235,12 @@ using route_type = std::list<route_element_type>;
 //! Pretty-print a route
 std::string to_string(const route_type& route);
 
-//! A graph object to store the topology of our RFNoC system. Unlike
-// rfnoc::detail::graph_t, this doesn't store info about the RFNoC blocks, but
-// about everything else: Transport Adapters, SEPs, crossbars, and how they're
-// connected.
+/*! \brief  A graph object to store the topology of our RFNoC system.
+ *
+ * Unlike rfnoc::detail::graph_t, this doesn't store info about the RFNoC blocks, but
+ * about everything else: Transport Adapters, SEPs, crossbars, and how they're
+ * connected.
+ */
 class topo_graph_t
 {
 public:
@@ -237,71 +249,79 @@ public:
 
     topo_graph_t() = default;
 
-    //! Add an unconnected node into this graph
-    //
-    // This is typically called while starting a new graph (or sub-graph).
-    //
-    // \returns true if the node was added, false if it already existed.
+    /*! \brief Add an unconnected node into this graph.
+     *
+     * This is typically called while starting a new graph (or sub-graph).
+     *
+     * \returns true if the node was added, false if it already existed.
+     */
     bool add_node(const topo_node_t& node);
 
     //! Return a list of nodes that match a given predicate
     std::list<topo_node_t> get_nodes(node_filter_type&& filter_predicate) const;
 
-    //! Return a list of nodes that are connected to a source node and optionally
-    // match a given predicate.
-    //
-    // The source node is not included in the result.
+    /*! \brief Return a list of nodes that are connected to a source node and optionally
+     * match a given predicate.
+     *
+     * The source node is not included in the result.
+     */
     std::list<topo_node_t> get_connected_nodes(
         const topo_node_t& src, node_filter_type&& filter_predicate = nullptr) const;
 
-    //! Add another connection/edge into this topology graph
-    //
-    // This adds another route from \p src to \p dst into this graph.
-    // If dst is not yet registered, it will add it as well.
-    //
-    // If \p src does not exist, this will throw an exception.
-    //
-    // \throws uhd::runtime_error if \p src does not exist.
-    // \returns true if dst was newly added, false if it already existed.
+    /*! \brief Add another connection/edge into this topology graph.
+     *
+     * This adds another route from \p src to \p dst into this graph.
+     * If dst is not yet registered, it will add it as well.
+     *
+     * If \p src does not exist, this will throw an exception.
+     *
+     * \throws uhd::runtime_error if \p src does not exist.
+     * \returns true if dst was newly added, false if it already existed.
+     */
     bool add_edge(
         const topo_node_t& src, const topo_node_t& dst, const topo_edge_t& edge);
 
-    //! Add a bidirectional edge into this topology
-    //
-    // This is mostly identical to add_edge(), but it adds a reverse edge as
-    // well as a forward edge. Functionally, it is equivalent to this pseudo
-    // code:
-    //
-    // ~~~{.cpp}
-    // add_edge(src, dst, edge);
-    // swap(edge.src_port, edge.dst_port);
-    // add_route(dst, src, edge);
-    // ~~~
-    //
-    // \throws uhd::runtime_error if \p src does not exist.
-    // \returns true if dst was newly added, false if it already existed.
+    /*! \brief Add a bidirectional edge into this topology.
+     *
+     * This is mostly identical to add_edge(), but it adds a reverse edge as
+     * well as a forward edge. Functionally, it is equivalent to this pseudo
+     * code:
+     *
+     * ~~~{.cpp}
+     * add_edge(src, dst, edge);
+     * swap(edge.src_port, edge.dst_port);
+     * add_edge(dst, src, edge);
+     * ~~~
+     *
+     * \throws uhd::runtime_error if \p src does not exist.
+     * \returns true if dst was newly added, false if it already existed.
+     */
     bool add_biedge(
         const topo_node_t& src, const topo_node_t& dst, const topo_edge_t& edge);
 
     //! Returns true if there's a route from \p src to \p dst
     bool has_route(const topo_node_t& src, const topo_node_t& dst) const;
 
-    //! Returns the shortest route from \p src to \p dst
-    //
-    // If there are multiple shortest routes, it returns the first route it finds.
+    /*! \brief Returns the shortest route from \p src to \p dst
+     *
+     * If there are multiple shortest routes, it returns the first route it finds.
+     */
     route_type get_route(const topo_node_t& src, const topo_node_t& dst) const;
 
-    //! Returns the shortest route to \p dst from any source that matches a predicate
-    //
-    // Use this instead of get_route() if it is not clear which node to use as
-    // source node.
-    //
-    // If there are multiple shortest routes, it returns the first route it finds.
+    /*! \brief Returns the shortest route to \p dst from any source that matches a
+     * predicate.
+     *
+     * Use this instead of get_route() if it is not clear which node to use as
+     * source node.
+     *
+     * If there are multiple shortest routes, it returns the first route it finds.
+     */
     route_type get_best_route(
         node_filter_type&& src_filter, const topo_node_t& dst) const;
 
-    //! Returns the distance between \p src and \p dst along the
-    // shortest path.
+    /*! \brief Returns the distance between \p src and \p dst along the
+     * shortest path.
+     */
     int get_distance(const topo_node_t& src, const topo_node_t& dst) const;
 
     //! Returns a copy of an edge object

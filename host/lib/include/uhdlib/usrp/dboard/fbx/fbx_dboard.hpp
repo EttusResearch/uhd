@@ -467,10 +467,11 @@ private:
     //! Reference to FBX CTRL
     std::shared_ptr<fbx_ctrl> _fbx_ctrl;
 
-    //! Reference to this block's subtree
-    //
-    // It is mutable because _tree->access<>(..).get() is not const, but we
-    // need to do just that in some const contexts
+    /*! \brief Reference to this block's subtree.
+     *
+     * It is mutable because _tree->access<>(..).get() is not const, but we
+     * need to do just that in some const contexts
+     */
     mutable uhd::property_tree::sptr _tree;
 
     rf_control::gain_profile_iface::sptr _tx_gain_profile_api;

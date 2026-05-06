@@ -39,11 +39,12 @@ public:
     //! Populate this class from the serialized data
     virtual void deserialize(const std::vector<uint8_t>& data) = 0;
 
-    //! Generic factory for cal data from serialized data
-    //
-    // \tparam container_type The class type of cal data which should be
-    //                        generated from \p data
-    // \param data The serialized data to be turned into the cal class
+    /*! \brief Generic factory for cal data from serialized data.
+     *
+     * \tparam container_type The class type of cal data which should be
+     *                        generated from \p data
+     * \param data The serialized data to be turned into the cal class
+     */
     template <typename container_type>
     static std::shared_ptr<container_type> make(const std::vector<uint8_t>& data)
     {

@@ -16,10 +16,11 @@ uhd::time_spec_t calc_latency(
     const double tick_rate, const uhd::direction_t trx, const size_t nipc)
 {
     UHD_ASSERT_THROW(tick_rate > 0.0);
-    //! Complex Gain Latency of 6 clock cycles on RX path
-    //
-    // 4 cycles delay in complex multiplier
-    // 1 cycle delay in rounding and 1 cycle delay in clipping
+    /*! \brief Complex Gain Latency of 6 clock cycles on RX path.
+     *
+     * 4 cycles delay in complex multiplier
+     * 1 cycle delay in rounding and 1 cycle delay in clipping
+     */
     constexpr uint64_t _feature_cgain_latency = 6;
 
     if (trx == uhd::direction_t::TX_DIRECTION) {

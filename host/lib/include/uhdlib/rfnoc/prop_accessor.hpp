@@ -12,12 +12,13 @@
 
 namespace uhd { namespace rfnoc {
 
-//! Special class which may access properties
-//
-// For the sake of property resolution, we require access to certain private
-// members of properties. Instead of giving the entire graph access to
-// everything, we create this accessor class which is not available
-// in the public API.
+/*! \brief Special class which may access properties.
+ *
+ * For the sake of property resolution, we require access to certain private
+ * members of properties. Instead of giving the entire graph access to
+ * everything, we create this accessor class which is not available
+ * in the public API.
+ */
 class prop_accessor_t
 {
 public:
@@ -39,18 +40,19 @@ public:
         prop->_access_mode = access;
     }
 
-    //! RAII-Style access mode setter
-    //
-    // This will return an object which will set the access mode on a property
-    // only for the duration of its own lifetime. Use this in situations where
-    // you want to guarantee a certain read-write mode of a property, even when
-    // an exception is thrown.
-    //
-    // \param prop A reference to the property
-    // \param access The temporary access mode which will be set as long as the
-    //               scope_exit object is alive
-    // \param default_access The access mode which will be set once the
-    //                       scope_exit object will be destroyed
+    /*! \brief RAII-Style access mode setter.
+     *
+     * This will return an object which will set the access mode on a property
+     * only for the duration of its own lifetime. Use this in situations where
+     * you want to guarantee a certain read-write mode of a property, even when
+     * an exception is thrown.
+     *
+     * \param prop A reference to the property
+     * \param access The temporary access mode which will be set as long as the
+     *               scope_exit object is alive
+     * \param default_access The access mode which will be set once the
+     *                       scope_exit object will be destroyed
+     */
     uhd::utils::scope_exit::uptr get_scoped_prop_access(property_base_t& prop,
         property_base_t::access_t access,
         property_base_t::access_t default_access = property_base_t::RO)

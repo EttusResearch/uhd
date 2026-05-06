@@ -16,15 +16,16 @@
 
 namespace uhd { namespace math {
 
-//! Return a pair of iterators before and after a key within a map.
-//
-// Complexity: That of std::map::lower_bound (logarithmic).
-//
-// If \p key is lower or greater than the range of \p data then both the
-// returned iterators will point to the first or last item in the map, respectively.
-// If the key is found exactly in the map, then the second iterator will point to
-// to that key, and the first iterator will point to the previous item (if
-// possible).
+/*! \brief Return a pair of iterators before and after a key within a map.
+ *
+ * Complexity: That of std::map::lower_bound (logarithmic).
+ *
+ * If \p key is lower or greater than the range of \p data then both the
+ * returned iterators will point to the first or last item in the map, respectively.
+ * If the key is found exactly in the map, then the second iterator will point to
+ * to that key, and the first iterator will point to the previous item (if
+ * possible).
+ */
 template <typename map_type>
 std::pair<typename map_type::const_iterator, typename map_type::const_iterator>
 get_bounding_iterators(const map_type& data, const typename map_type::key_type& key)
@@ -49,13 +50,14 @@ get_bounding_iterators(const map_type& data, const typename map_type::key_type& 
 }
 
 
-//! Linearly interpolate f(x) given f(x0) = y0 and f(x1) = y1
-//
-// This draws a line through the coordinates x0/y0 and x1/y1, and then returns
-// the y-value for the given x-value on said line.
-//
-// \throws uhd::runtime_error if x0 == x1, since that doesn't allow us to
-//         interpolate.
+/*! \brief Linearly interpolate f(x) given f(x0) = y0 and f(x1) = y1.
+ *
+ * This draws a line through the coordinates x0/y0 and x1/y1, and then returns
+ * the y-value for the given x-value on said line.
+ *
+ * \throws uhd::runtime_error if x0 == x1, since that doesn't allow us to
+ *         interpolate.
+ */
 template <typename InterpType>
 inline InterpType linear_interp(
     InterpType x, InterpType x0, InterpType y0, InterpType x1, InterpType y1)
@@ -66,13 +68,14 @@ inline InterpType linear_interp(
     return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
 }
 
-//! Bi-Linearly interpolate f(x, y) given f(xi, yk) = zik and for i, k == 0, 0
-//
-// This does one linear interpolation in x-direction and one in y-direction to
-// return the z-value for the given x-value and y-value.
-//
-// \throws uhd::runtime_error if x0 == x1, or y0 == y1 since that doesn't allow
-//         us to interpolate.
+/*! \brief Bi-Linearly interpolate f(x, y) given f(xi, yk) = zik and for i, k == 0, 0.
+ *
+ * This does one linear interpolation in x-direction and one in y-direction to
+ * return the z-value for the given x-value and y-value.
+ *
+ * \throws uhd::runtime_error if x0 == x1, or y0 == y1 since that doesn't allow
+ *         us to interpolate.
+ */
 template <typename InterpType>
 inline InterpType bilinear_interp(InterpType x,
     InterpType y,
@@ -155,17 +158,18 @@ typename map_type::mapped_type at_interpolate_1d(const map_type& data,
     return interp_func(key, lo_key, lo_value, hi_key, hi_value);
 }
 
-//! Like std::map::at, except with an approximate index
-//
-// Example:
-// ~~~{.cpp}
-// std::map<double, double> data{{1.0, 2.0}, {2.0, 3.0}};
-// std::cout << at_nearest(data, 1.72) << std::endl; // prints 3.0
-// ~~~
-//
-// This is in fact a shorthand for at_interpolate_1d(). It will look up the
-// value in \p data with the key that most closely matches \p key, i.e.,
-// at_nearest(data, key) == data[key'] if key' == argmin abs(key' - key).
+/*! \brief Like std::map::at, except with an approximate index.
+ *
+ * Example:
+ * ~~~{.cpp}
+ * std::map<double, double> data{{1.0, 2.0}, {2.0, 3.0}};
+ * std::cout << at_nearest(data, 1.72) << std::endl; // prints 3.0
+ * ~~~
+ *
+ * This is in fact a shorthand for at_interpolate_1d(). It will look up the
+ * value in \p data with the key that most closely matches \p key, i.e.,
+ * at_nearest(data, key) == data[key'] if key' == argmin abs(key' - key).
+ */
 template <typename map_type>
 typename map_type::mapped_type at_nearest(
     const map_type& data, const typename map_type::key_type& key)
@@ -180,19 +184,20 @@ typename map_type::mapped_type at_nearest(
         typename map_type::mapped_type { return (x1 - x < x - x0) ? y1 : y0; });
 }
 
-//! Like std::map::at, except it will linearly interpolate in one dimension
-//
-// Example:
-// ~~~{.cpp}
-// std::map<double, double> data{{1.0, 2.0}, {2.0, 3.0}};
-// std::cout << at_lin_interp(data, 1.5) << std::endl; // prints 2.5
-// ~~~
-//
-// This treats the map as a set of x/y coordinates, and returns the value from
-// the map that corresponds to a linear interpolation on those coordinates.
-//
-// For x-values greater than the maximum key, or smaller than the minimum key
-// of \p data, we return the value for the closest available key.
+/*! \brief Like std::map::at, except it will linearly interpolate in one dimension.
+ *
+ * Example:
+ * ~~~{.cpp}
+ * std::map<double, double> data{{1.0, 2.0}, {2.0, 3.0}};
+ * std::cout << at_lin_interp(data, 1.5) << std::endl; // prints 2.5
+ * ~~~
+ *
+ * This treats the map as a set of x/y coordinates, and returns the value from
+ * the map that corresponds to a linear interpolation on those coordinates.
+ *
+ * For x-values greater than the maximum key, or smaller than the minimum key
+ * of \p data, we return the value for the closest available key.
+ */
 template <typename map_type>
 typename map_type::mapped_type at_lin_interp(
     const map_type& data, const typename map_type::key_type& key)
@@ -201,24 +206,26 @@ typename map_type::mapped_type at_lin_interp(
         data, key, &uhd::math::linear_interp<typename map_type::mapped_type>);
 }
 
-//! Like std::map::at, except it will do a bilinear interpolation in two dimensions
-//
-// Example:
-// ~~~{.cpp}
-// std::map<double, std::map<double, double>> data;
-// data[1.0][1.0] = 0.0;
-// data[1.0][2.0] = 1.0;
-// data[2.0][1.0] = 1.0;
-// data[2.0][2.0] = 2.0;
-// std::cout << at_bilin_interp(data, 1.5, 1.5) << std::endl; // prints 1.0
-// ~~~
-//
-// This treats the double-map as a set of x/y/z coordinates, and returns the
-// value from the map that corresponds to a bilinear interpolation on those
-// coordinates.
-//
-// For x- or y-values greater than the maximum key, or smaller than the minimum
-// key of \p data, we return the value for the closest available key.
+/*! \brief Like std::map::at, except it will do a bilinear interpolation in two
+ * dimensions.
+ *
+ * Example:
+ * ~~~{.cpp}
+ * std::map<double, std::map<double, double>> data;
+ * data[1.0][1.0] = 0.0;
+ * data[1.0][2.0] = 1.0;
+ * data[2.0][1.0] = 1.0;
+ * data[2.0][2.0] = 2.0;
+ * std::cout << at_bilin_interp(data, 1.5, 1.5) << std::endl; // prints 1.0
+ * ~~~
+ *
+ * This treats the double-map as a set of x/y/z coordinates, and returns the
+ * value from the map that corresponds to a bilinear interpolation on those
+ * coordinates.
+ *
+ * For x- or y-values greater than the maximum key, or smaller than the minimum
+ * key of \p data, we return the value for the closest available key.
+ */
 template <typename doublemap_type>
 typename doublemap_type::mapped_type::mapped_type at_bilin_interp(
     const doublemap_type& data,

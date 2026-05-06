@@ -33,8 +33,14 @@ public:
         _locked.clear(std::memory_order_release);
     }
 
-    //!
-    // \param timeout Timeout in seconds
+    /*! \brief Try to claim, with a timeout.
+     *
+     * This will try to acquire the lock until either successful or the timeout
+     * expires. Note that this is a spinlock, so it will consume CPU while
+     * waiting.
+     *
+     * \param timeout Timeout in seconds
+     */
     inline bool claim_with_wait(const double timeout)
     {
         const auto exit_time = std::chrono::high_resolution_clock::now()

@@ -619,10 +619,11 @@ private:
         update_scaling(total_gain, chan);
     }
 
-    //! Update scaling based on the current gain
-    //
-    // Calculates the closest fixpoint value that this block can correct for in
-    // hardware (fixpoint). The residual gain is written to _residual_scaling.
+    /*! \brief Update scaling based on the current gain.
+     *
+     * Calculates the closest fixpoint value that this block can correct for in
+     * hardware (fixpoint). The residual gain is written to _residual_scaling.
+     */
     void update_scaling(const double dsp_gain, const size_t chan)
     {
         constexpr double FIXPOINT_SCALING = 1 << 15;

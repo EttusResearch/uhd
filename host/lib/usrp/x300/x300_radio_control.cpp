@@ -1884,9 +1884,10 @@ private:
     /**************************************************************************
      * noc_block_base API
      *************************************************************************/
-    //! Safely shut down all peripherals
-    //
-    // Reminder: After this is called, no peeks and pokes are allowed!
+    /*! \brief Safely shut down all peripherals.
+     *
+     * Reminder: After this is called, no peeks and pokes are allowed!
+     */
     void deinit() override
     {
         RFNOC_LOG_TRACE("deinit()");

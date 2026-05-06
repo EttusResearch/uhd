@@ -53,10 +53,11 @@ struct noc_block_base::make_args_int_t
     //! Controlport clock interface object that is shared with the reg_iface
     std::shared_ptr<clock_iface> ctrlport_clk_iface;
 
-    //! Reference to the motherboard controller associated with this block.
-    //
-    // Note that this may not be populated -- most blocks do not gain access to
-    // the motherboard controller.
+    /*! \brief Reference to the motherboard controller associated with this block.
+     *
+     * Note that this may not be populated -- most blocks do not gain access to
+     * the motherboard controller.
+     */
     std::shared_ptr<mb_controller> mb_control;
 
     //! The subtree for this block

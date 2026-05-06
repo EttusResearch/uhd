@@ -31,10 +31,11 @@ namespace {
 
 constexpr char LOG_ID[] = "MPMD::XPORT::UDP";
 
-//! Maximum CHDR packet size in bytes.
-// Our 10GbE connections use custom FPGA code which caps frames at 8192 bytes.
-// However, we artificially limit this to a smaller frame size, which gives us
-// a safety margin.
+/*! \brief Maximum CHDR packet size in bytes.
+ * Our 10GbE connections use custom FPGA code which caps frames at 8192 bytes.
+ * However, we artificially limit this to a smaller frame size, which gives us
+ * a safety margin.
+ */
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8016;
 // For 1 GbE, we either go through the the SFP+ port, which supports up to 8192
 // bytes, or the RJ45 port, which uses DMA to the FPGA fabric and supports even
@@ -47,11 +48,13 @@ const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE = 1500;
 //! Number of send/recv frames
 const size_t MPMD_ETH_NUM_FRAMES = 32;
 
-//! Buffer depth in seconds. We use the link rate to determine how large buffers
-// must be to store this many seconds worth of data.
+/*! Buffer depth in seconds. We use the link rate to determine how large buffers
+ * must be to store this many seconds worth of data.
+ */
 const double MPMD_BUFFER_DEPTH = 20.0e-3; // s
-//! For MTU discovery, the time we wait for a packet before calling it
-// oversized (seconds).
+/*! For MTU discovery, the time we wait for a packet before calling it
+ *  oversized (seconds).
+ */
 const double MPMD_MTU_DISCOVERY_TIMEOUT = 0.02;
 
 // TODO: move these to appropriate header file for all other devices

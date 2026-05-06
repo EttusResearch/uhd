@@ -420,8 +420,9 @@ protected:
         return _mtu;
     }
 
-    //! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
-    // reduced accordingly.
+    /*! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
+     * reduced accordingly.
+     */
     void set_mtu(const size_t mtu)
     {
         _mtu                      = mtu;

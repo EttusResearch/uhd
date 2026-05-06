@@ -34,8 +34,9 @@ namespace uhd { namespace rfnoc {
 
 namespace x400_regs {
 
-//! Base address for the rf_timing_control module. This controls the NCOs and
-// other things in the RFDC.
+/*! Base address for the rf_timing_control module. This controls the NCOs and
+ * other things in the RFDC.
+ */
 constexpr uint32_t RFDC_CTRL_BASE = radio_control_impl::regmap::PERIPH_BASE + 0x8000;
 
 constexpr uint32_t DIO_REGMAP_OFFSET = 0x2000;

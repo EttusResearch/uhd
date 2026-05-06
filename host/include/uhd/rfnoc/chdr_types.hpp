@@ -305,17 +305,21 @@ public: // Functions
         return serialize(buff, max_size_bytes, conv_byte_order);
     }
 
-    //! Deserialize the payload from a uint64_t buffer
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
-    //! \param conv_byte_order Byte order converter function (buffer to host endianness)
+    /*! \brief Deserialize the payload from a uint64_t buffer.
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     * \param conv_byte_order Byte order converter function (buffer to host endianness)
+     */
     void deserialize(const uint64_t* buff,
         size_t buff_size,
         const std::function<uint64_t(uint64_t)>& conv_byte_order);
 
-    //! Deserialize the payload from a uint64_t buffer (no conversion function)
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
+    /*! \brief Deserialize the payload from a uint64_t buffer (no conversion function).
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     */
     template <endianness_t endianness>
     void deserialize(const uint64_t* buff, size_t buff_size)
     {
@@ -463,17 +467,21 @@ public: // Functions
         return serialize(buff, max_size_bytes, conv_byte_order);
     }
 
-    //! Deserialize the payload from a uint64_t buffer
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
-    //! \param conv_byte_order Byte order converter function (buffer to host endianness)
+    /*! \brief Deserialize the payload from a uint64_t buffer.
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     * \param conv_byte_order Byte order converter function (buffer to host endianness)
+     */
     void deserialize(const uint64_t* buff,
         size_t buff_size,
         const std::function<uint64_t(uint64_t)>& conv_byte_order);
 
-    //! Deserialize the payload from a uint64_t buffer (no conversion function)
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
+    /*! \brief Deserialize the payload from a uint64_t buffer (no conversion function).
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     */
     template <endianness_t endianness>
     void deserialize(const uint64_t* buff, size_t buff_size)
     {
@@ -570,17 +578,21 @@ public: // Functions
         return serialize(buff, max_size_bytes, conv_byte_order);
     }
 
-    //! Deserialize the payload from a uint64_t buffer
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
-    //! \param conv_byte_order Byte order converter function (buffer to host endianness)
+    /*! \brief Deserialize the payload from a uint64_t buffer.
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     * \param conv_byte_order Byte order converter function (buffer to host endianness)
+     */
     void deserialize(const uint64_t* buff,
         size_t buff_size,
         const std::function<uint64_t(uint64_t)>& conv_byte_order);
 
-    //! Deserialize the payload from a uint64_t buffer (no conversion function)
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
+    /*! \brief Deserialize the payload from a uint64_t buffer (no conversion function).
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     */
     template <endianness_t endianness>
     void deserialize(const uint64_t* buff, size_t buff_size)
     {
@@ -623,16 +635,19 @@ private:
 // CHDR Management Packet Payload
 //----------------------------------------------------
 
-//! A class that represents a single management operation
-//  An operation consists of an operation code and some
-//  payload associated with that operation.
+/*! A class that represents a single management operation
+ *  An operation consists of an operation code and some
+ *  payload associated with that operation.
+ */
 class UHD_API mgmt_op_t
 {
 public:
-    // Operation code
-    // Note that a management packet has 8 bits available for op codes. The
-    // values for these enums are used to construct the packets, so these values
-    // must match the values in rfnoc_chdr_internal_utils.vh.
+    /*! \brief Operation code.
+     *
+     *  Note that a management packet has 8 bits available for op codes. The
+     *  values for these enums are used to construct the packets, so these values
+     *  must match the values in rfnoc_chdr_internal_utils.vh.
+     */
     enum op_code_t {
         //! Do nothing
         MGMT_OP_NOP = 0,
@@ -670,8 +685,9 @@ public:
         }
     };
 
-    //! An interpretation class for the payload for MGMT_OP_CFG_WR_REQ,
-    //! MGMT_OP_CFG_RD_REQ and MGMT_OP_CFG_RD_RESP
+    /*! An interpretation class for the payload for MGMT_OP_CFG_WR_REQ,
+     *  MGMT_OP_CFG_RD_REQ and MGMT_OP_CFG_RD_RESP
+     */
     struct cfg_payload
     {
         const uint16_t addr;
@@ -734,10 +750,12 @@ public:
     mgmt_op_t& operator=(const mgmt_op_t& rhs) = default;
 
 
-    //! Get the ops pending for this transaction
-    //  Note that ops_pending is not used by UHD, since it can infer this value
-    //  from the ops vector in mgmt_hop_t. It is needed only by the CHDR
-    //  dissector.
+    /*! \brief Get the ops pending for this transaction.
+     *
+     *  Note that ops_pending is not used by UHD, since it can infer this value
+     *  from the ops vector in mgmt_hop_t. It is needed only by the CHDR
+     *  dissector.
+     */
     inline uint8_t get_ops_pending() const
     {
         return _ops_pending;
@@ -770,17 +788,21 @@ private:
     uint8_t _ops_pending;
 };
 
-//! A class that represents a single management hop
-//  A hop is a collection for management transactions for
-//  a single node.
+/*! \brief A class that represents a single management hop.
+ *
+ *  A hop is a collection for management transactions for
+ *  a single node.
+ */
 class UHD_API mgmt_hop_t
 {
 public:
     mgmt_hop_t()                      = default;
     mgmt_hop_t(const mgmt_hop_t& rhs) = default;
 
-    //! Add a management operation to this hop.
-    //  Operations are added to the hop in FIFO order and executed in FIFO order.
+    /*! \brief Add a management operation to this hop.
+     *
+     *  Operations are added to the hop in FIFO order and executed in FIFO order.
+     */
     inline void add_op(const mgmt_op_t& op)
     {
         _ops.push_back(op);
@@ -798,16 +820,20 @@ public:
         return _ops.at(i);
     }
 
-    //! Serialize the payload to a uint64_t buffer
-    //  The RFNoC Specification section 2.2.6 specifies that for chdr widths
-    //  greater than 64, all MSBs are 0, so we pad out the hop based on the width
+    /*! \brief Serialize the payload to a uint64_t buffer.
+     *
+     *  The RFNoC Specification section 2.2.6 specifies that for chdr widths
+     *  greater than 64, all MSBs are 0, so we pad out the hop based on the width
+     */
     size_t serialize(std::vector<uint64_t>& target,
         const std::function<uint64_t(uint64_t)>& conv_byte_order,
         const size_t padding_size) const;
 
-    //! Deserialize the payload from a uint64_t buffer
-    //  The RFNoC Specification section 2.2.6 specifies that for chdr widths
-    //  greater than 64, all MSBs are 0, so we remove padding based on the width
+    /*! \brief Deserialize the payload from a uint64_t buffer.
+     *
+     *  The RFNoC Specification section 2.2.6 specifies that for chdr widths
+     *  greater than 64, all MSBs are 0, so we remove padding based on the width
+     */
     void deserialize(std::list<uint64_t>& src,
         const std::function<uint64_t(uint64_t)>& conv_byte_order,
         const size_t padding_size);
@@ -825,9 +851,11 @@ private:
     std::vector<mgmt_op_t> _ops;
 };
 
-//! A class that represents a complete multi-hop management transaction
-//  A transaction is a collection of hops, where each hop is a collection
-//  of management transactions.
+/*! \brief A class that represents a complete multi-hop management transaction.
+ *
+ *  A transaction is a collection of hops, where each hop is a collection
+ *  of management transactions.
+ */
 class UHD_API mgmt_payload
 {
 public:
@@ -844,8 +872,10 @@ public:
         set_proto_ver(protover);
     }
 
-    //! Add a management hop to this transaction
-    //  Hops are added to the hop in FIFO order and executed in FIFO order.
+    /*! \brief Add a management hop to this transaction.
+     *
+     *  Hops are added to the hop in FIFO order and executed in FIFO order.
+     */
     inline void add_hop(const mgmt_hop_t& hop)
     {
         _hops.push_back(hop);
@@ -899,17 +929,21 @@ public:
         return serialize(buff, max_size_bytes, conv_byte_order);
     }
 
-    //! Deserialize the payload from a uint64_t buffer
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
-    //! \param conv_byte_order Byte order converter function (buffer to host endianness)
+    /*! \brief Deserialize the payload from a uint64_t buffer.
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     * \param conv_byte_order Byte order converter function (buffer to host endianness)
+     */
     void deserialize(const uint64_t* buff,
         size_t buff_size,
         const std::function<uint64_t(uint64_t)>& conv_byte_order);
 
-    //! Deserialize the payload from a uint64_t buffer (no conversion function)
-    //! \param buff Buffer to deserialize the payload from
-    //! \param buff_size Number of elements in the buffer
+    /*! \brief Deserialize the payload from a uint64_t buffer (no conversion function).
+     *
+     * \param buff Buffer to deserialize the payload from
+     * \param buff_size Number of elements in the buffer
+     */
     template <endianness_t endianness>
     void deserialize(const uint64_t* buff, size_t buff_size)
     {

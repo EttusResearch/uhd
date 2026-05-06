@@ -16,14 +16,15 @@
 
 namespace uhd { namespace cores {
 
-//! Complex Gain core control
-//
-// This is a driver for the complex gain core inside the radio_core (used in
-// the RFNoC radio block). Note that this feature may not be available, and
-// the caller must check its availability first.
-//
-// The complex gain core enables setting a complex gain value (i.e., changing
-// both phase and amplitude) on multiple channels.
+/*! \brief Complex Gain core control.
+ *
+ * This is a driver for the complex gain core inside the radio_core (used in
+ * the RFNoC radio block). Note that this feature may not be available, and
+ * the caller must check its availability first.
+ *
+ * The complex gain core enables setting a complex gain value (i.e., changing
+ * both phase and amplitude) on multiple channels.
+ */
 class complex_gain_3000
 {
 public:
@@ -39,24 +40,26 @@ public:
         const uhd::direction_t trx,
         const size_t nipc);
 
-    //! Apply the gain coefficient
-    //
-    // This will convert the floating-point gain gain value to a fixpoint
-    // representation. It also accounts for processing delay, and will modify
-    // the timestamp such that the new complex gain value is applied at the
-    // desired timestamp (\p time).
+    /*! \brief Apply the gain coefficient.
+     *
+     * This will convert the floating-point gain gain value to a fixpoint
+     * representation. It also accounts for processing delay, and will modify
+     * the timestamp such that the new complex gain value is applied at the
+     * desired timestamp (\p time).
+     */
     void set_gain_coeff(const std::complex<double> gain_coeff,
         const size_t chan,
         const std::optional<uhd::time_spec_t>& time = {});
 
-    //! Return the currently set gain coefficient
-    //
-    // Convert the fixpoint gain value to a floating point value and return it.
-    // Note that this API does not support timed reads.
+    /*! \brief Return the currently set gain coefficient.
+     *
+     * Convert the fixpoint gain value to a floating point value and return it.
+     * Note that this API does not support timed reads.
+     */
     std::complex<double> get_gain_coeff(const size_t chan);
 
 private:
-    //! Writing to 32-bit coefficient register with
+    // Writing to 32-bit coefficient register with
     // [31:16]  : Real part
     // [15:0]   : Imaginary part
     static constexpr uint32_t REG_CGAIN_COEFF       = 0x00;

@@ -304,8 +304,9 @@ protected: // Methods
         }
     }
 
-    //! Helper for enum_arg: Create a new map where keys are converted to
-    //  lowercase.
+    /*! Helper for enum_arg: Create a new map where keys are converted to
+     *  lowercase.
+     */
     template <typename enum_t>
     static std::unordered_map<std::string, enum_t> _enum_map_to_lowercase(
         const std::unordered_map<std::string, enum_t>& in_map)

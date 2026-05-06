@@ -411,10 +411,11 @@ private:
     //! Reference to the RX Cal data
     std::shared_ptr<uhd::usrp::cal::zbx_rx_dsa_cal> _rx_dsa_cal;
 
-    //! Reference to this block's subtree
-    //
-    // It is mutable because _tree->access<>(..).get() is not const, but we
-    // need to do just that in some const contexts
+    /*! \brief Reference to this block's subtree.
+     *
+     * It is mutable because _tree->access<>(..).get() is not const, but we
+     * need to do just that in some const contexts
+     */
     mutable uhd::property_tree::sptr _tree;
 
     std::vector<uhd::usrp::pwr_cal_mgr::sptr> _rx_pwr_mgr;

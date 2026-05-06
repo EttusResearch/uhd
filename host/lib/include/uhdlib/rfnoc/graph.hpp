@@ -23,13 +23,14 @@
 
 namespace uhd { namespace rfnoc { namespace detail {
 
-//! Container for the logical graph within an uhd::rfnoc_graph
-//
-// Some notes on concurrency: The graph supports concurrent access from multiple
-// threads. The main concurrency control is done via a recursive mutex
-// (_graph_mutex). This mutex protects the graph structure itself (adding/removing
-// nodes/edges) as well as property propagation, action handling, and the
-// commit/release mechanism.
+/*! \brief Container for the logical graph within an uhd::rfnoc_graph.
+ *
+ * Some notes on concurrency: The graph supports concurrent access from multiple
+ * threads. The main concurrency control is done via a recursive mutex
+ * (_graph_mutex). This mutex protects the graph structure itself (adding/removing
+ * nodes/edges) as well as property propagation, action handling, and the
+ * commit/release mechanism.
+ */
 struct graph_t::impl
 {
 public:
@@ -360,20 +361,22 @@ private:
     //! Storage for the actual graph
     rfnoc_graph_t _graph;
 
-    //! Map to do a lookup node_ref_t -> vertex descriptor.
-    //
-    // This is technically redundant, but helps us check quickly and easily if
-    // a node is already in the graph, and to yank out the appropriate node
-    // descriptor without having to traverse the graph. The rfnoc_graph_t is not
-    // efficient for lookups of vertices.
+    /*! \brief Map to do a lookup node_ref_t -> vertex descriptor.
+     *
+     * This is technically redundant, but helps us check quickly and easily if
+     * a node is already in the graph, and to yank out the appropriate node
+     * descriptor without having to traverse the graph. The rfnoc_graph_t is not
+     * efficient for lookups of vertices.
+     */
     node_map_t _node_map;
 
     using action_tuple_t = std::tuple<node_ref_t, res_source_info, action_info::sptr>;
 
-    //! FIFO for incoming actions
-    //
-    // This FIFO is protected by _action_queue_mutex, which means that multiple
-    // threads can safely enqueue actions.
+    /*! \brief FIFO for incoming actions.
+     *
+     * This FIFO is protected by _action_queue_mutex, which means that multiple
+     * threads can safely enqueue actions.
+     */
     std::deque<action_tuple_t> _action_queue;
 
     //! Mutex to protect the action queue
@@ -397,17 +400,19 @@ private:
     //! Changes to the state of the graph are locked with this mutex
     std::recursive_mutex _graph_mutex;
 
-    //! This counter gets decremented everytime commit() is called. When zero,
-    // the graph is committed.
-    //
-    // Protected by _graph_mutex.
+    /*! \brief This counter gets decremented everytime commit() is called. When zero,
+     * the graph is committed.
+     *
+     * Protected by _graph_mutex.
+     */
     size_t _release_count{1};
 
-    //! A flag if the graph has shut down.
-    //
-    // _shutdown is only ever set from false -> true when the graph is being
-    // shut down, so reading it to see if the graph is already shut down is OK
-    // to do without holding the _graph_mutex.
+    /*! \brief A flag if the graph has shut down.
+     *
+     * _shutdown is only ever set from false -> true when the graph is being
+     * shut down, so reading it to see if the graph is already shut down is OK
+     * to do without holding the _graph_mutex.
+     */
     std::atomic<bool> _shutdown{false};
 };
 

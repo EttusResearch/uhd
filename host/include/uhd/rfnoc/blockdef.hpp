@@ -23,13 +23,14 @@ class UHD_API blockdef : public std::enable_shared_from_this<blockdef>
 public:
     typedef std::shared_ptr<blockdef> sptr;
 
-    //! Describes port options for a block definition.
-    //
-    // This is not the same as a uhd::rfnoc::stream_sig_t. This is used
-    // to describe which ports are defined in a block definition, and
-    // to describe what kind of connection is allowed for this port.
-    //
-    // All the keys listed in PORT_ARGS will be available in this class.
+    /*! \brief Describes port options for a block definition.
+     *
+     * This is not the same as a uhd::rfnoc::stream_sig_t. This is used
+     * to describe which ports are defined in a block definition, and
+     * to describe what kind of connection is allowed for this port.
+     *
+     * All the keys listed in PORT_ARGS will be available in this class.
+     */
     class port_t : public uhd::dict<std::string, std::string>
     {
     public:
@@ -42,8 +43,9 @@ public:
         bool is_variable(const std::string& key) const;
         //! Checks if the value at \p key is a keyword (e.g. '%vlen')
         bool is_keyword(const std::string& key) const;
-        //! Basic validity check of this port definition. Variables and
-        //  keywords are not resolved.
+        /*! Basic validity check of this port definition. Variables and
+         *  keywords are not resolved.
+         */
         bool is_valid() const;
         //! Returns a string with the most important keys
         std::string to_string() const;
@@ -98,9 +100,10 @@ public:
     //! Returns the full list of port numbers used
     virtual std::vector<size_t> get_all_port_numbers() = 0;
 
-    //! Returns the args for this block. Checks if args are valid.
-    //
-    // \throws uhd::runtime_error if args are invalid.
+    /*! \brief Returns the args for this block. Checks if args are valid.
+     *
+     * \throws uhd::runtime_error if args are invalid.
+     */
     virtual args_t get_args() = 0;
 
     //! Returns a list of settings registers by name.

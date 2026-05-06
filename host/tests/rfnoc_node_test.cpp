@@ -34,15 +34,17 @@ public:
         });
     }
 
-    //! Register a property for the second time, with the goal of triggering an
-    // exception
+    /*! \brief Register a property for the second time, with the goal of triggering an
+     * exception.
+     */
     void double_register()
     {
         register_property(&_double_prop_user);
     }
 
-    //! Register an identical property for the first time, with the goal of
-    // triggering an exception
+    /*! \brief Register an identical property for the first time, with the goal of
+     * triggering an exception.
+     */
     void double_register_input()
     {
         property_t<double> double_prop_in{
@@ -50,16 +52,18 @@ public:
         register_property(&double_prop_in);
     }
 
-    //! This should throw an error because the property in the output isn't
-    // registered
+    /*! \brief This should throw an error because the property in the output isn't
+     * registered.
+     */
     void add_unregistered_resolver_in()
     {
         property_t<double> temp{"temp", 0.0, {res_source_info::INPUT_EDGE, 5}};
         add_property_resolver({&temp}, {}, []() { std::cout << "foo" << std::endl; });
     }
 
-    //! This should throw an error because the property in the output isn't
-    // registered
+    /*! \brief This should throw an error because the property in the output isn't
+     * registered.
+     */
     void add_unregistered_resolver_out()
     {
         property_t<double> temp{"temp", 0.0, {res_source_info::INPUT_EDGE, 5}};

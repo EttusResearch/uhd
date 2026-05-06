@@ -44,10 +44,11 @@ size_t map_rx_band(const rx_band band)
     return RX_HIGHBAND;
 }
 
-//! Maps gain index -> gain_tuple_t
-//
-// Note: This is an int, for easier lookups. We're basically hardcoding the
-// knowledge that the gain map has a 1 dB granularity.
+/*! \brief Maps gain index -> gain_tuple_t.
+ *
+ * Note: This is an int, for easier lookups. We're basically hardcoding the
+ * knowledge that the gain map has a 1 dB granularity.
+ */
 using gain_tuple_map_t = std::map<int, gain_tuple_t>;
 
 //! Maps band -> gain_tuple_map_t

@@ -385,8 +385,10 @@ private:
     /**************************************************************************
      * Private Methods
      *************************************************************************/
-    //! Identify sync category according to Section 8.1.6 of the datasheet. This
-    // function implements the flowchart (Fig. 170).
+    /*! \brief Identify sync category according to Section 8.1.6 of the datasheet.
+     *
+     * This function implements the flowchart (Fig. 170).
+     */
     sync_cat _get_sync_cat(
         const uint8_t M, const double fOSC, const double fOUT, const uint16_t CHDIV)
     {
@@ -447,10 +449,12 @@ private:
         return CAT1A;
     }
 
-    //! Enable/disable register readback mode enabled
-    // SPI MISO is multiplexed to lock detect and register readback. Reading
-    // any register when the mux is set to lock detect will return just the
-    // lock detect signal, so ensure we're in readback mode if reads desired
+    /*! \brief Enable/disable register readback mode enabled.
+     *
+     * SPI MISO is multiplexed to lock detect and register readback. Reading
+     * any register when the mux is set to lock detect will return just the
+     * lock detect signal, so ensure we're in readback mode if reads desired
+     */
     void _enable_register_readback(const bool enable)
     {
         auto desired_state =
@@ -462,10 +466,11 @@ private:
         }
     }
 
-    //! Sets the output divider registers
-    //
-    // Configures both the output divider and the output mux. If the divider is
-    // used, the mux input is set to CHDIV, otherwise, it's set to VCO.
+    /*! \brief Sets the output divider registers.
+     *
+     * Configures both the output divider and the output mux. If the divider is
+     * used, the mux input is set to CHDIV, otherwise, it's set to VCO.
+     */
     uint16_t _set_output_divider(const double freq)
     {
         // clang-format off
@@ -528,12 +533,13 @@ private:
         _regs.mash_rst_count_lower = uhd::narrow_cast<uint16_t>(mash_rst_count);
     }
 
-    //! Calculate and set the mult_hi register
-    //
-    // Sets the MULT_HI bit (needs to be high if the multiplier output frequency
-    // is larger than 100 MHz).
-    //
-    //  \param ref_frequency The OSCin signal's frequency.
+    /*! \brief Calculate and set the mult_hi register.
+     *
+     * Sets the MULT_HI bit (needs to be high if the multiplier output frequency
+     * is larger than 100 MHz).
+     *
+     *  \param ref_frequency The OSCin signal's frequency.
+     */
     void _compute_and_set_mult_hi(const double fOSC)
     {
         const double fMULTout =
@@ -676,13 +682,14 @@ private:
             _regs.mult == 1 || _regs.osc_2x == lmx2572_regs_t::osc_2x_t::OSC_2X_DISABLED);
     }
 
-    //! Set the value of VCO_PHASE_SYNC_EN according to our sync category
-    //
-    // Assumption: outa_mux and outb_mux have already been appropriately
-    // programmed for this use case.
-    //
-    // Also calculates the P-value (see set_frequency() for more discussion on
-    // that value).
+    /*! \brief Set the value of VCO_PHASE_SYNC_EN according to our sync category.
+     *
+     * Assumption: outa_mux and outb_mux have already been appropriately
+     * programmed for this use case.
+     *
+     * Also calculates the P-value (see set_frequency() for more discussion on
+     * that value).
+     */
     int _set_phase_sync(const sync_cat cat)
     {
         int P = 1;
@@ -740,10 +747,10 @@ private:
     }
 
     //! Compute and set charge pump gain register
-    // TODO: Charge pump settings will eventually come from a
-    // lookup table in the Cal EEPROM for Charge Pump setting vs. F_CORE VCO_.
     void _compute_and_set_charge_pump_gain(const double fVCO_actual, const double N_real)
     {
+        // TODO: Charge pump settings will eventually come from a
+        // lookup table in the Cal EEPROM for Charge Pump setting vs. F_CORE VCO_.
         // clang-format off
         // Table 135 (VCO Gain)
         const std::map<
@@ -794,9 +801,11 @@ private:
         _regs.cpg         = cpg;
     }
 
-    //! Compute and set VCO calibration values
-    // This method implements VCO partial assist calibration
-    // See datasheet (Section 8.1.4.1)
+    /*! \brief Compute and set VCO calibration values.
+     *
+     * This method implements VCO partial assist calibration
+     * See datasheet (Section 8.1.4.1)
+     */
     void _compute_and_set_vco_cal(const double fVCO_actual)
     {
         // clang-format off

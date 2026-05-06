@@ -45,8 +45,9 @@ public:
     //! Return a list of sections
     std::vector<std::string> sections();
 
-    //! Return a list of options (keys) in a section, or an empty list if
-    //  section does not exist
+    /*! \brief Return a list of options (keys) in a section, or an empty list if
+     *  section does not exist.
+     */
     std::vector<std::string> options(const std::string& section);
 
     /*! Return the value of a key

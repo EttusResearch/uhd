@@ -22,9 +22,10 @@ public:
 
     enum mux_in_t { DIVIDER, VCO, HIGH_IMPEDANCE, SYSREF };
 
-    //! Category of phase sync procedure. See Section 8.1.6 ("Application for
-    // SYNC") in the datasheet. Category NONE applies when no phase
-    // synchronization is required.
+    /*! Category of phase sync procedure. See Section 8.1.6 ("Application for
+     * SYNC") in the datasheet. Category NONE applies when no phase
+     * synchronization is required.
+     */
     enum sync_cat { CAT1A, CAT1B, CAT2, CAT3, CAT4, NONE };
 
     //! Write functor: Take address / data pair, craft SPI transaction
@@ -36,12 +37,13 @@ public:
     //! Sleep functor: sleep for the specified time
     using sleep_fn_t = std::function<void(const uhd::time_spec_t&)>;
 
-    //! Factory
-    //
-    // \param write SPI write function object
-    // \param read SPI read function object
-    // \param sleep sleep function object
-    // \param log_id Log identifier
+    /*! \brief Factory.
+     *
+     * \param write SPI write function object
+     * \param read SPI read function object
+     * \param sleep sleep function object
+     * \param log_id Log identifier
+     */
     static sptr make(write_fn_t&& poke16,
         read_fn_t&& peek16,
         sleep_fn_t&& sleep,
@@ -62,10 +64,11 @@ public:
     //! Returns True if the PLL is locked, False otherwise.
     virtual bool get_lock_status() = 0;
 
-    //! Enables or disables the phase synchronization
-    //
-    // NOTE: This does not write anything to the device, it just sets the
-    // VCO_PHASE_SYNC_EN high.
+    /*! \brief Enables or disables the phase synchronization.
+     *
+     * NOTE: This does not write anything to the device, it just sets the
+     * VCO_PHASE_SYNC_EN high.
+     */
     virtual void set_sync_mode(const bool enable) = 0;
 
     //! Returns the enabled/disabled state of the phase synchronization
@@ -80,29 +83,31 @@ public:
     //! Returns whether the output is enabled
     virtual bool get_output_enabled(const output_t output) = 0;
 
-    //! Sets the output power
-    //
-    // \param output Choose which output to control
-    // \param power Power control bits. Higher values mean more power, but the
-    //              function that maps power control bits to power is non-linear,
-    //              and it is also frequency-dependent. For more detail, check
-    //              the data sheet, section 8.1.5.1. Ballpark numbers: 0 dBm is
-    //              at about power==27, over 35 the increase becomes "not obvious".
+    /*! \brief Sets the output power.
+     *
+     * \param output Choose which output to control
+     * \param power Power control bits. Higher values mean more power, but the
+     *              function that maps power control bits to power is non-linear,
+     *              and it is also frequency-dependent. For more detail, check
+     *              the data sheet, section 8.1.5.1. Ballpark numbers: 0 dBm is
+     *              at about power==27, over 35 the increase becomes "not obvious".
+     */
     virtual void set_output_power(const output_t output, const uint8_t power) = 0;
 
     //! Sets the OUTA_MUX or OUTB_MUX input
     virtual void set_mux_input(const output_t output, const mux_in_t input) = 0;
 
-    //! Set the output frequency
-    //
-    // A note on phase synchronization: If set_sync_mode(true) was called
-    // previously, then this method will set up the PLL in a phase-sync mode.
-    // However, this specific implementation assumes that the SYNC pin is
-    // populated, and will be pulsed after calling this command.
-    //
-    // \param target_freq The target frequency
-    // \param ref_freq The input reference frequency
-    // \param spur_dodging Set to true to enable spur dodging
+    /*! \brief Set the output frequency.
+     *
+     * A note on phase synchronization: If set_sync_mode(true) was called
+     * previously, then this method will set up the PLL in a phase-sync mode.
+     * However, this specific implementation assumes that the SYNC pin is
+     * populated, and will be pulsed after calling this command.
+     *
+     * \param target_freq The target frequency
+     * \param ref_freq The input reference frequency
+     * \param spur_dodging Set to true to enable spur dodging
+     */
     virtual double set_frequency(
         const double target_freq, const double ref_freq, const bool spur_dodging) = 0;
 };

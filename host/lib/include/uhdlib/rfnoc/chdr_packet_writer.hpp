@@ -23,22 +23,23 @@ namespace uhd { namespace rfnoc { namespace chdr {
 // Generic CHDR Packet Container
 //----------------------------------------------------
 
-//! A container class that wraps a generic buffer that contains a CHDR packet.
-//
-// The container provides a high level API to read and write the header,
-// metadata and payload of the packet. The payload can be accessed as a generic
-// buffer using this interface, making it suitable for data packets.
-//
-// Note that this class does not own or free the packet buffer, it only allows
-// interpreting the packet buffer as a CHDR packet. Care must be taken not to
-// use this class once the buffer pointer has been invalidated. For this reason,
-// a single chdr_packet_writer instance may be reused for multiple CHDR packets.
-//
-// This class is designed to be low-overhead and is suitable for usage in
-// high-performance code sections.
-//
-// To obtain an instance of a chdr_packet_writer, use
-// uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
+/*! \brief A container class that wraps a generic buffer that contains a CHDR packet.
+ *
+ * The container provides a high level API to read and write the header,
+ * metadata and payload of the packet. The payload can be accessed as a generic
+ * buffer using this interface, making it suitable for data packets.
+ *
+ * Note that this class does not own or free the packet buffer, it only allows
+ * interpreting the packet buffer as a CHDR packet. Care must be taken not to
+ * use this class once the buffer pointer has been invalidated. For this reason,
+ * a single chdr_packet_writer instance may be reused for multiple CHDR packets.
+ *
+ * This class is designed to be low-overhead and is suitable for usage in
+ * high-performance code sections.
+ *
+ * To obtain an instance of a chdr_packet_writer, use
+ * uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
+ */
 class chdr_packet_writer
 {
 public:
@@ -190,23 +191,24 @@ public:
 // Container for specific CHDR Packets
 //----------------------------------------------------
 
-//! A container class that wraps a generic buffer that contains a CHDR packet.
-//
-// The container provides a high level API to read and write the header,
-// metadata and payload of the packet. The payload can be accessed as
-// a specific type that will be serialized and deserialized appropriately. This
-// makes it suitable for control, stream status/command, and management packets.
-//
-// Note that this class does not own or free the packet buffer, it only allows
-// interpreting the packet buffer as a CHDR packet. Care must be taken not to
-// use this class once the buffer pointer has been invalidated. For this reason,
-// a single chdr_packet_writer instance may be reused for multiple CHDR packets.
-//
-// This class is designed to be low-overhead and is suitable for usage in
-// high-performance code sections.
-//
-// To obtain an instance of a chdr_packet_writer, use
-// uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
+/*! \brief A container class that wraps a generic buffer that contains a CHDR packet.
+ *
+ * The container provides a high level API to read and write the header,
+ * metadata and payload of the packet. The payload can be accessed as
+ * a specific type that will be serialized and deserialized appropriately. This
+ * makes it suitable for control, stream status/command, and management packets.
+ *
+ * Note that this class does not own or free the packet buffer, it only allows
+ * interpreting the packet buffer as a CHDR packet. Care must be taken not to
+ * use this class once the buffer pointer has been invalidated. For this reason,
+ * a single chdr_packet_writer instance may be reused for multiple CHDR packets.
+ *
+ * This class is designed to be low-overhead and is suitable for usage in
+ * high-performance code sections.
+ *
+ * To obtain an instance of a chdr_packet_writer, use
+ * uhd::rfnoc::chdr::chdr_packet_factory::make_generic().
+ */
 template <typename payload_t>
 class chdr_packet_writer_specific
 {
@@ -224,19 +226,21 @@ public:
     ~chdr_packet_writer_specific() = default;
 
     //! Updates the underlying storage of this packet. This is a const method and is
-    //  only useful for read-only access.
+    //!  only useful for read-only access.
     inline void refresh(const void* pkt_buff) const
     {
         _chdr_pkt->refresh(pkt_buff);
     }
 
-    //! Updates the underlying storage of this packet, and populates it with the specified
-    //  arguments. This is a non-const method and is useful for read-write access.
-    //
-    // \param pkt_buff Pointer to a buffer that should be populated with the CHDR packet
-    // \param pkt_buff_size Maximum size of the buffer in bytes
-    // \param header The CHDR header to fill into the CHDR packet
-    // \param payload The payload to fill into the CHDR packet
+    /*! \brief Updates the underlying storage of this packet, and populates it with the
+     * specified arguments. This is a non-const method and is useful for read-write
+     * access.
+     *
+     * \param pkt_buff Pointer to a buffer that should be populated with the CHDR packet
+     * \param pkt_buff_size Maximum size of the buffer in bytes
+     * \param header The CHDR header to fill into the CHDR packet
+     * \param payload The payload to fill into the CHDR packet
+     */
     inline void refresh(void* pkt_buff,
         size_t pkt_buff_size,
         chdr_header& header,
@@ -301,20 +305,22 @@ typedef chdr_packet_writer_specific<mgmt_payload> chdr_mgmt_packet;
 // CHDR packet factory
 //----------------------------------------------------
 
-//! Factory class for CHDR packet containers.
-//
-// A copyable and movable factory class that is capable of generating generic
-// and specific CHDR packet containers.
+/*! \brief Factory class for CHDR packet containers.
+ *
+ * A copyable and movable factory class that is capable of generating generic
+ * and specific CHDR packet containers.
+ */
 class chdr_packet_factory
 {
 public:
-    //! A parametrized ctor that takes in all the info required to generate a CHDR packet
-    //
-    // \param chdr_w The CHDR width of the remote device
-    // \param endianness The endianness of the link being used (e.g., Ethernet
-    //                   typically uses big-endian, PCIe typically uses
-    //                   little-endian). Note: The host endianness is
-    //                   automatically derived.
+    /*! A parametrized ctor that takes in all the info required to generate a CHDR packet
+     *
+     * \param chdr_w The CHDR width of the remote device
+     * \param endianness The endianness of the link being used (e.g., Ethernet
+     *                   typically uses big-endian, PCIe typically uses
+     *                   little-endian). Note: The host endianness is
+     *                   automatically derived.
+     */
     chdr_packet_factory(chdr_w_t chdr_w, endianness_t endianness);
     chdr_packet_factory()                               = delete;
     chdr_packet_factory(const chdr_packet_factory& rhs) = default;

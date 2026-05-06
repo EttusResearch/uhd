@@ -41,11 +41,12 @@ public:
      */
     uhd::wb_iface::sptr get_ctrl_iface() override;
 
-    //! Initializes attributes relevant to the Ethernet link
-    //
-    // - Calls discover_eth(), which populates eth_conn and _local_device_ids
-    // - Populates _max_frame_sizes based on MTU discovery and device args
-    // - Compares _max_frame_sizes against values requested via device args
+    /*! \brief Initializes attributes relevant to the Ethernet link.
+     *
+     * - Calls discover_eth(), which populates eth_conn and _local_device_ids
+     * - Populates _max_frame_sizes based on MTU discovery and device args
+     * - Compares _max_frame_sizes against values requested via device args
+     */
     void init_link(
         const mboard_eeprom_t& mb_eeprom, const std::string& loaded_fpga_image);
 
@@ -104,12 +105,13 @@ private:
         return eth_conns.at(_local_device_ids.at(0));
     }
 
-    //! Create a factory function for UDP traffic
-    //
-    // \note This is static rather than local to x300_eth_mgr.cpp to get access
-    //       to udp_simple_factory_t
-    // \param use_dpdk If true, use a DPDK transport instead of a regular UDP
-    //                 transport
+    /*! \brief Create a factory function for UDP traffic.
+     *
+     * \note This is static rather than local to x300_eth_mgr.cpp to get access
+     *       to udp_simple_factory_t
+     * \param use_dpdk If true, use a DPDK transport instead of a regular UDP
+     *                 transport
+     */
     static udp_simple_factory_t x300_get_udp_factory(const bool use_dpdk);
 
     /*!
@@ -120,13 +122,14 @@ private:
     frame_size_t determine_max_frame_size(
         const std::string& addr, const frame_size_t& user_mtu);
 
-    //! Discover the ethernet connections per motherboard
-    //
-    // - Gets called during init_link()
-    // - Populates eth_conn
-    // - Populates _local_device_ids
-    //
-    // \throws uhd::runtime_error if no Ethernet connections can be found
+    /*! \brief Discover the ethernet connections per motherboard.
+     *
+     * - Gets called during init_link()
+     * - Populates eth_conn
+     * - Populates _local_device_ids
+     *
+     * \throws uhd::runtime_error if no Ethernet connections can be found
+     */
     void discover_eth(
         const uhd::usrp::mboard_eeprom_t mb_eeprom, const std::string& loaded_fpga_image);
 

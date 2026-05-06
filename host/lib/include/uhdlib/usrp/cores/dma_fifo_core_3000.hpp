@@ -34,18 +34,20 @@ public:
     //! Return the fullness of the FIFO in bytes
     virtual uint64_t get_fifo_fullness() = 0;
 
-    //! Get the transfer timeout value for the transfer in memory interface
-    // clock cycles
+    /*! \brief Get the transfer timeout value for the transfer in memory interface
+     * clock cycles
+     */
     virtual uint16_t get_fifo_timeout() = 0;
 
-    //! Set the transfer timeout value for the transfer in memory interface
-    // clock cycles
+    /*! \brief Set the transfer timeout value for the transfer in memory interface
+     * clock cycles
+     */
     virtual void set_fifo_timeout(const uint16_t timeout_cycles) = 0;
 
     /*!
-     * Run the built-in-self-test routine for the DMA FIFO
+     * \brief Run the built-in-self-test routine for the DMA FIFO
      *
-     * Returns an approximation of the RAM throughput.
+     * \return An approximation of the RAM throughput.
      */
     virtual double run_bist(const uint64_t num_bytes, const double timeout_s) = 0;
 

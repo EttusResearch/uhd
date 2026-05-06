@@ -46,9 +46,11 @@ uhd_error uhd_dboard_eeprom_set_serial(uhd_dboard_eeprom_handle h, const char* s
     UHD_SAFE_C_SAVE_ERROR(h, h->dboard_eeprom_cpp.serial = serial;)
 }
 
-//! Convert a string into an int. If that doesn't work, craft our own exception
-// instead of using the Boost exception. We need to put this separate from the
-// caller function because of macro expansion.
+/*! \brief Convert a string into an int.
+ *
+ * If that doesn't work, craft our own exception instead of using the Boost exception. We
+ * need to put this separate from the caller function because of macro expansion.
+ */
 int _convert_rev_with_exception(const std::string& rev_str)
 {
     try {

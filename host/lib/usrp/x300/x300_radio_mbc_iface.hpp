@@ -50,8 +50,10 @@ public:
     //! Call sync() on the DAC object
     virtual void sync_dac() = 0;
 
-    //! Set the FRAMEP/N sync pulse. If time is not zero, it will do so at the
-    // given time.
+    /*! \brief Set the FRAMEP/N sync pulse.
+     *
+     * If time is not zero, it will do so at the given time.
+     */
     virtual void set_dac_sync(
         const bool enb, const uhd::time_spec_t& time = uhd::time_spec_t(0.0)) = 0;
 

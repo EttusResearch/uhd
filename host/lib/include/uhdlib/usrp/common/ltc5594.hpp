@@ -24,11 +24,12 @@ public:
     //! Read functor: Return value given address
     using read_fn_t = std::function<uint8_t(uint8_t)>;
 
-    //! Factory
-    //
-    // \param write SPI write function object
-    // \param read SPI read function object
-    // \param unique_id Unique identifier for logging purposes
+    /*! \brief Factory.
+     *
+     * \param write SPI write function object
+     * \param read SPI read function object
+     * \param unique_id Unique identifier for logging purposes
+     */
     static sptr make(
         write_fn_t&& poke16, read_fn_t&& peek16, const std::string& unique_id);
 
@@ -41,31 +42,36 @@ public:
     //! Performs a reset of the LTC5594 by using the software reset register
     virtual void reset() = 0;
 
-    //! Sets the Single-Ended LO Matching
-    //
-    // \param lo_freq The LO frequency in Hz
+    /*! \brief Sets the Single-Ended LO Matching.
+     *
+     * \param lo_freq The LO frequency in Hz
+     */
     virtual void set_lo_matching(const double lo_freq) = 0;
 
-    //! Enables/disables the SDO readback mode
-    //
-    // \param enable True to enable, False to disable
+    /*! \brief Enables/disables the SDO readback mode.
+     *
+     * \param enable True to enable, False to disable
+     */
     virtual void enable_sdo_readback(const bool enable) = 0;
 
-    //! Sets the phase error adjustment
-    //
-    // \param phase_error_adj The phase error adjustment in degrees
+    /*! \brief Sets the phase error adjustment.
+     *
+     * \param phase_error_adj The phase error adjustment in degrees
+     */
     virtual void set_phase_error_adj(const double phase_error_adj) = 0;
 
-    //! Sets the DC offset adjustment
-    //
-    // \param dc_off_i_adj The DC offset adjustment i component
-    // \param dc_off_q_adj The DC offset adjustment q component
+    /*! \brief Sets the DC offset adjustment.
+     *
+     * \param dc_off_i_adj The DC offset adjustment i component
+     * \param dc_off_q_adj The DC offset adjustment q component
+     */
     virtual void set_dc_offset_adj(
         const double dc_off_i_adj, const double dc_off_q_adj) = 0;
 
-    //! Sets the gain error adjustment
-    //
-    // \param gain_err_adj The gain error adjustment value
+    /*! \brief Sets the gain error adjustment.
+     *
+     * \param gain_err_adj The gain error adjustment value
+     */
     virtual void set_gain_err_adj(const double gain_err_adj) = 0;
 };
 //! Used for LTC5594 LO matching

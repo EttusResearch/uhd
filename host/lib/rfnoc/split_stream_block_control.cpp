@@ -28,8 +28,9 @@ public:
         const size_t num_branches     = num_output_ports / num_input_ports;
         UHD_ASSERT_THROW((num_output_ports % num_input_ports == 0) && (num_branches > 1));
 
-        //! Little helper to calculate the output port number given the branch
-        // (0..num_branches) and stream (0..num_input_ports()) numbers.
+        /*! \brief Little helper to calculate the output port number given the branch
+         * (0..num_branches) and stream (0..num_input_ports()) numbers.
+         */
         auto calculate_output_port = [num_input_ports, num_branches](
                                          size_t branch, size_t stream) -> size_t {
             UHD_ASSERT_THROW(branch < num_branches);

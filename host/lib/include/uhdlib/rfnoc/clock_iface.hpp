@@ -63,8 +63,9 @@ public:
         return _freq;
     }
 
-    //! If the clock is immutable, this will throw if freq is different from the
-    // current frequency.
+    /*! If the clock is immutable, this will throw if freq is different from the
+     *  current frequency.
+     */
     inline void set_freq(double freq)
     {
         if (!_is_mutable && freq != _freq.load()) {

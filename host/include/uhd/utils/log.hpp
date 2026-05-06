@@ -281,10 +281,12 @@ UHD_API void set_logger_level(const std::string& logger, uhd::log::severity_leve
 #define RFNOC_LOG_FATAL(message)   UHD_LOG_FATAL(this->get_unique_id(), message)
 
 #ifndef UHD_LOG_FASTPATH_DISABLE
-//! Extra-fast logging macro for when speed matters.
-// No metadata is tracked. Only the message is displayed. This does not go
-// through the regular backends. Mostly used for printing the UOSDL characters
-// during streaming.
+/*! \brief Extra-fast logging macro for when speed matters.
+ *
+ * No metadata is tracked. Only the message is displayed. This does not go
+ * through the regular backends. Mostly used for printing the UOSDL characters
+ * during streaming.
+ */
 #    define UHD_LOG_FASTPATH(message) uhd::_log::log_fastpath(message);
 #else
 #    define UHD_LOG_FASTPATH(message)

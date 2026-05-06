@@ -135,9 +135,11 @@ std::string check_option_valid(const std::string& name,
 /***********************************************************************
  * Discovery
  **********************************************************************/
-//! Look up the type of B-Series device we're currently running.
-//  Throws a uhd::runtime_error if the USB PID and the product ID stored
-//  in the MB EEPROM are invalid,
+/*! \brief Look up the type of B-Series device we're currently running.
+ *
+ *  Throws a uhd::runtime_error if the USB PID and the product ID stored
+ *  in the MB EEPROM are invalid.
+ */
 b200_product_t get_b200_product(
     const usb_device_handle::sptr& handle, const mboard_eeprom_t& mb_eeprom)
 {

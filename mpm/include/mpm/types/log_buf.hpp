@@ -67,8 +67,9 @@ public:
         const std::string& component,
         const std::string& message);
 
-    //! Use this to set a callback that gets called when a new message was
-    //  posted.
+    /*! Use this to set a callback that gets called when a new message was
+     *  posted.
+     */
     void set_notify_callback(std::function<void(void)> callback);
 
     std::tuple<log_level_t, std::string, std::string> pop();

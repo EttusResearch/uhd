@@ -122,11 +122,12 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t& args) override;
     bool recv_async_msg(uhd::async_metadata_t&, double) override;
 
-    //! Check that the combination of stream args and tick rate are valid.
-    //
-    // Basically figures out the arguments for enforce_tick_rate_limits()
-    // and calls said method. If arguments are invalid, throws a
-    // uhd::value_error.
+    /*! \brief Check that the combination of stream args and tick rate are valid.
+     *
+     * Basically figures out the arguments for enforce_tick_rate_limits()
+     * and calls said method. If arguments are invalid, throws a
+     * uhd::value_error.
+     */
     void check_streamer_args(const uhd::stream_args_t& args,
         double tick_rate,
         const std::string& direction = "");
@@ -137,8 +138,9 @@ private:
     b200_product_t _product;
     size_t _revision;
     bool _gpsdo_capable;
-    //! This flag is true if the FPGA has custom (user) registers and access to
-    // those needs to be enabled from software.
+    /*! This flag is true if the FPGA has custom (user) registers and access to
+     * those needs to be enabled from software.
+     */
     const bool _enable_user_regs;
 
     // controllers

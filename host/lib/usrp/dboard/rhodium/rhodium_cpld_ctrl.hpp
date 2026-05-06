@@ -16,10 +16,11 @@
 #include <mutex>
 #include <vector>
 
-//! Controls the CPLD on a Rhodium daughterboard
-//
-// Setters are thread-safe through lock guards. This lets a CPLD control object
-// be shared by multiple owners.
+/*! \brief Controls the CPLD on a Rhodium daughterboard.
+ *
+ * Setters are thread-safe through lock guards. This lets a CPLD control object
+ * be shared by multiple owners.
+ */
 class rhodium_cpld_ctrl
 {
 public:
@@ -137,24 +138,26 @@ public:
     //! Reset all registers to their default state
     void reset();
 
-    //! Return the current value of register at \p addr.
-    //
-    // Note: This will initiate a SPI transaction, it doesn't read from the
-    // internal register cache. However, it won't actually update the register
-    // cache.
+    /*! \brief Return the current value of register at \p addr.
+     *
+     * Note: This will initiate a SPI transaction, it doesn't read from the
+     * internal register cache. However, it won't actually update the register
+     * cache.
+     */
     uint16_t get_reg(const uint8_t addr);
 
     //! Set the value of the scratch register (has no effect on chip functions)
     void set_scratch(const uint16_t val);
 
-    //! Get the value of the scratch reg.
-    //
-    // This should be zero unless set_scratch() was called beforehand (note
-    // that _loopback_test() will also call set_scratch()). If set_scratch()
-    // was previously called, this should return the previously written value.
-    //
-    // Note: This will call get_reg(), and not simply return the value of the
-    // internal cache.
+    /*! \brief Get the value of the scratch reg.
+     *
+     * This should be zero unless set_scratch() was called beforehand (note
+     * that _loopback_test() will also call set_scratch()). If set_scratch()
+     * was previously called, this should return the previously written value.
+     *
+     * Note: This will call get_reg(), and not simply return the value of the
+     * internal cache.
+     */
     uint16_t get_scratch();
 
     /*! Frequency-related settings, transmit side
@@ -269,16 +272,18 @@ private:
     //! Read function: Return value given address
     using read_reg_fn_t = std::function<uint32_t(uint32_t)>;
 
-    //! Dump the state of the registers into the CPLD
-    //
-    // \param save_all If true, save all registers. If false, only change those
-    //                 that changes recently.
+    /*! \brief Dump the state of the registers into the CPLD.
+     *
+     * \param save_all If true, save all registers. If false, only change those
+     *                 that changes recently.
+     */
     void commit(const bool save_all = false);
 
-    //! Writes to the scratch reg and reads again. Throws on failure.
-    //
-    // Note: This is not thread-safe. Accesses to the scratch reg are not
-    // atomic. Only call this from a thread-safe environment, please.
+    /*! \brief Writes to the scratch reg and reads again. Throws on failure.
+     *
+     * Note: This is not thread-safe. Accesses to the scratch reg are not
+     * atomic. Only call this from a thread-safe environment, please.
+     */
     void _loopback_test();
 
     //! Write function for regs pokes

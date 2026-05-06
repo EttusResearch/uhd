@@ -29,17 +29,19 @@ public:
     //! Set the RF band to be used.
     void set_rf_band(const admv1420_iface::rf_band_t band);
 
-    //! Set the attentuation value for DSAs 1-5 (in dB)
-    //
-    // \param dsa The DSA to set
-    // \param value The attenuation value to set (0-15 dB, DSA2 only 0 or 6 dB)
-    // \return The value set for the DSA
+    /*! \brief Set the attentuation value for DSAs 1-5 (in dB).
+     *
+     * \param dsa The DSA to set
+     * \param value The attenuation value to set (0-15 dB, DSA2 only 0 or 6 dB)
+     * \return The value set for the DSA
+     */
     uint8_t set_dsa(const admv1420_iface::dsa_t dsa, uint8_t value);
 
-    //! Get the attenuation value for DSAs 1-5 (in dB)
-    //
-    // \param dsa The DSA to get
-    // \return The value set for the DSA
+    /*! \brief Get the attenuation value for DSAs 1-5 (in dB).
+     *
+     * \param dsa The DSA to get
+     * \return The value set for the DSA
+     */
     uint8_t get_dsa(const admv1420_iface::dsa_t dsa);
 
     //! Set the lo_x3 filter according to the given frequency
@@ -53,16 +55,17 @@ public:
         const admv1420_iface::rf_band_t admv_band,
         const double freq);
 
-    //! Sets a compound DSA value
-    //
-    // \param value The compound DSA value to set
-    // \return The values set for all DSAs 1 to 5
+    /*! \brief Sets a compound DSA value.
+     *
+     * \param value The compound DSA value to set
+     * \return The values set for all DSAs 1 to 5
+     */
     uint8_t set_compound_dsa(const uint8_t value);
 
-    //! Get the compound DSA value for the current band
+    //! Get the compound DSA value for the current band.
     uint8_t get_compound_dsa();
 
-    //! Get the maximum compound DSA value for the current band
+    //! Get the maximum compound DSA value for the current band.
     uint8_t get_max_compound_dsa();
 
 private:

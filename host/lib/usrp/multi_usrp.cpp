@@ -2715,9 +2715,10 @@ private:
         return gg;
     }
 
-    //! \param is_tx True for tx
-    // Assumption is that all mboards use the same link
-    // and that the rate sum is evenly distributed among the mboards
+    /*! \param is_tx True for tx
+     * Assumption is that all mboards use the same link
+     * and that the rate sum is evenly distributed among the mboards
+     */
     bool _check_link_rate(const stream_args_t& args, bool is_tx)
     {
         bool link_rate_is_ok    = true;

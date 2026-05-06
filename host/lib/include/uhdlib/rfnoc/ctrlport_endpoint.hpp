@@ -30,27 +30,28 @@ public:
 
     ~ctrlport_endpoint() override = 0;
 
-    //! Handles an incoming control packet (request and response)
-    //
-    // \param rx_ctrl The control payload of the received packet
-    //
+    /*! \brief Handles an incoming control packet (request and response).
+     *
+     * \param rx_ctrl The control payload of the received packet
+     */
     virtual void handle_recv(const chdr::ctrl_payload& rx_ctrl) = 0;
 
-    //! Provide an identifier for logging purposes
-    //
-    // \param log_id The new log identifier to use when logging in this module
+    /*! Provide an identifier for logging purposes
+     *
+     * \param log_id The new log identifier to use when logging in this module
+     */
     virtual void set_log_id(const std::string& log_id) = 0;
 
-    //! Creates a new register interface (ctrl_portendpoint)
-    //
-    // \param handle_send The function to call to send a control packet
-    // \param my_epid The endpoint ID of the SW control stream endpoint
-    // \param port The port number on the control crossbar
-    // \param buff_capacity The buffer capacity of the downstream buff in 32-bit words
-    // \param max_outstanding_async_msgs Max outstanding async messages allowed
-    // \param ctrl_clk_freq Frequency of the clock driving the ctrlport logic
-    // \param timebase_freq Frequency of the timebase (for timed commands)
-    //
+    /*! \brief Creates a new register interface (ctrl_portendpoint).
+     *
+     * \param handle_send The function to call to send a control packet
+     * \param my_epid The endpoint ID of the SW control stream endpoint
+     * \param port The port number on the control crossbar
+     * \param buff_capacity The buffer capacity of the downstream buff in 32-bit words
+     * \param max_outstanding_async_msgs Max outstanding async messages allowed
+     * \param ctrl_clk_freq Frequency of the clock driving the ctrlport logic
+     * \param timebase_freq Frequency of the timebase (for timed commands)
+     */
     static sptr make(const send_fn_t& handle_send,
         sep_id_t my_epid,
         uint16_t local_port,

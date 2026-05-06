@@ -49,9 +49,10 @@ public:
     /**************************************************************************
      * Timekeeper API
      *************************************************************************/
-    //! MPM-specific version of the timekeeper controls
-    //
-    // MPM devices talk to MPM via RPC to control the timekeeper
+    /*! \brief MPM-specific version of the timekeeper controls.
+     *
+     * MPM devices talk to MPM via RPC to control the timekeeper
+     */
     class mpmd_timekeeper : public mb_controller::timekeeper
     {
     public:

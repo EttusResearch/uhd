@@ -389,50 +389,56 @@ protected:
     //! Block-specific register interface
     multichan_register_iface _radio_reg_iface;
 
-    //! Power manager for RX power cal. If the radio doesn't have a power API,
-    // simply leave these empty.
+    /*! Power manager for RX power cal. If the radio doesn't have a power API,
+     * simply leave these empty.
+     */
     std::vector<uhd::usrp::pwr_cal_mgr::sptr> _rx_pwr_mgr;
-    //! Power manager for TX power cal. If the radio doesn't have a power API,
-    // simply leave these empty.
+    /*! Power manager for TX power cal. If the radio doesn't have a power API,
+     * simply leave these empty.
+     */
     std::vector<uhd::usrp::pwr_cal_mgr::sptr> _tx_pwr_mgr;
 
     rf_control::gain_profile_iface::sptr _tx_gain_profile_api;
     rf_control::gain_profile_iface::sptr _rx_gain_profile_api;
 
 private:
-    //! Validator for the async messages
-    //
-    // We only know about overruns, underruns, and late commands/packets.
+    /*! \brief Validator for the async messages.
+     *
+     * We only know about overruns, underruns, and late commands/packets.
+     */
     bool async_message_validator(uint32_t addr, const std::vector<uint32_t>& data);
 
-    //! Receiver for the async messages
-    //
-    // This block will receive all async messages. The following async messages
-    // are expected to show up:
-    // - Overrun info
-    // - Underrun info
-    // - Late data packets
+    /*! \brief Receiver for the async messages.
+     *
+     * This block will receive all async messages. The following async messages
+     * are expected to show up:
+     * - Overrun info
+     * - Underrun info
+     * - Late data packets
+     */
     void async_message_handler(uint32_t addr,
         const std::vector<uint32_t>& data,
         std::optional<uint64_t> timestamp);
 
-    //! Return the maximum samples per packet of size \p bytes
-    //
-    // Given a packet of size \p bytes, how many samples can we fit in there?
-    // This gives the answer, factoring in item size and samples per clock.
-    //
-    // \param bytes Number of bytes we can fill with samples (excluding bytes
-    //              required for CHDR headers!)
+    /*! \brief Return the maximum samples per packet of size \p bytes.
+     *
+     * Given a packet of size \p bytes, how many samples can we fit in there?
+     * This gives the answer, factoring in item size and samples per clock.
+     *
+     * \param bytes Number of bytes we can fill with samples (excluding bytes
+     *              required for CHDR headers!)
+     */
     int get_max_spp(const size_t bytes);
 
-    //! Calculates and apply the RF tune frequencies
-    //
-    // Calculates the target frequency based on the incoming tune request.
-    // Sets the RF frequency and updates the tune request action info.
-    //
-    // \param tune_request_action shared pointer to tune_request_action_info
-    // \param set_rf_freq Lambda function to set the frequency
-    // \param get_rf_freq Lambda function to get the current frequency
+    /*! \brief Calculates and apply the RF tune frequencies.
+     *
+     * Calculates the target frequency based on the incoming tune request.
+     * Sets the RF frequency and updates the tune request action info.
+     *
+     * \param tune_request_action shared pointer to tune_request_action_info
+     * \param set_rf_freq Lambda function to set the frequency
+     * \param get_rf_freq Lambda function to get the current frequency
+     */
     void apply_and_update_tune_request(tune_request_action_info::sptr tune_request_action,
         std::function<void(double)> set_rf_freq,
         std::function<double()> get_rf_freq);

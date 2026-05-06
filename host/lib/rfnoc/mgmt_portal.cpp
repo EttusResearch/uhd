@@ -775,11 +775,12 @@ private: // Functions
         }
     }
 
-    //! Add hops to the management transaction to reach the specified node
-    //
-    // The typical use case is to add a management transaction that's aimed at
-    // the node after \p dst_node. If the intention is to add a management
-    // transaction for \p dst_node itself, then set \p dst_is_target to true.
+    /*! \brief Add hops to the management transaction to reach the specified node.
+     *
+     * The typical use case is to add a management transaction that's aimed at
+     * the node after \p dst_node. If the intention is to add a management
+     * transaction for \p dst_node itself, then set \p dst_is_target to true.
+     */
     topo_edge_t _traverse_to_node(mgmt_payload& transaction,
         const topo_node_t& dst_node,
         const sep_id_t my_epid,

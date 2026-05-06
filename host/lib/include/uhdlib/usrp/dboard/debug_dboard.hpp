@@ -518,10 +518,11 @@ private:
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
 
-    //! Reference to this block's subtree
-    //
-    // It is mutable because _tree->access<>(..).get() is not const, but we
-    // need to do just that in some const contexts
+    /*! \brief Reference to this block's subtree.
+     *
+     * It is mutable because _tree->access<>(..).get() is not const, but we
+     * need to do just that in some const contexts
+     */
     mutable uhd::property_tree::sptr _tree;
 
     std::string _get_tx_path_from_mux(const std::string mux)

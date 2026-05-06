@@ -51,37 +51,40 @@ public:
     //! Return a string like this: "0/FFT#1" (includes all components, if set)
     std::string to_string() const;
 
-    //! Check if a given string is valid as a block name.
-    //
-    // Note: This only applies to the block *name*, not the entire block ID.
-    // Examples:
-    // * is_valid_blockname("FFT") will return true.
-    // * is_valid_blockname("FIR#Filter") will return false, because a # symbol
-    //   is not allowed in a block name. Only alphanumerical characters and
-    //   underscores are allowed.
-    //
-    // Internally, this matches the string with uhd::rfnoc::VALID_BLOCKNAME_REGEX.
+    /*! \brief Check if a given string is valid as a block name.
+     *
+     * Note: This only applies to the block *name*, not the entire block ID.
+     * Examples:
+     * * is_valid_blockname("FFT") will return true.
+     * * is_valid_blockname("FIR#Filter") will return false, because a # symbol
+     *   is not allowed in a block name. Only alphanumerical characters and
+     *   underscores are allowed.
+     *
+     * Internally, this matches the string with uhd::rfnoc::VALID_BLOCKNAME_REGEX.
+     */
     static bool is_valid_blockname(const std::string& block_name);
 
-    //! Check if a given string is valid as a block ID.
-    //
-    // Note: This does necessary require a complete complete ID. If this returns
-    // true, then it is a valid input for block_id_t::match().
-    //
-    // Examples:
-    // * is_valid_block_id("FFT") will return true.
-    // * is_valid_block_id("0/Filter#1") will return true.
-    // * is_valid_block_id("0/Filter#Foo") will return false.
-    //
-    // Internally, this matches the string with uhd::rfnoc::VALID_BLOCKID_REGEX.
+    /*! \brief Check if a given string is valid as a block ID.
+     *
+     * Note: This does necessary require a complete complete ID. If this returns
+     * true, then it is a valid input for block_id_t::match().
+     *
+     * Examples:
+     * * is_valid_block_id("FFT") will return true.
+     * * is_valid_block_id("0/Filter#1") will return true.
+     * * is_valid_block_id("0/Filter#Foo") will return false.
+     *
+     * Internally, this matches the string with uhd::rfnoc::VALID_BLOCKID_REGEX.
+     */
     static bool is_valid_block_id(const std::string& block_id);
 
-    //! Check if block_str matches this block.
-    //
-    // A match is a less strict version of equality.
-    // Less specific block IDs will match more specific ones,
-    // e.g. "FFT" will match "0/FFT#1", "1/FFT#2", etc.
-    // "FFT#1" will only match the former, etc.
+    /*! \brief Check if block_str matches this block.
+     *
+     * A match is a less strict version of equality.
+     * Less specific block IDs will match more specific ones,
+     * e.g. "FFT" will match "0/FFT#1", "1/FFT#2", etc.
+     * "FFT#1" will only match the former, etc.
+     */
     bool match(const std::string& block_str);
 
     // Getters
@@ -118,13 +121,15 @@ public:
 
     // Setters
 
-    //! Set from string such as "0/FFT#1", "FFT#0", ...
-    //  Returns true if successful (i.e. if string valid)
+    /*! \brief Set from string such as "0/FFT#1", "FFT#0", ...
+     *  Returns true if successful (i.e. if string valid)
+     */
     bool set(const std::string& new_name);
 
-    //! Sets from individual components, like calling set_device_no(), set_block_name()
-    //  and set_block_count() one after another, only if \p block_name is invalid, stops
-    //  and returns false before changing anything
+    /*! Sets from individual components, like calling set_device_no(), set_block_name()
+     *  and set_block_count() one after another, only if \p block_name is invalid, stops
+     *  and returns false before changing anything
+     */
     bool set(const size_t device_no,
         const std::string& block_name,
         const size_t block_ctr = 0);

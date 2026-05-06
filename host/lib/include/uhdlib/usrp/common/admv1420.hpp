@@ -36,11 +36,12 @@ public:
     //! Read functor: Return value given address
     using read_fn_t = std::function<uint16_t(uint32_t)>;
 
-    //! Factory
-    //
-    // \param write SPI write function object
-    // \param read SPI read function object
-    // \param unique_id Unique ID string for logging purposes
+    /*! Factory
+     *
+     * \param write SPI write function object
+     * \param read SPI read function object
+     * \param unique_id Unique ID string for logging purposes
+     */
     static sptr make(
         write_fn_t&& poke16, read_fn_t&& peek16, const std::string& unique_id);
 
@@ -50,100 +51,127 @@ public:
     //! Set the VCM voltage
     virtual void set_vcm(internal_voltage_t voltage) = 0;
 
-    //! Finalize the ADMV init
-    //
-    // This method does not require a commit() afterwards as it pokes the registers
-    // directly.
+    /*! \brief Finalize the ADMV init.
+     *
+     * This method does not require a commit() afterwards as it pokes the registers
+     * directly.
+     */
     virtual void finalize_init() = 0;
 
-    //! Sets the RF band
-    //
-    // Bands are frequency dependent but since they are overlapping they need to be chosen
-    // per application:
-    // Band 0: 0.1 GHz to 2 GHz
-    // Band 1: 1 GHz to 5 GHz
-    // Band 2: 2 GHz to 13 GHz
-    // Band 3: 6 GHz to 20 GHz
+    /*! \brief Sets the RF band.
+     *
+     * Bands are frequency dependent but since they are overlapping they need to be chosen
+     * per application:
+     * Band 0: 0.1 GHz to 2 GHz
+     * Band 1: 1 GHz to 5 GHz
+     * Band 2: 2 GHz to 13 GHz
+     * Band 3: 6 GHz to 20 GHz
+     */
     virtual void set_rf_band(const rf_band_t band) = 0;
 
-    //! Sets the IF band
-    //
-    // IF Band 0: 1 GHz to 5 GHz
-    // IF Band 1: 3 GHz to 13 GHz
+    /*! \brief Sets the IF band.
+     *
+     * IF Band 0: 1 GHz to 5 GHz
+     * IF Band 1: 3 GHz to 13 GHz
+     */
     virtual void set_if_band(const if_band_t if_band) = 0;
 
-    //! Sets the LO X3 filter
-    //
-    // It does this depending on the frequency
+    /*! \brief Sets the LO X3 filter.
+     *
+     * It does this depending on the frequency.
+     */
     virtual void set_lo_x3_filter(const double freq) = 0;
 
-    //! Set LO Sideband
-    //
-    // Enables swapping I and Q.
+    /*! \brief Set LO Sideband.
+     *
+     * Enables swapping I and Q.
+     */
     virtual void set_lo_sideband(const lo_sideband_t sideband) = 0;
 
-    //! Enable/disable filter table
+    /*! \brief Enable/disable filter table.
+     *
+     * \param enable: If true, enable the filter table; otherwise, disable it.
+     */
     virtual void enable_filter_table(const bool enable) = 0;
 
-    //! Enable/disable gain table
+    /*! \brief Enable/disable gain table.
+     *
+     * \param enable: If true, enable the gain table; otherwise, disable it.
+     */
     virtual void enable_gain_table(const bool enable) = 0;
 
-    //! Set DSA value
-    //
-    // \param dsa: The DSA to set
-    // \param value: The attenuation value to set (0-15 dB, DSA2 only 0 or 6 dB)
-    // \return The value set for the DSA
+    /*! \brief Set DSA value.
+     *
+     * \param dsa: The DSA to set
+     * \param value: The attenuation value to set (0-15 dB, DSA2 only 0 or 6 dB)
+     * \return The value set for the DSA
+     */
     virtual uint8_t set_dsa(const dsa_t dsa, const uint8_t value) = 0;
 
-    //! Get DSA value
+    /*! \brief Get DSA value.
+     *
+     * \param dsa: The DSA to get
+     * \return The value of the DSA
+     */
     virtual uint8_t get_dsa(const dsa_t dsa) = 0;
 
-    //! Sets the baseband switch control
+    /*! \brief Sets the baseband switch control.
+     *
+     * \param if_bb_switch_ctrl: BASEBAND or IF
+     */
     virtual void set_if_bb_switch_ctrl(const bb_switch_t if_bb_switch_ctrl) = 0;
 
-    //! Enables/disables powerdown for given components.
-    //
-    // \param components: List of components to be enabled/disabled
-    // \param enable: If enabled, the LNA band is powered down
+    /*! \brief Enables/disables powerdown for given components.
+     *
+     * \param components: List of components to be enabled/disabled
+     * \param enable: If enabled, the LNA band is powered down
+     */
     virtual void set_powerdown(
         const std::vector<pd_comp_t> components, const bool enable) = 0;
 
-    //! Sets the baseband amplifier output common mode voltage select
-    //
-    // \param internal: false if external, true if internal
+    /*! \brief Sets the baseband amplifier output common mode voltage select.
+     *
+     * \param internal: false if external, true if internal
+     */
     virtual void set_bb_amp_output_common_mode_int(const bool internal) = 0;
 
     //! Sets the mix gate bias adjustment mode
     virtual void set_mix_gate_bias_adj_mode(const mix_gate_bias_adj_mode_t mode) = 0;
 
-    //! Sets the absolute mixer gate bias voltage
-    //
-    // Only applies if mixer gate bias adjustment mode is set to manual.
-    // Voltage is set in mV and hardware accepts steps of 50 mV.
+    /*! \brief Sets the absolute mixer gate bias voltage.
+     *
+     * Only applies if mixer gate bias adjustment mode is set to manual.
+     * Voltage is set in mV and hardware accepts steps of 50 mV.
+     */
     virtual double set_mix_gate_bias_voltage(const double voltage) = 0;
 
-    //! Set SDO level (SPI config)
-    //
-    // \param setting: V3_3 for 3.3 V, V1_8 for 1.8 V
+    /*! \brief Set SDO level (SPI config).
+     *
+     * \param setting: V3_3 for 3.3 V, V1_8 for 1.8 V
+     */
     virtual void set_sdo_level(const sdo_level_t setting) = 0;
 
-    //! Selects the Low Pass Filter state source
-    //
-    // \param select: LUT_REG for lookup table or registers, SPI for state by SPI
+    /*! \brief Selects the Low Pass Filter state source.
+     *
+     * \param select: LUT_REG for lookup table or registers, SPI for state by SPI
+     */
     virtual void select_lpf_source(const filter_sel_t select) = 0;
 
-    //! Set the LPF cutoff frequency
-    //
-    // The cutoff freq is inversively propertional to the value passed.
+    /*! \brief Set the LPF cutoff frequency.
+     *
+     * The cutoff freq is inversively propertional to the value passed.
+     */
     virtual void set_lpf_cutoff_freq(const uint8_t value) = 0;
 
-    //! Selects the High Pass Filter state source
-    //
-    // \param select: LUT_REG for lookup table or registers, SPI for state by SPI
+    /*! \brief Selects the High Pass Filter state source.
+     *
+     * \param select: LUT_REG for lookup table or registers, SPI for state by SPI
+     */
     virtual void select_hpf_source(const filter_sel_t select) = 0;
 
-    //! Set the HPF cutoff frequency
-    //
-    // The cutoff freq is inversively propertional to the value passed.
+    /*! \brief Set the HPF cutoff frequency.
+     *
+     * The cutoff freq is inversively propertional to the value passed.
+     */
     virtual void set_hpf_cutoff_freq(const uint8_t value) = 0;
 };

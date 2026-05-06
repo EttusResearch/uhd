@@ -93,9 +93,10 @@ public:
     /**************************************************************************
      * Timekeeper API
      *************************************************************************/
-    //! X300-specific version of the timekeeper controls
-    //
-    // The X300 controls timekeepers via the ZPU
+    /*! \brief X300-specific version of the timekeeper controls.
+     *
+     * The X300 controls timekeepers via the ZPU
+     */
     class x300_timekeeper : public mb_controller::timekeeper
     {
     public:
@@ -193,9 +194,10 @@ private:
     //! Reset all registered DACs and ADCs
     void reset_codecs();
 
-    //! Wait until reference clock locks, or a timeout occurs
-    //
-    // \returns lock status
+    /*! Wait until reference clock locks, or a timeout occurs
+     *
+     * \return lock status
+     */
     bool wait_for_clk_locked(uint32_t which, double timeout);
 
     //! Returns true if a PPS signal is detected
@@ -261,8 +263,9 @@ private:
     //! List of available sensors
     std::unordered_set<std::string> _sensors{"ref_locked", "temp_fpga"};
 
-    //! Flag to tell us if initialization is complete. Some functions behave
-    // differently after initialization.
+    /*! Flag to tell us if initialization is complete. Some functions behave
+     * differently after initialization.
+     */
     bool _initialization_done = false;
 };
 

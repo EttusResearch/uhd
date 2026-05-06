@@ -101,10 +101,10 @@ public:
     }
 
     //! Connect a new channel to the streamer
-    // FIXME: Needs some way to handle virtual channels, since xport could be shared among
-    // them
     virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
+        // FIXME: Needs some way to handle virtual channels, since xport could be shared
+        // among them.
         const size_t mtu = xport->get_mtu();
         _hdr_len         = std::max(_hdr_len, xport->get_chdr_hdr_len());
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
@@ -268,8 +268,9 @@ protected:
         return _mtu;
     }
 
-    //! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
-    // reduced accordingly.
+    /*! Sets the MTU and checks spp. If spp would exceed the new MTU, it is
+     * reduced accordingly.
+     */
     void set_mtu(const size_t mtu)
     {
         _mtu                      = mtu;

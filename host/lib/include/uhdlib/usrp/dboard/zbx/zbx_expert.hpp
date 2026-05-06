@@ -27,11 +27,12 @@ namespace uhd { namespace usrp { namespace zbx {
 
 namespace {
 
-//! Depending on the given \p lo_step_size, this will return a valid frequency
-// range on a quantized grid for the the LOs. The lower limit of this range will
-// never be smaller than LMX2572_MIN_FREQ and the upper frequency will never be
-// larger than LMX2572_MAX_FREQ. All frequencies will be integer multiples of
-// the given \p lo_step_size.
+/*! Depending on the given \p lo_step_size, this will return a valid frequency
+ * range on a quantized grid for the the LOs. The lower limit of this range will
+ * never be smaller than LMX2572_MIN_FREQ and the upper frequency will never be
+ * larger than LMX2572_MAX_FREQ. All frequencies will be integer multiples of
+ * the given \p lo_step_size.
+ */
 uhd::freq_range_t _get_quantized_lo_range(const double lo_step_size)
 {
     const double start = std::ceil(LMX2572_MIN_FREQ / lo_step_size) * lo_step_size;
@@ -802,13 +803,15 @@ private:
     // Attributes
     rfdc_control::sptr _rfdcc;
     std::shared_ptr<zbx_cpld_ctrl> _cpld;
-    //! Store the sync state of the ADC gearboxes. If false, we assume they're
-    // out of sync. This could also be a vector of booleans if we want to be
-    // able to sync ADC gearboxes individually.
+    /*! Store the sync state of the ADC gearboxes. If false, we assume they're
+     * out of sync. This could also be a vector of booleans if we want to be
+     * able to sync ADC gearboxes individually.
+     */
     bool _adcs_synced = false;
-    //! Store the sync state of the DAC gearboxes. If false, we assume they're
-    // out of sync. This could also be a vector of booleans if we want to be
-    // able to sync DAC gearboxes individually.
+    /*! Store the sync state of the DAC gearboxes. If false, we assume they're
+     * out of sync. This could also be a vector of booleans if we want to be
+     * able to sync DAC gearboxes individually.
+     */
     bool _dacs_synced = false;
 };
 

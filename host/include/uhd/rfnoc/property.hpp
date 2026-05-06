@@ -59,16 +59,18 @@ public:
         return _source_info;
     }
 
-    //! Query this property's dirty flag.
-    //
-    // If it's true, that means this property was recently changed, but changes
-    // have not propagated yet and still need resolving.
+    /*! \brief Query this property's dirty flag.
+     *
+     * If it's true, that means this property was recently changed, but changes
+     * have not propagated yet and still need resolving.
+     */
     virtual bool is_dirty() const = 0;
 
-    //! Query this property's valid flag.
-    //
-    // If it's false, that means this property has a default value that should
-    // NOT be forwarded.
+    /*! \brief Query this property's valid flag.
+     *
+     * If it's false, that means this property has a default value that should
+     * NOT be forwarded.
+     */
     virtual bool is_valid() const = 0;
 
     //! Returns true if this property can be read.
@@ -92,14 +94,15 @@ public:
     //! Return true if rhs has the same type and value
     virtual bool equal(property_base_t* rhs) const = 0;
 
-    //! Create a copy of this property
-    //
-    // The copy must have the same type, value, and ID. However, it is often
-    // desirable to have a new source information, so that can be overridden.
-    //
-    // The cleanliness state of \p original is not preserved. The new property
-    // will have the same cleanliness state as any other new property.
-    //
+    /*! \brief Create a copy of this property.
+     *
+     * The copy must have the same type, value, and ID. However, it is often
+     * desirable to have a new source information, so that can be overridden.
+     *
+     * The cleanliness state of \p original is not preserved. The new property
+     * will have the same cleanliness state as any other new property.
+     *
+     */
     virtual std::unique_ptr<property_base_t> clone(res_source_info)
     {
         throw uhd::not_implemented_error("Cloning is not available for this property.");
@@ -126,9 +129,10 @@ private:
     //! Forward the value of this property to another one
     virtual void forward(property_base_t* next_prop) = 0;
 
-    //! Compare property types
-    //
-    // Note: This uses RTTI to evaluate type equality
+    /*! \brief Compare property types.
+     *
+     * Note: This uses RTTI to evaluate type equality
+     */
     virtual bool is_type_equal(property_base_t* other_prop) const = 0;
 
     /*** Attributes **********************************************************/
@@ -138,8 +142,9 @@ private:
     //! Stores the source info for this property.
     const res_source_info _source_info;
 
-    //! Access mode. Note that the prop_accessor_t is the only one who can
-    // write this.
+    /*! Access mode. Note that the prop_accessor_t is the only one who can
+     * write this.
+     */
     access_t _access_mode = RO;
 };
 
@@ -162,19 +167,21 @@ public:
 
     property_t(const property_t<data_t>& prop) = default;
 
-    //! Returns the dirty state of this property
-    //
-    // If true, this means the value was recently changed, but it wasn't marked
-    // clean yet.
+    /*! \brief Returns the dirty state of this property.
+     *
+     * If true, this means the value was recently changed, but it wasn't marked
+     * clean yet.
+     */
     bool is_dirty() const override
     {
         return _data.is_dirty();
     }
 
-    //! Query this property's valid flag.
-    //
-    // If it's false, that means this property has a default value that should
-    // NOT be used.
+    /*! \brief Query this property's valid flag.
+     *
+     * If it's false, that means this property has a default value that should
+     * NOT be used.
+     */
     bool is_valid() const override
     {
         return _valid;
@@ -204,14 +211,12 @@ public:
         }
     }
 
-    //! Returns the source info for the property
-    // const res_source_info& get_src_info() const = 0;
-
-    //! Set the value of this property
-    //
-    // \throws uhd::access_error if the current access mode is not RW or RWLOCKED
-    // \throws uhd::resolve_error if the property is RWLOCKED but the new value
-    //         doesn't match
+    /*! \brief Set the value of this property.
+     *
+     * \throws uhd::access_error if the current access mode is not RW or RWLOCKED
+     * \throws uhd::resolve_error if the property is RWLOCKED but the new value
+     *         doesn't match
+     */
     void set(const data_t& value)
     {
         if (write_access_granted()) {
@@ -245,10 +250,11 @@ public:
         }
     }
 
-    //! Get the value of this property
-    //
-    // \throws uhd::access_error if either the property is flagged as invalid,
-    //         or if no read access was granted.
+    /*! \brief Get the value of this property.
+     *
+     * \throws uhd::access_error if either the property is flagged as invalid,
+     *         or if no read access was granted.
+     */
     const data_t& get() const
     {
         if (!is_valid()) {

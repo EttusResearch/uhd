@@ -32,8 +32,9 @@ namespace {
 constexpr double MPMD_FIND_TIMEOUT               = 0.5;
 constexpr char MPMD_CHDR_REACHABILITY_KEY[]      = "reachable";
 constexpr char MPMD_CHDR_REACHABILITY_NEGATIVE[] = "No";
-//! The preamble for any response on the discovery port. Can be used to
-//  verify that the response is actually an MPM device.
+/*! The preamble for any response on the discovery port. Can be used to
+ *  verify that the response is actually an MPM device.
+ */
 constexpr char MPM_DISC_RESPONSE_PREAMBLE[] = "USRP-MPM";
 
 device_addr_t flag_dev_as_unreachable(const device_addr_t& device_args)

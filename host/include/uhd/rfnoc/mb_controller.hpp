@@ -191,26 +191,28 @@ public:
         double _tick_rate = 1.0;
     };
 
-    //! Returns the number of timekeepers, which equals the number of timebases
-    // on this device.
-    //
-    // Most USRPs have one timekeeper. Refer to the manual for your device
-    // family for potential exceptions to this behavior. Custom FPGA images
-    // may also implement multiple timekeepers for various purposes.
+    /*! \brief Returns the number of timekeepers, which equals the number of timebases
+     * on this device.
+     *
+     * Most USRPs have one timekeeper. Refer to the manual for your device
+     * family for potential exceptions to this behavior. Custom FPGA images
+     * may also implement multiple timekeepers for various purposes.
+     */
     size_t get_num_timekeepers() const;
 
-    //! Return a reference to the \p tk_idx-th timekeeper on this motherboard
-    //
-    // For most USRPs, timekeeper index 0 is used to access the main timekeeper.
-    // When using a USRP with multiple timekeepers, refer to the relevant device
-    // family manual for more information on timekeeper mapping and enumeration.
-    //
-    // Custom FPGA images can implement multiple timekeepers.
-    //
-    // To make sure that \p tk_idx is a valid value, get_num_timekeepers() can
-    // be used to query the number of timekeepers available.
-    //
-    // \throws uhd::index_error if \p tk_idx is not valid
+    /*! \brief Return a reference to the \p tk_idx-th timekeeper on this motherboard.
+     *
+     * For most USRPs, timekeeper index 0 is used to access the main timekeeper.
+     * When using a USRP with multiple timekeepers, refer to the relevant device
+     * family manual for more information on timekeeper mapping and enumeration.
+     *
+     * Custom FPGA images can implement multiple timekeepers.
+     *
+     * To make sure that \p tk_idx is a valid value, get_num_timekeepers() can
+     * be used to query the number of timekeepers available.
+     *
+     * \throws uhd::index_error if \p tk_idx is not valid
+     */
     timekeeper::sptr get_timekeeper(const size_t tk_idx) const;
 
     /**************************************************************************

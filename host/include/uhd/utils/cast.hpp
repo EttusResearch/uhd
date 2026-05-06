@@ -21,11 +21,12 @@
 #include <string>
 
 namespace uhd { namespace cast {
-//! Convert a hexadecimal string into a value.
-//
-// Example:
-//     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
-// Uses stringstream.
+/*! \brief Convert a hexadecimal string into a value.
+ *
+ * Example:
+ *     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
+ * Uses stringstream.
+ */
 template <typename T>
 inline T hexstr_cast(const std::string& in)
 {
@@ -36,13 +37,14 @@ inline T hexstr_cast(const std::string& in)
     return x;
 }
 
-//! Convert hexadecimal, decimal, octal or other strings that support the >>
-//! operator into a value depending on the prefix.
-//
-// Example:
-//     10, 0x10, 010 get parsed to decimal 10, 16, 8.
-//     uint32_t x = fromstr_cast<uint32_t>("0xaffe");
-// Uses istringstream.
+/*! \brief Convert hexadecimal, decimal, octal or other strings that support the >>
+ *  operator into a value depending on the prefix.
+ *
+ * Example:
+ *     10, 0x10, 010 get parsed to decimal 10, 16, 8.
+ *     uint32_t x = fromstr_cast<uint32_t>("0xaffe");
+ * Uses istringstream.
+ */
 template <typename T>
 inline T fromstr_cast(const std::string& in)
 {
@@ -52,17 +54,18 @@ inline T fromstr_cast(const std::string& in)
     return x;
 }
 
-//! Generic cast-from-string function
-//
-// Handles size_t aliases (unsigned long, unsigned long long) via if constexpr
-// when they are not the same type as uint32_t or uint64_t.
-// Explicit specializations below override this for bool, double, int,
-// uint32_t, uint64_t, uint16_t, uint8_t, and std::string.
-//
-// Note that we need this generic template to handle arbitrary types at runtime.
-// However, this means we can't use SFINAE to create template specializations,
-// which means any type that requires template logic needs to go into here and
-// must be explicitly handled with if constexpr.
+/*! \brief Generic cast-from-string function.
+ *
+ * Handles size_t aliases (unsigned long, unsigned long long) via if constexpr
+ * when they are not the same type as uint32_t or uint64_t.
+ * Explicit specializations below override this for bool, double, int,
+ * uint32_t, uint64_t, uint16_t, uint8_t, and std::string.
+ *
+ * Note that we need this generic template to handle arbitrary types at runtime.
+ * However, this means we can't use SFINAE to create template specializations,
+ * which means any type that requires template logic needs to go into here and
+ * must be explicitly handled with if constexpr.
+ */
 template <typename data_t>
 data_t from_str(const std::string& val)
 {
@@ -97,11 +100,12 @@ data_t from_str(const std::string& val)
 
 // Specializations of `uhd::cast::from_str()` for supported data types
 
-//! Specialization of `uhd::cast::from_str()` for Boolean values
-//
-//   Examples evaluating to `true`: 'True', 'Yes', 'y', '1', empty string
-//   Examples evaluating to `false`: 'false', 'NO', 'n', '0'
-//   Throws `uhd::runtime_error` if the string can't be converted to `bool`
+/*! \brief Specialization of `uhd::cast::from_str()` for Boolean values.
+ *
+ *   Examples evaluating to `true`: 'True', 'Yes', 'y', '1', empty string
+ *   Examples evaluating to `false`: 'false', 'NO', 'n', '0'
+ *   Throws `uhd::runtime_error` if the string can't be converted to `bool`
+ */
 template <>
 UHD_API bool from_str(const std::string& val);
 
@@ -139,11 +143,12 @@ inline UHD_API std::string from_str(const std::string& val)
 //! Create an ordinal string from a number.
 UHD_API std::string to_ordinal_string(int val);
 
-//! Template implementations for `uhd::cast::to_str()` for common types
-//
-// These template implementations provide consistent string conversion
-// for integer and floating-point types commonly used in UHD, particularly
-// for device_addr_t parameter handling.
+/*! \brief Template implementations for `uhd::cast::to_str()` for common types.
+ *
+ * These template implementations provide consistent string conversion
+ * for integer and floating-point types commonly used in UHD, particularly
+ * for device_addr_t parameter handling.
+ */
 
 // Type trait to detect if a type has a to_string() method
 namespace detail {
@@ -156,13 +161,14 @@ template <typename T>
 using has_to_string_method = decltype(has_to_string_method_impl<T>(0));
 } // namespace detail
 
-//! SFINAE-based template for integer types that std::to_string can handle
-//
-// This template will automatically work for integer types that std::to_string supports
-// (int, unsigned int, long, unsigned long, long long, unsigned long long, size_t, etc.),
-// excluding int8_t and uint8_t which need special handling, and floating-point types
-// which need precision handling, and excluding types that have their own to_string()
-// method.
+/*! \brief SFINAE-based template for integer types that std::to_string can handle.
+ *
+ * This template will automatically work for integer types that std::to_string supports
+ * (int, unsigned int, long, unsigned long, long long, unsigned long long, size_t, etc.),
+ * excluding int8_t and uint8_t which need special handling, and floating-point types
+ * which need precision handling, and excluding types that have their own to_string()
+ * method.
+ */
 template <typename T>
 auto to_str(const T& val) -> std::enable_if_t<
     std::is_arithmetic_v<
@@ -172,19 +178,21 @@ auto to_str(const T& val) -> std::enable_if_t<
     return std::to_string(val);
 }
 
-//! SFINAE-based template for enum types
-//
-// Convert enum types to their underlying integral type, then to string
+/*! \brief SFINAE-based template for enum types.
+ *
+ * Convert enum types to their underlying integral type, then to string
+ */
 template <typename T>
 auto to_str(const T& val) -> std::enable_if_t<std::is_enum_v<T>, std::string>
 {
     return std::to_string(static_cast<std::underlying_type_t<T>>(val));
 }
 
-//! Template for floating-point types with round-trip safe precision
-//
-// Uses ostringstream with max_digits10 precision and classic locale to ensure
-// round-trip safety for floating-point values.
+/*! \brief Template for floating-point types with round-trip safe precision.
+ *
+ * Uses ostringstream with max_digits10 precision and classic locale to ensure
+ * round-trip safety for floating-point values.
+ */
 template <typename T>
 auto to_str(const T& val) -> std::enable_if_t<
     std::is_floating_point_v<T> && !detail::has_to_string_method<T>::value,
@@ -217,10 +225,11 @@ auto to_str(const T& val)
     return std::to_string(static_cast<unsigned int>(val));
 }
 
-//! SFINAE-based template for std::complex<T> types
-//
-// This template will work for any std::complex<T> where T has a to_str() function
-// Creates a string of the form "a+jb" or "a-jb"
+/*! \brief SFINAE-based template for std::complex<T> types.
+ *
+ * This template will work for any std::complex<T> where T has a to_str() function
+ * Creates a string of the form "a+jb" or "a-jb"
+ */
 template <typename T>
 std::string to_str(const std::complex<T>& val)
 {
@@ -234,10 +243,11 @@ std::string to_str(const std::complex<T>& val)
     }
 }
 
-//! SFINAE-based template for any type that has a to_string() method
-//
-// This template will automatically work for any type T that has a to_string()
-// method that returns a type convertible to std::string.
+/*! \brief SFINAE-based template for any type that has a to_string() method.
+ *
+ * This template will automatically work for any type T that has a to_string()
+ * method that returns a type convertible to std::string.
+ */
 template <typename T>
 auto to_str(const T& val)
     -> std::enable_if_t<std::is_convertible_v<decltype(val.to_string()), std::string>,

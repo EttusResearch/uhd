@@ -144,10 +144,11 @@ private:
             const uhd::rfnoc::sep_id_t epid,
             const uhd::device_addr_t& route_args) override;
 
-        //! X300-specific post-ctor initialization
-        //
-        // We add this because X300s should be initialized in parallel, so we
-        // don't want to add slow, I/O bound functions in the constructor.
+        /*! X300-specific post-ctor initialization
+         *
+         * We add this because X300s should be initialized in parallel, so we
+         * don't want to add slow, I/O bound functions in the constructor.
+         */
         void init();
 
     private:

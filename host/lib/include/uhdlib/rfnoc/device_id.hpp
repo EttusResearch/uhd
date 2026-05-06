@@ -10,9 +10,10 @@
 
 namespace uhd { namespace rfnoc {
 
-//! Return a new, unique device ID.
-//
-// This function will never return the same device ID twice.
+/*! \brief Return a new, unique device ID.
+ *
+ * This function will never return the same device ID twice.
+ */
 device_id_t allocate_device_id();
 
 }} /* namespace uhd::rfnoc */

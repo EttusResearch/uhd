@@ -24,9 +24,10 @@ namespace uhd { namespace test {
 namespace {
 constexpr double DEFAULT_MCR = 4e9;
 }
-//! Mock MPM server for X440/FBX
-//
-// This is a mock server that mimicks an X410 with a FBX daughterboard.
+/*! \brief Mock MPM server for X440/FBX.
+ *
+ * This is a mock server that mimicks an X410 with a FBX daughterboard.
+ */
 class ferrum_mock_rpc_server : public x400_rpc_iface,
                                public mpmd_rpc_iface,
                                public dboard_base_rpc_iface,

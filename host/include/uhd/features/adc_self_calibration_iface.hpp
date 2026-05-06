@@ -36,17 +36,20 @@ public:
 
     virtual ~adc_self_calibration_iface() = default;
 
-    //! Runs calibration on the specified channel. This will momentarily
-    //  reconfigure both the specified RX channel as well as the matching
-    //  TX channel for the operation.
-    //
-    //  If you would like to calibrate the ADCs without interrupting the
-    //  signal chain, use the rx_codec/<n>/calibration_frozen property on the
-    //  motherboard's property tree.
+    /*! \brief Runs calibration on the specified channel.
+     *
+     *  This will momentarily reconfigure both the specified RX channel as well as the
+     * matching TX channel for the operation.
+     *
+     *  If you would like to calibrate the ADCs without interrupting the
+     *  signal chain, use the rx_codec/\<n\>/calibration_frozen property on the
+     *  motherboard's property tree.
+     */
     virtual void run(const size_t chan) = 0;
 
-    //! Runs calibration on the specified channel but takes custom calibration
-    //  parameters.
+    /*! \brief Runs calibration on the specified channel but takes custom calibration
+     *  parameters.
+     */
     virtual void run(const size_t chan, const uhd::device_addr_t params) = 0;
 };
 

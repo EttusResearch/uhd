@@ -451,10 +451,11 @@ private:
     //! Reference to RX LO Detector
     std::shared_ptr<hbx_lo_pd> _rx_lo_pd;
 
-    //! Reference to this block's subtree
-    //
-    // It is mutable because _tree->access<>(..).get() is not const, but we
-    // need to do just that in some const contexts
+    /*! \brief Reference to this block's subtree.
+     *
+     * It is mutable because _tree->access<>(..).get() is not const, but we
+     * need to do just that in some const contexts
+     */
     mutable uhd::property_tree::sptr _tree;
 
     std::vector<uhd::usrp::pwr_cal_mgr::sptr> _rx_pwr_mgr;

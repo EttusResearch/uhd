@@ -63,13 +63,15 @@ constexpr chdr_w_t bits_to_chdr_w(size_t bits)
     // clang-format on
 }
 
-//! Stream Endpoint ID Type
-// Stream endpoints within a graph are unique. They are assigned dynamically
-// during runtime when needed. Stream endpoints exist both in the host as well
-// as in the devices. See also sep_addr_t. The value of any sep_id_t is
-// meaningless, it provides no information on where the SEP is physically
-// located. In comments and variables, it is often abbreviated as "EPID"
-// ("endpoint ID").
+/*! \brief Stream Endpoint ID Type.
+ *
+ * Stream endpoints within a graph are unique. They are assigned dynamically
+ * during runtime when needed. Stream endpoints exist both in the host as well
+ * as in the devices. See also sep_addr_t. The value of any sep_id_t is
+ * meaningless, it provides no information on where the SEP is physically
+ * located. In comments and variables, it is often abbreviated as "EPID"
+ * ("endpoint ID").
+ */
 using sep_id_t = uint16_t;
 
 }} // namespace uhd::rfnoc

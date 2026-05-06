@@ -37,8 +37,9 @@ struct res_source_info
     //! The type of source (user or edge)
     source_t type;
 
-    //! The instance of the source. For resource that is sourced by a edge, it
-    // corresponds to the port number
+    /*! The instance of the source. For resource that is sourced by a edge, it
+     * corresponds to the port number
+     */
     size_t instance = 0;
 
     bool operator==(const res_source_info& rhs) const

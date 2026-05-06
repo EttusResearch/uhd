@@ -847,13 +847,15 @@ private:
 
     // Attributes
     rfdc_control::sptr _rfdcc;
-    //! Store the sync state of the ADC gearboxes. If false, we assume they're
-    // out of sync. This could also be a vector of booleans if we want to be
-    // able to sync ADC gearboxes individually.
+    /*! Store the sync state of the ADC gearboxes. If false, we assume they're
+     * out of sync. This could also be a vector of booleans if we want to be
+     * able to sync ADC gearboxes individually.
+     */
     bool _adcs_synced = false;
-    //! Store the sync state of the DAC gearboxes. If false, we assume they're
-    // out of sync. This could also be a vector of booleans if we want to be
-    // able to sync DAC gearboxes individually.
+    /*! Store the sync state of the DAC gearboxes. If false, we assume they're
+     * out of sync. This could also be a vector of booleans if we want to be
+     * able to sync DAC gearboxes individually.
+     */
     bool _dacs_synced = false;
 };
 }}} // namespace uhd::usrp::hbx

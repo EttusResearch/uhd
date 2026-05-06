@@ -103,9 +103,10 @@ private:
     /**************************************************************************
      * Private attributes
      *************************************************************************/
-    //! Cache available xport manager implementations
-    //
-    // Should only every be populated by connect()
+    /*! \brief Cache available xport manager implementations.
+     *
+     * Should only ever be populated by connect()
+     */
     std::vector<mpmd_link_if_ctrl_base::uptr> _link_if_ctrls;
     // Maps link index to link_if_ctrl index. To look up the xport ctrl for link
     // number L, do something like this:

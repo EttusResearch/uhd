@@ -42,22 +42,25 @@ public:
     using sptr            = std::shared_ptr<pwr_cal_mgr>;
     using get_double_type = std::function<double(void)>;
     using get_str_type    = std::function<std::string(void)>;
-    //! The current power/gain tracking mode. When the device does something
-    // that will cause the output power to change, we have an option of keeping
-    // the gain constant, or keeping the power constant.
+    /*! The current power/gain tracking mode. When the device does something
+     * that will cause the output power to change, we have an option of keeping
+     * the gain constant, or keeping the power constant.
+     */
     enum class tracking_mode {
         TRACK_GAIN, //!< In this mode, we keep the gain after retuning.
         TRACK_POWER //!< In this mode, we keep the power after retuning
     };
 
-    //! Helper: Sanitize antenna names (e.g. TX/RX -> tx_rx)
-    //
-    // Note: Argument is not const std::string&; we make use of C++'s short
-    // string optimization for an easier implementation
+    /*! \brief Helper: Sanitize antenna names (e.g. TX/RX -> tx_rx).
+     *
+     * Note: Argument is not const std::string&; we make use of C++'s short
+     * string optimization for an easier implementation
+     */
     static std::string sanitize_antenna_name(std::string antenna_name);
 
-    //! Helper: Check if an antenna name is valid for calibration (e.g., CAL and
-    // LOCAL are not)
+    /*! Helper: Check if an antenna name is valid for calibration (e.g., CAL and
+     * LOCAL are not)
+     */
     static bool is_valid_antenna(const std::string& antenna);
 
     /*! Factory
@@ -82,18 +85,20 @@ public:
 
     virtual ~pwr_cal_mgr() = default;
 
-    //! Update the gain group (see make());
-    //
-    // Not thread-safe: Don't call at the same time as set_power()
+    /*! \brief Update the gain group (see make());
+     *
+     * Not thread-safe: Don't call at the same time as set_power()
+     */
     virtual void set_gain_group(uhd::gain_group::sptr gain_group) = 0;
 
     //! Return true if there is power cal data for the currently selected port
     virtual bool has_power_data() = 0;
 
-    //! Add a property tree node (ref_power/range and ref_power/value)
-    //
-    // For non-RFNoC devices (e.g. B200), this must be called in order to
-    // expose the power APIs to multi_usrp.
+    /*! \brief Add a property tree node (ref_power/range and ref_power/value).
+     *
+     * For non-RFNoC devices (e.g. B200), this must be called in order to
+     * expose the power APIs to multi_usrp.
+     */
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
 
     /*! Set the power to \p power_dbm
@@ -123,11 +128,12 @@ public:
      */
     virtual uhd::meta_range_t get_power_range() = 0;
 
-    //! Update the temperature in Celsius
-    //
-    // Because reading the temperature can be an invasive operation, we leave it
-    // up to the device implementation to update the temperature at sensible
-    // intervals instead of using a callback.
+    /*! \brief Update the temperature in Celsius.
+     *
+     * Because reading the temperature can be an invasive operation, we leave it
+     * up to the device implementation to update the temperature at sensible
+     * intervals instead of using a callback.
+     */
     virtual void set_temperature(const int temp_C) = 0;
 
     /*! Set the current power tracking mode
@@ -144,13 +150,14 @@ public:
     //! Return the calibration serial
     virtual std::string get_serial() const = 0;
 
-    //! Update serial
-    //
-    // This may be called for example when the hardware is hot-pluggable, or
-    // if the calibration key changes at runtime.
-    // Calling it will not only set the serial number, but will also force a
-    // reload of the calibration data. The existing calibration data is
-    // discarded.
+    /*! \brief Update serial.
+     *
+     * This may be called for example when the hardware is hot-pluggable, or
+     * if the calibration key changes at runtime.
+     * Calling it will not only set the serial number, but will also force a
+     * reload of the calibration data. The existing calibration data is
+     * discarded.
+     */
     virtual void set_serial(const std::string& serial) = 0;
 };
 

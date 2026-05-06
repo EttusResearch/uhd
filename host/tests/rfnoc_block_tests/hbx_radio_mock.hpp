@@ -234,9 +234,11 @@ public:
  */
 constexpr size_t DEFAULT_MTU = 8000;
 
-//! Helper class to make sure we get the most logging. The logging level can be
-// overridden using a special test-specific environment variable,
-// `UHD_UNITTEST_LOG_LEVEL`.
+/*! \brief Helper class to make sure we get the most logging.
+ *
+ * The logging level can be overridden using a special test-specific environment variable,
+ * `UHD_UNITTEST_LOG_LEVEL`.
+ */
 struct uhd_log_enabler
 {
     uhd_log_enabler(uhd::log::severity_level level)

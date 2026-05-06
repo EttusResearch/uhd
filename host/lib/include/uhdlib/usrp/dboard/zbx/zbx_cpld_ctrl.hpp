@@ -305,91 +305,99 @@ public:
     /**************************************************************************
      * LO controls
      *************************************************************************/
-    //! Write to a register on an LO
-    //
-    // Note: All eight LOs are accessed through the same CPLD register. For
-    // timed commands to the LOs, it is up to the call site to ensure that SPI
-    // writes/reads do not get interleaved.
-    //
-    // Note: This will not poll the ready bit of the CPLD. To ensure valid
-    // transactions, either manually call lo_spi_ready(), or make sure that SPI
-    // commands are timed appropriately, i.e., new SPI transaction requests reach
-    // the CPLD only after the previous transaction is comppleted.
-    //
-    // \param lo Which LO to write to.
-    // \param addr The address of the LO register (see the LMX2572 datasheet)
-    // \param data The data to write to the LO register (see the LMX2572 datasheet)
+    /*! \brief Write to a register on an LO.
+     *
+     * Note: All eight LOs are accessed through the same CPLD register. For
+     * timed commands to the LOs, it is up to the call site to ensure that SPI
+     * writes/reads do not get interleaved.
+     *
+     * Note: This will not poll the ready bit of the CPLD. To ensure valid
+     * transactions, either manually call lo_spi_ready(), or make sure that SPI
+     * commands are timed appropriately, i.e., new SPI transaction requests reach
+     * the CPLD only after the previous transaction is comppleted.
+     *
+     * \param lo Which LO to write to.
+     * \param addr The address of the LO register (see the LMX2572 datasheet)
+     * \param data The data to write to the LO register (see the LMX2572 datasheet)
+     */
     void lo_poke16(const zbx_lo_t lo, const uint8_t addr, const uint16_t data);
 
-    //! Read back from the LO
-    //
-    // Note: The LMX2572 has a MUXout pin, not just an SDO pin. This means the
-    // call site needs to ensure that MUXout configuration is in the correct
-    // state before calling this function (to either read back the lock status,
-    // or the SPI read return value).
-    //
-    // Note: This will not poll the ready bit of the CPLD. To ensure valid
-    // transactions, either manually call lo_spi_ready(), or make sure that SPI
-    // commands are timed appropriately, i.e., new SPI transaction requests reach
-    // the CPLD only after the previous transaction is comppleted.
-    //
-    // \param lo Which LO to read from
-    // \param addr Which address on the LO to read from (see LMX2572 datasheet)
-    // \param valid_timeout_ms After triggering the transaction, the function will
-    //        wait for this many ms before throwing an exception. A zero timeout
-    //        is possible, which means the first read to the LO_SPI_STATUS
-    //        register must already have the ready bit high.
+    /*! \brief Read back from the LO.
+     *
+     * Note: The LMX2572 has a MUXout pin, not just an SDO pin. This means the
+     * call site needs to ensure that MUXout configuration is in the correct
+     * state before calling this function (to either read back the lock status,
+     * or the SPI read return value).
+     *
+     * Note: This will not poll the ready bit of the CPLD. To ensure valid
+     * transactions, either manually call lo_spi_ready(), or make sure that SPI
+     * commands are timed appropriately, i.e., new SPI transaction requests reach
+     * the CPLD only after the previous transaction is comppleted.
+     *
+     * \param lo Which LO to read from
+     * \param addr Which address on the LO to read from (see LMX2572 datasheet)
+     * \param valid_timeout_ms After triggering the transaction, the function will
+     *        wait for this many ms before throwing an exception. A zero timeout
+     *        is possible, which means the first read to the LO_SPI_STATUS
+     *        register must already have the ready bit high.
+     */
     uint16_t lo_peek16(const zbx_lo_t lo, const uint8_t addr);
 
-    //! Returns true if the LO_SPI_READY bit is high, i.e., the LO SPI is ready
-    // for a transaction
+    /*! \brief Returns true if the LO_SPI_READY bit is high, i.e., the LO SPI is ready
+     * for a transaction.
+     */
     bool lo_spi_ready();
 
-    //! LO's incoming source control (external/internal) is actually found in
-    // the CPLD path control register spaces
-    //
-    // \param idx Table index
-    // \param lo Which LO to read from
-    // \param lo_source Set LO source to internal/external
+    /*! \brief LO's incoming source control (external/internal) is actually found in
+     * the CPLD path control register spaces
+     *
+     * \param idx Table index
+     * \param lo Which LO to read from
+     * \param lo_source Set LO source to internal/external
+     */
     void set_lo_source(
         const size_t idx, const zbx_lo_t lo, const zbx_lo_source_t lo_source);
 
-    //! Retrieve lo source
-    // \param idx Table index to read from
-    // \param lo Which LO to read from
+    /*! \brief Retrieve lo source.
+     *
+     * \param idx Table index to read from
+     * \param lo Which LO to read from
+     */
     zbx_lo_source_t get_lo_source(const size_t idx, zbx_lo_t lo);
 
-    //! Synchronize LOs
-    //
-    // This will assert a SYNC pulse on all the LOs listed in \p los.
-    //
-    // Note: This function will throw an exception if LO sync bypass is enabled
-    // (see set_lo_sync_bypass()).
-    //
-    // A note on timing: Like most CPLD controls, the time is inherited from the
-    // underlying register interface. That is to say, the APIs don't take a time
-    // as an argument, but assume the command time is correctly applied.
-    // The different channels of the ZBX (channel 0/1) may have different command
-    // times. Because this API potentially affects both channels at once, the
-    // channel index must be provided to determine which channel's time should
-    // be used.
-    //
-    // \param ref_chan The channel that is used as a timing reference.
-    // \param los A list of LOs to synchronize
-    // \throws uhd::runtime_error if LO sync bypass is enabled.
+    /*! \brief Synchronize LOs.
+     *
+     * This will assert a SYNC pulse on all the LOs listed in \p los.
+     *
+     * Note: This function will throw an exception if LO sync bypass is enabled
+     * (see set_lo_sync_bypass()).
+     *
+     * A note on timing: Like most CPLD controls, the time is inherited from the
+     * underlying register interface. That is to say, the APIs don't take a time
+     * as an argument, but assume the command time is correctly applied.
+     * The different channels of the ZBX (channel 0/1) may have different command
+     * times. Because this API potentially affects both channels at once, the
+     * channel index must be provided to determine which channel's time should
+     * be used.
+     *
+     * \param ref_chan The channel that is used as a timing reference.
+     * \param los A list of LOs to synchronize
+     * \throws uhd::runtime_error if LO sync bypass is enabled.
+     */
     void pulse_lo_sync(const size_t ref_chan, const std::vector<zbx_lo_t>& los);
 
-    //! Enable/disable LO sync bypass
-    //
-    // This is a ZBX-specific option, which will allow synchronizing the LOs via
-    // the MB_SYNTH_SYNC pin instead of using a register. Enabling this will
-    // disable the ability to call pulse_lo_sync().
-    //
-    // \param enable If true, enables the bypass. When false, disables the bypass
-    //               and pulse_lo_sync() can be called.
+    /*! \brief Enable/disable LO sync bypass.
+     *
+     * This is a ZBX-specific option, which will allow synchronizing the LOs via
+     * the MB_SYNTH_SYNC pin instead of using a register. Enabling this will
+     * disable the ability to call pulse_lo_sync().
+     *
+     * \param enable If true, enables the bypass. When false, disables the bypass
+     *               and pulse_lo_sync() can be called.
+     */
     void set_lo_sync_bypass(const bool enable);
 
-    /*! Write DSA table for TX frequency to DB CPLD
+    /*! \brief Write DSA table for TX frequency to DB CPLD
      */
     void update_tx_dsa_settings(
         const std::vector<uint32_t>& dsa1_table, const std::vector<uint32_t>& dsa2_table);

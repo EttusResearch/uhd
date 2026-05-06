@@ -48,18 +48,20 @@ struct UHD_API stream_cmd_t
     } stream_mode;
     uint64_t num_samps;
 
-    //! When true, the device will begin streaming ASAP.
-    //
-    // When false, the device will start streaming based on the \p trigger source.
+    /*! \brief When true, the device will begin streaming ASAP.
+     *
+     * When false, the device will start streaming based on the \p trigger source.
+     */
     bool stream_now;
     //! The time spec to use when \p stream_now is false and \p trigger is TIMED
     time_spec_t time_spec;
 
-    //! Trigger source to be used when stream_now is false
-    //
-    // When \p stream_now is false, the trigger source controls when
-    // streaming begins. The default trigger source is TIMED, meaning
-    // that streaming will begin when the time specified in time_spec is reached.
+    /*! \brief Trigger source to be used when stream_now is false.
+     *
+     * When \p stream_now is false, the trigger source controls when
+     * streaming begins. The default trigger source is TIMED, meaning
+     * that streaming will begin when the time specified in time_spec is reached.
+     */
     enum class trigger_t {
         //! Start streaming when the time specified in time_spec is reached
         TIMED,

@@ -224,18 +224,24 @@ private:
     //! Set up sensor property nodes
     void _init_mpm_sensors(const direction_t dir, const size_t chan_idx);
 
-    //! Map a frequency in Hz to an rx_band value. Will return
-    //  rx_band::INVALID_BAND if the frequency is out of range.
+    /*! \brief Map a frequency in Hz to an rx_band value.
+     *
+     * Will return rx_band::INVALID_BAND if the frequency is out of range.
+     */
     rx_band _map_freq_to_rx_band(const band_map_t band_map, const double freq);
-    //! Map a frequency in Hz to an tx_band value. Will return
-    //  tx_band::INVALID_BAND if the frequency is out of range.
+    /*! \brief Map a frequency in Hz to an tx_band value.
+     *
+     * Will return tx_band::INVALID_BAND if the frequency is out of range.
+     */
     tx_band _map_freq_to_tx_band(const band_map_t band_map, const double freq);
 
     /**************************************************************************
      * Sensors
      *************************************************************************/
-    //! Return LO lock status. Factors in current band (low/high) and
-    // direction (TX/RX)
+    /*! \brief Return LO lock status.
+     *
+     * Factors in current band (low/high) and direction (TX/RX)
+     */
     bool get_lo_lock_status(const direction_t dir);
 
     /**************************************************************************
@@ -264,8 +270,9 @@ private:
     /**************************************************************************
      * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
      *************************************************************************/
-    //! Blink the front-panel LEDs for \p identify_duration, then reset CPLD
-    //  and resume normal operation.
+    /*! \brief Blink the front-panel LEDs for \p identify_duration, then reset CPLD
+     *  and resume normal operation.
+     */
     void _identify_with_leds(const int identify_duration);
 
     void _update_rx_freq_switches(const double freq,
@@ -332,22 +339,25 @@ private:
     //! Reference to the RX LO
     adf435x_iface::sptr _rx_lo;
 
-    //! Reference to the CPLD controls. Even if there's multiple radios,
-    //  there's only one CPLD control.
+    /*! Reference to the CPLD controls. Even if there's multiple radios,
+     *  there's only one CPLD control.
+     */
     std::shared_ptr<magnesium_cpld_ctrl> _cpld;
 
     //! Reference to the AD9371 controls
     magnesium_ad9371_iface::uptr _ad9371;
 
-    //! ATR controls. These control the external DSA and the AD9371 gain
-    //  up/down bits. They do *not* control the ATR state of the CPLD, the
-    //  tx/rx run states are hooked up directly to the CPLD.
-    //
-    //  Every radio channel gets its own ATR state register.
+    /*! ATR controls. These control the external DSA and the AD9371 gain
+     *  up/down bits. They do *not* control the ATR state of the CPLD, the
+     *  tx/rx run states are hooked up directly to the CPLD.
+     *
+     *  Every radio channel gets its own ATR state register.
+     */
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpio;
 
-    //! Front panel GPIO controller. Note that only one radio block per
-    //  module can be the FP-GPIO master.
+    /*! Front panel GPIO controller. Note that only one radio block per
+     *  module can be the FP-GPIO master.
+     */
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
 
     //! Sampling rate, and also ref clock frequency for the lowband LOs.
@@ -395,9 +405,11 @@ private:
         {magnesium_cpld_ctrl::CHAN2,
             magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}};
 
-    //! RX LO SOURCE
-    // NOTE for magnesium only ad9371 LO that can be connected to the external LO so we
-    // only need one var here
+    /*! \brief RX LO SOURCE.
+     *
+     *  NOTE for magnesium only ad9371 LO that can be connected to the external LO so we
+     *  only need one var here
+     */
     std::string _rx_lo_source = "internal";
 
 }; /* class radio_ctrl_impl */

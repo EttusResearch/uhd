@@ -150,8 +150,9 @@ public:
 
     //! All pokes end up writing to this map
     std::unordered_map<uint32_t, uint32_t> read_memory;
-    //! All peeks read from this map. A peek will fail if the address has not
-    // been previously set.
+    /*! All peeks read from this map. A peek will fail if the address has not
+     * been previously set.
+     */
     std::unordered_map<uint32_t, uint32_t> write_memory;
 
 protected:
@@ -174,8 +175,11 @@ struct UHD_API mock_block_container
     //! Reference to the prop tree object the block sees
     uhd::property_tree::sptr tree;
 
-    //! Use this to retrieve a reference to the block controller. Make sure that
-    // the register space is appropiately primed before doing so.
+    /*! \brief Use this to retrieve a reference to the block controller.
+     *
+     * Make sure that the register space is appropiately primed before doing so.
+     * the register space is appropiately primed before doing so.
+     */
     template <typename block_type = noc_block_base>
     std::shared_ptr<block_type> get_block()
     {

@@ -161,11 +161,16 @@ public:
         const size_t chan, const uhd::direction_t direction) const override;
 
 protected:
-    //! Map a frequency in Hz to an rx_band value. Will return
-    //  rx_band::INVALID_BAND if the frequency is out of range.
+    /*! \brief Map a frequency in Hz to an rx_band value.
+     *
+     * \return rx_band::INVALID_BAND if the frequency is out of range.
+     */
     rx_band map_freq_to_rx_band(const double freq);
-    //! Map a frequency in Hz to an tx_band value. Will return
-    //  tx_band::INVALID_BAND if the frequency is out of range.
+
+    /*! \brief Map a frequency in Hz to an tx_band value.
+     *
+     * \return tx_band::INVALID_BAND if the frequency is out of range.
+     */
     tx_band map_freq_to_tx_band(const double freq);
 
     virtual std::string get_default_timing_mode() = 0;
@@ -198,8 +203,9 @@ protected:
     virtual uint32_t get_txrx_led() = 0;
     virtual uint32_t get_idle_led() = 0;
 
-    //! Reference to the AD9361 controls
-    // e3xx_ad9361_iface::uptr _ad9361;
+    /*! Reference to the AD9361 controls
+     * e3xx_ad9361_iface::uptr _ad9361;
+     */
     ad9361_ctrl::sptr _ad9361;
 
     //! Swap RFA and RFB for catalina
@@ -237,8 +243,9 @@ private:
     /**************************************************************************
      * Misc Controls
      *************************************************************************/
-    //! Blink the front-panel LEDs for \p identify_duration,
-    //  and resume normal operation.
+    /*! \brief Blink the front-panel LEDs for \p identify_duration,
+     *  and resume normal operation.
+     */
     void _identify_with_leds(const int identify_duration);
 
     void _set_atr_bits(const size_t chan);
@@ -268,16 +275,19 @@ private:
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
 
-    //! ATR controls. These control the AD9361 gain up/down bits.
-    //  Every radio channel gets its own ATR state register.
+    /*! ATR controls. These control the AD9361 gain up/down bits.
+     *  Every radio channel gets its own ATR state register.
+     */
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _db_gpio;
 
-    // ATR controls for LEDs
-    //  Every radio channel gets its own ATR state register.
+    /*! ATR controls for LEDs
+     *  Every radio channel gets its own ATR state register.
+     */
     std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _leds_gpio;
 
-    //! Front panel GPIO controller. Note that only one radio block per
-    //  module can be the FP-GPIO master.
+    /*! Front panel GPIO controller. Note that only one radio block per
+     *  module can be the FP-GPIO master.
+     */
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
 
     //! Sampling rate

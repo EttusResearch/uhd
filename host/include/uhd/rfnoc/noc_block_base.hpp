@@ -43,12 +43,13 @@ class UHD_API noc_block_base : public node_t, public register_iface_holder
 public:
     using sptr = std::shared_ptr<noc_block_base>;
 
-    //! Dummy make_args_t class
-    //
-    // This allows OOTs to compile even if they were created prior to making
-    // make_args_t fully opaque.
-    //
-    // This is deprecated and will be removed in future UHD versions.
+    /*! \brief Dummy make_args_t class.
+     *
+     * This allows OOTs to compile even if they were created prior to making
+     * make_args_t fully opaque.
+     *
+     * This is deprecated and will be removed in future UHD versions.
+     */
     struct UHD_API make_args_t
     {
         ~make_args_t();
@@ -364,9 +365,10 @@ private:
     //! This block's Noc-ID
     noc_id_t _noc_id;
 
-    //! This block's block-ID
-    //
-    // The framework will guarantee that no one else has the same block ID
+    /*! \brief This block's block-ID.
+     *
+     * The framework will guarantee that no one else has the same block ID
+     */
     block_id_t _block_id;
 
     //! Number of input ports
@@ -375,8 +377,9 @@ private:
     //! Number of output ports
     size_t _num_output_ports;
 
-    //! Container for the 'tick rate' property. This will hold one edge property
-    // for all in- and output edges.
+    /*! Container for the 'tick rate' property. This will hold one edge property
+     * for all in- and output edges.
+     */
     std::vector<property_t<double>> _tick_rate_props;
 
     //! Forwarding policy for the MTU properties
@@ -385,8 +388,9 @@ private:
     //! Flag indicating if MTU forwarding property has been set yet
     bool _mtu_fwd_policy_set = false;
 
-    //! Container for the 'mtu' property. This will hold one edge property
-    // for all in- and output edges.
+    /*! Container for the 'mtu' property. This will hold one edge property
+     * for all in- and output edges.
+     */
     std::vector<property_t<size_t>> _mtu_props;
 
     //! The actual MTU value
@@ -401,17 +405,19 @@ private:
     //! Reference to the timebase clock_iface object shared with the register_iface
     std::shared_ptr<clock_iface> _tb_clock_iface;
 
-    //! Stores a reference to this block's motherboard's controller, if this
-    // block had requested and was granted access
+    /*! Stores a reference to this block's motherboard's controller, if this
+     * block had requested and was granted access
+     */
     std::shared_ptr<mb_controller> _mb_controller;
 
     //! Arguments that were passed into this block
     const uhd::device_addr_t _block_args;
 
-    //! Reference to this block's subtree
-    //
-    // It is mutable because _tree->access<>(..).get() is not const, but we
-    // need to do just that in some const contexts
+    /*! Reference to this block's subtree
+     *
+     * It is mutable because _tree->access<>(..).get() is not const, but we
+     * need to do just that in some const contexts
+     */
     mutable uhd::property_tree::sptr _tree;
 
 }; // class noc_block_base

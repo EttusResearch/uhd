@@ -1036,8 +1036,9 @@ private:
     //! Reference to the property tree
     uhd::property_tree::sptr _tree;
 
-    //! Number of motherboards, this is technically redundant but useful for
+    /*! Number of motherboards, this is technically redundant but useful for
     // easy lookups.
+    */
     size_t _num_mboards;
 
     //! Reference to the global I/O Service Manager
@@ -1065,8 +1066,9 @@ private:
     //! Stash of the client zeros for all motherboards
     std::unordered_map<size_t, detail::client_zero::sptr> _client_zeros;
 
-    //! Map a pair (motherboard index, control crossbar port) to an RFNoC block
-    // or SEP
+    /*! Map a pair (motherboard index, control crossbar port) to an RFNoC block
+     * or SEP.
+     */
     std::map<std::pair<size_t, size_t>, block_id_t> _port_block_map;
 
     //! Map SEP block ID (e.g. 0/SEP#0) onto a sep_addr_t
@@ -1078,8 +1080,9 @@ private:
     //! uptr to graph stream manager
     graph_stream_manager::uptr _gsm;
 
-    //! EPID allocator. Technically not required by the rfnoc_graph, but we'll
-    // store it here because it's such a central thing.
+    /*! EPID allocator. Technically not required by the rfnoc_graph, but we'll
+     * store it here because it's such a central thing.
+     */
     epid_allocator::sptr _epid_alloc = std::make_shared<epid_allocator>();
 
     //! Reference to a packet factory object. Gets initialized just before the GSM

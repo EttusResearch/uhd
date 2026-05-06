@@ -31,8 +31,9 @@ bool validate_key(const std::string& key)
     return std::regex_match(key, matches, KEY_RE);
 }
 
-//! Maps A to 0, Z to 25, '2' to 26 and so on.
-// Assumes c is in valid range!
+/*! \brief Maps A to 0, Z to 25, '2' to 26 and so on.
+ * Assumes c is in valid range!
+ */
 int base32_get_char_index(uint8_t c)
 {
     constexpr uint8_t A      = static_cast<uint8_t>('A');
@@ -53,9 +54,10 @@ std::string format_base32_key(const std::string& user_key)
 }
 
 
-//! Do base32 decoding
-//
-// This function assumes the input is valid base32 and of the right length
+/*! \brief Do base32 decoding.
+ *
+ * This function assumes the input is valid base32 and of the right length
+ */
 std::vector<uint8_t> base32_decode(const std::string& encoded_key)
 {
     std::vector<uint8_t> decoded_data(BINARY_KEY_LEN, 0);

@@ -22,7 +22,7 @@ namespace uhd { namespace usrp { namespace zbx {
 using uhd::usrp::x400::ch_mode;
 
 //! Which LO to address when peeking/poking
-//  This must match the LO_SELECT values in gen_zbx_cpld_regs.py
+//! This must match the LO_SELECT values in gen_zbx_cpld_regs.py
 enum class zbx_lo_t {
     TX0_LO1 = 0,
     TX0_LO2 = 1,

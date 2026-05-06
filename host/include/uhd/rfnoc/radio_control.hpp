@@ -113,9 +113,10 @@ public:
     /**************************************************************************
      * Rate-Related API Calls
      *************************************************************************/
-    //! Set the sample rate
-    //
-    // This function will coerce the rate and return the actual, current value.
+    /*! \brief Set the sample rate.
+     *
+     * This function will coerce the rate and return the actual, current value.
+     */
     virtual double set_rate(const double rate) = 0;
 
     //! Get the sample rate
@@ -124,18 +125,19 @@ public:
     //! Return a list of valid rates
     virtual uhd::meta_range_t get_rate_range() const = 0;
 
-    //! Return the samples per clock (SPC) value of this radio
-    //
-    // Some radios may operate on multiple samples per clock cycle, usually in
-    // order to handle large bandwidths without requiring very fast FPGA clock
-    // rates.
-    //
-    // When the SPC value is greater than one, certain API calls may behave
-    // slightly differently. This is most relevant for issue_stream_cmd(). Other
-    // commands may round their execution time to the next integer multiple of
-    // SPC as well.
-    //
-    // Ultimately, the exact impact of SPC is device-dependent.
+    /*! \brief Return the samples per clock (SPC) value of this radio.
+     *
+     * Some radios may operate on multiple samples per clock cycle, usually in
+     * order to handle large bandwidths without requiring very fast FPGA clock
+     * rates.
+     *
+     * When the SPC value is greater than one, certain API calls may behave
+     * slightly differently. This is most relevant for issue_stream_cmd(). Other
+     * commands may round their execution time to the next integer multiple of
+     * SPC as well.
+     *
+     * Ultimately, the exact impact of SPC is device-dependent.
+     */
     virtual size_t get_spc() const = 0;
 
     /**************************************************************************
@@ -356,14 +358,18 @@ public:
     //! Returns this radio's slot name (typically "A" or "B")
     virtual std::string get_slot_name() const = 0;
 
-    //! Return the channel that corresponds to a frontend's name
-    //
-    // Example: "0" -> 0 (for UBX), or "A" -> 0 (for E310)
+    /*! \brief Return the channel that corresponds to a frontend's name.
+     *
+     * Example: "0" -> 0 (for UBX), or "A" -> 0 (for E310)
+     */
     virtual size_t get_chan_from_dboard_fe(
         const std::string& fe, const uhd::direction_t direction) const = 0;
 
-    //! Return the frontend name for a channel index
-    //
+    /*! \brief Return the frontend name for a channel index.
+     *
+     * Example: 0 -> "0" (for UBX), or 0 -> "A" (for E310)
+     */
+
     // Example: 0 -> "0" (for UBX), or 0 -> "A" (for E310)
     virtual std::string get_dboard_fe_from_chan(
         const size_t chan, const uhd::direction_t direction) const = 0;
@@ -375,10 +381,11 @@ public:
     /**************************************************************************
      * EEPROM API Calls
      *************************************************************************/
-    //! Update the daughterboard EEPROM
-    //
-    // Note: EEPROMs have finite numbers of write cycles, so don't overuse this
-    // method!
+    /*! \brief Update the daughterboard EEPROM.
+     *
+     * Note: EEPROMs have finite numbers of write cycles, so don't overuse this
+     * method!
+     */
     virtual void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom) = 0;
 
     //! Return the content of the daughterboard EEPROM

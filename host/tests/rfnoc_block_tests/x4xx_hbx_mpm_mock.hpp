@@ -26,9 +26,10 @@ namespace {
 constexpr double DEFAULT_MCR = 1250e6;
 }
 
-//! Mock MPM server for X4xx/HBX
-//
-// This is a mock server that mimics an X4xx with an HBX daughterboard.
+/*! \brief Mock MPM server for X4xx/HBX.
+ *
+ * This is a mock server that mimics an X4xx with an HBX daughterboard.
+ */
 class x4xx_hbx_mock_rpc_server : public x400_rpc_iface,
                                  public mpmd_rpc_iface,
                                  public dboard_base_rpc_iface,

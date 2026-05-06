@@ -37,8 +37,9 @@ const uint32_t REG_BIST_RX_BYTE_COUNT = 0x0048;
 const uint32_t REG_BIST_ERROR_COUNT   = 0x0050;
 const uint32_t REG_BIST_CYCLE_COUNT   = 0x0058;
 
-//! Read FIFO info register, check for magic, return "has bist" flag all in one
-// go
+/*! \brief Read FIFO info register, check for magic, return "has bist" flag all in one
+ * go.
+ */
 bool unpack_fifo_info(const uint32_t fifo_info)
 {
     if (fifo_info >> 16 != FIFO_MAGIC) {

@@ -15,10 +15,11 @@
 
 namespace uhd { namespace rfnoc { namespace x400 {
 
-//! Control class for the RFDC components of a single daughterboard
-//
-// This class controls the NCOs and other RFDC settings. The corresponding FPGA
-// module is rfdc_timing_control.sv.
+/*! \brief Control class for the RFDC components of a single daughterboard.
+ *
+ * This class controls the NCOs and other RFDC settings. The corresponding FPGA
+ * module is rfdc_timing_control.sv.
+ */
 class rfdc_control
 {
 public:
@@ -51,33 +52,36 @@ public:
 
     rfdc_control(uhd::memmap32_iface_timed&& iface, const std::string& log_id);
 
-    //! Reset the listed NCOs
-    //
-    // All NCOs that are listed in \p ncos are reset synchronously.
-    //
-    // \param ncos A list of NCOs that shall be reset at the given time
-    // \param time The time at which the reset shall occur
+    /*! \brief Reset the listed NCOs.
+     *
+     * All NCOs that are listed in \p ncos are reset synchronously.
+     *
+     * \param ncos A list of NCOs that shall be reset at the given time
+     * \param time The time at which the reset shall occur
+     */
     void reset_ncos(const std::vector<rfdc_type>& ncos, const uhd::time_spec_t& time);
 
-    //! Reset the listed gearboxes
-    //
-    // All gearboxes that are listed in \p gearboxes are reset synchronously.
-    //
-    // \param gearboxes A list of gearboxes that shall be reset at the given time
-    // \param time The time at which the reset shall occur. Note: If \p time is
-    //             set to ASAP, the resets will still occur synchronously, but
-    //             at a non-deterministic time. This will suffice for synchronizing
-    //             gearboxes on a single device.
+    /*! \brief Reset the listed gearboxes.
+     *
+     * All gearboxes that are listed in \p gearboxes are reset synchronously.
+     *
+     * \param gearboxes A list of gearboxes that shall be reset at the given time
+     * \param time The time at which the reset shall occur. Note: If \p time is
+     *             set to ASAP, the resets will still occur synchronously, but
+     *             at a non-deterministic time. This will suffice for synchronizing
+     *             gearboxes on a single device.
+     */
     void reset_gearboxes(
         const std::vector<rfdc_type>& gearboxes, const uhd::time_spec_t& time);
 
     //! Return true if the NCO is out of reset
     bool get_nco_reset_done();
 
-    //! Set an NCO to a specific frequency
-    //
-    // \param nco Which NCO to re-tune
-    // \param freq the new frequency to tune it to (in Hz)
+    /*! \brief Set an NCO to a specific frequency.
+     *
+     * \param nco Which NCO to re-tune
+     * \param freq The new frequency to tune it to (in Hz)
+     */
     double set_nco_freq(const rfdc_type nco, const double freq);
 
 private:

@@ -183,12 +183,16 @@ public:
 
     // LO Gain Control
 
-    //! Set the external gain for a TX LO
-    //  Out of range values will be coerced
+    /*! \brief Set the external gain for a TX LO.
+     *
+     *  Out of range values will be coerced
+     */
     double set_tx_lo_gain(const double gain, const std::string& name, const size_t chan);
 
-    //! Set the external gain for an RX LO
-    //  Out of range values will be coerced
+    /*! \brief Set the external gain for an RX LO.
+     *
+     *  Out of range values will be coerced
+     */
     double set_rx_lo_gain(const double gain, const std::string& name, const size_t chan);
 
     double get_tx_lo_gain(const std::string& name, const size_t chan);
@@ -196,13 +200,17 @@ public:
 
     // LO Output Power Control
 
-    //! Set the output power setting of a TX LO
-    //  Out of range values will be coerced
+    /*! Set the output power setting of a TX LO.
+     *
+     *  Out of range values will be coerced
+     */
     double set_tx_lo_power(
         const double power, const std::string& name, const size_t chan);
 
-    //! Set the output power setting of a RX LO
-    //  Out of range values will be coerced
+    /*! \brief Set the output power setting of a RX LO.
+     *
+     *  Out of range values will be coerced
+     */
     double set_rx_lo_power(
         const double power, const std::string& name, const size_t chan);
 
@@ -214,9 +222,10 @@ private:
     /**************************************************************************
      * noc_block_base API
      *************************************************************************/
-    //! Safely shut down all peripherals
-    //
-    // Reminder: After this is called, no peeks and pokes are allowed!
+    /*! \brief Safely shut down all peripherals.
+     *
+     * Reminder: After this is called, no peeks and pokes are allowed!
+     */
     void deinit() override
     {
         RFNOC_LOG_TRACE("deinit()");
@@ -262,8 +271,9 @@ private:
     //! Configure LO1's export
     void _set_lo1_export_enabled(const bool enabled, const direction_t dir);
 
-    //! Validate that port_name is valid, and that LO distribution functions
-    //  can be called in this instance
+    /*! \brief Validate that port_name is valid, and that LO distribution functions
+     *  can be called in this instance.
+     */
     void _validate_output_port(
         const std::string& port_name, const std::string& function_name);
 
@@ -273,33 +283,44 @@ private:
 
     bool _get_lo_output_enabled(const std::string& port_name, const direction_t dir);
 
-    //! Configure LO1's output power
-    //  Out of range values will be coerced to [0-63]
+    /*! \brief Configure LO1's output power.
+     *  Out of range values will be coerced to [0-63]
+     */
     double _set_lo1_power(const double power, const direction_t dir);
 
     //! Flash all front end LEDs at 1 Hz for the specified amount of time
     void _identify_with_leds(double identify_duration);
 
-    //! Configure ATR registers and update the cached antenna value from the
-    //  new antenna value.
-    //  ATR registers control SW10 and the frontend LEDs.
+    /*! \brief Configure ATR registers and update the cached antenna value from the
+     *  new antenna value.
+     *
+     *  ATR registers control SW10 and the frontend LEDs.
+     */
     void _update_atr(const std::string& ant, const direction_t dir);
 
     //! Configure DSP core corrections based on current frequency
     void _update_corrections(const double freq, const direction_t dir, const bool enable);
 
-    //! Map a frequency in Hz to an rx_band value. Will return
-    //  rx_band::INVALID_BAND if the frequency is out of range.
+    /*! \brief Map a frequency in Hz to an rx_band value.
+     *
+     * Will return rx_band::INVALID_BAND if the frequency is out of range.
+     */
     static rx_band _map_freq_to_rx_band(const double freq);
-    //! Map a frequency in Hz to an tx_band value. Will return
-    //  tx_band::INVALID_BAND if the frequency is out of range.
+    /*! \brief Map a frequency in Hz to an tx_band value.
+     *
+     * Will return tx_band::INVALID_BAND if the frequency is out of range.
+     */
     static tx_band _map_freq_to_tx_band(const double freq);
 
-    //! Return if the given rx frequency is in lowband
-    //  NOTE: Returns false if frequency is out of Rh's rx frequency range
+    /*! \brief Return if the given rx frequency is in lowband.
+     *
+     *  NOTE: Returns false if frequency is out of Rh's rx frequency range
+     */
     static bool _is_rx_lowband(const double freq);
-    //! Return if the given tx frequency is in lowband
-    //  NOTE: Returns false if frequency is out of Rh's tx frequency range
+    /*! \brief Return if the given tx frequency is in lowband.
+     *
+     *  NOTE: Returns false if frequency is out of Rh's tx frequency range
+     */
     static bool _is_tx_lowband(const double freq);
 
     //! Return the gain range of the LMX LO
@@ -321,8 +342,10 @@ private:
     /**************************************************************************
      * Sensors
      *************************************************************************/
-    //! Return LO lock status. Factors in current band (low/high) and
-    // direction (TX/RX)
+    /*! \brief Return LO lock status.
+     *
+     * Factors in current band (low/high) and direction (TX/RX)
+     */
     bool get_lo_lock_status(const direction_t dir) const;
 
     /**************************************************************************
@@ -381,19 +404,23 @@ private:
     //! Reference to the RX LO
     lmx2592_iface::sptr _rx_lo;
 
-    //! Reference to the CPLD controls. Even if there's multiple radios,
-    //  there's only one CPLD control.
+    /*! \brief Reference to the CPLD controls.
+     *
+     * Even if there's multiple radios, there's only one CPLD control.
+     */
     std::shared_ptr<rhodium_cpld_ctrl> _cpld;
 
-    //! ATR controls. These control the external DSA and the AD9371 gain
-    //  up/down bits. They do *not* control the ATR state of the CPLD, the
-    //  tx/rx run states are hooked up directly to the CPLD.
-    //
-    //  Every radio channel gets its own ATR state register.
+    /*! ATR controls. These control the external DSA and the AD9371 gain
+     *  up/down bits. They do *not* control the ATR state of the CPLD, the
+     *  tx/rx run states are hooked up directly to the CPLD.
+     *
+     *  Every radio channel gets its own ATR state register.
+     */
     usrp::gpio_atr::gpio_atr_3000::sptr _gpio;
 
-    //! Front panel GPIO controller. Note that only one radio block per
-    //  module can be the FP-GPIO master.
+    /*! Front panel GPIO controller. Note that only one radio block per
+     *  module can be the FP-GPIO master.
+     */
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
 
     //! One DSP core per channel
@@ -408,9 +435,10 @@ private:
     //! Desired RF frequency
     std::map<direction_t, double> _desired_rf_freq = {
         {RX_DIRECTION, 2.44e9}, {TX_DIRECTION, 2.44e9}};
-    //! Frequency at which gain setting was last applied.  The CPLD requires a new gain
-    //  control write when switching between lowband and highband frequencies, so save
-    //  the frequency when sending a gain control command.
+    /*! Frequency at which gain setting was last applied.  The CPLD requires a new gain
+     *  control write when switching between lowband and highband frequencies, so save
+     *  the frequency when sending a gain control command.
+     */
     double _tx_frequency_at_last_gain_write = 0.0;
     double _rx_frequency_at_last_gain_write = 0.0;
     //! LO gain

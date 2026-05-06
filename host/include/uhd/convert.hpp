@@ -38,14 +38,15 @@ public:
     }
 
 private:
-    //! Callable method: input vectors, output vectors, num samples
-    //
-    // This is the guts of the converter. When deriving new converter types,
-    // this is where the actual conversion routines go.
-    //
-    // \param in Pointers to the input buffers
-    // \param out Pointers to the output buffers
-    // \param num Number of items in the input buffers to convert
+    /*! \brief Callable method: input vectors, output vectors, num samples.
+     *
+     * This is the guts of the converter. When deriving new converter types,
+     * this is where the actual conversion routines go.
+     *
+     * \param in Pointers to the input buffers
+     * \param out Pointers to the output buffers
+     * \param num Number of items in the input buffers to convert
+     */
     virtual void operator()(
         const input_type& in, const output_type& out, const size_t num) = 0;
 };
@@ -99,5 +100,4 @@ UHD_API void register_bytes_per_item(const std::string& format, const size_t siz
 
 //! Convert an item format to a size in bytes
 UHD_API size_t get_bytes_per_item(const std::string& format);
-
 }} // namespace uhd::convert

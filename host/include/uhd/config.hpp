@@ -11,24 +11,24 @@
 
 #    define UHD_MSVC _MSC_VER
 // suppress warnings
-//# pragma warning(push)
-//# pragma warning(disable: 4511) // copy constructor can't not be generated
-//# pragma warning(disable: 4512) // assignment operator can't not be generated
-//# pragma warning(disable: 4100) // unreferenced formal parameter
-//# pragma warning(disable: 4996) // <symbol> was declared deprecated
+// # pragma warning(push)
+// # pragma warning(disable: 4511) // copy constructor can't not be generated
+// # pragma warning(disable: 4512) // assignment operator can't not be generated
+// # pragma warning(disable: 4100) // unreferenced formal parameter
+// # pragma warning(disable: 4996) // <symbol> was declared deprecated
 #    pragma warning(disable : 4355) // 'this' : used in base member initializer list
-//# pragma warning(disable: 4706) // assignment within conditional expression
+// # pragma warning(disable: 4706) // assignment within conditional expression
 #    pragma warning(disable : 4251) // class 'A<T>' needs to have dll-interface to be used
                                     // by clients of class 'B'
-//# pragma warning(disable: 4127) // conditional expression is constant
-//# pragma warning(disable: 4290) // C++ exception specification ignored except to ...
-//# pragma warning(disable: 4180) // qualifier applied to function type has no meaning;
-// ignored
+// # pragma warning(disable: 4127) // conditional expression is constant
+// # pragma warning(disable: 4290) // C++ exception specification ignored except to ...
+// # pragma warning(disable: 4180) // qualifier applied to function type has no meaning;
+//  ignored
 #    pragma warning(disable : 4275) // non dll-interface class ... used as base for
                                     // dll-interface class ...
-//# pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible
-// loss of data # pragma warning(disable: 4511) // 'class' : copy constructor could not be
-// generated
+// # pragma warning(disable: 4267) // 'var' : conversion from 'size_t' to 'type', possible
+//  loss of data # pragma warning(disable: 4511) // 'class' : copy constructor could not
+//  be generated
 #    pragma warning(disable : 4250) // 'class' : inherits 'method' via dominance
 #    pragma warning( \
         disable : 4200) // nonstandard extension used : zero-sized array in struct/union
@@ -45,10 +45,11 @@ typedef SSIZE_T ssize_t;
 
 #endif // _MSC_VER
 
-//! Alias for [[fallthrough]];, for backward compatibility reasons
-//
-// \deprecated This is no longer necessary, as C and C++ now have standard
-//             ways of declaring a fallthrough.
+/*! \brief Alias for [[fallthrough]];, for backward compatibility reasons
+ *
+ * \deprecated This is no longer necessary, as C and C++ now have standard
+ *             ways of declaring a fallthrough.
+ */
 #define UHD_FALLTHROUGH [[fallthrough]];
 
 // define cross platform attribute macros
