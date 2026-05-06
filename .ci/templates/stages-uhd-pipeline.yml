@@ -95,6 +95,12 @@ parameters:
 - name: package_access
   type: string
   default: 'Internal'
+# GRPC version used in the macos build
+# make sure to align the definition with the grpc
+# respository resource below
+- name: grpc_version
+  type: string
+  default: "1.51.1"
 # Requested X410 targets (if build_x410 is true)
 - name: x410_targets_matrix
   type: object
@@ -294,6 +300,13 @@ resources:
     type: git
     ref: master
     name: DevCentral/usrp4-hw
+  # grpc repository is only used for macos build currently.
+  # Make sure to align the tag with the parameter grpc_version above
+  - repository: grpc
+    type: github
+    endpoint: EttusResearch
+    name: grpc/grpc
+    ref: refs/tags/v1.51.1
 
 stages:
 ###############################################################################
@@ -392,6 +405,7 @@ stages:
       toolset: make_homebrew_macos
       custom_boost_version: ${{ parameters.custom_boost_version }}
       custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
+      grpc_version: ${{ parameters.grpc_version }}
 
 - stage: build_uhd_embedded_system_images
   displayName: Build UHD Embedded System Images

@@ -15,6 +15,8 @@ parameters:
 - name: cmake_args
   type: string
   default: " "
+- name: grpc_version
+  type: string
 
 steps:
 - ${{ if parameters.uhdCustomBoostPackage }}:
@@ -52,6 +54,39 @@ steps:
     python3 -m pip install mako numpy requests ruamel.yaml
   displayName: Install python UHD deps
 
+- task: Cache@2
+  displayName: "Cache grpc installation"
+  inputs:
+    key: '"grpc-macos-${{ parameters.grpc_version }}"'
+    path: $(Agent.BuildDirectory)/grpc-${{ parameters.grpc_version }}-install
+    cacheHitVar: cache_grpc
+
+- checkout: grpc
+  submodules: true
+  displayName: clone grpc
+  condition: and(succeeded(), ne(variables.cache_grpc, 'true'))
+
+- script: |
+    set -e
+    SOURCE_DIR=$(Build.SourcesDirectory)/grpc
+    BUILD_DIR=$(Agent.BuildDirectory)/grpc-${{ parameters.grpc_version }}-build
+    INSTALL_DIR=$(Agent.BuildDirectory)/grpc-${{ parameters.grpc_version }}-install
+    mkdir -p $BUILD_DIR && cd $BUILD_DIR
+    cmake $SOURCE_DIR -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR
+    make -j $(nproc)
+    make -j $(nproc) install
+  displayName: compile grpc
+  condition: and(succeeded(), ne(variables.cache_grpc, 'true'))
+
+- script: |
+    INSTALL_DIR=$(Agent.BuildDirectory)/grpc-${{ parameters.grpc_version }}-install
+    echo GRPC_INSTALL_DIR=$INSTALL_DIR
+    echo "##vso[task.setvariable variable=GRPC_INSTALL_DIR]$INSTALL_DIR"
+    ls -l $INSTALL_DIR
+    ls -l $INSTALL_DIR/bin
+    ls -l $INSTALL_DIR/lib
+  displayName: list grpc
+
 - script: |
     mkdir -p ${{ parameters.uhdBuildDir }}
     cd ${{ parameters.uhdBuildDir }}
@@ -62,9 +97,10 @@ steps:
       export UHD_CI_CMAKE_OPTIONS="-DCMAKE_INSTALL_PREFIX=${{ parameters.uhdBuildDir }}-installed"
       export UHD_CI_CMAKE_SIM="-DENABLE_SIM=OFF"
     fi
+    CMAKE_PREFIX_PATH_OPTIONS="-DCMAKE_PREFIX_PATH=$GRPC_INSTALL_DIR"
     if [[ "${{ parameters.uhdCustomBoostPackage }}" = "True" ]]; then
       BOOST_INSTALL_DIR=${{ parameters.uhdBuildDir }}-boost
-      export UHD_BOOST_OPTIONS="-DCMAKE_PREFIX_PATH=$BOOST_INSTALL_DIR"
+      CMAKE_PREFIX_PATH_OPTIONS="$CMAKE_PREFIX_PATH_OPTIONS;$BOOST_INSTALL_DIR"
     fi
     if [[ "${{ parameters.cmake_args }}" != " " ]]; then
       echo "Adding additional cmake args: ${{ parameters.cmake_args }}"
@@ -72,8 +108,7 @@ steps:
     cmake \
       $UHD_CI_CMAKE_OPTIONS \
       $UHD_CI_CMAKE_SIM \
-      $UHD_BOOST_OPTIONS \
-      -DENABLE_MPMD=OFF \
+      $CMAKE_PREFIX_PATH_OPTIONS \
       ${{ parameters.cmake_args }} \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake homebrew macOS UHD
