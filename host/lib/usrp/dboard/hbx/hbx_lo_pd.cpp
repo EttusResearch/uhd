@@ -7,6 +7,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/dboard/hbx/hbx_lo_pd.hpp>
+#include <algorithm>
+#include <utility>
 
 namespace uhd { namespace usrp { namespace hbx {
 

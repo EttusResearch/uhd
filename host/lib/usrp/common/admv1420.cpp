@@ -6,6 +6,7 @@
 
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/admv1420.hpp>
+#include <cmath>
 
 namespace {
 // LOG ID

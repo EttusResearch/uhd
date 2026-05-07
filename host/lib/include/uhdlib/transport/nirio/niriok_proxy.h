@@ -12,7 +12,9 @@
 #include <uhdlib/transport/nirio/nirio_quirks.h>
 #include <shared_mutex>
 #include <cstdint>
+#include <memory>
 #include <mutex>
+#include <string>
 
 #define NI_VENDOR_NUM 0x1093
 

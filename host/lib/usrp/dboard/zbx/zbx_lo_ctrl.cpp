@@ -9,6 +9,7 @@
 #include <uhdlib/usrp/dboard/zbx/zbx_lo_ctrl.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 namespace uhd { namespace usrp { namespace zbx {
