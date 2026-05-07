@@ -23,12 +23,13 @@ index 45eb639910..25fff32908 100644
 --- a/host/include/uhd/utils/paths.hpp
 +++ b/host/include/uhd/utils/paths.hpp
 @@ -35,9 +35,6 @@ UHD_API std::string get_lib_path(void);
- //
- // This path is typically identical with the installation prefix, but can be
- // overridden with the UHD_PKG_PATH environment variable.
--//
--// This path is "calculated" by identifying the path to the UHD library and
--// returning the parent directory of the library path.
+  *
+  * This path is typically identical with the installation prefix, but can be
+  * overridden with the UHD_PKG_PATH environment variable.
+- *
+- * This path is "calculated" by identifying the path to the UHD library and
+- * returning the parent directory of the library path.
+  */
  UHD_API std::string get_pkg_path(void);
  
  
