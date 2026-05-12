@@ -10,11 +10,11 @@ daughterboards, and the combinations thereof.
 ## Documentation
 
 For technical documentation related to USRP™ hardware or UHD system
-design, check out the [UHD and USRP Manual](http://files.ettus.com/manual/).
+design, check out the [UHD and USRP Manual](http://uhd.readthedocs.io/).
 That is where you can find
-[Installation Instructions](http://files.ettus.com/manual/page_install.html),
+[Installation Instructions](http://uhd.readthedocs.io/en/latest/page_installation.html),
 help on how to
-[build UHD from source](http://files.ettus.com/manual/page_build_guide.html) on
+[build UHD from source](http://uhd.readthedocs.io/en/latest/page_build_guide.html) on
 different platforms, development guidelines and reference documentation as well
 as device usage guidance.
 
@@ -29,8 +29,8 @@ UHD is primarily developed on Linux, but we also test and support the following
 operating systems.
 
 * Linux (Fedora and Ubuntu)
-* Mac OS X (Intel)
-* Windows 10
+* Mac OS X
+* Windows 11
 
 Other operating systems will most likely work, too, but are not officially
 supported.
