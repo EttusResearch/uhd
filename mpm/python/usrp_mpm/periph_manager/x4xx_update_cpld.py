@@ -18,6 +18,10 @@ from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.sys_utils.sysfs_gpio import GPIOBank
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 
+X410_ID = (0x410, 0x7410)
+X420_ID = (0x420, 0x7420)
+X440_ID = (0x440, 0x7440)
+
 OPENOCD_DIR = "/usr/share/openocd/scripts"
 CONFIGS = {
     "axi_bitq": {
@@ -223,11 +227,11 @@ def get_mb_info(item):
 
 def get_default_cpld_image_names(pid, compat_rev):
     """Determine the default CPLD image name based on the compat_rev."""
-    if pid == 0x410 or pid == 0x420:
+    if pid in X410_ID or pid in X420_ID:
 
         default_cpld_image_10m04 = ["cpld-x410-10m04.rpd", "usrp_x410_cpld_10m04.rpd"]
         default_cpld_image_10m08 = ["cpld-x410-10m08.rpd", "usrp_x410_cpld_10m08.rpd"]
-    elif pid == 0x440:
+    elif pid in X440_ID:
         default_cpld_image_10m04 = ["cpld-x440-10m04.rpd", "usrp_x440_cpld_10m04.rpd"]
         default_cpld_image_10m08 = ["cpld-x440-10m08.rpd", "usrp_x440_cpld_10m08.rpd"]
     else:
@@ -281,7 +285,14 @@ def main():
         )
         args = parser.parse_args()
         if (os.path.basename(args.file) not in default_image_names) and not args.force:
-            devices = {0x410: "X410", 0x420: "X420", 0x440: "X440"}
+            devices = {
+                0x410: "X410",
+                0x420: "X420",
+                0x440: "X440",
+                0x7410: "X410 (non-customizable FPGA)",
+                0x7420: "X420 (non-customizable FPGA)",
+                0x7440: "X440 (non-customizable FPGA)",
+            }
             device = devices.get(pid, "unknown device")
             parser.epilog = (
                 f"\nERROR: Valid CPLD image names for {device} compat_rev "
