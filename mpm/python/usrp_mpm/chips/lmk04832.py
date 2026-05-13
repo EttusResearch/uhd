@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-"""
-LMK04832 parent driver class
-"""
+"""LMK04832 parent driver class."""
 
 import time
 
@@ -13,8 +11,9 @@ from usrp_mpm.mpmlog import get_logger
 
 
 class LMK04832:
-    """
-    Generic driver class for LMK04832 access.
+    """Generic driver class for LMK04832 access.
+
+    This is subclassed for the X4xx-specific use case.
     """
 
     LMK_CHIP_ID = 6
@@ -30,6 +29,7 @@ class LMK04832:
     PLL2_PRESCALER = range(2, 9)
 
     def __init__(self, regs_iface, parent_log=None):
+        """Initialize class."""
         self.log = (
             parent_log.getChild("LMK04832") if parent_log is not None else get_logger("LMK04832")
         )
@@ -41,25 +41,21 @@ class LMK04832:
         self.enable_3wire_spi = False
 
     def pokes8(self, addr_vals):
-        """
-        Apply a series of pokes.
+        """Apply a series of pokes.
+
         pokes8([(0,1),(0,2)]) is the same as calling poke8(0,1), poke8(0,2).
         """
         for addr, val in addr_vals:
             self.poke8(addr, val)
 
     def get_chip_id(self):
-        """
-        Read back the chip ID
-        """
+        """Read back the chip ID."""
         chip_id = self.peek8(0x03)
         self.log.trace("Chip ID Readback: {}".format(chip_id))
         return chip_id
 
     def get_product_id(self):
-        """
-        Read back the product ID
-        """
+        """Read back the product ID."""
         prod_id_0 = self.peek8(0x04)
         prod_id_1 = self.peek8(0x05)
         prod_id = (prod_id_1 << 8) | prod_id_0
@@ -67,9 +63,9 @@ class LMK04832:
         return prod_id
 
     def verify_chip_id(self):
-        """
-        Returns True if the chip ID and product ID matches what we expect,
-        False otherwise.
+        """Return True if the chip ID and product ID matches what we expect.
+
+        Returns False otherwise.
         """
         chip_id = self.get_chip_id()
         prod_id = self.get_product_id()
@@ -82,22 +78,18 @@ class LMK04832:
         return True
 
     def enable_4wire_spi(self):
-        """Enable 4-wire SPI readback from the CLKin_SEL0 pin"""
+        """Enable 4-wire SPI readback from the CLKin_SEL0 pin."""
         self.poke8(0x148, 0x33)
         self.enable_3wire_spi = False
 
     def get_status(self):
-        """
-        Returns PLL lock status as a dictionary
-        """
+        """Returns PLL lock status as a dictionary."""
         pll1_status = self.check_plls_locked(pll="PLL1")
         pll2_status = self.check_plls_locked(pll="PLL2")
         return {"PLL1 lock": pll1_status, "PLL2 lock": pll2_status}
 
     def check_plls_locked(self, pll="BOTH"):
-        """
-        Returns True if the specified PLLs are locked, False otherwise.
-        """
+        """Return True if the specified PLLs are locked, False otherwise."""
         pll = pll.upper()
         assert pll in ("BOTH", "PLL1", "PLL2"), "Invalid PLL specified"
         result = True
@@ -116,8 +108,8 @@ class LMK04832:
         return result
 
     def wait_for_pll_lock(self, pll="BOTH", timeout=2000):
-        """
-        Waits for the PLL(s) to lock.
+        """Wait for the PLL(s) to lock.
+
         Returns False if the PLL(s) do not lock before the timeout (in ms)
         """
         # Sets and clears the CLR_PLLX_LD_LOST for PLL1 and PLL2
@@ -134,8 +126,9 @@ class LMK04832:
         return False
 
     def soft_reset(self, value=True):
-        """
-        Performs a soft reset of the LMK04832 by setting or unsetting the reset register.
+        """Perform soft reset of the LMK04832.
+
+        This is done by setting or unsetting the reset register.
         """
         reset_addr = 0
         if value:  # Reset
@@ -147,15 +140,15 @@ class LMK04832:
         self.poke8(reset_addr, reset_byte)
 
     def pll1_r_divider_sync(self, sync_pin_callback):
-        """
-        Run PLL1 R Divider sync according to
+        """Run PLL1 R Divider sync.
+
+        Follows the sequence in
         http://www.ti.com/lit/ds/snas688c/snas688c.pdf chapter 8.3.1.1
 
         Rising edge on sync pin is done by an callback which has to return its
         success state. If the sync callback was successful, returns PLL1 lock
         state as overall success otherwise the method fails.
         """
-
         # 1) Setup device for synchronizing PLL1 R
         # PLL1R_SYNC_EN    (6) = 1
         # PLL1R_SYNC_SRC (5,4) = Sync pin
@@ -185,7 +178,8 @@ class LMK04832:
     ## Register bitfield definitions ##
 
     def pll2_pre_to_reg(self, prescaler, osc_field=0x01, xtal_en=0x0, ref_2x_en=0x0):
-        """
+        """Return prescaler value.
+
         From the prescaler value, returns the register value combined with the other
         register fields.
         """
