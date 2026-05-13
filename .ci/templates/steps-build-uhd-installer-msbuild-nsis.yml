@@ -196,6 +196,22 @@ steps:
     targetFolder: '${{ parameters.uhdInstallerDir }}'
     cleanTargetFolder: ${{ parameters.cleanTargetFolder }}
   displayName: Copy msbuild installer
+
+- powershell: |
+    p4 sync $(signtool-p4-path)
+    $p4where = p4 -Ztag where $(signtool-p4-path)
+    # Parses p4 where output to find local path
+    $LocalSignToolPath = ($p4where[2] -split "... path ")[1]
+    Write-Host "Sign tool: $LocalSignToolPath"
+    # Finds the installer binary name
+    $installer = Get-ChildItem -Path "${{ parameters.uhdInstallerDir }}" -Filter "uhd_*.exe" -File | Select-Object -First 1
+    Write-Host "Signing $($installer.FullName)"
+    & $LocalSignToolPath $installer.FullName $installer.FullName
+  displayName: Sign Windows installer
+  condition: and(succeeded(), eq(variables['attemptSigning'], 'true'))
+  target: host
+  timeoutInMinutes: 30
+
 - ${{if parameters.uhdBuildPythonAPI }}:
   - task: CopyFiles@2.246.0
     inputs:
