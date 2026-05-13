@@ -28,6 +28,13 @@ class LMK04832:
     # PLL2 Prescaler is in range from 2, 8
     PLL2_PRESCALER = range(2, 9)
 
+    # fmt: off
+    RB_PLL1_LD_LOST_MASK = 0b1000
+    RB_PLL1_LD_MASK      = 0b0100
+    RB_PLL2_LD_LOST_MASK = 0b0010
+    RB_PLL2_LD_MASK      = 0b0001
+    # fmt: on
+
     def __init__(self, regs_iface, parent_log=None):
         """Initialize class."""
         self.log = (
@@ -88,23 +95,64 @@ class LMK04832:
         pll2_status = self.check_plls_locked(pll="PLL2")
         return {"PLL1 lock": pll1_status, "PLL2 lock": pll2_status}
 
-    def check_plls_locked(self, pll="BOTH"):
-        """Return True if the specified PLLs are locked, False otherwise."""
+    def clear_ldl(self, pll="BOTH"):
+        """Clear the LD_LOST flags for both PLLs.
+
+        Set `pll` to "PLL1", "PLL2", or "BOTH" to specify which PLL's LD_LOST
+        flags to clear.
+        """
+        pll = pll.upper()
+        assert pll in ("BOTH", "PLL1", "PLL2"), "Invalid PLL specified"
+        clear_val1 = 0b10 if pll in ("BOTH", "PLL1") else 0
+        clear_val2 = 0b01 if pll in ("BOTH", "PLL2") else 0
+        self.poke8(0x182, clear_val1 | clear_val2)
+        self.poke8(0x182, 0x00)
+
+    def check_plls_locked(self, pll="BOTH", sticky=False):
+        """Return True if the specified PLLs are locked, False otherwise.
+
+        Note: By default, this checks the current status only, it does not check
+        the sticky lock-detect bits (i.e., we only check RB_PLL1_LD and/or
+        RB_PLL2_LD). If sticky is set to True, this will also check the sticky
+        bits, and will clear them afterwards.
+
+        From the datasheet (Section 8.6.2.9.3), register 0x183 bits:
+        3: RB_PLL1_LD_LOST. This is set when PLL1 DLD edge falls. Does not set
+           if cleared while PLL1 DLD
+        2: RB_PLL1_LD. Read back 0: PLL1 DLD is low.  Read back 1: PLL1 DLD is
+           high.
+        1: RB_PLL2_LD_LOST. This is set when PLL2 DLD edge falls. Does not set
+           if cleared while PLL2 DLD
+        0: RB_PLL2_LD. Read back 0: PLL2 DLD is low.  Read back 1: PLL2 DLD is
+           high.
+
+        The *_LD_LOST bits get cleared by writing to register 0x182 (see
+        self.clear_ldl()).
+        """
         pll = pll.upper()
         assert pll in ("BOTH", "PLL1", "PLL2"), "Invalid PLL specified"
         result = True
+        clear_ldl = False
         pll_lock_status = self.peek8(0x183)
+        pll1_ld = bool(pll_lock_status & self.RB_PLL1_LD_MASK)
+        pll1_ld_lost = bool(pll_lock_status & self.RB_PLL1_LD_LOST_MASK)
+        pll2_ld = bool(pll_lock_status & self.RB_PLL2_LD_MASK)
+        pll2_ld_lost = bool(pll_lock_status & self.RB_PLL2_LD_LOST_MASK)
 
         if pll in ("BOTH", "PLL1"):
-            # Lock status for PLL1 is 0x01 on bits [3:2]
-            if (pll_lock_status & 0xC) != 0x04:
-                self.log.debug("PLL1 reporting unlocked... Status: 0x{:x}".format(pll_lock_status))
-                result = False
+            result = result and pll1_ld and (not sticky or not pll1_ld_lost)
+            clear_ldl = clear_ldl or (sticky and pll1_ld_lost)
         if pll in ("BOTH", "PLL2"):
-            # Lock status for PLL2 is 0x01 on bits [1:0]
-            if (pll_lock_status & 0x3) != 0x01:
-                self.log.debug("PLL2 reporting unlocked... Status: 0x{:x}".format(pll_lock_status))
-                result = False
+            result = result and pll2_ld and (not sticky or not pll2_ld_lost)
+            clear_ldl = clear_ldl or (sticky and pll2_ld_lost)
+        if not result:
+            self.log.debug(
+                f"Lock loss reported: RB_PLL1_LD_LOST={int(pll1_ld_lost)},"
+                f"RB_PLL1_LD={int(pll1_ld)},RB_PLL2_LD_LOST={int(pll2_ld_lost)},"
+                f"RB_PLL2_LD={int(pll2_ld)}"
+            )
+        if clear_ldl:
+            self.clear_ldl(pll)
         return result
 
     def wait_for_pll_lock(self, pll="BOTH", timeout=2000):
@@ -112,9 +160,7 @@ class LMK04832:
 
         Returns False if the PLL(s) do not lock before the timeout (in ms)
         """
-        # Sets and clears the CLR_PLLX_LD_LOST for PLL1 and PLL2
-        self.poke8(0x182, 0x03)
-        self.poke8(0x182, 0x00)
+        self.clear_ldl()
         # Now poll lock status until timeout
         end_time = time.monotonic() + (timeout / 1000)
         while time.monotonic() < end_time:

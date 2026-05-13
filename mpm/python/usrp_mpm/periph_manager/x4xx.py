@@ -1021,9 +1021,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     # Sensors
     ###########################################################################
     def get_ref_lock_sensor(self):
-        """
-        Return main refclock lock status. This is the lock status of the
-        reference and sample PLLs.
+        """Return main refclock lock status.
+
+        This is the current, combined lock status of the reference and sample PLLs.
         """
         lock_status = self.clk_mgr.clk_ctrl.get_ref_locked()
         return {
