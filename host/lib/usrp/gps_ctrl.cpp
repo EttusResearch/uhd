@@ -15,6 +15,7 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
+#include <algorithm>
 #include <cctype>
 #include <chrono>
 #include <ctime>
@@ -223,7 +224,10 @@ public:
         const boost::system_time comm_timeout =
             boost::get_system_time() + milliseconds(650);
         while (boost::get_system_time() < comm_timeout) {
-            reply = _recv();
+            reply                  = _recv();
+            std::string nmea_reply = reply;
+            erase_all(nmea_reply, "\r");
+            erase_all(nmea_reply, "\n");
             // known devices are JL "FireFly", "GPSTCXO", and "LC_XO"
             if (reply.find("FireFly") != std::string::npos
                 or reply.find("LC_XO") != std::string::npos
