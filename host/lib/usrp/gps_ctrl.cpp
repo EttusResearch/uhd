@@ -15,6 +15,7 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <mutex>
@@ -111,8 +112,12 @@ private:
         if (nmea.length() < 5 || nmea[0] != '$' || nmea[nmea.length() - 3] != '*')
             return false;
 
+        if (!std::isxdigit(static_cast<unsigned char>(nmea[nmea.length() - 2]))
+            || !std::isxdigit(static_cast<unsigned char>(nmea[nmea.length() - 1])))
+            return false;
+
         std::stringstream ss;
-        uint32_t string_crc;
+        uint32_t string_crc     = 0;
         uint32_t calculated_crc = 0;
 
         // get crc from string
