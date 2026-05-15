@@ -298,6 +298,12 @@ if(ENABLE_DPDK)
 ENDIF(ENABLE_DPDK)
 
 UHD_ADD_NONAPI_TEST(
+    TARGET "gps_ctrl_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/gps_ctrl.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "system_time_test.cpp"
     EXTRA_SOURCES
     "${UHD_SOURCE_DIR}/lib/utils/system_time.cpp"

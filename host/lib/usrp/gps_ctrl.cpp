@@ -15,6 +15,8 @@
 #include <boost/date_time/posix_time/posix_time_types.hpp>
 #include <boost/thread/thread_time.hpp>
 #include <boost/tokenizer.hpp>
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <mutex>
@@ -111,8 +113,12 @@ private:
         if (nmea.length() < 5 || nmea[0] != '$' || nmea[nmea.length() - 3] != '*')
             return false;
 
+        if (!std::isxdigit(static_cast<unsigned char>(nmea[nmea.length() - 2]))
+            || !std::isxdigit(static_cast<unsigned char>(nmea[nmea.length() - 1])))
+            return false;
+
         std::stringstream ss;
-        uint32_t string_crc;
+        uint32_t string_crc     = 0;
         uint32_t calculated_crc = 0;
 
         // get crc from string
@@ -127,6 +133,41 @@ private:
         return (string_crc == calculated_crc);
     }
 
+    // Modern GNSS receivers emit standard NMEA sentence formatters
+    // (RMC, GGA, etc.) under multiple talker IDs (GP, GL, GA, etc).
+    // Normalize these sentences to the three-letter formatter so
+    // the rest of the GPS logic remains talker-agnostic
+    static std::string get_nmea_sentence_type(const std::string& nmea)
+    {
+        static constexpr size_t nmea_sentence_id_len = 5;
+        static constexpr size_t nmea_formatter_len   = 3;
+
+        if (nmea.length() < 10 || nmea[0] != '$' || nmea[1] == 'P') {
+            return "";
+        }
+
+        const size_t checksum_pos = nmea.rfind('*');
+        if (checksum_pos == std::string::npos || checksum_pos + 3 != nmea.length()) {
+            return "";
+        }
+
+        if (nmea[1 + nmea_sentence_id_len] != ','
+            || !std::isxdigit(static_cast<unsigned char>(nmea[checksum_pos + 1]))
+            || !std::isxdigit(static_cast<unsigned char>(nmea[checksum_pos + 2]))) {
+            return "";
+        }
+
+        const std::string sentence_id =
+            boost::to_upper_copy(nmea.substr(1, nmea_sentence_id_len));
+        if (!std::all_of(sentence_id.begin(), sentence_id.end(), [](const char c) {
+                return std::isalnum(static_cast<unsigned char>(c)) != 0;
+            })) {
+            return "";
+        }
+
+        return sentence_id.substr(nmea_sentence_id_len - nmea_formatter_len);
+    }
+
     // Read all outstanding messages and put them in the cache
     //
     // Outside of the ctor, this is the only function that actually reads
@@ -139,7 +180,7 @@ private:
     // \param msg_key_hint If not empty, this will be used as the key for the
     //                    message in the cache. This is useful when we know that
     //                    a message is arriving that does not conform to the
-    //                    message patterns for a SERVO or GP* message.
+    //                    message patterns for a SERVO or standard NMEA message.
     void update_cache(const std::string& msg_key_hint = "")
     {
         if (not gps_detected()) {
@@ -147,7 +188,6 @@ private:
         }
 
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
-        static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
 
         // Get all GPSDO messages available
@@ -173,12 +213,19 @@ private:
                     msg, servo_regex, std::regex_constants::match_continuous)) {
                 UHD_LOG_TRACE("GPS", "Received new SERVO message: " << msg);
                 msgs["SERVO"] = msg;
-            } else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg)) {
-                UHD_LOG_TRACE(
-                    "GPS", "Received new " << msg.substr(1, 5) << " message: " << msg);
-                msgs[msg.substr(1, 5)] = msg;
             } else {
-                if (!msg_key_hint.empty()) {
+                const std::string sentence_type = get_nmea_sentence_type(msg);
+                if (!sentence_type.empty()) {
+                    if (!is_nmea_checksum_ok(msg)) {
+                        UHD_LOGGER_WARNING("GPS") << "Invalid NMEA string: " << msg;
+                    } else {
+                        UHD_LOG_TRACE("GPS",
+                            "Received new " << sentence_type << " message: " << msg);
+                        if (sentence_type == "GGA" || sentence_type == "RMC") {
+                            msgs[sentence_type] = msg;
+                        }
+                    }
+                } else if (!msg_key_hint.empty()) {
                     UHD_LOG_DEBUG(
                         "GPS", "Received " << msg_key_hint << " message: " << msg);
                     msgs[msg_key_hint] = msg;
@@ -218,14 +265,18 @@ public:
         const boost::system_time comm_timeout =
             boost::get_system_time() + milliseconds(650);
         while (boost::get_system_time() < comm_timeout) {
-            reply = _recv();
+            reply                  = _recv();
+            std::string nmea_reply = reply;
+            erase_all(nmea_reply, "\r");
+            erase_all(nmea_reply, "\n");
             // known devices are JL "FireFly", "GPSTCXO", and "LC_XO"
             if (reply.find("FireFly") != std::string::npos
                 or reply.find("LC_XO") != std::string::npos
                 or reply.find("GPSTCXO") != std::string::npos) {
                 _gps_type = GPS_TYPE_INTERNAL_GPSDO;
                 break;
-            } else if (reply.substr(0, 3) == "$GP") {
+            } else if (!get_nmea_sentence_type(nmea_reply).empty()
+                       && is_nmea_checksum_ok(nmea_reply)) {
                 i_heard_some_nmea = true; // but keep looking
             } else if (not reply.empty()) {
                 // wrong baud rate or firmware still initializing
@@ -283,7 +334,7 @@ public:
     {
         if (key == "gps_gpgga" or key == "gps_gprmc") {
             return sensor_value_t(boost::to_upper_copy(key),
-                get_sentence(boost::to_upper_copy(key.substr(4, 8)),
+                get_sentence(key == "gps_gpgga" ? "GGA" : "RMC",
                     GPS_NMEA_NORMAL_FRESHNESS,
                     GPS_TIMEOUT_DELAY_MS),
                 "");
@@ -372,7 +423,7 @@ private:
             try {
                 // wait for next GPRMC string
                 std::string reply = get_sentence(
-                    "GPRMC", GPS_NMEA_NORMAL_FRESHNESS, GPS_COMM_TIMEOUT_MS, true);
+                    "RMC", GPS_NMEA_NORMAL_FRESHNESS, GPS_COMM_TIMEOUT_MS, true);
 
                 std::string datestr = get_token(reply, 9);
                 std::string timestr = get_token(reply, 1);
@@ -423,7 +474,7 @@ private:
         while (error_cnt < 3) {
             try {
                 std::string reply =
-                    get_sentence("GPGGA", GPS_LOCK_FRESHNESS, GPS_COMM_TIMEOUT_MS);
+                    get_sentence("GGA", GPS_LOCK_FRESHNESS, GPS_COMM_TIMEOUT_MS);
                 if (reply.empty())
                     error_cnt++;
                 else
