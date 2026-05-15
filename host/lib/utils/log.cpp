@@ -20,6 +20,7 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <sstream>
