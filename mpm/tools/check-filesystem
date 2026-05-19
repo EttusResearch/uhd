@@ -131,7 +131,7 @@ class CheckFilesystem(unittest.TestCase):
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
         p1.stdout.close()
         lines = p2.communicate()[0].decode('utf-8').splitlines()
-        r1=re.compile('^(\S*) \[C\]> < (.*)$')
+        r1=re.compile(r'^(\S*) \[C\]> < (.*)$')
         result = None
         for line in lines:
             m1 = r1.match(line)
