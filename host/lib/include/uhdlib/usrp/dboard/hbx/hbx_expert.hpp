@@ -511,11 +511,9 @@ public:
         std::shared_ptr<hbx_cpld_ctrl> hbx_cpld_ctrl)
         : experts::worker_node_t(fe_path / "hbx_rx_programming_expert")
         , _antenna(db, fe_path / "antenna" / "value")
-        , _command_time(db, fe_path / "time" / "cmd")
         , _cpld(hbx_cpld_ctrl)
     {
         bind_accessor(_antenna);
-        bind_accessor(_command_time);
     }
 
 private:
@@ -524,7 +522,6 @@ private:
 
     // Inputs from user/API
     uhd::experts::data_reader_t<std::string> _antenna;
-    uhd::experts::data_reader_t<time_spec_t> _command_time;
 
     // Expects constructed control objects
     std::shared_ptr<hbx_cpld_ctrl> _cpld;

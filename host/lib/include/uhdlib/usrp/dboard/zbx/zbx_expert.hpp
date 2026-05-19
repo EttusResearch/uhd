@@ -481,7 +481,6 @@ public:
         bind_accessor(_antenna);
         bind_accessor(_atr_mode);
         bind_accessor(_profile);
-        bind_accessor(_command_time);
         bind_accessor(_frequency);
         bind_accessor(_dsa1);
         bind_accessor(_dsa2);
@@ -503,9 +502,10 @@ private:
     uhd::experts::data_reader_t<std::string> _profile;
 
     // Inputs from the Frequency FE expert
+    // Command time is just read but we don't trigger on it.
+    uhd::experts::data_reader_t<time_spec_t> _command_time;
     // Note: this is just for node dependencies, we want to be notified if just the tune
     // frequency has been changed.
-    uhd::experts::data_reader_t<time_spec_t> _command_time;
     uhd::experts::data_reader_t<double> _frequency;
 
     // Inputs from Gain TX expert
@@ -571,7 +571,6 @@ public:
         bind_accessor(_antenna);
         bind_accessor(_atr_mode);
         bind_accessor(_profile);
-        bind_accessor(_command_time);
         bind_accessor(_frequency);
         bind_accessor(_dsa1);
         bind_accessor(_dsa2);
@@ -595,9 +594,10 @@ private:
     uhd::experts::data_reader_t<std::string> _profile;
 
     // Inputs from the Frequency FE expert
+    // Command time is just read but we don't trigger on it.
+    uhd::experts::data_reader_t<time_spec_t> _command_time;
     // Note: this is just for node dependencies, we want to be notified if just the tune
     // frequency has been changed.
-    uhd::experts::data_reader_t<time_spec_t> _command_time;
     uhd::experts::data_reader_t<double> _frequency;
 
     // Inputs from Gain expert
