@@ -93,6 +93,8 @@ public:
     std::mutex response_threads_mutex{};
     std::vector<std::thread> response_threads{};
     std::atomic<size_t> pending_responses{0};
+    std::atomic<size_t> response_sequence{0};
+    std::atomic<size_t> responses_delivered{0};
 
     ctrlport_endpoint::send_fn_t send_fn;
     mock_clock_iface client_clk;
@@ -219,12 +221,18 @@ private:
     void schedule_async_response(const ctrl_payload& response, int64_t delay_ms = 1)
     {
         pending_responses++;
+        // Ensure responses are delivered in order by waiting on the previous one
+        size_t my_seq = response_sequence++;
 
         std::lock_guard<std::mutex> lock(response_threads_mutex);
-        response_threads.emplace_back([this, response, delay_ms]() {
+        response_threads.emplace_back([this, response, delay_ms, my_seq]() {
             // Small delay to simulate hardware response time
             std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
+            while (responses_delivered.load() < my_seq) {
+                std::this_thread::yield();
+            }
             endpoint->handle_recv(response);
+            responses_delivered++;
             pending_responses--;
         });
     }
