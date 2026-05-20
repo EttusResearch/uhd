@@ -53,6 +53,7 @@ class X4xxClockCtrl:
         self._sample_pll = None
         self._reference_pll = None
         self._base_ref_clk_select = None
+        self.spll_unlock_event = False  # Tracks if an SPLL lock-detect loss occurred
         # Init peripherals
         self._init_clk_peripherals()
 
@@ -278,6 +279,27 @@ class X4xxClockCtrl:
                 ref_pll_status["PLL2 lock"],
                 sample_pll_status["PLL1 lock"],
                 sample_pll_status["PLL2 lock"],
+            ]
+        )
+
+    def get_ref_stable(self):
+        """Return True if reference clocks have been stably locked.
+
+        Unlike get_ref_locked(), this also checks the sticky lock-detect-lost
+        bits in the LMK04832 (sample PLL). If a lock loss has occurred since
+        the last call, the sticky bits are cleared so the next call reflects
+        only new events.
+        """
+        ref_pll_status = self._reference_pll.get_status()
+        spll_stable = self._sample_pll.check_plls_locked(sticky=True)
+        if not spll_stable:
+            self.log.debug("SPLL unlock event registered!")
+        self.spll_unlock_event = self.spll_unlock_event or not spll_stable
+        return all(
+            [
+                ref_pll_status["PLL1 lock"],
+                ref_pll_status["PLL2 lock"],
+                spll_stable,
             ]
         )
 

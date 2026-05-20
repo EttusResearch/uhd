@@ -452,7 +452,7 @@ class X4xxClockManager:
         # Now see if we can keep the current settings, or if we need to run an
         # update of sync sources:
         if not force and clock_source == self._clock_source and time_source == self._time_source:
-            if self.clk_ctrl.get_ref_locked():
+            if self.clk_ctrl.get_ref_locked() and not self.clk_ctrl.spll_unlock_event:
                 # Nothing changed, no need to do anything
                 self.log.trace(
                     "New sync source assignment matches "
@@ -657,6 +657,8 @@ class X4xxClockManager:
             "internal_pps" if time_source == self.TIME_SOURCE_INTERNAL else "external_pps",
             ref_clk_freq,
         )
+        # If the SPLL was unlocked before, it will be resync'd now.
+        self.clk_ctrl.spll_unlock_event = False
         # At this point the SPLL is sync'd in time and frequency to the reference.
         # From now on, no-one will be touching the SPLL until we call
         # set_master_clock_rate() again.

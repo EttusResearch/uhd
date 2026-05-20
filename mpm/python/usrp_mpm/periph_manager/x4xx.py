@@ -172,6 +172,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # GPS sensors, but they get added during __init__() only when there is
         # a GPS available.
         "ref_locked": "get_ref_lock_sensor",
+        "ref_stable": "get_ref_stable_sensor",
         "fan0": "get_fan0_sensor",
         "fan1": "get_fan1_sensor",
         "temp_fpga": "get_fpga_temp_sensor",
@@ -1031,6 +1032,21 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             "type": "BOOLEAN",
             "unit": "locked" if lock_status else "unlocked",
             "value": str(lock_status).lower(),
+        }
+
+    def get_ref_stable_sensor(self):
+        """Return refclock stable lock status.
+
+        This checks both current lock status and the sticky lock-detect-lost
+        bits in the LMK04832 sample PLL. If a lock loss has occurred since the
+        last query, the sticky bits are cleared after detection.
+        """
+        stable = self.clk_mgr.clk_ctrl.get_ref_stable()
+        return {
+            "name": "ref_stable",
+            "type": "BOOLEAN",
+            "unit": "stable" if stable else "unstable",
+            "value": str(stable).lower(),
         }
 
     def get_fpga_temp_sensor(self):

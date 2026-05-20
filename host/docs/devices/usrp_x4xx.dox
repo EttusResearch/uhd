@@ -786,7 +786,7 @@ Example output of ´uhd_usrp_probe´:
     |   |
     |   |   Time sources:  internal, external, qsfp0, gpsdo
     |   |   Clock sources: mboard, internal, external, nsync, gpsdo
-    |   |   Sensors: ref_locked, fan0, fan1, temp_fpga, temp_main_power0, temp_main_power1, temp_scu_internal, temp_sample_clock_pcb, temp_dram_pcb, temp_tmp464_internal, temp_power_supply_pcb, gps_alarm, gps_enabled, gps_gpgga, gps_locked, gps_phase_lock, gps_sky, gps_survey, gps_time, gps_tpv, gps_warmup
+    |   |   Sensors: ref_locked, ref_stable, fan0, fan1, temp_fpga, temp_main_power0, temp_main_power1, temp_scu_internal, temp_sample_clock_pcb, temp_dram_pcb, temp_tmp464_internal, temp_power_supply_pcb, gps_alarm, gps_enabled, gps_gpgga, gps_locked, gps_phase_lock, gps_sky, gps_survey, gps_time, gps_tpv, gps_warmup
     |     _____________________________________________________
     |    /
     |   |       RFNoC blocks on this device:
@@ -1823,8 +1823,18 @@ interact with the motherboard sensor API:
 
 The following motherboard sensors are always available:
 
-- `ref_locked`: This will check that all the daughterboards have locked to the
-                external reference.
+- `ref_locked`: This will check that all PLLs related to the reference clock
+                are locked to the reference. Note that this checks the current
+                lock status of the PLLs. Until UHD 4.10, this sensor would also
+                check the sticky lock-detect-lost bits of the sample PLL, which
+                means it would always return "false" if the sample PLL had
+                ever lost reference lock during the current session.
+- `ref_stable`: This sensor returns true if the reference lock
+                has remained stable. If the reference lock was ever lost since
+                the "sticky" lock-detect-loss status was last cleared, this
+                sensor will return false, and then clear that status. If a lock
+                was reacquired, following queries of this sensor will return
+                "true" again.
 - `temp_fpga`: The temperature of the RFSoC die itself.
 - `temp_main_power`: The temperature of the PM-BUS devices which supply 0.85V
                      to the RFSoC.
