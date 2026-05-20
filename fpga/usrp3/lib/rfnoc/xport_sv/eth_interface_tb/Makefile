@@ -33,7 +33,7 @@ include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
 IP_DIR = $(BASE_DIR)/x300/ip
 include $(BASE_DIR)/x300/ip/fifo_short_2clk/Makefile.inc
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 eth_ifc_synth_test.sv \
 $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) \

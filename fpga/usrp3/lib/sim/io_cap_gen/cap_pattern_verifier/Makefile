@@ -22,7 +22,7 @@ PART_ID = xc7k410t/ffg900/-2
 
 include $(BASE_DIR)/../lib/control/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(CONTROL_LIB_SRCS) \
 )
 

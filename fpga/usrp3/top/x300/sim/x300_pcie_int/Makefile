@@ -23,7 +23,7 @@ include $(BASE_DIR)/../lib/packet_proc/Makefile.srcs
 include $(BASE_DIR)/../lib/fifo/Makefile.srcs
 include $(BASE_DIR)/../lib/io_port2/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) \
 $(PACKET_PROC_SRCS) \

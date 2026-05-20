@@ -27,7 +27,7 @@ include $(BASE_DIR)/../lib/rfnoc/crossbar/Makefile.srcs
 include $(BASE_DIR)/../lib/rfnoc/core/Makefile.srcs
 include $(BASE_DIR)/../lib/rfnoc/utils/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(AXI_SRCS) \
 $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) \

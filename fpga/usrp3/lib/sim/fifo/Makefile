@@ -19,7 +19,7 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 include $(BASE_DIR)/../lib/control/Makefile.srcs
 include $(BASE_DIR)/../lib/fifo/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(CONTROL_LIB_SRCS) \
 $(FIFO_SRCS) \
 )

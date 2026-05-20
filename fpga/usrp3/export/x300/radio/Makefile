@@ -28,7 +28,7 @@ include $(LIB_DIR)/axi/Makefile.srcs
 include $(LIB_DIR)/radio/Makefile.srcs
 include $(BASE_DIR)/x300/coregen_dsp/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(FIFO_SRCS) \
 $(CONTROL_LIB_SRCS) \
 $(TIMING_SRCS) \

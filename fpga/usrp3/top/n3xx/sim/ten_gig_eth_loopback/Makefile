@@ -25,7 +25,7 @@ include $(BASE_DIR)/../lib/xge_interface/Makefile.srcs
 include $(BASE_DIR)/../lib/xge/Makefile.srcs
 include $(BASE_DIR)/../lib/packet_proc/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(FIFO_SRCS) \
 $(AXI_SRCS) \
 $(CONTROL_LIB_SRCS) \

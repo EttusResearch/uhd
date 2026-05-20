@@ -23,7 +23,7 @@ include $(BASE_DIR)/../lib/axi/Makefile.srcs
 include $(BASE_DIR)/../lib/control/Makefile.srcs
 include $(BASE_DIR)/../lib/rfnoc/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(FIFO_SRCS) \
 $(AXI_SRCS) \
 $(CONTROL_LIB_SRCS) \

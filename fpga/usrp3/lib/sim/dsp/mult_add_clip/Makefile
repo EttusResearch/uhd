@@ -18,7 +18,7 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 # Include makefiles and sources for the DUT and its dependencies
 include $(BASE_DIR)/../lib/dsp/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(DSP_SRCS) \
 )
 

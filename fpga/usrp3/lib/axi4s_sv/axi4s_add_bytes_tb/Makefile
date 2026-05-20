@@ -19,7 +19,7 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 # Include makefiles and sources for the DUT and its dependencies
 include $(BASE_DIR)/../lib/axi4s_sv/Makefile.srcs
 
-DESIGN_SRCS = $(abspath \
+DESIGN_SRCS += $(abspath \
 $(AXI4S_SV_SRCS) \
 )
 

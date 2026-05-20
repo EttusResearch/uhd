@@ -17,7 +17,7 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 ARCH = zynq
 PART_ID= xc7z020/clg484/-1
 
-DESIGN_SRCS = $(abspath ../../e310_io.v) \
+DESIGN_SRCS += $(abspath ../../e310_io.v) \
   $(abspath $(addprefix $(BASE_DIR)/../lib/control/, \
   synchronizer.v \
   synchronizer_impl.v))
