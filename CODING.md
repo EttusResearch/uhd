@@ -93,6 +93,27 @@ Date:   Tue Nov 22 16:19:38 2016 -0800
   an exception if the index doesn't exist -- which is usually the desired
   behaviour.
 
+* Documenting methods is highly encouraged. To make the documentation well
+  digestible for Doxygen, use the Qt style and add an exclamation mark (`!`)
+  after the opening C-style comment block. Use `\brief` to mark a brief
+  introductory line, then add an empty line (starting with `*`), then
+  continue with the detailed description. Add `\param` for each parameter
+  and `\return` for describing the return value. For single-line method
+  documentation, `//!` is okay. Example
+
+```cpp
+/*! \brief Summary line. 
+ *
+ * more details 
+ * \param variable Explanation of variable (if applicable)
+ * \return Explanation of return value (if applicable)
+ */
+bool example_method(uint32_t variable) {};
+
+//! Short description of a simple method.
+void example_method2() {};
+```
+
 
 ## Boost-specific Guidelines
 
