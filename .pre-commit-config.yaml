@@ -19,3 +19,9 @@ repos:
     entry: ni-python-styleguide lint
     # TODO: re-enable linting until we have the fixed all files at once
     exclude: ^mpm
+  - id: check-doxygen-format
+    name: check_doxygen_format
+    description: Check for broken Doxygen comments in C++ files
+    language: python
+    types: [c++]
+    entry: python tools/check_doxygen_format.py
