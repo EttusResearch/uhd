@@ -421,6 +421,7 @@ class X4xxClockManager:
         clock_source: str,
         time_source: str,
         force: bool = False,
+        ignore_unlock_event: bool = False,
     ) -> SetSyncRetVal:
         """Configure switches for clock sources and reset clock tree.
 
@@ -442,6 +443,8 @@ class X4xxClockManager:
         force -- This Boolean will bypass the checks if anything has changed.
                  If it is set to True, it will run the configuration regardless
                  of any previous state.
+        ignore_unlock_event -- If set to True, then a previous unlock event
+                               will not cause a forced re-configuration.
 
         Returns: A SetSyncRetVal enum value.
         """
@@ -452,7 +455,9 @@ class X4xxClockManager:
         # Now see if we can keep the current settings, or if we need to run an
         # update of sync sources:
         if not force and clock_source == self._clock_source and time_source == self._time_source:
-            if self.clk_ctrl.get_ref_locked() and not self.clk_ctrl.spll_unlock_event:
+            if self.clk_ctrl.get_ref_locked() and (
+                not self.clk_ctrl.spll_unlock_event or ignore_unlock_event
+            ):
                 # Nothing changed, no need to do anything
                 self.log.trace(
                     "New sync source assignment matches "
@@ -949,6 +954,11 @@ class X4xxClockManager:
                   flag initial operations, which may behave differently from
                   when the user calls this function. DO NOT SET THIS unless you
                   really know what you're doing.
+                - reset_spll_r_divider: If this is given, and force_reinit is
+                  not given, and the clock/time source are unchanged, then this
+                  will reset the SPLL R-divider to a PPS flank. This is an
+                  unsupported feature which can potentially put the FPGA in a
+                  bad state.
                 - __noretry__: This Boolean will instruct this method
                   immediately give up on failure (instead of the normal
                   behaviour of retrying with safe values).
@@ -992,12 +1002,53 @@ class X4xxClockManager:
             self._clocking_auxbrd.export_clock(enable=False)
         # Set some more helper variables
         force_update = str2bool(args.get("force_reinit", False)) or mcr_change
+        reset_spll_r_divider = str2bool(args.get("reset_spll_r_divider", False))
+        # _set_sync_source() will apply settings if they were changed, but also
+        # when there was a reference unlock event. We can ignore the latter
+        # condition if we are going to reset the SPLL R-divider, because that
+        # will undo the effects of an unlock event.
+        ignore_unlock_event = reset_spll_r_divider
         # Now configure the sync sources (if changes are necessary, this will
         # reset the entire clock tree downstream of the reference, and update
         # the switch settings).
-        ret_val = self._set_sync_source(clock_source, time_source, force_update)
+        ret_val = self._set_sync_source(
+            clock_source, time_source, force_update, ignore_unlock_event
+        )
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
-            self.log.debug("Skipping reconfiguration of clocks.")
+            # If we reach this branch, that means _set_sync_source() didn't
+            # have to do anything. We might still have some work to do, but we
+            # will return early from this function.
+            if reset_spll_r_divider:
+                # Re-synchronize the SPLL R-dividers to the PPS edge. This is
+                # necessary after the SPLL has lost and reacquired its reference
+                # lock, which leaves the R-dividers in an arbitrary phase. In
+                # this code path, we do this without resetting the downstream
+                # clock tree, which is generally *not* best practice.
+                #
+                # Note if we force update or do the normal sync source update,
+                # then the R-divider gets reset anyway. Only if nothing else
+                # changes and `reset_spll_r_divider` was set, do we need to
+                # enter this branch.
+                self.log.warning(
+                    "Resetting SPLL R-divider during operation... this may cause clock glitches."
+                )
+                pps_source = (
+                    "internal_pps"
+                    if self._time_source == self.TIME_SOURCE_INTERNAL
+                    else "external_pps"
+                )
+                if not self.clk_ctrl.sync_spll_clocks(pps_source, self.get_ref_clock_freq()):
+                    self.log.error("set_sync_source(): Failed to re-synchronize SPLL clocks.")
+                    raise RuntimeError("Failed to re-synchronize SPLL clocks")
+                # Even though this is not a full resync, we assume this will
+                # fix SPLL de-syncs. See the comment how this is not a supported
+                # feature.
+                self.clk_ctrl.spll_unlock_event = False
+                # Reset gearboxes again to avoid phase ambiguity in clock
+                # crossings
+                self.rfdc.reset_gearboxes()
+            else:
+                self.log.debug("Skipping reconfiguration of clocks.")
             return
         # If we reach this line, the clocks are all in reset and need to be
         # brought back up again.
