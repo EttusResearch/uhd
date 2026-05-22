@@ -11,6 +11,7 @@
 #include <uhd/features/discoverable_feature.hpp>
 #include <uhd/features/gpio_power_iface.hpp>
 #include <uhd/features/gps_iface.hpp>
+#include <uhd/features/ref_clk_calibration_iface.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
@@ -280,6 +281,14 @@ void export_rfnoc(py::module& m)
         .def("get_sensors", &uhd::features::gps_iface::get_sensors)
         .def("send_cmd", &uhd::features::gps_iface::send_cmd);
 
+    py::class_<uhd::features::ref_clk_calibration_iface>(m, "ref_clk_calibration")
+        .def("set_ref_clk_tuning_word",
+            &uhd::features::ref_clk_calibration_iface::set_ref_clk_tuning_word)
+        .def("get_ref_clk_tuning_word",
+            &uhd::features::ref_clk_calibration_iface::get_ref_clk_tuning_word)
+        .def("store_ref_clk_tuning_word",
+            &uhd::features::ref_clk_calibration_iface::store_ref_clk_tuning_word);
+
     py::class_<detail::filter_node>(m, "filter_node")
         .def("get_rx_filter_names", &detail::filter_node::get_rx_filter_names)
         .def("get_rx_filter", &detail::filter_node::get_rx_filter)
@@ -330,6 +339,12 @@ void export_rfnoc(py::module& m)
             "get_gps_iface",
             [](mb_controller& self) {
                 return &self.get_feature<uhd::features::gps_iface>();
+            },
+            py::return_value_policy::reference_internal)
+        .def(
+            "get_ref_clk_calibration",
+            [](mb_controller& self) {
+                return &self.get_feature<uhd::features::ref_clk_calibration_iface>();
             },
             py::return_value_policy::reference_internal);
 

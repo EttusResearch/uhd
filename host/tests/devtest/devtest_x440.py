@@ -67,5 +67,6 @@ from list_sensors_test import ListSensorsTest
 from python_api_test import UhdPythonApiTest
 from rx_multi_spc_timed_commands_test import RxMultiSpcTimedCommandsTest
 from tx_multi_spc_timed_commands_test import TxMultiSpcTimedCommandsTest
+from ref_clk_calibration_test import RefClkCalibrationTest
 
 from trigger_test import TxTriggerTest
