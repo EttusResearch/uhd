@@ -173,7 +173,15 @@ BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
     mock_reg_iface->add_connection(ddc1_id, 0, sep1_id, 0);
     constexpr size_t num_edges = 8; // Number of lines above
 
+// GCC16 comes with a bug that produces a spurious warning here.
+#if defined(__GNUC__) && __GNUC__ >= 16
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
     auto mock_client0 = std::make_shared<uhd::rfnoc::detail::client_zero>(mock_reg_iface);
+#if defined(__GNUC__) && __GNUC__ >= 16
+#    pragma GCC diagnostic pop
+#endif
 
     BOOST_CHECK_EQUAL(mock_client0->get_proto_ver(), mock_reg_iface->GLOBAL_PROTOVER);
     BOOST_CHECK_EQUAL(mock_client0->get_device_type(), mock_reg_iface->DEVICE_TYPE);

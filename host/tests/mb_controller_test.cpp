@@ -148,7 +148,15 @@ public:
 
 BOOST_AUTO_TEST_CASE(test_mb_controller)
 {
+// GCC16 comes with a bug that produces a spurious warning here.
+#if defined(__GNUC__) && __GNUC__ >= 16
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Warray-bounds"
+#endif
     auto mmbc = std::make_shared<mock_mb_controller>();
+#if defined(__GNUC__) && __GNUC__ >= 16
+#    pragma GCC diagnostic pop
+#endif
 
     BOOST_REQUIRE_EQUAL(mmbc->get_num_timekeepers(), 1);
     auto tk      = mmbc->get_timekeeper(0);
