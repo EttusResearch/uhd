@@ -560,6 +560,13 @@ void export_rfnoc(py::module& m)
             py::arg("timeout"),
             py::arg("time"),
             py::arg("ack") = false)
+        .def(
+            "sleep",
+            [](noc_block_base& self, uhd::time_spec_t duration, bool ack = false) {
+                self.regs().sleep(duration, ack);
+            },
+            py::arg("duration"),
+            py::arg("ack") = false)
         .def("get_src_epid",
             [](noc_block_base& self) { return self.regs().get_src_epid(); })
         .def("get_port_num",
