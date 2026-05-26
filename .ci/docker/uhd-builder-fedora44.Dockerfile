@@ -1,7 +1,7 @@
 # please follow docker best practices
 # https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/
 
-FROM fedora:41
+FROM fedora:44
 LABEL maintainer="Ettus Research"
 
 ARG PIP_INDEX_HOST
@@ -70,5 +70,5 @@ RUN if [[ -n "$PIP_INDEX_URL" ]]; then \
     fi
 
 RUN python3 -m pip config list
-RUN python3 -m pip install --upgrade pip
-RUN pip install pygccxml pyyaml
+RUN python3 -m pip install --upgrade pip --root-user-action=ignore
+RUN pip install pygccxml pyyaml --root-user-action=ignore
