@@ -31,7 +31,7 @@ try:
 
     def yaml_dump(data, stream):
         """Dumps data to a file."""
-        yaml = YAML(typ="base", pure=True)
+        yaml = YAML(typ="safe", pure=True)
         yaml.default_flow_style = False
         yaml.dump(data, stream)
 
