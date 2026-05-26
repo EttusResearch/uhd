@@ -57,7 +57,7 @@ nirio_status usrprio_rpc_client::niusrprio_enumerate(NIUSRPRIO_ENUMERATE_ARGS)
     if (nirio_status_not_fatal(status) && vtr_size > 0) {
         device_info_vtr.resize(vtr_size);
         for (size_t i = 0; i < (size_t)vtr_size; i++) {
-            usrprio_device_info info;
+            usrprio_device_info info{};
             try {
                 out_args >> info;
             } catch (std::exception&) {
