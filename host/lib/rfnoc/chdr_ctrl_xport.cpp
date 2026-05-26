@@ -13,6 +13,27 @@ using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 using namespace uhd::transport;
 
+chdr_ctrl_xport::sptr chdr_ctrl_xport::make(io_service::sptr io_srv,
+    send_link_if::sptr send_link,
+    recv_link_if::sptr recv_link,
+    const chdr::chdr_packet_factory& pkt_factory,
+    sep_id_t my_epid,
+    size_t num_send_frames,
+    size_t num_recv_frames,
+    size_t send_frame_size,
+    disconnect_callback_t disconnect)
+{
+    return std::make_shared<chdr_ctrl_xport>(io_srv,
+        send_link,
+        recv_link,
+        pkt_factory,
+        my_epid,
+        num_send_frames,
+        num_recv_frames,
+        send_frame_size,
+        disconnect);
+}
+
 chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     send_link_if::sptr send_link,
     recv_link_if::sptr recv_link,

@@ -49,18 +49,7 @@ public:
         size_t num_send_frames,
         size_t num_recv_frames,
         size_t send_frame_size,
-        disconnect_callback_t disconnect)
-    {
-        return std::make_shared<chdr_ctrl_xport>(io_srv,
-            send_link,
-            recv_link,
-            pkt_factory,
-            my_epid,
-            num_send_frames,
-            num_recv_frames,
-            send_frame_size,
-            disconnect);
-    }
+        disconnect_callback_t disconnect);
 
     /*!
      * Make a chdr_ctrl_xport
