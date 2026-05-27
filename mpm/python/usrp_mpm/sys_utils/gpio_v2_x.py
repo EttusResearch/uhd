@@ -95,8 +95,8 @@ class Gpio:
         :param value: The value to set the GPIO line to.
         """
         with self.request_gpio() as request:
-            request.set_value(self._offset, gpiod.line.Value(value))
-            self._out_value = bool(value)
+            request.set_value(self._offset, gpiod.line.Value(int(value)))
+            self._out_value = bool(int(value))
 
     def event_wait(self, timeout=1):
         """Wait for an event to happen on this line.
