@@ -284,6 +284,13 @@ The Ettus USRP X4x0 has various network interfaces:
 The configuration files for these network interfaces are stored in:
 `/data/network/<interface>.network`.
 
+Note: To avoid timeout errors during device configuration, it is recommended to
+specify the \ref x4xx_usage_args "mgmt_addr argument" with the IP address of the
+eth0 interface when setting up UHD sessions on X420 and X440 devices. Otherwise,
+timeouts may occur if clocking-related settings change between UHD sessions as
+these changes require an automatic restart of the USRP Hardware Daemon (MPM)
+and cause the QSFP28 interfaces to become temporarily unavailable.  
+
 Interface Name | Description                           | Default Configuration | Configuration File | Ex.: X4_xxx FPGA image | Ex.: CG_xxx FPGA image |
 ---------------|---------------------------------------|-----------------------|--------------------|------------------------|------------------------|
 `eth0`         | RJ45                                  | DHCP                  | eth0.network       | DHCP                   | DHCP                   |
@@ -1444,38 +1451,65 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection x4xx_usage_args Device Arguments
 
- Key                   | Description                                                                     | Example Value
------------------------|---------------------------------------------------------------------------------|---------------------
- addr                  | IPv4 address of primary SFP+ port to connect to.                                | addr=192.168.30.2
- second_addr           | IPv4 address of secondary SFP+ port to connect to.                              | second_addr=192.168.40.2
- third_addr            | IPv4 address of tertiary SFP+ port to connect to.                               | third_addr=192.168.40.3
- fourth_addr           | IPv4 address of quaternary SFP+ port to connect to.                             | fourth_addr=192.168.40.4
- mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.| mgmt_addr=ni-x4xx-311FE00
- find_all              | When using broadcast, find all devices, even if unreachable via CHDR.           | find_all=1
- master_clock_rate     | Master Clock Rate in Hz.                                                        | master_clock_rate=250e6
- serialize_init        | Force serial initialization of motherboards (default is parallel)               | serialize_init=1
- skip_init             | Skip the initialization process for the device.                                 | skip_init=1
- time_source           | Specify the time (PPS) source.                                                  | time_source=internal
- clock_source          | Specify the reference clock source.                                             | clock_source=internal
- ext_clock_freq        | Specify the external reference clock frequency, default is 10 MHz.              | ref_clk_freq=20e6
- discovery_port        | Override default value for MPM discovery port.                                  | discovery_port=49700
- rpc_port              | Override default value for MPM RPC port.                                        | rpc_port=49701
- force_reinit          | Force reinitialization of clocking.                                             | force_reinit=1
- converter_rate        | Specify the rate of the ADC/DAC. X440 only. UHD may choose to ignore this.      | master_clock_rate=500e6,converter_rate=1e9
- cal_freq              | Frequency to use for self-calibration. For X440 only.                           | cal_freq=400e6
- cal_dac_mux_i         | 16 bit I value for self calibration tone.                                       | cal_dac_mux_i=0x7FFF
- cal_dac_mux_q         | 16 bit Q value for self calibration tone.                                       | cal_dac_mux_q=0x0
- cal_tone_duration     | Duration in ms for how long the self-calibration shall run per channel.         | cal_tone_duration=2000
- cal_delay             | Delay for calibration threshold status (see \ref x4xx_adc_self_cal).            | cal_delay=100
- cal_ch_list           | Selects the channels to be calibrated.                                          | cal_ch_list=1;2;3
- skip_adc_selfcal      | Skips the ADC self-cal on clock-reconfig.                                       | skip_adc_selfcal=true
- skip_mpm_reboot       | Skips MPM rebooting during session initialization on clock-reconfig. X440 only. | skip_mpm_reboot=1
- force_mtu             | Skips MTU detection and manually sets a network MTU.                            | force_mtu=8000
+ Key                   | Description                                                                       | Example Value
+-----------------------|-----------------------------------------------------------------------------------|---------------------
+ addr                  | IPv4 address of primary SFP+ port to connect to.                                  | addr=192.168.30.2
+ second_addr           | IPv4 address of secondary SFP+ port to connect to.                                | second_addr=192.168.40.2
+ third_addr            | IPv4 address of tertiary SFP+ port to connect to.                                 | third_addr=192.168.40.3
+ fourth_addr           | IPv4 address of quaternary SFP+ port to connect to.                               | fourth_addr=192.168.40.4
+ mgmt_addr             | IPv4 address or hostname to which to connect the RPC client. Defaults to `addr'.  | mgmt_addr=ni-x4xx-311FE00
+ find_all              | When using broadcast, find all devices, even if unreachable via CHDR.             | find_all=1
+ master_clock_rate     | Master Clock Rate in Hz.                                                          | master_clock_rate=250e6
+ serialize_init        | Force serial initialization of motherboards (default is parallel)                 | serialize_init=1
+ skip_init             | Skip the initialization process for the device.                                   | skip_init=1
+ time_source           | Specify the time (PPS) source.                                                    | time_source=internal
+ clock_source          | Specify the reference clock source.                                               | clock_source=internal
+ ext_clock_freq        | Specify the external reference clock frequency, default is 10 MHz.                | ref_clk_freq=20e6
+ discovery_port        | Override default value for MPM discovery port.                                    | discovery_port=49700
+ rpc_port              | Override default value for MPM RPC port.                                          | rpc_port=49701
+ force_reinit          | Force reinitialization of clocking.                                               | force_reinit=1
+ converter_rate        | Specify the rate of the ADC/DAC. X440 only. UHD may choose to ignore this.        | master_clock_rate=500e6,converter_rate=1e9
+ cal_freq              | Frequency to use for self-calibration. For X440 only.                             | cal_freq=400e6
+ cal_dac_mux_i         | 16 bit I value for self calibration tone.                                         | cal_dac_mux_i=0x7FFF
+ cal_dac_mux_q         | 16 bit Q value for self calibration tone.                                         | cal_dac_mux_q=0x0
+ cal_tone_duration     | Duration in ms for how long the self-calibration shall run per channel.           | cal_tone_duration=2000
+ cal_delay             | Delay for calibration threshold status (see \ref x4xx_adc_self_cal).              | cal_delay=100
+ cal_ch_list           | Selects the channels to be calibrated.                                            | cal_ch_list=1;2;3
+ skip_adc_selfcal      | Skips the ADC self-cal on clock-reconfig.                                         | skip_adc_selfcal=true
+ skip_mpm_reboot       | Skips MPM rebooting during session initialization on clock-reconfig on X420/X440. | skip_mpm_reboot=1
+ force_mtu             | Skips MTU detection and manually sets a network MTU.                              | force_mtu=8000
 
 \subsection x4xx_usage_mcrs Master Clock Rates
 
 The available master clock rates (MCR) depend on the FPGA image flavor that is
 currently installed on the device (see \ref x4xx_updating_fpga_types).
+
+For all devices, changing the master clock rate during a running session is not
+supported. Once a UHD session is initialized, the master clock rate is fixed.
+For that reason, uhd::usrp::multi_usrp::get_master_clock_rate_range() will 
+not return a list of multiple entries, but only the currently active 
+master clock rate. This behavior is identical to that of the USRP X3x0.\n
+When the master clock rate or clock and time sources change, UHD needs to
+perform clock reconfigurations. On X420/X440 this currently requires that UHD
+restarts MPM during session creation, which may cause non-persistent 
+network configurations for the QSFP28 interfaces to be reset. See 
+\ref x4xx_getting_started_network_connectivity_ifcs for a persistent 
+configuration option that is maintained during MPM reboots. 
+
+In contrast to X410, when selecting a master clock rate on a USRP X420 or X440,
+UHD will coerce to the next available master clock rate. Example:
+~~~{.cpp}
+// Assumption: USRP X440, 400 MHz FPGA image
+auto usrp = uhd::usrp::multi_usrp::make("type=x4xx,master_clock_rate=245e6");
+// 245 MHz is not a valid master clock rate!
+std::cout << usrp->get_master_clock_rate() << std::endl; // Prints 245.76e6
+// Changing the master clock rate is not allowed:
+std::cout << usrp->set_master_clock_rate(250e6) << std::endl; // Prints 245.76e6 and a warning
+// The range is now also fixed:
+std::cout << usrp->get_master_clock_rate_range().start() << std::endl; // Prints 245.76e6
+std::cout << usrp->get_master_clock_rate_range().stop() << std::endl; // Prints 245.76e6
+~~~
+For details see \ref x4xx_too_convrate. 
 
 \subsubsection x410_usage_mcrs USRP X410
 
@@ -1557,34 +1591,8 @@ Examples of Supported Sampling Rates
 |30.72MSps*, 61.44MSps*, 122.88MSps*, 245.76MSps, 491.52MSps| 3GPP Wireless Communications rates| 
 \*= achievable via DDC/DUC in FPGA fabric
 
-Note: See KB article [About Sampling Rates and Master Clock Rates for the USRP X440](https://kb.ettus.com/About_Sampling_Rates_and_Master_Clock_Rates_for_the_USRP_X440) for the full list of supported rates. See [X440 specifications](https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html) for additional information.
-
-For all devices, changing the master clock rate during a running session is not
-supported. Once a UHD session is initialized, the master clock rate is fixed.
-For that reason, uhd::usrp::multi_usrp::get_master_clock_rate_range() will 
-not return a list of multiple entries, but only the currently active 
-master clock rate. This behavior is identical to that of the USRP X3x0.\n
-When the master clock rate or clock and time sources change, UHD needs to
-perform clock reconfigurations. On the X440 this currently requires that UHD
-restarts MPM during session creation, which may cause non-persistent 
-network configurations for the QSFP28 interfaces to be reset. See 
-\ref x4xx_getting_started_network_connectivity_ifcs for a persistent 
-configuration option that is maintained during MPM reboots. 
-
-In contrast to X410, when selecting a master clock rate on a USRP X440, UHD will
-coerce to the next available master clock rate. Example:
-~~~{.cpp}
-// Assumption: USRP X440, 400 MHz FPGA image
-auto usrp = uhd::usrp::multi_usrp::make("type=x4xx,master_clock_rate=245e6");
-// 245 MHz is not a valid master clock rate!
-std::cout << usrp->get_master_clock_rate() << std::endl; // Prints 245.76e6
-// Changing the master clock rate is not allowed:
-std::cout << usrp->set_master_clock_rate(250e6) << std::endl; // Prints 245.76e6 and a warning
-// The range is now also fixed:
-std::cout << usrp->get_master_clock_rate_range().start() << std::endl; // Prints 245.76e6
-std::cout << usrp->get_master_clock_rate_range().stop() << std::endl; // Prints 245.76e6
-~~~
-For details see \ref x4xx_too_convrate. 
+Note: See KB article [About Sampling Rates and Master Clock Rates for the USRP X440](https://kb.ettus.com/About_Sampling_Rates_and_Master_Clock_Rates_for_the_USRP_X440) 
+for the full list of supported rates. See [X440 specifications](https://www.ni.com/docs/en-US/bundle/ettus-usrp-x440-specs/page/specs.html) for additional information.
 
 \paragraph x440_usage_mcr_dualrate Dual Rate
 
