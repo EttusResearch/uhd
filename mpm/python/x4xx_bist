@@ -518,11 +518,12 @@ class X4XXBIST(bist.UsrpBIST):
         using_pri_ref = not mpm_c.clkaux_get_nsync_status1()
         # Status 0 checks dpll loss of lock
         dpll_lock = not mpm_c.clkaux_get_nsync_status0()
-        # Reg 0xD checks several APLL statuses, we need to make sure APLL1 is
-        # locked and APLL2 is unlocked
-        apll_lock = mpm_c.peek_clkaux(0xD) == '0x8'
+        # Reg 0xD bit 3 is APLL1 lock, bit 2 is APLL2 lock
+        apll_status = int(mpm_c.peek_clkaux(0xD), 16)
+        apll1_locked = bool(apll_status & 0x8)
+        apll2_unlocked = not (apll_status & 0x4)
 
-        result = using_pri_ref and dpll_lock and apll_lock
+        result = all([using_pri_ref, dpll_lock, apll1_locked, apll2_unlocked])
 
         mpm_c.enable_ecpri_clocks(False)
         # Set the clock source back to internal, as the register values
@@ -538,7 +539,8 @@ class X4XXBIST(bist.UsrpBIST):
 
         return result, {"pri_ref_selected": using_pri_ref,
                         "dpll_locked": dpll_lock,
-                        "apll1_locked_apll2_unlocked": apll_lock}
+                        "apll1_locked": apll1_locked,
+                        "apll2_unlocked": apll2_unlocked}
 
     def bist_clkaux_fpga_aux_ref(self):
         """
