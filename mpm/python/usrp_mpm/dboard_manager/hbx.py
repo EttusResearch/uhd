@@ -302,35 +302,30 @@ class HBX(X4xxDbMixin, DboardManagerBase):
 
     def enable_admv(self):
         """Enable LDOs which will turn on ADMV1320 and ADMV1420."""
-        # Enable ADMV1420
-        self.regs.P3d3V_ADMV1420_EN = 1
-        self.commit()
+        admv_devices = [
+            ("P3d3V_ADMV1420_EN", "P3d3V_ADMV1420_PG"),
+            ("P3d3V_ADMV1320_EN", "P3d3V_ADMV1320_PG"),
+        ]
 
-        def check_p3d3v_admv1420_pg_bit_high():
-            self.update_reg("P3d3V_ADMV1420_PG")
-            return self.regs.P3d3V_ADMV1420_PG
+        for en_reg, pg_reg in admv_devices:
+            # Enable ADMV
+            setattr(self.regs, en_reg, 1)
+            self.commit()
 
-        if not poll_with_timeout(
-            check_p3d3v_admv1420_pg_bit_high,
-            timeout_ms=self.TIMEOUT_MS,
-            interval_ms=self.POLLING_TIME_MS,
-        ):
-            raise RuntimeError("P3d3V_ADMV1420_PG bit is not high within the timeout period")
+            def check_admv_pg_bit_high(pg_reg=pg_reg):
+                def read_pg():
+                    self.update_reg(pg_reg)
+                    return getattr(self.regs, pg_reg)
 
-        # Enable ADMV1320
-        self.regs.P3d3V_ADMV1320_EN = 1
-        self.commit()
+                # Since the reported PG bit has a glitch sometimes, check twice.
+                return all([read_pg(), read_pg()])
 
-        def check_p3d3v_admv1320_pg_bit_high():
-            self.update_reg("P3d3V_ADMV1320_PG")
-            return self.regs.P3d3V_ADMV1320_PG
-
-        if not poll_with_timeout(
-            check_p3d3v_admv1320_pg_bit_high,
-            timeout_ms=self.TIMEOUT_MS,
-            interval_ms=self.POLLING_TIME_MS,
-        ):
-            raise RuntimeError("P3d3V_ADMV1320_PG bit is not high within the timeout period")
+            if not poll_with_timeout(
+                check_admv_pg_bit_high,
+                timeout_ms=self.TIMEOUT_MS,
+                interval_ms=self.POLLING_TIME_MS,
+            ):
+                raise RuntimeError(f"{pg_reg} bit is not high within the timeout period")
 
     def enable_rf_and_bb(self):
         """Enable baseband and RF rails."""
