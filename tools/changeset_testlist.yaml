@@ -216,10 +216,14 @@
   add:
     - hw.streaming.x4xx
   stop: False
-- re: ^mpm/.+/rfdc|^mpm/.+_manager/x4xx
+- re: ^mpm/.+/rfdc|^mpm/.+_manager/x4xx|^mpm/.+/lmk04832.py|x4xx_bist$
   add:
     - mpm.build.x4xx
     - hw.rf.x4xx
+    - devtest.x4xx
+- re: x4xx_bist$
+  add:
+    - mpm.build.x4xx
     - devtest.x4xx
 - re: zbx.py$
   add:
