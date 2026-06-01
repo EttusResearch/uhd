@@ -199,9 +199,12 @@ class ImageBuilderConfig:
                     )
         # Also set parameters for the device
         default_params = getattr(self.device, "parameters", {})
+        # Pre-merge raw BSP defaults with user overrides so that BSP parameter
+        # expressions can reference other BSP parameters that are not explicitly
+        # overridden in the image core file (e.g. RADIO_NIPC depending on RESAMPLERS).
+        pre_merged = {**default_params, **{k: v for k, v in self.parameters.items() if k in default_params}}
         self.parameters = {
-            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in default_params.items()},
-            **{k: resolve(v, parameters=self.parameters, config=self) for k, v in self.parameters.items() if k in default_params},
+            k: resolve(v, parameters=pre_merged, config=self) for k, v in pre_merged.items()
         }
         invalid_keys = [k for k in self.parameters if k not in default_params]
         if invalid_keys:
