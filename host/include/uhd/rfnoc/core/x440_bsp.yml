@@ -69,6 +69,7 @@ make_defs:
   - DRAM_BANKS=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_BANKS']}
   - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
   - DRAM_W=${parameters['DRAM_WIDTH']}
+  - USE_FABRIC_RESAMPLERS=${1 if parameters['USE_FABRIC_RESAMPLERS'] else 0}
 
 generate_dts: True
 dts_includes:

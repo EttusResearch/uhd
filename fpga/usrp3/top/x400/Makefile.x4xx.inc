@@ -108,7 +108,17 @@ endif
 
 ifdef X440
 TOP_SRCS += \
-rf/100m/rf_core_100m.v \
+rf/common/rf_reset.vhd \
+rf/200m_x440/dac_gearbox_12x4.sv \
+rf/200m_x440/dac_gearbox_6x4.sv \
+rf/400m/dac_gearbox_4x2.v \
+rf/400m/adc_gearbox_2x4.vhd \
+rf/400m/dac_gearbox_6x12.vhd \
+rf/200m_x440/fir_dec3_2spc_wrapper.sv \
+rf/200m_x440/fir_inp3_1spc_wrapper.sv \
+rf/200m_x440/rf_core_200m_x440.sv \
+rf/200m_x440/rx_dec3.sv \
+rf/200m_x440/tx_inp3.sv \
 rf/full/rf_core_full.sv \
 rf/common/adc_iq_repacker.v \
 rf/x440/x440_rf_reset_controller.vhd \

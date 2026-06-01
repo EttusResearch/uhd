@@ -43,6 +43,8 @@ include $(IP_DIR)/adc_100m_bd/Makefile.inc
 include $(IP_DIR)/dac_100m_bd/Makefile.inc
 include $(IP_DIR)/ddr4_64bits_x440/Makefile.inc
 include $(IP_DIR)/x4xx_ps_rfdc_bd/x440_ps_rfdc_bd/Makefile.inc
+include $(IP_DIR)/fir_dec3_2spc/Makefile.inc
+include $(IP_DIR)/fir_inp3_1spc/Makefile.inc
 endif
 
 BD_SRCS = \
@@ -106,7 +108,9 @@ endif
 
 ifdef X440
 IP_XCI_SRCS += \
-$(IP_DDR4_64BITS_X440_SRCS)
+$(IP_DDR4_64BITS_X440_SRCS) \
+$(IP_FIR_DEC3_2SPC_SRCS) \
+$(IP_FIR_INP3_1SPC_SRCS)
 endif
 
 BD_OUTPUTS = \

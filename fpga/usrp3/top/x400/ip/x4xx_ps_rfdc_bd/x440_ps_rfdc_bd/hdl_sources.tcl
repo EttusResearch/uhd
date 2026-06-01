@@ -21,5 +21,6 @@ read_verilog -sv    -library work $script_dir/../../../rf/common/rfdc_info_memor
 read_verilog -sv    -library work $script_dir/../../../rf/common/rfdc_info_pkg.sv
 read_verilog        -library work $script_dir/../../../rf/common/sync_wrapper.v
 read_vhdl           -library work $script_dir/../../../rf/x440/x440_clock_gates.vhd
+read_vhdl           -library work $script_dir/../../../rf/x440/x440_resampler_reset_controller.vhd
 read_vhdl           -library work $script_dir/../../../rf/x440/x440_rf_reset_controller.vhd
 read_verilog -sv    -library work $script_dir/../../../rf/x440/x440_rfdc_memory_content_pkg.sv

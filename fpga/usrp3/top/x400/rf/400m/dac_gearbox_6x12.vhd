@@ -31,93 +31,58 @@ end dac_gearbox_6x12;
 
 architecture RTL of dac_gearbox_6x12 is
 
-  subtype Word_t is std_logic_vector(191 downto 0);
-  type Words_t is array(natural range<>) of Word_t;
-
-  signal c1DataInDly, c2DataInDly : Words_t(2 downto 0);
-
-  signal c2DataValidInDly : std_logic_vector(1 downto 0) := (others => '0');
-  signal c1PhaseCount, c2PhaseCount : std_logic := '0';
-  signal c1DataValidIn, c1DataValidDly0 : std_logic := '0';
+  -- Even-phase word (first of each pair) held in Clk2x domain.
+  signal c2EvenData    : std_logic_vector(191 downto 0) := (others => '0');
+  -- Assembled 12-SPC pair; stable for two consecutive Clk2x cycles so
+  -- the Clk1x register capture (see below) sees it regardless of phase.
+  signal c2PairData    : std_logic_vector(383 downto 0) := (others => '0');
+  -- Two-bit shift-register valid window: set to "11" when a pair is complete,
+  -- then shifts to "01" then "00".  The two-cycle window spans exactly one
+  -- Clk1x period so Clk1x captures the valid exactly once.
+  signal c2PairValidSr : std_logic_vector(1 downto 0)  := (others => '0');
+  -- Toggles only on valid input cycles so stalls never advance the phase.
+  signal c2PhaseCount  : std_logic := '0';
 
 begin
 
-  -- Input data pipeline.
-  InputValidPipeline: process(Clk2x, ac2Reset_n)
+  -- Clk2x domain: accumulate pairs of 6-SPC words into a 12-SPC word.
+  -- This mirrors the first-sample / sample-pair collection in adc_cdc:
+  -- c2PhaseCount acts like first_sample_valid (toggling only on valid cycles),
+  -- c2PairData / c2PairValidSr act like sample_pair_rclk / sample_pair_valid_rclk.
+  Clk2xAccumulate: process(Clk2x, ac2Reset_n)
   begin
     if ac2Reset_n = '0' then
-      c2DataValidInDly <= (others => '0');
+      c2PhaseCount  <= '0';
+      c2PairValidSr <= (others => '0');
     elsif rising_edge(Clk2x) then
-      c2DataValidInDly <= c2DataValidInDly(c2DataValidInDly'left-1 downto 0) &
-                          c2DataValidIn;
-    end if;
-  end process;
-
-  InputDataPipeline: process(Clk2x)
-  begin
-    if rising_edge(Clk2x) then
-      c2DataInDly <= c2DataInDly(c2DataInDly'high-1 downto 0) & c2DataIn;
-    end if;
-  end process;
-
-  -- Process to determine if data valid was asserted when both clocks were
-  -- in-phase. Since we are crossing a 2x clock domain to a 1x clock domain,
-  -- there are only two possible phase. One is data valid assertion when both
-  -- clocks rising edges are aligned. The other case is data valid assertion
-  -- when Clk2x is aligned to the falling edge.
-  Clock2xPhaseCount: process(ac2Reset_n, Clk2x)
-  begin
-    if ac2Reset_n = '0' then
-      c2PhaseCount <= '0';
-    elsif rising_edge(Clk2x) then
-      -- This is a single bit counter. This counter is enabled for an extra
-      -- clock cycle to account for the output pipeline delay.
-      c2PhaseCount <= (not c2PhaseCount) and
-                      (c2DataValidInDly(1) or c2DataValidInDly(0));
-    end if;
-  end process;
-
-  -- Crossing clock from Clk2x to Clk1x.
-  Clk2xToClk1xCrossing: process(Clk1x)
-  begin
-    if rising_edge(Clk1x) then
-      c1DataInDly   <= c2DataInDly;
-      c1PhaseCount  <= c2PhaseCount;
-      c1DataValidIn <= c2DataValidInDly(0);
-    end if;
-  end process;
-
-  -- Output data packing is determined based on when input data valid was
-  -- asserted. c1PhaseCount is '1' when input data valid was asserted when both
-  -- clocks are rising edge aligned. In this case, we can send data from the
-  -- with 1 and 2 pipeline delays.
-  -- When data valid is asserted when the two clock are not rising edge
-  -- aligned, we will use data from 2 and 3 pipeline delays.
-  DataOut: process(Clk1x)
-  begin
-    if rising_edge(Clk1x) then
-      c1DataOut <= c1DataInDly(1) & c1DataInDly(2);
-      if c1PhaseCount = '1' then
-        c1DataOut <= c1DataInDly(0) & c1DataInDly(1);
+      -- Shift the valid window down each cycle so it expires after two cycles.
+      c2PairValidSr <= '0' & c2PairValidSr(1);
+      if c2DataValidIn = '1' then
+        c2PhaseCount <= not c2PhaseCount;
+        if c2PhaseCount = '0' then
+          -- First word of the pair (even phase).
+          c2EvenData <= c2DataIn;
+        else
+          -- Second word of the pair (odd phase); latch the complete 12-SPC
+          -- word and open a two-cycle valid window for the Clk1x capture.
+          c2PairData    <= c2DataIn & c2EvenData;
+          c2PairValidSr <= "11";
+        end if;
       end if;
     end if;
   end process;
 
-  -- Similar to data output, when input data valid is asserted and both clocks
-  -- are rising edge aligned, the output data valid is asserted with a single
-  -- pipeline stage. If not, output data valid is asserted with two pipeline
-  -- stages.
-  DataValidOut: process(Clk1x, ac1Reset_n)
+  -- Clk1x domain: plain register capture of the assembled pair.
+  -- Safe because the static phase relationship between Clk1x and Clk2x
+  -- guarantees c2PairData is stable during the capture window, matching
+  -- the sample_pair_rclk -> sample_pair_bclk register in adc_cdc.
+  Clk2xToClk1xCrossing: process(Clk1x, ac1Reset_n)
   begin
     if ac1Reset_n = '0' then
-      c1DataValidDly0 <= '0';
-      c1DataValidOut  <= '0';
+      c1DataValidOut <= '0';
     elsif rising_edge(Clk1x) then
-      c1DataValidDly0 <= c1DataValidIn;
-      c1DataValidOut  <= c1DataValidDly0;
-      if c1PhaseCount = '1' then
-        c1DataValidOut <= c1DataValidIn;
-      end if;
+      c1DataOut      <= c2PairData;
+      c1DataValidOut <= c2PairValidSr(1) or c2PairValidSr(0);
     end if;
   end process;
 

@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# axi_rfdc_info_memory, capture_sysref, x440_clock_gates, rf_nco_reset_wrapper, x440_rf_reset_controller, x440_rf_reset_controller, gpio_to_axis_mux
+# axi_rfdc_info_memory, capture_sysref, x440_clock_gates, rf_nco_reset_wrapper, x440_rf_reset_controller, x440_rf_reset_controller, x440_resampler_reset_controller, gpio_to_axis_mux
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -184,6 +184,7 @@ x440_clock_gates\
 rf_nco_reset_wrapper\
 x440_rf_reset_controller\
 x440_rf_reset_controller\
+x440_resampler_reset_controller\
 gpio_to_axis_mux\
 "
 
@@ -798,6 +799,7 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
   create_bd_pin -dir I -from 31 -to 0 rf_dsp_info_sclk
   create_bd_pin -dir I -from 31 -to 0 rf_rfdc_info_sclk
   create_bd_pin -dir O -type intr rfdc_irq
+  create_bd_pin -dir O rx_resampler_reset_pulse_dclk
   create_bd_pin -dir I -type rst s_axi_config_aresetn
   create_bd_pin -dir I -type clk s_axi_config_clk
   create_bd_pin -dir I start_nco_reset_r0clk
@@ -805,6 +807,7 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
   create_bd_pin -dir O sysref_out_r0clk
   create_bd_pin -dir I sysref_pl_in
   create_bd_pin -dir I -from 7 -to 0 sysref_wait_cycles
+  create_bd_pin -dir O tx_resampler_reset_pulse_dclk
 
   # Create instance: ThresholdRegister
   create_hier_cell_ThresholdRegister $hier_obj ThresholdRegister
@@ -1397,6 +1400,17 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
    CONFIG.DOUT_WIDTH {4} \
  ] $slice_iqswap_3_0_radio1
 
+  # Create instance: x440_resampler_reset_0, and set properties
+  set block_name x440_resampler_reset_controller
+  set block_cell_name x440_resampler_reset_0
+  if { [catch {set x440_resampler_reset_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2095 -severity "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   } elseif { $x440_resampler_reset_0 eq "" } {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
+     return 1
+   }
+  
   # Create interface connections
   connect_bd_intf_net -intf_net S_AXI_1_1 [get_bd_intf_pins axi_interconnect_rf/M06_AXI] [get_bd_intf_pins calibration_muxes/S_AXI_1]
   connect_bd_intf_net -intf_net adc0_clk_0_1 [get_bd_intf_pins adc0_clk] [get_bd_intf_pins rf_data_converter/adc0_clk]
@@ -1470,7 +1484,7 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
 
   # Create port connections
   connect_bd_net -net M02_ARESETN_1 [get_bd_pins axi_interconnect_rf/M02_ARESETN] [get_bd_pins axi_interconnect_rf/M11_ARESETN] [get_bd_pins const_1/dout] [get_bd_pins reg_invert_iq_radio0/s_axi_aresetn] [get_bd_pins reg_invert_iq_radio1/s_axi_aresetn]
-  connect_bd_net -net adc_reset_pulse_r0clk_1 [get_bd_pins adc_reset_pulse_r0clk] [get_bd_pins rf_reset_controller_0/rAdcResetPulse]
+  connect_bd_net -net adc_reset_pulse_r0clk_1 [get_bd_pins adc_reset_pulse_r0clk] [get_bd_pins rf_reset_controller_0/rAdcResetPulse] [get_bd_pins x440_resampler_reset_0/dAdcResetPulse]
   connect_bd_net -net adc_reset_pulse_r1clk_1 [get_bd_pins adc_reset_pulse_r1clk] [get_bd_pins rf_reset_controller_1/rAdcResetPulse]
   connect_bd_net -net capture_sysref_0_sysref_out_rclk [get_bd_pins sysref_out_r0clk] [get_bd_pins capture_sysref/sysref_out_rclk] [get_bd_pins rf_data_converter/user_sysref_adc] [get_bd_pins rf_data_converter/user_sysref_dac]
   connect_bd_net -net capture_sysref_sysref_out_pclk [get_bd_pins sysref_out_pclk] [get_bd_pins capture_sysref/sysref_out_pclk] [get_bd_pins rf_nco_reset_wrapper_0/p_sysref]
@@ -1482,14 +1496,14 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
   connect_bd_net -net clock_gates_0_rf2EnableBufg [get_bd_pins clock_gates_0/aEnableRf0Bufg2x] [get_bd_pins data_clock_mmcm/r0_rfdc_clk_2x_ce]
   connect_bd_net -net clock_gates_0_rfEnableBufg [get_bd_pins clock_gates_0/aEnableRf0Bufg1x] [get_bd_pins data_clock_mmcm/r0_rfdc_clk_ce]
   connect_bd_net -net dSysrefWaitCycles_0_1 [get_bd_pins sysref_wait_cycles] [get_bd_pins rf_nco_reset_wrapper_0/d_sysref_wait_cycles]
-  connect_bd_net -net dac_reset_pulse_r0clk_1 [get_bd_pins dac_reset_pulse_r0clk] [get_bd_pins rf_reset_controller_0/rDacResetPulse]
+  connect_bd_net -net dac_reset_pulse_r0clk_1 [get_bd_pins dac_reset_pulse_r0clk] [get_bd_pins rf_reset_controller_0/rDacResetPulse] [get_bd_pins x440_resampler_reset_0/dDacResetPulse]
   connect_bd_net -net dac_reset_pulse_r1clk_1 [get_bd_pins dac_reset_pulse_r1clk] [get_bd_pins rf_reset_controller_1/rDacResetPulse]
-  connect_bd_net -net data_clock_mmcm_data_clk [get_bd_pins data_clk] [get_bd_pins data_clock_mmcm/data_clk]
+  connect_bd_net -net data_clock_mmcm_data_clk [get_bd_pins data_clk] [get_bd_pins data_clock_mmcm/data_clk] [get_bd_pins x440_resampler_reset_0/DataClk]
   connect_bd_net -net data_clock_mmcm_data_clk_2x [get_bd_pins data_clk_2x] [get_bd_pins data_clock_mmcm/data_clk_2x]
   connect_bd_net -net data_clock_mmcm_locked [get_bd_pins clock_gates_0/aPllLocked] [get_bd_pins data_clock_mmcm/locked]
-  connect_bd_net -net data_clock_mmcm_r0_rfdc_clk [get_bd_pins radio0_rfdc_clk] [get_bd_pins axi_interconnect_rf/M02_ACLK] [get_bd_pins calibration_muxes/s_axi_aclk_0] [get_bd_pins calibration_muxes/s_axi_aclk_1] [get_bd_pins capture_sysref/rfdc_clk] [get_bd_pins data_clock_mmcm/r0_rfdc_clk] [get_bd_pins reg_invert_iq_radio0/s_axi_aclk] [get_bd_pins rf_data_converter/m0_axis_aclk] [get_bd_pins rf_data_converter/m1_axis_aclk] [get_bd_pins rf_data_converter/s0_axis_aclk] [get_bd_pins rf_nco_reset_wrapper_0/data_clk] [get_bd_pins rf_reset_controller_0/RfClk]
+  connect_bd_net -net data_clock_mmcm_r0_rfdc_clk [get_bd_pins radio0_rfdc_clk] [get_bd_pins axi_interconnect_rf/M02_ACLK] [get_bd_pins calibration_muxes/s_axi_aclk_0] [get_bd_pins capture_sysref/rfdc_clk] [get_bd_pins data_clock_mmcm/r0_rfdc_clk] [get_bd_pins reg_invert_iq_radio0/s_axi_aclk] [get_bd_pins rf_data_converter/m0_axis_aclk] [get_bd_pins rf_data_converter/m1_axis_aclk] [get_bd_pins rf_data_converter/s0_axis_aclk] [get_bd_pins rf_nco_reset_wrapper_0/data_clk] [get_bd_pins rf_reset_controller_0/RfClk]
   connect_bd_net -net data_clock_mmcm_r0_rfdc_clk_2x [get_bd_pins radio0_rfdc_clk_2x] [get_bd_pins data_clock_mmcm/r0_rfdc_clk_2x] [get_bd_pins rf_reset_controller_0/RfClk2x]
-  connect_bd_net -net data_clock_mmcm_r1_rfdc_clk [get_bd_pins radio1_rfdc_clk_1x] [get_bd_pins axi_interconnect_rf/M11_ACLK] [get_bd_pins data_clock_mmcm/r1_rfdc_clk] [get_bd_pins reg_invert_iq_radio1/s_axi_aclk] [get_bd_pins rf_data_converter/m2_axis_aclk] [get_bd_pins rf_data_converter/m3_axis_aclk] [get_bd_pins rf_data_converter/s1_axis_aclk] [get_bd_pins rf_reset_controller_1/RfClk]
+  connect_bd_net -net data_clock_mmcm_r1_rfdc_clk [get_bd_pins radio1_rfdc_clk_1x] [get_bd_pins axi_interconnect_rf/M11_ACLK] [get_bd_pins calibration_muxes/s_axi_aclk_1] [get_bd_pins data_clock_mmcm/r1_rfdc_clk] [get_bd_pins reg_invert_iq_radio1/s_axi_aclk] [get_bd_pins rf_data_converter/m2_axis_aclk] [get_bd_pins rf_data_converter/m3_axis_aclk] [get_bd_pins rf_data_converter/s1_axis_aclk] [get_bd_pins rf_reset_controller_1/RfClk]
   connect_bd_net -net data_clock_mmcm_r1_rfdc_clk_2x [get_bd_pins radio1_rfdc_clk_2x] [get_bd_pins data_clock_mmcm/r1_rfdc_clk_2x] [get_bd_pins rf_reset_controller_1/RfClk2x]
   connect_bd_net -net data_clock_mmcm_tdc_ref_clk [get_bd_pins pll_ref_clk_out] [get_bd_pins capture_sysref/pll_ref_clk] [get_bd_pins data_clock_mmcm/pll_ref_clk_out] [get_bd_pins rf_nco_reset_wrapper_0/pll_ref_clk] [get_bd_pins rf_reset_controller_0/PllRefClk] [get_bd_pins rf_reset_controller_1/PllRefClk]
   connect_bd_net -net enable_gated_clocks_clk40_1 [get_bd_pins enable_gated_clocks_clk40] [get_bd_pins clock_gates_0/rSafeToEnableGatedClks]
@@ -1501,7 +1515,7 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
   connect_bd_net -net reg_reset_mmcm_gpio_io_o [get_bd_pins axi_interconnect_rf/M01_ARESETN] [get_bd_pins clock_gates_0/rPllReset_n] [get_bd_pins data_clock_mmcm/s_axi_aresetn] [get_bd_pins reg_reset_mmcm/gpio_io_o]
   connect_bd_net -net reg_rf_reset_control1_gpio_io_o [get_bd_pins clock_gates_0/rSoftwareControl] [get_bd_pins reg_clock_gate_control/gpio_io_o]
   connect_bd_net -net reg_rf_reset_control_radio1_gpio_io_o [get_bd_pins reg_rf_reset_control_radio1/gpio_io_o] [get_bd_pins rf_reset_controller_1/cSoftwareControl]
-  connect_bd_net -net reg_rf_resets_gpio_io_o [get_bd_pins reg_rf_reset_control_radio0/gpio_io_o] [get_bd_pins rf_reset_controller_0/cSoftwareControl]
+  connect_bd_net -net reg_rf_resets_gpio_io_o [get_bd_pins reg_rf_reset_control_radio0/gpio_io_o] [get_bd_pins rf_reset_controller_0/cSoftwareControl] [get_bd_pins x440_resampler_reset_0/cSoftwareControl]
   connect_bd_net -net rf_data_converter_adc0_01_over_threshold1 [get_bd_pins ThresholdRegister/In0] [get_bd_pins rf_data_converter/adc0_01_over_threshold1]
   connect_bd_net -net rf_data_converter_adc0_01_over_threshold2 [get_bd_pins ThresholdRegister/In1] [get_bd_pins rf_data_converter/adc0_01_over_threshold2]
   connect_bd_net -net rf_data_converter_adc0_23_over_threshold1 [get_bd_pins ThresholdRegister/In2] [get_bd_pins rf_data_converter/adc0_23_over_threshold1]
@@ -1543,13 +1557,15 @@ proc create_hier_cell_rfdc { parentCell nameHier } {
   connect_bd_net -net rf_rfdc_info_sclk_1 [get_bd_pins rf_rfdc_info_sclk] [get_bd_pins reg_rfdc_info/gpio_io_i]
   connect_bd_net -net rfdc_regs_gpio_io_o [get_bd_pins reg_invert_iq_radio0/gpio_io_o] [get_bd_pins slice_iqswap_11_8_radio0/Din] [get_bd_pins slice_iqswap_3_0_radio0/Din]
   connect_bd_net -net s_axi_aresetn_0_1 [get_bd_pins s_axi_config_aresetn] [get_bd_pins ThresholdRegister/s_axi_config_aresetn] [get_bd_pins axi_interconnect_rf/ARESETN] [get_bd_pins axi_interconnect_rf/M00_ARESETN] [get_bd_pins axi_interconnect_rf/M03_ARESETN] [get_bd_pins axi_interconnect_rf/M04_ARESETN] [get_bd_pins axi_interconnect_rf/M05_ARESETN] [get_bd_pins axi_interconnect_rf/M06_ARESETN] [get_bd_pins axi_interconnect_rf/M07_ARESETN] [get_bd_pins axi_interconnect_rf/M08_ARESETN] [get_bd_pins axi_interconnect_rf/M09_ARESETN] [get_bd_pins axi_interconnect_rf/M10_ARESETN] [get_bd_pins axi_interconnect_rf/M12_ARESETN] [get_bd_pins axi_interconnect_rf/S00_ARESETN] [get_bd_pins axi_rfdc_info_memory_0/s_axi_aresetn] [get_bd_pins calibration_muxes/s_axi_config_aresetn] [get_bd_pins reg_clock_gate_control/s_axi_aresetn] [get_bd_pins reg_reset_mmcm/s_axi_aresetn] [get_bd_pins reg_rf_axi_status/s_axi_aresetn] [get_bd_pins reg_rf_reset_control_radio0/s_axi_aresetn] [get_bd_pins reg_rf_reset_control_radio1/s_axi_aresetn] [get_bd_pins reg_rfdc_info/s_axi_aresetn] [get_bd_pins rf_data_converter/s_axi_aresetn]
-  connect_bd_net -net s_axi_config_clk_1 [get_bd_pins s_axi_config_clk] [get_bd_pins ThresholdRegister/s_axi_config_clk] [get_bd_pins axi_interconnect_rf/ACLK] [get_bd_pins axi_interconnect_rf/M00_ACLK] [get_bd_pins axi_interconnect_rf/M01_ACLK] [get_bd_pins axi_interconnect_rf/M03_ACLK] [get_bd_pins axi_interconnect_rf/M04_ACLK] [get_bd_pins axi_interconnect_rf/M05_ACLK] [get_bd_pins axi_interconnect_rf/M06_ACLK] [get_bd_pins axi_interconnect_rf/M07_ACLK] [get_bd_pins axi_interconnect_rf/M08_ACLK] [get_bd_pins axi_interconnect_rf/M09_ACLK] [get_bd_pins axi_interconnect_rf/M10_ACLK] [get_bd_pins axi_interconnect_rf/M12_ACLK] [get_bd_pins axi_interconnect_rf/S00_ACLK] [get_bd_pins axi_rfdc_info_memory_0/s_axi_aclk] [get_bd_pins calibration_muxes/s_axi_config_clk] [get_bd_pins clock_gates_0/ReliableClk] [get_bd_pins data_clock_mmcm/s_axi_aclk] [get_bd_pins reg_clock_gate_control/s_axi_aclk] [get_bd_pins reg_reset_mmcm/s_axi_aclk] [get_bd_pins reg_rf_axi_status/s_axi_aclk] [get_bd_pins reg_rf_reset_control_radio0/s_axi_aclk] [get_bd_pins reg_rf_reset_control_radio1/s_axi_aclk] [get_bd_pins reg_rfdc_info/s_axi_aclk] [get_bd_pins rf_data_converter/s_axi_aclk] [get_bd_pins rf_nco_reset_wrapper_0/config_clk] [get_bd_pins rf_reset_controller_0/ConfigClk] [get_bd_pins rf_reset_controller_1/ConfigClk]
+  connect_bd_net -net s_axi_config_clk_1 [get_bd_pins s_axi_config_clk] [get_bd_pins ThresholdRegister/s_axi_config_clk] [get_bd_pins axi_interconnect_rf/ACLK] [get_bd_pins axi_interconnect_rf/M00_ACLK] [get_bd_pins axi_interconnect_rf/M01_ACLK] [get_bd_pins axi_interconnect_rf/M03_ACLK] [get_bd_pins axi_interconnect_rf/M04_ACLK] [get_bd_pins axi_interconnect_rf/M05_ACLK] [get_bd_pins axi_interconnect_rf/M06_ACLK] [get_bd_pins axi_interconnect_rf/M07_ACLK] [get_bd_pins axi_interconnect_rf/M08_ACLK] [get_bd_pins axi_interconnect_rf/M09_ACLK] [get_bd_pins axi_interconnect_rf/M10_ACLK] [get_bd_pins axi_interconnect_rf/M12_ACLK] [get_bd_pins axi_interconnect_rf/S00_ACLK] [get_bd_pins axi_rfdc_info_memory_0/s_axi_aclk] [get_bd_pins calibration_muxes/s_axi_config_clk] [get_bd_pins clock_gates_0/ReliableClk] [get_bd_pins data_clock_mmcm/s_axi_aclk] [get_bd_pins reg_clock_gate_control/s_axi_aclk] [get_bd_pins reg_reset_mmcm/s_axi_aclk] [get_bd_pins reg_rf_axi_status/s_axi_aclk] [get_bd_pins reg_rf_reset_control_radio0/s_axi_aclk] [get_bd_pins reg_rf_reset_control_radio1/s_axi_aclk] [get_bd_pins reg_rfdc_info/s_axi_aclk] [get_bd_pins rf_data_converter/s_axi_aclk] [get_bd_pins rf_nco_reset_wrapper_0/config_clk] [get_bd_pins rf_reset_controller_0/ConfigClk] [get_bd_pins rf_reset_controller_1/ConfigClk] [get_bd_pins x440_resampler_reset_0/ConfigClk]
   connect_bd_net -net slice_iqswap_11_8_radio0_Dout [get_bd_pins radio0_invert_dac_iq_r0clk] [get_bd_pins slice_iqswap_11_8_radio0/Dout]
   connect_bd_net -net slice_iqswap_11_8_radio1_Dout [get_bd_pins radio1_invert_dac_iq_r1clk] [get_bd_pins slice_iqswap_11_8_radio1/Dout]
   connect_bd_net -net slice_iqswap_3_0_radio0_Dout [get_bd_pins radio0_invert_adc_iq_r0clk] [get_bd_pins slice_iqswap_3_0_radio0/Dout]
   connect_bd_net -net slice_iqswap_3_0_radio1_Dout [get_bd_pins radio1_invert_adc_iq_r1clk] [get_bd_pins slice_iqswap_3_0_radio1/Dout]
   connect_bd_net -net start_nco_reset_rclk_1 [get_bd_pins start_nco_reset_r0clk] [get_bd_pins rf_nco_reset_wrapper_0/d_start_nco_reset]
   connect_bd_net -net sysref_in_0_2 [get_bd_pins sysref_pl_in] [get_bd_pins capture_sysref/sysref_in]
+  connect_bd_net -net x440_resampler_reset_0_dRxResamplerResetPulse [get_bd_pins rx_resampler_reset_pulse_dclk] [get_bd_pins x440_resampler_reset_0/dRxResamplerResetPulse]
+  connect_bd_net -net x440_resampler_reset_0_dTxResamplerResetPulse [get_bd_pins tx_resampler_reset_pulse_dclk] [get_bd_pins x440_resampler_reset_0/dTxResamplerResetPulse]
   connect_bd_net -net x440_rf_reset_contro_0_cSoftwareStatus [get_bd_pins reg_rf_reset_control_radio0/gpio2_io_i] [get_bd_pins rf_reset_controller_0/cSoftwareStatus]
   connect_bd_net -net x440_rf_reset_contro_0_r2DacReset_n [get_bd_pins dac_data_in_resetn_r0clk2x] [get_bd_pins rf_reset_controller_0/r2DacReset_n]
   connect_bd_net -net x440_rf_reset_contro_0_rAdcEnableData [get_bd_pins adc_enable_data_r0clk] [get_bd_pins rf_reset_controller_0/rAdcEnableData]
@@ -3832,6 +3848,7 @@ proc create_root_design { parentCell } {
   set rf_dsp_info_clk40 [ create_bd_port -dir I -from 31 -to 0 rf_dsp_info_clk40 ]
   set rf_rfdc_info_clk40 [ create_bd_port -dir I -from 31 -to 0 rf_rfdc_info_clk40 ]
   set rfdc_irq [ create_bd_port -dir O -type intr rfdc_irq ]
+  set rx_resampler_reset_pulse_dclk [ create_bd_port -dir O rx_resampler_reset_pulse_dclk ]
   set s_axi_hp0_aclk [ create_bd_port -dir I -type clk -freq_hz 40000000 s_axi_hp0_aclk ]
   set_property -dict [ list \
    CONFIG.ASSOCIATED_BUSIF {s_axi_hp0} \
@@ -3850,6 +3867,7 @@ proc create_root_design { parentCell } {
   set sysref_out_r0clk [ create_bd_port -dir O sysref_out_r0clk ]
   set sysref_pl_in [ create_bd_port -dir I sysref_pl_in ]
   set sysref_wait_cycles [ create_bd_port -dir I -from 7 -to 0 sysref_wait_cycles ]
+  set tx_resampler_reset_pulse_dclk [ create_bd_port -dir O tx_resampler_reset_pulse_dclk ]
 
   # Create instance: ps
   create_hier_cell_ps [current_bd_instance .] ps
@@ -3960,6 +3978,8 @@ proc create_root_design { parentCell } {
   connect_bd_net -net rfdc_adc_rfdc_axi_resetn_r0clk [get_bd_ports adc_rfdc_axi_resetn_r0clk] [get_bd_pins rfdc/adc_rfdc_axi_resetn_r0clk]
   connect_bd_net -net rfdc_adc_rfdc_axi_resetn_r1clk [get_bd_ports adc_rfdc_axi_resetn_r1clk] [get_bd_pins rfdc/adc_rfdc_axi_resetn_r1clk]
   connect_bd_net -net rfdc_clk_adc0 [get_bd_ports clk_adc0] [get_bd_pins rfdc/clk_adc0]
+  connect_bd_net -net rfdc_dRxResamplerResetPulseDclk_0 [get_bd_ports rx_resampler_reset_pulse_dclk] [get_bd_pins rfdc/rx_resampler_reset_pulse_dclk]
+  connect_bd_net -net rfdc_dTxResamplerResetPulseDclk_0 [get_bd_ports tx_resampler_reset_pulse_dclk] [get_bd_pins rfdc/tx_resampler_reset_pulse_dclk]
   connect_bd_net -net rfdc_dac_data_in_resetn_r0clk [get_bd_ports dac_data_in_resetn_r0clk] [get_bd_pins rfdc/dac_data_in_resetn_r0clk]
   connect_bd_net -net rfdc_dac_data_in_resetn_r0clk2x [get_bd_ports dac_data_in_resetn_r0clk2x] [get_bd_pins rfdc/dac_data_in_resetn_r0clk2x]
   connect_bd_net -net rfdc_dac_data_in_resetn_r1clk [get_bd_ports dac_data_in_resetn_r1clk] [get_bd_pins rfdc/dac_data_in_resetn_r1clk]

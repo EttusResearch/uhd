@@ -19,6 +19,7 @@ def do_files():
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/dboards/fbx")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/common")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/full")
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/200m_x440")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/common/regmap")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/x440_ps_rfdc_bd/regmap")
 

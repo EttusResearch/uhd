@@ -20,6 +20,7 @@ parameters:
   NUM_DRAM_BANKS: 0
   NUM_DRAM_CHANS: 0
   DRAM_WIDTH: 64
+  USE_FABRIC_RESAMPLERS: True
 
 # A list of all stream endpoints in design
 # ----------------------------------------
