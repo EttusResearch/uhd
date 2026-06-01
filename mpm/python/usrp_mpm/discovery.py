@@ -60,6 +60,7 @@ def _discovery_process(state, discovery_addr):
             + [b"serial=" + state.dev_serial.value]
             + [b"name=" + state.dev_name.value]
             + [b"fpga=" + state.dev_fpga_type.value]
+            + [b"customizable_fpga=" + state.dev_customizable_fpga.value]
             + [b"rpc_version=" + RPC_VERSION]
             + [RESPONSE_CLAIMED_KEY + to_binary_str("={}".format(state.claim_status.value))]
         )

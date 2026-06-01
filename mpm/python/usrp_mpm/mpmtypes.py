@@ -32,3 +32,4 @@ class SharedState:
         self.dev_name = Array(ctypes.c_char, 21, lock=self.lock)
         self.dev_product = Array(ctypes.c_char, 16, lock=self.lock)
         self.dev_fpga_type = Array(ctypes.c_char, 8, lock=self.lock)
+        self.dev_customizable_fpga = Array(ctypes.c_char, 8, lock=self.lock)

@@ -13,7 +13,7 @@ import traceback
 import weakref
 from concurrent import futures
 from contextlib import contextmanager
-from multiprocessing import current_process, Process, RLock
+from multiprocessing import Process, RLock, current_process
 from random import choice
 from string import ascii_letters, digits
 
@@ -184,6 +184,9 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
         self._state.dev_serial.value = to_binary_str(device_info.get("serial", "n/a"))
         self._state.dev_name.value = to_binary_str(device_info.get("name", "n/a"))
         self._state.dev_fpga_type.value = to_binary_str(device_info.get("fpga", "n/a"))
+        self._state.dev_customizable_fpga.value = to_binary_str(
+            str(device_info.get("customizable_fpga", "n/a"))
+        )
         self._db_methods = []
         self._mb_methods = []
         self._server_methods = []
@@ -956,6 +959,8 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
             raise RuntimeError(err_msg)
         info = self.periph_manager.get_device_info()
         info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
+        if "customizable_fpga" in info:
+            info["customizable_fpga"] = str(info["customizable_fpga"])
         if _is_connection_local(self.client_host):
             info["connection"] = "local"
         else:
