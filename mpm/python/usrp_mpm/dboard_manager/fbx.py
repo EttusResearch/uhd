@@ -44,6 +44,10 @@ class FBX(X4xxDbMixin, DboardManagerBase):
                     "current": (1, 0),
                     "oldest": (1, 0),
                 },
+                "rf_core_200m": {
+                    "current": (1, 0),
+                    "oldest": (1, 0),
+                },
             }
         },
     }
