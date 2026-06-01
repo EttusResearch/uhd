@@ -9,8 +9,9 @@ parameters:
   NUM_DRAM_BANKS: 0
   NUM_DRAM_CHANS: 0
   DRAM_WIDTH: 64
-  RADIO_NIPC: 8
   FP_GPIO_BANK_WIDTH: 12
+  USE_FABRIC_RESAMPLERS: False
+  RADIO_NIPC: "${ 2 if parameters['USE_FABRIC_RESAMPLERS'] else 8 }"
 
 checks:
   - condition: ${int(parameters['RF_BW'] in [200, 400, 1600])}
@@ -52,7 +53,7 @@ checks:
       connections:
         - {srcblk: eth_qsfp0, srcport: qsfp,       dstblk: _device_, dstport: qsfp0   }
     severity: warning
-  - condition: ${ parameters['RADIO_NIPC'] == 8 }
+  - condition: ${ parameters['RADIO_NIPC'] in [2, 8] }
     message: |
       The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
       be correct, so please remove the RADIO_NIPC parameter from the image core file.
@@ -62,10 +63,12 @@ checks:
       The NUM_PORTS_PER_RADIO value is not valid. The default values of NUM_PORTS_PER_RADIO will
       be correct, so please remove the NUM_PORTS_PER_RADIO parameter from the image core file.
     severity: error
+  - condition: ${not (parameters['USE_FABRIC_RESAMPLERS'] and parameters['RF_BW'] != 200)}
+    message: "USE_FABRIC_RESAMPLERS is only valid when RF_BW is 200 (RF_BW is: ${parameters['RF_BW']})."
 
 make_defs:
   - RF_BW=${parameters['RF_BW']}
-  - RF_CORE_FULL=1
+  - RF_CORE_${"200M" if parameters['USE_FABRIC_RESAMPLERS'] else "FULL"}=1
   - DRAM_BANKS=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_BANKS']}
   - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
   - DRAM_W=${parameters['DRAM_WIDTH']}
