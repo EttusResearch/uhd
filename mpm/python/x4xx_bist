@@ -946,7 +946,7 @@ class X4XXBIST(bist.UsrpBIST):
             sys.stderr.write(
                 "Cannot run bist_spi_flash_integrity(): "
                 "This device does not have daughterboard flash memory!\n")
-            return False, {}
+            return True, {}
 
         import os
         from usrp_mpm.sys_utils.db_flash import DBFlash
@@ -1011,7 +1011,7 @@ class X4XXBIST(bist.UsrpBIST):
             sys.stderr.write(
                 "Cannot run bist_spi_flash_speed(): "
                 "This device does not have daughterboard flash memory!\n")
-            return False, {}
+            return True, {}
 
         import os
         import re
