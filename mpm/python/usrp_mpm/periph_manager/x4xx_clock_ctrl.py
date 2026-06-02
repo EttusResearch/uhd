@@ -260,8 +260,9 @@ class X4xxClockCtrl:
         )
 
     def get_ref_locked(self):
-        """
-        Return lock status both RPLL and SPLL.
+        """Return combined, current lock status both RPLL and SPLL.
+
+        This returns True if all Ref- and Sample PLLs are currently locked.
         """
         ref_pll_status = self._reference_pll.get_status()
         sample_pll_status = self._sample_pll.get_status()

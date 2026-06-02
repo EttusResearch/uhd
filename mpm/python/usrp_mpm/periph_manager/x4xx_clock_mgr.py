@@ -416,8 +416,14 @@ class X4xxClockManager:
     ###########################################################################
     # Internal helpers/workers
     ###########################################################################
-    def _set_sync_source(self, clock_source, time_source, force=False):
-        """
+    def _set_sync_source(
+        self,
+        clock_source: str,
+        time_source: str,
+        force: bool = False,
+    ) -> SetSyncRetVal:
+        """Configure switches for clock sources and reset clock tree.
+
         See set_sync_source() for docs. This is the internal helper that does
         the actual work, but it assumes clock_source and time_source are
         validated/sanitized.
@@ -428,6 +434,16 @@ class X4xxClockManager:
 
         If anything changed, then all clocks will be put into reset. Call
         set_master_clock_rate() in that case to get them running again!
+
+        Arguments:
+        clock_source -- A string value with the new clock source ('external',
+                        'internal', ...).
+        time_source  -- Same for the time source.
+        force -- This Boolean will bypass the checks if anything has changed.
+                 If it is set to True, it will run the configuration regardless
+                 of any previous state.
+
+        Returns: A SetSyncRetVal enum value.
         """
         assert (clock_source, time_source) in self.valid_sync_sources, (
             f"Clock and time source pair ({clock_source}, {time_source}) is "
@@ -705,6 +721,8 @@ class X4xxClockManager:
                 "Converter Rate 1 is larger than Converter Rate 0. This will impact "
                 " RF performance. Consider swapping your master clock rate values."
             )
+        # Reset everything downstream from SPLL, sync SPLL to PPS, then bring
+        # MMCM out of reset
         self._configure_clock_chain(clk_settings, self.get_time_source(), self.get_ref_clock_freq())
 
         # All settings are applied: Now bring other clocks out of reset. Note
@@ -891,14 +909,50 @@ class X4xxClockManager:
             for (clock_source, time_source) in self.valid_sync_sources
         ]
 
-    def set_sync_source(self, args):
-        """
-        Selects reference clock and PPS sources. Unconditionally re-applies the
-        time source to ensure continuity between the reference clock and time
-        rates.
-        Note that if we change the source such that the time source is changed
-        to 'external', then we need to also disable exporting the reference
-        clock (RefOut and PPS-In are the same SMA connector).
+    def set_sync_source(self, args: dict):
+        """Select reference clock and PPS sources.
+
+        This API call configures everything related to time- and clock-
+        synchronization. Notes:
+        - If setting the sync source fails, this function will attempt to fall
+          back to a safe setting. For example, if `clock_source=external` is
+          passed as an argument but there is no external clock signal, then this
+          function will fail to lock and will fall back to an internal clock.
+        - Unconditionally re-applies the time source to ensure continuity
+          between the reference clock and time rates (i.e., if clock source
+          changes but time source does not, then it still applies the time
+          source settings).
+        - If we change the source such that the time source is changed to
+          'external', then this method also disables exporting the reference
+          clock (RefOut and PPS-In are the same SMA connector).
+
+        Arguments:
+        args -- Synchronization arguments. This is a dictionary, and typically
+                holds the keys 'clock_source' and 'time_source', although these
+                keys can be omitted, in which case set_sync_source() will keep
+                the current settings. The following other keys are understood:
+                - master_clock_rate: New master clock rates (same as device args)
+                - force_reinit: This will disable the smart re-init detection
+                  logic and force a reinit.
+
+                The following keys trigger special behaviour and should not be
+                set during regular operations UNLESS YOU REALLY KNOW WHAT YOU'RE
+                DOING:
+                - skip_mpm_reboot: Under some circumstances, changing the clock
+                  configuration may necessitate reloading the FPGA image and
+                  MPM reboot. This argument will bypass rebooting MPM, and is
+                  usually only required during initialization, where we use safe
+                  intermediate clock settings.
+                - initializing: This key is passed in by other MPM functions to
+                  flag initial operations, which may behave differently from
+                  when the user calls this function. DO NOT SET THIS unless you
+                  really know what you're doing.
+                - __noretry__: This Boolean will instruct this method
+                  immediately give up on failure (instead of the normal
+                  behaviour of retrying with safe values).
+
+        Returns None under normal operations, but will throw an exception if
+        something goes wrong (RuntimeError).
         """
         assert self.rfdc
         # Check the clock source, time source, and combined pair are valid:
@@ -934,16 +988,22 @@ class X4xxClockManager:
             and self._clocking_auxbrd
         ):
             self._clocking_auxbrd.export_clock(enable=False)
-        # Now configure the sync sources:
+        # Set some more helper variables
         force_update = str2bool(args.get("force_reinit", False)) or mcr_change
+        # Now configure the sync sources (if changes are necessary, this will
+        # reset the entire clock tree downstream of the reference, and update
+        # the switch settings).
         ret_val = self._set_sync_source(clock_source, time_source, force_update)
         if ret_val == self.SetSyncRetVal.NOP and not force_update:
             self.log.debug("Skipping reconfiguration of clocks.")
             return
+        # If we reach this line, the clocks are all in reset and need to be
+        # brought back up again.
         try:
-            # An intermittent spur has been seen on multiple reconfigurations of clocking for x440.
-            # If we have already reconfigured clocking after initializtion, the next clocking
-            # reconfiguration will trigger MPM to reboot
+            # An intermittent spur has been seen on multiple reconfigurations
+            # of clocking for x440.
+            # If we have already reconfigured clocking after initialization, the
+            # next clocking reconfiguration will trigger MPM to reboot
             skip_mpm_reboot = str2bool(args.get("skip_mpm_reboot", False))
             initializing = str2bool(args.get("initializing", False))
             if (
@@ -991,6 +1051,11 @@ class X4xxClockManager:
                 # clock chain, so if we had an intermediate settting, it will
                 # be overwritten immediately.
             self.set_master_clock_rate(master_clock_rates)
+            # set_master_clock_rate() resets and brings up the entire clock
+            # chain starting with the SPLL, so it's the right call to reconfigure
+            # all important components after the clocking was changed. The only
+            # clock that it leaves in reset is the RFDC clock, which we bring
+            # back now:
             self.restart_tiles()
             # Restore the nco frequency to the same values as before the sync source
             # was changed, to ensure the device transmission/acquisition continues at
