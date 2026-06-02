@@ -225,6 +225,8 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         },
     }
     discoverable_features = ["ref_clk_calibration", "time_export", "trig_io_mode", "gpio_power"]
+    bootgen_arch = "zynqmp"
+    handle_bootgen_bin_files = True
     #
     # End of overridables from PeriphManagerBase
     ###########################################################################

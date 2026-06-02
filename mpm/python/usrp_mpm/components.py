@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 
+from usrp_mpm.bootgen_wrapper import extract_bitstream, verify
 from usrp_mpm.rpc_utils import no_rpc
 
 
@@ -29,6 +30,8 @@ class ZynqComponents:
     #       into), so all logs in the ZynqComponents class will be under the
     #       derived class's category.
     log = None
+    bootgen_arch = "zynq"
+    handle_bootgen_bin_files = False
 
     ###########################################################################
     # Component updating
@@ -209,7 +212,11 @@ class ZynqComponents:
         file_extension = file_extension[1:].lower()
         updc = self._merge_updateable_components()
         if file_extension not in updc["fpga"].get("supported_file_extensions", ["bit", "bin"]):
-            self._log_and_raise(f"Invalid FPGA bitfile: {filepath}")
+            if not self.device_info.get("customizable_fpga", True):
+                msg = " Please note that only signed bitstreams (.bin files) from official UHD releases are supported."
+            else:
+                msg = ""
+            self._log_and_raise(f"Invalid FPGA bitfile: {filepath}{msg}")
         assert "path" in updc["fpga"]
         binfile_path = updc["fpga"]["path"].format(self.device_info.get("product"))
 
@@ -221,8 +228,26 @@ class ZynqComponents:
 
             fpga_bit_to_bin(filepath, binfile_path, flip=True)
         elif file_extension == "bin":
-            self.log.trace("Copying bin file to %s", binfile_path)
-            shutil.copy(filepath, binfile_path)
+            if self.handle_bootgen_bin_files:
+                if not self.device_info.get("customizable_fpga", True):
+                    # In case of non-customizable FPGA, verify that .bin file is signed
+                    self.log.debug("Verifying FPGA bitstream (.bin file)")
+                    try:
+                        verify(filepath, self.bootgen_arch)
+                    except RuntimeError as err:
+                        msg = " Please note that only signed bitstreams (.bin files) from official UHD releases are supported."
+                        self._log_and_raise(str(err) + msg)
+                    self.log.trace("Copying bin file to %s", binfile_path)
+                    shutil.copy(filepath, binfile_path)
+                else:
+                    self.log.trace(
+                        "Converting .bin file (extracting bitstream), copying bin file to %s",
+                        binfile_path,
+                    )
+                    extract_bitstream(filepath, binfile_path, self.bootgen_arch)
+            else:
+                self.log.trace("Copying bin file to %s", binfile_path)
+                shutil.copy(filepath, binfile_path)
 
         # RPC server will reload the periph manager after this.
         return True
