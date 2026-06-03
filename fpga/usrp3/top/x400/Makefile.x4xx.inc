@@ -161,7 +161,8 @@ constraints/pins/common.xdc \
 constraints/timing/shared_constants.sdc \
 constraints/timing/common.xdc \
 constraints/pins/dram.xdc \
-constraints/timing/dram.xdc
+constraints/timing/dram.xdc \
+constraints/placement/common.xdc
 
 ifdef X410
 MB_XDC += \
