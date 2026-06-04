@@ -15,12 +15,19 @@
 //     Data Rate RFDC: rfdc_clk @ RADIO_SPC
 //     Data Rate RFNoC: data_clk @ RADIO_SPC
 //
+//  Parameters:
+//    NUM_ADC_CHANNELS: Number of ADC channels to support
+//    NUM_DAC_CHANNELS: Number of DAC channels to support
+//    DISABLE_TX      : If set, the module will be configured for RX-only operation by removing the
+//                      TX RF chain to save FPGA resources.
+//
 
 module rf_core_200m_x440
   import ctrlport_pkg::*;
 # (
-  parameter int NUM_ADC_CHANNELS = 1,
-  parameter int NUM_DAC_CHANNELS = 1,
+  parameter  int NUM_ADC_CHANNELS = 1,
+  parameter  int NUM_DAC_CHANNELS = 1,
+  parameter  bit DISABLE_TX = 0,
   localparam int RADIO_SPC = 2
 ) (
   //---------------------------------------------------------------------------
@@ -145,19 +152,28 @@ module rf_core_200m_x440
   //---------------------------------------------------------------------------
   // Fixed resamplers by 3
   //---------------------------------------------------------------------------
-  for (genvar i = 0; i < NUM_DAC_CHANNELS; i++) begin
-    tx_inp3 tx_inp3_i (
-      .data_clk              (data_clk),
-      .data_clk_2x           (data_clk_2x),
-      .rfdc_clk              (rfdc_clk),
-      .pll_ref_clk           (pll_ref_clk),
-      .reset_pulse_dclk      (tx_resampler_reset_pulse_dclk),
-      .dac_data_in_tdata     (dac_data_in_tdata[i]),
-      .dac_data_in_tvalid    (dac_data_in_tvalid[i]),
-      .dac_data_out_tdata    (dac_data_int_tdata[i]),
-      .dac_data_out_tvalid   (dac_data_int_tvalid[i])
-    );
-    assign dac_data_in_tready[i] = '1;
+  if (DISABLE_TX) begin
+     // Assign default values to DAC interfaces when TX is disabled
+      for (genvar i = 0; i < NUM_DAC_CHANNELS; i++) begin
+        assign dac_data_int_tdata[i]  = '0;
+        assign dac_data_int_tvalid[i] = '0;
+        assign dac_data_in_tready[i]  = '1;
+      end
+  end else begin
+    for (genvar i = 0; i < NUM_DAC_CHANNELS; i++) begin
+      tx_inp3 tx_inp3_i (
+        .data_clk              (data_clk),
+        .data_clk_2x           (data_clk_2x),
+        .rfdc_clk              (rfdc_clk),
+        .pll_ref_clk           (pll_ref_clk),
+        .reset_pulse_dclk      (tx_resampler_reset_pulse_dclk),
+        .dac_data_in_tdata     (dac_data_in_tdata[i]),
+        .dac_data_in_tvalid    (dac_data_in_tvalid[i]),
+        .dac_data_out_tdata    (dac_data_int_tdata[i]),
+        .dac_data_out_tvalid   (dac_data_int_tvalid[i])
+      );
+      assign dac_data_in_tready[i] = '1;
+    end
   end
 
   for (genvar d = 0; d < NUM_ADC_CHANNELS; d++) begin

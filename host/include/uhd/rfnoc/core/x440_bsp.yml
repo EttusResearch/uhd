@@ -11,6 +11,7 @@ parameters:
   DRAM_WIDTH: 64
   FP_GPIO_BANK_WIDTH: 12
   USE_FABRIC_RESAMPLERS: False
+  DISABLE_TX: False
   RADIO_NIPC: "${ 2 if parameters['USE_FABRIC_RESAMPLERS'] else 8 }"
 
 checks:
@@ -73,6 +74,7 @@ make_defs:
   - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
   - DRAM_W=${parameters['DRAM_WIDTH']}
   - USE_FABRIC_RESAMPLERS=${1 if parameters['USE_FABRIC_RESAMPLERS'] else 0}
+  - DISABLE_TX=${1 if parameters['DISABLE_TX'] else 0}
 
 generate_dts: True
 dts_includes:

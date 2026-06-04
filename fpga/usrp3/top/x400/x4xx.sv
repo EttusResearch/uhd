@@ -2522,9 +2522,17 @@ module x4xx (
             .version_info              (rf_core_version[db_i])
           );
         `else
+          // remove TX RF chain for RX-only mode to save FPGA resources
+          `ifdef DISABLE_TX
+            localparam bit DISABLE_TX = `DISABLE_TX;
+          `else
+            localparam bit DISABLE_TX = '0;
+          `endif
+
           rf_core_200m_x440 #(
-            .NUM_ADC_CHANNELS(NUM_CH_PER_DB),
-            .NUM_DAC_CHANNELS(NUM_CH_PER_DB)
+            .NUM_ADC_CHANNELS (NUM_CH_PER_DB),
+            .NUM_DAC_CHANNELS (NUM_CH_PER_DB),
+            .DISABLE_TX       (DISABLE_TX)
           ) rf_core_200m_x440_i (
             .rfdc_clk                      (rfdc_clk[db_i]),
             .data_clk                      (data_clk),
