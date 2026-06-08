@@ -2,7 +2,6 @@
 
 #include "{lvbitx_classname}_lvbitx.hpp"
 #include <uhd/utils/paths.hpp>
-#include <boost/algorithm/string.hpp>
 #include <filesystem>
 #include <fstream>
 #include <iostream>

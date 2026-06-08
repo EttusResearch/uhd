@@ -16,7 +16,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/math/special_functions/round.hpp>
+#include <boost/format.hpp>
 #include <functional>
 #include <vector>
 

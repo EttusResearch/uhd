@@ -8,7 +8,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/io_service_args.hpp>
 #include <uhdlib/usrp/constrained_device_args.hpp>
-#include <boost/format.hpp>
 #include <regex>
 #include <string>
 

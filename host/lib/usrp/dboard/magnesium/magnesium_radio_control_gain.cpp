@@ -9,6 +9,7 @@
 #include "magnesium_radio_control.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;

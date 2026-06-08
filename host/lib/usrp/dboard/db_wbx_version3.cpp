@@ -215,8 +215,7 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     // clip to tuning range
     target_freq = wbx_v3_freq_range.clip(target_freq);
 
-    UHD_LOGGER_TRACE("WBX") << boost::format("WBX tune: target frequency %f MHz")
-                                   % (target_freq / 1e6);
+    UHD_LOG_TRACE("WBX", "WBX tune: target frequency " << (target_freq / 1e6) << " MHz");
 
     /*
      * If the user sets 'mode_n=integer' in the tuning args, the user wishes to

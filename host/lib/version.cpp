@@ -8,7 +8,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/version.hpp>
-#include <boost/version.hpp>
 #include <iostream>
 
 std::string uhd::get_version_string(void)

@@ -16,7 +16,6 @@
 #include <uhd/utils/log.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <functional>
 
 using namespace uhd;

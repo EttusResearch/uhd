@@ -7,6 +7,7 @@
 
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
+#include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <chrono>
 #include <cmath>

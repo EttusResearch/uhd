@@ -7,7 +7,6 @@
 
 #include <uhd/types/tune_request.h>
 #include <uhd/types/tune_result.h>
-#include <boost/format.hpp>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>

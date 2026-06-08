@@ -7,7 +7,6 @@
 
 #include "db_sbx_common.hpp"
 #include <boost/algorithm/string.hpp>
-#include <boost/math/special_functions/round.hpp>
 #include <functional>
 
 using namespace uhd;
@@ -50,8 +49,7 @@ void sbx_xcvr::cbx::write_lo_regs(
  **********************************************************************/
 double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
 {
-    UHD_LOGGER_TRACE("CBX") << boost::format("CBX tune: target frequency %f MHz")
-                                   % (target_freq / 1e6);
+    UHD_LOG_TRACE("CBX", "CBX tune: target frequency " << (target_freq / 1e6) << " MHz");
 
     // clip the input
     target_freq = cbx_freq_range.clip(target_freq);

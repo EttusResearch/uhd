@@ -17,7 +17,6 @@
 #include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cmath>

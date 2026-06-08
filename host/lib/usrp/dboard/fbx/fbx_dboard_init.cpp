@@ -20,7 +20,6 @@
 #include <uhdlib/usrp/dboard/fbx/fbx_constants.hpp>
 #include <uhdlib/usrp/dboard/fbx/fbx_dboard.hpp>
 #include <uhdlib/usrp/dboard/fbx/fbx_expert.hpp>
-#include <boost/algorithm/string.hpp>
 #include <sstream>
 #include <vector>
 

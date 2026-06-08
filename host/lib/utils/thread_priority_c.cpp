@@ -10,7 +10,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/thread.hpp>
 #include <uhd/utils/thread_priority.h>
-#include <boost/format.hpp>
 #include <iostream>
 
 uhd_error uhd_set_thread_priority(float priority, bool realtime)

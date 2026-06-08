@@ -17,7 +17,6 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/format.hpp>
 #include <functional>
 
 using namespace uhd;
@@ -82,8 +81,7 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args)
     ////////////////////////////////////////////////////////////////////
 
     this->get_rx_subtree()->access<std::string>("name").set(
-        std::string(str(boost::format("%s+GDB")
-                        % this->get_rx_subtree()->access<std::string>("name").get())));
+        this->get_rx_subtree()->access<std::string>("name").get() + "+GDB");
     this->get_rx_subtree()
         ->create<std::string>("antenna/value")
         .add_coerced_subscriber(
@@ -97,8 +95,7 @@ wbx_simple::wbx_simple(ctor_args_t args) : wbx_base(args)
     // Register TX properties
     ////////////////////////////////////////////////////////////////////
     this->get_tx_subtree()->access<std::string>("name").set(
-        std::string(str(boost::format("%s+GDB")
-                        % this->get_tx_subtree()->access<std::string>("name").get())));
+        this->get_tx_subtree()->access<std::string>("name").get() + "+GDB");
     this->get_tx_subtree()
         ->create<std::string>("antenna/value")
         .add_coerced_subscriber(

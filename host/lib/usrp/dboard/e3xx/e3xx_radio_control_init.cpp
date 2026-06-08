@@ -9,9 +9,6 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/case_conv.hpp>
-#include <boost/algorithm/string/split.hpp>
 #include <string>
 #include <vector>
 
@@ -38,10 +35,11 @@ void e3xx_radio_control_impl::_init_defaults()
     const double block_args_mcr =
         block_args.cast<double>("master_clock_rate", _master_clock_rate);
     if (block_args_mcr != _master_clock_rate) {
-        throw uhd::runtime_error(
-            str(boost::format("Master clock rate mismatch. Device returns %f MHz, "
-                              "but should have been %f MHz.")
-                % (_master_clock_rate / 1e6) % (block_args_mcr / 1e6)));
+        UHD_LOG_THROW(uhd::runtime_error,
+            get_unique_id(),
+            "Master clock rate mismatch. Device returns "
+                << std::fixed << std::setprecision(6) << (_master_clock_rate / 1e6)
+                << " MHz, but should have been " << (block_args_mcr / 1e6) << " MHz.");
     }
     RFNOC_LOG_DEBUG("Master Clock Rate is: " << (_master_clock_rate / 1e6) << " MHz.");
     set_tick_rate(_master_clock_rate);

@@ -11,7 +11,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/utility.hpp>
 #include <memory>
 
 class i2c_core_200 : uhd::noncopyable, public uhd::i2c_iface

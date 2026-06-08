@@ -10,7 +10,6 @@
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/utility.hpp>
 #include <memory>
 
 class user_settings_core_200 : uhd::noncopyable

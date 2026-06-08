@@ -13,7 +13,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
-#include <boost/utility.hpp>
 #include <functional>
 #include <memory>
 #include <string>

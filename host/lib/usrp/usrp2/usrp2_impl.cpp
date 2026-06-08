@@ -944,9 +944,6 @@ meta_range_t usrp2_impl::get_tx_dsp_freq_range(const std::string& mb)
     return meta_range_t(-dac_rate / 2, +dac_rate / 2, dsp_range_step);
 }
 
-#include <boost/math/special_functions/round.hpp>
-#include <boost/math/special_functions/sign.hpp>
-
 void usrp2_impl::update_clock_source(const std::string& mb, const std::string& source)
 {
     // NOTICE: U2_REG_MISC_CTRL_CLOCK is on the wb clock, and cannot be set from fifo_ctrl

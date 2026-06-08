@@ -10,7 +10,6 @@
 #include <uhd/utils/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/condition_variable.hpp>
 #include <cmath>
 #include <complex>
 #include <csignal>

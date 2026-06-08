@@ -11,7 +11,6 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/utility.hpp>
 #include <memory>
 #include <string>
 #include <vector>

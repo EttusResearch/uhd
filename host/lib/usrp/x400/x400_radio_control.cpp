@@ -419,10 +419,11 @@ void x400_radio_control_impl::_validate_master_clock_rate_args()
     // configured to do.
     const double master_clock_rate = _db_rpcc->get_master_clock_rate();
     if (!uhd::math::frequencies_are_equal(get_rate(), master_clock_rate)) {
-        throw uhd::runtime_error(
-            str(boost::format("Master clock rate mismatch. Device returns %f MHz, "
-                              "but should have been %f MHz.")
-                % (master_clock_rate / 1e6) % (get_rate() / 1e6)));
+        UHD_LOG_THROW(uhd::runtime_error,
+            get_unique_id(),
+            "Master clock rate mismatch. Device returns "
+                << std::fixed << std::setprecision(6) << (master_clock_rate / 1e6)
+                << " MHz, but should have been " << (get_rate() / 1e6) << " MHz.");
     }
     RFNOC_LOG_DEBUG("Master Clock Rate is: " << (master_clock_rate / 1e6) << " MHz.");
 }
