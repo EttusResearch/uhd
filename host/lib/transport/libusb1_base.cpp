@@ -18,6 +18,10 @@
 #include <memory>
 #include <mutex>
 
+#if defined(UHD_PLATFORM_WIN32) && !defined(_WINSOCKAPI_)
+#    include <winsock2.h>
+#endif
+
 using namespace uhd;
 using namespace uhd::transport;
 
