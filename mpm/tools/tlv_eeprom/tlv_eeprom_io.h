@@ -16,7 +16,7 @@
  *
  * Return: zero on success, else negative error code
  */
-int tlv_eeprom_write_to_file(const struct tlv_eeprom *e, const char *path);
+int tlv_eeprom_write_to_file(const struct tlv_eeprom* e, const char* path);
 
 /**
  * tlv_eeprom_read_from_file - read an eeprom from file
@@ -27,5 +27,4 @@ int tlv_eeprom_write_to_file(const struct tlv_eeprom *e, const char *path);
  *
  * Return: eeprom, or NULL if error
  */
-struct tlv_eeprom *tlv_eeprom_read_from_file(const char *path);
-
+struct tlv_eeprom* tlv_eeprom_read_from_file(const char* path);

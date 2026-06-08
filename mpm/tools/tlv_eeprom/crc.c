@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <stdint.h>
 #include "tlv_eeprom.h"
+#include <stdint.h>
 
+// clang-format off
 static const uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -52,20 +53,21 @@ static const uint32_t crc32_tab[] = {
 	0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+// clang-format on
 
-static uint32_t crc32(uint32_t crc, const void *buf, size_t size)
+static uint32_t crc32(uint32_t crc, const void* buf, size_t size)
 {
-	const uint8_t *p;
+    const uint8_t* p;
 
-	p = buf;
+    p = buf;
 
-	while (size--)
-		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+    while (size--)
+        crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
 
-	return crc;
+    return crc;
 }
 
-uint32_t tlv_eeprom_crc(const struct tlv_eeprom *e)
+uint32_t tlv_eeprom_crc(const struct tlv_eeprom* e)
 {
-	return crc32(0, &e->size, sizeof(e->size) + e->size);
+    return crc32(0, &e->size, sizeof(e->size) + e->size);
 }

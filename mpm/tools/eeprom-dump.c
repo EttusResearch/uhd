@@ -7,15 +7,15 @@
 #include "eeprom.h"
 #include <stdlib.h>
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	struct usrp_sulfur_eeprom *ep;
+    struct usrp_sulfur_eeprom* ep;
 
-	ep = usrp_sulfur_eeprom_from_file(NVMEM_PATH_MB);
-	if (!ep)
-		return EXIT_FAILURE;
-	usrp_sulfur_eeprom_print(ep);
-	free(ep);
+    ep = usrp_sulfur_eeprom_from_file(NVMEM_PATH_MB);
+    if (!ep)
+        return EXIT_FAILURE;
+    usrp_sulfur_eeprom_print(ep);
+    free(ep);
 
-	return 0;
+    return 0;
 }

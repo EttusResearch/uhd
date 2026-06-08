@@ -7,38 +7,39 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <getopt.h>
 #include <inttypes.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdarg.h>
 #include <unistd.h>
-#include <getopt.h>
 
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 
-#include <linux/i2c.h>
 #include <linux/i2c-dev.h>
+#include <linux/i2c.h>
 
+#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #include "eeprom.h"
 
 
-static const u32 USRP_EEPROM_MAGIC = 0xF008AD10;
-static const u32 USRP_EEPROM_DB_MAGIC = 0xF008AD11;
-static const u32 USRP_EEPROM_VERSION = 3;
-static const u32 USRP_EEPROM_DB_VERSION = 2;
+static const u32 USRP_EEPROM_MAGIC                = 0xF008AD10;
+static const u32 USRP_EEPROM_DB_MAGIC             = 0xF008AD11;
+static const u32 USRP_EEPROM_VERSION              = 3;
+static const u32 USRP_EEPROM_DB_VERSION           = 2;
 static const u32 USRP_EEPROM_DEFAULT_MCU_FLAGS[4] = {0x0, 0x0, 0x0, 0x0};
 
 
 /*static const size_t TOTAL_SIZE=256;*/
 static const u8 EEPROM_I2C_ADDR = 0x50;
 
+// clang-format off
 static const uint32_t crc32_tab[] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
 	0xe963a535, 0x9e6495a3,	0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
@@ -84,423 +85,434 @@ static const uint32_t crc32_tab[] = {
 	0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02, 0x2a6f2b94,
 	0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
+// clang-format on
 
-static uint32_t crc32(uint32_t crc, const void *buf, size_t size)
+static uint32_t crc32(uint32_t crc, const void* buf, size_t size)
 {
-	const uint8_t *p;
+    const uint8_t* p;
 
-	p = buf;
-	crc = crc ^ ~0U;
+    p   = buf;
+    crc = crc ^ ~0U;
 
-	while (size--)
-		crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
+    while (size--)
+        crc = crc32_tab[(crc ^ *p++) & 0xFF] ^ (crc >> 8);
 
-	return crc ^ ~0U;
+    return crc ^ ~0U;
 }
 
-static int __eth_addr_parse(uint8_t *out, const char *in)
+static int __eth_addr_parse(uint8_t* out, const char* in)
 {
-	/* 00:00:00:00:00:00 */
-	char tmp[18];
-	char *tok;
-	unsigned int ul, i = 0;
+    /* 00:00:00:00:00:00 */
+    char tmp[18];
+    char* tok;
+    unsigned int ul, i = 0;
 
-	if (strlen(in) < 17)
-		return -1;
+    if (strlen(in) < 17)
+        return -1;
 
-	strncpy(tmp, in, sizeof(tmp) - 1);
-	tmp[sizeof(tmp) - 1] = '\0';
+    strncpy(tmp, in, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = '\0';
 
-	for (tok = strtok(tmp, ":"); tok && (i < ETH_ALEN); tok = strtok(NULL, ":")) {
-		ul = strtoul(tok, NULL, 16);
-		out[i++] = ul & 0xff;
-	}
+    for (tok = strtok(tmp, ":"); tok && (i < ETH_ALEN); tok = strtok(NULL, ":")) {
+        ul       = strtoul(tok, NULL, 16);
+        out[i++] = ul & 0xff;
+    }
 
-	return 0;
+    return 0;
 }
 
-struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
-						  const u16 pid,
-						  const u16 rev,
-						  const char *serial,
-						  const char *eth_addr0,
-						  const char *eth_addr1,
-						  const char *eth_addr2,
-						  const u16 dt_compat,
-						  const u16 mcu_compat,
-						  const u16 rev_compat)
+struct usrp_sulfur_eeprom* usrp_sulfur_eeprom_new(const u32* mcu_flags,
+    const u16 pid,
+    const u16 rev,
+    const char* serial,
+    const char* eth_addr0,
+    const char* eth_addr1,
+    const char* eth_addr2,
+    const u16 dt_compat,
+    const u16 mcu_compat,
+    const u16 rev_compat)
 {
-	struct usrp_sulfur_eeprom *ep;
-	int i;
+    struct usrp_sulfur_eeprom* ep;
+    int i;
 
-	ep = malloc(sizeof(*ep));
-	if (!ep) {
-		perror("Failed to allocate eeprom struct\n");
-		return NULL;
-	}
+    ep = malloc(sizeof(*ep));
+    if (!ep) {
+        perror("Failed to allocate eeprom struct\n");
+        return NULL;
+    }
 
-	/* it's an eeprom, so just make it 0xff */
-	memset(ep, 0, sizeof(*ep));
+    /* it's an eeprom, so just make it 0xff */
+    memset(ep, 0, sizeof(*ep));
 
-	ep->magic = htonl(USRP_EEPROM_MAGIC);
-	ep->version = htonl(USRP_EEPROM_VERSION);
+    ep->magic   = htonl(USRP_EEPROM_MAGIC);
+    ep->version = htonl(USRP_EEPROM_VERSION);
 
-	if (!mcu_flags)
-		mcu_flags = &USRP_EEPROM_DEFAULT_MCU_FLAGS[0];
+    if (!mcu_flags)
+        mcu_flags = &USRP_EEPROM_DEFAULT_MCU_FLAGS[0];
 
-	for (i = 0; i < 4; ++i)
-		ep->mcu_flags[i] = htonl(mcu_flags[i]);
+    for (i = 0; i < 4; ++i)
+        ep->mcu_flags[i] = htonl(mcu_flags[i]);
 
-	ep->pid = htons(pid);
-	ep->rev = htons(rev);
+    ep->pid = htons(pid);
+    ep->rev = htons(rev);
 
-	if (strlen(serial) > 8) {
-		fprintf(stderr, "Serial# too long\n");
-		free(ep);
-		return NULL;
-	}
+    if (strlen(serial) > 8) {
+        fprintf(stderr, "Serial# too long\n");
+        free(ep);
+        return NULL;
+    }
 
-	memset(ep->serial, '\0', 8);
-	strncpy(ep->serial, serial, 8);
+    memset(ep->serial, '\0', 8);
+    strncpy(ep->serial, serial, 8);
 
-	if (eth_addr0)
-		__eth_addr_parse(ep->eth_addr0, eth_addr0);
+    if (eth_addr0)
+        __eth_addr_parse(ep->eth_addr0, eth_addr0);
 
-	if (eth_addr1)
-		__eth_addr_parse(ep->eth_addr1, eth_addr1);
+    if (eth_addr1)
+        __eth_addr_parse(ep->eth_addr1, eth_addr1);
 
-	if (eth_addr2)
-		__eth_addr_parse(ep->eth_addr2, eth_addr2);
+    if (eth_addr2)
+        __eth_addr_parse(ep->eth_addr2, eth_addr2);
 
-	ep->dt_compat = htons(dt_compat);
-	ep->mcu_compat = htons(mcu_compat);
-	ep->rev_compat = htons(rev_compat);
+    ep->dt_compat  = htons(dt_compat);
+    ep->mcu_compat = htons(mcu_compat);
+    ep->rev_compat = htons(rev_compat);
 
-	ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep)-4));
+    ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep) - 4));
 
-	return ep;
+    return ep;
 }
 
-static int __usrp_sulfur_eeprom_check_crc(const struct usrp_sulfur_eeprom *ep)
+static int __usrp_sulfur_eeprom_check_crc(const struct usrp_sulfur_eeprom* ep)
 {
-	uint32_t crc;
+    uint32_t crc;
 
-	crc = crc32(0, &ep->magic, sizeof(*ep) - 4);
+    crc = crc32(0, &ep->magic, sizeof(*ep) - 4);
 
-	return (crc != ep->crc);
+    return (crc != ep->crc);
 }
 
-static int __usrp_sulfur_db_eeprom_check_crc(const struct usrp_sulfur_db_eeprom *ep)
+static int __usrp_sulfur_db_eeprom_check_crc(const struct usrp_sulfur_db_eeprom* ep)
 {
-	uint32_t crc;
+    uint32_t crc;
 
-	crc = crc32(0, &ep->magic, sizeof(*ep) - 4);
+    crc = crc32(0, &ep->magic, sizeof(*ep) - 4);
 
-	return (crc != ep->crc);
+    return (crc != ep->crc);
 }
 
-void usrp_sulfur_eeprom_print(const struct usrp_sulfur_eeprom *ep)
+void usrp_sulfur_eeprom_print(const struct usrp_sulfur_eeprom* ep)
 {
-	int i;
+    int i;
 
-	if (!ep) {
-		fprintf(stderr, "ep not valid!\n");
-		return;
-	}
+    if (!ep) {
+        fprintf(stderr, "ep not valid!\n");
+        return;
+    }
 
-	printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev));
-	for (i = 0; i < 4; ++i)
-		printf("-- MCU_FLAGS[%u]: %08x\n", i, ntohl(ep->mcu_flags[i]));
-	printf("-- Serial: %s\n", ep->serial);
+    printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev));
+    for (i = 0; i < 4; ++i)
+        printf("-- MCU_FLAGS[%u]: %08x\n", i, ntohl(ep->mcu_flags[i]));
+    printf("-- Serial: %s\n", ep->serial);
 
-	printf("-- eth_addr0: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	       ep->eth_addr0[0], ep->eth_addr0[1], ep->eth_addr0[2],
-	       ep->eth_addr0[3], ep->eth_addr0[4], ep->eth_addr0[5]);
-	printf("-- eth_addr1: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	       ep->eth_addr1[0], ep->eth_addr1[1], ep->eth_addr1[2],
-	       ep->eth_addr1[3], ep->eth_addr1[4],
-	       ep->eth_addr1[5]);
-	printf("-- eth_addr2: %02x:%02x:%02x:%02x:%02x:%02x\n",
-	       ep->eth_addr2[0], ep->eth_addr2[1], ep->eth_addr2[2],
-	       ep->eth_addr2[3], ep->eth_addr2[4], ep->eth_addr2[5]);
+    printf("-- eth_addr0: %02x:%02x:%02x:%02x:%02x:%02x\n",
+        ep->eth_addr0[0],
+        ep->eth_addr0[1],
+        ep->eth_addr0[2],
+        ep->eth_addr0[3],
+        ep->eth_addr0[4],
+        ep->eth_addr0[5]);
+    printf("-- eth_addr1: %02x:%02x:%02x:%02x:%02x:%02x\n",
+        ep->eth_addr1[0],
+        ep->eth_addr1[1],
+        ep->eth_addr1[2],
+        ep->eth_addr1[3],
+        ep->eth_addr1[4],
+        ep->eth_addr1[5]);
+    printf("-- eth_addr2: %02x:%02x:%02x:%02x:%02x:%02x\n",
+        ep->eth_addr2[0],
+        ep->eth_addr2[1],
+        ep->eth_addr2[2],
+        ep->eth_addr2[3],
+        ep->eth_addr2[4],
+        ep->eth_addr2[5]);
 
-	if (ntohl(ep->version) >= 2)
-		printf("-- DT-Compat/MCU-Compat: %04x %04x\n",
-		       ntohs(ep->dt_compat), ntohs(ep->mcu_compat));
+    if (ntohl(ep->version) >= 2)
+        printf("-- DT-Compat/MCU-Compat: %04x %04x\n",
+            ntohs(ep->dt_compat),
+            ntohs(ep->mcu_compat));
 
-	if (ntohl(ep->version) >= 3) {
-		printf("-- Max-REV: %04x\n", ntohs(ep->rev_compat));
-	}
+    if (ntohl(ep->version) >= 3) {
+        printf("-- Max-REV: %04x\n", ntohs(ep->rev_compat));
+    }
 
-	printf("-- CRC: %08x (%s)\n", ntohl(ep->crc),
-	       __usrp_sulfur_eeprom_check_crc(ep) ? "matches": "doesn't match!");
+    printf("-- CRC: %08x (%s)\n",
+        ntohl(ep->crc),
+        __usrp_sulfur_eeprom_check_crc(ep) ? "matches" : "doesn't match!");
 }
 
-struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_from_file(const char *path)
+struct usrp_sulfur_eeprom* usrp_sulfur_eeprom_from_file(const char* path)
 {
-	int fd;
-	struct usrp_sulfur_eeprom *ep;
-	size_t len = sizeof(*ep);
-	size_t got = 0;
+    int fd;
+    struct usrp_sulfur_eeprom* ep;
+    size_t len = sizeof(*ep);
+    size_t got = 0;
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		perror("Could not open file:\n");
-		return NULL;
-	}
+    fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        perror("Could not open file:\n");
+        return NULL;
+    }
 
-	ep = malloc(sizeof(*ep));
-	if (!ep) {
-		perror("Could not allocate struct");
-		return ep;
-	}
+    ep = malloc(sizeof(*ep));
+    if (!ep) {
+        perror("Could not allocate struct");
+        return ep;
+    }
 
-	u8 *rptr = (u8*)ep;
+    u8* rptr = (u8*)ep;
 
-	while(len) {
-		got = read(fd, rptr, len);
-		len -= got;
-		rptr += got;
-	}
+    while (len) {
+        got = read(fd, rptr, len);
+        len -= got;
+        rptr += got;
+    }
 
-	close(fd);
-	if (ep->magic != ntohl(USRP_EEPROM_MAGIC)) {
-		free(ep);
-		return NULL;
-	}
+    close(fd);
+    if (ep->magic != ntohl(USRP_EEPROM_MAGIC)) {
+        free(ep);
+        return NULL;
+    }
 
-	return ep;
+    return ep;
 }
 
-void usrp_sulfur_eeprom_to_file(struct usrp_sulfur_eeprom *ep, const char *path)
+void usrp_sulfur_eeprom_to_file(struct usrp_sulfur_eeprom* ep, const char* path)
 {
-	int fd;
-	size_t len = sizeof(*ep);
-	size_t got = 0;
+    int fd;
+    size_t len = sizeof(*ep);
+    size_t got = 0;
 
-	fd = open(path, O_WRONLY | O_CREAT);
-	if (fd < 0) {
-		perror("Could not open file:\n");
-		return;
-	}
+    fd = open(path, O_WRONLY | O_CREAT);
+    if (fd < 0) {
+        perror("Could not open file:\n");
+        return;
+    }
 
-	u8 *rptr = (u8*)ep;
+    u8* rptr = (u8*)ep;
 
-	while(len) {
-		got = write(fd, rptr, len);
-		len -= got;
-		rptr += got;
-	}
+    while (len) {
+        got = write(fd, rptr, len);
+        len -= got;
+        rptr += got;
+    }
 
-	close(fd);
+    close(fd);
 
-	return;
+    return;
 }
 
-void usrp_sulfur_db_eeprom_to_file(struct usrp_sulfur_db_eeprom *ep, const char *path)
+void usrp_sulfur_db_eeprom_to_file(struct usrp_sulfur_db_eeprom* ep, const char* path)
 {
-	int fd;
-	size_t len = sizeof(*ep);
-	size_t got = 0;
+    int fd;
+    size_t len = sizeof(*ep);
+    size_t got = 0;
 
-	fd = open(path, O_WRONLY | O_CREAT);
-	if (fd < 0) {
-		perror("Could not open file:\n");
-		return;
-	}
+    fd = open(path, O_WRONLY | O_CREAT);
+    if (fd < 0) {
+        perror("Could not open file:\n");
+        return;
+    }
 
-	u8 *rptr = (u8*)ep;
+    u8* rptr = (u8*)ep;
 
-	while(len) {
-		got = write(fd, rptr, len);
-		len -= got;
-		rptr += got;
-	}
+    while (len) {
+        got = write(fd, rptr, len);
+        len -= got;
+        rptr += got;
+    }
 
-	close(fd);
+    close(fd);
 
-	return;
+    return;
 }
 
 
-static int set_i2c_reg(int fd, const u8 addr, const u8 reg,
-		       const u8 val)
+static int set_i2c_reg(int fd, const u8 addr, const u8 reg, const u8 val)
 {
-	int ret;
-	u8 outbuf[2];
-	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg messages[1];
+    int ret;
+    u8 outbuf[2];
+    struct i2c_rdwr_ioctl_data packets;
+    struct i2c_msg messages[1];
 
-	messages[0].addr = addr;
-	messages[0].flags = 0;
-	messages[0].len = sizeof(outbuf);
-	messages[0].buf = outbuf;
+    messages[0].addr  = addr;
+    messages[0].flags = 0;
+    messages[0].len   = sizeof(outbuf);
+    messages[0].buf   = outbuf;
 
-	outbuf[0] = reg;
-	outbuf[1] = val;
+    outbuf[0] = reg;
+    outbuf[1] = val;
 
-	packets.msgs = messages;
-	packets.nmsgs = 1;
+    packets.msgs  = messages;
+    packets.nmsgs = 1;
 
-	ret = ioctl(fd, I2C_RDWR, &packets);
-	if (ret < 0) {
-		fprintf(stderr, "Failed to set register %u\n", reg);
-		return ret;
-	}
+    ret = ioctl(fd, I2C_RDWR, &packets);
+    if (ret < 0) {
+        fprintf(stderr, "Failed to set register %u\n", reg);
+        return ret;
+    }
 
-	usleep(5 * 1000);
+    usleep(5 * 1000);
 
-	return 0;
+    return 0;
 }
 
-static int get_i2c_reg(int fd, const u8 addr, const u8 reg, u8 *val)
+static int get_i2c_reg(int fd, const u8 addr, const u8 reg, u8* val)
 {
-	int ret;
-	u8 outbuf, inbuf;
-	struct i2c_rdwr_ioctl_data packets;
-	struct i2c_msg messages[2];
+    int ret;
+    u8 outbuf, inbuf;
+    struct i2c_rdwr_ioctl_data packets;
+    struct i2c_msg messages[2];
 
-	messages[0].addr = addr;
-	messages[0].flags = 0;
-	messages[0].len = sizeof(outbuf);
-	messages[0].buf = &outbuf;
+    messages[0].addr  = addr;
+    messages[0].flags = 0;
+    messages[0].len   = sizeof(outbuf);
+    messages[0].buf   = &outbuf;
 
-	outbuf = reg;
+    outbuf = reg;
 
-	messages[1].addr = addr;
-	messages[1].flags = I2C_M_RD;
-	messages[1].len = sizeof(inbuf);
-	messages[1].buf = &inbuf;
+    messages[1].addr  = addr;
+    messages[1].flags = I2C_M_RD;
+    messages[1].len   = sizeof(inbuf);
+    messages[1].buf   = &inbuf;
 
-	packets.msgs = messages;
-	packets.nmsgs = 2;
+    packets.msgs  = messages;
+    packets.nmsgs = 2;
 
-	ret = ioctl(fd, I2C_RDWR, &packets);
-	if (ret < 0) {
-		fprintf(stderr, "Failed to get register %u\n", reg);
-		return ret;
-	}
+    ret = ioctl(fd, I2C_RDWR, &packets);
+    if (ret < 0) {
+        fprintf(stderr, "Failed to get register %u\n", reg);
+        return ret;
+    }
 
-	*val = inbuf;
+    *val = inbuf;
 
-	return 0;
+    return 0;
 }
 
-void usrp_sulfur_eeprom_recrc(struct usrp_sulfur_eeprom *ep)
+void usrp_sulfur_eeprom_recrc(struct usrp_sulfur_eeprom* ep)
 {
-	ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep)-4));
+    ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep) - 4));
 }
 
-void usrp_sulfur_eeprom_to_i2c(struct usrp_sulfur_eeprom *ep, const char *path)
+void usrp_sulfur_eeprom_to_i2c(struct usrp_sulfur_eeprom* ep, const char* path)
 {
-	int fd;
-	size_t len = sizeof(*ep);
-	size_t i;
+    int fd;
+    size_t len = sizeof(*ep);
+    size_t i;
 
-	fd = open(path, O_WRONLY | O_CREAT);
-	if (fd < 0) {
-		perror("Could not open file:\n");
-		return;
-	}
+    fd = open(path, O_WRONLY | O_CREAT);
+    if (fd < 0) {
+        perror("Could not open file:\n");
+        return;
+    }
 
-	u8 *rptr = (u8*)ep;
+    u8* rptr = (u8*)ep;
 
-	for (i = 0; i < len; i++)
-		set_i2c_reg(fd, EEPROM_I2C_ADDR, i, *(rptr+i));
+    for (i = 0; i < len; i++)
+        set_i2c_reg(fd, EEPROM_I2C_ADDR, i, *(rptr + i));
 
-	close(fd);
+    close(fd);
 
-	return;
+    return;
 }
 
-struct usrp_sulfur_db_eeprom *usrp_sulfur_db_eeprom_new(const u16 pid,
-						     const u16 rev,
-						     const char *serial,
-						     const u16 dt_compat)
+struct usrp_sulfur_db_eeprom* usrp_sulfur_db_eeprom_new(
+    const u16 pid, const u16 rev, const char* serial, const u16 dt_compat)
 {
-	struct usrp_sulfur_db_eeprom *ep;
-	int i;
+    struct usrp_sulfur_db_eeprom* ep;
+    int i;
 
-	ep = malloc(sizeof(*ep));
-	if (!ep) {
-		perror("Failed to allocate eeprom struct\n");
-		return NULL;
-	}
+    ep = malloc(sizeof(*ep));
+    if (!ep) {
+        perror("Failed to allocate eeprom struct\n");
+        return NULL;
+    }
 
-	/* it's an eeprom, so just make it 0xff */
-	memset(ep, 0, sizeof(*ep));
+    /* it's an eeprom, so just make it 0xff */
+    memset(ep, 0, sizeof(*ep));
 
-	ep->magic = htonl(USRP_EEPROM_DB_MAGIC);
-	ep->version = htonl(USRP_EEPROM_DB_VERSION);
+    ep->magic   = htonl(USRP_EEPROM_DB_MAGIC);
+    ep->version = htonl(USRP_EEPROM_DB_VERSION);
 
-	ep->pid = htons(pid);
-	ep->rev.v2_rev.rev = rev;
-	ep->rev.v2_rev.dt_compat = dt_compat;
+    ep->pid                  = htons(pid);
+    ep->rev.v2_rev.rev       = rev;
+    ep->rev.v2_rev.dt_compat = dt_compat;
 
-	if (strlen(serial) > 8) {
-		fprintf(stderr, "Serial# too long\n");
-		free(ep);
-		return NULL;
-	}
+    if (strlen(serial) > 8) {
+        fprintf(stderr, "Serial# too long\n");
+        free(ep);
+        return NULL;
+    }
 
-	memset(ep->serial, '\0', 8);
-	strncpy(ep->serial, serial, 8);
+    memset(ep->serial, '\0', 8);
+    strncpy(ep->serial, serial, 8);
 
-	ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep)-4));
+    ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep) - 4));
 
-	return ep;
+    return ep;
 }
 
-struct usrp_sulfur_db_eeprom *usrp_sulfur_db_eeprom_from_file(const char *path)
+struct usrp_sulfur_db_eeprom* usrp_sulfur_db_eeprom_from_file(const char* path)
 {
-	int fd;
-	struct usrp_sulfur_db_eeprom *ep;
-	size_t len = sizeof(*ep);
-	size_t got = 0;
+    int fd;
+    struct usrp_sulfur_db_eeprom* ep;
+    size_t len = sizeof(*ep);
+    size_t got = 0;
 
-	fd = open(path, O_RDONLY);
-	if (fd < 0) {
-		return NULL;
-	}
+    fd = open(path, O_RDONLY);
+    if (fd < 0) {
+        return NULL;
+    }
 
-	ep = malloc(sizeof(*ep));
-	if (!ep) {
-		perror("Could not allocate struct");
-		return ep;
-	}
+    ep = malloc(sizeof(*ep));
+    if (!ep) {
+        perror("Could not allocate struct");
+        return ep;
+    }
 
-	u8 *rptr = (u8*)ep;
+    u8* rptr = (u8*)ep;
 
-	while(len) {
-		got = read(fd, rptr, len);
-		len -= got;
-		rptr += got;
-	}
+    while (len) {
+        got = read(fd, rptr, len);
+        len -= got;
+        rptr += got;
+    }
 
-	close(fd);
-	if (ep->magic != ntohl(USRP_EEPROM_DB_MAGIC)) {
-		free(ep);
-		return NULL;
-	}
+    close(fd);
+    if (ep->magic != ntohl(USRP_EEPROM_DB_MAGIC)) {
+        free(ep);
+        return NULL;
+    }
 
-	return ep;
+    return ep;
 }
 
-void usrp_sulfur_db_eeprom_print(const struct usrp_sulfur_db_eeprom *ep)
+void usrp_sulfur_db_eeprom_print(const struct usrp_sulfur_db_eeprom* ep)
 {
-	if (!ep) {
-		fprintf(stderr, "ep not valid!\n");
-		return;
-	}
+    if (!ep) {
+        fprintf(stderr, "ep not valid!\n");
+        return;
+    }
 
-	if (ntohl(ep->version) == 1)
-		printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev.v1_rev));
-	else
-		printf("-- PID/REV: %04x %02x\n", ntohs(ep->pid), ep->rev.v2_rev.rev);
-	printf("-- Serial: %s\n", ep->serial);
-	if (ntohl(ep->version) == 2)
-		printf("-- DT-Compat: %02x\n", ep->rev.v2_rev.dt_compat);
-	printf("-- CRC: %08x (%s)\n", ntohl(ep->crc),
-	       __usrp_sulfur_db_eeprom_check_crc(ep) ? "matches": "doesn't match!");
+    if (ntohl(ep->version) == 1)
+        printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev.v1_rev));
+    else
+        printf("-- PID/REV: %04x %02x\n", ntohs(ep->pid), ep->rev.v2_rev.rev);
+    printf("-- Serial: %s\n", ep->serial);
+    if (ntohl(ep->version) == 2)
+        printf("-- DT-Compat: %02x\n", ep->rev.v2_rev.dt_compat);
+    printf("-- CRC: %08x (%s)\n",
+        ntohl(ep->crc),
+        __usrp_sulfur_db_eeprom_check_crc(ep) ? "matches" : "doesn't match!");
 }
-

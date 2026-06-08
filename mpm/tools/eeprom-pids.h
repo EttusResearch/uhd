@@ -11,4 +11,4 @@
 #define N300_PID 0x4240
 #define E320_PID 0xe320
 
-#endif  /* EEPROM_PIDS_H */
+#endif /* EEPROM_PIDS_H */

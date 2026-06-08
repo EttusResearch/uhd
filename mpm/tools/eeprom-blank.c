@@ -9,37 +9,36 @@
 #include <stdlib.h>
 #include <string.h>
 
-void usage(char *argv[])
+void usage(char* argv[])
 {
-	printf("-- Usage -- \n");
-	printf("Example:\n");
-	printf("%s -c -f\n", argv[0]);
+    printf("-- Usage -- \n");
+    printf("Example:\n");
+    printf("%s -c -f\n", argv[0]);
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	struct usrp_sulfur_eeprom *ep;
-	int erase = 0;
+    struct usrp_sulfur_eeprom* ep;
+    int erase = 0;
 
-	if (argc == 3) {
-		erase = !strcmp("-c", argv[1]) &&
-			!strcmp("-f", argv[2]);
-	} else {
-		usage(argv);
-		return EXIT_FAILURE;
-	}
+    if (argc == 3) {
+        erase = !strcmp("-c", argv[1]) && !strcmp("-f", argv[2]);
+    } else {
+        usage(argv);
+        return EXIT_FAILURE;
+    }
 
-	if (!erase)
-		return EXIT_FAILURE;
+    if (!erase)
+        return EXIT_FAILURE;
 
-	printf("Erasing ...");
-	ep = malloc(sizeof(*ep));
-	memset(ep, 0xff, sizeof(*ep));
+    printf("Erasing ...");
+    ep = malloc(sizeof(*ep));
+    memset(ep, 0xff, sizeof(*ep));
 
-	usrp_sulfur_eeprom_to_i2c(ep, "/dev/i2c-2");
-	printf(" Done\n");
-	free(ep);
+    usrp_sulfur_eeprom_to_i2c(ep, "/dev/i2c-2");
+    printf(" Done\n");
+    free(ep);
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

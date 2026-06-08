@@ -5,57 +5,54 @@
 //
 
 #include "eeprom.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int get_dt_compat(int rev)
 {
-	if (rev > 3)
-		return 3;
+    if (rev > 3)
+        return 3;
 
-	return rev;
+    return rev;
 }
 
-void usage(char *argv[])
+void usage(char* argv[])
 {
-	printf("-- Usage -- \n");
-	printf("%s slot pid rev serial [dt-compat]#\n\n", argv[0]);
-	printf("Example:\n");
-	printf("$ %s 0 0x0150 0 310A850\n",
-		argv[0]);
-	printf("or specifying a dt-compat explicitly:\n");
-	printf("$ %s 0 0x0150 0 310A850 3\n",
-		argv[0]);
+    printf("-- Usage -- \n");
+    printf("%s slot pid rev serial [dt-compat]#\n\n", argv[0]);
+    printf("Example:\n");
+    printf("$ %s 0 0x0150 0 310A850\n", argv[0]);
+    printf("or specifying a dt-compat explicitly:\n");
+    printf("$ %s 0 0x0150 0 310A850 3\n", argv[0]);
 }
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	struct usrp_sulfur_db_eeprom *ep;
-	int which_slot = 0;
-	u8 dt_compat = 0;
+    struct usrp_sulfur_db_eeprom* ep;
+    int which_slot = 0;
+    u8 dt_compat   = 0;
 
-	if (argc < 5) {
-		usage(argv);
-		return EXIT_FAILURE;
-	}
+    if (argc < 5) {
+        usage(argv);
+        return EXIT_FAILURE;
+    }
 
-	if (argc >= 6)
-		dt_compat = atoi(argv[5]);
-	else
-		dt_compat = get_dt_compat(atoi(argv[3]));
+    if (argc >= 6)
+        dt_compat = atoi(argv[5]);
+    else
+        dt_compat = get_dt_compat(atoi(argv[3]));
 
-	which_slot = atoi(argv[1]);
+    which_slot = atoi(argv[1]);
 
-	ep = usrp_sulfur_db_eeprom_new(strtol(argv[2], NULL, 16), atoi(argv[3]), argv[4],
-			dt_compat);
-	usrp_sulfur_db_eeprom_print(ep);
+    ep = usrp_sulfur_db_eeprom_new(
+        strtol(argv[2], NULL, 16), atoi(argv[3]), argv[4], dt_compat);
+    usrp_sulfur_db_eeprom_print(ep);
 
-	if (!which_slot)
-		usrp_sulfur_db_eeprom_to_file(ep, NVMEM_PATH_SLOT_A);
-	else
-		usrp_sulfur_db_eeprom_to_file(ep, NVMEM_PATH_SLOT_B);
+    if (!which_slot)
+        usrp_sulfur_db_eeprom_to_file(ep, NVMEM_PATH_SLOT_A);
+    else
+        usrp_sulfur_db_eeprom_to_file(ep, NVMEM_PATH_SLOT_B);
 
-	return 0;
+    return 0;
 }
-
