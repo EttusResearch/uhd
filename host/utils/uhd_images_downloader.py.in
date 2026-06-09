@@ -57,7 +57,7 @@ except ImportError:
         "Python modules.\n")
     if platform.system() == 'Windows':
         input('Hit Enter to continue.')
-    exit(0)
+    sys.exit(1)
 
 # pylint: disable=bad-whitespace
 _USERNAME_VARIABLE        = "UHD_IMAGES_USER"
