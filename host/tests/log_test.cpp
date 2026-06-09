@@ -7,7 +7,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/log_add.hpp>
+#include <uhd/utils/log_add_impl.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
