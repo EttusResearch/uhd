@@ -15,6 +15,7 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <thread>
 
@@ -106,22 +107,7 @@ public:
     return_type request(std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        try {
-            return _client->call(func_name, std::forward<Args>(args)...)
-                .template as<return_type>();
-        } catch (const ::rpc::rpc_error& ex) {
-            const std::string error = _get_last_error_safe();
-            if (not error.empty()) {
-                UHD_LOG_ERROR("RPC", error);
-            }
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % (error.empty() ? ex.what() : error)));
-        } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % ex.what()));
-        }
+        return _call_rpc_or_throw<return_type>(func_name, std::forward<Args>(args)...);
     };
 
     /*! Perform an RPC request.
@@ -140,22 +126,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
         auto holder = rpcc_timeout_holder(_client, timeout_ms, _default_timeout_ms);
-        try {
-            return _client->call(func_name, std::forward<Args>(args)...)
-                .template as<return_type>();
-        } catch (const ::rpc::rpc_error& ex) {
-            const std::string error = _get_last_error_safe();
-            if (not error.empty()) {
-                UHD_LOG_ERROR("RPC", error);
-            }
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % (error.empty() ? ex.what() : error)));
-        } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % ex.what()));
-        }
+        return _call_rpc_or_throw<return_type>(func_name, std::forward<Args>(args)...);
     };
 
 
@@ -175,21 +146,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
         auto holder = rpcc_timeout_holder(_client, timeout_ms, _default_timeout_ms);
-        try {
-            _client->call(func_name, std::forward<Args>(args)...);
-        } catch (const ::rpc::rpc_error& ex) {
-            const std::string error = _get_last_error_safe();
-            if (not error.empty()) {
-                UHD_LOG_ERROR("RPC", error);
-            }
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % (error.empty() ? ex.what() : error)));
-        } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % ex.what()));
-        }
+        _notify_rpc_or_throw(func_name, std::forward<Args>(args)...);
     };
 
     /*! Perform an RPC notification.
@@ -206,21 +163,7 @@ public:
     void notify(std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        try {
-            _client->call(func_name, std::forward<Args>(args)...);
-        } catch (const ::rpc::rpc_error& ex) {
-            const std::string error = _get_last_error_safe();
-            if (not error.empty()) {
-                UHD_LOG_ERROR("RPC", error);
-            }
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % (error.empty() ? ex.what() : error)));
-        } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(
-                str(boost::format("Error during RPC call to `%s'. Error message: %s")
-                    % func_name % ex.what()));
-        }
+        _notify_rpc_or_throw(func_name, std::forward<Args>(args)...);
     };
 
     /*! Like request(), also provides a token.
@@ -296,12 +239,91 @@ private:
         uint64_t _save_timeout;
     };
 
-    /*! Pull the last error out of the RPC server. Not thread-safe, meant to
+    /*! Try to read error from rpc_error object. Not thread-safe, meant to
      * be called from notify() or request().
      *
      * This function will do its best not to get in anyone's way. If it can't
      * get an error string, it'll return an empty string.
      */
+    std::string _extract_rpc_error_payload_safe(::rpc::rpc_error& ex)
+    {
+        try {
+            auto& error_obj = ex.get_error().get();
+            try {
+                return error_obj.as<std::string>();
+            } catch (const std::bad_cast&) {
+                // Fall back to stringifying arbitrary msgpack payload types.
+            }
+            std::ostringstream error_stream;
+            error_stream << error_obj;
+            return error_stream.str();
+        } catch (...) {
+            // nop
+        }
+        return "";
+    }
+
+    /*! Generate error message.
+     *
+     * First, try to read the error message from rpc_error itself. If that
+     * does not work, fall back to _get_last_error_safe().
+     */
+    std::string _compose_rpc_error_message(::rpc::rpc_error& ex)
+    {
+        const std::string rpc_error_payload = _extract_rpc_error_payload_safe(ex);
+        if (not rpc_error_payload.empty()) {
+            return rpc_error_payload;
+        }
+
+        const std::string error = _get_last_error_safe();
+        if (not error.empty()) {
+            return error;
+        }
+
+        return ex.what();
+    }
+
+    template <typename return_type, typename... Args>
+    return_type _call_rpc_or_throw(const std::string& func_name, Args&&... args)
+    {
+        try {
+            return _client->call(func_name, std::forward<Args>(args)...)
+                .template as<return_type>();
+        } catch (::rpc::rpc_error& ex) {
+            const std::string error = _compose_rpc_error_message(ex);
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % error));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
+        }
+    }
+
+    template <typename... Args>
+    void _notify_rpc_or_throw(const std::string& func_name, Args&&... args)
+    {
+        try {
+            _client->call(func_name, std::forward<Args>(args)...);
+        } catch (::rpc::rpc_error& ex) {
+            const std::string error = _compose_rpc_error_message(ex);
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % error));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
+        }
+    }
+
     std::string _get_last_error_safe()
     {
         if (_get_last_error_cmd.empty()) {
