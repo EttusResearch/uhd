@@ -203,7 +203,7 @@ class ZynqComponents:
         :param filepath: path to new FPGA image
         :param metadata: Dictionary of strings containing metadata
         """
-        self.log.trace(f"Updating FPGA with image at {filepath}" " (metadata: `{str(metadata)}')")
+        self.log.trace(f"Updating FPGA with image at {filepath} (metadata: '{metadata}')")
         file_name, file_extension = os.path.splitext(filepath)
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
