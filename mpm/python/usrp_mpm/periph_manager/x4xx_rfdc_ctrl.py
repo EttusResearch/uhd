@@ -8,6 +8,7 @@ X400 RFDC Control Module
 """
 import ast
 import itertools
+import time
 from dataclasses import dataclass
 from enum import Enum
 
@@ -393,6 +394,12 @@ class X4xxRfdcCtrl:
             factor,
             fab_words,
         )
+        # Allow the converter FIFO to settle after being disabled before the
+        # decimation/interpolation factor and fabric read/write rate are
+        # reprogrammed and the FIFO is re-enabled. Without this settle the ADC
+        # SPC=2 FIFO read pointer can latch the wrong phase, structurally zeroing
+        # every other I/Q sample (Q/I amplitude imbalance).
+        time.sleep(0.00173)
         if conv_direction is CONV_OPTIONS["DAC"]:
             # Set interpolation
             self._rfdc_ctrl.set_interpolation_factor(tile, block, int_dec)
