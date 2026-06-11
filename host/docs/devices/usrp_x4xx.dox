@@ -619,13 +619,13 @@ As of UHD 4.10, the following USRP X420 images flavors are shipped with UHD:
 
 As of UHD 4.6, the following USRP X440 images flavors are shipped with UHD:
 
-| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                      |
-|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|---------------------------|
-| X4_200            | 8 (4 per FBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | No                        |
-| X4_400            | 8 (4 per FBX)         | 400 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 8-Ch Replay*) |
-| CG_400            | 8 (4 per FBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                        |
-| X4_1600           | 2 (1 per FBX)         | 1600 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay)  |
-| CG_1600           | 2 (1 per FBX)         | 1600 MHz                 | 100 GbE                 | 100 GbE                 | No      | No                        |
+| FPGA Image Flavor | Number of \n Channels | Bandwidth \n per Channel | QSFP28 Port 0 Interface | QSFP28 Port 1 Interface | DDC/DUC | DRAM                      | Dual-Rate Support                          |
+|-------------------|-----------------------|--------------------------|-------------------------|-------------------------|---------|---------------------------|--------------------------------------------|
+| X4_200            | 8 (4 per FBX)         | 200 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | Yes     | No                        | Yes until UHD 4.10, No with later versions |
+| X4_400            | 8 (4 per FBX)         | 400 MHz                  | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 8-Ch Replay*) | Yes                                        |
+| CG_400            | 8 (4 per FBX)         | 400 MHz                  | 100 GbE                 | 100 GbE                 | No      | No                        | Yes                                        |
+| X4_1600           | 2 (1 per FBX)         | 1600 MHz                 | 4x 10 GbE (All Lanes)   | Unused                  | No      | Yes (8 GiB, 2-Ch Replay)  | Yes                                        |
+| CG_1600           | 2 (1 per FBX)         | 1600 MHz                 | 100 GbE                 | 100 GbE                 | No      | No                        | Yes                                        |
 
 \* (Implemented as two separate 4-Ch Replay blocks)
 
@@ -637,6 +637,7 @@ The following list shows some potential use-cases for different FPGA images:
   block. For more on DRAM, refer \ref x4xx_pl_dram.
 - `X4_200`: On X440, 200 MHz analog bandwidth per channel, or below (using
   RFNoC DDC/DUCs), streaming between the X440 and an external host computer.
+  Note: Dual rate is not supported on this image.
 - `CG_400`: 400 MHz analog bandwidth streaming per channel between the X4x0 and
   an external host computer. The current implementation requires dual 100 GbE
   connections for 4 full-duplex channels or a single 100 GbE connection for 2
@@ -1596,10 +1597,19 @@ for the full list of supported rates. See [X440 specifications](https://www.ni.c
 
 \paragraph x440_usage_mcr_dualrate Dual Rate
 
-The USRP X440 supports being operated at two different master clock rates simultaneously.
-All channels on daughterboard 0 will run on their own master clock rate / sampling rate and
-all channels on daughterboard 1 will run on the other configured master clock rate /
-sampling rate.
+Note: Dual rate is not supported on the default `X4_200` FPGA image. An `X4_400`,
+      `CG_400`, `X4_1600`, or `CG_1600` image is required. Custom images can
+      enable dual rate for `X4_200` at the cost of repeatable initial phase
+      offsets (by disabling the `USE_FABRIC_RESAMPLERS` BSP parameter).
+
+Within some limitations, the USRP X440 supports being operated at two different
+master clock rates simultaneously.  All channels on daughterboard 0 will run on
+their own master clock rate / sampling rate and all channels on daughterboard
+1 will run on another configured master clock rate / sampling rate. Until and
+including UHD 4.10, this was true for all default bitfiles. Later versions
+require an FPGA build-time selection for support of either dual-rate or
+repeatable phase offsets between devices and reboots.
+
 The main motivation for having two different master clock rates is the direct sampling
 architecture of the USRP X440 without signal conditioning and filtering:
 Both TX and RX signals are affected by Nyquist zones and their boundaries. By using different
@@ -1654,6 +1664,11 @@ With the RFSoC variant used in X440 it is not feasible to use an additional tile
 Therefore it is not feasible to synchronize the tiles individually for daughterboard 1. While
 in theory it is possible to run MTS for daughterboard 0 only, it was skipped completely to
 prevent any unexpected side-effects.
+
+The X440_X4_200 default image does support repeatable phase relationships
+between channels and across reboots, but it does not allow the usage of dual
+rates. If an X4_200 image with dual rates is required, it must be built using
+a custom image core YAML file.
 
 \subsection x4xx_usage_timedcmds Timed Commands
 
