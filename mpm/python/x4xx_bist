@@ -880,7 +880,7 @@ class X4XXBIST(bist.UsrpBIST):
                 "TMP464 Internal": 47000,
             }
 
-        result = bist.get_iio_temp_sensor_values()
+        result = bist.get_hwmon_temp_sensor_values(dev_filter={"OF_NAME": "cros-ec"})
 
         if len(result) < 1:
             result["error_msg"] = "No temperature sensors found!"
@@ -900,7 +900,7 @@ class X4XXBIST(bist.UsrpBIST):
         assert "fan" in self.tests_to_run
         if self.args.dry_run:
             return True, {"fan0": 10000, "fan1": 10000}
-        result = bist.get_ectool_fan_values()
+        result = bist.get_hwmon_fan_sensor_values(dev_filter={"OF_NAME": "cros-ec"})
         return len(result) == 2, result
 
     def _db_flash_init(self, db_flash):

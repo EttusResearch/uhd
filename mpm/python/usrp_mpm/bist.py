@@ -389,6 +389,28 @@ def get_temp_sensor_value(temp_sensor_map):
     }
 
 
+def get_hwmon_fan_sensor_values(dev_filter=None):
+    """
+    Read a fan sensor value from the system using the "hwmon" subsystem and
+    return a dictionary of the form {fan_sensor_lookup(device): $speed}
+    """
+    from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
+
+    sensors = HwmonTempSensors(sensor_list=["fan"], dev_filter=dev_filter)
+    return {name: int(sensors.read_raw_sensor_value(name)) for name in sensors.get_sensor_names()}
+
+
+def get_hwmon_temp_sensor_values(dev_filter=None):
+    """
+    Read a temp sensor value from the system using the "hwmon" subsystem and
+    return a dictionary of the form {temp_sensor_lookup(device): $temp}
+    """
+    from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
+
+    sensors = HwmonTempSensors(sensor_list=["temp"], dev_filter=dev_filter)
+    return {name: int(sensors.read_raw_sensor_value(name)) for name in sensors.get_sensor_names()}
+
+
 def get_iio_temp_sensor_values():
     """
     Read all devices in the IIO subsystem that can report a temperature and

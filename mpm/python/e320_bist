@@ -371,7 +371,7 @@ class E320BIST(bist.UsrpBIST):
         assert "temp" in self.tests_to_run
         if self.args.dry_run:
             return True, {"internal": 30000}
-        result = bist.get_temp_sensor_value(lambda device: TEMP_SENSOR_MAP[device.sys_name])
+        result = bist.get_hwmon_temp_sensor_values(dev_filter={"OF_NAME": "embedded-controller"})
         if len(result) < 1:
             result["error_msg"] = "No temperature sensors found!"
         return "error_msg" not in result, result
@@ -389,7 +389,7 @@ class E320BIST(bist.UsrpBIST):
         assert "fan" in self.tests_to_run
         if self.args.dry_run:
             return True, {"cooling_device0": 10000}
-        result = bist.get_fan_values()
+        result = bist.get_hwmon_fan_sensor_values(dev_filter={"OF_NAME": "embedded-controller"})
         return len(result) == 1, result
 
     def bist_link_up(self):
