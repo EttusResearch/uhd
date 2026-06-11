@@ -35,9 +35,9 @@ from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
 from usrp_mpm.rpc_utils import no_rpc
 from usrp_mpm.sys_utils import dtoverlay, ectool
 from usrp_mpm.sys_utils.gpio import Gpio
+from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
-from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
 
 X400_FPGA_COMPAT = (11, 0)
 # The compat number at which remote streaming was added:
@@ -1099,7 +1099,6 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.log.trace("Reading Power Supply PCB temperature.")
         return self._temp_fan_sensors.read_thermal_sensor_value(["Power Supply PCB"])
 
-
     def _get_fan_sensor(self, fan="fan0"):
         """Get fan speed."""
         self.log.trace(f"Reading {fan} speed sensor.")
@@ -1109,11 +1108,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 fan_rpm_all = ectool.get_fan_rpm()
                 fan_rpm = str(fan_rpm_all[fan])
             else:
-                fan_mapping = {
-                    "fan0": "fan1",
-                    "fan1": "fan2",
-                }
-                fan_rpm = self._temp_fan_sensors.read_fan_sensor_value(fan_mapping[fan])["value"]
+                fan_rpm = self._temp_fan_sensors.read_fan_sensor_value(fan)["value"]
         except Exception as ex:
             self.log.warning(f"Error occurred when getting {fan} speed value: {ex}")
         return {"name": fan, "type": "INTEGER", "unit": "rpm", "value": fan_rpm}

@@ -9,6 +9,7 @@ import statistics
 
 import pyudev
 
+
 class HwmonTempSensors:
     """
     This class provides access to the temperature and fan sensors under the subsystem.
@@ -16,6 +17,7 @@ class HwmonTempSensors:
     the one corresponding to the ChromeEC microcontroller,
     and reads the temperature and fan sensor values from it.
     """
+
     def __init__(self, log=None, subsystem="hwmon", dev_filter={}, sensor_list=["temp", "fan"]):
         self.context = pyudev.Context()
         self.sensor_map = dict()
@@ -25,23 +27,25 @@ class HwmonTempSensors:
         self.device = [x for x in self.context.list_devices(subsystem=subsystem, **dev_filter)]
         if len(self.device) == 0:
             raise RuntimeError(f"Could not find {subsystem} device with filter {dev_filter}")
-        
-        self.device=self.device[0]
-        
+
+        self.device = self.device[0]
+
         # create map of sensors -> tempX_label, tempY_input, fanZ_input
         for attr in self.device.attributes.available_attributes:
+            input_attr = ""
             if "temp" in sensor_list and "temp" in attr:
                 if attr.startswith("temp") and attr.endswith("_label"):
                     label = self.device.attributes.get(attr).decode(errors="ignore")
                     input_attr = attr.replace("_label", "_input")
-                elif attr.startswith("temp") and attr.endswith("_input"):
-                    label = attr
-                    input_attr = attr                
                 elif attr.startswith("in_temp"):
                     label = attr
                     input_attr = attr
+                else:
+                    continue
             elif "fan" in sensor_list and attr.startswith("fan") and attr.endswith("_input"):
-                label = attr
+                # for backward compatibility, map value "fan1_input" to label "fan0", etc.
+                fan_idx = int(attr[3:-6]) - 1
+                label = f"fan{fan_idx}"
                 input_attr = attr
             else:
                 continue
@@ -49,7 +53,7 @@ class HwmonTempSensors:
                 # dummy read - this will fail with KeyError if either
                 # - the input attribute is not available or
                 # - input attribute is available but no data can be read from it
-                #self.device.attributes.asint(input_attr)
+                # self.device.attributes.asint(input_attr)
                 float(self.device.attributes.asstring(input_attr))
                 self.sensor_map[label] = input_attr
             except KeyError:
@@ -57,6 +61,10 @@ class HwmonTempSensors:
                     self.log.warning(f"Sensor {label} cannot be read")
             if self.log:
                 self.log.trace(f"Sensor map: {self.sensor_map}")
+
+    def get_sensor_names(self):
+        """Return the sensor names"""
+        return self.sensor_map.keys()
 
     def print_sensors(self):
         """Print the sensor values"""
@@ -112,7 +120,9 @@ class HwmonTempSensors:
                         self.log.debug(f"{sensor_name}: {rpm} RPM")
                 except ValueError as ex:
                     if self.log:
-                        self.log.warning(f"Error occurred when getting {fan_name} speed value: {ex}")
+                        self.log.warning(
+                            f"Error occurred when getting {fan_name} speed value: {ex}"
+                        )
                 return {
                     "name": "cooling fan",
                     "type": "INTEGER",
@@ -140,8 +150,10 @@ class HwmonTempSensors:
                 self.log.warning("Error when converting temperature value.")
         return raw_val
 
+
 def main():
     import argparse
+
     from usrp_mpm.mpmlog import DEBUG, get_main_logger
 
     """ Main function for testing this system utility stand-alone."""
@@ -155,11 +167,11 @@ def main():
     args = parser.parse_args()
 
     DEVICE_FILTER = {
-        "n3xx"      : {"OF_NAME": "embedded-controller"},
-        "x4xx"      : {"OF_NAME": "cros-ec"},
-        "e32x"      : {"OF_NAME": "embedded-controller"},
+        "n3xx": {"OF_NAME": "embedded-controller"},
+        "x4xx": {"OF_NAME": "cros-ec"},
+        "e32x": {"OF_NAME": "embedded-controller"},
         "e31x_hwmon": {"OF_NAME": "temp"},
-        "e31x_iio"  : {"OF_NAME": "adc"},
+        "e31x_iio": {"OF_NAME": "adc"},
     }
 
     log = get_main_logger()
@@ -167,7 +179,7 @@ def main():
 
     if "e31x" not in args.device:
         dev_filter = DEVICE_FILTER[args.device]
-        #log.debug(f"Using dev_filter: {dev_filter} for device: {args.device}")
+        # log.debug(f"Using dev_filter: {dev_filter} for device: {args.device}")
         sensors = HwmonTempSensors(log=log, dev_filter=dev_filter, sensor_list=["temp", "fan"])
         sensors.print_sensors()
     if args.device == "x4xx":
@@ -180,32 +192,38 @@ def main():
         log.debug(f"TMP431_Internal: {sensors.read_thermal_sensor_value(['TMP431_Internal'])}")
         log.debug(f"TMP431_Remote: {sensors.read_thermal_sensor_value(['TMP431_Remote'])}")
     elif args.device == "e32x":
-        temp_sensor_list =['TMP464_Internal',\
-         'TMP464_Remote_1',\
-         'TMP464_Remote_2',\
-         'TMP464_Remote_3',\
-         'TMP464_Remote_4',\
+        temp_sensor_list = [
+            "TMP464_Internal",
+            "TMP464_Remote_1",
+            "TMP464_Remote_2",
+            "TMP464_Remote_3",
+            "TMP464_Remote_4",
         ]
         for sensor in temp_sensor_list:
             log.debug(f"{sensor}: {sensors.read_thermal_sensor_value([sensor])}")
         log.debug(f"fan1: {sensors.read_fan_sensor_value('fan1')}")
     elif args.device == "e31x":
         dev_filter = DEVICE_FILTER["e31x_hwmon"]
-        sensors_hwmon = HwmonTempSensors(log=None, subsystem="hwmon", dev_filter=dev_filter, sensor_list=["temp", "fan"])
+        sensors_hwmon = HwmonTempSensors(
+            log=None, subsystem="hwmon", dev_filter=dev_filter, sensor_list=["temp", "fan"]
+        )
         sensors_hwmon.print_sensors()
-        temp_sensor_list =['temp1_input']
+        temp_sensor_list = ["temp1_input"]
         for sensor in temp_sensor_list:
             log.debug(f"{sensor}: {sensors_hwmon.read_thermal_sensor_value([sensor])}")
         dev_filter = DEVICE_FILTER["e31x_iio"]
-        sensors_iio = HwmonTempSensors(log=None, subsystem="iio", dev_filter=dev_filter, sensor_list=["temp"])
-        temp_sensor_list =['in_temp0_raw', 'in_temp0_offset', 'in_temp0_scale']
+        sensors_iio = HwmonTempSensors(
+            log=None, subsystem="iio", dev_filter=dev_filter, sensor_list=["temp"]
+        )
+        temp_sensor_list = ["in_temp0_raw", "in_temp0_offset", "in_temp0_scale"]
         raw_val = [sensors_iio.read_raw_sensor_value(sensor) for sensor in temp_sensor_list]
-        temp = (raw_val[0] + raw_val[1])*raw_val[2] / 1000
-        log.debug(f'get_fpga_temp_sensor: {temp} C')
+        temp = (raw_val[0] + raw_val[1]) * raw_val[2] / 1000
+        log.debug(f"get_fpga_temp_sensor: {temp} C")
     else:
         log.debug(f"Unsupported device type: {args.device}")
 
-    #log.debug(f"type {type(sensors)}")
+    # log.debug(f"type {type(sensors)}")
+
 
 if __name__ == "__main__":
     main()
