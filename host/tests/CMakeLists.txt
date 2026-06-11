@@ -362,6 +362,8 @@ UHD_ADD_NONAPI_TEST(
     TARGET client_zero_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/rfnoc/client_zero.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/chdr_packet_writer.cpp
+    ${UHD_SOURCE_DIR}/lib/rfnoc/chdr_ctrl_xport.cpp
 )
 
 UHD_ADD_NONAPI_TEST(
