@@ -316,14 +316,13 @@ message(STATUS "Configuring Boost C++ Libraries...")
 # NO optional Boost components!
 # ALL required Boost components!
 set(UHD_BOOST_REQUIRED_COMPONENTS
-    chrono
-    date_time
     filesystem
+    # Only used by utils and examples, not libuhd:
     program_options
+    # Only used by nirio driver inside libuhd:
     serialization
     #system Boost.System is used, but explicitly listing it causes errors on some systems.
-    thread
-    #unit_test_framework Boost.Test is used, but listing it here causes problems when 
+    #unit_test_framework Boost.Test is used, but listing it here causes problems when
     #                    using static linking (the  Windows default).
     #                    Package detection for 'Boost::unit_test_framework' is handled
     #                    separately in UHDBoost.cmake to work around this issue.

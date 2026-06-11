@@ -187,11 +187,8 @@ endif(DEFINED UHD_BOOST_REQUIRED_ADDITIONAL_WINDOWS_COMPONENTS)
 target_link_libraries(uhd
     PUBLIC
     Boost::boost
-    Boost::chrono
-    Boost::date_time
     Boost::filesystem
     Boost::serialization
-    Boost::thread
     ${libuhd_boost_msvc_libs}
     ${libuhd_libs}
     PRIVATE uhd_rc
@@ -291,12 +288,9 @@ function(UHD_ADD_STATIC_LIB)
     target_link_libraries(uhd_static
         PUBLIC
         Boost::boost
-        Boost::chrono
-        Boost::date_time
         Boost::filesystem
         Boost::serialization
         Boost::system
-        Boost::thread
         ${libuhd_boost_msvc_libs}
     )
     target_include_directories(uhd_static

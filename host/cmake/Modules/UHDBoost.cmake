@@ -242,6 +242,15 @@ else()
     message(STATUS "Looking for Boost version ${UHD_BOOST_MIN_VERSION} or greater - not found")
 endif()
 
+# Prefer the modern header-only Boost imported target when available, but keep
+# the legacy alias for older FindBoost/CMake combinations.
+if(TARGET Boost::headers AND NOT TARGET Boost::boost)
+    add_library(Boost::boost INTERFACE IMPORTED)
+    set_target_properties(Boost::boost PROPERTIES
+        INTERFACE_LINK_LIBRARIES Boost::headers
+    )
+endif()
+
 # unset some internal variables, if set
 unset(Boost_LIBRARY_DIR)
 unset(Boost_INCLUDE_DIR)
