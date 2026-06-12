@@ -2,9 +2,38 @@ Change Log for Releases
 ==============================
 
 ## 004.next
-* API Changes:
+* Highlights / Main Changes
+  - The X440_X4_200 image now uses fabric resamplers instead of RFdc resamplers,
+    which enables repeatable phase offsets between devices and reboots. Note
+    that this feature is currently mutually exclusive with dual rate support.
+* New Features
+  - X440:
+    - The X440_X4_200 image now uses fabric resamplers instead of RFdc
+      resamplers, which enables repeatable phase offsets between devices and
+      reboots. Note that this feature is currently mutually exclusive with dual
+      rate support, and it increases the resource utilization. To revert to the
+      previous image with non-repeatable phase offsets, a custom image must be
+      built. By default, it is set to false (i.e., same as old behaviour),
+      except for the X440_X4_200 image.
+    - A new BSP parameter (USE_FABRIC_RESAMPLERS) is introduced to toggle this
+      new feature.
+  - Python:
+    - The ref_clk_calibration feature is now accessible in the Python API.
+  - Streamers:
+    - Added get_stream_info() API call to streamers, which allows reading out
+      internal information about streamer objects.
+* Bug Fixes
+  - Fixed X420 powerup issue caused by glitchy power readouts.
+* API Changes
   - All usage of boost::optional within the library is removed. Public APIs
     that used boost::optional are retained, but flagged deprecated.
+  - Some logging APIs that previously used boost::posix_time are now
+    declared deprecated, and alternatives that use standard C++ constructs have
+    been introduced.
+* Codebase Management
+  - Fully removed Boost.Thread, Boost.Date_Time, and Boost.Chrono dependencies
+    for libuhd. Other Boost usage has been reduced.
+  - Improved compatibility with newest compiler versions (e.g., gcc16).
 
 ## 004.010.000.000
 * Highlights / Main Changes
