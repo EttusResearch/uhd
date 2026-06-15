@@ -9,24 +9,27 @@ E320 Built-In Self Test (BIST)
 """
 
 from __future__ import print_function
+
 import sys
 import time
+
 from usrp_mpm import bist
 
 # Timeout values are in seconds:
-GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
-GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes. Because our test
-                       # does not necessarily require GPS lock to pass, we
-                       # reduce this value in order for the BIST to pass faster
-                       # by default.
+GPS_WARMUP_TIMEOUT = 70  # Data sheet says "about a minute"
+GPS_LOCKOK_TIMEOUT = 2  # Data sheet says about 15 minutes. Because our test
+# does not necessarily require GPS lock to pass, we reduce this value in
+# order for the BIST to pass faster by default.
+
 # Temperature Sensor Mapping based on location
 TEMP_SENSOR_MAP = {
-    "thermal_zone0" : "internal",
-    "thermal_zone1" : "rf_channelA",
-    "thermal_zone2" : "fpga",
-    "thermal_zone3" : "rf_channelB",
-    "thermal_zone4" : "main_power"
+    "thermal_zone0": "internal",
+    "thermal_zone1": "rf_channelA",
+    "thermal_zone2": "fpga",
+    "thermal_zone3": "rf_channelB",
+    "thermal_zone4": "main_power",
 }
+
 
 ##############################################################################
 # Bist class
@@ -35,20 +38,20 @@ class E320BIST(bist.UsrpBIST):
     """
     BIST Tool for the USRP E320
     """
+
     usrp_type = "E320"
     # This defines special tests that are really collections of other tests.
     collections = {
-        'standard': ["ddr3", "gpsdo", "rtc", "temp", "fan", "tpm", "gyro",
-                     "ref_clock_int"],
-        'extended': "*",
+        "standard": ["ddr3", "gpsdo", "rtc", "temp", "fan", "tpm", "gyro", "ref_clock_int"],
+        "extended": "*",
     }
     # Default FPGA image type
-    DEFAULT_FPGA_TYPE = '1G'
+    DEFAULT_FPGA_TYPE = "1G"
     lv_compat_format = {
-        'ddr3': {
-            'throughput': -1,
+        "ddr3": {
+            "throughput": -1,
         },
-        'gpsdo': {
+        "gpsdo": {
             "class": "",
             "time": "",
             "ept": -1,
@@ -64,30 +67,30 @@ class E320BIST(bist.UsrpBIST):
             "eps": -1,
             "mode": -1,
         },
-        'tpm': {
-            'tpm0_caps': "",
+        "tpm": {
+            "tpm0_caps": "",
         },
-        'sfp_loopback': {
-            'elapsed_time': -1,
-            'max_roundtrip_latency': -1,
-            'throughput': -1,
-            'max_ber': -1,
-            'errors': -1,
-            'bits': -1,
+        "sfp_loopback": {
+            "elapsed_time": -1,
+            "max_roundtrip_latency": -1,
+            "throughput": -1,
+            "max_ber": -1,
+            "errors": -1,
+            "bits": -1,
         },
-        'gpio': {
-            'write_patterns': [],
-            'read_patterns': [],
+        "gpio": {
+            "write_patterns": [],
+            "read_patterns": [],
         },
-        'temp': {
-            TEMP_SENSOR_MAP['thermal_zone0']: -1,
-            TEMP_SENSOR_MAP['thermal_zone1']: -1,
-            TEMP_SENSOR_MAP['thermal_zone2']: -1,
-            TEMP_SENSOR_MAP['thermal_zone3']: -1,
-            TEMP_SENSOR_MAP['thermal_zone4']: -1,
+        "temp": {
+            TEMP_SENSOR_MAP["thermal_zone0"]: -1,
+            TEMP_SENSOR_MAP["thermal_zone1"]: -1,
+            TEMP_SENSOR_MAP["thermal_zone2"]: -1,
+            TEMP_SENSOR_MAP["thermal_zone3"]: -1,
+            TEMP_SENSOR_MAP["thermal_zone4"]: -1,
         },
-        'fan': {
-            'cooling_device0': -1,
+        "fan": {
+            "cooling_device0": -1,
         },
     }
     device_args = "type=e3xx,addr=127.0.0.1"
@@ -98,17 +101,17 @@ class E320BIST(bist.UsrpBIST):
     def get_mb_periph_mgr(self):
         """Return reference to an e320 periph manager"""
         from usrp_mpm.periph_manager.e320 import e320
+
         return e320
 
     def get_product_id(self):
         """Return the mboard product ID (e320):"""
-        return bist.get_product_id_from_eeprom(valid_ids=['e320'])
+        return bist.get_product_id_from_eeprom(valid_ids=["e320"])
 
-
-#############################################################################
-# BISTS
-# All bist_* methods must return True/False success values!
-#############################################################################
+    #############################################################################
+    # BISTS
+    # All bist_* methods must return True/False success values!
+    #############################################################################
     def bist_gyro(self):
         """
         BIST for GYRO (MPU9250)
@@ -117,20 +120,20 @@ class E320BIST(bist.UsrpBIST):
 
         Return status: True if MPU9250 is detected.
         """
-        assert 'gyro' in self.tests_to_run
+        assert "gyro" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'device_name': 'dry_run mpu9250'}
+            return True, {"device_name": "dry_run mpu9250"}
         import pyudev
+
         context = pyudev.Context()
         result = {
-            'device_name': device.get('OF_NAME')
-            for device in context.list_devices(subsystem='iio', DEVTYPE='iio_device')
-            if 'mpu9250' in device.get('OF_NAME') is not None
+            "device_name": device.get("OF_NAME")
+            for device in context.list_devices(subsystem="iio", DEVTYPE="iio_device")
+            if "mpu9250" in device.get("OF_NAME") is not None
         }
         if len(result) < 1:
-            result['error_msg'] = "No GYRO detected!"
-        return 'error_msg' not in result, result
-
+            result["error_msg"] = "No GYRO detected!"
+        return "error_msg" not in result, result
 
     def bist_ddr3(self):
         """
@@ -148,11 +151,11 @@ class E320BIST(bist.UsrpBIST):
         Return status:
         True if the DDR3 bist passed
         """
-        assert 'ddr3' in self.tests_to_run
+        assert "ddr3" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'throughput': 1250e6}
+            return True, {"throughput": 1250e6}
         result = bist.test_ddr3_with_usrp_probe()
-        return result.get('throughput', 0) > 1000e6, result
+        return result.get("throughput", 0) > 1000e6, result
 
     def bist_gpsdo(self):
         """
@@ -166,7 +169,7 @@ class E320BIST(bist.UsrpBIST):
 
         Check for mode 2 or 3 to see if it's locked.
         """
-        assert 'gpsdo' in self.tests_to_run
+        assert "gpsdo" in self.tests_to_run
         if self.args.dry_run:
             return True, {
                 "class": "TPV",
@@ -182,49 +185,37 @@ class E320BIST(bist.UsrpBIST):
                 "speed": 0.091,
                 "climb": -0.085,
                 "eps": 34.11,
-                "mode": 3
+                "mode": 3,
             }
         from usrp_mpm.periph_manager import e320
+
         # Turn on GPS, give some time to acclimatize
         mb_regs = e320.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
         mb_regs.enable_gps(True)
         time.sleep(5)
-        gps_warmup_timeout = float(
-            self.args.option.get('gps_warmup_timeout', GPS_WARMUP_TIMEOUT))
-        gps_lockok_timeout = float(
-            self.args.option.get('gps_lockok_timeout', GPS_LOCKOK_TIMEOUT))
+        gps_warmup_timeout = float(self.args.option.get("gps_warmup_timeout", GPS_WARMUP_TIMEOUT))
+        gps_lockok_timeout = float(self.args.option.get("gps_lockok_timeout", GPS_LOCKOK_TIMEOUT))
         # Wait for WARMUP to go low
         sys.stderr.write(
-            "Waiting for WARMUP to go low for up to {} seconds...\n".format(
-                gps_warmup_timeout))
+            "Waiting for WARMUP to go low for up to {} seconds...\n".format(gps_warmup_timeout)
+        )
         if not bist.poll_with_timeout(
-                lambda: not bool((mb_regs.get_gps_status() >> 4) & 0x1),
-                gps_warmup_timeout*1000, 1000
-            ):
+            lambda: not bool((mb_regs.get_gps_status() >> 4) & 0x1), gps_warmup_timeout * 1000, 1000
+        ):
             raise RuntimeError(
-                "GPS-WARMUP did not go low within {} seconds!".format(
-                    gps_warmup_timeout))
+                "GPS-WARMUP did not go low within {} seconds!".format(gps_warmup_timeout)
+            )
         sys.stderr.write("Chip is warmed up.\n")
         # Wait for LOCKOK. Data sheet says wait up to 15 minutes for GPS lock.
         sys.stderr.write(
-            "Waiting for LOCKOK to go high for up to {} seconds...\n".format(
-                gps_lockok_timeout))
-        if not bist.poll_with_timeout(
-                mb_regs.get_gps_locked_val,
-                gps_lockok_timeout*1000,
-                1000
-            ):
+            "Waiting for LOCKOK to go high for up to {} seconds...\n".format(gps_lockok_timeout)
+        )
+        if not bist.poll_with_timeout(mb_regs.get_gps_locked_val, gps_lockok_timeout * 1000, 1000):
             sys.stderr.write("No GPS-LOCKOK!\n")
         gps_status = mb_regs.get_gps_status()
-        sys.stderr.write("GPS-SURVEY status: {}\n".format(
-            (gps_status >> 3) & 0x1
-        ))
-        sys.stderr.write("GPS-PHASELOCK status: {}\n".format(
-            (gps_status >> 2) & 0x1
-        ))
-        sys.stderr.write("GPS-ALARM status: {}\n".format(
-            (gps_status >> 1) & 0x1
-        ))
+        sys.stderr.write("GPS-SURVEY status: {}\n".format((gps_status >> 3) & 0x1))
+        sys.stderr.write("GPS-PHASELOCK status: {}\n".format((gps_status >> 2) & 0x1))
+        sys.stderr.write("GPS-ALARM status: {}\n".format((gps_status >> 1) & 0x1))
         # Now the chip is on, read back the TPV result
         result = bist.get_gpsd_tpv_result()
         # If we reach this line, we have a valid result and the chip responded.
@@ -243,10 +234,10 @@ class E320BIST(bist.UsrpBIST):
 
         Return status: True if exactly one TPM device is detected.
         """
-        assert 'tpm' in self.tests_to_run
+        assert "tpm" in self.tests_to_run
         if self.args.dry_run:
             return True, {
-                'tpm0_caps': "Fake caps value\n\nVersion 0.0.0",
+                "tpm0_caps": "Fake caps value\n\nVersion 0.0.0",
             }
         result = bist.get_tpm_caps_info()
         return len(result) == 1, result
@@ -265,11 +256,11 @@ class E320BIST(bist.UsrpBIST):
         There can be multiple ref lock sensors; for a pass condition they all
         need to be asserted.
         """
-        assert 'ref_clock_int' in self.tests_to_run
+        assert "ref_clock_int" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'ref_locked': True}
-        result = bist.get_ref_clock_prop('internal', 'internal')
-        return 'error_msg' not in result, result
+            return True, {"ref_locked": True}
+        result = bist.get_ref_clock_prop("internal", "internal")
+        return "error_msg" not in result, result
 
     def bist_ref_clock_ext(self):
         """
@@ -285,11 +276,11 @@ class E320BIST(bist.UsrpBIST):
         There can be multiple ref lock sensors; for a pass condition they all
         need to be asserted.
         """
-        assert 'ref_clock_ext' in self.tests_to_run
+        assert "ref_clock_ext" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'ref_locked': True}
-        result = bist.get_ref_clock_prop('external', 'external')
-        return 'error_msg' not in result, result
+            return True, {"ref_locked": True}
+        result = bist.get_ref_clock_prop("external", "external")
+        return "error_msg" not in result, result
 
     def bist_sfp_loopback(self):
         """
@@ -312,7 +303,7 @@ class E320BIST(bist.UsrpBIST):
         sfp_bist_results = bist.run_aurora_bist(
             device_args=self.device_args,
             product_id=self.get_product_id(),
-            master='misc-auro-regs',
+            master="misc-auro-regs",
         )
         self.reload_fpga_image = True
         return bist.aurora_results_to_status(sfp_bist_results)
@@ -333,34 +324,35 @@ class E320BIST(bist.UsrpBIST):
         - write_patterns: A list of patterns that were written
         - read_patterns: A list of patterns that were read back
         """
-        assert 'gpio' in self.tests_to_run
+        assert "gpio" in self.tests_to_run
         gpio_width = 8
         patterns = range(16)
         if self.args.dry_run:
             return True, {
-                'write_patterns': list(patterns),
-                'read_patterns': list(patterns),
+                "write_patterns": list(patterns),
+                "read_patterns": list(patterns),
             }
         from usrp_mpm.periph_manager import e320, e320_periphs
+
         mb_regs = e320_periphs.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
         mb_regs.enable_fp_gpio(True)
         mb_regs.set_fp_gpio_master(0xFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(1)
-        ddr1 = 0xf0
-        ddr2 = 0x0f
+        ddr1 = 0xF0
+        ddr2 = 0x0F
+
         def _run_gpio(ddr, patterns):
-            " Run a GPIO test for a given set of patterns "
+            "Run a GPIO test for a given set of patterns"
             gpio_ctrl = e320_periphs.FrontpanelGPIO(ddr)
             for pattern in patterns:
                 bist.gpio_set_all(gpio_ctrl, pattern, gpio_width, ddr)
                 time.sleep(0.1)
                 gpio_rb = gpio_ctrl.get_all()
                 if pattern != gpio_rb:
-                    return False, {'write_patterns': [pattern],
-                                   'read_patterns': [gpio_rb]}
-            return True, {'write_patterns': list(patterns),
-                          'read_patterns': list(patterns)}
+                    return False, {"write_patterns": [pattern], "read_patterns": [gpio_rb]}
+            return True, {"write_patterns": list(patterns), "read_patterns": list(patterns)}
+
         status, data = _run_gpio(ddr1, patterns)
         if not status:
             return status, data
@@ -376,14 +368,13 @@ class E320BIST(bist.UsrpBIST):
         Return dictionary:
         - <thermal-zone-name>: temp in mC
         """
-        assert 'temp' in self.tests_to_run
+        assert "temp" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'internal': 30000}
-        result = bist.get_temp_sensor_value(
-            lambda device: TEMP_SENSOR_MAP[device.sys_name])
+            return True, {"internal": 30000}
+        result = bist.get_temp_sensor_value(lambda device: TEMP_SENSOR_MAP[device.sys_name])
         if len(result) < 1:
-            result['error_msg'] = "No temperature sensors found!"
-        return 'error_msg' not in result, result
+            result["error_msg"] = "No temperature sensors found!"
+        return "error_msg" not in result, result
 
     def bist_fan(self):
         """
@@ -395,9 +386,9 @@ class E320BIST(bist.UsrpBIST):
         Return dictionary:
         - <fan-name>: Fan speed in RPM
         """
-        assert 'fan' in self.tests_to_run
+        assert "fan" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'cooling_device0': 10000}
+            return True, {"cooling_device0": 10000}
         result = bist.get_fan_values()
         return len(result) == 1, result
 
@@ -410,18 +401,20 @@ class E320BIST(bist.UsrpBIST):
             - sfp0: status of link
         Return status: True if link is UP
         """
-        assert 'link_up' in self.tests_to_run
+        assert "link_up" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'sfp0': 'UP'}
-        result = bist.get_link_up('sfp0')
-        return 'error_msg' not in result, result
+            return True, {"sfp0": "UP"}
+        result = bist.get_link_up("sfp0")
+        return "error_msg" not in result, result
+
 
 ##############################################################################
 # main
 ##############################################################################
 def main():
-    " Go, go, go! "
+    "Go, go, go!"
     return E320BIST().run()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     exit(not main())

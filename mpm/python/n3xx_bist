@@ -11,16 +11,18 @@ Will work on all derivatives of the N3xx series.
 """
 
 from __future__ import print_function
+
 import sys
 import time
+
 from usrp_mpm import bist
 
 # Timeout values are in seconds:
-GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
-GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes. Because our test
-                       # does not necessarily require GPS lock to pass, we
-                       # reduce this value in order for the BIST to pass faster
-                       # by default.
+GPS_WARMUP_TIMEOUT = 70  # Data sheet says "about a minute"
+GPS_LOCKOK_TIMEOUT = 2  # Data sheet says about 15 minutes. Because our test
+# does not necessarily require GPS lock to pass, we reduce this value in
+# order for the BIST to pass faster by default.
+
 
 ##############################################################################
 # Bist class
@@ -29,19 +31,20 @@ class N3XXBIST(bist.UsrpBIST):
     """
     BIST Tool for the USRP N3xx series
     """
+
     usrp_type = "N3XX"
     # This defines special tests that are really collections of other tests.
     collections = {
-        'standard': ["gpsdo", "rtc", "temp", "fan", "tpm"],
-        'extended': "*",
+        "standard": ["gpsdo", "rtc", "temp", "fan", "tpm"],
+        "extended": "*",
     }
     # Default FPGA image type
-    DEFAULT_FPGA_TYPE = 'HG'
+    DEFAULT_FPGA_TYPE = "HG"
     lv_compat_format = {
-        'ddr3': {
-            'throughput': -1,
+        "ddr3": {
+            "throughput": -1,
         },
-        'gpsdo': {
+        "gpsdo": {
             "class": "",
             "time": "",
             "ept": -1,
@@ -57,46 +60,46 @@ class N3XXBIST(bist.UsrpBIST):
             "eps": -1,
             "mode": -1,
         },
-        'tpm': {
-            'tpm0_caps': "",
+        "tpm": {
+            "tpm0_caps": "",
         },
-        'sfp0_loopback': {
-            'elapsed_time': -1,
-            'max_roundtrip_latency': -1,
-            'throughput': -1,
-            'max_ber': -1,
-            'errors': -1,
-            'bits': -1,
+        "sfp0_loopback": {
+            "elapsed_time": -1,
+            "max_roundtrip_latency": -1,
+            "throughput": -1,
+            "max_ber": -1,
+            "errors": -1,
+            "bits": -1,
         },
-        'sfp1_loopback': {
-            'elapsed_time': -1,
-            'max_roundtrip_latency': -1,
-            'throughput': -1,
-            'max_ber': -1,
-            'errors': -1,
-            'bits': -1,
+        "sfp1_loopback": {
+            "elapsed_time": -1,
+            "max_roundtrip_latency": -1,
+            "throughput": -1,
+            "max_ber": -1,
+            "errors": -1,
+            "bits": -1,
         },
-        'qsfp_loopback': {
-            'elapsed_time': -1,
-            'max_roundtrip_latency': -1,
-            'throughput': -1,
-            'max_ber': -1,
-            'errors': -1,
-            'bits': -1,
+        "qsfp_loopback": {
+            "elapsed_time": -1,
+            "max_roundtrip_latency": -1,
+            "throughput": -1,
+            "max_ber": -1,
+            "errors": -1,
+            "bits": -1,
         },
-        'gpio': {
-            'write_patterns': [],
-            'read_patterns': [],
+        "gpio": {
+            "write_patterns": [],
+            "read_patterns": [],
         },
-        'temp': {
-            'fpga-thermal-zone': -1,
+        "temp": {
+            "fpga-thermal-zone": -1,
         },
-        'fan': {
-            'cooling_device0': -1,
-            'cooling_device1': -1,
+        "fan": {
+            "cooling_device0": -1,
+            "cooling_device1": -1,
         },
-        'whiterabbit': {
-            'lock_status': 0,
+        "whiterabbit": {
+            "lock_status": 0,
         },
     }
     device_args = "type=n3xx,addr=127.0.0.1"
@@ -107,26 +110,27 @@ class N3XXBIST(bist.UsrpBIST):
     def get_mb_periph_mgr(self):
         """Return reference to an n3xx periph manager"""
         from usrp_mpm.periph_manager.n3xx import n3xx
+
         return n3xx
 
     def get_product_id(self):
         """Return the mboard product ID (n310 or n300):"""
         product_map = {
-            #(mboard, dboard): product
-            ('n300', 'magnesium'): 'n300',
-            ('n300', ''):          'n300', # n300 mboard with no dboard
-            ('n310', 'magnesium'): 'n310',
-            ('n310', ''):          'n310', # n310 mboard with no dboard
-            ('n310', 'rhodium'):   'n320',
+            # (mboard, dboard): product
+            ("n300", "magnesium"): "n300",
+            ("n300", ""): "n300",  # n300 mboard with no dboard
+            ("n310", "magnesium"): "n310",
+            ("n310", ""): "n310",  # n310 mboard with no dboard
+            ("n310", "rhodium"): "n320",
         }
-        mb_id = bist.get_product_id_from_eeprom(valid_ids=['n300', 'n310'], cmd='eeprom-id')
-        db_id = bist.get_product_id_from_eeprom(valid_ids=['magnesium', 'rhodium', ''], cmd='db-id')
+        mb_id = bist.get_product_id_from_eeprom(valid_ids=["n300", "n310"], cmd="eeprom-id")
+        db_id = bist.get_product_id_from_eeprom(valid_ids=["magnesium", "rhodium", ""], cmd="db-id")
         return product_map[(mb_id, db_id)]
 
-#############################################################################
-# BISTS
-# All bist_* methods must return True/False success values!
-#############################################################################
+    #############################################################################
+    # BISTS
+    # All bist_* methods must return True/False success values!
+    #############################################################################
     def bist_ddr3(self):
         """
         BIST for PL DDR3 DRAM
@@ -143,33 +147,32 @@ class N3XXBIST(bist.UsrpBIST):
         Return status:
         True if the DDR3 bist passed
         """
-        assert 'ddr3' in self.tests_to_run
+        assert "ddr3" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'throughput': 1250e6}
+            return True, {"throughput": 1250e6}
         # First, run the BIST without modifications. It will fail if there is no
         # DmaFIFO block.
         result = bist.test_ddr3_with_usrp_probe()
         # If it failed, but the user specified skip_load_fpga, we also return
         # the current result.
-        if ('error_msg' not in result) \
-                or self.args.option.get('skip_load_fpga', False):
-            return result.get('throughput', 0) > 1000e6, result
+        if ("error_msg" not in result) or self.args.option.get("skip_load_fpga", False):
+            return result.get("throughput", 0) > 1000e6, result
         # Otherwise, we load the AA FPGA image, because that's one image where
         # we think the DmaFIFO block is actually instantiated.
         self.reload_fpga_image = True
         try:
             bist.load_fpga_image(
-                'AA',
+                "AA",
                 self.device_args,
                 self.get_product_id(),
             )
         except Exception as ex:
             return False, {
-                'throughput': 0,
-                'error_msg': "Failed to load AA image: {}".format(str(ex)),
+                "throughput": 0,
+                "error_msg": "Failed to load AA image: {}".format(str(ex)),
             }
         result = bist.test_ddr3_with_usrp_probe()
-        return result.get('throughput', 0) > 1000e6, result
+        return result.get("throughput", 0) > 1000e6, result
 
     def bist_gpsdo(self):
         """
@@ -183,7 +186,7 @@ class N3XXBIST(bist.UsrpBIST):
 
         Check for mode 2 or 3 to see if it's locked.
         """
-        assert 'gpsdo' in self.tests_to_run
+        assert "gpsdo" in self.tests_to_run
         if self.args.dry_run:
             return True, {
                 "class": "TPV",
@@ -199,48 +202,38 @@ class N3XXBIST(bist.UsrpBIST):
                 "speed": 0.091,
                 "climb": -0.085,
                 "eps": 34.11,
-                "mode": 3
+                "mode": 3,
             }
         from usrp_mpm.periph_manager import n3xx
+
         gpio_tca6424 = n3xx.TCA6424(self.mb_rev)
         # Turn on GPS, give some time to acclimatize
         gpio_tca6424.set("PWREN-GPS")
         time.sleep(5)
-        gps_warmup_timeout = float(
-            self.args.option.get('gps_warmup_timeout', GPS_WARMUP_TIMEOUT))
-        gps_lockok_timeout = float(
-            self.args.option.get('gps_lockok_timeout', GPS_LOCKOK_TIMEOUT))
+        gps_warmup_timeout = float(self.args.option.get("gps_warmup_timeout", GPS_WARMUP_TIMEOUT))
+        gps_lockok_timeout = float(self.args.option.get("gps_lockok_timeout", GPS_LOCKOK_TIMEOUT))
         # Wait for WARMUP to go low
         sys.stderr.write(
-            "Waiting for WARMUP to go low for up to {} seconds...\n".format(
-                gps_warmup_timeout))
+            "Waiting for WARMUP to go low for up to {} seconds...\n".format(gps_warmup_timeout)
+        )
         if not bist.poll_with_timeout(
-                lambda: not gpio_tca6424.get('GPS-WARMUP'),
-                gps_warmup_timeout*1000, 1000
-            ):
+            lambda: not gpio_tca6424.get("GPS-WARMUP"), gps_warmup_timeout * 1000, 1000
+        ):
             raise RuntimeError(
-                "GPS-WARMUP did not go low within {} seconds!".format(
-                    gps_warmup_timeout))
+                "GPS-WARMUP did not go low within {} seconds!".format(gps_warmup_timeout)
+            )
         sys.stderr.write("Chip is warmed up.\n")
         # Wait for LOCKOK. Data sheet says wait up to 15 minutes for GPS lock.
         sys.stderr.write(
-            "Waiting for LOCKOK to go high for up to {} seconds...\n".format(
-                gps_lockok_timeout))
+            "Waiting for LOCKOK to go high for up to {} seconds...\n".format(gps_lockok_timeout)
+        )
         if not bist.poll_with_timeout(
-                lambda: gpio_tca6424.get('GPS-LOCKOK'),
-                gps_lockok_timeout*1000,
-                1000
-            ):
+            lambda: gpio_tca6424.get("GPS-LOCKOK"), gps_lockok_timeout * 1000, 1000
+        ):
             sys.stderr.write("No GPS-LOCKOK!\n")
-        sys.stderr.write("GPS-SURVEY status: {}\n".format(
-            gpio_tca6424.get('GPS-SURVEY')
-        ))
-        sys.stderr.write("GPS-PHASELOCK status: {}\n".format(
-            gpio_tca6424.get('GPS-PHASELOCK')
-        ))
-        sys.stderr.write("GPS-ALARM status: {}\n".format(
-            gpio_tca6424.get('GPS-ALARM')
-        ))
+        sys.stderr.write("GPS-SURVEY status: {}\n".format(gpio_tca6424.get("GPS-SURVEY")))
+        sys.stderr.write("GPS-PHASELOCK status: {}\n".format(gpio_tca6424.get("GPS-PHASELOCK")))
+        sys.stderr.write("GPS-ALARM status: {}\n".format(gpio_tca6424.get("GPS-ALARM")))
         # Now the chip is on, read back the TPV result
         result = bist.get_gpsd_tpv_result()
         # If we reach this line, we have a valid result and the chip responded.
@@ -259,10 +252,10 @@ class N3XXBIST(bist.UsrpBIST):
 
         Return status: True if exactly one TPM device is detected.
         """
-        assert 'tpm' in self.tests_to_run
+        assert "tpm" in self.tests_to_run
         if self.args.dry_run:
             return True, {
-                'tpm0_caps': "Fake caps value\n\nVersion 0.0.0",
+                "tpm0_caps": "Fake caps value\n\nVersion 0.0.0",
             }
         result = bist.get_tpm_caps_info()
         return len(result) == 1, result
@@ -281,15 +274,11 @@ class N3XXBIST(bist.UsrpBIST):
         There can be multiple ref lock sensors; for a pass condition they all
         need to be asserted.
         """
-        assert 'ref_clock_int' in self.tests_to_run
+        assert "ref_clock_int" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'ref_locked': True}
-        result = bist.get_ref_clock_prop(
-            'internal',
-            'internal',
-            extra_args={'skip_rfic': 1}
-        )
-        return 'error_msg' not in result, result
+            return True, {"ref_locked": True}
+        result = bist.get_ref_clock_prop("internal", "internal", extra_args={"skip_rfic": 1})
+        return "error_msg" not in result, result
 
     def bist_ref_clock_ext(self):
         """
@@ -308,15 +297,11 @@ class N3XXBIST(bist.UsrpBIST):
         There can be multiple ref lock sensors; for a pass condition they all
         need to be asserted.
         """
-        assert 'ref_clock_ext' in self.tests_to_run
+        assert "ref_clock_ext" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'ref_locked': True}
-        result = bist.get_ref_clock_prop(
-            'external',
-            'external',
-            extra_args={'skip_rfic': 1}
-        )
-        return 'error_msg' not in result, result
+            return True, {"ref_locked": True}
+        result = bist.get_ref_clock_prop("external", "external", extra_args={"skip_rfic": 1})
+        return "error_msg" not in result, result
 
     def bist_ref_clock_gpsdo(self):
         """
@@ -335,15 +320,11 @@ class N3XXBIST(bist.UsrpBIST):
         There can be multiple ref lock sensors; for a pass condition they all
         need to be asserted.
         """
-        assert 'ref_clock_gpsdo' in self.tests_to_run
+        assert "ref_clock_gpsdo" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'ref_locked': True}
-        result = bist.get_ref_clock_prop(
-            'gpsdo',
-            'gpsdo',
-            extra_args={'skip_rfic': 1}
-        )
-        return 'error_msg' not in result, result
+            return True, {"ref_locked": True}
+        result = bist.get_ref_clock_prop("gpsdo", "gpsdo", extra_args={"skip_rfic": 1})
+        return "error_msg" not in result, result
 
     def bist_sfp0_loopback(self):
         """
@@ -367,7 +348,7 @@ class N3XXBIST(bist.UsrpBIST):
         sfp_bist_results = bist.run_aurora_bist(
             device_args=self.device_args,
             product_id=self.get_product_id(),
-            master='misc-auro-regs0',
+            master="misc-auro-regs0",
         )
         self.reload_fpga_image = True
         return bist.aurora_results_to_status(sfp_bist_results)
@@ -394,7 +375,7 @@ class N3XXBIST(bist.UsrpBIST):
         sfp_bist_results = bist.run_aurora_bist(
             device_args=self.device_args,
             product_id=self.get_product_id(),
-            master='misc-auro-regs1',
+            master="misc-auro-regs1",
         )
         self.reload_fpga_image = True
         return bist.aurora_results_to_status(sfp_bist_results)
@@ -417,22 +398,24 @@ class N3XXBIST(bist.UsrpBIST):
         """
         if self.args.dry_run:
             return True, bist.get_sfp_bist_defaults()
-        from usrp_mpm.sys_utils import i2c_dev
         from usrp_mpm.periph_manager import n3xx
+        from usrp_mpm.sys_utils import i2c_dev
+
         qsfp_i2c = i2c_dev.of_get_i2c_adapter(n3xx.N32X_QSFP_I2C_LABEL)
         if qsfp_i2c is None:
             raise RuntimeError("Could not find QSFP board!")
-        qsfp_port = int(self.args.option.get('qsfp_port', '0'))
+        qsfp_port = int(self.args.option.get("qsfp_port", "0"))
         assert qsfp_port in range(4)
-        aurora_regs_label = 'misc-auro-regs{}'.format(qsfp_port)
+        aurora_regs_label = "misc-auro-regs{}".format(qsfp_port)
         sfp_bist_results = bist.run_aurora_bist(
             device_args=self.device_args,
             # Note: We're overwriting the product ID here, because the detection
             # is currently limited to reading the Mboard EEPROM. However, only
             # the N320 has the QSFP board.
-            product_id='n320',
-            aurora_image_type='AQ',
-            master=aurora_regs_label)
+            product_id="n320",
+            aurora_image_type="AQ",
+            master=aurora_regs_label,
+        )
         return bist.aurora_results_to_status(sfp_bist_results)
 
     def bist_sfp_loopback(self):
@@ -457,8 +440,8 @@ class N3XXBIST(bist.UsrpBIST):
         sfp_bist_results = bist.run_aurora_bist(
             device_args=self.device_args,
             product_id=self.get_product_id(),
-            master='misc-auro-regs0',
-            slave='misc-auro-regs1',
+            master="misc-auro-regs0",
+            slave="misc-auro-regs1",
         )
         self.reload_fpga_image = True
         return bist.aurora_results_to_status(sfp_bist_results)
@@ -481,37 +464,38 @@ class N3XXBIST(bist.UsrpBIST):
         - write_patterns: A list of patterns that were written
         - read_patterns: A list of patterns that were read back
         """
-        assert 'gpio' in self.tests_to_run
+        assert "gpio" in self.tests_to_run
         # Our FP-GPIO has 12 programmable pins
         gpio_width = 12
         patterns = range(64)
         if self.args.dry_run:
             return True, {
-                'write_patterns': list(patterns),
-                'read_patterns': list(patterns),
+                "write_patterns": list(patterns),
+                "read_patterns": list(patterns),
             }
         from usrp_mpm.periph_manager import n3xx, n3xx_periphs
+
         gpio_tca6424 = n3xx_periphs.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
         mb_regs = n3xx_periphs.MboardRegsControl(n3xx.n3xx.mboard_regs_label, self.log)
         # We set all 12 pins to be driven by the PS
         mb_regs.set_fp_gpio_master(0xFFF)
         # Allow some time for the front-panel GPIOs to become usable
-        time.sleep(.5)
-        ddr1 = 0x03f # Lower 6 pins are outputs
-        ddr2 = 0xfc0 # Upper 6 pins are inputs
+        time.sleep(0.5)
+        ddr1 = 0x03F  # Lower 6 pins are outputs
+        ddr2 = 0xFC0  # Upper 6 pins are inputs
+
         def _run_gpio(ddr, patterns):
-            " Run a GPIO test for a given set of patterns "
+            "Run a GPIO test for a given set of patterns"
             gpio_ctrl = n3xx_periphs.FrontpanelGPIO(ddr)
             for pattern in patterns:
                 bist.gpio_set_all(gpio_ctrl, pattern, gpio_width, ddr)
                 time.sleep(0.1)
                 gpio_rb = gpio_ctrl.get_all()
-                if  pattern != gpio_rb:
-                    return False, {'write_patterns': [pattern],
-                                   'read_patterns': [gpio_rb]}
-            return True, {'write_patterns': list(patterns),
-                          'read_patterns': list(patterns)}
+                if pattern != gpio_rb:
+                    return False, {"write_patterns": [pattern], "read_patterns": [gpio_rb]}
+            return True, {"write_patterns": list(patterns), "read_patterns": list(patterns)}
+
         status, data = _run_gpio(ddr1, patterns)
         if not status:
             return status, data
@@ -527,14 +511,15 @@ class N3XXBIST(bist.UsrpBIST):
         Return dictionary:
         - <thermal-zone-name>: temp in mC
         """
-        assert 'temp' in self.tests_to_run
+        assert "temp" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'fpga-thermal-zone': 30000}
+            return True, {"fpga-thermal-zone": 30000}
         result = bist.get_temp_sensor_value(
-            lambda device: device.attributes.get('type').decode('ascii'))
+            lambda device: device.attributes.get("type").decode("ascii")
+        )
         if len(result) < 1:
-            result['error_msg'] = "No temperature sensors found!"
-        return 'error_msg' not in result, result
+            result["error_msg"] = "No temperature sensors found!"
+        return "error_msg" not in result, result
 
     def bist_fan(self):
         """
@@ -546,9 +531,9 @@ class N3XXBIST(bist.UsrpBIST):
 
         External Equipment: None
         """
-        assert 'fan' in self.tests_to_run
+        assert "fan" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'cooling_device0': 10000, 'cooling_device1': 10000}
+            return True, {"cooling_device0": 10000, "cooling_device1": 10000}
         result = bist.get_fan_values()
         return len(result) == 2, result
 
@@ -559,46 +544,47 @@ class N3XXBIST(bist.UsrpBIST):
 
         External Equipment: A WR source needs to be connected to SFP0.
         """
-        assert 'whiterabbit' in self.tests_to_run
+        assert "whiterabbit" in self.tests_to_run
         if self.args.dry_run:
-            return True, {'lock': True}
+            return True, {"lock": True}
         from usrp_mpm.cores import WhiteRabbitRegsControl
-        from usrp_mpm.periph_manager.n3xx import n3xx
         from usrp_mpm.periph_manager import n3xx_periphs
+        from usrp_mpm.periph_manager.n3xx import n3xx
         from usrp_mpm.sys_utils import uio
+
         if not uio.find_uio_device(n3xx.wr_regs_label, logger=self.log)[0]:
             self.log.info("Need to load WX image before proceeding...")
             bist.load_fpga_image(
-                'WX',
+                "WX",
                 self.device_args,
                 self.get_product_id(),
             )
             self.log.info("Image loading complete.")
         self.reload_fpga_image = True
-        mb_regs = n3xx_periphs.MboardRegsControl(
-            n3xx.mboard_regs_label, self.log)
-        mb_regs.set_time_source('sfp0', 25e6)
-        wr_regs_control = WhiteRabbitRegsControl(
-            n3xx.wr_regs_label, self.log)
+        mb_regs = n3xx_periphs.MboardRegsControl(n3xx.mboard_regs_label, self.log)
+        mb_regs.set_time_source("sfp0", 25e6)
+        wr_regs_control = WhiteRabbitRegsControl(n3xx.wr_regs_label, self.log)
         lock_status = bist.poll_with_timeout(
             lambda: wr_regs_control.get_time_lock_status(),
-            40000, # Try for x ms... this number is set from a few benchtop tests
-            1000, # Poll every... second! why not?
+            40000,  # Try for x ms... this number is set from a few benchtop tests
+            1000,  # Poll every... second! why not?
         )
         result = {
-            'lock_status': int(lock_status),
+            "lock_status": int(lock_status),
         }
         return lock_status, result
+
 
 ##############################################################################
 # main
 ##############################################################################
 def main():
-    " Go, go, go! "
+    "Go, go, go!"
     result = N3XXBIST().run()
     print("BIST complete. It is strongly recommended that you reboot your USRP ")
     print("before returning to regular operation.")
     return result
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     exit(not main())
