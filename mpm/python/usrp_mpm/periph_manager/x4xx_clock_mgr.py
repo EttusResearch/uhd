@@ -374,6 +374,11 @@ class X4xxClockManager:
                     if not desired_master_clock_rates:
                         desired_master_clock_rates = self._master_clock_rates
                     force_set_mcr = True
+        # Check sticky lock-detect bits from any inter-session unlock events.
+        # This populates spll_unlock_event so that set_sync_source() below can
+        # react if the SPLL lost lock between the previous session and this one.
+        if not args.get("boot_init", False):
+            self.clk_ctrl.get_ref_stable()
         # set_sync_source() will cause a reconfiguration of the master clock rate
         # if anything changed. By modifying self._master_clock_rates, we can
         # use that to immediately set the sync source, the external ref clock freq,
@@ -444,7 +449,8 @@ class X4xxClockManager:
                  If it is set to True, it will run the configuration regardless
                  of any previous state.
         ignore_unlock_event -- If set to True, then a previous unlock event
-                               will not cause a forced re-configuration.
+                               will not cause a forced re-configuration. Note
+                               we always check if PLLs is currently locked.
 
         Returns: A SetSyncRetVal enum value.
         """
@@ -452,12 +458,19 @@ class X4xxClockManager:
             f"Clock and time source pair ({clock_source}, {time_source}) is "
             "not a valid selection"
         )
+        # First, we check if anything changed that would require us to update
+        # the sync source. If not, we can just skip everything and return.
+        clock_change_event = clock_source != self._clock_source or time_source != self._time_source
+        # An unlock requires reconfiguration if any PLLs are currently
+        # unlocked, or a previous unlock event was recorded and we're not
+        # explicitly ignoring it.
+        unlock_event = (not self.clk_ctrl.get_ref_locked()) or (
+            self.clk_ctrl.spll_unlock_event and not ignore_unlock_event
+        )
         # Now see if we can keep the current settings, or if we need to run an
         # update of sync sources:
-        if not force and clock_source == self._clock_source and time_source == self._time_source:
-            if self.clk_ctrl.get_ref_locked() and (
-                not self.clk_ctrl.spll_unlock_event or ignore_unlock_event
-            ):
+        if not (force or clock_change_event):
+            if not unlock_event:
                 # Nothing changed, no need to do anything
                 self.log.trace(
                     "New sync source assignment matches "
@@ -466,7 +479,7 @@ class X4xxClockManager:
                 return self.SetSyncRetVal.NOP
             self.log.debug(
                 "Although the clock source has not changed, some PLLs "
-                "are not locked. Setting clock source again..."
+                "are or were not locked. Setting clock source again..."
             )
         # Start setting sync source
         self.log.debug(
