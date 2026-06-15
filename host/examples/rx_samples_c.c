@@ -172,11 +172,11 @@ int main(int argc, char* argv[])
     // Set up streamer
     stream_args.channel_list = &channel;
     EXECUTE_OR_GOTO(
-        free_rx_streamer, uhd_usrp_get_rx_stream(usrp, &stream_args, rx_streamer))
+        free_rx_metadata, uhd_usrp_get_rx_stream(usrp, &stream_args, rx_streamer))
 
     // Set up buffer
     EXECUTE_OR_GOTO(
-        free_rx_streamer, uhd_rx_streamer_max_num_samps(rx_streamer, &samps_per_buff))
+        free_rx_metadata, uhd_rx_streamer_max_num_samps(rx_streamer, &samps_per_buff))
     fprintf(stderr, "Buffer size in samples: %zu\n", samps_per_buff);
     buff      = malloc(samps_per_buff * 2 * sizeof(float));
     buffs_ptr = (void**)&buff;
@@ -235,18 +235,18 @@ free_buffer:
     }
     buff      = NULL;
     buffs_ptr = NULL;
+    
+free_rx_metadata:
+    if (verbose) {
+        fprintf(stderr, "Cleaning up RX metadata.\n");
+    }
+    uhd_rx_metadata_free(&md);
 
 free_rx_streamer:
     if (verbose) {
         fprintf(stderr, "Cleaning up RX streamer.\n");
     }
     uhd_rx_streamer_free(&rx_streamer);
-
-free_rx_metadata:
-    if (verbose) {
-        fprintf(stderr, "Cleaning up RX metadata.\n");
-    }
-    uhd_rx_metadata_free(&md);
 
 free_usrp:
     if (verbose) {
