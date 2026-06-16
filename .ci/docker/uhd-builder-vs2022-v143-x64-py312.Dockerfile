@@ -31,7 +31,7 @@ RUN if defined PIP_INDEX_URL ( \
 
 RUN pip config list
 RUN python -m pip install --upgrade pip
-RUN pip install mako requests numpy ruamel.yaml setuptools
+RUN pip install mako requests numpy ruamel.yaml setuptools grpcio
 
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command \
     Invoke-WebRequest "https://aka.ms/vs/17/release/vs_buildtools.exe" \

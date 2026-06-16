@@ -41,6 +41,13 @@ RUN apt-get update && \
         python3-requests \
         python3-setuptools \
         pybind11-dev \
+        # gRPC baseline
+        libgrpc++-dev \
+        libprotobuf-dev \
+        # gRPC protobuf compiler
+        protobuf-compiler-grpc \
+        # gRPC Python runtime
+        python3-grpcio \
     # Install deb dependencies
         debootstrap \
         devscripts \

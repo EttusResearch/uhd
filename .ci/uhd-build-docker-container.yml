@@ -56,9 +56,7 @@ variables:
 - ${{ if parameters.build_windows }}:
   - name: winDockerImages
     value:
-      "{'VS2019-x64-py310-builder':{'buildOSName':'win-vs19-v142-x64-py310','dockerImageName':'uhd-builder-vs2019-v142-x64-py310','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python310'},
-      'VS2019-x64-py312-builder':{'buildOSName':'win-vs19-v142-x64-py312','dockerImageName':'uhd-builder-vs2019-v142-x64-py312','cmakeCompiler':'Visual Studio 16 2019','cmakeArch':'x64','vsArch':'x64','vsYear':'2019','pythonVersion':'python312'},
-      'VS2022-x64-py310-builder':{'buildOSName':'win-vs22-v143-x64-py310','dockerImageName':'uhd-builder-vs2022-v143-x64-py310','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python310'},
+      "{'VS2022-x64-py310-builder':{'buildOSName':'win-vs22-v143-x64-py310','dockerImageName':'uhd-builder-vs2022-v143-x64-py310','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python310'},
       'VS2022-x64-py312-builder':{'buildOSName':'win-vs22-v143-x64-py312','dockerImageName':'uhd-builder-vs2022-v143-x64-py312','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python312'},
       'VS2026-x64-py310-builder':{'buildOSName':'win-vs26-v145-x64-py310','dockerImageName':'uhd-builder-vs2026-v145-x64-py310','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python310'},
       'VS2026-x64-py312-builder':{'buildOSName':'win-vs26-v145-x64-py312','dockerImageName':'uhd-builder-vs2026-v145-x64-py312','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python312'}}"
@@ -226,7 +224,7 @@ jobs:
 - job: build_image_win
   dependsOn: set_uhd_docker_image_version
   displayName: Build Docker Image Windows
-  timeoutInMinutes: 150
+  timeoutInMinutes: 600
   variables:
     uhdDockerImageVersion: $[ dependencies.set_uhd_docker_image_version.outputs['set_uhd_version.uhdDockerImageVersion'] ]
   pool:
@@ -301,7 +299,7 @@ jobs:
 
 - job: test_image_win
   displayName: Test Docker Image Windows
-  timeoutInMinutes: 90
+  timeoutInMinutes: 400
   dependsOn:
   - build_image_win
   - set_uhd_docker_image_version

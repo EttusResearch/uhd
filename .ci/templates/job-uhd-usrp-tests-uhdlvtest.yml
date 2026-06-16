@@ -21,7 +21,7 @@ jobs:
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
     toolset: 'msbuild'
     installer: 'nsis'
-    buildOSName: 'win-vs19-v142-x64-py310'
+    buildOSName: 'win-vs22-v143-x64-py310'
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x410') }}:
         uhdlvtest-x410-0:

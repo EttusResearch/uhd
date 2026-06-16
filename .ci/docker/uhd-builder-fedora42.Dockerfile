@@ -36,6 +36,13 @@ RUN dnf install -y \
         rsync \
         tar \
         xz \
+        # gRPC baseline
+        grpc-devel \
+        protobuf-devel \
+        # gRPC protobuf compiler
+        grpc-plugins \
+        # gRPC Python runtime
+        python3-grpcio \
     # Install GNURadio dependencies
         python3-sphinx \
         python3-lxml \
