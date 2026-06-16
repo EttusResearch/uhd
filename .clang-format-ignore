@@ -7,6 +7,7 @@
 ./fpga
 ./tools
 ./firmware
+*.pb.*
 *cdecode.*
 *getopt.*
 *_generated.h

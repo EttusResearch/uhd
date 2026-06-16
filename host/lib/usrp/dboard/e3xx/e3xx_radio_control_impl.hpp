@@ -255,13 +255,18 @@ private:
     uhd::eeprom_map_t get_db_eeprom() override;
 
     /**************************************************************************
+     * DB-RPC
+     *************************************************************************/
+    uhd::rpc_client::dboard_iface& db_rpc()
+    {
+        return _rpcc->get_dboard(0);
+    }
+
+    /**************************************************************************
      * Private attributes
      *************************************************************************/
     //! Locks access to setter APIs
     mutable std::recursive_mutex _set_lock;
-
-    //! Prepended for all dboard RPC calls
-    std::string _rpc_prefix = "db_0_";
 
     //! Reference to the MB controller
     uhd::rfnoc::mpmd_mb_controller::sptr _e3xx_mb_control;

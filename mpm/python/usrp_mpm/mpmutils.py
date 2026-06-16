@@ -309,22 +309,44 @@ def get_dboard_class_from_pid(pid):
     return None
 
 
-def register_chained_signal_handler(signal, handler):
-    """Register a signal handler that chains to the previous handler.
+# Module-level registry: signum -> list of handlers, in registration order.
+# A single dispatcher per signal walks this list, allowing handlers to be
+# added and removed without rebuilding a nested-closure chain.
+_chained_signal_handlers: dict = {}
 
-    :param signal: The signal to handle
-    :param handler: Handler to be added to the chain
+
+def register_chained_signal_handler(signum, handler):
+    """Register a signal handler that is called alongside existing handlers.
+
+    Unlike the previous nested-closure approach, handlers are stored in a
+    flat list so they can be unregistered via unregister_chained_signal_handler.
+
+    :param signum: The signal number (e.g. signal.SIGTERM)
+    :param handler: Callable (signum, frame) -> None to add to the chain
     """
     import signal as sig
 
-    registered_handler = sig.getsignal(signal)
+    if signum not in _chained_signal_handlers:
+        _chained_signal_handlers[signum] = []
 
-    def chained_handler(signum, frame):
-        handler(signum, frame)
-        if callable(registered_handler):
-            registered_handler(signum, frame)
+        def _dispatcher(sn, frame):
+            for h in list(_chained_signal_handlers.get(sn, [])):
+                h(sn, frame)
 
-    sig.signal(signal, chained_handler)
+        sig.signal(signum, _dispatcher)
+    _chained_signal_handlers[signum].append(handler)
+
+
+def unregister_chained_signal_handler(signum, handler):
+    """Remove a handler previously added with register_chained_signal_handler.
+
+    :param signum: The signal number (e.g. signal.SIGTERM)
+    :param handler: The exact handler object that was registered
+    """
+    try:
+        _chained_signal_handlers.get(signum, []).remove(handler)
+    except ValueError:
+        pass
 
 
 def set_proc_title(title, logger=None):

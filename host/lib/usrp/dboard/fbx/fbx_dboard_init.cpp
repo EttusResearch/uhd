@@ -154,7 +154,6 @@ void fbx_dboard_impl::_init_experts(expert_container::sptr expert,
         trx,
         chan_idx,
         _rfdc_rate,
-        _rpc_prefix,
         _db_idx,
         _mb_rpcc);
 
@@ -175,8 +174,7 @@ void fbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
         subtree,
         fe_path / "los" / RFDC_NCO / "freq" / "value",
         // Initialize with current value
-        _mb_rpcc->rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
-            _db_idx,
+        _mb_rpcc->get_dboard(_db_idx).rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
             chan_idx,
             static_cast<size_t>(FBX_CH_MODE)),
         AUTO_RESOLVE_ON_WRITE);

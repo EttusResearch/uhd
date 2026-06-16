@@ -33,7 +33,7 @@ namespace {
 //! Most pessimistic time for a CHDR query to go to device and back
 const double MPMD_CHDR_MAX_RTT = 0.02;
 //! MPM Compatibility number {MAJOR, MINOR}
-const std::vector<size_t> MPM_COMPAT_NUM = {6, 1};
+const std::vector<size_t> MPM_COMPAT_NUM = {7, 0};
 /*! Default number of motherboards to initialize in parallel at once.
  *
  * This caps the number of threads spawned during parallel initialization. It
@@ -143,14 +143,13 @@ void assert_compat_number_throw(const std::string& component,
 /*****************************************************************************
  * Static class attributes
  ****************************************************************************/
-const std::string mpmd_impl::MPM_FINDALL_KEY            = "find_all";
-const size_t mpmd_impl::MPM_DISCOVERY_PORT              = 49600;
-const std::string mpmd_impl::MPM_DISCOVERY_PORT_KEY     = "discovery_port";
-const size_t mpmd_impl::MPM_RPC_PORT                    = 49601;
-const std::string mpmd_impl::MPM_RPC_PORT_KEY           = "rpc_port";
-const std::string mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD = "get_last_error";
-const std::string mpmd_impl::MPM_DISCOVERY_CMD          = "MPM-DISC";
-const std::string mpmd_impl::MPM_ECHO_CMD               = "MPM-ECHO";
+const std::string mpmd_impl::MPM_FINDALL_KEY        = "find_all";
+const size_t mpmd_impl::MPM_DISCOVERY_PORT          = 49600;
+const std::string mpmd_impl::MPM_DISCOVERY_PORT_KEY = "discovery_port";
+const size_t mpmd_impl::MPM_RPC_PORT                = 49601;
+const std::string mpmd_impl::MPM_RPC_PORT_KEY       = "rpc_port";
+const std::string mpmd_impl::MPM_DISCOVERY_CMD      = "MPM-DISC";
+const std::string mpmd_impl::MPM_ECHO_CMD           = "MPM-ECHO";
 
 /*****************************************************************************
  * Structors
@@ -348,9 +347,11 @@ mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(
 
 void mpmd_impl::setup_mb(mpmd_mboard_impl* mb, const size_t mb_index)
 {
+    auto compat_num_uint32 = mb->rpc->get_mpm_compat_number();
+    std::vector<size_t> compat_num(compat_num_uint32.begin(), compat_num_uint32.end());
     assert_compat_number_throw("MPM",
         MPM_COMPAT_NUM,
-        mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num"),
+        compat_num,
         "Please update the version of MPM on your USRP device.");
 
     UHD_LOG_DEBUG("MPMD", "Initializing mboard " << mb_index);

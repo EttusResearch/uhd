@@ -11,7 +11,7 @@
 #    include <uhd/types/filters.hpp>
 #    include <uhd/types/sensors.hpp>
 #    include <uhdlib/usrp/common/ad9361_ctrl.hpp>
-#    include <uhdlib/utils/rpc.hpp>
+#    include <uhdlib/usrp/common/rpc.hpp>
 #    include <memory>
 #    include <string>
 #    include <vector>

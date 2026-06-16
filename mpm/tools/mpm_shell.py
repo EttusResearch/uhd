@@ -13,14 +13,45 @@ from __future__ import print_function
 import argparse
 import cmd
 import multiprocessing
+import os
 import re
+import sys
 import time
 from importlib import import_module
+
+import grpc
 
 try:
     from usrp_mpm.mpmtypes import MPM_RPC_PORT
 except ImportError:
     MPM_RPC_PORT = None
+
+# Import protobuf modules from the installed package path.
+try:
+    from usrp_mpm import mpm_server_pb2, mpm_server_pb2_grpc
+except ImportError as e:
+    print("Error: Could not import usrp_mpm protobuf modules.")
+    print(
+        "Info: For source-tree development, set PYTHONPATH to include "
+        "your build Python output directory."
+    )
+    print(f"Original import error: {e}")
+    sys.exit(1)
+
+
+def _field_is_repeated(field):
+    """Check if a protobuf field is repeated, compatible with protobuf 3.x and 4.x+."""
+    try:
+        return field.is_repeated  # protobuf 3.x
+    except AttributeError:
+        return field.label == field.LABEL_REPEATED  # protobuf 4.x+ (UPB backend)
+
+
+def _camel_to_snake(name):
+    """Convert a CamelCase name to snake_case."""
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
 
 DEFAULT_MPM_RPC_PORT = 49601
 if MPM_RPC_PORT is None:
@@ -90,43 +121,76 @@ class MPMClaimer(object):
 
     def claim_loop(self, host, port, cmd_q, token_q):
         """
-        Run a claim loop
+        Run a claim loop.
         """
-        from mprpc import RPCClient
-        from mprpc.exceptions import RPCError
-
         command = None
         token = None
         exit_loop = False
-        client = RPCClient(host, port, pack_params={"use_bin_type": True})
+
+        # Create gRPC channel and stub
+        channel = grpc.insecure_channel(f"{host}:{port}")
+        stub = mpm_server_pb2_grpc.MpmServerServiceStub(channel)
+
         try:
             while not exit_loop:
                 if token and not command:
-                    client.call("reclaim", token)
+                    # Reclaim with existing token
+                    try:
+                        request = mpm_server_pb2.ReclaimRequest(token=token)
+                        response = stub.Reclaim(request)
+                        if not response.success:
+                            print("Reclaim failed, token may have expired")
+                            token = None
+                            token_q.put(None)
+                    except grpc.RpcError as e:
+                        print(f"RPC error during reclaim: {e}")
+                        token = None
+                        token_q.put(None)
+
                 elif command == "claim":
                     if not token:
-                        token = client.call("claim", "MPM Shell")
+                        try:
+                            request = mpm_server_pb2.ClaimRequest(session_id="MPM Shell")
+                            response = stub.Claim(request)
+                            token = response.token
+                        except grpc.RpcError as e:
+                            print(f"Failed to claim: {e}")
+                            token = None
                     else:
                         print("Already have claim")
                     token_q.put(token)
+
                 elif command == "unclaim":
                     if token:
-                        client.call("unclaim", token)
+                        try:
+                            request = mpm_server_pb2.UnclaimRequest(token=token)
+                            stub.Unclaim(request)
+                        except grpc.RpcError as e:
+                            print(f"Failed to unclaim: {e}")
                     token = None
                     token_q.put(None)
+
                 elif command == "exit":
                     if token:
-                        client.call("unclaim", token)
+                        try:
+                            request = mpm_server_pb2.UnclaimRequest(token=token)
+                            stub.Unclaim(request)
+                        except grpc.RpcError as e:
+                            print(f"Failed to unclaim on exit: {e}")
                     token = None
                     token_q.put(None)
                     exit_loop = True
+
                 time.sleep(1)
                 command = None
                 if not cmd_q.empty():
                     command = cmd_q.get(False)
-        except RPCError as ex:
-            print("Unexpected RPC error in claimer loop!")
+
+        except Exception as ex:
+            print("Unexpected error in claimer loop!")
             print(str(ex))
+        finally:
+            channel.close()
 
     def exit(self):
         """
@@ -181,7 +245,8 @@ class MPMShell(cmd.Cmd):
     def __init__(self, host, port, claim, hijack, script):
         cmd.Cmd.__init__(self)
         self.prompt = "> "
-        self.client = None
+        self.channel = None
+        self.stub = None
         self.remote_methods = []
         self._host = host
         self._port = port
@@ -202,46 +267,179 @@ class MPMShell(cmd.Cmd):
         """
         Add a command to the current session
         """
-        cmd_name = "do_" + command
+        snake_name = _camel_to_snake(command)
+        cmd_name = "do_" + snake_name
         if not hasattr(self, cmd_name):
             new_command = lambda args: self.rpc_template(str(command), requires_token, args)
             new_command.__doc__ = docs
             setattr(self, cmd_name, new_command)
-            self.remote_methods.append(command)
+            self.remote_methods.append(snake_name)
 
     def _print_response(self, response):
         print(re.sub("^", "< ", response, flags=re.MULTILINE))
 
+    def _create_request_message(self, method_name, args, requires_token):
+        """
+        Dynamically create a protobuf request message for a given method.
+        """
+        # method_name is already in CamelCase from ListMethods
+        # Get the request message type
+        request_class_name = f"{method_name}Request"
+        try:
+            request_class = getattr(mpm_server_pb2, request_class_name)
+        except AttributeError:
+            raise ValueError(f"Unknown request type: {request_class_name}")
+
+        # Create request object
+        request = request_class()
+
+        # Add token if required
+        if requires_token:
+            token = self._claimer.get_token()
+            if token and hasattr(request, "token"):
+                request.token = token
+
+        # Parse and add other arguments
+        if args:
+            expanded_args = self.expand_args(args)
+
+            # Get field names from the request descriptor
+            field_names = [
+                field.name for field in request.DESCRIPTOR.fields if field.name != "token"
+            ]
+
+            # Assign args to fields
+            for i, (field_name, arg_value) in enumerate(zip(field_names, expanded_args)):
+                field = request.DESCRIPTOR.fields_by_name.get(field_name)
+                if field:
+                    from google.protobuf import descriptor
+
+                    is_string_map = field.message_type and field.message_type.name == "StringMap"
+
+                    # Handle repeated fields first (before any message-type inspection,
+                    # since getattr() returns a container for repeated fields)
+                    if _field_is_repeated(field) and is_string_map:
+                        # repeated StringMap (e.g., UpdateComponentRequest.file_metadata_l)
+                        repeated_field = getattr(request, field_name)
+                        entries = arg_value if isinstance(arg_value, list) else [arg_value]
+                        for entry in entries:
+                            if isinstance(entry, dict):
+                                new_entry = repeated_field.add()
+                                new_entry.data.update(entry)
+                    elif _field_is_repeated(field):
+                        # repeated primitive/other message
+                        repeated_field = getattr(request, field_name)
+                        entries = arg_value if isinstance(arg_value, list) else [arg_value]
+                        repeated_field.extend(entries)
+                    elif is_string_map:
+                        # singular StringMap
+                        if isinstance(arg_value, dict):
+                            getattr(request, field_name).data.update(arg_value)
+                    else:
+                        # Convert arg_value to appropriate type based on field type
+                        if field.type == descriptor.FieldDescriptor.TYPE_INT32:
+                            arg_value = int(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_INT64:
+                            arg_value = int(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_UINT32:
+                            arg_value = int(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_UINT64:
+                            arg_value = int(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_DOUBLE:
+                            arg_value = float(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_FLOAT:
+                            arg_value = float(arg_value)
+                        elif field.type == descriptor.FieldDescriptor.TYPE_BOOL:
+                            arg_value = (
+                                arg_value.lower() in ("true", "1", "yes")
+                                if isinstance(arg_value, str)
+                                else bool(arg_value)
+                            )
+                        elif field.type == descriptor.FieldDescriptor.TYPE_STRING:
+                            arg_value = str(arg_value)
+                        # For other types (message, enum, etc.), leave as-is
+                        setattr(request, field_name, arg_value)
+
+        return request
+
+    def _format_response(self, response):
+        """Format a protobuf response for display"""
+        if response is None:
+            return "None"
+
+        # Handle simple responses
+        if hasattr(response, "success"):
+            return str(response.success)
+
+        # Handle string responses
+        if hasattr(response, "data") and isinstance(response.data, str):
+            return response.data
+
+        # Handle responses with a single field
+        fields = [field for field in response.DESCRIPTOR.fields]
+        if len(fields) == 1:
+            field = fields[0]
+            value = getattr(response, field.name)
+            from google.protobuf import descriptor
+
+            # Handle repeated fields first (before any message-type inspection,
+            # since value is a container object for repeated fields and does not
+            # have attributes like .data that belong to individual messages)
+            if _field_is_repeated(field):
+                # repeated StringMap -> list of plain dicts
+                if field.message_type and field.message_type.name == "StringMap":
+                    return str([dict(entry.data) for entry in value])
+                return str(list(value))
+            # Handle singular StringMap
+            elif field.message_type and field.message_type.name == "StringMap":
+                return str(dict(value.data))
+            else:
+                return str(value)
+
+        # For complex responses, return string representation
+        return str(response)
+
     def rpc_template(self, command, requires_token, args=None):
         """
-        Template function to create new RPC shell commands
+        Template function to create new RPC shell commands.
         """
-        from mprpc.exceptions import RPCError
-
         if requires_token and (self._claimer is None or self._claimer.get_token() is None):
             self._print_response("Cannot execute `{}' -- " "no claim available!".format(command))
             return False
+
         try:
-            if args or requires_token:
-                expanded_args = self.expand_args(args)
-                if requires_token:
-                    expanded_args.insert(0, self._claimer.get_token())
-                response = self.client.call(command, *expanded_args)
+            # Create the request message
+            request = self._create_request_message(command, args, requires_token)
+
+            # Get the gRPC method from stub (command is already in CamelCase)
+            grpc_method = getattr(self.stub, command, None)
+
+            if grpc_method is None:
+                self._print_response(f"Method {command} not found on stub")
+                return False
+
+            # Call the gRPC method
+            response = grpc_method(request)
+
+            # Format and print response
+            formatted_response = self._format_response(response)
+            # Only treat True/False as a success indicator if the response field
+            # is literally named 'success'. All other bool fields (e.g. lo_lock)
+            # should print their actual value.
+            if hasattr(response, "success") and formatted_response in ["True", "False"]:
+                if formatted_response == "True":
+                    self._print_response("Command succeeded.")
+                else:
+                    self._print_response("Command failed!")
             else:
-                response = self.client.call(command)
-        except RPCError as ex:
-            self._print_response("RPC Command failed!\nError: {}".format(ex))
+                self._print_response(formatted_response)
+
+        except grpc.RpcError as ex:
+            self._print_response("RPC Command failed!\nError: {}".format(ex.details()))
             return False
         except Exception as ex:
             self._print_response("Unexpected exception!\nError: {}".format(ex))
-            return True
-        if isinstance(response, bool):
-            if response:
-                self._print_response("Command succeeded.")
-            else:
-                self._print_response("Command failed!")
-        else:
-            self._print_response(str(response))
+            return False
 
         return False
 
@@ -260,6 +458,16 @@ class MPMShell(cmd.Cmd):
         In script mode add Execution start marker to ease parsing script output
         :return: None
         """
+        # cmd.Cmd uses 'tab: complete' which is GNU readline syntax.
+        # Platforms using libedit (e.g. embedded Linux, macOS) need a
+        # different binding; re-apply the correct one here.
+        try:
+            import readline
+
+            if "libedit" in (readline.__doc__ or ""):
+                readline.parse_and_bind("bind ^I rl_complete")
+        except ImportError:
+            pass
         if self._script:
             print("Execute %s" % self._script)
 
@@ -287,46 +495,89 @@ class MPMShell(cmd.Cmd):
         """
         Launch a connection.
         """
-        from mprpc import RPCClient
-
         print("Attempting to connect to {host}:{port}...".format(host=host, port=port))
         try:
-            self.client = RPCClient(host, port, pack_params={"use_bin_type": True})
-            print("Connection successful.")
+            # Create gRPC channel and stub, matching the message size limits used
+            # by mpm_client.cpp (128 MB) to handle large payloads like firmware updates.
+            MAX_GRPC_MESSAGE_SIZE = 128 * 1024 * 1024  # 128 MB
+            channel_options = [
+                ("grpc.max_receive_message_length", MAX_GRPC_MESSAGE_SIZE),
+                ("grpc.max_send_message_length", MAX_GRPC_MESSAGE_SIZE),
+            ]
+            self.channel = grpc.insecure_channel(f"{host}:{port}", options=channel_options)
+            self.stub = mpm_server_pb2_grpc.MpmServerServiceStub(self.channel)
+
+            # Test connection with ping
+            ping_test_data = "test"
+            ping_request = mpm_server_pb2.PingRequest(data=ping_test_data)
+            ping_response = self.stub.Ping(ping_request)
+
+            # Verify ping response
+            if not hasattr(ping_response, "data"):
+                print("Warning: Ping response missing data field")
+                print("Connection established but ping verification failed.")
+            elif ping_response.data != ping_test_data:
+                print(
+                    f"Warning: Ping response mismatch. Sent '{ping_test_data}', got '{ping_response.data}'"
+                )
+                print("Connection established but ping verification failed.")
+            else:
+                print("Connection successful.")
+
         except Exception as ex:
             print("Connection refused")
             print("Error: {}".format(ex))
             return False
+
         self._host = host
         self._port = port
+
         print("Getting methods...")
-        methods = self.client.call("list_methods")
-        for method in methods:
-            self._add_command(*method)
-        print("Added {} methods.".format(len(methods)))
-        print("Quering device info...")
-        self._device_info = self.client.call("get_device_info")
+        try:
+            # Call ListMethods to get available methods
+            list_methods_request = mpm_server_pb2.ListMethodsRequest()
+            methods_response = self.stub.ListMethods(list_methods_request)
+
+            # Add each method as a command
+            for method in methods_response.methods:
+                self._add_command(method.method_name, method.docstring, method.requires_claim)
+            print("Added {} methods.".format(len(methods_response.methods)))
+
+        except grpc.RpcError as ex:
+            print("Failed to get methods list")
+            print("Error: {}".format(ex.details()))
+            return False
+
+        print("Querying device info...")
+        try:
+            device_info_request = mpm_server_pb2.GetDeviceInfoRequest()
+            device_info_response = self.stub.GetDeviceInfo(device_info_request)
+            self._device_info = dict(device_info_response.dev_info.data)
+        except grpc.RpcError as ex:
+            print("Warning: Could not get device info")
+            print("Error: {}".format(ex.details()))
+            self._device_info = {}
+
         return True
 
     def disconnect(self):
         """
         Clean up after a connection was closed.
         """
-        from mprpc.exceptions import RPCError
-
         self._device_info = None
         if self._claimer is not None:
             self._claimer.exit()
-        if self.client:
+        if self.channel:
             try:
-                self.client.close()
-            except RPCError as ex:
+                self.channel.close()
+            except Exception as ex:
                 print("Error while closing the connection")
                 print("Error: {}".format(ex))
         for method in self.remote_methods:
             delattr(self, "do_" + method)
         self.remote_methods = []
-        self.client = None
+        self.stub = None
+        self.channel = None
         self._host = None
         self._port = None
 
@@ -355,7 +606,7 @@ class MPMShell(cmd.Cmd):
         """
         Update prompt
         """
-        if self._device_info is None:
+        if not self._device_info:
             self.prompt = "> "
         else:
             token = self._claimer.get_token()

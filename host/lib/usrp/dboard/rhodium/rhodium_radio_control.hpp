@@ -369,6 +369,14 @@ private:
     void _update_tx_output_switches(const std::string& output);
 
     /**************************************************************************
+     * RPC
+     *************************************************************************/
+    uhd::rpc_client::dboard_iface& db_rpc() const
+    {
+        return _rpcc->get_dboard(_db_idx);
+    }
+
+    /**************************************************************************
      * Private attributes
      *************************************************************************/
     //! Locks access to the antenna cached values
@@ -377,8 +385,8 @@ private:
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 
-    //! Prepended for all dboard RPC calls
-    std::string _rpc_prefix;
+    //! Numerical representation of the radio we're currently using
+    int _db_idx;
 
     //! Daughterboard info from MPM
     std::map<std::string, std::string> _dboard_info;

@@ -163,6 +163,24 @@ else()
         target_link_options(pyuhd PRIVATE "LINKER:-undefined,dynamic_lookup")
     endif(APPLE)
 endif(WIN32)
+# When MPMD is enabled, add the auto-generated RPC client source and its
+# include directory, inject the compile definition, and declare the build
+# dependency so that generate_mpm_stubs runs before pyuhd is compiled.
+if(ENABLE_MPMD)
+    set_source_files_properties(
+        ${UHD_BINARY_DIR}/lib/usrp/common/mpm_client_python.cpp
+        PROPERTIES GENERATED TRUE
+    )
+    target_sources(pyuhd PRIVATE
+        ${UHD_BINARY_DIR}/lib/usrp/common/mpm_client_python.cpp
+    )
+    target_include_directories(pyuhd PRIVATE
+        ${UHD_SOURCE_DIR}/lib/include
+        ${UHD_BINARY_DIR}/lib/usrp/common
+    )
+    target_compile_definitions(pyuhd PRIVATE ENABLE_MPMD)
+    add_dependencies(pyuhd generate_mpm_stubs)
+endif(ENABLE_MPMD)
 # Copy pyuhd library to the staging directory
 add_custom_command(TARGET pyuhd
     POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/$<TARGET_FILE_NAME:pyuhd>)
@@ -230,6 +248,8 @@ if(ENABLE_SIM)
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/prefs.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/tlv_eeprom.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/rpc_server.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpm_server_pb2.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpm_server_pb2_grpc.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/__init__.py
                        ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm)
     # Move usrp_hwd.py into usrp_mpm so that it is included in the package

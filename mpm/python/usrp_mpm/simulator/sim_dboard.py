@@ -50,6 +50,9 @@ class SimulatedDboardBase(DboardManagerBase):
         self.log.trace("sim_db#tear_down called")
 
     def _make_extra_methods(self):
+        import inspect
+        from functools import wraps
+
         for entry in self.__class__.extra_methods:
             func = None
             prop_name = None
@@ -57,13 +60,34 @@ class SimulatedDboardBase(DboardManagerBase):
                 func = entry[1]
                 prop_name = entry[0]
             else:
-                func = lambda *args: None
+                func = lambda **kwargs: None
                 prop_name = entry
 
-            # default values are needed because loop iterations don't create a new scope in python
-            def wrapped_func(*args, prop_name=prop_name, func=func):
-                self.log.debug("Called {} with args: {}".format(prop_name, args))
-                return func(*args)
+            # Get the signature of the actual function to preserve parameter names
+            try:
+                sig = inspect.signature(func)
+
+                # Create wrapper that preserves the original signature
+                @wraps(func)
+                def make_wrapper(f, name):
+                    def wrapper(*args, **kwargs):
+                        self.log.debug(
+                            "Called {} with args: {}, kwargs: {}".format(name, args, kwargs)
+                        )
+                        return f(*args, **kwargs)
+
+                    wrapper.__name__ = name
+                    wrapper.__signature__ = sig
+                    return wrapper
+
+                wrapped_func = make_wrapper(func, prop_name)
+            except (ValueError, TypeError):
+                # Fallback if signature inspection fails
+                def wrapped_func(**kwargs):
+                    self.log.debug("Called {} with kwargs: {}".format(prop_name, kwargs))
+                    return func(**kwargs)
+
+                wrapped_func.__name__ = prop_name
 
             setattr(self, prop_name, wrapped_func)
 
@@ -85,9 +109,9 @@ class SimulatedCatalinaDboard(SimulatedDboardBase):
     }
 
     extra_methods = [
-        ("set_gain", lambda target, gain: gain),
+        ("set_gain", lambda which, value: value),
         ("catalina_tune", lambda which, freq: freq),
-        ("set_bw_filter", lambda which, freq: freq),
+        ("set_bw_filter", lambda which, bw: bw),
         "set_dc_offset_auto",
         "set_iq_balance_auto",
         "set_agc",

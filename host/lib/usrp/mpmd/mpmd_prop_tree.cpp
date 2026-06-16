@@ -64,13 +64,12 @@ uhd::usrp::component_files_t _update_component(
     // call and just reload the fpga/dts by resetting the peripheral
     // manager.
     if (just_reload) {
-        mb->rpc->notify_with_token(MPMD_DEFAULT_INIT_TIMEOUT, "reset_timer_and_mgr");
+        mb->rpc->reset_timer_and_mgr();
         return all_comps_copy;
     }
 
     // Now call update component
-    mb->rpc->notify_with_token(
-        MPMD_DEFAULT_INIT_TIMEOUT, "update_component", all_metadata, all_data);
+    mb->rpc->update_component(all_metadata, all_data);
     return all_comps_copy;
 }
 
@@ -85,8 +84,7 @@ uhd::usrp::component_files_t _get_component_info(
     const std::string& comp_name, mpmd_mboard_impl* mb)
 {
     UHD_LOG_TRACE("MPMD", "Getting component info for " << comp_name);
-    const auto component_metadata = mb->rpc->request<std::map<std::string, std::string>>(
-        "get_component_info", comp_name);
+    const auto component_metadata = mb->rpc->get_component_info(comp_name);
     // Copy the contents of the component metadata into a object we can return
     uhd::usrp::component_file_t return_component;
     auto& return_metadata = return_component.metadata;
@@ -138,42 +136,31 @@ void mpmd_impl::init_property_tree(uhd::property_tree::sptr tree,
     /*** Clocking *******************************************************/
     tree->create<std::string>(mb_path / "clock_source/value")
         .add_coerced_subscriber([mb](const std::string& clock_source) {
-            mb->rpc->notify_with_token(
-                MPMD_DEFAULT_INIT_TIMEOUT, "set_clock_source", clock_source);
+            [[maybe_unused]] auto timeout_scope =
+                mb->rpc->set_scope_timeout(MPMD_DEFAULT_INIT_TIMEOUT);
+            mb->rpc->set_clock_source(clock_source);
         })
-        .set_publisher([mb]() {
-            return mb->rpc->request_with_token<std::string>("get_clock_source");
-        });
+        .set_publisher([mb]() { return mb->rpc->get_clock_source(); });
     tree->create<std::vector<std::string>>(mb_path / "clock_source/options")
-        .set_publisher([mb]() {
-            return mb->rpc->request_with_token<std::vector<std::string>>(
-                "get_clock_sources");
-        });
+        .set_publisher([mb]() { return mb->rpc->get_clock_sources(); });
     tree->create<std::string>(mb_path / "time_source/value")
         .add_coerced_subscriber([mb](const std::string& time_source) {
-            mb->rpc->notify_with_token(
-                MPMD_DEFAULT_INIT_TIMEOUT, "set_time_source", time_source);
+            [[maybe_unused]] auto timeout_scope =
+                mb->rpc->set_scope_timeout(MPMD_DEFAULT_INIT_TIMEOUT);
+            mb->rpc->set_time_source(time_source);
         })
-        .set_publisher([mb]() {
-            return mb->rpc->request_with_token<std::string>("get_time_source");
-        });
+        .set_publisher([mb]() { return mb->rpc->get_time_source(); });
     tree->create<std::vector<std::string>>(mb_path / "time_source/options")
-        .set_publisher([mb]() {
-            return mb->rpc->request_with_token<std::vector<std::string>>(
-                "get_time_sources");
-        });
+        .set_publisher([mb]() { return mb->rpc->get_time_sources(); });
 
     /*** Sensors ********************************************************/
-    auto sensor_list =
-        mb->rpc->request_with_token<std::vector<std::string>>("get_mb_sensors");
+    auto sensor_list = mb->rpc->get_mb_sensors();
     UHD_LOG_DEBUG(mb_log_id, "Found " << sensor_list.size() << " motherboard sensors.");
     for (const auto& sensor_name : sensor_list) {
         UHD_LOG_TRACE(mb_log_id, "Adding motherboard sensor `" << sensor_name << "'");
         tree->create<sensor_value_t>(mb_path / "sensors" / sensor_name)
             .set_publisher([mb, sensor_name]() {
-                auto sensor_val = sensor_value_t(
-                    mb->rpc->request_with_token<sensor_value_t::sensor_map_t>(
-                        MPMD_DEFAULT_INIT_TIMEOUT, "get_mb_sensor", sensor_name));
+                auto sensor_val = sensor_value_t(mb->rpc->get_mb_sensor(sensor_name));
                 return sensor_val;
             })
             .set_coercer([](const sensor_value_t&) {
@@ -190,13 +177,15 @@ void mpmd_impl::init_property_tree(uhd::property_tree::sptr tree,
                 eeprom_map[key] =
                     std::vector<uint8_t>(mb_eeprom[key].cbegin(), mb_eeprom[key].cend());
             }
-            mb->rpc->notify_with_token(
-                MPMD_DEFAULT_INIT_TIMEOUT, "set_mb_eeprom", eeprom_map);
+            std::map<std::string, std::string> eeprom_str_map;
+            for (const auto& kv : eeprom_map) {
+                eeprom_str_map[kv.first] =
+                    std::string(kv.second.begin(), kv.second.end());
+            }
+            mb->rpc->set_mb_eeprom(eeprom_str_map);
         })
         .set_publisher([mb]() {
-            auto mb_eeprom =
-                mb->rpc->request_with_token<std::map<std::string, std::string>>(
-                    "get_mb_eeprom");
+            auto mb_eeprom = mb->rpc->get_mb_eeprom();
             uhd::usrp::mboard_eeprom_t mb_eeprom_dict(
                 mb_eeprom.cbegin(), mb_eeprom.cend());
             return mb_eeprom_dict;
@@ -204,7 +193,7 @@ void mpmd_impl::init_property_tree(uhd::property_tree::sptr tree,
 
     /*** Updateable Components ******************************************/
     std::vector<std::string> updateable_components =
-        mb->rpc->request<std::vector<std::string>>("list_updateable_components");
+        mb->rpc->list_updateable_components();
     // TODO: Check the 'id' against the registered property
     UHD_LOG_DEBUG("MPMD",
         "Found " << updateable_components.size()

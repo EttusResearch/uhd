@@ -13,7 +13,7 @@
 #include <uhdlib/features/discoverable_feature_registry.hpp>
 #include <uhdlib/features/fpga_load_notification_iface.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
-#include <uhdlib/utils/rpc.hpp>
+#include <unordered_set>
 #include <map>
 #include <memory>
 
@@ -129,7 +129,7 @@ private:
 
     //! Helper for synchronize(): Dispatch the aggregate_sync_data() RPC call
     std::map<std::string, std::string> _aggregate_sync_info(
-        const std::list<std::map<std::string, std::string>>& collated_sync_args);
+        const std::vector<std::map<std::string, std::string>>& collated_sync_args);
 
 
     /**************************************************************************

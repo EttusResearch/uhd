@@ -17,9 +17,8 @@
 #include <uhd/usrp/zbx_tune_map_item.hpp>
 #include <uhdlib/rfnoc/rf_control/gain_profile_iface.hpp>
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
-#include <uhdlib/utils/rpc.hpp>
+#include <uhdlib/usrp/common/x400_rpc_iface.hpp>
 #include <cmath>
 #include <memory>
 
@@ -680,7 +679,6 @@ public:
         const uhd::fs_path fe_path,
         const uhd::direction_t trx,
         const size_t chan,
-        const std::string rpc_prefix,
         int db_idx,
         uhd::usrp::x400_rpc_iface::sptr rpcc)
         : uhd::experts::worker_node_t(fe_path / "zbx_rfdc_freq_expert")
@@ -690,7 +688,6 @@ public:
               db, fe_path / "los" / RFDC_NCO / "freq" / "value" / "coerced")
         , _if2_frequency_desired(db, fe_path / "if_freq" / "desired")
         , _if2_frequency_coerced(db, fe_path / "if_freq" / "coerced")
-        , _rpc_prefix(rpc_prefix)
         , _db_idx(db_idx)
         , _rpcc(rpcc)
         , _trx(trx)
@@ -719,7 +716,6 @@ private:
     uhd::experts::data_writer_t<double> _if2_frequency_coerced;
 
 
-    const std::string _rpc_prefix;
     const size_t _db_idx;
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
     const uhd::direction_t _trx;

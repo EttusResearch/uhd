@@ -165,7 +165,7 @@ void e3xx_radio_control_impl::set_channel_mode(const std::string& channel_mode)
     // MIMO for 2R2T mode for 2 channels
     // SISO_TX1 for 1R1T mode for 1 channel - TX1
     // SISO_TX0 for 1R1T mode for 1 channel - TX0
-    _rpcc->request_with_token<void>("set_channel_mode", channel_mode);
+    _rpcc->set_channel_mode(channel_mode);
 }
 
 double e3xx_radio_control_impl::set_rate(const double rate)
@@ -429,8 +429,7 @@ std::vector<std::string> e3xx_radio_control_impl::get_rx_sensor_names(const size
 uhd::sensor_value_t e3xx_radio_control_impl::get_rx_sensor(
     const std::string& sensor_name, const size_t chan)
 {
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "RX", sensor_name, chan));
+    return sensor_value_t(db_rpc().get_sensor("RX", sensor_name, chan));
 }
 
 std::vector<std::string> e3xx_radio_control_impl::get_tx_sensor_names(const size_t) const
@@ -441,8 +440,7 @@ std::vector<std::string> e3xx_radio_control_impl::get_tx_sensor_names(const size
 uhd::sensor_value_t e3xx_radio_control_impl::get_tx_sensor(
     const std::string& sensor_name, const size_t chan)
 {
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "TX", sensor_name, chan));
+    return sensor_value_t(db_rpc().get_sensor("TX", sensor_name, chan));
 }
 
 /*  loopback_self_test checks the integrity of the FPGA->AD936x->FPGA sample interface.
@@ -580,12 +578,12 @@ void e3xx_radio_control_impl::_set_atr_bits(const size_t chan)
 
 void e3xx_radio_control_impl::set_db_eeprom(const eeprom_map_t& db_eeprom)
 {
-    _rpcc->notify_with_token("set_db_eeprom", 0, db_eeprom);
+    _rpcc->set_db_eeprom(0, db_eeprom);
 }
 
 eeprom_map_t e3xx_radio_control_impl::get_db_eeprom()
 {
-    return _rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", 0);
+    return _rpcc->get_db_eeprom(0);
 }
 
 /**************************************************************************

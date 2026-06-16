@@ -1,0 +1,2231 @@
+syntax = "proto3";
+
+package mpm_server;
+
+// MPM Server service definition
+service MpmServerService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc Claim(ClaimRequest) returns (ClaimResponse);
+  rpc Reclaim(ReclaimRequest) returns (ReclaimResponse);
+  rpc Unclaim(UnclaimRequest) returns (UnclaimResponse);
+  rpc GetMpmCompatNumber(GetMpmCompatNumberRequest) returns (GetMpmCompatNumberResponse);
+  rpc ListMethods(ListMethodsRequest) returns (ListMethodsResponse);
+
+  rpc Init(InitRequest) returns (InitResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc ResetTimerAndMgr(ResetTimerAndMgrRequest) returns (ResetTimerAndMgrResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc UpdateComponent(UpdateComponentRequest) returns (UpdateComponentResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc ListUpdateableComponents(ListUpdateableComponentsRequest) returns (ListUpdateableComponentsResponse);
+  rpc GetComponentInfo(GetComponentInfoRequest) returns (GetComponentInfoResponse);
+  rpc GetLogBuf(GetLogBufRequest) returns (GetLogBufResponse);
+  rpc GetDeviceInfo(GetDeviceInfoRequest) returns (GetDeviceInfoResponse); // timeout=MPMD_SHORT_RPC_TIMEOUT  (2000ms)
+  rpc GetDboardInfo(GetDboardInfoRequest) returns (GetDboardInfoResponse);
+  rpc GetInitStatus(GetInitStatusRequest) returns (GetInitStatusResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc GetDeviceId(GetDeviceIdRequest) returns (GetDeviceIdResponse);
+  rpc SetDeviceId(SetDeviceIdRequest) returns (SetDeviceIdResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc SupportsFeature(SupportsFeatureRequest) returns (SupportsFeatureResponse);
+  rpc ListActiveOverlays(ListActiveOverlaysRequest) returns (ListActiveOverlaysResponse);
+  rpc ListAvailableOverlays(ListAvailableOverlaysRequest) returns (ListAvailableOverlaysResponse);
+  rpc ListRequiredDtOverlays(ListRequiredDtOverlaysRequest) returns (ListRequiredDtOverlaysResponse);
+  rpc OverlayApply(OverlayApplyRequest) returns (OverlayApplyResponse);
+  rpc Deinit(DeinitRequest) returns (DeinitResponse);
+  rpc TearDown(TearDownRequest) returns (TearDownResponse);
+  rpc InitDboards(InitDboardsRequest) returns (InitDboardsResponse);
+  rpc GetDeviceInfoDyn(GetDeviceInfoDynRequest) returns (GetDeviceInfoDynResponse);
+  rpc GetPostResetArgs(GetPostResetArgsRequest) returns (GetPostResetArgsResponse);
+  rpc GenerateDeviceInfo(GenerateDeviceInfoRequest) returns (GenerateDeviceInfoResponse);
+
+  rpc GetNumTimekeepers(GetNumTimekeepersRequest) returns (GetNumTimekeepersResponse);
+  rpc SetTickPeriod(SetTickPeriodRequest) returns (SetTickPeriodResponse);
+  rpc GetTimekeeperTime(GetTimekeeperTimeRequest) returns (GetTimekeeperTimeResponse);
+  rpc SetTimekeeperTime(SetTimekeeperTimeRequest) returns (SetTimekeeperTimeResponse);
+  rpc SetTimeSource(SetTimeSourceRequest) returns (SetTimeSourceResponse); // timeout=MPMD_DEFAULT_LONG_TIMEOUT
+  rpc GetTimeSource(GetTimeSourceRequest) returns (GetTimeSourceResponse);
+  rpc GetTimeSources(GetTimeSourcesRequest) returns (GetTimeSourcesResponse);
+  rpc SetClockSource(SetClockSourceRequest) returns (SetClockSourceResponse); // timeout=MPMD_DEFAULT_LONG_TIMEOUT
+  rpc GetClockSource(GetClockSourceRequest) returns (GetClockSourceResponse);
+  rpc GetClockSources(GetClockSourcesRequest) returns (GetClockSourcesResponse);
+  rpc SetSyncSource(SetSyncSourceRequest) returns (SetSyncSourceResponse); // timeout=MPMD_DEFAULT_LONG_TIMEOUT
+  rpc GetSyncSource(GetSyncSourceRequest) returns (GetSyncSourceResponse);
+  rpc GetSyncSources(GetSyncSourcesRequest) returns (GetSyncSourcesResponse);
+  rpc SetClockSourceOut(SetClockSourceOutRequest) returns (SetClockSourceOutResponse);
+  rpc SetTriggerIo(SetTriggerIoRequest) returns (SetTriggerIoResponse);
+  rpc GetClocks(GetClocksRequest) returns (GetClocksResponse);
+  rpc Synchronize(SynchronizeRequest) returns (SynchronizeResponse);
+  rpc AggregateSyncData(AggregateSyncDataRequest) returns (AggregateSyncDataResponse);
+  rpc SetRefClkTuningWord(SetRefClkTuningWordRequest) returns (SetRefClkTuningWordResponse);
+  rpc GetRefClkTuningWord(GetRefClkTuningWordRequest) returns (GetRefClkTuningWordResponse);
+  rpc StoreRefClkTuningWord(StoreRefClkTuningWordRequest) returns (StoreRefClkTuningWordResponse);
+
+  rpc GetMbSensors(GetMbSensorsRequest) returns (GetMbSensorsResponse);
+  rpc GetMbSensor(GetMbSensorRequest) returns (GetMbSensorResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc GetRefLockSensor(GetRefLockSensorRequest) returns (GetRefLockSensorResponse);
+  rpc GetGpsLockedSensor(GetGpsLockedSensorRequest) returns (GetGpsLockedSensorResponse);
+  rpc GetFanSensor(GetFanSensorRequest) returns (GetFanSensorResponse);
+  rpc GetTempSensor(GetTempSensorRequest) returns (GetTempSensorResponse);
+  rpc GetFpgaTempSensor(GetFpgaTempSensorRequest) returns (GetFpgaTempSensorResponse);
+  rpc GetInternalTempSensor(GetInternalTempSensorRequest) returns (GetInternalTempSensorResponse);
+  rpc GetRfChannelATempSensor(GetRfChannelATempSensorRequest) returns (GetRfChannelATempSensorResponse);
+  rpc GetRfChannelBTempSensor(GetRfChannelBTempSensorRequest) returns (GetRfChannelBTempSensorResponse);
+  rpc GetMainPowerTempSensor(GetMainPowerTempSensorRequest) returns (GetMainPowerTempSensorResponse);
+  rpc GetGpsTimeSensor(GetGpsTimeSensorRequest) returns (GetGpsTimeSensorResponse);
+  rpc GetGpsTpvSensor(GetGpsTpvSensorRequest) returns (GetGpsTpvSensorResponse);
+  rpc GetGpsSkySensor(GetGpsSkySensorRequest) returns (GetGpsSkySensorResponse);
+  rpc GetGpsGpggaSensor(GetGpsGpggaSensorRequest) returns (GetGpsGpggaSensorResponse);
+
+  rpc EnableFpGpio(EnableFpGpioRequest) returns (EnableFpGpioResponse);
+  rpc EnableGps(EnableGpsRequest) returns (EnableGpsResponse);
+  rpc SetFpGpioVoltage(SetFpGpioVoltageRequest) returns (SetFpGpioVoltageResponse);
+  rpc GetFpGpioVoltage(GetFpGpioVoltageRequest) returns (GetFpGpioVoltageResponse);
+  rpc GetRefClockFreq(GetRefClockFreqRequest) returns (GetRefClockFreqResponse);
+  rpc SetRefClockFreq(SetRefClockFreqRequest) returns (SetRefClockFreqResponse);
+
+  rpc GetGpioBanks(GetGpioBanksRequest) returns (GetGpioBanksResponse);
+  rpc GetGpioSrcs(GetGpioSrcsRequest) returns (GetGpioSrcsResponse);
+  rpc GetGpioSrc(GetGpioSrcRequest) returns (GetGpioSrcResponse);
+  rpc SetGpioSrc(SetGpioSrcRequest) returns (SetGpioSrcResponse);
+
+  rpc GetMbEeprom(GetMbEepromRequest) returns (GetMbEepromResponse);
+  rpc SetMbEeprom(SetMbEepromRequest) returns (SetMbEepromResponse); // timeout=MPMD_DEFAULT_INIT_TIMEOUT
+  rpc GetDbEeprom(GetDbEepromRequest) returns (GetDbEepromResponse);
+  rpc SetDbEeprom(SetDbEepromRequest) returns (SetDbEepromResponse);
+
+  rpc GetProtoVer(GetProtoVerRequest) returns (GetProtoVerResponse);
+  rpc GetChdrWidth(GetChdrWidthRequest) returns (GetChdrWidthResponse);
+  rpc GetChdrLinkTypes(GetChdrLinkTypesRequest) returns (GetChdrLinkTypesResponse);
+  rpc GetChdrLinkOptions(GetChdrLinkOptionsRequest) returns (GetChdrLinkOptionsResponse);
+  rpc GetChdrXportAdapters(GetChdrXportAdaptersRequest) returns (GetChdrXportAdaptersResponse);
+  rpc AddRemoteChdrRoute(AddRemoteChdrRouteRequest) returns (AddRemoteChdrRouteResponse);
+
+  rpc PopHostTasks(PopHostTasksRequest) returns (PopHostTasksResponse);
+
+  rpc SetChannelMode(SetChannelModeRequest) returns (SetChannelModeResponse);
+  rpc GetSensors(GetSensorsRequest) returns (GetSensorsResponse);
+  rpc GetSensor(GetSensorRequest) returns (GetSensorResponse);
+  rpc GetMasterClockRate(GetMasterClockRateRequest) returns (GetMasterClockRateResponse);
+  rpc SetBwFilter(SetBwFilterRequest) returns (SetBwFilterResponse);
+  rpc SetGain(SetGainRequest) returns (SetGainResponse);
+  rpc SetAgc(SetAgcRequest) returns (SetAgcResponse);
+  rpc SetAgcMode(SetAgcModeRequest) returns (SetAgcModeResponse);
+  rpc SetCatalinaClockRate(SetCatalinaClockRateRequest) returns (SetCatalinaClockRateResponse);
+  rpc SetActiveChains(SetActiveChainsRequest) returns (SetActiveChainsResponse);
+  rpc CatalinaTune(CatalinaTuneRequest) returns (CatalinaTuneResponse);
+  rpc SetDcOffsetAuto(SetDcOffsetAutoRequest) returns (SetDcOffsetAutoResponse);
+  rpc SetTimingMode(SetTimingModeRequest) returns (SetTimingModeResponse);
+  rpc SetIqBalanceAuto(SetIqBalanceAutoRequest) returns (SetIqBalanceAutoResponse);
+  rpc GetFreq(GetFreqRequest) returns (GetFreqResponse);
+  rpc DataPortLoopback(DataPortLoopbackRequest) returns (DataPortLoopbackResponse);
+  rpc GetRssi(GetRssiRequest) returns (GetRssiResponse);
+  rpc GetTemperature(GetTemperatureRequest) returns (GetTemperatureResponse);
+  rpc GetFilterNames(GetFilterNamesRequest) returns (GetFilterNamesResponse);
+  rpc OutputDigitalTestTone(OutputDigitalTestToneRequest) returns (OutputDigitalTestToneResponse);
+  rpc GetRevision(GetRevisionRequest) returns (GetRevisionResponse);
+  rpc GetRevisionString(GetRevisionStringRequest) returns (GetRevisionStringResponse);
+  rpc GetSerial(GetSerialRequest) returns (GetSerialResponse);
+  rpc GetAd9361LoLock(GetAd9361LoLockRequest) returns (GetAd9361LoLockResponse);
+  rpc GetLoLockSensor(GetLoLockSensorRequest) returns (GetLoLockSensorResponse);
+  rpc GetRxLoLockSensor(GetRxLoLockSensorRequest) returns (GetRxLoLockSensorResponse);
+  rpc GetTxLoLockSensor(GetTxLoLockSensorRequest) returns (GetTxLoLockSensorResponse);
+  rpc GetCatalinaTempSensor(GetCatalinaTempSensorRequest) returns (GetCatalinaTempSensorResponse);
+  rpc GetRssiVal(GetRssiValRequest) returns (GetRssiValResponse);
+  rpc GetRssiSensor(GetRssiSensorRequest) returns (GetRssiSensorResponse);
+  rpc GetGainNames(GetGainNamesRequest) returns (GetGainNamesResponse);
+  rpc GetRfFreqRange(GetRfFreqRangeRequest) returns (GetRfFreqRangeResponse);
+  rpc GetBwFilterRange(GetBwFilterRangeRequest) returns (GetBwFilterRangeResponse);
+  rpc GetClockRateRange(GetClockRateRangeRequest) returns (GetClockRateRangeResponse);
+  rpc SetClockRate(SetClockRateRequest) returns (SetClockRateResponse);
+  rpc Tune(TuneRequest) returns (TuneResponse);
+  rpc SetDcOffset(SetDcOffsetRequest) returns (SetDcOffsetResponse);
+  rpc SetIqBalance(SetIqBalanceRequest) returns (SetIqBalanceResponse);
+  rpc SetFilter(SetFilterRequest) returns (SetFilterResponse);
+  rpc GetUserEepromData(GetUserEepromDataRequest) returns (GetUserEepromDataResponse);
+  rpc SetUserEepromData(SetUserEepromDataRequest) returns (SetUserEepromDataResponse);
+  rpc UpdateRefClockFreq(UpdateRefClockFreqRequest) returns (UpdateRefClockFreqResponse);
+  rpc InitRfic(InitRficRequest) returns (InitRficResponse);
+  rpc TearDownRfic(TearDownRficRequest) returns (TearDownRficResponse);
+  rpc ResetClock(ResetClockRequest) returns (ResetClockResponse);
+
+  rpc SetFreq(SetFreqRequest) returns (SetFreqResponse);
+  rpc GetGain(GetGainRequest) returns (GetGainResponse);
+  rpc GetBandwidth(GetBandwidthRequest) returns (GetBandwidthResponse);
+  rpc SetBandwidth(SetBandwidthRequest) returns (SetBandwidthResponse);
+  rpc SetLoSource(SetLoSourceRequest) returns (SetLoSourceResponse);
+  rpc GetLoSource(GetLoSourceRequest) returns (GetLoSourceResponse);
+  rpc SetFir(SetFirRequest) returns (SetFirResponse);
+  rpc GetFir(GetFirRequest) returns (GetFirResponse);
+  rpc GetAd9371LoLock(GetAd9371LoLockRequest) returns (GetAd9371LoLockResponse);
+  rpc GetLowbandLoLock(GetLowbandLoLockRequest) returns (GetLowbandLoLockResponse);
+  rpc EnableRxLowbandLo(EnableRxLowbandLoRequest) returns (EnableRxLowbandLoResponse);
+  rpc EnableTxLowbandLo(EnableTxLowbandLoRequest) returns (EnableTxLowbandLoResponse);
+  rpc SetMasterClockRate(SetMasterClockRateRequest) returns (SetMasterClockRateResponse);
+
+  rpc IsLoDistPresent(IsLoDistPresentRequest) returns (IsLoDistPresentResponse);
+  rpc EnableLoExport(EnableLoExportRequest) returns (EnableLoExportResponse);
+  rpc EnableLoOutput(EnableLoOutputRequest) returns (EnableLoOutputResponse);
+
+  rpc DioGetSupportedVoltageLevels(DioGetSupportedVoltageLevelsRequest) returns (DioGetSupportedVoltageLevelsResponse);
+  rpc DioSetVoltageLevel(DioSetVoltageLevelRequest) returns (DioSetVoltageLevelResponse);
+  rpc DioGetVoltageLevel(DioGetVoltageLevelRequest) returns (DioGetVoltageLevelResponse);
+  rpc DioSetExternalPower(DioSetExternalPowerRequest) returns (DioSetExternalPowerResponse);
+  rpc DioGetExternalPowerState(DioGetExternalPowerStateRequest) returns (DioGetExternalPowerStateResponse);
+
+  rpc DioSetPortMapping(DioSetPortMappingRequest) returns (DioSetPortMappingResponse);
+  rpc DioSetPinDirections(DioSetPinDirectionsRequest) returns (DioSetPinDirectionsResponse);
+  rpc SetDacMuxData(SetDacMuxDataRequest) returns (SetDacMuxDataResponse);
+  rpc SetDacMuxEnable(SetDacMuxEnableRequest) returns (SetDacMuxEnableResponse);
+  rpc SetupThreshold(SetupThresholdRequest) returns (SetupThresholdResponse);
+  rpc SetCalibrationMode(SetCalibrationModeRequest) returns (SetCalibrationModeResponse);
+  rpc GetCalFrozen(GetCalFrozenRequest) returns (GetCalFrozenResponse);
+  rpc SetCalFrozen(SetCalFrozenRequest) returns (SetCalFrozenResponse);
+  rpc RfdcSetNcoFreq(RfdcSetNcoFreqRequest) returns (RfdcSetNcoFreqResponse);
+  rpc RfdcGetNcoFreq(RfdcGetNcoFreqRequest) returns (RfdcGetNcoFreqResponse);
+  rpc SetLeds(SetLedsRequest) returns (SetLedsResponse);
+  rpc EnableIqSwap(EnableIqSwapRequest) returns (EnableIqSwapResponse);
+  rpc GetDboardSampleRate(GetDboardSampleRateRequest) returns (GetDboardSampleRateResponse);
+  rpc GetDboardPrcRate(GetDboardPrcRateRequest) returns (GetDboardPrcRateResponse);
+  rpc IsDbGpioIfcPresent(IsDbGpioIfcPresentRequest) returns (IsDbGpioIfcPresentResponse);
+  rpc GetThresholdStatus(GetThresholdStatusRequest) returns (GetThresholdStatusResponse);
+  rpc ConfigTxPath(ConfigTxPathRequest) returns (ConfigTxPathResponse);
+  rpc GetTxPath(GetTxPathRequest) returns (GetTxPathResponse);
+  rpc ConfigRxPath(ConfigRxPathRequest) returns (ConfigRxPathResponse);
+  rpc GetRxPath(GetRxPathRequest) returns (GetRxPathResponse);
+  rpc SetDataPath(SetDataPathRequest) returns (SetDataPathResponse);
+  rpc GetCalCoefs(GetCalCoefsRequest) returns (GetCalCoefsResponse);
+  rpc SetCalCoefs(SetCalCoefsRequest) returns (SetCalCoefsResponse);
+
+  rpc GetFpgaAuxRefFreq(GetFpgaAuxRefFreqRequest) returns (GetFpgaAuxRefFreqResponse);
+  rpc NsyncChangeInputSource(NsyncChangeInputSourceRequest) returns (NsyncChangeInputSourceResponse);
+  rpc EnableEcpriClocks(EnableEcpriClocksRequest) returns (EnableEcpriClocksResponse);
+  rpc ConfigRpllToNsync(ConfigRpllToNsyncRequest) returns (ConfigRpllToNsyncResponse);
+  rpc PeekClkaux(PeekClkauxRequest) returns (PeekClkauxResponse);
+  rpc ClkauxGetNsyncStatus0(ClkauxGetNsyncStatus0Request) returns (ClkauxGetNsyncStatus0Response);
+  rpc ClkauxGetNsyncStatus1(ClkauxGetNsyncStatus1Request) returns (ClkauxGetNsyncStatus1Response);
+  rpc DioSetGpioSrc(DioSetGpioSrcRequest) returns (DioSetGpioSrcResponse);
+  rpc DioSetPinOutputs(DioSetPinOutputsRequest) returns (DioSetPinOutputsResponse);
+  rpc DioGetPinInputs(DioGetPinInputsRequest) returns (DioGetPinInputsResponse);
+  rpc DioStatus(DioStatusRequest) returns (DioStatusResponse);
+  rpc PokeDb(PokeDbRequest) returns (PokeDbResponse);
+  rpc PeekDb(PeekDbRequest) returns (PeekDbResponse);
+  rpc PokeClkaux(PokeClkauxRequest) returns (PokeClkauxResponse);
+  rpc PeekCtrlport(PeekCtrlportRequest) returns (PeekCtrlportResponse);
+  rpc PokeCtrlport(PokeCtrlportRequest) returns (PokeCtrlportResponse);
+  rpc PeekCpld(PeekCpldRequest) returns (PeekCpldResponse);
+  rpc PokeCpld(PokeCpldRequest) returns (PokeCpldResponse);
+  rpc PeekMb(PeekMbRequest) returns (PeekMbResponse);
+  rpc PokeMb(PokeMbRequest) returns (PokeMbResponse);
+  rpc PeekRfdc(PeekRfdcRequest) returns (PeekRfdcResponse);
+  rpc PokeRfdc(PokeRfdcRequest) returns (PokeRfdcResponse);
+}
+
+// ==============================================================================
+// Common/Reusable Message Types
+// ==============================================================================
+
+// A reusable string-to-string map wrapper (same as in rpc.proto)
+message StringMap {
+  map<string, string> data = 1;
+}
+
+// A reusable string-to-bytes map wrapper for EEPROM data
+message BytesMap {
+  map<string, bytes> data = 1;
+}
+
+// Sensor value map wrapper
+message SensorValueMap {
+  map<string, string> data = 1;
+}
+
+// Empty response for void functions
+message EmptyResponse {}
+
+// ==============================================================================
+// Core Session & Device Management Messages
+// ==============================================================================
+
+message PingRequest {
+    string data = 1;
+}
+
+message PingResponse {
+    string data = 1;
+}
+
+// Claim
+message ClaimRequest {
+    string session_id = 1;
+}
+
+message ClaimResponse {
+    string token = 1;
+}
+
+// Reclaim
+message ReclaimRequest {
+    string token = 1;
+}
+
+message ReclaimResponse {
+    bool success = 1;
+}
+
+// Unclaim
+message UnclaimRequest {
+    string token = 1;
+}
+
+message UnclaimResponse {
+    bool success = 1;
+}
+
+// GetMpmCompatNumber
+message GetMpmCompatNumberRequest {}
+
+message GetMpmCompatNumberResponse {
+    repeated uint32 compat_num = 1;
+}
+
+// ListMethods
+message ListMethodsRequest {}
+
+message MethodInfo {
+  string method_name = 1;
+  string docstring = 2;
+  bool requires_claim = 3;
+}
+
+message ListMethodsResponse {
+  repeated MethodInfo methods = 1;
+}
+
+// ==============================================================================
+// Device Initialization & Configuration Messages
+// ==============================================================================
+
+// Init
+message InitRequest {
+  string token = 1;
+  StringMap args = 2;
+}
+
+message InitResponse {
+  bool success = 1;
+}
+
+// ResetTimerAndMgr
+message ResetTimerAndMgrRequest {
+  string token = 1;
+}
+
+message ResetTimerAndMgrResponse {}
+
+// UpdateComponent
+message UpdateComponentRequest {
+  string token = 1;
+  repeated StringMap file_metadata_l = 2;
+  repeated bytes data_l = 3;
+}
+
+message UpdateComponentResponse {
+  bool success = 1;
+}
+
+// ListUpdateableComponents
+message ListUpdateableComponentsRequest {
+}
+
+message ListUpdateableComponentsResponse {
+  repeated string components = 1;
+}
+
+// GetComponentInfo
+message GetComponentInfoRequest {
+  string component_name = 1;
+}
+
+message GetComponentInfoResponse {
+  StringMap metadata = 1;
+}
+
+message GetLogBufRequest {
+    string token = 1;
+}
+
+message GetLogBufResponse {
+    repeated StringMap log_bufs = 1;
+}
+
+message GetDeviceInfoRequest {}
+
+message GetDeviceInfoResponse {
+    StringMap dev_info = 1;
+}
+
+message GetDboardInfoRequest {}
+
+message GetDboardInfoResponse {
+    repeated StringMap dboard_info = 1;
+}
+
+// GetInitStatus
+message GetInitStatusRequest {
+  string token = 1;
+}
+
+message GetInitStatusResponse {
+  repeated string init_status = 1;
+}
+
+// GetDeviceId
+message GetDeviceIdRequest {
+  string token = 1;
+}
+
+message GetDeviceIdResponse {
+  uint32 device_id = 1;
+}
+
+// SetDeviceId
+message SetDeviceIdRequest {
+  string token = 1;
+  uint32 device_id = 2;
+}
+
+message SetDeviceIdResponse {}
+
+// SupportsFeature
+message SupportsFeatureRequest {
+  string token = 1;
+  string query = 2;
+}
+
+message SupportsFeatureResponse {
+  bool supported = 1;
+}
+
+// ==============================================================================
+// Timing & Synchronization Messages
+// ==============================================================================
+
+// GetNumTimekeepers
+message GetNumTimekeepersRequest {
+  string token = 1;
+}
+
+message GetNumTimekeepersResponse {
+  uint32 count = 1;
+}
+
+// SetTickPeriod
+message SetTickPeriodRequest {
+  string token = 1;
+  uint32 tk_idx = 2;
+  uint64 period_ns = 3;
+}
+
+message SetTickPeriodResponse {}
+
+// GetTimekeeperTime
+message GetTimekeeperTimeRequest {
+  string token = 1;
+  uint32 tk_idx = 2;
+  bool last_pps = 3;
+}
+
+message GetTimekeeperTimeResponse {
+  uint64 time = 1;
+}
+
+// SetTimekeeperTime
+message SetTimekeeperTimeRequest {
+  string token = 1;
+  uint32 tk_idx = 2;
+  uint64 ticks = 3;
+  bool next_pps = 4;
+}
+
+message SetTimekeeperTimeResponse {}
+
+// SetTimeSource
+message SetTimeSourceRequest {
+  string token = 1;
+  string time_source = 2;
+}
+
+message SetTimeSourceResponse {}
+
+// GetTimeSource
+message GetTimeSourceRequest {
+  string token = 1;
+}
+
+message GetTimeSourceResponse {
+  string source = 1;
+}
+
+// GetTimeSources
+message GetTimeSourcesRequest {
+  string token = 1;
+}
+
+message GetTimeSourcesResponse {
+  repeated string sources = 1;
+}
+
+// SetClockSource
+message SetClockSourceRequest {
+  string token = 1;
+  string source = 2;
+}
+
+message SetClockSourceResponse {}
+
+// GetClockSource
+message GetClockSourceRequest {
+  string token = 1;
+}
+
+message GetClockSourceResponse {
+  string source = 1;
+}
+
+// GetClockSources
+message GetClockSourcesRequest {
+  string token = 1;
+}
+
+message GetClockSourcesResponse {
+  repeated string sources = 1;
+}
+
+// SetSyncSource
+message SetSyncSourceRequest {
+  string token = 1;
+  StringMap sync_args = 2;
+}
+
+message SetSyncSourceResponse {}
+
+// GetSyncSource
+message GetSyncSourceRequest {
+  string token = 1;
+}
+
+message GetSyncSourceResponse {
+  StringMap source = 1;
+}
+
+// GetSyncSources
+message GetSyncSourcesRequest {
+  string token = 1;
+}
+
+message GetSyncSourcesResponse {
+  repeated StringMap sources = 1;
+}
+
+// SetClockSourceOut
+message SetClockSourceOutRequest {
+  string token = 1;
+  bool enable = 2;
+}
+
+message SetClockSourceOutResponse {}
+
+// SetTriggerIo
+message SetTriggerIoRequest {
+  string token = 1;
+  string direction = 2;
+}
+
+message SetTriggerIoResponse {}
+
+// GetClocks
+message GetClocksRequest {
+  string token = 1;
+}
+
+message GetClocksResponse {
+  repeated StringMap clocks = 1;
+}
+
+// Synchronize
+message SynchronizeRequest {
+  string token = 1;
+  StringMap sync_args = 2;
+  bool finalize = 3;
+}
+
+message SynchronizeResponse {
+  StringMap result = 1;
+}
+
+// AggregateSyncData
+message AggregateSyncDataRequest {
+  string token = 1;
+  repeated StringMap collated_sync_data = 2;
+}
+
+message AggregateSyncDataResponse {
+  StringMap result = 1;
+}
+
+// SetRefClkTuningWord
+message SetRefClkTuningWordRequest {
+  string token = 1;
+  uint32 tuning_word = 2;
+}
+
+message SetRefClkTuningWordResponse {}
+
+// GetRefClkTuningWord
+message GetRefClkTuningWordRequest {
+  string token = 1;
+}
+
+message GetRefClkTuningWordResponse {
+  uint32 tuning_word = 1;
+}
+
+// StoreRefClkTuningWord
+message StoreRefClkTuningWordRequest {
+  string token = 1;
+  uint32 tuning_word = 2;
+}
+
+message StoreRefClkTuningWordResponse {}
+
+// ==============================================================================
+// Sensor Messages
+// ==============================================================================
+
+// GetMbSensors
+message GetMbSensorsRequest {
+  string token = 1;
+}
+
+message GetMbSensorsResponse {
+  repeated string sensors = 1;
+}
+
+// GetMbSensor
+message GetMbSensorRequest {
+  string token = 1;
+  string sensor_name = 2;
+}
+
+message GetMbSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// ==============================================================================
+// GPIO & Digital I/O Messages
+// ==============================================================================
+
+// GetGpioBanks
+message GetGpioBanksRequest {
+  string token = 1;
+}
+
+message GetGpioBanksResponse {
+  repeated string banks = 1;
+}
+
+// GetGpioSrcs
+message GetGpioSrcsRequest {
+  string token = 1;
+  string bank = 2;
+}
+
+message GetGpioSrcsResponse {
+  repeated string sources = 1;
+}
+
+// GetGpioSrc
+message GetGpioSrcRequest {
+  string token = 1;
+  string bank = 2;
+}
+
+message GetGpioSrcResponse {
+  repeated string sources = 1;
+}
+
+// SetGpioSrc
+message SetGpioSrcRequest {
+  string token = 1;
+  string bank = 2;
+  repeated string src = 3;
+}
+
+message SetGpioSrcResponse {}
+
+// ==============================================================================
+// EEPROM Management Messages
+// ==============================================================================
+
+// GetMbEeprom
+message GetMbEepromRequest {
+  string token = 1;
+}
+
+message GetMbEepromResponse {
+  StringMap eeprom_data = 1;
+}
+
+// SetMbEeprom
+message SetMbEepromRequest {
+  string token = 1;
+  StringMap eeprom_vals = 2;
+}
+
+message SetMbEepromResponse {}
+
+// GetDbEeprom
+message GetDbEepromRequest {
+  string token = 1;
+  uint32 dboard_idx = 2;
+}
+
+message GetDbEepromResponse {
+  BytesMap eeprom_data = 1;
+}
+
+// SetDbEeprom
+message SetDbEepromRequest {
+  string token = 1;
+  uint32 dboard_idx = 2;
+  BytesMap eeprom_data = 3;
+}
+
+message SetDbEepromResponse {}
+
+// ==============================================================================
+// Network Transport (CHDR) Messages
+// ==============================================================================
+
+// GetProtoVer
+message GetProtoVerRequest {
+}
+
+message GetProtoVerResponse {
+  uint32 result = 1;
+}
+
+// GetChdrWidth
+message GetChdrWidthRequest {
+}
+
+message GetChdrWidthResponse {
+  uint32 result = 1;
+}
+
+// GetChdrLinkTypes
+message GetChdrLinkTypesRequest {
+  string token = 1;
+}
+
+message GetChdrLinkTypesResponse {
+  repeated string link_types = 1;
+}
+
+// GetChdrLinkOptions
+message GetChdrLinkOptionsRequest {
+  string token = 1;
+  string xport_type = 2;
+}
+
+message GetChdrLinkOptionsResponse {
+  repeated StringMap options = 1;
+}
+
+// GetChdrXportAdapters
+message GetChdrXportAdaptersRequest {
+  string token = 1;
+}
+
+message GetChdrXportAdaptersResponse {
+  StringMap adapters = 1;
+}
+
+// AddRemoteChdrRoute
+message AddRemoteChdrRouteRequest {
+  string token = 1;
+  string adapter = 2;
+  uint32 epid = 3;
+  StringMap route_args = 4;
+}
+
+message AddRemoteChdrRouteResponse {
+  bool success = 1;
+}
+
+// ==============================================================================
+// Host Task Management Messages
+// ==============================================================================
+
+// PopHostTasks
+message PopHostTasksRequest {
+  string token = 1;
+  string task = 2;
+}
+
+message PopHostTasksResponse {
+  repeated StringMap tasks = 1;
+}
+
+// ==============================================================================
+// Daughterboard Messages: E3XX (AD9361)
+// ==============================================================================
+
+// SetChannelMode (E3XX)
+message SetChannelModeRequest {
+  string token = 1;
+  string channel_mode = 2;
+}
+
+message SetChannelModeResponse {}
+
+// GetSensors (daughterboard)
+message GetSensorsRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;  // "RX" or "TX"
+}
+
+message GetSensorsResponse {
+  repeated string sensors = 1;
+}
+
+// GetSensor (daughterboard)
+message GetSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;  // "RX" or "TX"
+  string sensor_name = 4;
+  uint32 chan = 5;
+}
+
+message GetSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetMasterClockRate (daughterboard)
+message GetMasterClockRateRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetMasterClockRateResponse {
+  double clock_rate = 1;
+}
+
+// SetBwFilter
+message SetBwFilterRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double bw = 4;
+}
+
+message SetBwFilterResponse {
+  double actual_bw = 1;
+}
+
+// SetGain
+message SetGainRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double value = 4;
+}
+
+message SetGainResponse {
+  double actual_gain = 1;
+}
+
+// SetAgc
+message SetAgcRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  bool enable = 4;
+}
+
+message SetAgcResponse {}
+
+// SetAgcMode
+message SetAgcModeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  string mode = 4;
+}
+
+message SetAgcModeResponse {}
+
+// SetCatalinaClockRate
+message SetCatalinaClockRateRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  double rate = 3;
+}
+
+message SetCatalinaClockRateResponse {
+  double actual_rate = 1;
+}
+
+// SetActiveChains
+message SetActiveChainsRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  bool tx1 = 3;
+  bool tx2 = 4;
+  bool rx1 = 5;
+  bool rx2 = 6;
+}
+
+message SetActiveChainsResponse {}
+
+// CatalinaTune
+message CatalinaTuneRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double freq = 4;
+}
+
+message CatalinaTuneResponse {
+  double actual_freq = 1;
+}
+
+// SetDcOffsetAuto
+message SetDcOffsetAutoRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  bool on = 4;
+}
+
+message SetDcOffsetAutoResponse {}
+
+// SetTimingMode
+message SetTimingModeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string timing_mode = 3;
+}
+
+message SetTimingModeResponse {}
+
+// SetIqBalanceAuto
+message SetIqBalanceAutoRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  bool on = 4;
+}
+
+message SetIqBalanceAutoResponse {}
+
+// GetFreq
+message GetFreqRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetFreqResponse {
+  double freq = 1;
+}
+
+// DataPortLoopback
+message DataPortLoopbackRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  bool on = 3;
+}
+
+message DataPortLoopbackResponse {}
+
+// GetRssi
+message GetRssiRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetRssiResponse {
+  SensorValueMap rssi = 1;
+}
+
+// GetTemperature
+message GetTemperatureRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetTemperatureResponse {
+  SensorValueMap temperature = 1;
+}
+
+// GetFilterNames
+message GetFilterNamesRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetFilterNamesResponse {
+  repeated string filter_names = 1;
+}
+
+// OutputDigitalTestTone
+message OutputDigitalTestToneRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  bool enb = 3;
+}
+
+message OutputDigitalTestToneResponse {}
+
+// ==============================================================================
+// Daughterboard Messages: N3XX (AD9371/Magnesium)
+// ==============================================================================
+
+// SetFreq (with wait_for_lock parameter for AD9371)
+message SetFreqRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double freq = 4;
+  bool wait_for_lock = 5;
+}
+
+message SetFreqResponse {
+  double actual_freq = 1;
+}
+
+// GetGain
+message GetGainRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetGainResponse {
+  double gain = 1;
+}
+
+// GetBandwidth
+message GetBandwidthRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetBandwidthResponse {
+  double bandwidth = 1;
+}
+
+// SetBandwidth
+message SetBandwidthRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double bw = 4;
+}
+
+message SetBandwidthResponse {
+  double actual_bandwidth = 1;
+}
+
+// SetLoSource
+message SetLoSourceRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  string source = 4;
+}
+
+message SetLoSourceResponse {
+  string actual_source = 1;
+}
+
+// GetLoSource
+message GetLoSourceRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetLoSourceResponse {
+  string source = 1;
+}
+
+// SetFir
+message SetFirRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string name = 3;
+  int32 gain = 4;
+  repeated int32 coeffs = 5;
+}
+
+message SetFirResponse {}
+
+// GetFir
+message GetFirRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string name = 3;
+}
+
+message GetFirResponse {
+  int32 gain = 1;
+  repeated int32 coeffs = 2;
+}
+
+// GetAd9371LoLock
+message GetAd9371LoLockRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetAd9371LoLockResponse {
+  bool lock = 1;
+}
+
+// GetLowbandLoLock
+message GetLowbandLoLockRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+}
+
+message GetLowbandLoLockResponse {
+  bool lock = 1;
+}
+
+// EnableRxLowbandLo
+message EnableRxLowbandLoRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  bool enable = 3;
+}
+
+message EnableRxLowbandLoResponse {}
+
+// EnableTxLowbandLo
+message EnableTxLowbandLoRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  bool enable = 3;
+}
+
+message EnableTxLowbandLoResponse {}
+
+// SetMasterClockRate (daughterboard)
+message SetMasterClockRateRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  double rate = 3;
+}
+
+message SetMasterClockRateResponse {
+  double actual_rate = 1;
+}
+
+// ==============================================================================
+// Daughterboard Messages: N3XX (Rhodium)
+// ==============================================================================
+
+message IsLoDistPresentRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message IsLoDistPresentResponse {
+  bool is_present = 1;
+}
+
+// EnableLoExport (Rhodium)
+message EnableLoExportRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;
+  bool enable = 4;
+}
+
+message EnableLoExportResponse {}
+
+// EnableLoOutput (Rhodium)
+message EnableLoOutputRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;
+  uint32 port_number = 4;
+  bool enable = 5;
+}
+
+message EnableLoOutputResponse {}
+
+// ==============================================================================
+// Daughterboard Messages: N3XX/X4XX (DIO Power Control)
+// ==============================================================================
+
+// DioGetSupportedVoltageLevels
+message DioGetSupportedVoltageLevelsRequest {
+  string token = 1;
+  string port = 2;
+}
+
+message DioGetSupportedVoltageLevelsResponse {
+  repeated string voltage_levels = 1;
+}
+
+// DioSetVoltageLevel
+message DioSetVoltageLevelRequest {
+  string token = 1;
+  string port = 2;
+  string level = 3;
+}
+
+message DioSetVoltageLevelResponse {}
+
+// DioGetVoltageLevel
+message DioGetVoltageLevelRequest {
+  string token = 1;
+  string port = 2;
+}
+
+message DioGetVoltageLevelResponse {
+  string voltage = 1;
+}
+
+// DioSetExternalPower
+message DioSetExternalPowerRequest {
+  string token = 1;
+  string port = 2;
+  bool value = 3;
+}
+
+message DioSetExternalPowerResponse {}
+
+// DioGetExternalPowerState
+message DioGetExternalPowerStateRequest {
+  string token = 1;
+  string port = 2;
+}
+
+message DioGetExternalPowerStateResponse {
+  string state = 1;
+}
+
+// ==============================================================================
+// Daughterboard Messages: X4XX (ZBX/FBX)
+// ==============================================================================
+
+// DioSetPortMapping
+message DioSetPortMappingRequest {
+  string mapping = 1;
+  string token = 2;
+}
+
+message DioSetPortMappingResponse {}
+
+// DioSetPinDirections
+message DioSetPinDirectionsRequest {
+  string port = 1;
+  uint32 values = 2;
+  string token = 3;
+}
+
+message DioSetPinDirectionsResponse {}
+
+// SetDacMuxData
+message SetDacMuxDataRequest {
+  int32 i_val = 1;
+  int32 q_val = 2;
+  string token = 3;
+}
+
+message SetDacMuxDataResponse {}
+
+// SetDacMuxEnable
+message SetDacMuxEnableRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 enable = 3;
+  string token = 4;
+  uint32 mode = 5;
+}
+
+message SetDacMuxEnableResponse {}
+
+// SetupThreshold
+message SetupThresholdRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 mix_mode = 9;
+  uint32 threshold_idx = 3;
+  string mode = 4;
+  uint32 delay = 5;
+  uint32 under = 6;
+  uint32 over = 7;
+  string token = 8;
+}
+
+message SetupThresholdResponse {}
+
+// SetCalibrationMode
+message SetCalibrationModeRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 mix_mode = 5;
+  string cal_mode = 3;
+  string token = 4;
+}
+
+message SetCalibrationModeResponse {}
+
+// GetCalFrozen
+message GetCalFrozenRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 mode = 4;
+  string token = 3;
+}
+
+message GetCalFrozenResponse {
+  repeated int32 frozen_state = 1;
+}
+
+// SetCalFrozen
+message SetCalFrozenRequest {
+  int32 frozen = 1;
+  uint32 db_idx = 2;
+  uint32 channel = 3;
+  uint32 mode = 5;
+  string token = 4;
+}
+
+message SetCalFrozenResponse {}
+
+// RfdcSetNcoFreq
+message RfdcSetNcoFreqRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;
+  uint32 channel = 4;
+  double freq = 5;
+  uint32 mode = 6;
+}
+
+message RfdcSetNcoFreqResponse {
+  double coerced_freq = 1;
+}
+
+// RfdcGetNcoFreq
+message RfdcGetNcoFreqRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string direction = 3;
+  uint32 channel = 4;
+  uint32 mode = 5;
+}
+
+message RfdcGetNcoFreqResponse {
+  double freq = 1;
+}
+
+// SetLeds
+message SetLedsRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 channel = 3;
+  bool rx = 4;
+  bool trx_rx = 5;
+  bool trx_tx = 6;
+}
+
+message SetLedsResponse {}
+
+// EnableIqSwap
+message EnableIqSwapRequest {
+  bool enable = 1;
+  string trx = 2;
+  uint32 channel = 3;
+  string token = 4;
+  uint32 db_idx = 5;
+}
+
+message EnableIqSwapResponse {}
+
+// GetDboardSampleRate
+message GetDboardSampleRateRequest {
+  string token = 1;
+}
+
+message GetDboardSampleRateResponse {
+  double rate = 1;
+}
+
+// GetDboardPrcRate
+message GetDboardPrcRateRequest {
+  string token = 1;
+}
+
+message GetDboardPrcRateResponse {
+  double rate = 1;
+}
+
+// IsDbGpioIfcPresent
+message IsDbGpioIfcPresentRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message IsDbGpioIfcPresentResponse {
+  bool present = 1;
+}
+
+// GetThresholdStatus
+message GetThresholdStatusRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 mode = 5;
+  uint32 threshold_idx = 3;
+  string token = 4;
+}
+
+message GetThresholdStatusResponse {
+  bool status = 1;
+}
+
+// ConfigTxPath (Debug daughterboard)
+message ConfigTxPathRequest {
+  uint32 db_idx = 1;
+  string dac = 2;
+  string token = 3;
+}
+
+message ConfigTxPathResponse {}
+
+// GetTxPath (Debug daughterboard)
+message GetTxPathRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetTxPathResponse {
+  string path = 1;
+}
+
+// ConfigRxPath (Debug daughterboard)
+message ConfigRxPathRequest {
+  uint32 db_idx = 1;
+  string adc = 2;
+  string token = 3;
+}
+
+message ConfigRxPathResponse {}
+
+// GetRxPath (Debug daughterboard)
+message GetRxPathRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetRxPathResponse {
+  string path = 1;
+}
+
+// SetDataPath (HBX daughterboard - set RFDC data path mode)
+message SetDataPathRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 mode = 3;
+  string direction = 4;
+}
+
+message SetDataPathResponse {}
+
+// GetCalCoefs (X4XX daughterboard - read raw ADC calibration block coefficients)
+message GetCalCoefsRequest {
+  uint32 channel = 1;
+  string token = 2;
+  uint32 db_idx = 3;
+  uint32 cal_block = 4;
+  uint32 mode = 5;
+}
+
+message GetCalCoefsResponse {
+  repeated double coefs = 1;
+}
+
+// SetCalCoefs (X4XX daughterboard - manually override ADC calibration block coefficients)
+message SetCalCoefsRequest {
+  uint32 db_idx = 1;
+  uint32 channel = 2;
+  uint32 cal_block = 3;
+  repeated double coefs = 4;
+  uint32 mode = 5;
+  string token = 6;
+}
+
+message SetCalCoefsResponse {}
+
+// ==============================================================================
+// Device Tree Overlay Management
+// ==============================================================================
+
+// ListActiveOverlays
+message ListActiveOverlaysRequest {}
+
+message ListActiveOverlaysResponse {
+  repeated string overlays = 1;
+}
+
+// ListAvailableOverlays
+message ListAvailableOverlaysRequest {}
+
+message ListAvailableOverlaysResponse {
+  repeated string overlays = 1;
+}
+
+// ListRequiredDtOverlays
+message ListRequiredDtOverlaysRequest {
+  StringMap device_info = 1;
+  string token = 2;
+}
+
+message ListRequiredDtOverlaysResponse {
+  repeated string overlays = 1;
+}
+
+// OverlayApply
+message OverlayApplyRequest {
+  string token = 1;
+}
+
+message OverlayApplyResponse {
+  bool success = 1;
+}
+
+// ==============================================================================
+// Daughterboard Information Methods
+// ==============================================================================
+
+// GetRevision
+message GetRevisionRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetRevisionResponse {
+  uint32 revision = 1;
+}
+
+// GetRevisionString
+message GetRevisionStringRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetRevisionStringResponse {
+  string revision = 1;
+}
+
+// GetSerial
+message GetSerialRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetSerialResponse {
+  string serial = 1;
+}
+
+// ==============================================================================
+// Additional Device Management Messages
+// ==============================================================================
+
+// GenerateDeviceInfo
+message GenerateDeviceInfoRequest {
+  StringMap eeprom_md = 1;
+  StringMap mboard_info = 2;
+  repeated StringMap dboard_infos = 3;
+}
+
+message GenerateDeviceInfoResponse {
+  StringMap dev_info = 1;
+}
+
+// GetPostResetArgs
+message GetPostResetArgsRequest {
+  string token = 1;
+  StringMap original_args = 2;
+}
+
+message GetPostResetArgsResponse {
+  StringMap args = 1;
+}
+
+// ==============================================================================
+// Device Lifecycle Messages
+// ==============================================================================
+
+// Deinit
+message DeinitRequest {
+  string token = 1;
+}
+
+message DeinitResponse {}
+
+// TearDown
+message TearDownRequest {
+  string token = 1;
+}
+
+message TearDownResponse {}
+
+// InitDboards
+message InitDboardsRequest {
+  string token = 1;
+  StringMap args = 2;
+}
+
+message InitDboardsResponse {}
+
+// GetDeviceInfoDyn
+message GetDeviceInfoDynRequest {}
+
+message GetDeviceInfoDynResponse {
+  StringMap dev_info = 1;
+}
+
+// ==============================================================================
+// E320-Specific Sensor Messages
+// ==============================================================================
+
+// GetRefLockSensor
+message GetRefLockSensorRequest {
+  string token = 1;
+}
+
+message GetRefLockSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsLockedSensor
+message GetGpsLockedSensorRequest {
+  string token = 1;
+}
+
+message GetGpsLockedSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetFanSensor
+message GetFanSensorRequest {
+  string token = 1;
+}
+
+message GetFanSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetTempSensor — generic, takes a sensor_name key
+message GetTempSensorRequest {
+  string token = 1;
+  string sensor_name = 2;
+}
+
+message GetTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetFpgaTempSensor — calls get_temp_sensor("temp_fpga")
+message GetFpgaTempSensorRequest {
+  string token = 1;
+}
+
+message GetFpgaTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetInternalTempSensor — calls get_temp_sensor("temp_internal")
+message GetInternalTempSensorRequest {
+  string token = 1;
+}
+
+message GetInternalTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetRfChannelATempSensor — calls get_temp_sensor("temp_rf_channelA")
+message GetRfChannelATempSensorRequest {
+  string token = 1;
+}
+
+message GetRfChannelATempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetRfChannelBTempSensor — calls get_temp_sensor("temp_rf_channelB")
+message GetRfChannelBTempSensorRequest {
+  string token = 1;
+}
+
+message GetRfChannelBTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetMainPowerTempSensor — calls get_temp_sensor("temp_main_power")
+message GetMainPowerTempSensorRequest {
+  string token = 1;
+}
+
+message GetMainPowerTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// ==============================================================================
+// GPS Sensor Messages (from gpsd_iface.py)
+// ==============================================================================
+
+// GetGpsTimeSensor
+message GetGpsTimeSensorRequest {
+  string token = 1;
+}
+
+message GetGpsTimeSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsTpvSensor
+message GetGpsTpvSensorRequest {
+  string token = 1;
+}
+
+message GetGpsTpvSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsSkySensor
+message GetGpsSkySensorRequest {
+  string token = 1;
+}
+
+message GetGpsSkySensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsGpggaSensor
+message GetGpsGpggaSensorRequest {
+  string token = 1;
+}
+
+message GetGpsGpggaSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// ==============================================================================
+// E320-Specific Motherboard Method Messages
+// ==============================================================================
+
+// EnableFpGpio
+message EnableFpGpioRequest {
+  string token = 1;
+  bool enable = 2;
+}
+
+message EnableFpGpioResponse {}
+
+// EnableGps
+message EnableGpsRequest {
+  string token = 1;
+  bool enable = 2;
+}
+
+message EnableGpsResponse {}
+
+// SetFpGpioVoltage
+message SetFpGpioVoltageRequest {
+  string token = 1;
+  double voltage = 2;
+}
+
+message SetFpGpioVoltageResponse {}
+
+// GetFpGpioVoltage
+message GetFpGpioVoltageRequest {
+  string token = 1;
+}
+
+message GetFpGpioVoltageResponse {
+  double voltage = 1;
+}
+
+// GetRefClockFreq
+message GetRefClockFreqRequest {
+  string token = 1;
+}
+
+message GetRefClockFreqResponse {
+  double freq = 1;
+}
+
+// SetRefClockFreq
+message SetRefClockFreqRequest {
+  string token = 1;
+  double freq = 2;
+}
+
+message SetRefClockFreqResponse {}
+
+// ==============================================================================
+// Daughterboard Messages: E3XX (AD9361) — Extended Methods
+// ==============================================================================
+
+// GetAd9361LoLock — returns raw boolean LO lock status for 'tx' or 'rx'
+message GetAd9361LoLockRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // 'tx' or 'rx'
+}
+
+message GetAd9361LoLockResponse {
+  bool lock = 1;
+}
+
+// GetLoLockSensor — sensor dict version of GetAd9361LoLock
+message GetLoLockSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // 'tx' or 'rx'
+}
+
+message GetLoLockSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetRxLoLockSensor — RX-specific LO lock sensor (UHD API compat)
+message GetRxLoLockSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+
+message GetRxLoLockSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetTxLoLockSensor — TX-specific LO lock sensor (UHD API compat)
+message GetTxLoLockSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+
+message GetTxLoLockSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetCatalinaTempSensor — AD9361 die temperature sensor
+message GetCatalinaTempSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;  // channel (unused by implementation)
+}
+
+message GetCatalinaTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetRssiVal — raw RSSI double for a given chain ('RX1', 'RX2', etc.)
+message GetRssiValRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // e.g., 'RX1', 'RX2'
+}
+
+message GetRssiValResponse {
+  double rssi = 1;
+}
+
+// GetRssiSensor — per-channel RSSI as a sensor dict
+message GetRssiSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+
+message GetRssiSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGainNames — list of gain stage names for a given direction/chain
+message GetGainNamesRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // e.g., 'RX1', 'TX1'
+}
+
+message GetGainNamesResponse {
+  repeated string gain_names = 1;
+}
+
+// GetRfFreqRange — valid RF frequency range of the AD9361 (static)
+message GetRfFreqRangeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetRfFreqRangeResponse {
+  repeated double range = 1;  // [start, stop, step]
+}
+
+// GetBwFilterRange — valid bandwidth filter range of the AD9361 (static)
+message GetBwFilterRangeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetBwFilterRangeResponse {
+  repeated double range = 1;  // [start, stop, step]
+}
+
+// GetClockRateRange — valid master clock rate range of the AD9361 (static)
+message GetClockRateRangeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetClockRateRangeResponse {
+  repeated double range = 1;  // [start, stop, step]
+}
+
+// SetClockRate — synchronous clock rate set on the AD9361 RFIC
+message SetClockRateRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  double rate = 3;
+}
+
+message SetClockRateResponse {
+  double actual_rate = 1;
+}
+
+// Tune — synchronous LO tune on the AD9361 RFIC
+message TuneRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // 'TX' or 'RX'
+  double freq = 4;
+}
+
+message TuneResponse {
+  double actual_freq = 1;
+}
+
+// SetDcOffset — set DC offset correction (real + imag parts of complex value)
+// Note: throws on AD9361; supported only on some RFIC variants
+message SetDcOffsetRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double offset_real = 4;
+  double offset_imag = 5;
+}
+
+message SetDcOffsetResponse {}
+
+// SetIqBalance — set IQ balance correction (real + imag parts of complex value)
+// Note: throws on AD9361; supported only on some RFIC variants
+message SetIqBalanceRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  double correction_real = 4;
+  double correction_imag = 5;
+}
+
+message SetIqBalanceResponse {}
+
+// SetFilter — set filter coefficients (filter_info serialized as a string blob)
+message SetFilterRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  string filter_name = 4;
+  string filter_data = 5;  // serialized filter_info_base object
+}
+
+message SetFilterResponse {}
+
+// GetUserEepromData — get dboard user EEPROM blobs (blob_id -> bytes)
+message GetUserEepromDataRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message GetUserEepromDataResponse {
+  BytesMap eeprom_data = 1;
+}
+
+// SetUserEepromData — set dboard user EEPROM blobs (blob_id -> bytes)
+message SetUserEepromDataRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  BytesMap eeprom_data = 3;
+}
+
+message SetUserEepromDataResponse {}
+
+// UpdateRefClockFreq — notify dboard of external reference clock freq change
+message UpdateRefClockFreqRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  double freq = 3;
+}
+
+message UpdateRefClockFreqResponse {}
+
+// InitRfic — initialize AD9361 chains at the given master clock rate
+message InitRficRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  double master_clock_rate = 3;
+}
+
+message InitRficResponse {}
+
+// TearDownRfic — de-initialize the AD9361 RFIC object
+message TearDownRficRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+
+message TearDownRficResponse {}
+
+// ResetClock — reset or re-enable a named clock (X4XX-specific)
+// clock_to_reset: 'cpld', 'spll', or 'rpll'
+// value: true = assert reset, false = release reset
+message ResetClockRequest {
+  string token = 1;
+  bool value = 2;
+  string clock_to_reset = 3;
+}
+
+message ResetClockResponse {}
+
+// ==============================================================================
+// X4XX Clock and GPIO BIST API Messages
+// ==============================================================================
+
+// GetFpgaAuxRefFreq — read the FPGA auxiliary reference frequency counter
+message GetFpgaAuxRefFreqRequest {
+  string token = 1;
+}
+
+message GetFpgaAuxRefFreqResponse {
+  uint64 count = 1;
+}
+
+// NsyncChangeInputSource — switch eCPRI PLL input reference source
+message NsyncChangeInputSourceRequest {
+  string token = 1;
+  string source = 2;
+}
+
+message NsyncChangeInputSourceResponse {}
+
+// EnableEcpriClocks — enable or disable FABRIC / GTY_RCV eCPRI clock export
+// clock: "both" (default), "fabric", or "gty_rcv".
+message EnableEcpriClocksRequest {
+  string token = 1;
+  bool enable = 2;
+  string clock = 3;
+}
+
+message EnableEcpriClocksResponse {}
+
+// ConfigRpllToNsync — configure the RPLL to lock to the Nsync source
+message ConfigRpllToNsyncRequest {
+  string token = 1;
+}
+
+message ConfigRpllToNsyncResponse {}
+
+// PeekClkaux — read a register on the clkaux board over SPI; returns hex string e.g. "0x8"
+message PeekClkauxRequest {
+  string token = 1;
+  uint32 addr = 2;
+}
+
+message PeekClkauxResponse {
+  string value = 1;
+}
+
+// ClkauxGetNsyncStatus0 — read Nsync status register 0 from the clkaux board
+message ClkauxGetNsyncStatus0Request {
+  string token = 1;
+}
+
+message ClkauxGetNsyncStatus0Response {
+  bool status = 1;
+}
+
+// ClkauxGetNsyncStatus1 — read Nsync status register 1 from the clkaux board
+message ClkauxGetNsyncStatus1Request {
+  string token = 1;
+}
+
+message ClkauxGetNsyncStatus1Response {
+  bool status = 1;
+}
+
+// DioSetGpioSrc — set the GPIO source for each pin in a DIO bank
+message DioSetGpioSrcRequest {
+  string token = 1;
+  string bank = 2;
+  repeated string src = 3;
+}
+
+message DioSetGpioSrcResponse {}
+
+// DioSetPinOutputs — drive a bitmask of output values on a DIO port
+message DioSetPinOutputsRequest {
+  string token = 1;
+  string port = 2;
+  uint32 values = 3;
+}
+
+message DioSetPinOutputsResponse {}
+
+// DioGetPinInputs — read back the current input pin values from a DIO port
+message DioGetPinInputsRequest {
+  string token = 1;
+  string port = 2;
+}
+
+message DioGetPinInputsResponse {
+  uint32 value = 1;
+}
+
+// DioStatus — return a human-readable DIO status string
+message DioStatusRequest {
+  string token = 1;
+}
+
+message DioStatusResponse {
+  string status = 1;
+}
+
+// PokeDb — poke a DB CPLD register (db_idx selects the daughterboard)
+message PokeDbRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+  uint32 val = 4;
+}
+
+message PokeDbResponse {}
+
+// PeekDb — peek a DB CPLD register; returns a hex string e.g. "0x8"
+message PeekDbRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+}
+
+message PeekDbResponse {
+  string value = 1;
+}
+
+// PokeClkaux — write a register on the clkaux board over SPI
+message PokeClkauxRequest {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+}
+
+message PokeClkauxResponse {}
+
+// PeekCtrlport — read an MPM-endpoint ctrlport register on the FPGA; returns hex string
+message PeekCtrlportRequest {
+  string token = 1;
+  uint32 addr = 2;
+}
+
+message PeekCtrlportResponse {
+  string value = 1;
+}
+
+// PokeCtrlport — write an MPM-endpoint ctrlport register on the FPGA
+message PokeCtrlportRequest {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+}
+
+message PokeCtrlportResponse {}
+
+// PeekCpld — read the PS-side MB CPLD register; returns hex string
+message PeekCpldRequest {
+  string token = 1;
+  uint32 addr = 2;
+}
+
+message PeekCpldResponse {
+  string value = 1;
+}
+
+// PokeCpld — write the PS-side MB CPLD register
+message PokeCpldRequest {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+}
+
+message PokeCpldResponse {}
+
+// PeekMb — read an MB register; returns hex string
+message PeekMbRequest {
+  string token = 1;
+  uint32 addr = 2;
+}
+
+message PeekMbResponse {
+  string value = 1;
+}
+
+// PokeMb — write an MB register
+message PokeMbRequest {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+}
+
+message PokeMbResponse {}
+
+// PeekRfdc — read an RFDC register; returns hex string
+message PeekRfdcRequest {
+  string token = 1;
+  uint32 addr = 2;
+}
+
+message PeekRfdcResponse {
+  string value = 1;
+}
+
+// PokeRfdc — write an RFDC register
+message PokeRfdcRequest {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+}
+
+message PokeRfdcResponse {}

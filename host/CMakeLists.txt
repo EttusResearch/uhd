@@ -303,7 +303,7 @@ if(CYGWIN)
 endif(CYGWIN)
 
 if(WIN32)
-    add_definitions(-D_WIN32_WINNT=0x0501) # minimum version required is windows xp
+    add_definitions(-D_WIN32_WINNT=0x0600) # minimum version required is windows vista (required by gRPC)
     add_definitions(-DNOMINMAX) # disables stupidity and enables std::min and std::max
 endif(WIN32)
 

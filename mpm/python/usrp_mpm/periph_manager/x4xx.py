@@ -27,12 +27,12 @@ from usrp_mpm.periph_manager.x4xx_gps_mgr import X4xxGPSMgr
 from usrp_mpm.periph_manager.x4xx_mb_cpld import make_mb_cpld_ctrl
 from usrp_mpm.periph_manager.x4xx_periphs import (
     CtrlportRegs,
+    get_temp_sensors,
     MboardRegsControl,
     QSFPModule,
-    get_temp_sensors,
 )
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
-from usrp_mpm.rpc_utils import no_rpc
+from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.sys_utils import dtoverlay, ectool
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
@@ -692,6 +692,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Device info
     ###########################################################################
+    @no_claim
     def get_device_info_dyn(self):
         """
         Append the device info with current IP addresses.
@@ -710,11 +711,12 @@ class x4xx(ZynqComponents, PeriphManagerBase):
             device_info.update({"device_dna": self._device_dna})
         return device_info
 
-    def is_db_gpio_ifc_present(self, slot_id):
+    @no_claim
+    def is_db_gpio_ifc_present(self, db_idx):
         """
-        Return if daughterboard GPIO interface at 'slot_id' is present in the FPGA
+        Return if daughterboard GPIO interface at 'db_idx' is present in the FPGA
         """
-        db_gpio_version = self.mboard_regs_control.get_db_gpio_ifc_version(slot_id)
+        db_gpio_version = self.mboard_regs_control.get_db_gpio_ifc_version(db_idx)
         return db_gpio_version[0] > 0
 
     ###########################################################################
@@ -994,17 +996,17 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """Poke the MB CPLD"""
         self.mboard_regs_control.poke32(addr, val)
 
-    def peek_db(self, db_id, addr):
+    def peek_db(self, db_idx, addr):
         """Peek the DB CPLD, even if the DB is not discovered by MPM"""
-        assert db_id in (0, 1)
-        self.cpld_control.enable_daughterboard(db_id)
-        return "0x{:X}".format(self.ctrlport_regs.get_db_cpld_iface(db_id).peek32(addr))
+        assert db_idx in (0, 1)
+        self.cpld_control.enable_daughterboard(db_idx)
+        return "0x{:X}".format(self.ctrlport_regs.get_db_cpld_iface(db_idx).peek32(addr))
 
-    def poke_db(self, db_id, addr, val):
+    def poke_db(self, db_idx, addr, val):
         """Poke the DB CPLD, even if the DB is not discovered by MPM"""
-        assert db_id in (0, 1)
-        self.cpld_control.enable_daughterboard(db_id)
-        self.ctrlport_regs.get_db_cpld_iface(db_id).poke32(addr, val)
+        assert db_idx in (0, 1)
+        self.cpld_control.enable_daughterboard(db_idx)
+        self.ctrlport_regs.get_db_cpld_iface(db_idx).poke32(addr, val)
 
     def peek_clkaux(self, addr):
         """Peek the ClkAux DB over SPI"""

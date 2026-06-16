@@ -15,34 +15,18 @@
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
-#include <uhdlib/utils/rpc.hpp>
+#include <uhdlib/usrp/common/mpmd_timeouts.hpp>
+#include <uhdlib/usrp/common/rpc.hpp>
 #include <atomic>
 #include <map>
 #include <memory>
 #include <optional>
 
-/*************************************************************************
- * RPC timeout constants for MPMD
- ************************************************************************/
-//! Time between reclaims (ms)
-static constexpr size_t MPMD_RECLAIM_INTERVAL_MS = 1000;
-//! Default timeout value for the init() RPC call (ms)
-static constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT = 120000;
-//! Default timeout value for the reset_timer_and_mgr() RPC call (ms)
-static constexpr size_t MPMD_DEFAULT_REBOOT_TIMEOUT = 200000;
-//! Default timeout value for RPC calls (ms)
-static constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT = 2000;
-/*! Short timeout value for RPC calls (ms), used for calls that shouldn't
- * take long. This value can be used to quickly determine a link status.
- */
-static constexpr size_t MPMD_SHORT_RPC_TIMEOUT = 2000;
-//! Claimer loop timeout value for RPC calls (ms).
-static constexpr size_t MPMD_CLAIMER_RPC_TIMEOUT = 10000;
 //! Ethernet address for management and RPC communication
 static const std::string MGMT_ADDR_KEY = "mgmt_addr";
 //! RPC version
 static const std::string RPC_VERSION_KEY = "rpc_version";
-static const std::string RPC_VERSION     = "1";
+static const std::string RPC_VERSION     = "2";
 // Older devices did not provide an RPC version, but they were all using
 // mprpc, aka version 1.
 static const std::string DEFAULT_RPC_VERSION = "1";
@@ -250,8 +234,6 @@ public:
      *  device via the discovery process. Useful for MTU discovery.
      */
     static const std::string MPM_ECHO_CMD;
-    //! This is the RPC command that will return the last known error from MPM.
-    static const std::string MPM_RPC_GET_LAST_ERROR_CMD;
 
     /**************************************************************************
      * Structors

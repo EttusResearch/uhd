@@ -6,7 +6,6 @@
 """
 X400 RFDC Control Module
 """
-import ast
 import itertools
 import time
 from dataclasses import dataclass
@@ -778,13 +777,13 @@ class X4xxRfdcCtrl:
     ###########################################################################
     # Public APIs that get exposed as MPM RPC calls
     ###########################################################################
-    def rfdc_set_nco_freq(self, direction, slot_id, channel, freq, mode):
+    def rfdc_set_nco_freq(self, direction, db_idx, channel, freq, mode):
         """
         Sets the RFDC NCO Frequency for the specified channel
         """
         if isinstance(mode, int):
             mode = MixerMode(mode)
-        convs = self._get_converter(direction, slot_id, channel, mode)
+        convs = self._get_converter(direction, db_idx, channel, mode)
         nco_freq = [None for _ in convs]
         for idx, conv in enumerate(convs):
             if not self._rfdc_ctrl.set_if(
@@ -804,11 +803,11 @@ class X4xxRfdcCtrl:
         assert all(nco_freq[0] == freq for freq in nco_freq)
         return nco_freq[0]
 
-    def rfdc_get_nco_freq(self, direction, slot_id, channel, mode):
+    def rfdc_get_nco_freq(self, direction, db_idx, channel, mode):
         """
         Gets the RFDC NCO Frequency for the specified channel
         """
-        convs = self._get_converter(direction, slot_id, channel, MixerMode(mode))
+        convs = self._get_converter(direction, db_idx, channel, MixerMode(mode))
         nco_freq = [None for _ in convs]
         for idx, conv in enumerate(convs):
             nco_freq[idx] = self._rfdc_ctrl.get_nco_freq(
@@ -819,7 +818,7 @@ class X4xxRfdcCtrl:
         return nco_freq[0]
 
     ### ADC cal ###############################################################
-    def set_calibration_mode(self, slot_id, channel, mix_mode, cal_mode):
+    def set_calibration_mode(self, db_idx, channel, mix_mode, cal_mode):
         """
         Set RFDC calibration mode
         """
@@ -835,7 +834,7 @@ class X4xxRfdcCtrl:
 
         mix_mode = MixerMode(mix_mode)
 
-        for tile_id, block_id, _ in self._find_converters(slot_id, channel, "rx", mix_mode):
+        for tile_id, block_id, _ in self._find_converters(db_idx, channel, "rx", mix_mode):
             # Only set the cal-mode if it is not yet what we want.
             if self._rfdc_ctrl.get_calibration_mode(tile_id, block_id) != MODES[cal_mode]:
                 self.log.debug(
@@ -865,27 +864,27 @@ class X4xxRfdcCtrl:
                     f"block {block_id} already set, not changing it."
                 )
 
-    def set_cal_frozen(self, frozen, slot_id, channel, mode):
+    def set_cal_frozen(self, frozen, db_idx, channel, mode):
         """
         Set the freeze state for the ADC cal blocks
 
         Usage:
-        > set_cal_frozen <frozen> <slot_id> <channel> <mode>
+        > set_cal_frozen <frozen> <db_idx> <channel> <mode>
 
         <frozen> should be 0 to unfreeze the calibration blocks or 1 to freeze them.
         """
         mode = MixerMode(mode)
 
-        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs, mode):
+        for _, conv in self._filter_converters(db_idx, channel, self._adc_convs, mode):
             conv.cal_freeze = frozen
             self._rfdc_ctrl.set_cal_frozen(conv.tile, conv.block, frozen)
 
-    def get_cal_frozen(self, slot_id, channel, mode):
+    def get_cal_frozen(self, db_idx, channel, mode):
         """
         Get the freeze states for each ADC cal block in the channel
 
         Usage:
-        > get_cal_frozen <slot_id> <channel> <mode>
+        > get_cal_frozen <db_idx> <channel> <mode>
         """
         mode = MixerMode(mode)
 
@@ -893,29 +892,27 @@ class X4xxRfdcCtrl:
             return 1 if self._rfdc_ctrl.get_cal_frozen(conv[1].tile, conv[1].block) else 0
 
         return list(
-            map(get_cal_frozen, self._filter_converters(slot_id, channel, self._adc_convs, mode))
+            map(get_cal_frozen, self._filter_converters(db_idx, channel, self._adc_convs, mode))
         )
 
-    def set_cal_coefs(self, slot_id, channel, cal_block, coefs, mode):
+    def set_cal_coefs(self, db_idx, channel, cal_block, coefs, mode):
         """
         Manually override calibration block coefficients. You probably don't need to use this.
         """
         mode = MixerMode(mode)
         self.log.trace(
             "Setting ADC cal coefficients for "
-            f"channel={channel} slot_id={slot_id} cal_block={cal_block}"
+            f"channel={channel} db_idx={db_idx} cal_block={cal_block}"
         )
-        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs, mode):
-            self._rfdc_ctrl.set_adc_cal_coefficients(
-                conv.tile, conv.block, cal_block, ast.literal_eval(coefs)
-            )
+        for _, conv in self._filter_converters(db_idx, channel, self._adc_convs, mode):
+            self._rfdc_ctrl.set_adc_cal_coefficients(conv.tile, conv.block, cal_block, list(coefs))
 
-    def get_cal_coefs(self, channel, slot_id, cal_block, mode):
+    def get_cal_coefs(self, channel, db_idx, cal_block, mode):
         """
         Manually retrieve raw coefficients for the ADC calibration blocks.
 
         Usage:
-        > get_cal_coefs <channel, 0-1> <slot_id, 0-1> <cal_block, 0-3> <mode 0-3>
+        > get_cal_coefs <channel, 0-1> <db_idx, 0-1> <cal_block, 0-3> <mode 0-3>
         e.g.
         > get_cal_coefs 0 1 3 1
         Retrieves the coefficients for the TSCB block on channel 0 of DB 1 in I mode.
@@ -933,12 +930,10 @@ class X4xxRfdcCtrl:
 
         self.log.trace(
             "Getting ADC cal coefficients for "
-            "channel={channel} slot_id={slot_id} cal_block={cal_block}"
+            f"channel={channel} db_idx={db_idx} cal_block={cal_block}"
         )
         return list(
-            map(
-                get_adc_dac_coeffs, self._filter_converters(slot_id, channel, self._adc_convs, mode)
-            )
+            map(get_adc_dac_coeffs, self._filter_converters(db_idx, channel, self._adc_convs, mode))
         )
 
     ### DAC mux
@@ -969,14 +964,14 @@ class X4xxRfdcCtrl:
             self._rfdc_regs.set_cal_enable(conv.tile, conv.block, bool(enable))
 
     ### ADC thresholds
-    def setup_threshold(self, slot_id, channel, mix_mode, threshold_idx, mode, delay, under, over):
+    def setup_threshold(self, db_idx, channel, mix_mode, threshold_idx, mode, delay, under, over):
         """
         Configure the given ADC threshold block.
 
         Usage:
-        > setup_threshold <slot_id> <channel> <mix_mode> <threshold_idx> <mode> <delay> <under> <over>
+        > setup_threshold <db_idx> <channel> <mix_mode> <threshold_idx> <mode> <delay> <under> <over>
 
-        slot_id: Slot ID to configure, 0 or 1
+        db_idx: Slot/DB index index to configure, 0 or 1
         channel: Channel on the slot to configure, 0 or 1
         mix_mode: Mixer mode to configure, one of MixerMode
         threshold_idx: Threshold block index, 0 or 1
@@ -987,7 +982,7 @@ class X4xxRfdcCtrl:
         """
         mix_mode = MixerMode(mix_mode)
 
-        for _, conv in self._filter_converters(slot_id, channel, self._adc_convs, mix_mode):
+        for _, conv in self._filter_converters(db_idx, channel, self._adc_convs, mix_mode):
             thresholds = {
                 0: lib.rfdc.threshold_id_options.THRESHOLD_0,
                 1: lib.rfdc.threshold_id_options.THRESHOLD_1,
@@ -1018,12 +1013,12 @@ class X4xxRfdcCtrl:
                 over,
             )
 
-    def get_threshold_status(self, slot_id, channel, mode, threshold_idx):
+    def get_threshold_status(self, db_idx, channel, mode, threshold_idx):
         """
         Read the threshold status bit for the given threshold block(s) from the device.
 
         Usage:
-        > get_threshold_status <slot_id> <channel> <mode> <threshold_idx>
+        > get_threshold_status <db_idx> <channel> <mode> <threshold_idx>
         e.g.
         > get_threshold_status 0 1 3 0
         """
@@ -1031,4 +1026,4 @@ class X4xxRfdcCtrl:
         # _rfdc_regs uses
         if MixerMode(mode) == MixerMode.IQ:
             mode = int(MixerMode.I.value)
-        return self._rfdc_regs.get_threshold_status(slot_id, channel, mode, threshold_idx) != 0
+        return self._rfdc_regs.get_threshold_status(db_idx, channel, mode, threshold_idx) != 0

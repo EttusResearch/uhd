@@ -164,7 +164,11 @@ class DboardManagerBase:
     ##########################################################################
     # Sensors
     ##########################################################################
-    def get_sensors(self, direction, chan=0):
+    def get_sensors(
+        self,
+        direction,
+        chan=0,
+    ):
         """
         Return a list of RX daughterboard sensor names.
 

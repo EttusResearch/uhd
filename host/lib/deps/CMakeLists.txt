@@ -5,7 +5,4 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-if(ENABLE_MPMD)
-    add_subdirectory(rpclib)
-endif()
 add_subdirectory(flatbuffers)

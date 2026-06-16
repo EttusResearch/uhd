@@ -146,6 +146,8 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} ${test_source})
+    target_include_directories(${test_name}
+        PRIVATE ${UHD_BINARY_DIR}/lib/usrp/common)
     target_link_libraries(${test_name}
         PUBLIC uhd_test uhd Boost::unit_test_framework)
     UHD_ADD_TEST(${test_name} ${test_name})
@@ -156,6 +158,8 @@ endforeach(test_source)
 foreach(benchmark_source ${benchmark_sources})
     get_filename_component(benchmark_name ${benchmark_source} NAME_WE)
     add_executable(${benchmark_name} ${benchmark_source})
+    target_include_directories(${benchmark_name}
+        PRIVATE ${UHD_BINARY_DIR}/lib/usrp/common)
     target_link_libraries(${benchmark_name}
         PUBLIC uhd uhd_test Boost::unit_test_framework)
     UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
@@ -181,6 +185,8 @@ macro(UHD_ADD_NONAPI_TEST)
     get_filename_component(test_name ${test_TARGET} NAME_WE)
     include_directories(${test_INCLUDE_DIRS})
     add_executable(${test_name} ${test_TARGET} ${test_EXTRA_SOURCES})
+    target_include_directories(${test_name}
+        PRIVATE ${UHD_BINARY_DIR}/lib/usrp/common)
     target_link_libraries(${test_name}
         PUBLIC uhd uhd_test Boost::unit_test_framework Boost::program_options)
     if(MINGW)
@@ -249,6 +255,8 @@ set(rfnoc_block_sources
 foreach(test_source ${rfnoc_block_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
     add_executable(${test_name} rfnoc_block_tests/${test_source})
+    target_include_directories(${test_name}
+        PRIVATE ${UHD_BINARY_DIR}/lib/usrp/common)
     target_link_libraries(${test_name}
         PUBLIC uhd uhd_test Boost::unit_test_framework)
     UHD_ADD_TEST(${test_name} ${test_name})
@@ -491,7 +499,6 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
             ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
             ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
-            $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
         )
@@ -540,7 +547,6 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
             ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
             ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
-            $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
         )
@@ -589,7 +595,6 @@ IF(ENABLE_X400)
             ${UHD_SOURCE_DIR}/lib/utils/pathslib.cpp
             ${UHD_SOURCE_DIR}/lib/utils/paths.cpp
             ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
-            $<TARGET_OBJECTS:uhd_rpclib>
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/rpclib/include
             INCLUDE_DIRS ${UHD_SOURCE_DIR}/lib/deps/flatbuffers/include
         )

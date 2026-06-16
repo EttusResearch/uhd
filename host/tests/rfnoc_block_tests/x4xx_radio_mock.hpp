@@ -299,7 +299,7 @@ struct x400_radio_fixture
         // Override the timebase clock interface with the mcr frequency
         // This fixes the issue where get_tick_rate() returns 0.0 in tests
         auto tb_clock = std::make_shared<uhd::rfnoc::clock_iface>(
-            "radio_clk", rpcs->get_master_clock_rate());
+            "radio_clk", rpcs->get_dboard(0).get_master_clock_rate());
         block_container.make_args->tb_clk_iface = tb_clock;
 
         test_radio = block_container.get_block<x400_radio_control_impl>();

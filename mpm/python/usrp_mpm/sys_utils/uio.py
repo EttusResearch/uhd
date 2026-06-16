@@ -11,7 +11,6 @@ import os
 from builtins import object
 from contextlib import contextmanager
 
-import pyudev
 from usrp_mpm import __simulated__
 from usrp_mpm.mpmlog import get_logger
 
@@ -39,16 +38,14 @@ def get_all_uio_devs():
     """
     Return a list of all uio devices. Will look something like
     ['uio0', 'uio1', ...].
+
+    Uses a direct sysfs scan instead of pyudev to avoid pyudev blocking
+    against the udev daemon during FPGA reloads.
     """
     try:
-        context = pyudev.Context()
-        paths = [
-            os.path.split(device.device_node)[-1]
-            for device in context.list_devices(subsystem="uio")
-        ]
-        return paths
+        return sorted(d for d in os.listdir(UIO_SYSFS_BASE_DIR) if d.startswith("uio"))
     except OSError:
-        # Typically means UIO devices
+        # Typically means UIO devices are not available
         return []
 
 

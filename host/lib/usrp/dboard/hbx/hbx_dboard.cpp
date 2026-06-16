@@ -29,7 +29,6 @@ hbx_dboard_impl::hbx_dboard_impl(register_iface& reg_iface,
     time_accessor_fn_type&& time_accessor,
     const size_t db_idx,
     const std::string& radio_slot,
-    const std::string& rpc_prefix,
     const std::string& unique_id,
     uhd::usrp::x400_rpc_iface::sptr mb_rpcc,
     uhd::usrp::hbx_rpc_iface::sptr rpcc,
@@ -55,7 +54,6 @@ hbx_dboard_impl::hbx_dboard_impl(register_iface& reg_iface,
     , _time_accessor(time_accessor)
     , _radio_slot(radio_slot)
     , _db_idx(db_idx)
-    , _rpc_prefix(rpc_prefix)
     , _mb_rpcc(mb_rpcc)
     , _rpcc(rpcc)
     , _rfdcc(rfdcc)
@@ -622,7 +620,7 @@ bool hbx_dboard_impl::select_adc_self_cal_gain(size_t chan, size_t mode)
         std::this_thread::sleep_for(settle_time);
         try {
             const bool threshold_status =
-                _mb_rpcc->get_threshold_status(_db_idx, chan, mode, 0);
+                _mb_rpcc->get_dboard(_db_idx).get_threshold_status(chan, mode, 0);
             if (threshold_status) {
                 found_gain = true;
                 break;

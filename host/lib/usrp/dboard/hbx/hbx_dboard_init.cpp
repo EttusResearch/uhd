@@ -349,10 +349,9 @@ void hbx_dboard_impl::_init_frequency_prop_tree(uhd::property_tree::sptr subtree
     expert_factory::add_dual_prop_node<double>(expert,
         subtree,
         fe_path / "los" / RFDC_NCO / "freq" / "value",
-        _mb_rpcc->rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
-            _db_idx,
+        _mb_rpcc->get_dboard(_db_idx).rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
             0,
-            static_cast<size_t>(uhd::usrp::x400::ch_mode::REAL)),
+            static_cast<uint32_t>(uhd::usrp::x400::ch_mode::REAL)),
         AUTO_RESOLVE_ON_WRITE);
 
     subtree->create<double>(fe_path / "bandwidth" / "value")
@@ -644,14 +643,14 @@ void hbx_dboard_impl::_init_iq_dc_prop_tree(uhd::property_tree::sptr subtree,
     // tree so they can be read by the correction utility.
     if (trx == RX_DIRECTION) {
         // This is only relevant for RX as the DACs don't do an own DC offset calibration.
-        const auto i_coeffs = (_mb_rpcc->get_cal_coefs(0, _db_idx, 1, 1))[0];
-        const auto q_coeffs = (_mb_rpcc->get_cal_coefs(0, _db_idx, 1, 2))[0];
+        const auto i_coeffs = _mb_rpcc->get_dboard(_db_idx).get_cal_coefs(0, 1, 1);
+        const auto q_coeffs = _mb_rpcc->get_dboard(_db_idx).get_cal_coefs(0, 1, 2);
         // The cal coeffs are 8 values, but we have only 4 sub-ADCs, therefore the average
         // must be taken from 4 coeffs and not from the length of the vector.
         const auto i_avg = std::accumulate(i_coeffs.begin(), i_coeffs.end(), 0.0) / 4;
         const auto q_avg = std::accumulate(q_coeffs.begin(), q_coeffs.end(), 0.0) / 4;
 
-        _rfdc_dc_offset = {i_avg, q_avg};
+        _rfdc_dc_offset = std::complex<double>(i_avg, q_avg);
         expert_factory::add_prop_node<double>(expert,
             subtree,
             fe_path / "dc_offset/i_conv_cal/value",

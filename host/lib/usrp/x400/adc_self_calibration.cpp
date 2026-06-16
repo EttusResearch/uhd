@@ -16,12 +16,10 @@ using namespace std::chrono_literals;
 namespace uhd { namespace features {
 
 adc_self_calibration::adc_self_calibration(uhd::usrp::x400_rpc_iface::sptr rpcc,
-    const std::string rpc_prefix,
     const std::string unique_id,
     size_t db_number,
     uhd::usrp::x400::x400_dboard_iface::sptr daughterboard)
     : _rpcc(rpcc)
-    , _rpc_prefix(rpc_prefix)
     , _db_number(db_number)
     , _daughterboard(daughterboard)
     , _unique_id(unique_id)
@@ -155,9 +153,11 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
                 }
             }
         }
-        _rpcc->set_dac_mux_enable(_db_number, chan, 1, static_cast<size_t>(mode));
+        _rpcc->get_dboard(_db_number)
+            .set_dac_mux_enable(chan, 1, static_cast<size_t>(mode));
         auto disable_dac_mux = uhd::utils::scope_exit::make([&, mode]() {
-            _rpcc->set_dac_mux_enable(_db_number, chan, 0, static_cast<size_t>(mode));
+            _rpcc->get_dboard(_db_number)
+                .set_dac_mux_enable(chan, 0, static_cast<size_t>(mode));
         });
 
         // Save all of the LO frequencies & sources
@@ -210,20 +210,21 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
 
         // In case the calibration mode is changed, MPM will restart the ADCs. Therefore,
         // this should be done up here before we turn on any calibration tone.
-        _rpcc->set_calibration_mode(
-            _db_number, chan, static_cast<size_t>(mode), cal_params.calibration_mode);
+        _rpcc->get_dboard(_db_number)
+            .set_calibration_mode(
+                chan, static_cast<size_t>(mode), cal_params.calibration_mode);
 
         // Do any preparation work if required by the daughterboard
         _daughterboard->setup_adc_self_cal();
 
-        _rpcc->setup_threshold(_db_number,
-            chan,
-            static_cast<size_t>(mode),
-            0,
-            "hysteresis",
-            cal_params.threshold_delay,
-            cal_params.threshold_under,
-            cal_params.threshold_over);
+        _rpcc->get_dboard(_db_number)
+            .setup_threshold(chan,
+                static_cast<size_t>(mode),
+                0,
+                "hysteresis",
+                cal_params.threshold_delay,
+                cal_params.threshold_under,
+                cal_params.threshold_over);
 
         bool found_gain =
             _daughterboard->select_adc_self_cal_gain(chan, static_cast<size_t>(mode));
@@ -234,11 +235,11 @@ void adc_self_calibration::run(size_t chan, uhd::device_addr_t params)
 
         // (if required) unfreeze calibration
         const std::vector<int> current_frozen_state =
-            _rpcc->get_cal_frozen(_db_number, chan, static_cast<size_t>(mode));
-        _rpcc->set_cal_frozen(0, _db_number, chan, static_cast<size_t>(mode));
+            _rpcc->get_dboard(_db_number).get_cal_frozen(chan, static_cast<size_t>(mode));
+        _rpcc->get_dboard(_db_number).set_cal_frozen(0, chan, static_cast<size_t>(mode));
         auto refreeze_adcs = uhd::utils::scope_exit::make([&]() {
-            _rpcc->set_cal_frozen(
-                current_frozen_state[0], _db_number, chan, static_cast<size_t>(mode));
+            _rpcc->get_dboard(_db_number)
+                .set_cal_frozen(current_frozen_state[0], chan, static_cast<size_t>(mode));
             _daughterboard->finalize_adc_self_cal();
         });
 

@@ -42,10 +42,10 @@ mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
 {
     _remote_device_id = allocate_device_id();
     UHD_LOG_TRACE(_log_id, "Assigning device_id " << _remote_device_id);
-    _rpc->notify_with_token("set_device_id", _remote_device_id);
+    _rpc->set_device_id(_remote_device_id);
 
     // Check for remote streaming capabilities
-    auto compat_num = rpc->request<std::vector<size_t>>("get_mpm_compat_num");
+    auto compat_num = rpc->get_mpm_compat_number();
     _has_remote_xport_capability =
         uhd::compat_num<size_t, size_t>(compat_num[0], compat_num[1])
         >= REMOTE_XPORT_CAP_MIN;
@@ -57,7 +57,7 @@ mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
 void mpmd_mboard_impl::mpmd_mb_iface::init()
 {
     UHD_LOG_TRACE(_log_id, "Requesting clock ifaces...");
-    auto clock_ifaces = _rpc->request_with_token<clock_iface_list_t>("get_clocks");
+    clock_iface_list_t clock_ifaces = _rpc->get_clocks();
     for (auto& clock : clock_ifaces) {
         auto iface = std::make_shared<uhd::rfnoc::clock_iface>(
             clock.at("name"), std::stod(clock.at("freq")), clock.count("mutable"));
@@ -69,14 +69,11 @@ void mpmd_mboard_impl::mpmd_mb_iface::init()
                 << " MHz, mutable: " << (iface->is_mutable() ? "Yes" : "No"));
     }
     UHD_LOG_TRACE(_log_id, "Requesting CHDR link types...");
-    auto chdr_link_types =
-        _rpc->request_with_token<std::vector<std::string>>("get_chdr_link_types");
+    auto chdr_link_types = _rpc->get_chdr_link_types();
     UHD_LOG_TRACE(_log_id, "Found " << chdr_link_types.size() << " link type(s)");
     for (const auto& type : chdr_link_types) {
         UHD_LOG_TRACE(_log_id, "Trying link type `" << type << "'");
-        const auto xport_info =
-            _rpc->request_with_token<xport::mpmd_link_if_mgr::xport_info_list_t>(
-                "get_chdr_link_options", type);
+        const auto xport_info = _rpc->get_chdr_link_options(type);
         // User may have specified: addr=192.168.10.2, second_addr=
         // MPM may have said: "my addresses are 192.168.10.2 and 192.168.20.2"
         if (_link_if_mgr->connect(type, xport_info, get_chdr_w())) {
@@ -99,12 +96,12 @@ void mpmd_mboard_impl::mpmd_mb_iface::init()
  *****************************************************************************/
 uint16_t mpmd_mboard_impl::mpmd_mb_iface::get_proto_ver()
 {
-    return _rpc->request<uint16_t>("get_proto_ver");
+    return _rpc->get_proto_ver();
 }
 
 uhd::rfnoc::chdr_w_t mpmd_mboard_impl::mpmd_mb_iface::get_chdr_w()
 {
-    const auto chdr_w_bits = _rpc->request<size_t>("get_chdr_width");
+    const auto chdr_w_bits = _rpc->get_chdr_width();
     switch (chdr_w_bits) {
         case 512:
             return CHDR_W_512;
@@ -439,9 +436,7 @@ mpmd_mboard_impl::mpmd_mb_iface::get_chdr_xport_adapters()
 
     // Note: If MPM is capable, but the FPGA is not, then MPM will return an
     // empty list here.
-    const auto xport_adapters = _rpc->request_with_token<
-        std::map<std::string, std::map<std::string, std::string>>>(
-        "get_chdr_xport_adapters");
+    const auto xport_adapters = _rpc->get_chdr_xport_adapters();
 
     // Convert to UHD data type and return
     std::map<std::string, uhd::device_addr_t> return_val;
@@ -468,6 +463,5 @@ int mpmd_mboard_impl::mpmd_mb_iface::add_remote_chdr_route(const std::string& ad
     for (const auto& key : route_args.keys()) {
         route_args_map[key] = route_args.get(key);
     }
-    return _rpc->request_with_token<int>(
-        "add_remote_chdr_route", adapter_id, epid, route_args_map);
+    return _rpc->add_remote_chdr_route(adapter_id, epid, route_args_map);
 }

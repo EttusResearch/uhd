@@ -331,7 +331,7 @@ void rhodium_radio_control_impl::_set_lo1_export_enabled(
     _lo_ctrl->set_output_enable(lmx2592_iface::output_t::RF_OUTPUT_B, enabled);
     if (_lo_dist_present) {
         const auto direction = (dir == RX_DIRECTION) ? "RX" : "TX";
-        _rpcc->notify_with_token(_rpc_prefix + "enable_lo_export", direction, enabled);
+        db_rpc().enable_lo_export(direction, enabled);
     }
 }
 
@@ -423,7 +423,7 @@ void rhodium_radio_control_impl::_set_lo_output_enabled(
         std::find(LO_OUTPUT_PORT_NAMES.begin(), LO_OUTPUT_PORT_NAMES.end(), port_name);
     auto index = std::distance(LO_OUTPUT_PORT_NAMES.begin(), name_iter);
 
-    _rpcc->notify_with_token(_rpc_prefix + "enable_lo_output", direction, index, enabled);
+    db_rpc().enable_lo_output(direction, index, enabled);
     auto out_enabled   = (dir == RX_DIRECTION) ? _lo_dist_rx_out_enabled
                                                : _lo_dist_tx_out_enabled;
     out_enabled[index] = enabled;

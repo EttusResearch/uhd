@@ -18,11 +18,10 @@
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x400_rpc_iface.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <uhdlib/usrp/cores/spi_core_4000.hpp>
-#include <uhdlib/utils/rpc.hpp>
 #include <stddef.h>
 #include <memory>
 #include <mutex>
@@ -185,13 +184,12 @@ private:
 
     //! Reference to the RPC client
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
-    uhd::usrp::dboard_base_rpc_iface::sptr _db_rpcc;
+    uhd::rpc_client::dboard_iface* _db_rpcc;
 
     //! Reference to the MB timekeeper
     uhd::rfnoc::mpmd_mb_controller::mpmd_timekeeper::sptr _x4xx_timekeeper;
 
     std::string _radio_slot;
-    std::string _rpc_prefix;
 
     //! Reference to this radio block's RFDC control
     x400::rfdc_control::sptr _rfdcc;

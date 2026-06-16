@@ -423,15 +423,10 @@ public:
      * Structors
      *****************************************************************************/
     if_test_dboard_impl(const size_t db_idx,
-        const std::string& rpc_prefix,
         const std::string& unique_id,
         std::shared_ptr<mpmd_mb_controller> mb_controller,
         uhd::property_tree::sptr tree)
-        : _unique_id(unique_id)
-        , _db_idx(db_idx)
-        , _rpc_prefix(rpc_prefix)
-        , _mb_control(mb_controller)
-        , _tree(tree)
+        : _unique_id(unique_id), _db_idx(db_idx), _mb_control(mb_controller), _tree(tree)
     {
         RFNOC_LOG_TRACE("Entering " << UHD_FUNCTION);
         RFNOC_LOG_TRACE("DB ID: " << _db_idx);
@@ -462,13 +457,12 @@ public:
     void set_tx_mux(const std::string& mux)
     {
         RFNOC_LOG_TRACE("Setting TX mux to " << mux);
-        _rpcc->notify_with_token(
-            _rpc_prefix + "config_tx_path", _get_tx_path_from_mux(mux));
+        _rpcc->get_dboard(_db_idx).config_tx_path(_get_tx_path_from_mux(mux));
     }
 
     std::string get_tx_mux(void)
     {
-        return _rpcc->request_with_token<std::string>(_rpc_prefix + "get_tx_path");
+        return _rpcc->get_dboard(_db_idx).get_tx_path();
     }
 
     std::vector<std::string> get_rx_muxes(void)
@@ -479,23 +473,22 @@ public:
     void set_rx_mux(const std::string& mux)
     {
         RFNOC_LOG_TRACE("Setting RX mux to " << mux);
-        _rpcc->notify_with_token(
-            _rpc_prefix + "config_rx_path", _get_rx_path_from_mux(mux));
+        _rpcc->get_dboard(_db_idx).config_rx_path(_get_rx_path_from_mux(mux));
     }
 
     std::string get_rx_mux(void)
     {
-        return _rpcc->request_with_token<std::string>(_rpc_prefix + "get_rx_path");
+        return _rpcc->get_dboard(_db_idx).get_rx_path();
     }
 
     eeprom_map_t get_db_eeprom() final
     {
-        return _rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", _db_idx);
+        return _rpcc->get_db_eeprom(_db_idx);
     }
 
     double get_converter_rate() const final
     {
-        return _rpcc->request_with_token<double>(_rpc_prefix + "get_dboard_sample_rate");
+        return _rpcc->get_dboard_sample_rate();
     }
 
 private:
@@ -508,9 +501,6 @@ private:
 
     //! Index of this daughterboard
     const size_t _db_idx;
-
-    //! Prepended for all dboard RPC calls
-    const std::string _rpc_prefix;
 
     //! Reference to the MB controller
     uhd::rfnoc::mpmd_mb_controller::sptr _mb_control;

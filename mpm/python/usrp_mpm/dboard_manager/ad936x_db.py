@@ -104,23 +104,22 @@ class AD936xDboard:
             "value": str(lo_locked).lower(),
         }
 
-    def get_rx_lo_lock_sensor(self, _chan):
+    def get_rx_lo_lock_sensor(self, chan):
         """
         RX-specific version of get_lo_lock_sensor() (for UHD API)
         """
         return self.get_lo_lock_sensor("rx")
 
-    def get_tx_lo_lock_sensor(self, _chan):
+    def get_tx_lo_lock_sensor(self, chan):
         """
         TX-specific version of get_lo_lock_sensor() (for UHD API)
         """
         return self.get_lo_lock_sensor("tx")
 
-    def get_catalina_temp_sensor(self, _):
+    def get_catalina_temp_sensor(self, chan):
         """
         Get temperature sensor reading of Catalina.
         """
-        # Note: the unused argument is channel
         self.log.trace("Reading Catalina temperature.")
         return {
             "name": "ad9361_temperature",

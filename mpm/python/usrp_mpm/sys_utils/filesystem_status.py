@@ -29,15 +29,21 @@ def get_mender_artifact(filesystem_root="/", parse_manually=False):
     if filesystem_root != "/":
         parse_manually = True
     if parse_manually:
-        # parse mender artifact manually
         file = pathlib.Path(filesystem_root, "etc/mender/artifact_info")
         if not file.exists():
             return None
         return parse_artifact(file.read_text())
     try:
-        output = subprocess.check_output(["/usr/bin/mender", "show-artifact"]).decode("utf-8")
-        return output.splitlines()[0]
-    except:
+        # start_new_session=True isolates the child from the parent's process
+        # group (equivalent to setsid()). Unlike preexec_fn, it is fork-safe
+        # because it runs after exec, avoiding deadlocks on inherited locks.
+        result = subprocess.run(
+            ["/usr/bin/mender", "show-artifact"],
+            capture_output=True,
+            start_new_session=True,
+        )
+        return result.stdout.decode("utf-8").splitlines()[0]
+    except Exception:
         return None
 
 

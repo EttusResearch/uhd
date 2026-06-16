@@ -7,7 +7,7 @@
 #pragma once
 
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
+#include <uhdlib/usrp/common/x400_rpc_iface.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <vector>
 

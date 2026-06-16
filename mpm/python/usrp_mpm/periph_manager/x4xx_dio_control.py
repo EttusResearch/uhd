@@ -5,6 +5,7 @@
 #
 """X4xx DIO Control."""
 
+import os
 import re
 import signal
 import weakref
@@ -14,6 +15,7 @@ from usrp_mpm.mpmutils import (
     poll_with_timeout,
     register_chained_signal_handler,
     set_proc_title,
+    unregister_chained_signal_handler,
 )
 from usrp_mpm.sys_utils.gpio import Gpio
 
@@ -320,12 +322,17 @@ class DioControl:
         # Use a weakref-based signal handler wrapper so the global signal
         # handler chain does not keep this DioControl instance alive.
         self_ref = weakref.ref(self)
+
         def _weak_monitor_int_handler(signum, frame):
             obj = self_ref()
             if obj is not None:
                 obj._monitor_int_handler(signum, frame)
-        register_chained_signal_handler(signal.SIGINT, _weak_monitor_int_handler)
-        register_chained_signal_handler(signal.SIGTERM, _weak_monitor_int_handler)
+
+        # Store as instance attr so tear_down() can unregister this specific
+        # handler and prevent the chain from growing across resets.
+        self._monitor_signal_handler = _weak_monitor_int_handler
+        register_chained_signal_handler(signal.SIGINT, self._monitor_signal_handler)
+        register_chained_signal_handler(signal.SIGTERM, self._monitor_signal_handler)
         self._dio0_fault_monitor.start()
         self._dio1_fault_monitor.start()
 
@@ -353,6 +360,22 @@ class DioControl:
 
         If there is a fault, turn off external power.
         """
+        # After fork(), this child inherits the parent's gevent signal self-pipe.
+        # Signals delivered to this child write to that shared pipe, causing the
+        # parent's gevent hub to fire the parent's SIGTERM handler (stopping the
+        # gRPC server mid-reset). Disconnect the self-pipe and reset signal
+        # handlers to defaults so this child exits cleanly on SIGTERM/SIGINT.
+        try:
+            signal.set_wakeup_fd(-1)  # Disconnect inherited gevent wakeup fd
+            self.log.debug("DioControl %s child: gevent self-pipe disconnected", dio_port)
+        except (ValueError, OSError) as ex:
+            self.log.warning("DioControl %s child: set_wakeup_fd(-1) failed: %s", dio_port, ex)
+        for sig in (signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGPIPE):
+            try:
+                signal.signal(sig, signal.SIG_DFL)
+            except (OSError, ValueError):
+                pass
+        os.setpgrp()  # Belt-and-suspenders: own process group
         self.log.trace("Launching monitor loop...")
         set_proc_title(current_process().name, self.log)
         fault_line = Gpio(fault, Gpio.FALLING_EDGE)
@@ -751,8 +774,22 @@ class DioControl:
         self._dio1_fault_monitor.terminate()
         self._dio0_fault_monitor.join(3)
         self._dio1_fault_monitor.join(3)
-        if self._dio0_fault_monitor.is_alive() or self._dio1_fault_monitor.is_alive():
-            self.log.warning("DIO monitor didn't exit properly")
+        for monitor in (self._dio0_fault_monitor, self._dio1_fault_monitor):
+            if monitor.is_alive():
+                self.log.warning(
+                    "DIO monitor %s didn't exit properly, sending SIGKILL", monitor.name
+                )
+                monitor.kill()
+                monitor.join(1)
+        # Break the reference cycle: Process._target holds a bound method of
+        # this DioControl, preventing reference-count GC from collecting it
+        # after reset. Only clear references once the processes are confirmed
+        # dead; keeping them would allow a future kill/join if needed.
+        self._dio0_fault_monitor = None
+        self._dio1_fault_monitor = None
+        unregister_chained_signal_handler(signal.SIGINT, self._monitor_signal_handler)
+        unregister_chained_signal_handler(signal.SIGTERM, self._monitor_signal_handler)
+        self._monitor_signal_handler = None
 
     def set_port_mapping(self, mapping):
         """Change the port mapping to mapping.

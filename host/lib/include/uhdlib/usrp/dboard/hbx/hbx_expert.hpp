@@ -18,6 +18,7 @@
 #include <uhdlib/usrp/common/pwr_cal_mgr.hpp>
 #include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x400_rpc_iface.hpp>
 #include <uhdlib/usrp/dboard/hbx/hbx_cpld_ctrl.hpp>
 #include <cmath>
 #include <complex>

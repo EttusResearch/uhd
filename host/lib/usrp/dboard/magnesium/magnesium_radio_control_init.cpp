@@ -442,8 +442,7 @@ void magnesium_radio_control_impl::_init_mpm()
     // in arguments from the device args. So if block_args contains a
     // master_clock_rate key, then it should better be whatever the device is
     // configured to do.
-    _master_clock_rate =
-        _rpcc->request_with_token<double>(_rpc_prefix + "get_master_clock_rate");
+    _master_clock_rate = db_rpc().get_master_clock_rate();
     if (block_args.cast<double>("master_clock_rate", _master_clock_rate)
         != _master_clock_rate) {
         throw uhd::runtime_error(str(

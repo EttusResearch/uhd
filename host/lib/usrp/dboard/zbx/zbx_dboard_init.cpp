@@ -350,7 +350,6 @@ void zbx_dboard_impl::_init_experts(uhd::property_tree::sptr subtree,
                 fe_path,
                 trx,
                 chan_idx,
-                _rpc_prefix,
                 _db_idx,
                 _mb_rpcc);
         } else {
@@ -649,8 +648,7 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         subtree,
         fe_path / "los" / RFDC_NCO / "freq" / "value",
         // Initialize with current value
-        _mb_rpcc->rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
-            _db_idx,
+        _mb_rpcc->get_dboard(_db_idx).rfdc_get_nco_freq(trx == TX_DIRECTION ? "tx" : "rx",
             chan_idx,
             static_cast<size_t>(ZBX_CH_MODE)),
         AUTO_RESOLVE_ON_WRITE);

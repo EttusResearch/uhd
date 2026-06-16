@@ -20,13 +20,12 @@ UHD_PYTHON_CHECK_MODULE_VERSION(
     HAVE_PYTHON_MODULE_GEVENT
 )
 
-# mprpc does not expose a __version__ attribute, so merely check for its
-# presence
+# Check for grpcio (gRPC Python runtime library)
 UHD_PYTHON_CHECK_MODULE(
-    "mprpc module"
-    "mprpc"
+    "grpcio module"
+    "grpc"
     "True"
-    HAVE_PYTHON_MODULE_MPRPC
+    HAVE_PYTHON_MODULE_GRPCIO
 )
 
 UHD_PYTHON_CHECK_MODULE_VERSION(
@@ -46,7 +45,7 @@ UHD_PYTHON_CHECK_MODULE(
     HAVE_PYTHON_MODULE_PYROUTE2
 )
 
-if (HAVE_PYTHON_MODULE_GEVENT AND HAVE_PYTHON_MODULE_MPRPC AND HAVE_PYTHON_MODULE_PYUDEV AND HAVE_PYTHON_MODULE_PYROUTE2)
+if (HAVE_PYTHON_MODULE_GEVENT AND HAVE_PYTHON_MODULE_GRPCIO AND HAVE_PYTHON_MODULE_PYUDEV AND HAVE_PYTHON_MODULE_PYROUTE2)
     set(HAVE_MPM_TEST_PREREQS TRUE)
     MESSAGE(STATUS "MPM unit test Python package prerequisites met!")
 else()
@@ -114,12 +113,67 @@ configure_file(${PERIPH_MGR_INIT_IN} ${PERIPH_MGR_INIT})
 configure_file(${USRP_MPM_INIT_IN} ${USRP_MPM_INIT})
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/usrp_hwd.py" "${CMAKE_CURRENT_BINARY_DIR}/usrp_hwd.py" COPYONLY)
 
+########################################################################
+# Generate gRPC/protobuf Python stubs from .proto file
+########################################################################
+
+find_package(Protobuf)
+find_program(GRPC_PYTHON_PLUGIN grpc_python_plugin)
+
+if(NOT Protobuf_PROTOC_EXECUTABLE)
+    message(FATAL_ERROR "protoc not found! Install protobuf-compiler.")
+endif()
+if(NOT GRPC_PYTHON_PLUGIN)
+    message(FATAL_ERROR "grpc_python_plugin not found! Install protobuf-compiler-grpc.")
+endif()
+
+set(PROTO_DIR "${UHD_SOURCE_DIR}/lib/usrp/common")
+set(PROTO_FILE "${PROTO_DIR}/mpm_server.proto")
+set(PROTO_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+set(GRPC_CUSTOM_PATH "usrp_mpm")
+
+protobuf_generate(
+    OUT_VAR MPM_SERVER_PROTO_PYTHON_FILES
+    LANGUAGE python
+    APPEND_PATH ${PROTO_DIR}
+    PROTOS ${PROTO_FILE}
+    PROTOC_OUT_DIR ${PROTO_OUTPUT_DIR}/${GRPC_CUSTOM_PATH}
+)
+# Using a custom command instead of protobuf_generate because the latter does not allow adding a custom package path
+# as described in https://grpc.io/docs/languages/python/basics/#generating-grpc-interfaces-with-custom-package-path
+# Note: `python -m grpc_tools.protoc` corresponds to `protoc --plugin=protoc-gen-grpc_python=grpc_python_plugin`
+set(MPM_SERVER_PROTO_GRPC_PYTHON_FILES ${PROTO_OUTPUT_DIR}/${GRPC_CUSTOM_PATH}/mpm_server_pb2_grpc.py)
+add_custom_command(
+    OUTPUT
+        ${MPM_SERVER_PROTO_GRPC_PYTHON_FILES}
+    COMMAND
+        ${Protobuf_PROTOC_EXECUTABLE} --proto_path=${GRPC_CUSTOM_PATH}=${PROTO_DIR} --grpc_python_out=${PROTO_OUTPUT_DIR} --plugin=protoc-gen-grpc_python=${GRPC_PYTHON_PLUGIN} ${PROTO_DIR}/mpm_server.proto
+    DEPENDS
+        ${PROTO_DIR}/mpm_server.proto
+    COMMENT "Generating gRPC Python stubs for MPM server"
+    VERBATIM
+)
+
 add_custom_command(OUTPUT ${OUTPUT}
      COMMAND ${CMAKE_COMMAND}  -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"  -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake
      COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
      COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-     DEPENDS ${USRP_MPM_FILES} pyusrp_periphs)
+     DEPENDS ${USRP_MPM_FILES} pyusrp_periphs ${MPM_SERVER_PROTO_PYTHON_FILES} ${MPM_SERVER_PROTO_GRPC_PYTHON_FILES})
 add_custom_target(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
+
+# see https://gitlab.kitware.com/cmake/cmake/-/work_items/21034
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+    TARGET_SOURCES(usrp_mpm PRIVATE ${MPM_SERVER_PROTO_PYTHON_FILES} ${MPM_SERVER_PROTO_GRPC_PYTHON_FILES})
+else()
+    set_property(TARGET usrp_mpm APPEND PROPERTY SOURCES ${MPM_SERVER_PROTO_PYTHON_FILES} ${MPM_SERVER_PROTO_GRPC_PYTHON_FILES})
+endif()
+
+add_custom_target(
+    generate_mpm_server_python_stubs
+    DEPENDS
+        ${MPM_SERVER_PROTO_PYTHON_FILES}
+        ${MPM_SERVER_PROTO_GRPC_PYTHON_FILES}
+)
 
 if(NOT DEFINED USRP_MPM_PYTHON_DIR)
     execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
@@ -175,4 +229,3 @@ endif()
 if (HAVE_MPM_TEST_PREREQS)
     add_subdirectory(tests)
 endif (HAVE_MPM_TEST_PREREQS)
-

@@ -198,14 +198,16 @@ if(MINGW)
     target_link_libraries(uhd PRIVATE mswsock)
 endif(MINGW)
 
-function(UHD_LIB_ADD_RPCLIB uhd_lib_name)
-    target_include_directories(${uhd_lib_name} PRIVATE deps/rpclib/include)
-    target_sources(${uhd_lib_name} PRIVATE $<TARGET_OBJECTS:uhd_rpclib>)
-endfunction(UHD_LIB_ADD_RPCLIB)
-
 if(ENABLE_MPMD)
     add_subdirectory(deps)
-    UHD_LIB_ADD_RPCLIB(uhd)
+    # Link gRPC and protobuf as PRIVATE: they are internal implementation details
+    # and must not be exported into UHDTargets.cmake (would break find_package(UHD)
+    # in consumer projects that have not loaded protobuf/gRPC themselves).
+    target_link_libraries(uhd PRIVATE protobuf::libprotobuf gRPC::grpc++)
+    # utf8_range is a static-only dep on Windows; on Linux it is transitively resolved
+    if(WIN32)
+        target_link_libraries(uhd PRIVATE utf8_range::utf8_range utf8_range::utf8_validity)
+    endif()
 endif()
 
 if(ENABLE_DPDK)

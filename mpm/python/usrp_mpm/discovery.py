@@ -16,7 +16,8 @@ RESPONSE_PREAMBLE = b"USRP-MPM"
 RESPONSE_SEP = b";"
 RESPONSE_CLAIMED_KEY = b"claimed"
 # 1: mprpc
-RPC_VERSION = b"1"
+# 2: gRPC
+RPC_VERSION = b"2"
 # A buffer size large enough to capture any UDP packet we receive on the
 # discovery socket
 MAX_SOCK_BUFSIZ = 9000

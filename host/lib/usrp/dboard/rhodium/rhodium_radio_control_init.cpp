@@ -224,14 +224,13 @@ void rhodium_radio_control_impl::_init_peripherals()
     _update_rx_input_switches(RHODIUM_DEFAULT_RX_ANTENNA);
 
     RFNOC_LOG_TRACE("Checking for existence of LO Distribution board");
-    _lo_dist_present =
-        _rpcc->request_with_token<bool>(_rpc_prefix + "is_lo_dist_present");
+    _lo_dist_present = db_rpc().is_lo_dist_present();
     RFNOC_LOG_DEBUG(
         "LO distribution board is" << (_lo_dist_present ? "" : " NOT") << " present");
 
     RFNOC_LOG_TRACE("Reading EEPROM content...");
     const size_t db_idx = get_block_id().get_block_count();
-    _db_eeprom = this->_rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", db_idx);
+    _db_eeprom          = _rpcc->get_db_eeprom(db_idx);
 }
 
 // Reminder: The property must not own any properties, it can only interact with
@@ -590,8 +589,7 @@ void rhodium_radio_control_impl::_init_mpm()
     // in arguments from the device args. So if block_args contains a
     // master_clock_rate key, then it should better be whatever the device is
     // configured to do.
-    _master_clock_rate =
-        _rpcc->request_with_token<double>(_rpc_prefix + "get_master_clock_rate");
+    _master_clock_rate = db_rpc().get_master_clock_rate();
     if (block_args.cast<double>("master_clock_rate", _master_clock_rate)
         != _master_clock_rate) {
         throw uhd::runtime_error(

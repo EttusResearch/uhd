@@ -8,7 +8,7 @@
 #define INCLUDED_LIBUHD_RFNOC_MAGNESIUM_AD9371_IFACE_HPP
 
 #include <uhd/types/direction.hpp>
-#include <uhdlib/utils/rpc.hpp>
+#include <uhdlib/usrp/common/rpc.hpp>
 #include <iostream>
 #include <string>
 
@@ -43,31 +43,16 @@ public:
     std::pair<int8_t, std::vector<int16_t>> get_fir(const std::string& name);
 
 private:
-    /*! Shorthand to perform an RPC request. Saves some typing.
-     */
-    template <typename return_type, typename... Args>
-    return_type request(std::string const& func_name, Args&&... args)
+    uhd::rpc_client::dboard_iface& rpc()
     {
-        UHD_LOG_TRACE(_log_prefix, "[RPC] Calling " << func_name);
-        return _rpcc->request_with_token<return_type>(
-            _rpc_prefix + func_name, std::forward<Args>(args)...);
-    };
-
-    /*! Shorthand to perform an RPC request with timeout.
-     */
-    template <typename return_type, typename... Args>
-    return_type request(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
-    {
-        UHD_LOG_TRACE(_log_prefix, "[RPC] Calling " << func_name);
-        return _rpcc->request_with_token<return_type>(
-            timeout_ms, _rpc_prefix + func_name, std::forward<Args>(args)...);
-    };
+        return _rpcc->get_dboard(_db_idx);
+    }
 
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
 
     //! Stores the prefix to RPC calls
-    const std::string _rpc_prefix;
+    const int _db_idx;
 
     //! Logger prefix
     const std::string _log_prefix;

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <uhd/types/device_addr.hpp>
-#include <uhdlib/utils/rpc.hpp>
+#include <uhdlib/usrp/common/rpc.hpp>
 
 namespace uhd { namespace rfnoc {
 

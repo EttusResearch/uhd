@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" @package usrp
+"""@package usrp
 Python UHD module containing the MultiUSRP and other objects
 """
 
@@ -16,14 +16,25 @@ from .. import libpyuhd as lib
 
 def _get_mpm_client(token, mb_args):
     """
-    Wrapper function to dynamically generate a Pythonic MPM client from
-    MultiUSRP.
-    """
-    from uhd.utils import mpmtools
+    Return a C++ rpc_client connected to the MPM server on the given device.
 
+    The token is injected so the caller can make claim-requiring RPC calls.
+    """
+    from uhd.utils.mpmtools import MPM_DEFAULT_RPC_TIMEOUT_MS, MPM_RPC_PORT
+
+    if not token:
+        raise RuntimeError(
+            "Cannot create MPM client: token is empty. " "The device may not be claimed yet."
+        )
     rpc_addr = mb_args.get("mgmt_addr")
-    rpc_port = mb_args.get("rpc_port", mpmtools.MPM_RPC_PORT)
-    return mpmtools.MPMClient(mpmtools.InitMode.Hijack, rpc_addr, rpc_port, token)
+    rpc_port = int(mb_args.get("rpc_port", MPM_RPC_PORT))
+    try:
+        client = lib.usrp.rpc_client.make(rpc_addr, rpc_port, MPM_DEFAULT_RPC_TIMEOUT_MS)
+    except Exception as ex:
+        print(f"[MPM] Failed to connect to {rpc_addr}:{rpc_port}: {ex}")
+        raise
+    client.set_token(token)
+    return client
 
 
 class MultiUSRP(lib.usrp.multi_usrp):

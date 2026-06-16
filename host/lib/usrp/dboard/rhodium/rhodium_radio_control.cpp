@@ -50,8 +50,8 @@ rhodium_radio_control_impl::rhodium_radio_control_impl(make_args_ptr make_args)
     UHD_ASSERT_THROW(get_block_id().get_block_count() < 2);
     const char radio_slot_name[] = {'A', 'B'};
     _radio_slot                  = radio_slot_name[get_block_id().get_block_count()];
-    _rpc_prefix                  = (_radio_slot == "A") ? "db_0_" : "db_1_";
-    RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
+    _db_idx                      = get_block_id().get_block_count();
+    RFNOC_LOG_TRACE("Radio slot: " << _radio_slot << " Daughterboard index: " << _db_idx);
     UHD_ASSERT_THROW(get_num_input_ports() == RHODIUM_NUM_CHANS);
     UHD_ASSERT_THROW(get_num_output_ports() == RHODIUM_NUM_CHANS);
     UHD_ASSERT_THROW(get_mb_controller());
@@ -63,9 +63,7 @@ rhodium_radio_control_impl::rhodium_radio_control_impl(make_args_ptr make_args)
     _rpcc = _n320_mb_control->get_rpc_client();
     UHD_ASSERT_THROW(_rpcc);
 
-    const auto all_dboard_info =
-        _rpcc->request<std::vector<std::map<std::string, std::string>>>(
-            "get_dboard_info");
+    const auto all_dboard_info = _rpcc->get_dboard_info();
     RFNOC_LOG_TRACE("Hardware detected " << all_dboard_info.size() << " daughterboards.");
 
     // If we two radio blocks, but there is only one dboard plugged in, we skip
@@ -117,8 +115,11 @@ double rhodium_radio_control_impl::set_rate(double requested_rate)
     }
 
     RFNOC_LOG_TRACE("Updating master clock rate to " << rate);
-    _master_clock_rate = _rpcc->request_with_token<double>(
-        SET_RATE_RPC_TIMEOUT_MS, "db_0_set_master_clock_rate", rate);
+    {
+        [[maybe_unused]] auto timeout_scope =
+            _rpcc->set_scope_timeout(SET_RATE_RPC_TIMEOUT_MS);
+        _master_clock_rate = db_rpc().set_master_clock_rate(rate);
+    }
     _n3xx_timekeeper->update_tick_rate(_master_clock_rate);
     radio_control_impl::set_rate(_master_clock_rate);
     // The lowband LO frequency will change with the master clock rate, so
@@ -228,7 +229,7 @@ double rhodium_radio_control_impl::set_tx_frequency(const double freq, const siz
                 "Disable highband_spur_reduction or avoid using timed tuning commands.");
         }
         RFNOC_LOG_TRACE("TX Lowband LO is " << (is_highband ? "disabled" : "enabled"));
-        _rpcc->notify_with_token(_rpc_prefix + "enable_tx_lowband_lo", (!is_highband));
+        db_rpc().enable_tx_lowband_lo(!is_highband);
     }
     _update_tx_freq_switches(coerced_freq);
     const bool enable_corrections = is_highband
@@ -280,7 +281,7 @@ double rhodium_radio_control_impl::set_rx_frequency(const double freq, const siz
                 "Disable highband_spur_reduction or avoid using timed tuning commands.");
         }
         RFNOC_LOG_TRACE("RX Lowband LO is " << (is_highband ? "disabled" : "enabled"));
-        _rpcc->notify_with_token(_rpc_prefix + "enable_rx_lowband_lo", (!is_highband));
+        db_rpc().enable_rx_lowband_lo(!is_highband);
     }
     _update_rx_freq_switches(coerced_freq);
     const bool enable_corrections = is_highband
@@ -690,8 +691,8 @@ uint32_t rhodium_radio_control_impl::get_gpio_attr(
 void rhodium_radio_control_impl::set_db_eeprom(const eeprom_map_t& db_eeprom)
 {
     const size_t db_idx = get_block_id().get_block_count();
-    _rpcc->notify_with_token("set_db_eeprom", db_idx, db_eeprom);
-    _db_eeprom = this->_rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", db_idx);
+    _rpcc->set_db_eeprom(db_idx, db_eeprom);
+    _db_eeprom = this->_rpcc->get_db_eeprom(db_idx);
 }
 
 eeprom_map_t rhodium_radio_control_impl::get_db_eeprom()
@@ -718,8 +719,7 @@ sensor_value_t rhodium_radio_control_impl::get_rx_sensor(
         return sensor_value_t(
             "all_los", this->get_lo_lock_status(RX_DIRECTION), "locked", "unlocked");
     }
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "RX", name, chan));
+    return sensor_value_t(db_rpc().get_sensor("RX", name, chan));
 }
 
 std::vector<std::string> rhodium_radio_control_impl::get_tx_sensor_names(size_t) const
@@ -738,8 +738,7 @@ sensor_value_t rhodium_radio_control_impl::get_tx_sensor(
         return sensor_value_t(
             "all_los", this->get_lo_lock_status(TX_DIRECTION), "locked", "unlocked");
     }
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "TX", name, chan));
+    return sensor_value_t(db_rpc().get_sensor("TX", name, chan));
 }
 
 bool rhodium_radio_control_impl::get_lo_lock_status(const direction_t dir) const

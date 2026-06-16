@@ -4,17 +4,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
+#include <uhdlib/usrp/common/mpmd_timeouts.hpp>
 #include <future>
 #include <vector>
 
 using namespace uhd::rfnoc;
 using namespace uhd;
-
-namespace {
-//! Default timeout value for RPC calls that we know can take long (ms)
-constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 30000; // ms
-} // namespace
 
 mpmd_mb_controller::fpga_onload::fpga_onload() {}
 
@@ -152,8 +149,7 @@ mpmd_mb_controller::mpmd_mb_controller(uhd::usrp::mpmd_rpc_iface::sptr rpcc,
     }
 
     if (_rpc->supports_feature("gpio_power")) {
-        _gpio_power = std::make_shared<gpio_power>(
-            std::make_shared<uhd::usrp::dio_rpc>(get_rpc_client()), _gpio_banks);
+        _gpio_power = std::make_shared<gpio_power>(get_rpc_client(), _gpio_banks);
         register_feature(_gpio_power);
     }
 }
@@ -201,8 +197,7 @@ std::string mpmd_mb_controller::get_mboard_name() const
 
 void mpmd_mb_controller::set_time_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(
-        MPMD_DEFAULT_LONG_TIMEOUT, "set_time_source", source);
+    _rpc->set_time_source(source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["time_source"] = source;
@@ -224,8 +219,7 @@ std::vector<std::string> mpmd_mb_controller::get_time_sources() const
 
 void mpmd_mb_controller::set_clock_source(const std::string& source)
 {
-    _rpc->get_raw_rpc_client()->notify_with_token(
-        MPMD_DEFAULT_LONG_TIMEOUT, "set_clock_source", source);
+    _rpc->set_clock_source(source);
     if (!_sync_source_updaters.empty()) {
         mb_controller::sync_source_t sync_source;
         sync_source["clock_source"] = source;
@@ -260,8 +254,7 @@ void mpmd_mb_controller::set_sync_source(const device_addr_t& sync_source)
     for (const auto& key : sync_source.keys()) {
         sync_source_map[key] = sync_source.get(key);
     }
-    _rpc->get_raw_rpc_client()->notify_with_token(
-        MPMD_DEFAULT_LONG_TIMEOUT, "set_sync_source", sync_source_map);
+    _rpc->set_sync_source(sync_source_map);
     if (!_sync_source_updaters.empty()) {
         for (const auto& updater : _sync_source_updaters) {
             updater(sync_source);
@@ -432,7 +425,8 @@ bool mpmd_mb_controller::_pre_timekeeper_synchronize(
     // device args, but we don't have access to them here. Might be a useful
     // change.
     std::map<std::string, std::string> sync_args{};
-    std::list<std::map<std::string, std::string>> collated_sync_args;
+    std::vector<std::map<std::string, std::string>> collated_sync_args;
+    collated_sync_args.reserve(mpmd_mb_controllers.size());
     // Now prime the sync args (in parallel) on all relevant devices.
     for (auto& mbc : mpmd_mb_controllers) {
         sync_tasks.emplace_back(std::async(
@@ -494,7 +488,7 @@ std::map<std::string, std::string> mpmd_mb_controller::_synchronize(
 }
 
 std::map<std::string, std::string> mpmd_mb_controller::_aggregate_sync_info(
-    const std::list<std::map<std::string, std::string>>& collated_sync_args)
+    const std::vector<std::map<std::string, std::string>>& collated_sync_args)
 {
     return _rpc->aggregate_sync_data(collated_sync_args);
 }

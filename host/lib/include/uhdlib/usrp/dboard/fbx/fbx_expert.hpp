@@ -10,8 +10,8 @@
 #include "fbx_ctrl.hpp"
 #include <uhd/experts/expert_nodes.hpp>
 #include <uhd/property_tree.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
+#include <uhdlib/usrp/common/x400_rpc_iface.hpp>
 #include <cmath>
 #include <memory>
 
@@ -210,7 +210,6 @@ public:
         const uhd::direction_t trx,
         const size_t chan,
         const double rfdc_rate,
-        const std::string rpc_prefix,
         int db_idx,
         uhd::usrp::x400_rpc_iface::sptr rpcc)
         : uhd::experts::worker_node_t(fe_path / "fbx_rfdc_freq_expert")
@@ -221,7 +220,6 @@ public:
         , _frequency_desired(db, fe_path / "freq" / "desired")
         , _if_frequency_coerced(db, fe_path / "if_freq" / "coerced")
         , _coerced_frequency(db, fe_path / "freq" / "coerced")
-        , _rpc_prefix(rpc_prefix)
         , _db_idx(db_idx)
         , _rpcc(rpcc)
         , _trx(trx)
@@ -253,7 +251,6 @@ private:
     // Outputs to generic freq property
     uhd::experts::data_writer_t<double> _coerced_frequency;
 
-    const std::string _rpc_prefix;
     const size_t _db_idx;
     uhd::usrp::x400_rpc_iface::sptr _rpcc;
     const uhd::direction_t _trx;

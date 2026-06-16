@@ -181,6 +181,7 @@ class sim(PeriphManagerBase):
     ###########################################################################
     # Device info
     ###########################################################################
+    @no_claim
     def get_device_info_dyn(self):
         """
         Append the device info with current IP addresses.
@@ -270,7 +271,7 @@ class sim(PeriphManagerBase):
         next_pps: If True, set time at next PPS. Otherwise, set time now.
         """
         self.log.debug(
-            "Setting timekeeper time (tx_idx:{}, ticks: {}, next_pps: {})".format(
+            "Setting timekeeper time (tk_idx:{}, ticks: {}, next_pps: {})".format(
                 tk_idx, ticks, next_pps
             )
         )

@@ -111,7 +111,7 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     const char radio_slot_name[2] = {'A', 'B'};
     _radio_slot                   = radio_slot_name[get_block_id().get_block_count()];
     RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
-    _rpc_prefix = (_radio_slot == "A") ? "db_0_" : "db_1_";
+    _db_idx = (_radio_slot == "A") ? 0 : 1;
     UHD_ASSERT_THROW(get_num_input_ports() == MAGNESIUM_NUM_CHANS);
     UHD_ASSERT_THROW(get_num_output_ports() == MAGNESIUM_NUM_CHANS);
     UHD_ASSERT_THROW(get_mb_controller());
@@ -122,7 +122,8 @@ magnesium_radio_control_impl::magnesium_radio_control_impl(make_args_ptr make_ar
     UHD_ASSERT_THROW(_n3xx_timekeeper);
     _rpcc = _n310_mb_control->get_rpc_client();
     UHD_ASSERT_THROW(_rpcc);
-    _mpm_compat_num = _rpcc->request<std::vector<size_t>>("get_mpm_compat_num");
+    const auto compat_num_u32 = _rpcc->get_mpm_compat_number();
+    _mpm_compat_num.assign(compat_num_u32.begin(), compat_num_u32.end());
     UHD_ASSERT_THROW(_mpm_compat_num.size() == 2);
 
     _init_defaults();
@@ -177,19 +178,23 @@ double magnesium_radio_control_impl::set_rate(double requested_rate)
     // on both radios every time we call it on any radio, unless the other radio
     // block is not participating in the graph.
     // Note: Updating the master clock rate is a no-op on the second call.
-    const size_t num_dboards =
-        _rpcc->request<std::vector<std::map<std::string, std::string>>>("get_dboard_info")
-            .size();
+    const size_t num_dboards = _rpcc->get_dboard_info().size();
     // Explicitly go and update rate on radio 0
     RFNOC_LOG_DEBUG("Setting master clock rate on DB0 to " << (rate / 1e6) << " MHz...");
-    _master_clock_rate = _rpcc->request_with_token<double>(
-        MAGNESIUM_TUNE_TIMEOUT, "db_0_set_master_clock_rate", rate);
+    {
+        [[maybe_unused]] auto timeout_scope =
+            _rpcc->set_scope_timeout(MAGNESIUM_TUNE_TIMEOUT);
+        _master_clock_rate = _rpcc->get_dboard(0).set_master_clock_rate(rate);
+    }
     // Now go to the other side
     if (num_dboards == 2) {
         RFNOC_LOG_DEBUG(
             "Setting master clock rate on DB1 to " << (rate / 1e6) << " MHz...");
-        const double sideB_rate = _rpcc->request_with_token<double>(
-            MAGNESIUM_TUNE_TIMEOUT, "db_1_set_master_clock_rate", rate);
+        const double sideB_rate = [&]() {
+            [[maybe_unused]] auto timeout_scope =
+                _rpcc->set_scope_timeout(MAGNESIUM_TUNE_TIMEOUT);
+            return _rpcc->get_dboard(1).set_master_clock_rate(rate);
+        }();
         if (!math::frequencies_are_equal(sideB_rate, _master_clock_rate)) {
             RFNOC_LOG_ERROR("set_rate(): Error updating rates. Slot A now has rate "
                             << (_master_clock_rate / 1e6) << " MHz, but slot B has "
@@ -1093,13 +1098,10 @@ bool magnesium_radio_control_impl::get_lo_lock_status(const direction_t dir)
     const double freq     = (dir == RX_DIRECTION) ? get_rx_frequency(chan)
                                                   : get_tx_frequency(chan);
 
-    bool lo_lock =
-        _rpcc->request_with_token<bool>(_rpc_prefix + "get_ad9371_lo_lock", trx);
+    bool lo_lock = db_rpc().get_ad9371_lo_lock(trx);
     RFNOC_LOG_TRACE("AD9371 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
     if (lo_lock and _map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
-        lo_lock =
-            lo_lock
-            && _rpcc->request_with_token<bool>(_rpc_prefix + "get_lowband_lo_lock", trx);
+        lo_lock = lo_lock && db_rpc().get_lowband_lo_lock(trx);
         RFNOC_LOG_TRACE(
             "ADF4351 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
     }
@@ -1154,13 +1156,13 @@ uint32_t magnesium_radio_control_impl::get_gpio_attr(
 void magnesium_radio_control_impl::set_db_eeprom(const eeprom_map_t& db_eeprom)
 {
     const size_t db_idx = get_block_id().get_block_count();
-    _rpcc->notify_with_token("set_db_eeprom", db_idx, db_eeprom);
+    _rpcc->set_db_eeprom(db_idx, db_eeprom);
 }
 
 eeprom_map_t magnesium_radio_control_impl::get_db_eeprom()
 {
     const size_t db_idx = get_block_id().get_block_count();
-    return this->_rpcc->request_with_token<eeprom_map_t>("get_db_eeprom", db_idx);
+    return this->_rpcc->get_db_eeprom(db_idx);
 }
 
 /**************************************************************************
@@ -1168,8 +1170,7 @@ eeprom_map_t magnesium_radio_control_impl::get_db_eeprom()
  *************************************************************************/
 std::vector<std::string> magnesium_radio_control_impl::get_rx_sensor_names(size_t) const
 {
-    auto sensor_names = _rpcc->request_with_token<std::vector<std::string>>(
-        this->_rpc_prefix + "get_sensors", "RX");
+    auto sensor_names = db_rpc().get_sensors("RX");
     sensor_names.push_back("lo_locked");
     return sensor_names;
 }
@@ -1181,14 +1182,12 @@ sensor_value_t magnesium_radio_control_impl::get_rx_sensor(
         return sensor_value_t(
             "all_los", this->get_lo_lock_status(RX_DIRECTION), "locked", "unlocked");
     }
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "RX", name, chan));
+    return sensor_value_t(db_rpc().get_sensor("RX", name, chan));
 }
 
 std::vector<std::string> magnesium_radio_control_impl::get_tx_sensor_names(size_t) const
 {
-    auto sensor_names = _rpcc->request_with_token<std::vector<std::string>>(
-        this->_rpc_prefix + "get_sensors", "TX");
+    auto sensor_names = db_rpc().get_sensors("TX");
     sensor_names.push_back("lo_locked");
     return sensor_names;
 }
@@ -1200,8 +1199,7 @@ sensor_value_t magnesium_radio_control_impl::get_tx_sensor(
         return sensor_value_t(
             "all_los", this->get_lo_lock_status(TX_DIRECTION), "locked", "unlocked");
     }
-    return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
-        _rpc_prefix + "get_sensor", "TX", name, chan));
+    return sensor_value_t(db_rpc().get_sensor("TX", name, chan));
 }
 
 /**************************************************************************

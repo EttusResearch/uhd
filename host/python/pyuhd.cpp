@@ -45,6 +45,9 @@ namespace py = pybind11;
 #include "types/types_python.hpp"
 #include "usrp/dboard_iface_python.hpp"
 #include "usrp/fe_connection_python.hpp"
+#ifdef ENABLE_MPMD
+#    include "usrp/mpm_client_python.hpp"
+#endif
 #include "usrp/multi_usrp_python.hpp"
 #include "usrp/subdev_spec_python.hpp"
 #include "usrp_clock/multi_usrp_clock_python.hpp"
@@ -91,6 +94,9 @@ PYBIND11_MODULE(libpyuhd, m)
     // Register usrp submodule
     auto usrp_module = m.def_submodule("usrp", "USRP Objects");
     export_multi_usrp(usrp_module);
+#ifdef ENABLE_MPMD
+    export_rpc_client(usrp_module);
+#endif
     export_subdev_spec(usrp_module);
     export_dboard_iface(usrp_module);
     export_fe_connection(usrp_module);

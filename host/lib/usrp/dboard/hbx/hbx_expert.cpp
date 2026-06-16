@@ -363,11 +363,11 @@ void hbx_rfdc_freq_expert::resolve()
 {
     // This expert only sets the converters in Real mode as the converters in
     // complex mode are driven in base-band mode.
-    _rfdc_freq_coerced = _rpcc->rfdc_set_nco_freq(_get_trx_string(_trx),
-        _db_idx,
-        0,
-        _rfdc_freq_desired,
-        static_cast<size_t>(uhd::usrp::x400::ch_mode::REAL));
+    _rfdc_freq_coerced =
+        _rpcc->get_dboard(_db_idx).rfdc_set_nco_freq(_get_trx_string(_trx),
+            0,
+            _rfdc_freq_desired,
+            static_cast<uint32_t>(uhd::usrp::x400::ch_mode::REAL));
 }
 
 void hbx_rx_programming_expert::resolve()

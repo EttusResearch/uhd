@@ -20,11 +20,9 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhdlib/rfnoc/rf_control/dboard_iface.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
-#include <uhdlib/usrp/common/rpc.hpp>
 #include <uhdlib/usrp/common/x400_rfdc_control.hpp>
 #include <uhdlib/usrp/common/x4xx_ch_modes.hpp>
 #include <uhdlib/usrp/dboard/x400_dboard_iface.hpp>
-#include <uhdlib/utils/rpc.hpp>
 #include <string>
 
 using namespace uhd::rfnoc;
@@ -53,7 +51,6 @@ public:
         const std::string& radio_slot,
         const size_t num_tx_chans,
         const size_t num_rx_chans,
-        const std::string& rpc_prefix,
         const std::string& unique_id,
         uhd::usrp::x400_rpc_iface::sptr mb_rpcc,
         uhd::usrp::fbx_rpc_iface::sptr rpcc,
@@ -447,9 +444,6 @@ private:
 
     // infos about the daughtherboard
     std::vector<std::map<std::string, std::string>> _all_dboard_info;
-
-    //! Prepended for all dboard RPC calls
-    const std::string _rpc_prefix;
 
     //! Reference to the MB controller
     uhd::rfnoc::mpmd_mb_controller::sptr _mb_control;

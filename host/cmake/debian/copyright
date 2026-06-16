@@ -11,10 +11,6 @@ Files: *
 Copyright: Copyright 2010-2025 Ettus Research, A National Instruments Brand
 License: GPL-3+
 
-Files: host/lib/deps/rpclib/*
-Copyright: Copyright (c) 2015-2017, Tamás Szelei
-License: MIT
-
 Files: host/lib/deps/pybind11/include/*
 Copyright: Copyright (c) 2016 Wenzel Jakob
 License: PyBind11-BSD

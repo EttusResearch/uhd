@@ -24,6 +24,7 @@ set(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmlog.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmtypes.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmutils.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/pb_utils.py
     ${CMAKE_CURRENT_SOURCE_DIR}/prefs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/process_manager.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py

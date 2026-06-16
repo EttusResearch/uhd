@@ -24,7 +24,6 @@ fbx_dboard_impl::fbx_dboard_impl(register_iface& reg_iface,
     const std::string& radio_slot,
     const size_t num_tx_chans,
     const size_t num_rx_chans,
-    const std::string& rpc_prefix,
     const std::string& unique_id,
     uhd::usrp::x400_rpc_iface::sptr mb_rpcc,
     uhd::usrp::fbx_rpc_iface::sptr rpcc,
@@ -39,7 +38,7 @@ fbx_dboard_impl::fbx_dboard_impl(register_iface& reg_iface,
     , _time_accessor(time_accessor)
     , _radio_slot(radio_slot)
     , _db_idx(db_idx)
-    , _rpc_prefix(rpc_prefix)
+
     , _mb_rpcc(mb_rpcc)
     , _rpcc(rpcc)
     , _rfdcc(rfdcc)
@@ -288,7 +287,7 @@ std::string fbx_dboard_impl::get_dboard_fe_from_chan(
  **********************************************************************/
 bool fbx_dboard_impl::select_adc_self_cal_gain(size_t chan, size_t mode)
 {
-    return _mb_rpcc->get_threshold_status(_db_idx, chan, mode, 0);
+    return _mb_rpcc->get_dboard(_db_idx).get_threshold_status(chan, mode, 0);
 }
 
 }}} // namespace uhd::usrp::fbx

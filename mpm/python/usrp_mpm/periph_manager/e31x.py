@@ -19,7 +19,7 @@ from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
-from usrp_mpm.rpc_utils import get_map_for_rpc, no_rpc
+from usrp_mpm.rpc_utils import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_sysfs_sensors_value
 from usrp_mpm.sys_utils.udev import get_eeprom_paths, get_spidev_nodes
@@ -470,6 +470,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Device info
     ###########################################################################
+    @no_claim
     def get_device_info_dyn(self):
         """
         Append the device info with current IP addresses.
@@ -652,15 +653,10 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         data_probes = ["temp1_input"]
         if self.mb_temp_sensor_type == None:
-            sensor_types = ["jc-42.4-temp","jc42"]
+            sensor_types = ["jc-42.4-temp", "jc42"]
             for sensor_type in sensor_types:
                 try:
-                    read_sysfs_sensors_value(
-                            sensor_type, 
-                            data_probes[0], 
-                            "hwmon", 
-                            "name"
-                        )[0]
+                    read_sysfs_sensors_value(sensor_type, data_probes[0], "hwmon", "name")[0]
                     self.mb_temp_sensor_type = sensor_type
                     self.log.debug(f"MB temperature sensor type detected: {sensor_type}")
                     break
@@ -673,10 +669,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         try:
             for data_probe in data_probes:
                 raw_val[data_probe] = read_sysfs_sensors_value(
-                    self.mb_temp_sensor_type, 
-                    data_probe, 
-                    "hwmon", 
-                    "name"
+                    self.mb_temp_sensor_type, data_probe, "hwmon", "name"
                 )[0]
             temp = str(raw_val["temp1_input"] / 1000)
         except ValueError:
@@ -695,10 +688,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         data_probes = ["in_temp0_raw", "in_temp0_scale", "in_temp0_offset"]
         try:
             for data_probe in data_probes:
-                raw_val[data_probe] = read_sysfs_sensors_value("xadc",
-                                                               data_probe,
-                                                               "iio",
-                                                               "name")[0]
+                raw_val[data_probe] = read_sysfs_sensors_value("xadc", data_probe, "iio", "name")[0]
             temp = str(
                 (raw_val["in_temp0_raw"] + raw_val["in_temp0_offset"])
                 * raw_val["in_temp0_scale"]
@@ -723,7 +713,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         mboard info again. This filters the EEPROM contents to what we think
         the user wants to know/see.
         """
-        return get_map_for_rpc(self.mboard_info, self.log)
+        return self.mboard_info
 
     def set_mb_eeprom(self, _eeprom_vals):
         """

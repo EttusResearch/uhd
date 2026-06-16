@@ -235,6 +235,11 @@ private:
      */
     tx_band _map_freq_to_tx_band(const band_map_t band_map, const double freq);
 
+    uhd::rpc_client::dboard_iface& db_rpc() const
+    {
+        return _rpcc->get_dboard(_db_idx);
+    }
+
     /**************************************************************************
      * Sensors
      *************************************************************************/
@@ -312,8 +317,8 @@ private:
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 
-    //! Prepended for all dboard RPC calls
-    std::string _rpc_prefix;
+    //! Numerical representation of the radio we're currently running
+    size_t _db_idx;
 
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;

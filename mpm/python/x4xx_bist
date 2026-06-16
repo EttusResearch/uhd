@@ -441,7 +441,7 @@ class X4XXBIST(bist.UsrpBIST):
         mpm_c = usrp_dev.get_mpm_client()
 
         # Make sure fabric_clk is turned off
-        mpm_c.enable_ecpri_clocks(False)
+        mpm_c.enable_ecpri_clocks(False, "both")
         # Check validation bit - reg 0x19B second bit as per datasheet
         pri_ref_disabled_condition = not (int(mpm_c.peek_clkaux(0x19B), 16) & 0x4)
         # Turn on fabric_clk
@@ -454,7 +454,7 @@ class X4XXBIST(bist.UsrpBIST):
         # Check validation bit - reg 0x19B second bit as per datasheet
         pri_ref_enabled = (int(mpm_c.peek_clkaux(0x19B), 16) & 0x4) == 0x4
         # Turn off clock
-        mpm_c.enable_ecpri_clocks(False)
+        mpm_c.enable_ecpri_clocks(False, "both")
         # Check validation bit - reg 0x19B second bit as per datasheet
         pri_ref_disabled = not (int(mpm_c.peek_clkaux(0x19B), 16) & 0x4)
 
@@ -512,7 +512,7 @@ class X4XXBIST(bist.UsrpBIST):
 
         result = all([using_pri_ref, dpll_lock, apll1_locked, apll2_unlocked])
 
-        mpm_c.enable_ecpri_clocks(False)
+        mpm_c.enable_ecpri_clocks(False, "both")
         # Set the clock source back to internal, as the register values
         # for locking to the gty_rcv_clk cause the mboard to lose ref_lock
         # to the nsync lmk. For x440 setting clock source must be done
@@ -1191,23 +1191,23 @@ class X4XXBIST(bist.UsrpBIST):
             Write a value to the LMX2572 register.
             """
             cmd = get_spi_command(register, value, spi_conf, False)
-            mpm_c.poke_db(db, spi_conf.poke_addr, cmd)
+            mpm_c.get_dboard(db).poke_db(spi_conf.poke_addr, cmd)
 
         def read_lmx(db, spi_conf, register):
             """
             Read a value from the LMX2572 register.
             """
             cmd = get_spi_command(register, 0, spi_conf, True)
-            mpm_c.poke_db(db, spi_conf.poke_addr, cmd)
+            mpm_c.get_dboard(db).poke_db(spi_conf.poke_addr, cmd)
             sleep(0.1)
-            status = int(mpm_c.peek_db(db, spi_conf.peek_addr), 0)
+            status = int(mpm_c.get_dboard(db).peek_db(spi_conf.peek_addr), 0)
             return status & ((1 << spi_conf.data_width) - 1)
 
         if self.product_id == "x420":
             los_to_test = {"TX_LO": 0x1000, "RX_LO": 0x1010}
 
             def get_spi_info(db, lo):
-                spi_info = int(mpm_c.peek_db(db, lo[1]), 0)
+                spi_info = int(mpm_c.get_dboard(db).peek_db(lo[1]), 0)
                 data_width = spi_info & 0xFF
                 addr_width = (spi_info >> 8) & 0xFF
                 return SpiConfig(
@@ -1356,9 +1356,10 @@ class X4XXBIST(bist.UsrpBIST):
 
         def check(mc, board, channel, mode, value):
             """Checks if the given threshold value returns a valid threshold status."""
-            mc.setup_threshold(board, channel, mode, 0, "hysteresis", 10000, value - 100, value)
+            db_iface = mc.get_dboard(board)
+            db_iface.setup_threshold(channel, mode, 0, "hysteresis", 10000, value - 100, value)
             time.sleep(0.01)
-            return mc.get_threshold_status(board, channel, mode, 0)
+            return db_iface.get_threshold_status(channel, mode, 0)
 
         usrp = uhd.usrp.MultiUSRP(self.device_args)
         settings = settings(usrp)
@@ -1379,13 +1380,13 @@ class X4XXBIST(bist.UsrpBIST):
                 chan = i % ch_per_board
                 # I DAC Mux needs to be enabled for both I and Q subchannels,
                 # so just turn them all on (5: All)
-                mc.set_dac_mux_enable(slot, chan, 1, 5)
+                mc.get_dboard(slot).set_dac_mux_enable(chan, 1, 5)
                 if check(mc, slot, chan, j, THRESHOLD):
                     data[ch_name] = True
                 else:
                     data[ch_name] = False
                     result = False
-                mc.set_dac_mux_enable(slot, chan, 0, 5)
+                mc.get_dboard(slot).set_dac_mux_enable(chan, 0, 5)
                 reset_gain(usrp, i)
 
         data["error_msg"] = "" if result else "One or more channels failed"
