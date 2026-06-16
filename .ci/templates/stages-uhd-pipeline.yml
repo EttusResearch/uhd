@@ -645,6 +645,25 @@ stages:
           fpga_imgs_source: 'Internal'
         create_sbom: ${{ parameters.create_sbom }}
 
+- template: .ci/templates/stages-nisbom-uploads.yml@ettus-rts
+  parameters:
+    artifactSourceMode: current
+    uhdArtifactSource: uhd_mono_pipeline
+    releaseBinaries: false
+    dependsOnGroups:
+      fedoraInstaller:
+        - build_uhd_installer_stage_fedora
+      ubuntuInstaller:
+        - build_uhd_installer_stage_ubuntu
+      winInstaller:
+        - build_uhd_installer_stage_win
+      embeddedImages:
+        - build_uhd_embedded_system_images_e310_sg1
+        - build_uhd_embedded_system_images_e310_sg3
+        - build_uhd_embedded_system_images_e320
+        - build_uhd_embedded_system_images_n3xx
+        - build_uhd_embedded_system_images_x4xx
+
 ###############################################################################
 # FPGA Stages. Here, we build bitfiles (or at least download the right artifacts)
 ###############################################################################
