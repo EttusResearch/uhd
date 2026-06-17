@@ -8,7 +8,7 @@
 #include <uhdlib/transport/nirio/rpc/rpc_client.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/asio/error.hpp>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/version.hpp>
 
