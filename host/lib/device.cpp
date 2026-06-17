@@ -12,7 +12,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/utils/prefs.hpp>
-#include <uhdlib/utils/serial_number.hpp>
 #include <boost/functional/hash.hpp>
 #include <future>
 #include <memory>
@@ -113,70 +112,65 @@ discover_devices_with_makers(const device_addr_t& hint, device::device_filter_t 
     return device_maker_pairs;
 }
 
-// Internal function that returns filtered device-maker pairs
-static std::vector<std::tuple<device_addr_t, device::make_t>>
-find_filtered_devices_with_makers(
-    const device_addr_t& hint, device::device_filter_t filter)
+// Remove duplicate addresses from a discovery result.
+static device_addrs_t deduplicate_device_addrs(const device_addrs_t& discovered_addrs)
 {
-    // Get devices with their makers
-    auto device_maker_pairs = discover_devices_with_makers(hint, filter);
-
-    std::vector<std::tuple<device_addr_t, device::make_t>> filtered_pairs;
-
-    // Filter the discovered devices
-    for (const auto& pair : device_maker_pairs) {
-        const device_addr_t& discovered_addr = std::get<0>(pair);
-
-        // Filter with the optional keys name/serial/type/product
-        if ((not hint.has_key("name") or hint["name"] == discovered_addr["name"])
-            and (not hint.has_key("serial")
-                 or utils::serial_numbers_match(
-                     hint["serial"], discovered_addr["serial"]))
-            and (not hint.has_key("type") or hint["type"] == discovered_addr["type"]
-                 or hint["type"] == "sim") // special case for simulator
-            and (not hint.has_key("product") or not discovered_addr.has_key("product")
-                 or hint["product"] == discovered_addr["product"])) {
-            UHD_LOG_DEBUG("Device FIND",
-                "Found device that matches hints: " << discovered_addr.to_string());
-            filtered_pairs.push_back(pair);
-        } else {
-            UHD_LOG_DEBUG("Device FIND",
-                "Found device, but does not match hint: " << discovered_addr.to_string());
+    device_addrs_t deduped_addrs;
+    std::set<size_t> device_hashes;
+    for (const auto& discovered_addr : discovered_addrs) {
+        const size_t hash = hash_device_addr(discovered_addr);
+        if (device_hashes.insert(hash).second) {
+            deduped_addrs.push_back(discovered_addr);
         }
     }
 
-    // find might return duplicate entries if a device received a broadcast multiple
-    // times. These entries needs to be removed from the result.
-    std::set<size_t> device_hashes;
-    filtered_pairs.erase(
-        std::remove_if(filtered_pairs.begin(),
-            filtered_pairs.end(),
-            [&device_hashes](const std::tuple<device_addr_t, device::make_t>& pair) {
-                size_t hash       = hash_device_addr(std::get<0>(pair));
-                const bool result = device_hashes.count(hash);
-                device_hashes.insert(hash);
-                return result;
-            }),
-        filtered_pairs.end());
+    return deduped_addrs;
+}
 
-    return filtered_pairs;
+// Internal function that discovers and de-duplicates device addresses.
+static device_addrs_t discover_devices(
+    const device_addr_t& hint, device::device_filter_t filter)
+{
+    auto device_maker_pairs = discover_devices_with_makers(hint, filter);
+
+    device_addrs_t discovered_addrs;
+    discovered_addrs.reserve(device_maker_pairs.size());
+    for (const auto& pair : device_maker_pairs) {
+        discovered_addrs.push_back(std::get<0>(pair));
+    }
+
+    return deduplicate_device_addrs(discovered_addrs);
+}
+
+// Internal function that discovers and de-duplicates device-maker pairs.
+static std::vector<std::tuple<device_addr_t, device::make_t>>
+discover_unique_devices_with_makers(
+    const device_addr_t& hint, device::device_filter_t filter)
+{
+    auto discovered_pairs = discover_devices_with_makers(hint, filter);
+
+    // find might return duplicate entries if a device received a broadcast
+    // multiple times. These entries need to be removed from the result.
+    std::set<size_t> device_hashes;
+    discovered_pairs.erase(
+        std::remove_if(discovered_pairs.begin(),
+            discovered_pairs.end(),
+            [&device_hashes](const std::tuple<device_addr_t, device::make_t>& pair) {
+                const size_t hash = hash_device_addr(std::get<0>(pair));
+                const bool seen   = device_hashes.count(hash);
+                device_hashes.insert(hash);
+                return seen;
+            }),
+        discovered_pairs.end());
+
+    return discovered_pairs;
 }
 
 device_addrs_t device::find(const device_addr_t& hint, device_filter_t filter)
 {
     std::lock_guard<std::mutex> lock(_device_mutex);
 
-    // Get filtered device-maker pairs
-    auto filtered_pairs = find_filtered_devices_with_makers(hint, filter);
-
-    // Extract just the device addresses
-    device_addrs_t device_addrs;
-    std::transform(filtered_pairs.begin(),
-        filtered_pairs.end(),
-        std::back_inserter(device_addrs),
-        [](const auto& pair) { return std::get<0>(pair); });
-
-    return device_addrs;
+    return discover_devices(hint, filter);
 }
 
 /***********************************************************************
@@ -186,14 +180,14 @@ device::sptr device::make(const device_addr_t& hint, device_filter_t filter, siz
 {
     std::lock_guard<std::mutex> lock(_device_mutex);
 
-    // Use the internal function that returns filtered device-maker pairs
-    auto filtered_pairs = find_filtered_devices_with_makers(hint, filter);
+    // Use the internal function that returns unique device-maker pairs.
+    auto discovered_pairs = discover_unique_devices_with_makers(hint, filter);
 
     typedef std::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
     // Convert to the expected format (no additional filtering needed)
-    for (const auto& pair : filtered_pairs) {
+    for (const auto& pair : discovered_pairs) {
         dev_addr_makers.push_back(dev_addr_make_t(std::get<0>(pair), std::get<1>(pair)));
     }
 

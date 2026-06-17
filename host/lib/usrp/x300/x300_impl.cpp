@@ -26,6 +26,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <boost/format.hpp>
 #include <chrono>
@@ -105,7 +106,7 @@ device_addrs_t x300_find(const device_addr_t& hint_)
         } catch (...) {
             UHD_LOGGER_ERROR("X300") << "X300 Network discovery unknown error ";
         }
-        return reply_addrs;
+        return device_filter::filter_device_addrs(reply_addrs, hint);
     }
 
     if (!hint.has_key("resource")) {
@@ -148,7 +149,7 @@ device_addrs_t x300_find(const device_addr_t& hint_)
         addrs.insert(addrs.end(), pcie_addrs.begin(), pcie_addrs.end());
     }
 
-    return addrs;
+    return device_filter::filter_device_addrs(addrs, hint);
 }
 
 /***********************************************************************

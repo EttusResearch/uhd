@@ -14,6 +14,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/cast.hpp>
 #include <uhdlib/asio.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <uhdlib/utils/serial_number.hpp>
 #include <boost/algorithm/string.hpp>
@@ -230,7 +231,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
         // Note: We don't try and connect to the devices in this mode, because
         // we only get here if the user specified addresses, and we assume she
         // knows what she's doing.
-        return mpmd_find_with_addrs(hints);
+        return device_filter::filter_device_addrs(mpmd_find_with_addrs(hints), hint_);
     }
 
     // Scenario 2): User gave us no address, and we need to broadcast
@@ -301,5 +302,5 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
                 << mpmd_impl::MPM_FINDALL_KEY << " to find all devices.");
     }
 
-    return filtered_mpm_devs;
+    return device_filter::filter_device_addrs(filtered_mpm_devs, hint_);
 }

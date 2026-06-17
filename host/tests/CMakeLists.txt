@@ -315,6 +315,11 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET "device_filter_test.cpp"
+    EXTRA_SOURCES ${UHD_SOURCE_DIR}/lib/utils/serial_number.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "config_parser_test.cpp"
     EXTRA_SOURCES ${UHD_SOURCE_DIR}/lib/utils/config_parser.cpp
 )

@@ -21,6 +21,7 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/asio.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <stdint.h>
 #include <filesystem>
@@ -143,13 +144,7 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
                         new_addr["name"]   = "";
                         new_addr["serial"] = "";
                     }
-
-                    // Filter based on optional keys (if any)
-                    if ((not _hint.has_key("name") or (_hint["name"] == new_addr["name"]))
-                        and (not _hint.has_key("serial")
-                             or (_hint["serial"] == new_addr["serial"]))) {
-                        octoclock_addrs.push_back(new_addr);
-                    }
+                    octoclock_addrs.push_back(new_addr);
                 }
             } else
                 continue;
@@ -159,7 +154,7 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
             break;
     }
 
-    return octoclock_addrs;
+    return device_filter::filter_device_addrs(octoclock_addrs, _hint);
 }
 
 device::sptr octoclock_make(const device_addr_t& device_addr)

@@ -20,6 +20,7 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <chrono>
@@ -264,7 +265,7 @@ static device_addrs_t b200_find(const device_addr_t& hint)
         }
     }
 
-    return b200_addrs;
+    return device_filter::filter_device_addrs(b200_addrs, hint);
 }
 
 /***********************************************************************

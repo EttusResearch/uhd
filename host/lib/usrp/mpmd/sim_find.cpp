@@ -15,6 +15,7 @@
 #include <uhd/device.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <chrono>
@@ -110,7 +111,7 @@ device_addrs_t sim_find(const device_addr_t& hint_)
         // So discovery doesn't complain about hint mismatch
         simulators.back()["type"] = MPM_CATCHALL_DEVICE_TYPE;
     }
-    return simulators;
+    return device_filter::filter_device_addrs(simulators, hint_);
 }
 
 /*! Ensure that the simulator is loaded by pinging the discovery port until it responds or

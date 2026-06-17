@@ -15,6 +15,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <cstdio>
@@ -114,16 +115,11 @@ static device_addrs_t b100_find(const device_addr_t& hint)
             new_addr["type"]   = "b100";
             new_addr["name"]   = mb_eeprom["name"];
             new_addr["serial"] = handle->get_serial();
-            // this is a found b100 when the hint serial and name match or blank
-            if ((not hint.has_key("name") or hint["name"] == new_addr["name"])
-                and (not hint.has_key("serial")
-                     or hint["serial"] == new_addr["serial"])) {
-                b100_addrs.push_back(new_addr);
-            }
+            b100_addrs.push_back(new_addr);
         }
     }
 
-    return b100_addrs;
+    return device_filter::filter_device_addrs(b100_addrs, hint);
 }
 
 /***********************************************************************

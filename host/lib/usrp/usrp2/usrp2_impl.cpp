@@ -16,6 +16,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/asio.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
+#include <uhdlib/utils/device_filter.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/format.hpp>
 #include <cmath>
@@ -91,7 +92,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
             usrp2_addrs.insert(
                 usrp2_addrs.begin(), new_usrp2_addrs.begin(), new_usrp2_addrs.end());
         }
-        return usrp2_addrs;
+        return device_filter::filter_device_addrs(usrp2_addrs, hint);
     }
 
     // Create a UDP transport to communicate:
@@ -174,7 +175,7 @@ device_addrs_t usrp2_find(const device_addr_t& hint_)
             break; // timeout
     }
 
-    return usrp2_addrs;
+    return device_filter::filter_device_addrs(usrp2_addrs, hint);
 }
 
 /***********************************************************************
