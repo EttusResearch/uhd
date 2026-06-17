@@ -16,11 +16,11 @@ parameters:
 jobs:
 - template: templates/job-uhd-x4xx-hardware-tests.yml
   parameters:
-    suiteName: 'ettus_dre_s175_x420'
+    suiteName: 'dre_s175_x420_3'
     toolset: 'make'
     runPyTest: true
     runPyTestNonRF: false
-    runDevTest: true
+    runDevTest: false
     runSystemImageTest: false
     master_clock_rate: '245.76e6'
     uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
@@ -39,4 +39,30 @@ jobs:
         pipelineAgent: dre-s175-x420-3
         pytestAtsConfig: ec21_ats
         pytestDUT: 'x420'
-        sfp0ip: '192.168.175.2'
+        sfp0ip: '$(x420_dutAddr)'
+- template: templates/job-uhd-x4xx-hardware-tests.yml
+  parameters:
+    suiteName: 'dre_s175_x420_4'
+    toolset: 'make'
+    runPyTest: false
+    runPyTestNonRF: true
+    runDevTest: true
+    runSystemImageTest: true
+    master_clock_rate: '245.76e6'
+    uhdArtifactSource: ${{ parameters.uhdArtifactSource }}
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
+    testLength: '${{ parameters.testLength }}'
+    dutMatrix:
+      dre_s175-x420-4:
+        dutName: 'dre_s175-x420-4'
+        dutType: 'x4xx'
+        devtestPattern: 'x420'
+        dutFPGA: 'CG_1000'
+        dutEmbeddedImagesArtifact: 'x4xx-images'
+        uartSerial: '$(x420_uartSerial)'
+        pipelineAgent: dre-s175-x420-4
+        pytestAtsConfig: dre_s175_ats
+        pytestDUT: 'x420'
+        sfp0ip: '$(x420_dutAddr)'
