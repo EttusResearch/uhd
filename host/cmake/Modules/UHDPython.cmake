@@ -298,6 +298,8 @@ macro(UHD_PYTHON_INSTALL_MODULE)
                 ${CMAKE_CURRENT_BINARY_DIR}/${_py_install_mod_MODULE}
                 DESTINATION ${UHD_PYTHON_DIR}
                 COMPONENT pythonapi
+                PATTERN "cmake_install.cmake" EXCLUDE
+                PATTERN "CTestTestfile.cmake" EXCLUDE
             )
             # On Linux/Unix systems, we must properly install the library file.
             # install(DIRECTORY) will treat the .so file like any other file, which
