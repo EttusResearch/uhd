@@ -55,4 +55,12 @@ macro(UHD_LOAD_BUILD_INFO)
     get_directory_property(uhd_flags COMPILE_DEFINITIONS)
     set(UHD_C_FLAGS "${uhd_flags}${CMAKE_C_FLAGS}") # CMAKE_C_FLAGS starts with a space
     set(UHD_CXX_FLAGS "${uhd_flags}${CMAKE_CXX_FLAGS}") # CMAKE_CXX_FLAGS starts with a space
+    if(DEFINED ENV{SOURCE_DATE_EPOCH})
+        # The variable SOURCE_DATE_EPOCH is typically used to ensure reproducible builds.
+        # Reproducible builds also require the build directory to be deterministic.
+        # The following commands replaces the actual build directory by "BUILD_DIR".
+        cmake_path(GET CMAKE_BINARY_DIR PARENT_PATH uhd_topdir)
+        string(REPLACE "${uhd_topdir}" "BUILD_DIR" UHD_C_FLAGS "${UHD_C_FLAGS}")
+        string(REPLACE "${uhd_topdir}" "BUILD_DIR" UHD_CXX_FLAGS "${UHD_CXX_FLAGS}")
+    endif()
 endmacro(UHD_LOAD_BUILD_INFO)
