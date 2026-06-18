@@ -7,11 +7,14 @@
 #include "mpmd_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/types/component_file.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <boost/format.hpp>
+#include <algorithm>
 #include <chrono>
+#include <exception>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -31,6 +34,12 @@ namespace {
 const double MPMD_CHDR_MAX_RTT = 0.02;
 //! MPM Compatibility number {MAJOR, MINOR}
 const std::vector<size_t> MPM_COMPAT_NUM = {6, 1};
+/*! Default number of motherboards to initialize in parallel at once.
+ *
+ * This caps the number of threads spawned during parallel initialization. It
+ * can be overridden via the 'init_threads' device arg to provide a new cap.
+ */
+const size_t MPMD_DEFAULT_INIT_THREADS = 16;
 
 /*************************************************************************
  * Helper functions
@@ -165,28 +174,114 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         }
     }
     const size_t num_mboards = mb_args.size();
-    _mb.reserve(num_mboards);
-    const bool serialize_init = device_args.has_key("serialize_init");
-    const bool skip_init      = device_args.has_key("skip_init");
-    UHD_LOGGER_INFO("MPMD") << "Initializing " << num_mboards << " device(s) "
-                            << (serialize_init ? "serially " : "in parallel ")
-                            << "with args: " << device_args.to_string();
+    _mb.resize(num_mboards);
+    // Maximum number of motherboards to initialize in parallel at once. This
+    // can be overridden via the 'init_threads' device arg, and defaults to
+    // MPMD_DEFAULT_INIT_THREADS.
+    const size_t max_init_threads = std::max<size_t>(
+        1, device_args.cast<size_t>("init_threads", MPMD_DEFAULT_INIT_THREADS));
+    const bool serialize_init =
+        uhd::cast::from_str<bool>(device_args.get("serialize_init", "0"))
+        || max_init_threads == 1;
+    const bool skip_init = uhd::cast::from_str<bool>(device_args.get("skip_init", "0"));
+    if (serialize_init) {
+        UHD_LOG_INFO("MPMD",
+            "Initializing " << num_mboards << " device(s) serially with args: "
+                            << device_args.to_string());
+    } else {
+        UHD_LOG_INFO("MPMD",
+            "Initializing " << num_mboards
+                            << " device(s) in parallel (max threads: " << max_init_threads
+                            << ") at a time, with args : " << device_args.to_string());
+    }
+
+    // Helper to run a per-mboard task across all motherboards in parallel,
+    // using at most max_init_threads threads at a time so we don't spawn
+    // an unbounded number of threads for large device counts.
+    // All tasks in a batch are awaited before any exception is re-thrown, so
+    // no async task can outlive this scope and access a destroyed or
+    // partially-constructed object.
+    auto run_parallel = [num_mboards, max_init_threads](auto&& task) {
+        size_t mb_i = 0;
+        while (mb_i < num_mboards) {
+            const size_t batch_size = std::min(num_mboards - mb_i, max_init_threads);
+            std::vector<std::future<void>> futures;
+            futures.reserve(batch_size);
+            for (size_t i = 0; i < batch_size; ++i) {
+                const size_t index = mb_i + i;
+                futures.push_back(
+                    std::async(std::launch::async, [&task, index]() { task(index); }));
+            }
+            // Wait for every task in this batch to finish before propagating
+            // any exception, so no task is left running while we unwind.
+            std::exception_ptr first_exception;
+            for (auto& future : futures) {
+                try {
+                    future.get();
+                } catch (...) {
+                    if (!first_exception) {
+                        first_exception = std::current_exception();
+                    } else {
+                        // We can only re-throw one exception, so log any
+                        // additional ones so they're not silently swallowed.
+                        try {
+                            std::rethrow_exception(std::current_exception());
+                        } catch (const std::exception& ex) {
+                            UHD_LOG_ERROR("MPMD",
+                                "Additional exception during parallel "
+                                "initialization: "
+                                    << ex.what());
+                        } catch (...) {
+                            UHD_LOG_ERROR("MPMD",
+                                "Additional unknown exception during parallel "
+                                "initialization.");
+                        }
+                    }
+                }
+            }
+            if (first_exception) {
+                std::rethrow_exception(first_exception);
+            }
+            mb_i += batch_size;
+        }
+    };
 
     // First, claim all the devices (so we own them and no one else can claim
     // them).
     // This can be parallelized as long as uptrs are stored in the right spot;
     // they need to be correctly indexed.
-    for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
-        UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
-        _mb.push_back(claim_and_make(mb_args[mb_i]));
+    if (serialize_init) {
+        for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
+            UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
+            _mb[mb_i] = claim_and_make(mb_args[mb_i]);
+        }
+    } else {
+        run_parallel([this, &mb_args](const size_t mb_i) {
+            UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
+            _mb[mb_i] = claim_and_make(mb_args[mb_i]);
+        });
     }
 
     if (not skip_init) {
         // Run the actual device initialization. This can run in parallel.
+        // Note: setup_mb() only performs the (thread-safe) heavy init; the
+        // motherboard controllers are registered serially below, because
+        // register_mb_controller() mutates a shared registry that is not
+        // thread-safe.
+        if (serialize_init) {
+            for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
+                // Note: This is the only place we do compat number checks. They're
+                // effectively disabled for skip_init=1
+                setup_mb(_mb[mb_i].get(), mb_i);
+            }
+        } else {
+            run_parallel([this](const size_t mb_i) { setup_mb(_mb[mb_i].get(), mb_i); });
+        }
+        // Register the motherboard controllers serially: this mutates a shared
+        // registry that is not safe for concurrent access.
         for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
-            // Note: This is the only place we do compat number checks. They're
-            // effectively disabled for skip_init=1
-            setup_mb(_mb[mb_i].get(), mb_i);
+            UHD_ASSERT_THROW(_mb[mb_i]->mb_ctrl);
+            register_mb_controller(mb_i, _mb[mb_i]->mb_ctrl);
         }
     } else {
         UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
@@ -257,7 +352,6 @@ void mpmd_impl::setup_mb(mpmd_mboard_impl* mb, const size_t mb_index)
     UHD_LOG_DEBUG("MPMD", "Initializing mboard " << mb_index);
     mb->init();
     UHD_ASSERT_THROW(mb->mb_ctrl);
-    register_mb_controller(mb_index, mb->mb_ctrl);
 }
 
 /*****************************************************************************

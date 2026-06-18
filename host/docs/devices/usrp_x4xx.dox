@@ -1462,6 +1462,7 @@ For a list of which arguments can be passed into make(), see Section
  find_all              | When using broadcast, find all devices, even if unreachable via CHDR.             | find_all=1
  master_clock_rate     | Master Clock Rate in Hz.                                                          | master_clock_rate=250e6
  serialize_init        | Force serial initialization of motherboards (default is parallel)                 | serialize_init=1
+ init_threads          | Max number of threads to use for parallel device initialization (default: 16)     | init_threads=4
  skip_init             | Skip the initialization process for the device.                                   | skip_init=1
  time_source           | Specify the time (PPS) source.                                                    | time_source=internal
  clock_source          | Specify the reference clock source.                                               | clock_source=internal
