@@ -629,7 +629,8 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
     // The NCO gets a sub-node called 'reset'. It is read/write: Write will
     // perform a reset, and read will return the reset status. The latter is
     // also returned in the 'locked' sensor for the NCO, but the 'nco_locked'
-    // sensor node is read-only, and returns a sensor_value_t (not a bool).
+    // sensor node is read-only, and returns a sensor_value_t (not a bool), and
+    // it also includes the sync-fail flag (which this node does not).
     // This node is primarily used for debugging, but can also serve as a manual
     // reset line for the NCOs.
     const auto nco = (trx == TX_DIRECTION)

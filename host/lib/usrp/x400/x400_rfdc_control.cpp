@@ -75,6 +75,21 @@ bool rfdc_control::get_nco_reset_done()
     return bool(_iface.peek32(regmap::NCO_RESET) & (1 << regmap::NCO_RESET_DONE_MSB));
 }
 
+bool rfdc_control::get_nco_good()
+{
+    constexpr uint32_t flag_mask = (uint32_t(1) << regmap::NCO_RESET_DONE_MSB)
+                                   | (uint32_t(1) << regmap::NCO_SYNC_FAILED_MSB);
+    const uint32_t nco_flags = _iface.peek32(regmap::NCO_RESET) & flag_mask;
+    return nco_flags == (uint32_t(1) << regmap::NCO_RESET_DONE_MSB);
+}
+
+bool rfdc_control::get_nco_no_fail()
+{
+    const uint32_t fail_flag = _iface.peek32(regmap::NCO_RESET)
+                               & (uint32_t(1) << regmap::NCO_SYNC_FAILED_MSB);
+    return fail_flag == 0;
+}
+
 double rfdc_control::set_nco_freq(const rfdc_type, const double freq)
 {
     UHD_LOG_WARNING(_log_id, "set_nco_freq() called but not yet implemented!");

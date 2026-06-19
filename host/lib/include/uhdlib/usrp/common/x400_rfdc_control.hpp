@@ -77,6 +77,17 @@ public:
     //! Return true if the NCO is out of reset
     bool get_nco_reset_done();
 
+    //! Return true if the failure flag is NOT set and the NCO is out of reset
+    bool get_nco_good();
+
+    /*! Return true if the NCO fail flag is NOT set
+     *
+     * Note: The logic inversion is to stay consistent with the previous
+     * get_nco_*() methods; in all three cases we return 'true' if we have a
+     * positive status.
+     */
+    bool get_nco_no_fail();
+
     /*! \brief Set an NCO to a specific frequency.
      *
      * \param nco Which NCO to re-tune
