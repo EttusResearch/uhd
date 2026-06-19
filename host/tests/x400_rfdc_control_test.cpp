@@ -50,3 +50,34 @@ BOOST_FIXTURE_TEST_CASE(test_nco_freq, x400_rfdc_fixture)
     // TODO: Add checks when implemented
     rfdcc.set_nco_freq(rfdc_control::rfdc_type::RX0, 1e9);
 }
+
+BOOST_FIXTURE_TEST_CASE(test_nco_status_flags, x400_rfdc_fixture)
+{
+    struct test_case_t
+    {
+        bool reset_done;
+        bool sync_failed;
+        bool expected_reset_done;
+        bool expected_no_fail;
+        bool expected_good;
+    };
+
+    const std::vector<test_case_t> cases = {
+        {false, false, false, true, false},
+        {false, true, false, false, false},
+        {true, false, true, true, true},
+        {true, true, true, false, false},
+    };
+
+    for (const auto& tc : cases) {
+        mem[rfdc_control::regmap::NCO_RESET] =
+            (tc.reset_done ? (uint32_t(1) << rfdc_control::regmap::NCO_RESET_DONE_MSB)
+                           : 0)
+            | (tc.sync_failed ? (uint32_t(1) << rfdc_control::regmap::NCO_SYNC_FAILED_MSB)
+                              : 0);
+
+        BOOST_CHECK_EQUAL(rfdcc.get_nco_reset_done(), tc.expected_reset_done);
+        BOOST_CHECK_EQUAL(rfdcc.get_nco_no_fail(), tc.expected_no_fail);
+        BOOST_CHECK_EQUAL(rfdcc.get_nco_good(), tc.expected_good);
+    }
+}

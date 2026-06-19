@@ -681,7 +681,7 @@ void zbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         })
         .set_publisher([this]() {
             return sensor_value_t(
-                RFDC_NCO, this->_rfdcc->get_nco_reset_done(), "locked", "unlocked");
+                RFDC_NCO, this->_rfdcc->get_nco_good(), "locked", "unlocked");
         });
 }
 }}} // namespace uhd::usrp::zbx

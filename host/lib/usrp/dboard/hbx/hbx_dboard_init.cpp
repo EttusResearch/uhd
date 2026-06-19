@@ -602,7 +602,7 @@ void hbx_dboard_impl::_init_lo_prop_tree(uhd::property_tree::sptr subtree,
         })
         .set_publisher([this]() {
             return sensor_value_t(
-                RFDC_NCO, this->_rfdcc->get_nco_reset_done(), "locked", "unlocked");
+                RFDC_NCO, this->_rfdcc->get_nco_good(), "locked", "unlocked");
         });
     subtree->create<sensor_value_t>(fe_path / "sensors" / "lo_pd")
         .add_coerced_subscriber([](const sensor_value_t&) {
