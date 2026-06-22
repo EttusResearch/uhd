@@ -22,7 +22,9 @@ class mpmd_mboard_impl::mpmd_mb_iface : public uhd::rfnoc::mb_iface
 public:
     using uptr               = std::unique_ptr<mpmd_mb_iface>;
     using clock_iface_list_t = std::vector<std::map<std::string, std::string>>;
-    mpmd_mb_iface(const uhd::device_addr_t& mb_args, uhd::rpc_client::sptr rpc);
+    mpmd_mb_iface(const uhd::device_addr_t& mb_args,
+        uhd::rpc_client::sptr rpc,
+        const size_t mb_idx);
     ~mpmd_mb_iface() override = default;
 
     /*** mpmd_mb_iface API calls *****************************************/
@@ -66,6 +68,9 @@ public:
         const uhd::device_addr_t& route_args) override;
 
 private:
+    const size_t _mb_index;
+    const std::string _log_id;
+
     uhd::device_addr_t _mb_args;
     uhd::rpc_client::sptr _rpc;
     xport::mpmd_link_if_mgr::uptr _link_if_mgr;

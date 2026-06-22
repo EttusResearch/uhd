@@ -132,7 +132,7 @@ void forward_logs(log_buf_t&& log_buf, const size_t mb_index)
         std::string log_name{
             log_record.count("name") ? log_record.at("name") : "UNKNOWN MPMD"};
         if (log_name.compare(0, 3, "MPM") == 0) {
-            log_name = "MPM#" + std::to_string(mb_index) + log_name.substr(3);
+            log_name = std::to_string(mb_index) + "/" + log_name;
         }
         if (log_record.count("levelname") == 0 or log_record.count("message") == 0) {
             UHD_LOG_ERROR("MPMD", "Invalid logging structure returned from MPM device!");
@@ -283,7 +283,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(const device_addr_t& mb_args_,
     , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
     , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
     , _mb_index(mb_idx)
-    , _log_id("MPMD#" + std::to_string(mb_idx))
+    , _log_id(std::to_string(mb_idx) + "/MPMD")
     , _rpc_server_addr(rpc_server_addr)
 {
     UHD_LOG_TRACE(_log_id,
@@ -317,9 +317,9 @@ mpmd_mboard_impl::mpmd_mboard_impl(const device_addr_t& mb_args_,
 
     if (!mb_args.has_key("skip_init")) {
         // Initialize mb_iface and mb_controller
-        mb_iface = std::make_unique<mpmd_mb_iface>(mb_args, rpc);
+        mb_iface = std::make_unique<mpmd_mb_iface>(mb_args, rpc, mb_idx);
         mb_ctrl  = std::make_shared<rfnoc::mpmd_mb_controller>(
-            std::make_shared<uhd::usrp::mpmd_rpc>(rpc), device_info);
+            std::make_shared<uhd::usrp::mpmd_rpc>(rpc), device_info, mb_idx);
     } // Note -- when skip_init is used, these are not initialized, and trying
       // to use them will result in a null pointer dereference exception!
 }

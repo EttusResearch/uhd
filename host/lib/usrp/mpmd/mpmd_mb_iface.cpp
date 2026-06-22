@@ -33,11 +33,15 @@ static uhd::usrp::io_service_args_t get_default_io_srv_args()
 }
 
 mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
-    const uhd::device_addr_t& mb_args, uhd::rpc_client::sptr rpc)
-    : _mb_args(mb_args), _rpc(rpc), _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
+    const uhd::device_addr_t& mb_args, uhd::rpc_client::sptr rpc, const size_t mb_idx)
+    : _mb_index(mb_idx)
+    , _log_id(std::to_string(mb_idx) + "/MPMD::MB_IFACE")
+    , _mb_args(mb_args)
+    , _rpc(rpc)
+    , _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
 {
     _remote_device_id = allocate_device_id();
-    UHD_LOG_TRACE("MPMD::MB_IFACE", "Assigning device_id " << _remote_device_id);
+    UHD_LOG_TRACE(_log_id, "Assigning device_id " << _remote_device_id);
     _rpc->notify_with_token("set_device_id", _remote_device_id);
 
     // Check for remote streaming capabilities
@@ -52,37 +56,36 @@ mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
  *****************************************************************************/
 void mpmd_mboard_impl::mpmd_mb_iface::init()
 {
-    UHD_LOG_TRACE("MPMD::MB_IFACE", "Requesting clock ifaces...");
+    UHD_LOG_TRACE(_log_id, "Requesting clock ifaces...");
     auto clock_ifaces = _rpc->request_with_token<clock_iface_list_t>("get_clocks");
     for (auto& clock : clock_ifaces) {
         auto iface = std::make_shared<uhd::rfnoc::clock_iface>(
             clock.at("name"), std::stod(clock.at("freq")), clock.count("mutable"));
         _clock_ifaces[clock.at("name")] = iface;
         iface->set_running(true);
-        UHD_LOG_DEBUG("MPMD::MB_IFACE",
+        UHD_LOG_DEBUG(_log_id,
             "Adding clock iface `"
                 << clock.at("name") << "`, frequency: " << (iface->get_freq() / 1e6)
                 << " MHz, mutable: " << (iface->is_mutable() ? "Yes" : "No"));
     }
-    UHD_LOG_TRACE("MPMD::MB_IFACE", "Requesting CHDR link types...");
+    UHD_LOG_TRACE(_log_id, "Requesting CHDR link types...");
     auto chdr_link_types =
         _rpc->request_with_token<std::vector<std::string>>("get_chdr_link_types");
-    UHD_LOG_TRACE(
-        "MPMD::MB_IFACE", "Found " << chdr_link_types.size() << " link type(s)");
+    UHD_LOG_TRACE(_log_id, "Found " << chdr_link_types.size() << " link type(s)");
     for (const auto& type : chdr_link_types) {
-        UHD_LOG_TRACE("MPMD::MB_IFACE", "Trying link type `" << type << "'");
+        UHD_LOG_TRACE(_log_id, "Trying link type `" << type << "'");
         const auto xport_info =
             _rpc->request_with_token<xport::mpmd_link_if_mgr::xport_info_list_t>(
                 "get_chdr_link_options", type);
         // User may have specified: addr=192.168.10.2, second_addr=
         // MPM may have said: "my addresses are 192.168.10.2 and 192.168.20.2"
         if (_link_if_mgr->connect(type, xport_info, get_chdr_w())) {
-            UHD_LOG_TRACE("MPMD::MB_IFACE", "Link type " << type << " successful.");
+            UHD_LOG_TRACE(_log_id, "Link type " << type << " successful.");
         }
     }
 
     if (_link_if_mgr->get_num_links() == 0) {
-        UHD_LOG_ERROR("MPMD::MB_IFACE", "No CHDR connection available!");
+        UHD_LOG_ERROR(_log_id, "No CHDR connection available!");
         throw uhd::runtime_error("No CHDR connection available!");
     }
 
@@ -174,17 +177,16 @@ uhd::rfnoc::clock_iface::sptr mpmd_mboard_impl::mpmd_mb_iface::get_clock_iface(
     // info.
     if (auto_clk_idx && (clock_idx == 0x00 || clock_idx == 0x3F)) {
         UHD_LOG_THROW(uhd::not_implemented_error,
-            "MPMD::MB_IFACE",
+            _log_id,
             "Automatic clock detection requested, but no valid clock index given ("
                 << std::hex << clk_key << "). Make sure FPGA bitfile is up to date!");
     }
     if (_clock_ifaces.count(clk_key)) {
-        UHD_LOG_TRACE(
-            "MPMD::MB_IFACE", "Looking up clock info for clock ID '" << clk_key << "'");
+        UHD_LOG_TRACE(_log_id, "Looking up clock info for clock ID '" << clk_key << "'");
         return _clock_ifaces.at(clk_key);
     } else {
         UHD_LOG_THROW(uhd::key_error,
-            "MPMD::MB_IFACE",
+            _log_id,
             "Unable to look up clock '" << clk_key << "'. Invalid "
                                         << (auto_clk_idx ? "index" : "clock name"));
     }
@@ -194,8 +196,9 @@ uhd::rfnoc::chdr_ctrl_xport::sptr mpmd_mboard_impl::mpmd_mb_iface::make_ctrl_tra
     uhd::rfnoc::device_id_t local_device_id, const uhd::rfnoc::sep_id_t& local_epid)
 {
     if (!_local_device_id_map.count(local_device_id)) {
-        throw uhd::key_error(std::string("[MPMD::MB_IFACE] Cannot create control "
-                                         "transport: Unknown local device ID ")
+        throw uhd::key_error(std::string("[" + _log_id
+                                         + "] Cannot create control "
+                                           "transport: Unknown local device ID ")
                              + std::to_string(local_device_id));
     }
     const size_t link_idx = _local_device_id_map.at(local_device_id);
@@ -246,8 +249,9 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.second;
 
     if (!_local_device_id_map.count(local_sep_addr.first)) {
-        throw uhd::key_error(std::string("[MPMD::MB_IFACE] Cannot create RX data "
-                                         "transport: Unknown local device ID ")
+        throw uhd::key_error(std::string("[" + _log_id
+                                         + "] Cannot create RX data "
+                                           "transport: Unknown local device ID ")
                              + std::to_string(local_sep_addr.first));
     }
     const size_t link_idx = _local_device_id_map.at(local_sep_addr.first);
@@ -353,8 +357,9 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.first;
 
     if (!_local_device_id_map.count(local_sep_addr.first)) {
-        throw uhd::key_error(std::string("[MPMD::MB_IFACE] Cannot create TX data "
-                                         "transport: Unknown local device ID ")
+        throw uhd::key_error(std::string("[" + _log_id
+                                         + "] Cannot create TX data "
+                                           "transport: Unknown local device ID ")
                              + std::to_string(local_sep_addr.first));
     }
     const size_t link_idx = _local_device_id_map.at(local_sep_addr.first);

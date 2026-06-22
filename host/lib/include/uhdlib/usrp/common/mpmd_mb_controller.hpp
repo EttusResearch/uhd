@@ -31,8 +31,9 @@ class mpmd_mb_controller : public mb_controller,
 public:
     using sptr = std::shared_ptr<mpmd_mb_controller>;
 
-    mpmd_mb_controller(
-        uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info);
+    mpmd_mb_controller(uhd::usrp::mpmd_rpc_iface::sptr rpcc,
+        uhd::device_addr_t device_info,
+        const size_t mb_idx);
 
     //! Return reference to the RPC client
     uhd::rpc_client::sptr get_rpc_client()
@@ -134,6 +135,10 @@ private:
     /**************************************************************************
      * Attributes
      *************************************************************************/
+    //! Motherboard index for logging
+    const size_t _mb_index;
+    const std::string _log_id;
+
     //! Reference to RPC interface
     mutable uhd::usrp::mpmd_rpc_iface::sptr _rpc;
 

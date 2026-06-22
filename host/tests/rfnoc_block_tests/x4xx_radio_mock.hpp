@@ -286,7 +286,7 @@ struct x400_radio_fixture
         , num_output_ports(num_channels)
         , reg_iface(std::make_shared<x4xx_radio_mock_reg_iface_t>(num_channels))
         , rpcs(std::make_shared<uhd::test::x4xx_mock_rpc_server>(device_info))
-        , mbc(std::make_shared<mpmd_mb_controller>(rpcs, device_info))
+        , mbc(std::make_shared<mpmd_mb_controller>(rpcs, device_info, 0))
         , block_container(get_mock_block(RADIO_BLOCK,
               num_channels,
               num_channels,

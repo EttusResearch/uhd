@@ -114,9 +114,13 @@ std::string mpmd_mb_controller::gpio_power::get_external_power_status(
     return _rpcc->dio_get_external_power_state(port);
 }
 
-mpmd_mb_controller::mpmd_mb_controller(
-    uhd::usrp::mpmd_rpc_iface::sptr rpcc, uhd::device_addr_t device_info)
-    : _rpc(rpcc), _device_info(device_info)
+mpmd_mb_controller::mpmd_mb_controller(uhd::usrp::mpmd_rpc_iface::sptr rpcc,
+    uhd::device_addr_t device_info,
+    const size_t mb_idx)
+    : _mb_index(mb_idx)
+    , _log_id(std::to_string(mb_idx) + "/MPMD::MB_CTRL")
+    , _rpc(rpcc)
+    , _device_info(device_info)
 {
     const size_t num_tks = _rpc->get_num_timekeepers();
     for (size_t tk_idx = 0; tk_idx < num_tks; tk_idx++) {
@@ -125,7 +129,7 @@ mpmd_mb_controller::mpmd_mb_controller(
 
     // Enumerate sensors
     auto sensor_list = _rpc->get_mb_sensors();
-    UHD_LOG_DEBUG("MPMD", "Found " << sensor_list.size() << " motherboard sensors.");
+    UHD_LOG_DEBUG(_log_id, "Found " << sensor_list.size() << " motherboard sensors.");
     _sensor_names.insert(sensor_list.cbegin(), sensor_list.cend());
 
     // Enumerate GPIO banks that are under mb_controller control
@@ -326,7 +330,7 @@ std::vector<std::string> mpmd_mb_controller::get_gpio_banks() const
 std::vector<std::string> mpmd_mb_controller::get_gpio_srcs(const std::string& bank) const
 {
     if (!_gpio_srcs.count(bank)) {
-        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        UHD_LOG_ERROR(_log_id, "Invalid GPIO bank: `" << bank << "'");
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
     return _gpio_srcs.at(bank);
@@ -335,7 +339,7 @@ std::vector<std::string> mpmd_mb_controller::get_gpio_srcs(const std::string& ba
 std::vector<std::string> mpmd_mb_controller::get_gpio_src(const std::string& bank)
 {
     if (!_gpio_srcs.count(bank)) {
-        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        UHD_LOG_ERROR(_log_id, "Invalid GPIO bank: `" << bank << "'");
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
     if (_current_gpio_src.count(bank)) {
@@ -349,7 +353,7 @@ void mpmd_mb_controller::set_gpio_src(
     const std::string& bank, const std::vector<std::string>& src)
 {
     if (!_gpio_srcs.count(bank)) {
-        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        UHD_LOG_ERROR(_log_id, "Invalid GPIO bank: `" << bank << "'");
         throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
     }
     _rpc->set_gpio_src(bank, src);
@@ -438,7 +442,7 @@ bool mpmd_mb_controller::_pre_timekeeper_synchronize(
         try {
             collated_sync_args.push_back(sync_task.get());
         } catch (const std::exception& e) {
-            UHD_LOGGER_ERROR("MPMD") << "Synchronization error: " << e.what();
+            UHD_LOGGER_ERROR(_log_id) << "Synchronization error: " << e.what();
             return false;
         }
     }
@@ -462,7 +466,7 @@ bool mpmd_mb_controller::_pre_timekeeper_synchronize(
         try {
             sync_task.get();
         } catch (const std::exception& e) {
-            UHD_LOGGER_ERROR("MPMD") << "Synchronization error: " << e.what();
+            UHD_LOGGER_ERROR(_log_id) << "Synchronization error: " << e.what();
             return false;
         }
     }
