@@ -16,6 +16,7 @@
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/utils/rpc.hpp>
+#include <atomic>
 #include <map>
 #include <memory>
 #include <optional>
@@ -80,7 +81,9 @@ public:
      * \param mb_args Device args that pertain to this motherboard
      * \param ip_addr RPC client will attempt to connect to this IP address
      */
-    mpmd_mboard_impl(const uhd::device_addr_t& mb_args, const std::string& ip_addr);
+    mpmd_mboard_impl(const uhd::device_addr_t& mb_args,
+        const std::string& ip_addr,
+        const size_t mb_idx);
     ~mpmd_mboard_impl();
 
     /*** Factory *************************************************************/
@@ -88,7 +91,8 @@ public:
      * \param mb_args Device args that pertain to this motherboard
      * \param ip_addr RPC client will attempt to connect to this IP address
      */
-    static uptr make(const uhd::device_addr_t& mb_args, const std::string& addr);
+    static uptr make(
+        const uhd::device_addr_t& mb_args, const std::string& addr, const size_t mb_idx);
 
     /*** API *****************************************************************/
     void init();
@@ -191,6 +195,12 @@ private:
      */
     std::string _token;
 
+    //! Motherboard index in the parent mpmd_impl.
+    size_t _mb_index;
+
+    //! Per-mboard logger component (e.g., "MPMD#0").
+    std::string _log_id;
+
     /*! A copy of the device access token
      */
     std::string _rpc_server_addr;
@@ -274,7 +284,8 @@ private:
      *
      * Does not initialize the device (see setup_mb() for that).
      */
-    mpmd_mboard_impl::uptr claim_and_make(const uhd::device_addr_t& dev_args);
+    mpmd_mboard_impl::uptr claim_and_make(
+        const uhd::device_addr_t& dev_args, const size_t mb_index);
 
     /*! Initialize a single motherboard
      *
@@ -293,9 +304,12 @@ private:
      * \param tree Property tree reference (to the whole tree)
      * \param mb_path Subtree path for this device
      * \param mb Reference to the actual device
+     * \param mb_index Index number of the mboard being initialized
      */
-    static void init_property_tree(
-        uhd::property_tree::sptr tree, fs_path mb_path, mpmd_mboard_impl* mb);
+    static void init_property_tree(uhd::property_tree::sptr tree,
+        fs_path mb_path,
+        mpmd_mboard_impl* mb,
+        const size_t mb_index);
 
     /*************************************************************************
      * Private attributes

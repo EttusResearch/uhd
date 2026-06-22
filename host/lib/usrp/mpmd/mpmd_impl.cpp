@@ -253,12 +253,12 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     if (serialize_init) {
         for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
             UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
-            _mb[mb_i] = claim_and_make(mb_args[mb_i]);
+            _mb[mb_i] = claim_and_make(mb_args[mb_i], mb_i);
         }
     } else {
         run_parallel([this, &mb_args](const size_t mb_i) {
             UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
-            _mb[mb_i] = claim_and_make(mb_args[mb_i]);
+            _mb[mb_i] = claim_and_make(mb_args[mb_i], mb_i);
         });
     }
 
@@ -284,7 +284,7 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
             register_mb_controller(mb_i, _mb[mb_i]->mb_ctrl);
         }
     } else {
-        UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
+        UHD_LOG_DEBUG("MPMD", "Claimed device(s), but skipped init.");
     }
 
     // Init the prop tree before the blocks get set up -- they might need access
@@ -294,7 +294,7 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     // concurrent accesses. Would shave of milliseconds per device -- probably
     // not worth it.
     for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-        init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
+        init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get(), mb_i);
     }
 
     if (not skip_init) {
@@ -327,7 +327,8 @@ void mpmd_impl::_deinit()
 /*****************************************************************************
  * Private methods
  ****************************************************************************/
-mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(const uhd::device_addr_t& device_args)
+mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(
+    const uhd::device_addr_t& device_args, const size_t mb_index)
 {
     const std::string rpc_addr = device_args.get(MGMT_ADDR_KEY);
     UHD_LOGGER_DEBUG("MPMD") << "Device args: `" << device_args.to_string()
@@ -339,7 +340,7 @@ mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(const uhd::device_addr_t& devic
                 << device_args.to_string());
         throw uhd::runtime_error("Could not determine device RPC address.");
     }
-    return mpmd_mboard_impl::make(device_args, rpc_addr);
+    return mpmd_mboard_impl::make(device_args, rpc_addr, mb_index);
 }
 
 void mpmd_impl::setup_mb(mpmd_mboard_impl* mb, const size_t mb_index)

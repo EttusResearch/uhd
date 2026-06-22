@@ -126,25 +126,30 @@ void measure_rpc_latency(
 /*! Forward entries from a list of dictionaries to UHD's native logging
  *  system.
  */
-void forward_logs(log_buf_t&& log_buf)
+void forward_logs(log_buf_t&& log_buf, const size_t mb_index)
 {
     for (const auto& log_record : log_buf) {
+        std::string log_name{
+            log_record.count("name") ? log_record.at("name") : "UNKNOWN MPMD"};
+        if (log_name.compare(0, 3, "MPM") == 0) {
+            log_name = "MPM#" + std::to_string(mb_index) + log_name.substr(3);
+        }
         if (log_record.count("levelname") == 0 or log_record.count("message") == 0) {
             UHD_LOG_ERROR("MPMD", "Invalid logging structure returned from MPM device!");
             continue;
         }
         if (log_record.at("levelname") == "TRACE") {
-            UHD_LOG_TRACE(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_TRACE(log_name, log_record.at("message"));
         } else if (log_record.at("levelname") == "DEBUG") {
-            UHD_LOG_DEBUG(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_DEBUG(log_name, log_record.at("message"));
         } else if (log_record.at("levelname") == "INFO") {
-            UHD_LOG_INFO(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_INFO(log_name, log_record.at("message"));
         } else if (log_record.at("levelname") == "WARNING") {
-            UHD_LOG_WARNING(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_WARNING(log_name, log_record.at("message"));
         } else if (log_record.at("levelname") == "ERROR") {
-            UHD_LOG_ERROR(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_ERROR(log_name, log_record.at("message"));
         } else if (log_record.at("levelname") == "CRITICAL") {
-            UHD_LOG_FATAL(log_record.at("name"), log_record.at("message"));
+            UHD_LOG_FATAL(log_name, log_record.at("message"));
         } else {
             UHD_LOG_ERROR("MPMD",
                 "Invalid log level returned from MPM device: "
@@ -271,16 +276,19 @@ std::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
 /*****************************************************************************
  * Structors
  ****************************************************************************/
-mpmd_mboard_impl::mpmd_mboard_impl(
-    const device_addr_t& mb_args_, const std::string& rpc_server_addr)
+mpmd_mboard_impl::mpmd_mboard_impl(const device_addr_t& mb_args_,
+    const std::string& rpc_server_addr,
+    const size_t mb_idx)
     : mb_args(mb_args_)
     , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
     , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
+    , _mb_index(mb_idx)
+    , _log_id("MPMD#" + std::to_string(mb_idx))
     , _rpc_server_addr(rpc_server_addr)
 {
-    UHD_LOGGER_TRACE("MPMD") << "Initializing mboard, connecting to RPC server address: "
-                             << rpc_server_addr
-                             << " mboard args: " << mb_args.to_string();
+    UHD_LOG_TRACE(_log_id,
+        "Initializing mboard , connecting to RPC server address: "
+            << rpc_server_addr << " mboard args: " << mb_args.to_string());
 
     _claimer_task = claim_device_and_make_task();
     if (mb_args_.has_key(MPMD_MEAS_LATENCY_KEY)) {
@@ -292,7 +300,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     for (const auto& info_pair : device_info_dict) {
         device_info[info_pair.first] = info_pair.second;
     }
-    UHD_LOG_DEBUG("MPMD", "MPM reports device info: " << device_info.to_string());
+    UHD_LOG_DEBUG(_log_id, "MPM reports device info: " << device_info.to_string());
     /// Get dboard info
     const auto dboards_info = rpc->request<std::vector<dev_info>>("get_dboard_info");
     UHD_ASSERT_THROW(this->dboard_info.empty());
@@ -301,9 +309,9 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         for (const auto& info_pair : dboard_info_dict) {
             this_db_info[info_pair.first] = info_pair.second;
         }
-        UHD_LOGGER_TRACE("MPMD")
-            << "MPM reports dboard info for slot " << this->dboard_info.size() << ": "
-            << this_db_info.to_string();
+        UHD_LOG_TRACE(_log_id,
+            "MPM reports dboard info for slot " << this->dboard_info.size() << ": "
+                                                << this_db_info.to_string());
         this->dboard_info.push_back(this_db_info);
     }
 
@@ -322,7 +330,7 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
     // after the unclaim.
     UHD_SAFE_CALL(dump_logs(); _claimer_task.reset();
                   if (not rpc->request_with_token<bool>("unclaim")) {
-                      UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
+                      UHD_LOG_WARNING(_log_id, "Failure to ack unclaim!");
                   });
 }
 
@@ -336,9 +344,9 @@ void mpmd_mboard_impl::init()
         rpc->request_with_token<std::vector<std::map<std::string, std::string>>>(
             "pop_host_tasks", "mpm_reboot");
     if (!need_mpm_reboot.empty()) {
-        UHD_LOG_DEBUG("MPMD", "Bracing for potential loss of RPC server connection.");
+        UHD_LOG_DEBUG(_log_id, "Bracing for potential loss of RPC server connection.");
         allow_claim_failure(true);
-        UHD_LOGGER_INFO("MPMD") << "Rebooting MPM before device initialization!";
+        UHD_LOGGER_INFO(_log_id) << "Rebooting MPM before device initialization!";
         auto id = rpc->request_with_token<int>("get_device_id");
         rpc->notify_with_token(MPMD_DEFAULT_REBOOT_TIMEOUT, "reset_timer_and_mgr");
         allow_claim_failure(false);
@@ -377,9 +385,9 @@ bool mpmd_mboard_impl::claim()
         // Note: Any RPC error will raise a uhd::runtime_error. Other errors are
         // not handled here.
         if (_allow_claim_failure_latch) {
-            UHD_LOG_DEBUG("MPMD", ex.what());
+            UHD_LOG_DEBUG(_log_id, ex.what());
         } else {
-            UHD_LOG_WARNING("MPMD", ex.what());
+            UHD_LOG_WARNING(_log_id, ex.what());
         }
         return _allow_claim_failure_latch;
     }
@@ -396,7 +404,7 @@ uhd::task::sptr mpmd_mboard_impl::make_claim_loop_task()
                 try {
                     this->dump_logs();
                 } catch (const uhd::runtime_error&) {
-                    UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+                    UHD_LOG_WARNING(_log_id, "Could not read back log queue!");
                 }
             }
             std::this_thread::sleep_until(
@@ -412,7 +420,7 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
     if (rpc_token.empty()) {
         throw uhd::value_error("mpmd device claiming failed!");
     }
-    UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
+    UHD_LOG_TRACE(_log_id, "Received claim token " << rpc_token);
     // Save token for both RPC clients
     _claim_rpc->set_token(rpc_token);
     rpc->set_token(rpc_token);
@@ -422,7 +430,7 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
         try {
             this->dump_logs(true);
         } catch (const uhd::runtime_error&) {
-            UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+            UHD_LOG_WARNING(_log_id, "Could not read back log queue!");
         }
     }
     return make_claim_loop_task();
@@ -445,7 +453,7 @@ void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
     if (dump_to_null) {
         _claim_rpc->request_with_token<log_buf_t>("get_log_buf");
     } else {
-        forward_logs(_claim_rpc->request_with_token<log_buf_t>("get_log_buf"));
+        forward_logs(_claim_rpc->request_with_token<log_buf_t>("get_log_buf"), _mb_index);
     }
 }
 
@@ -454,10 +462,10 @@ void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
  * Factory
  ****************************************************************************/
 mpmd_mboard_impl::uptr mpmd_mboard_impl::make(
-    const uhd::device_addr_t& mb_args, const std::string& addr)
+    const uhd::device_addr_t& mb_args, const std::string& addr, const size_t mb_idx)
 {
     mpmd_mboard_impl::uptr mb =
-        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(mb_args, addr));
+        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(mb_args, addr, mb_idx));
     // implicit move
     return mb;
 }

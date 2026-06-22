@@ -97,9 +97,13 @@ uhd::usrp::component_files_t _get_component_info(
 }
 } // namespace
 
-void mpmd_impl::init_property_tree(
-    uhd::property_tree::sptr tree, fs_path mb_path, mpmd_mboard_impl* mb)
+void mpmd_impl::init_property_tree(uhd::property_tree::sptr tree,
+    fs_path mb_path,
+    mpmd_mboard_impl* mb,
+    const size_t mb_index)
 {
+    const std::string mb_log_id = "MPMD#" + std::to_string(mb_index);
+
     /*** Device info ****************************************************/
     if (not tree->exists("/name")) {
         tree->create<std::string>("/name").set(
@@ -162,9 +166,9 @@ void mpmd_impl::init_property_tree(
     /*** Sensors ********************************************************/
     auto sensor_list =
         mb->rpc->request_with_token<std::vector<std::string>>("get_mb_sensors");
-    UHD_LOG_DEBUG("MPMD", "Found " << sensor_list.size() << " motherboard sensors.");
+    UHD_LOG_DEBUG(mb_log_id, "Found " << sensor_list.size() << " motherboard sensors.");
     for (const auto& sensor_name : sensor_list) {
-        UHD_LOG_TRACE("MPMD", "Adding motherboard sensor `" << sensor_name << "'");
+        UHD_LOG_TRACE(mb_log_id, "Adding motherboard sensor `" << sensor_name << "'");
         tree->create<sensor_value_t>(mb_path / "sensors" / sensor_name)
             .set_publisher([mb, sensor_name]() {
                 auto sensor_val = sensor_value_t(
