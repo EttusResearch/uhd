@@ -130,6 +130,13 @@ module chdr_traffic_source_sim #(
     end
   end
 
+  logic [WIDTH:0] fifo_idata;
+  logic [WIDTH:0] fifo_odata;
+
+  assign fifo_idata      = {m_chdr.axis.tlast, m_chdr.axis.tdata};
+  assign post_fifo.tlast = fifo_odata[WIDTH];
+  assign post_fifo.tdata = fifo_odata[WIDTH-1:0];
+
   // Capture packets in a really short FIFO (for backpressure)
   axi_fifo #(
     .WIDTH(WIDTH+1), .SIZE(MTU + 1)
@@ -137,10 +144,10 @@ module chdr_traffic_source_sim #(
     .clk      (clk), 
     .reset    (rst), 
     .clear    (1'b0),
-    .i_tdata  ({m_chdr.axis.tlast, m_chdr.axis.tdata}),
+    .i_tdata  (fifo_idata),
     .i_tvalid (m_chdr.axis.tvalid),
     .i_tready (m_chdr.axis.tready),
-    .o_tdata  ({post_fifo.tlast, post_fifo.tdata}),
+    .o_tdata  (fifo_odata),
     .o_tvalid (post_fifo.tvalid),
     .o_tready (post_fifo.tready),
     .space    (),
