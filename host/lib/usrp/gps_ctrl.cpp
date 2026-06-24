@@ -156,7 +156,12 @@ private:
         }
 
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
-        static const std::regex gp_msg_regex("^\\$GP.*\\*[0-9A-F]{2}$");
+        // Support all NMEA message prefixes: $GP, $GN, $GA, $GB, $GQ, etc.
+        // GNSS NMEA messages will have the format of '$', the 2-character talker ID
+        // (first letter always 'G'), a 3-character message type, a comma, then a number
+        // of fields separated by commas, and finally a '*' followed by a 2-character
+        // checksum.
+        static const std::regex nmea_msg_regex("^\\$G[A-Z]{4},.*\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
 
         // Get all GPSDO messages available
@@ -182,7 +187,8 @@ private:
                     msg, servo_regex, std::regex_constants::match_continuous)) {
                 UHD_LOG_TRACE("GPS", "Received new SERVO message: " << msg);
                 msgs["SERVO"] = msg;
-            } else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg)) {
+            } else if (std::regex_match(msg, nmea_msg_regex)
+                       and is_nmea_checksum_ok(msg)) {
                 UHD_LOG_TRACE(
                     "GPS", "Received new " << msg.substr(1, 5) << " message: " << msg);
                 msgs[msg.substr(1, 5)] = msg;
@@ -287,6 +293,12 @@ public:
     }
 
     // return a list of supported sensors
+    //
+    // Only GPS (GP) constellation messages are enabled by default, so all NMEA
+    // sentences are emitted with the GP talker ID. If multi-constellation is
+    // enabled, sentences may instead use the GN talker ID (and additional
+    // constellations such as GA/GB/GQ for GSV); those keys are still accepted by
+    // get_sensor() even if not advertised here.
     std::vector<std::string> get_sensors(void) override
     {
         return {"gps_gpgga", "gps_gprmc", "gps_time", "gps_locked", "gps_servo"};
@@ -294,19 +306,22 @@ public:
 
     uhd::sensor_value_t get_sensor(std::string key) override
     {
-        if (key == "gps_gpgga" or key == "gps_gprmc") {
-            return sensor_value_t(boost::to_upper_copy(key),
-                get_sentence(boost::to_upper_copy(key.substr(4, 8)),
-                    GPS_NMEA_NORMAL_FRESHNESS,
-                    GPS_TIMEOUT_DELAY_MS),
-                "");
-        } else if (key == "gps_time") {
+        if (key == "gps_time") {
             return sensor_value_t("GPS epoch time", int(get_epoch_time()), "seconds");
         } else if (key == "gps_locked") {
             return sensor_value_t("GPS lock status", locked(), "locked", "unlocked");
         } else if (key == "gps_servo") {
             return sensor_value_t("GPS_SERVO",
                 get_sentence("SERVO", GPS_SERVO_FRESHNESS, GPS_TIMEOUT_DELAY_MS),
+                "");
+        } else if (key.substr(0, 4) == "gps_" && key.length() > 4) {
+            // Treat any other gps_* key as a request for an NMEA sentence, where
+            // the part after "gps_" is the NMEA sentence identifier (e.g.
+            // gps_gpgsa -> GPGSA). This works for both GP and GN talker IDs.
+            return sensor_value_t(boost::to_upper_copy(key),
+                get_sentence(boost::to_upper_copy(key.substr(4, std::string::npos)),
+                    GPS_NMEA_NORMAL_FRESHNESS,
+                    GPS_TIMEOUT_DELAY_MS),
                 "");
         } else {
             throw uhd::value_error("gps ctrl get_sensor unknown key: " + key);
