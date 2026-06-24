@@ -51,7 +51,7 @@ resources:
     branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
-    branch: kirkstone
+    branch: scarthgap
   # Keep this for now, but it should be removed once the mono pipeline is
   # fully populated.
   - pipeline: uhd_fpga_pipeline
@@ -62,7 +62,7 @@ resources:
     type: github
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
-    ref: kirkstone
+    ref: scarthgap
   - repository: gr-ettus
     type: github
     name: EttusResearch/gr-ettusdev

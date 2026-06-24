@@ -225,7 +225,7 @@ resources:
     branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
-    branch: kirkstone
+    branch: scarthgap
   - pipeline: uhd_mono_pipeline
     source: 'uhddev mono pipeline'
     branch: master
@@ -242,7 +242,7 @@ resources:
     type: github
     name: EttusResearch/meta-ettus-dev
     endpoint: EttusResearch
-    ref: kirkstone
+    ref: scarthgap
   - repository: gnuradio
     type: github
     name: gnuradio/gnuradio
