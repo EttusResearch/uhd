@@ -47,8 +47,6 @@ XA_DEFS=BUILD_10G=1 BUILD_AURORA=1 SFP0_10GBE=1 SFP1_AURORA=1 $(OPTIONS) BUILD_S
 ifndef TARGET
 	ifeq ($(CHECK), 1)
 		TARGET = rtl
-	else ifeq ($(SYNTH), 1)
-		TARGET = synth
 	else ifeq ($(IP_ONLY), 1)
 		TARGET = viv_ip
 	else
@@ -62,7 +60,10 @@ vivado_build = make -f Makefile.x300.inc $(TARGET) NAME=$@ ARCH=$(XIL_ARCH_$1) P
 vivado_ip    = make -f Makefile.x300.inc viv_ip    NAME=$@ ARCH=$(XIL_ARCH_$1) PART_ID=$(XIL_PART_ID_$1) $2 TOP_MODULE=$(TOP) EXTRA_DEFS="$2"
 
 # post_build($1=Device, $2=Option)
-ifeq ($(TARGET),bin)
+# Only export build artifacts for a full build (TARGET=bin) and not synth-only (SYNTH=1).
+# Normalize SYNTH so that only the value 1 is treated as synth-only; 0 or unset are equivalent.
+SYNTH_ONLY := $(filter 1,$(SYNTH))
+ifeq ($(TARGET)$(SYNTH_ONLY),bin)
 	post_build = @\
 		mkdir -p $(BUILD_OUTPUT_DIR); \
 		echo "Exporting bitstream files..."; \

@@ -56,6 +56,16 @@ VIVADO_MODE=batch
 endif
 
 # -------------------------------------------------------------------
+# Synth-only mode. Calling with SYNTH=1 will stop after synthesis.
+# Requires vivado_utils::exit_if_synth_only in build script after synthesis.
+# -------------------------------------------------------------------
+ifeq ($(SYNTH),1)
+VIV_SYNTH_ONLY=1
+else
+VIV_SYNTH_ONLY=0
+endif
+
+# -------------------------------------------------------------------
 # Project mode switch. Calling with PROJECT:=1 will use Vivado project file
 # -------------------------------------------------------------------
 ifeq ($(PROJECT),1)
@@ -74,7 +84,7 @@ endif
 	@echo -n "* "; vivado -version 2>&1 | grep Vivado || (echo "ERROR: Vivado not found in environment. Please run setupenv.sh"; exit 1;)
 
 # -------------------------------------------------------------------
-# Intermediate build dirs 
+# Intermediate build dirs
 # -------------------------------------------------------------------
 .build_dirs:
 ifdef BUILD_DIR

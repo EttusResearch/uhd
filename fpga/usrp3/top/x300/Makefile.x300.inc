@@ -131,13 +131,10 @@ bin: .prereqs $(OOT_SRCS_FILE)
 	@echo "Printing VERILOG_DEFS:: $(VERILOG_DEFS)"
 	$(call BUILD_VIVADO_DESIGN,$(abspath ./build_x300.tcl),$(TOP_MODULE),$(ARCH),$(PART_ID))
 
-synth: .prereqs $(OOT_SRCS_FILE)
-	$(call BUILD_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_synth.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
-
 rtl: .prereqs $(OOT_SRCS_FILE)
 	$(call CHECK_VIVADO_DESIGN,$(TOOLS_DIR)/scripts/viv_check_syntax.tcl,$(TOP_MODULE),$(ARCH),$(PART_ID))
 
 viv_ip: .prereqs $$(DESIGN_SRCS) ip
 	@echo "IP build for $(NAME) DONE . . ."
 
-.PHONY: bin synth rtl viv_ip $(OOT_SRCS_FILE)
+.PHONY: bin rtl viv_ip $(OOT_SRCS_FILE)

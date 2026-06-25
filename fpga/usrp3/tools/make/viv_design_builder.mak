@@ -32,6 +32,7 @@ BUILD_VIVADO_DESIGN = \
 	export VIV_OOT_SRCS_FILE=$(OOT_SRCS_FILE); \
 	export VIV_VERILOG_DEFS="$(VERILOG_DEFS) UHD_FPGA_DIR=$(BASE_DIR)/../.."; \
 	export VIV_INCR_BUILD=$(INCR_BUILD); \
+	export VIV_SYNTH_ONLY=$(VIV_SYNTH_ONLY); \
 	export VIV_SECURE_KEY=$(call RESOLVE_PATH,$(abspath $(SECURE_KEY))); \
 	cd $(BUILD_DIR); \
 	$(TOOLS_DIR)/scripts/launch_vivado.py --parse-config $(MAKEFILE_DIR)/dev_config.json -mode $(VIVADO_MODE) -source $(call RESOLVE_PATH,$(1)) -log build.log -journal $(2).jou

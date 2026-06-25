@@ -13,6 +13,7 @@ vivado_utils::initialize_project
 # STEP#2: Run synthesis
 vivado_utils::synthesize_design
 vivado_utils::generate_post_synth_reports
+vivado_utils::exit_if_synth_only
 
 # STEP#3: Run implementation strategy
 set e31x_strategy [dict create]

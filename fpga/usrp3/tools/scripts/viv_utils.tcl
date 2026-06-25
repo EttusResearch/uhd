@@ -20,7 +20,8 @@ namespace eval ::vivado_utils {
         write_implementation_outputs \
         get_top_module \
         get_part_name \
-        get_vivado_mode
+        get_vivado_mode \
+        exit_if_synth_only
 
     # Required environment variables
     variable g_tools_dir    $::env(VIV_TOOLS_DIR)
@@ -434,6 +435,17 @@ proc ::vivado_utils::close_batch_project {} {
         close_project
     } else {
         puts "BUILDER: In GUI mode. Leaving project open."
+    }
+}
+
+# ---------------------------------------------------
+# Exit script after synthesis if VIV_SYNTH_ONLY is set
+# ---------------------------------------------------
+proc ::vivado_utils::exit_if_synth_only {} {
+    if {[info exists ::env(VIV_SYNTH_ONLY)] && $::env(VIV_SYNTH_ONLY) eq "1"} {
+        puts "BUILDER: VIV_SYNTH_ONLY set. Stopping after synthesis."
+        vivado_utils::close_batch_project
+        return -code return
     }
 }
 
