@@ -190,7 +190,7 @@ endmodule
 
 //XmlParse xml_on
 //
-//<regmap name="RFDC_TIMING_REGMAP" readablestrobes="false" generatevhdl="true" generatesv="false" ettusguidelines="true">
+//<regmap name="RFDC_TIMING_REGMAP" readablestrobes="false" generatevhdl="true" generatesv="false" ettusguidelines="true" generateverilog="true">
 //  <group name="RFDC_TIMING_REGS">
 //    <register name="NCO_RESET_REG" offset="0x00" size="32" readable="true" writable="true">
 //      <info>NCO reset control register.</info>
