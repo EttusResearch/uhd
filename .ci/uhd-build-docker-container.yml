@@ -88,7 +88,7 @@ variables:
 - name: sourcePackageBuilders
   # Match with one of the Ubuntu images in linuxDockerImages
   value:
-    "{'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'}}"
+    "{'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'}}"
 
 - name: fedoraRpmDockerImages
   # Match with Fedora images in linuxDockerImages
