@@ -77,8 +77,7 @@ variables:
 - name: ubuntuDebDockerImages
   # Match with Ubuntu images in linuxDockerImages
   value:
-    "{'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','ubuntuReleaseName':'focal'},
-    'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'},
+    "{'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'},
     'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'},
     'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','ubuntuReleaseName':'questing'}}"
 
