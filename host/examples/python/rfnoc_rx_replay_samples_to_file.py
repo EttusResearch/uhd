@@ -261,8 +261,8 @@ def _sanitize_args(replay, num_ports, num_bytes, pkt_size_bytes=None):
             f"Port {port} address space: "
             f"0x{mem_stride*port:08X} - 0x{mem_stride*port+num_bytes:08X}"
         )
-        replay.set_play_type("sc16", 0)
-        replay.set_record_type("sc16", 0)
+        replay.set_play_type("sc16", port)
+        replay.set_record_type("sc16", port)
         if pkt_size_bytes is not None:
             replay.set_max_items_per_packet(pkt_size_bytes // BYTES_PER_SAMP, port)
     return mem_stride, num_bytes
