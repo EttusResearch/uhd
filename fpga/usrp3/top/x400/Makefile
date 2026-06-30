@@ -101,6 +101,8 @@ endif
 ##x410_X4_200_rfnoc_image_core.yml   | 200 MHz   | 4  | 4 x 10 GbE      | Unused          | 64b x 4 Ch
 ##x410_XG_200_rfnoc_image_core.yml   | 200 MHz   | 4  | 10 GbE (Lane 0) | 10 GbE (Lane 0) | 64b x 4 Ch
 ##x420_X4_200_rfnoc_image_core.yml   | 200 MHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
+##x420_X4_400_rfnoc_image_core.yml   | 400 MHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
+##x420_CG_400_rfnoc_image_core.yml   | 400 MHz   | 2  | 100 GbE         | 100 GbE         | 512b x 2 Ch
 ##x420_X4_1000_rfnoc_image_core.yml  | 1.0 GHz   | 2  | 4 x 10 GbE      | Unused          | 512b x 2 Ch
 ##x420_CG_1000_rfnoc_image_core.yml  | 1.0 GHz   | 2  | 100 GbE         | 100 GbE         | 512b x 2 Ch
 ##x440_CG_400_rfnoc_image_core.yml   | 400 MHz   | 8  | 100 GbE         | 100 GbE         | Unused
@@ -153,7 +155,7 @@ $(BUILD_DIR)/x410-version-info.dtsi: regmap/x410/versioning_regs_regmap_utils.vh
 $(BUILD_DIR)/x420-version-info.dtsi: regmap/x420/versioning_regs_regmap_utils.vh
 	tools/parse_versions_for_dts.py \
 		--input $< --output $@ \
-		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_full,rf_core_1000m
+		--components fpga,cpld_ifc,db_gpio_ifc,rf_core_full,rf_core_1000m,rf_core_400m
 
 $(BUILD_DIR)/x440-version-info.dtsi: regmap/x440/versioning_regs_regmap_utils.vh
 	tools/parse_versions_for_dts.py \

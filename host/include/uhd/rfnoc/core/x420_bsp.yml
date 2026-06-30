@@ -13,8 +13,8 @@ parameters:
   FP_GPIO_BANK_WIDTH: 12
 
 checks:
-  - condition: ${int(parameters['RF_BW'] in [200, 1000])}
-    message: "RF_BW must be one of 200, 1000 (is: ${parameters['RF_BW']})."
+  - condition: ${int(parameters['RF_BW'] in [200, 400, 1000])}
+    message: "RF_BW must be one of 200, 400, 1000 (is: ${parameters['RF_BW']})."
   - condition: ${not parameters['ENABLE_DRAM'] or int(parameters['NUM_DRAM_BANKS']) in [1, 2]}
     message: "NUM_DRAM_BANKS must be 1 or 2 when enabling DRAM (is: ${parameters['NUM_DRAM_BANKS']})."
   - condition: ${int(parameters['DRAM_WIDTH'] in [64, 128, 512])}
@@ -55,7 +55,7 @@ checks:
 
 make_defs:
   - RF_BW=${parameters['RF_BW']}
-  - RF_CORE_1000M=1
+  - RF_CORE_${1000 if parameters['RF_BW'] == 1000 else 400}M=1
   - DRAM_BANKS=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_BANKS']}
   - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
   - DRAM_W=${parameters['DRAM_WIDTH']}

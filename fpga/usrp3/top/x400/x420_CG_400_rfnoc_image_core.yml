@@ -1,0 +1,20 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args           # Identifier for the schema used to validate this file
+copyright: >-                             # Copyright information used in file headers
+  Copyright 2026 Ettus Research, a National Instruments Brand
+license: >-                               # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                            # File version
+chdr_width: 512                           # Bit width of the CHDR bus for this image
+device: 'x420'                            # USRP type
+image_core_name: 'usrp_x420_fpga_CG_400'  # Name to use for the generated output files
+default_target: 'X420'                    # Default make target
+# This image is identical to the 1000 MHz image, except for the RF bandwidth,
+# which is achieved by adding resamplers with fixed factor of 3 in the RF data
+# path
+inherit:
+  - 'x420_CG_1000_rfnoc_image_core.yml'
+
+parameters:
+  RF_BW: 400
