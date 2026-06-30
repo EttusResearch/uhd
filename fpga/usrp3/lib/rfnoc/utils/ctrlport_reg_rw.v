@@ -157,7 +157,7 @@ module ctrlport_reg_rw #(
               end
 
               // Update the least-significant words from the cache
-              for (w = 0; w < NUM_BYTES/4; w = w+1) begin
+              for (w = 0; w < NUM_BYTES/4-1; w = w+1) begin
                 if (write_en_cache_reg[b]) begin
                   reg_val[32*w+b*8 +: 8] <= write_cache_reg[32*w+b*8 +: 8];
                 end
