@@ -36,6 +36,8 @@ endif
 ifdef X420
 include $(IP_DIR)/ddr4_64bits/Makefile.inc
 include $(IP_DIR)/x4xx_ps_rfdc_bd/x420_ps_rfdc_bd/Makefile.inc
+include $(IP_DIR)/fir_dec3_4spc/Makefile.inc
+include $(IP_DIR)/fir_inp3_2spc/Makefile.inc
 endif
 
 ifdef X440
@@ -103,7 +105,9 @@ endif
 
 ifdef X420
 IP_XCI_SRCS += \
-$(IP_DDR4_64BITS_SRCS)
+$(IP_DDR4_64BITS_SRCS) \
+$(IP_FIR_DEC3_4SPC_SRCS) \
+$(IP_FIR_INP3_2SPC_SRCS)
 endif
 
 ifdef X440

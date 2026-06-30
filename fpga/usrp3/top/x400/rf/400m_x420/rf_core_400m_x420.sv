@@ -3,24 +3,26 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: rf_core_1000m
+// Module: rf_core_400m_x420
 //
 // Description:
 //
-//   Top-level wrapper for data reordering from RFDC to RFNoC and vice versa.
-//   This module includes signal processing for IQ impairments and DC offset.
-//   It supports a single data channel in TX and RX direction with a
-//   configurable number of samples per clock.
+//   RF core for X420 daughterboard including data reordering for the RFDC, fixed
+//   resamplers by 3 (decimation on RX and interpolation on TX), and a DSP chain.
 //
 //   Data/RF Specs:
 //     DBs:   1
-//     Data Rate: rfdc_clk @ RADIO_SPC
+//     Data Rate RFDC: rfdc_clk @ RADIO_SPC
+//     Data Rate RFNoC: data_clk @ RADIO_SPC
+//
+//  Parameters:
+//    RADIO_SPC: Number of samples per cycle on the radio data interfaces
 //
 
-module rf_core_1000m
+module rf_core_400m_x420
   import ctrlport_pkg::*;
 # (
-  parameter  int RADIO_SPC = 8,
+  parameter  int RADIO_SPC = 4,
   localparam int NUM_ADC_CHANNELS = 1,
   localparam int NUM_DAC_CHANNELS = 1
 ) (
@@ -30,7 +32,14 @@ module rf_core_1000m
   //---------------------------------------------------------------------------
 
   // Main Clock Inputs
+  input  logic data_clk,
+  input  logic data_clk_2x,
   input  logic rfdc_clk,
+  input  logic pll_ref_clk,
+
+  // Resets
+  input  logic rx_resampler_reset_pulse_dclk,
+  input  logic tx_resampler_reset_pulse_dclk,
 
   // AXI4-Lite Config Clock
   // This clock is used to synchronize status bits for the RFDC
@@ -38,7 +47,7 @@ module rf_core_1000m
   input  logic s_axi_config_clk,
 
   //---------------------------------------------------------------------------
-  // Control-Port Interface (rfdc_clk domain)
+  // Control-Port Interface (data_clk domain)
   //---------------------------------------------------------------------------
   input  logic                       ctrlport_rst,
   input  logic                       s_ctrlport_req_wr,
@@ -50,10 +59,8 @@ module rf_core_1000m
   output logic [CTRLPORT_DATA_W-1:0] s_ctrlport_resp_data,
 
   //---------------------------------------------------------------------------
-  // RFDC Data Interfaces
+  // RFDC Data Interfaces (rfdc_clk domain)
   //---------------------------------------------------------------------------
-  // All ports here are in the rfdc_clk domain.
-
   // ADC
   input  logic [16*RADIO_SPC-1:0]     adc_data_in_i_tdata [0:NUM_ADC_CHANNELS-1],
   output logic [NUM_ADC_CHANNELS-1:0] adc_data_in_i_tready,
@@ -68,10 +75,8 @@ module rf_core_1000m
   output logic [NUM_DAC_CHANNELS-1:0] dac_data_out_tvalid,
 
   //---------------------------------------------------------------------------
-  // User Data Interfaces
+  // User Data Interfaces (data_clk domain)
   //---------------------------------------------------------------------------
-  // All ports here are in the rfdc_clk domain on the X420.
-
   // ADC
   // Packed [Q7,I7, ... , Q0,I0] with Q in MSBs
   output logic [32*RADIO_SPC-1:0]     adc_data_out_tdata [0:NUM_ADC_CHANNELS-1],
@@ -104,6 +109,7 @@ module rf_core_1000m
 );
 
   import XmlSvPkgRF_CORE_REGMAP::*;
+  `include "../../regmap/x420/rfdc_regs_regmap_utils.vh"
   `include "../../regmap/x420/versioning_regs_regmap_utils.vh"
   `include "../../regmap/versioning_utils.vh"
 
@@ -117,8 +123,10 @@ module rf_core_1000m
 
   // DAC
   logic [32*RADIO_SPC-1:0]     dac_data_int_tdata [0:NUM_DAC_CHANNELS-1];
-  logic [NUM_DAC_CHANNELS-1:0] dac_data_int_tready;
   logic [NUM_DAC_CHANNELS-1:0] dac_data_int_tvalid;
+
+  // DSP information
+  logic [15:0] rfdc_info_int;
 
   rf_core_full #(
     .NUM_ADC_CHANNELS(NUM_ADC_CHANNELS),
@@ -139,16 +147,51 @@ module rf_core_1000m
     .adc_data_out_tdata       (adc_data_int_tdata),
     .adc_data_out_tvalid      (adc_data_int_tvalid),
     .dac_data_in_tdata        (dac_data_int_tdata),
-    .dac_data_in_tready       (dac_data_int_tready),
+    .dac_data_in_tready       (),
     .dac_data_in_tvalid       (dac_data_int_tvalid),
     .invert_adc_iq_rclk       (invert_adc_iq_rclk),
     .invert_dac_iq_rclk       (invert_dac_iq_rclk),
     .dsp_info_sclk            (dsp_info_sclk),
-    .rfdc_info_sclk           (rfdc_info_sclk),
+    .rfdc_info_sclk           (rfdc_info_int),
     .axi_status_sclk          (axi_status_sclk),
     .adc_enable_data_rclk     (adc_enable_data_rclk),
     .adc_rfdc_axi_resetn_rclk (adc_rfdc_axi_resetn_rclk),
     .version_info             ()
+  );
+
+  //---------------------------------------------------------------------------
+  // Fixed resamplers by 3
+  //---------------------------------------------------------------------------
+  logic [32*RADIO_SPC-1:0] dac_int_tdata;
+  logic                    dac_int_tvalid;
+
+  logic [32*RADIO_SPC-1:0] adc_dec3_tdata;
+  logic                    adc_dec3_tvalid;
+
+  // Interpolation
+  tx_inp3 tx_inp3_i (
+    .data_clk              (data_clk),
+    .data_clk_2x           (data_clk_2x),
+    .rfdc_clk              (rfdc_clk),
+    .pll_ref_clk           (pll_ref_clk),
+    .reset_pulse_dclk      (tx_resampler_reset_pulse_dclk),
+    .dac_data_in_tdata     (dac_int_tdata),
+    .dac_data_in_tvalid    (dac_int_tvalid),
+    .dac_data_out_tdata    (dac_data_int_tdata[0]),
+    .dac_data_out_tvalid   (dac_data_int_tvalid[0])
+  );
+
+  // Decimation
+  rx_dec3 rx_dec3_i (
+    .rfdc_clk              (rfdc_clk),
+    .data_clk              (data_clk),
+    .pll_ref_clk           (pll_ref_clk),
+    .reset_pulse_dclk      (rx_resampler_reset_pulse_dclk),
+    .adc_data_in_tdata     (adc_data_int_tdata[0]),
+    .adc_data_in_tvalid    (adc_data_int_tvalid[0]),
+    .adc_data_in_tready    (),
+    .adc_data_out_tdata    (adc_dec3_tdata),
+    .adc_data_out_tvalid   (adc_dec3_tvalid)
   );
 
   //---------------------------------------------------------------------------
@@ -159,27 +202,36 @@ module rf_core_1000m
   x420_dsp_chain #(
     .RADIO_SPC (RADIO_SPC)
   ) x420_dsp_chain_i (
-    .clk                    (rfdc_clk),
-    .ctrlport_rst           (ctrlport_rst),
-    .s_ctrlport_req_wr      (s_ctrlport_req_wr),
-    .s_ctrlport_req_rd      (s_ctrlport_req_rd),
-    .s_ctrlport_req_addr    (s_ctrlport_req_addr),
-    .s_ctrlport_req_data    (s_ctrlport_req_data),
-    .s_ctrlport_resp_ack    (s_ctrlport_resp_ack),
-    .s_ctrlport_resp_status (s_ctrlport_resp_status),
-    .s_ctrlport_resp_data   (s_ctrlport_resp_data),
-    .tx_in_axis_tdata       (dac_data_in_tdata[0]),
-    .tx_in_axis_tvalid      (dac_data_in_tvalid[0]),
-    .tx_in_axis_tready      (dac_data_in_tready[0]),
-    .tx_out_axis_tdata      (dac_data_int_tdata[0]),
-    .tx_out_axis_tvalid     (dac_data_int_tvalid[0]),
-    .tx_out_axis_tready     (dac_data_int_tready[0]),
-    .rx_in_axis_tdata       (adc_data_int_tdata[0]),
-    .rx_in_axis_tvalid      (adc_data_int_tvalid[0]),
-    .rx_out_axis_tdata      (adc_data_out_tdata[0]),
-    .rx_out_axis_tvalid     (adc_data_out_tvalid[0]),
-    .rx_out_axis_tready     ('1)
+    .clk                   (data_clk),
+    .ctrlport_rst          (ctrlport_rst),
+    .s_ctrlport_req_wr     (s_ctrlport_req_wr),
+    .s_ctrlport_req_rd     (s_ctrlport_req_rd),
+    .s_ctrlport_req_addr   (s_ctrlport_req_addr),
+    .s_ctrlport_req_data   (s_ctrlport_req_data),
+    .s_ctrlport_resp_ack   (s_ctrlport_resp_ack),
+    .s_ctrlport_resp_status(s_ctrlport_resp_status),
+    .s_ctrlport_resp_data  (s_ctrlport_resp_data),
+    .tx_in_axis_tdata      (dac_data_in_tdata[0]),
+    .tx_in_axis_tvalid     (dac_data_in_tvalid[0]),
+    .tx_in_axis_tready     (dac_data_in_tready[0]),
+    .tx_out_axis_tdata     (dac_int_tdata),
+    .tx_out_axis_tvalid    (dac_int_tvalid),
+    .tx_out_axis_tready    ('1),
+    .rx_in_axis_tdata      (adc_dec3_tdata),
+    .rx_in_axis_tvalid     (adc_dec3_tvalid),
+    .rx_out_axis_tdata     (adc_data_out_tdata[0]),
+    .rx_out_axis_tvalid    (adc_data_out_tvalid[0]),
+    .rx_out_axis_tready    ('1)
   );
+
+  //---------------------------------------------------------------------------
+  // Versioning
+  //---------------------------------------------------------------------------
+  // add information about resamplers
+  always_comb begin
+    rfdc_info_sclk = rfdc_info_int;
+    rfdc_info_sclk[RFDC_INFO_XTRA_RESAMP_MSB:RFDC_INFO_XTRA_RESAMP] = 'd3;
+  end
 
   // check version info from rf_core_full
   if (build_version(
@@ -187,21 +239,21 @@ module rf_core_1000m
       RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_MINOR,
       RF_CORE_FULL_OLDEST_COMPATIBLE_VERSION_BUILD
     ) != build_version(1,0,0)) begin
-    $error("rf_core_1000m: Incompatible rf_core_full version detected!");
+    $error("rf_core_400m_x420: Incompatible rf_core_full version detected!");
   end
 
   // assign version info
   assign version_info = build_component_versions(
-    RF_CORE_1000M_VERSION_LAST_MODIFIED_TIME,
+    RF_CORE_400M_VERSION_LAST_MODIFIED_TIME,
     build_version(
-      RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_MAJOR,
-      RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_MINOR,
-      RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_BUILD
+      RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_MAJOR,
+      RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_MINOR,
+      RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_BUILD
     ),
     build_version(
-      RF_CORE_1000M_CURRENT_VERSION_MAJOR,
-      RF_CORE_1000M_CURRENT_VERSION_MINOR,
-      RF_CORE_1000M_CURRENT_VERSION_BUILD
+      RF_CORE_400M_CURRENT_VERSION_MAJOR,
+      RF_CORE_400M_CURRENT_VERSION_MINOR,
+      RF_CORE_400M_CURRENT_VERSION_BUILD
     )
   );
 
@@ -211,22 +263,22 @@ endmodule
 //XmlParse xml_on
 //<regmap name="VERSIONING_REGS_REGMAP">
 //  <group name="VERSIONING_CONSTANTS">
-//    <enumeratedtype name="RF_CORE_1000M_VERSION" showhex="true">
+//    <enumeratedtype name="RF_CORE_400M_VERSION" showhex="true">
 //      <info>
-//        1000 MHz RF core.{BR/}
+//        400 MHz RF core (similar to 1000 MHz RF core but with fixed resamplers by 3).{BR/}
 //        For guidance on when to update these revision numbers,
 //        please refer to the register map documentation accordingly:
 //        <li> Current version: @.VERSIONING_REGS_REGMAP..CURRENT_VERSION
 //        <li> Oldest compatible version: @.VERSIONING_REGS_REGMAP..OLDEST_COMPATIBLE_VERSION
 //        <li> Version last modified: @.VERSIONING_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
-//      <value name="RF_CORE_1000M_CURRENT_VERSION_MAJOR"           integer="3"/>
-//      <value name="RF_CORE_1000M_CURRENT_VERSION_MINOR"           integer="0"/>
-//      <value name="RF_CORE_1000M_CURRENT_VERSION_BUILD"           integer="0"/>
-//      <value name="RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="2"/>
-//      <value name="RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
-//      <value name="RF_CORE_1000M_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="RF_CORE_1000M_VERSION_LAST_MODIFIED_TIME"      integer="0x25120310"/>
+//      <value name="RF_CORE_400M_CURRENT_VERSION_MAJOR"           integer="1"/>
+//      <value name="RF_CORE_400M_CURRENT_VERSION_MINOR"           integer="0"/>
+//      <value name="RF_CORE_400M_CURRENT_VERSION_BUILD"           integer="0"/>
+//      <value name="RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="1"/>
+//      <value name="RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
+//      <value name="RF_CORE_400M_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
+//      <value name="RF_CORE_400M_VERSION_LAST_MODIFIED_TIME"      integer="0x26050416"/>
 //    </enumeratedtype>
 //  </group>
 //</regmap>

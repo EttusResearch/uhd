@@ -325,7 +325,11 @@ module x4xx (
   `elsif RF_CORE_400M
     localparam RF_CORE   = "400M";
     localparam RADIO_SPC = 4;
-    localparam RFDC_SPC  = 8;
+    `ifdef X420
+      localparam RFDC_SPC = 4;
+    `else
+      localparam RFDC_SPC = 8;
+    `endif
   `elsif RF_CORE_1000M
     localparam RF_CORE   = "1000M";
     localparam RADIO_SPC = 4;
@@ -1357,6 +1361,8 @@ module x4xx (
     );
   `elsif X420
     x420_ps_rfdc_bd x420_ps_rfdc_bd_i (
+      .rx_resampler_reset_pulse_dclk (rx_resampler_reset_pulse_dclk),
+      .tx_resampler_reset_pulse_dclk (tx_resampler_reset_pulse_dclk),
       .adc_enable_data_r0clk         (adc_enable_data_rclk[0]),
       .adc_enable_data_r1clk         (adc_enable_data_rclk[1]),
       .adc_reset_pulse_r0clk         (adc_reset_pulse[0]),
@@ -2566,54 +2572,98 @@ module x4xx (
           );
         `endif
       end else if (RF_CORE == "400M") begin : gen_rf_core_400m
-        rf_core_400m rf_core_400m_i (
-          .rfdc_clk                  (rfdc_clk[0]),
-          .rfdc_clk_2x               (rfdc_clk_2x[0]),
-          .data_clk                  (data_clk),
-          .data_clk_2x               (data_clk_2x),
-          .s_axi_config_clk          (clk40),
-          .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tready_0    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tvalid_0    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tready_0    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_q_tvalid_0    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_i_tready_1    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_i_tvalid_1    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tready_1    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_in_q_tvalid_1    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tready_0     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tvalid_0     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tready_1     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_out_tvalid_1     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_out_tdata_0      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_out_tvalid_0     (adc_data_out_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .adc_data_out_tdata_1      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+1]),
-          .adc_data_out_tvalid_1     (adc_data_out_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_in_tdata_0       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_in_tready_0      (dac_data_in_tready[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_in_tvalid_0      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+0]),
-          .dac_data_in_tdata_1       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_in_tready_1      (dac_data_in_tready[NUM_CH_PER_DB*db_i+1]),
-          .dac_data_in_tvalid_1      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+1]),
-          .invert_adc_iq_rclk2       (swapped_invert_adc_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
-          .invert_dac_iq_rclk2       (swapped_invert_dac_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
-          .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
-          .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
-          .axi_status_sclk           (rf_axi_status_clk40[16*db_i+:16]),
-          .adc_data_out_resetn_dclk  (adc_data_out_resetn_dclk),
-          .adc_enable_data_rclk      (adc_enable_data_rclk),
-          .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk),
-          .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
-          .dac_data_in_resetn_dclk2x (dac_data_in_resetn_dclk2x),
-          .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
-          .fir_resetn_rclk2x         (fir_resetn_rclk2x),
-          .version_info              (rf_core_version[db_i])
-        );
+        `ifdef X410
+          rf_core_400m rf_core_400m_i (
+            .rfdc_clk                  (rfdc_clk[0]),
+            .rfdc_clk_2x               (rfdc_clk_2x[0]),
+            .data_clk                  (data_clk),
+            .data_clk_2x               (data_clk_2x),
+            .s_axi_config_clk          (clk40),
+            .adc_data_in_i_tdata_0     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_i_tready_0    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_i_tvalid_0    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_q_tdata_0     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_q_tready_0    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_q_tvalid_0    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_in_i_tdata_1     (adc_tile_dout_i_tdata[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_in_i_tready_1    (adc_tile_dout_i_tready[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_in_i_tvalid_1    (adc_tile_dout_i_tvalid[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_in_q_tdata_1     (adc_tile_dout_q_tdata[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_in_q_tready_1    (adc_tile_dout_q_tready[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_in_q_tvalid_1    (adc_tile_dout_q_tvalid[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_out_tdata_0      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_out_tready_0     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_out_tvalid_0     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_out_tdata_1      (dac_tile_din_tdata[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_out_tready_1     (dac_tile_din_tready[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_out_tvalid_1     (dac_tile_din_tvalid[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_out_tdata_0      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_out_tvalid_0     (adc_data_out_tvalid[NUM_CH_PER_DB*db_i+0]),
+            .adc_data_out_tdata_1      (adc_data_out_tdata[NUM_CH_PER_DB*db_i+1]),
+            .adc_data_out_tvalid_1     (adc_data_out_tvalid[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_in_tdata_0       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_in_tready_0      (dac_data_in_tready[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_in_tvalid_0      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+0]),
+            .dac_data_in_tdata_1       (dac_data_in_tdata[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_in_tready_1      (dac_data_in_tready[NUM_CH_PER_DB*db_i+1]),
+            .dac_data_in_tvalid_1      (dac_data_in_tvalid[NUM_CH_PER_DB*db_i+1]),
+            .invert_adc_iq_rclk2       (swapped_invert_adc_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
+            .invert_dac_iq_rclk2       (swapped_invert_dac_iq_rclk2[4*db_i+:NUM_CH_PER_DB]),
+            .dsp_info_sclk             (rf_dsp_info_clk40[10*db_i+:10]),
+            .rfdc_info_sclk            (rf_rfdc_info_clk40[16*db_i+:16]),
+            .axi_status_sclk           (rf_axi_status_clk40[16*db_i+:16]),
+            .adc_data_out_resetn_dclk  (adc_data_out_resetn_dclk),
+            .adc_enable_data_rclk      (adc_enable_data_rclk),
+            .adc_rfdc_axi_resetn_rclk  (adc_rfdc_axi_resetn_rclk),
+            .dac_data_in_resetn_dclk   (dac_data_in_resetn_dclk),
+            .dac_data_in_resetn_dclk2x (dac_data_in_resetn_dclk2x),
+            .dac_data_in_resetn_rclk   (dac_data_in_resetn_rclk),
+            .fir_resetn_rclk2x         (fir_resetn_rclk2x),
+            .version_info              (rf_core_version[db_i])
+          );
+        `else // X420 variant
+          rf_core_400m_x420 #(
+            .RADIO_SPC(RADIO_SPC)
+          ) rf_core_400m_x420_i (
+            .data_clk                      (data_clk),
+            .data_clk_2x                   (data_clk_2x),
+            .rfdc_clk                      (rfdc_clk[db_i]),
+            .pll_ref_clk                   (pll_ref_clk),
+            .rx_resampler_reset_pulse_dclk (rx_resampler_reset_pulse_dclk),
+            .tx_resampler_reset_pulse_dclk (tx_resampler_reset_pulse_dclk),
+            .s_axi_config_clk              (clk40),
+            .ctrlport_rst                  (radio_rst[db_i]),
+            .s_ctrlport_req_wr             (rf_core_ctrlport_req_wr[db_i]),
+            .s_ctrlport_req_rd             (rf_core_ctrlport_req_rd[db_i]),
+            .s_ctrlport_req_addr           (rf_core_ctrlport_req_addr[db_i]),
+            .s_ctrlport_req_data           (rf_core_ctrlport_req_data[db_i]),
+            .s_ctrlport_resp_ack           (rf_core_ctrlport_resp_ack[db_i]),
+            .s_ctrlport_resp_status        (rf_core_ctrlport_resp_status[db_i]),
+            .s_ctrlport_resp_data          (rf_core_ctrlport_resp_data[db_i]),
+            .adc_data_in_i_tdata           (adc_tile_dout_i_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_in_i_tready          (adc_tile_dout_i_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_in_i_tvalid          (adc_tile_dout_i_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_in_q_tdata           (adc_tile_dout_q_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_in_q_tready          (adc_tile_dout_q_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_in_q_tvalid          (adc_tile_dout_q_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_out_tdata            (dac_tile_din_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_out_tready           (dac_tile_din_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_out_tvalid           (dac_tile_din_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_out_tdata            (adc_data_out_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .adc_data_out_tvalid           (adc_data_out_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_in_tdata             (dac_data_in_tdata  [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_in_tready            (dac_data_in_tready [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .dac_data_in_tvalid            (dac_data_in_tvalid [NUM_CH_PER_DB*db_i +: NUM_CH_PER_DB]),
+            .invert_adc_iq_rclk            (swapped_invert_adc_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
+            .invert_dac_iq_rclk            (swapped_invert_dac_iq_rclk2[4*db_i +: NUM_CH_PER_DB]),
+            .dsp_info_sclk                 (rf_dsp_info_clk40[10*db_i+:10]),
+            .rfdc_info_sclk                (rf_rfdc_info_clk40[16*db_i+:16]),
+            .axi_status_sclk               (rf_axi_status_clk40[16*db_i +: 16]),
+            .adc_enable_data_rclk          (adc_enable_data_rclk[db_i]),
+            .adc_rfdc_axi_resetn_rclk      (adc_rfdc_axi_resetn_rclk[db_i]),
+            .version_info                  (rf_core_version[db_i])
+          );
+        `endif
       end else if (RF_CORE == "1000M") begin : gen_rf_core_1000m
         rf_core_1000m #(
           .RADIO_SPC(RADIO_SPC)
@@ -2685,7 +2735,7 @@ module x4xx (
       end // gen_rf_core_full
 
       // terminate unused rf core ctrlport interfaces
-      if (RF_CORE != "1000M") begin : gen_rf_core_ctrlport_terminator
+      `ifndef X420
         ctrlport_terminator #(
           .START_ADDRESS (0),
           .LAST_ADDRESS  (2**CTRLPORT_ADDR_W-1)
@@ -2700,7 +2750,7 @@ module x4xx (
           .s_ctrlport_resp_status (rf_core_ctrlport_resp_status[db_i]),
           .s_ctrlport_resp_data   (rf_core_ctrlport_resp_data[db_i])
         );
-      end
+      `endif
     end // gen_rf_cores
 
     `ifdef X440

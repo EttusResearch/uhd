@@ -10,12 +10,12 @@ IP_DAC_400M_ORIG_SRCS = $(addprefix $(IP_DIR)/dac_400m_bd/, \
 dac_400m_bd.tcl \
 )
 
-IP_DAC_400M_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/400m/, \
-duc_400m_saturate.vhd \
-dac_gearbox_6x8.vhd \
-dac_gearbox_6x12.vhd \
-dac_gearbox_12x8.vhd \
-dac_gearbox_4x2.v \
+IP_DAC_400M_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/, \
+400m/duc_400m_saturate.vhd \
+400m/dac_gearbox_6x8.vhd \
+common/dac_gearbox_6x12.vhd \
+400m/dac_gearbox_12x8.vhd \
+common/dac_gearbox_4x2.v \
 )
 
 IP_DAC_400M_BDTCL_SRCS = $(addprefix $(IP_BUILD_DIR)/dac_400m_bd/, \

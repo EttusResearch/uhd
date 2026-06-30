@@ -8,11 +8,10 @@
 -- Description:
 --
 --   Control RFDC, ADC, and DAC resets.
---   This file contains a similar structure to '../x410/x410_rf_reset_controller',
---   with the main difference of not having to support a complex reset chain.
---   This means that the instantiations of 'rf_reset' can be taken out in favor
---   having a simple combination of the incoming pulses and the software triggers
---   to generate the different outputs.
+--   This file contains a similar structure to '../x410/x410_rf_reset_controller'
+--   in order to combine the different reset sources.
+--   The rf_reset instances have moved to the interpolation / decimation modules
+--   to have fewer wires.
 --
 
 library IEEE;

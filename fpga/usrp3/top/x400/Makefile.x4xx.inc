@@ -89,16 +89,27 @@ endif
 
 ifdef X420
 TOP_SRCS += \
-rf/full/rf_core_full.sv \
+rf/x420/XmlSvPkgRF_CORE_REGMAP.sv \
+rf/x420/XmlSvPkgIQ_IMPAIRMENT_REGMAP.sv \
+rf/x420/XmlSvPkgDC_OFFSET_REGMAP.sv \
+rf/x420/impairment_correction_dsp.sv \
+rf/x420/impairment_correction.sv \
+rf/x420/dc_offset.sv \
+rf/x420/x420_dsp_chain.sv \
 rf/common/adc_iq_repacker.v \
-rf/x420/x420_rf_reset_controller.vhd \
-rf/1000m/XmlSvPkgIQ_IMPAIRMENT_REGMAP.sv \
-rf/1000m/XmlSvPkgRF_CORE_REGMAP.sv \
-rf/1000m/XmlSvPkgDC_OFFSET_REGMAP.sv \
-rf/1000m/impairment_correction_dsp.sv \
-rf/1000m/impairment_correction.sv \
-rf/1000m/dc_offset.sv \
+rf/full/rf_core_full.sv \
 rf/1000m/rf_core_1000m.sv \
+rf/common/adc_gearbox_2x4.vhd \
+rf/common/dac_gearbox_4x2.v \
+rf/common/dac_gearbox_6x12.vhd \
+rf/400m_x420/fir_dec3_4spc_wrapper.sv \
+rf/400m_x420/rx_dec3.sv \
+rf/common/dac_gearbox_12x4.sv \
+rf/common/dac_gearbox_6x4.sv \
+rf/400m_x420/fir_inp3_2spc_wrapper.sv \
+rf/400m_x420/tx_inp3.sv \
+rf/400m_x420/rf_core_400m_x420.sv \
+rf/x420/x420_rf_reset_controller.vhd \
 regmap/x420/XmlSvPkgDB_WINDOW_REGMAP.sv \
 regmap/x420/XmlSvPkgFPGA_GPIO_REGMAP.sv\
 regmap/x420/XmlSvPkgHBX_SYNC_INJECTION_REGMAP.sv \
@@ -109,11 +120,11 @@ endif
 ifdef X440
 TOP_SRCS += \
 rf/common/rf_reset.vhd \
-rf/200m_x440/dac_gearbox_12x4.sv \
-rf/200m_x440/dac_gearbox_6x4.sv \
-rf/400m/dac_gearbox_4x2.v \
-rf/400m/adc_gearbox_2x4.vhd \
-rf/400m/dac_gearbox_6x12.vhd \
+rf/common/dac_gearbox_12x4.sv \
+rf/common/dac_gearbox_6x4.sv \
+rf/common/dac_gearbox_4x2.v \
+rf/common/adc_gearbox_2x4.vhd \
+rf/common/dac_gearbox_6x12.vhd \
 rf/200m_x440/fir_dec3_2spc_wrapper.sv \
 rf/200m_x440/fir_inp3_1spc_wrapper.sv \
 rf/200m_x440/rf_core_200m_x440.sv \
@@ -138,6 +149,10 @@ ifdef X420
 ifneq (,$(findstring RF_BW=200,$(RFNOC_IMAGE_CORE_DEFS)))
 MB_XDC += \
 constraints/timing/x420_clocks_200.xdc
+endif
+ifneq (,$(findstring RF_BW=400,$(RFNOC_IMAGE_CORE_DEFS)))
+MB_XDC += \
+constraints/timing/x420_clocks_400.xdc
 endif
 MB_XDC += \
 constraints/timing/x420_clocks.xdc

@@ -13,7 +13,7 @@ adc_400m_bd.tcl \
 IP_ADC_400M_HDL_SRCS = $(addprefix $(BASE_DIR)/x400/rf/, \
 400m/ddc_400m_saturate.vhd \
 400m/adc_gearbox_8x4.v \
-400m/adc_gearbox_2x4.vhd \
+common/adc_gearbox_2x4.vhd \
 common/PkgRf.vhd \
 common/scale_2x.vhd \
 )

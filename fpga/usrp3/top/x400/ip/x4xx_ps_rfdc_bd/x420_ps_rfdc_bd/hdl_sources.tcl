@@ -25,5 +25,6 @@ read_verilog        -library work $script_dir/../../../rf/common/sync_wrapper.v
 read_verilog        -library work $script_dir/../../../rf/x420/axi_stream_select.v
 read_verilog        -library work $script_dir/../../../rf/x420/axi_stream_split.v
 read_vhdl           -library work $script_dir/../../../rf/x420/x420_clock_gates.vhd
+read_vhdl           -library work $script_dir/../../../rf/x420/x420_resampler_reset_controller.vhd
 read_vhdl           -library work $script_dir/../../../rf/x420/x420_rf_reset_controller.vhd
 read_verilog -sv    -library work $script_dir/../../../rf/x420/x420_rfdc_memory_content_pkg.sv

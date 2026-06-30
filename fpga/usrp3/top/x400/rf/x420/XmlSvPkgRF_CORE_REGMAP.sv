@@ -16,16 +16,16 @@ package XmlSvPkgRF_CORE_REGMAP;
 // A numerically ordered list of registers and their HDL source files
 //===============================================================================
 
-  // TX_IQ_IMPAIRMENTS : 0x0 (rf_core_1000m.sv)
-  // RX_IQ_IMPAIRMENTS : 0x20 (rf_core_1000m.sv)
-  // TX_DC_OFFSET      : 0x40 (rf_core_1000m.sv)
-  // RX_DC_OFFSET      : 0x50 (rf_core_1000m.sv)
+  // TX_IQ_IMPAIRMENTS : 0x0 (x420_dsp_chain.sv)
+  // RX_IQ_IMPAIRMENTS : 0x20 (x420_dsp_chain.sv)
+  // TX_DC_OFFSET      : 0x40 (x420_dsp_chain.sv)
+  // RX_DC_OFFSET      : 0x50 (x420_dsp_chain.sv)
 
 //===============================================================================
 // Register Group IQ_IMPAIRMENT_WINDOWS
 //===============================================================================
 
-  // TX_IQ_IMPAIRMENTS Window (from rf_core_1000m.sv)
+  // TX_IQ_IMPAIRMENTS Window (from x420_dsp_chain.sv)
   localparam kTX_IQ_IMPAIRMENTS = 'h0; // Window Offset
   localparam kTX_IQ_IMPAIRMENTSSize = 'h20;  // size in bytes
 
@@ -33,7 +33,7 @@ package XmlSvPkgRF_CORE_REGMAP;
   logic [31:0] Rsvd31_0;  // [31: 0] 32 bit spacer for empty reg
  } TX_IQ_IMPAIRMENTS;
 
-  // RX_IQ_IMPAIRMENTS Window (from rf_core_1000m.sv)
+  // RX_IQ_IMPAIRMENTS Window (from x420_dsp_chain.sv)
   localparam kRX_IQ_IMPAIRMENTS = 'h20; // Window Offset
   localparam kRX_IQ_IMPAIRMENTSSize = 'h20;  // size in bytes
 
@@ -41,7 +41,7 @@ package XmlSvPkgRF_CORE_REGMAP;
   logic [31:0] Rsvd31_0;  // [31: 0] 32 bit spacer for empty reg
  } RX_IQ_IMPAIRMENTS;
 
-  // TX_DC_OFFSET Window (from rf_core_1000m.sv)
+  // TX_DC_OFFSET Window (from x420_dsp_chain.sv)
   localparam kTX_DC_OFFSET = 'h40; // Window Offset
   localparam kTX_DC_OFFSETSize = 'h10;  // size in bytes
 
@@ -49,7 +49,7 @@ package XmlSvPkgRF_CORE_REGMAP;
   logic [15:0] Rsvd15_0;  // [15: 0] 16 bit spacer for empty reg
  } TX_DC_OFFSET;
 
-  // RX_DC_OFFSET Window (from rf_core_1000m.sv)
+  // RX_DC_OFFSET Window (from x420_dsp_chain.sv)
   localparam kRX_DC_OFFSET = 'h50; // Window Offset
   localparam kRX_DC_OFFSETSize = 'h10;  // size in bytes
 

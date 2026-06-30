@@ -1,0 +1,25 @@
+#
+# Copyright 2026 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+# Common X420 RF core sources shared between 1000m and 400m_x420 cores.
+
+RF_X420_COMMON_SRCS := \
+$(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/x420/, \
+XmlSvPkgDC_OFFSET_REGMAP.sv \
+XmlSvPkgIQ_IMPAIRMENT_REGMAP.sv \
+XmlSvPkgRF_CORE_REGMAP.sv \
+impairment_correction_dsp.sv \
+impairment_correction.sv \
+dc_offset.sv \
+x420_dsp_chain.sv \
+))
+
+RF_X420_COMMON_TB_SRCS := \
+$(abspath $(addprefix $(BASE_DIR)/../top/x400/rf/x420/, \
+impairment_correction_test_pkg.sv \
+impairment_correction_tb.sv \
+dc_offset_tb.sv \
+))

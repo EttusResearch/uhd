@@ -16,6 +16,7 @@ rfdc_info_pkg.sv \
 $(addprefix $(BASE_DIR)/x400/rf/x420/, \
 x420_clock_gates.vhd \
 x420_rf_reset_controller.vhd \
+x420_resampler_reset_controller.vhd \
 x420_rfdc_memory_content_pkg.sv \
 axi_stream_select.v \
 axi_stream_split.v \

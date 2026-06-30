@@ -32,6 +32,9 @@ def do_files():
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/common")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/x420")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/1000m")
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/400m_x420")
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/400m", regex="adc*")
+    vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/400m", regex="dac*")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/rf/full/rf_core_full.sv")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/common/regmap")
     vapi.find_files_and_add_to_fileset(base="repo", path="fpga/usrp3/top/x400/ip/x4xx_ps_rfdc_bd/x420_ps_rfdc_bd/regmap")
@@ -53,6 +56,7 @@ def do_files():
 
     # duplicate exclusions
     vapi.remove_from_fileset("build-.*")
+    vapi.remove_from_fileset("xsim_proj")
     vapi.remove_from_fileset("lattice/impl1")
     vapi.remove_from_fileset("crossbar_tb/")
     vapi.remove_from_fileset("glbl.v")

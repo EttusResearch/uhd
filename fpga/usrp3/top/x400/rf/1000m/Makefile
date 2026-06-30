@@ -20,17 +20,13 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 include $(BASE_DIR)/../lib/rfnoc/Makefile.srcs
 include ../full/Makefile.srcs
 include ../common/Makefile.srcs
+include ../x420/Makefile.srcs
 
 DESIGN_SRCS +=  \
 $(RFNOC_FRAMEWORK_SRCS) \
 $(RF_FULL_SRCS) \
 $(RF_COMMON_SRCS) \
-$(abspath XmlSvPkgIQ_IMPAIRMENT_REGMAP.sv) \
-$(abspath impairment_correction_dsp.sv) \
-$(abspath impairment_correction.sv) \
-$(abspath XmlSvPkgDC_OFFSET_REGMAP.sv) \
-$(abspath dc_offset.sv) \
-$(abspath XmlSvPkgRF_CORE_REGMAP.sv) \
+$(RF_X420_COMMON_SRCS) \
 $(abspath rf_core_1000m.sv) \
 
 #-------------------------------------------------
@@ -39,10 +35,8 @@ $(abspath rf_core_1000m.sv) \
 SIM_TOP = rf_core_1000m_all_tb
 
 SIM_SRCS = \
-$(abspath impairment_correction_test_pkg.sv) \
-$(abspath impairment_correction_tb.sv) \
+$(RF_X420_COMMON_TB_SRCS) \
 $(abspath rf_core_1000m_tb.sv) \
-$(abspath dc_offset_tb.sv) \
 $(abspath rf_core_1000m_all_tb.sv) \
 
 
