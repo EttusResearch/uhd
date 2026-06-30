@@ -686,8 +686,8 @@ class X440ClockPolicy(X4xxClockPolicy):
         if len(master_clock_rates) > 1 and self._extra_resampling > 1:
             if master_clock_rates[0] != master_clock_rates[1]:
                 raise ValueError(
-                    "X440 with resamplers only supports identical "
-                    "master clock rates on both DBs."
+                    f"{type(self).__name__.replace('ClockPolicy', '')} with resamplers only "
+                    "supports identical master clock rates on both DBs."
                 )
 
         # Check if MCR meets BW
@@ -894,6 +894,7 @@ class X420ClockPolicy(X440ClockPolicy):
     # depending on the DSP bandwidth (in MHz) of the FPGA image.
     bandwidth_to_default_mcr = {
         200: 250e6,
+        400: 491.52e6,
         1000: 1250e6,
     }
 

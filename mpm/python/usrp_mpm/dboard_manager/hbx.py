@@ -42,8 +42,12 @@ class HBX(X4xxDbMixin, DboardManagerBase):
         "fpga": {
             "compatibility": {
                 "rf_core_1000m": {
-                    "current": (2, 0),
+                    "current": (3, 0),
                     "oldest": (2, 0),
+                },
+                "rf_core_400m": {
+                    "current": (1, 0),
+                    "oldest": (1, 0),
                 },
             }
         },
