@@ -39,7 +39,7 @@ const std::vector<size_t> MPM_COMPAT_NUM = {6, 1};
  * This caps the number of threads spawned during parallel initialization. It
  * can be overridden via the 'init_threads' device arg to provide a new cap.
  */
-const size_t MPMD_DEFAULT_INIT_THREADS = 16;
+const size_t MPMD_DEFAULT_INIT_THREADS = 1;
 
 /*************************************************************************
  * Helper functions
@@ -189,6 +189,9 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
             "Initializing " << num_mboards << " device(s) serially with args: "
                             << device_args.to_string());
     } else {
+        UHD_LOG_WARNING("MPMD",
+            "Parallel initialization has not been validated for all USRPs. Use at your "
+            "own risk.");
         UHD_LOG_INFO("MPMD",
             "Initializing " << num_mboards
                             << " device(s) in parallel (max threads: " << max_init_threads
