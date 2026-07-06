@@ -59,6 +59,9 @@ int main(int argc, char** argv)
         printf("product=unknown-(%04x)\n", pid);
     }
     printf("serial=%s\n", serial);
+    if (pid_info && pid_info->addtl_info) {
+        printf("%s\n", pid_info->addtl_info);
+    }
 
     free(eeprom);
     return 0;
