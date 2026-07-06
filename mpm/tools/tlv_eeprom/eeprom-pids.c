@@ -23,6 +23,9 @@ static struct pid_info pid_list[] = {
     {0x4006, NULL, "IF Test Manufacturing CCA", 0, NULL},
     {0x4007, "fbx", "FBX RF DB", 0, NULL},
     {0x4008, "hbx", "HBX RF DB", 0, NULL},
+    {0x7410, "x410", "X410 (non-customizable FPGA)", 0, "customizable_fpga=False"},
+    {0x7420, "x420", "X420 (non-customizable FPGA)", 0, "customizable_fpga=False"},
+    {0x7440, "x440", "X440 (non-customizable FPGA)", 0, "customizable_fpga=False"},
 };
 
 #define ARRAY_SIZE(x) (sizeof((x)) / sizeof((*x)))
