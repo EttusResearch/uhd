@@ -73,6 +73,7 @@ steps:
       $UHD_CI_CMAKE_OPTIONS \
       $UHD_CI_CMAKE_SIM \
       $UHD_BOOST_OPTIONS \
+      -DENABLE_MPMD=OFF \
       ${{ parameters.cmake_args }} \
       ${{ parameters.uhdSrcDir }}/host
   displayName: cmake homebrew macOS UHD
