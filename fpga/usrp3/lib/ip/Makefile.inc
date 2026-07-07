@@ -11,7 +11,6 @@ include $(LIB_IP_DIR)/complex_to_magphase/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase_int17/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase_int16_int24/Makefile.inc
 include $(LIB_IP_DIR)/complex_to_magphase_int32/Makefile.inc
-include $(LIB_IP_DIR)/complex_multiplier/Makefile.inc
 include $(LIB_IP_DIR)/complex_multiplier_dds/Makefile.inc
 include $(LIB_IP_DIR)/cordic_rotator/Makefile.inc
 include $(LIB_IP_DIR)/cordic_rotator24/Makefile.inc
@@ -39,7 +38,6 @@ $(LIB_IP_COMPLEX_TO_MAGPHASE_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT17_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT16_INT24_SRCS) \
 $(LIB_IP_COMPLEX_TO_MAGPHASE_INT32_SRCS) \
-$(LIB_IP_COMPLEX_MULTIPLIER_SRCS) \
 $(LIB_IP_COMPLEX_MULTIPLIER_DDS_SRCS) \
 $(LIB_IP_CORDIC_ROTATOR_SRCS) \
 $(LIB_IP_CORDIC_ROTATOR24_SRCS) \

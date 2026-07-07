@@ -9,7 +9,6 @@ include $(IP_DIR)/axi_intercon_4x64_256_bd/Makefile.inc
 include $(IP_DIR)/ddr3_32bit/Makefile.inc
 include $(IP_DIR)/fifo_4k_2clk/Makefile.inc
 include $(IP_DIR)/fifo_short_2clk/Makefile.inc
-#include $(IP_DIR)/input_sample_fifo/Makefile.inc
 include $(IP_DIR)/one_gig_eth_pcs_pma/Makefile.inc
 #include $(IP_DIR)/misc_clock_gen/Makefile.inc
 include $(IP_DIR)/ten_gig_eth_pcs_pma/Makefile.inc
@@ -43,9 +42,6 @@ $(IP_FIFO_4K_2CLK_SRCS) \
 
 IP_DRAM_XCI_SRCS = \
 $(IP_DDR3_32BIT_SRCS)
-
-## Currently unused
-## $(IP_INPUT_SAMPLE_FIFO_SRCS) \
 
 IP_CODEGEN_SRCS = \
 $(TEN_GIGE_PHY_SRCS) \

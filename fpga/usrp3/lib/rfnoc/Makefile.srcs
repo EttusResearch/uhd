@@ -36,7 +36,6 @@ counter.v \
 ram_to_fifo.v \
 const.v \
 const_sreg.v \
-cmul.v \
 cadd.v \
 keep_one_in_n.v \
 vector_iir.v \
