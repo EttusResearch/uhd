@@ -219,32 +219,15 @@ module chdr_xb_ingress_buff #(
     end
   end
 
-  // The dest_find_tready signal indicates if the find_fifo is ready or if the
-  // dest port of the dest_muax is ready, depending on which path will be used.
-  reg dest_find_tready;
-
-  always @(*) begin
-    if (s_axis_chdr_hdr_valid) begin
-      case (s_axis_chdr_tid)
-        CHDR_MGMT_ROUTE_EPID:
-          dest_find_tready = cache_hit ? dest_i_tready : find_tready;
-        CHDR_MGMT_ROUTE_TDEST:
-          dest_find_tready = dest_i_tready;
-        CHDR_MGMT_RETURN_TO_SRC:
-          dest_find_tready = dest_i_tready;
-        default:
-          dest_find_tready = dest_i_tready; // We should never get here
-      endcase
-    end else begin
-      dest_find_tready = 1'b1;
-    end
-  end
-
   // We can accept a transfer from the input CHDR stream only if the the packet
   // gate and dest/find datapaths are ready.
+  // This is a violation of the AXI-Stream protocol because it creates a tready -> tvalid
+  // dependency. To avoid deadlocks, FIFOs (axi_fifo_flop2) are placed downstream of the
+  // gate_i_*, find_* and dest_i_* streams.
   assign s_axis_chdr_tready = s_axis_chdr_tvalid &&
                               gate_i_tready      &&
-                              dest_find_tready;
+                              dest_i_tready      &&
+                              find_tready;
 
   // The chdr_header_stb signal indicates when we write data into the dest/find
   // data path. This happens when we're accepting the header word of the packet
