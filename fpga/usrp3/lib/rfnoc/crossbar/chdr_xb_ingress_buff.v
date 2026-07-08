@@ -139,6 +139,7 @@ module chdr_xb_ingress_buff #(
   reg [15:0]         cache_epid  [0:1];
   reg [DEST_W-1:0]   cache_dest  [0:1];
   reg                cache_lru;
+  reg                reset_cache_pend = 1'b0;
 
   wire [15:0]        hdr_epid       = chdr_get_dst_epid(s_axis_chdr_tdata[63:0]);
   wire               cache_hit_0    = cache_valid[0] && (cache_epid[0] == hdr_epid);
@@ -295,19 +296,33 @@ module chdr_xb_ingress_buff #(
 
   wire result_consumed = s_axis_result_tvalid && s_axis_result_tready;
   wire cache_update    = result_consumed && s_axis_result_tkeep;
+  wire reset_cache_ok  = result_consumed || !s_axis_result_tvalid;
 
   always @(posedge clk) begin
-    if (reset || reset_cache) begin
-      cache_valid[0] <= 1'b0;
-      cache_valid[1] <= 1'b0;
-      cache_lru      <= 1'b0;
+    if (reset) begin
+      cache_valid[0]   <= 1'b0;
+      cache_valid[1]   <= 1'b0;
+      cache_lru        <= 1'b0;
+      reset_cache_pend <= 1'b0;
     end else begin
+      if (reset_cache) begin
+        reset_cache_pend <= 1'b1;
+      end
+
       // Capture the EPID when a find request is issued
       if (find_tvalid) begin
         pending_epid <= hdr_epid;
       end
-      // Update cache with successful routing table results
-      if (cache_update) begin
+
+      // Reset cache when requested as soon as we're not outputting a
+      // destination. Otherwise, update cache with successful routing table
+      // results.
+      if (reset_cache_pend && reset_cache_ok) begin
+        cache_valid[0]   <= 1'b0;
+        cache_valid[1]   <= 1'b0;
+        cache_lru        <= 1'b0;
+        reset_cache_pend <= 1'b0;
+      end else if (cache_update) begin
         cache_valid[cache_lru] <= 1'b1;
         cache_epid [cache_lru] <= pending_epid;
         cache_dest [cache_lru] <= s_axis_result_tdata;
