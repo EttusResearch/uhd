@@ -424,7 +424,7 @@ module chdr_crossbar_nxn #(
         // Pipeline stage
         axi_fifo #(
           .WIDTH(CHDR_W(n)+1+NPORTS_W),
-          .SIZE (1                   )
+          .SIZE (-1                   )
         ) axi_fifo_i (
           .clk     (clk                                                      ),
           .reset   (reset                                                    ),
@@ -451,7 +451,7 @@ module chdr_crossbar_nxn #(
           .DEST_W   (1        ),
           .IN_PORTS (1        ),
           .OUT_PORTS(NPORTS   ),
-          .PIPELINE (1        )
+          .PIPELINE (0        )
         ) axis_switch_demux (
           .clk          (clk                        ),
           .reset        (reset                      ),
