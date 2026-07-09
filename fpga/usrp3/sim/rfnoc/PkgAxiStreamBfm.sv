@@ -264,12 +264,16 @@ package PkgAxiStreamBfm;
   // AXI Stream BFM Class
   //---------------------------------------------------------------------------
 
-  // Reset behavior: determines how the BFM slave handles packets in progress when
-  // a reset occurs.
+  // Reset behavior: determines how the master & slave handles packets
+  // in progress when a reset occurs.
   typedef enum  {
-    DISCARD_PACKET,  // DISCARD_PACKET  - discard any in-progress output packets on reset
-    CONTINUE_PACKET, // CONTINUE_PACKET - continue sending/receiving packet in progress during reset
-    TRUNCATE_PACKET  // TRUNCATE_PACKET - ignore DUT outputs for the duration of the reset
+    DISCARD_PACKET,  // - discard any in-progress packets on reset (master & slave)
+    CONTINUE_PACKET, // - continue sending/receiving packet in progress during reset,
+                     //   only applicable for slave.
+    TRUNCATE_PACKET  // - (a)slave : ignore DUT outputs for the duration of the reset
+                     //   (b)master: default behavior; ignore TREADY & continue sending
+                     //              words for the packet in progress (but when in a
+                     //              stall loop, it goes to next packet)
   } reset_behavior_t;
 
   class AxiStreamBfm #(
@@ -280,7 +284,8 @@ package PkgAxiStreamBfm;
     bit TUSER = 1,
     bit TKEEP = 1,
     bit TLAST = 1,
-    reset_behavior_t RESET_BEHAVIOR = DISCARD_PACKET
+    reset_behavior_t RESET_BEHAVIOR_SLAVE  = DISCARD_PACKET,
+    reset_behavior_t RESET_BEHAVIOR_MASTER = TRUNCATE_PACKET
   );
 
     //------------------
@@ -545,6 +550,18 @@ package PkgAxiStreamBfm;
               @(posedge master.clk);
               if (master.rst) break;
             end while (!master.tready);
+            if (master.rst) begin
+              case (RESET_BEHAVIOR_MASTER)
+                DISCARD_PACKET: begin
+                  // Discards the rest of the packet in flight and
+                  // continues with the next packet.
+                  break;
+                end
+                default: begin
+                  // do nothing
+                end
+              endcase
+            end
           end
           master.tvalid <= 0;
           master.tdata  <= IDLE_DATA;
@@ -571,7 +588,7 @@ package PkgAxiStreamBfm;
       forever begin
         @(posedge slave.clk);
         if (slave.rst) begin
-          case (RESET_BEHAVIOR)
+          case (RESET_BEHAVIOR_SLAVE)
             DISCARD_PACKET: begin
               packet.data = {};
               packet.user = {};
@@ -585,7 +602,8 @@ package PkgAxiStreamBfm;
               continue;
             end
             default: begin
-              $fatal(1, "Unrecognized RESET_BEHAVIOR value: %s", RESET_BEHAVIOR.name());
+              $fatal(1, "Unrecognized RESET_BEHAVIOR_SLAVE value: %s",
+                     RESET_BEHAVIOR_SLAVE.name());
             end
           endcase
         end
