@@ -51,10 +51,10 @@ i2c_core_100_wb32::~i2c_core_100_wb32(void)
     /* NOP */
 }
 
-class i2c_core_100_wb32_wb32_impl : public i2c_core_100_wb32
+class i2c_core_100_wb32_impl : public i2c_core_100_wb32
 {
 public:
-    i2c_core_100_wb32_wb32_impl(wb_iface::sptr iface,
+    i2c_core_100_wb32_impl(wb_iface::sptr iface,
         const size_t base,
         const bool multi_byte_eeprom_offset = false)
         : _iface(iface), _base(base), _multi_byte_eeprom_offset(multi_byte_eeprom_offset)
@@ -175,5 +175,5 @@ private:
 i2c_core_100_wb32::sptr i2c_core_100_wb32::make(
     wb_iface::sptr iface, const size_t base, const bool multi_byte_eeprom_offset)
 {
-    return sptr(new i2c_core_100_wb32_wb32_impl(iface, base, multi_byte_eeprom_offset));
+    return sptr(new i2c_core_100_wb32_impl(iface, base, multi_byte_eeprom_offset));
 }
