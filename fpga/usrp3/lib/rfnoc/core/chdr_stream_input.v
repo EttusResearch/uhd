@@ -64,7 +64,7 @@ module chdr_stream_input #(
   localparam BUFF_DEPTH_W = $clog2(BUFF_DEPTH);
 
   // The buffer size depends on the BUFF_DEPTH parameter
-  localparam [40:0] BUFF_SIZE_BYTES = (BUFF_DEPTH * (CHDR_W / 8)) - 41'h1;
+  localparam [40:0] BUFF_SIZE_BYTES = BUFF_DEPTH * (CHDR_W / 41'd8);
   // This is a flit-buffer. No packet limits
   localparam [23:0] BUFF_SIZE_PKTS  = 24'hFFFFFF;
 

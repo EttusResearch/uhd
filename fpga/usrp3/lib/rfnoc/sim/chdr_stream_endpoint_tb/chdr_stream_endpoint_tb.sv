@@ -547,7 +547,7 @@ module chdr_stream_endpoint_tb#(
       str_sts = '{
         src_epid         : dst_epid,
         status           : STRS_OKAY,
-        capacity_bytes   : 2**(MTU+1) * (CHDR_W/8) - 1,
+        capacity_bytes   : 2**(MTU+1) * (CHDR_W/8),
         capacity_pkts    : 'hFFFFFF,
         xfer_count_pkts  : xfer_count_pkts,
         xfer_count_bytes : xfer_count_bytes,
@@ -1159,7 +1159,7 @@ module chdr_stream_endpoint_tb#(
         exp_mgmt_op = '{op_payload:{32'h80000006, sep_a.REG_OSTRM_CTRL_STATUS},   // FC on, no errors and lossy
           op_code:MGMT_OP_CFG_RD_RESP, ops_pending:8'd6};
         `ASSERT_ERROR(rx_mgmt_pl.ops[1] == exp_mgmt_op, "Config SEP: Mgmt response was incorrect");
-        exp_mgmt_op = '{op_payload:{((1<<(MTU+1))*(CHDR_W/8)-1), sep_a.REG_OSTRM_BUFF_CAP_BYTES_LO},
+        exp_mgmt_op = '{op_payload:{(1<<(MTU+1))*(CHDR_W/8), sep_a.REG_OSTRM_BUFF_CAP_BYTES_LO},
           op_code:MGMT_OP_CFG_RD_RESP, ops_pending:8'd5};
         `ASSERT_ERROR(rx_mgmt_pl.ops[2] == exp_mgmt_op, "Config SEP: Mgmt response was incorrect");
         exp_mgmt_op = '{op_payload:{32'h0, sep_a.REG_OSTRM_BUFF_CAP_BYTES_HI},
