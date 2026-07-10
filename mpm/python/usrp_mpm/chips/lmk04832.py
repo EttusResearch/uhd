@@ -3,6 +3,10 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+# This class also has a C++ counterpart in host/lib/usrp/common/lmk04832.cpp and
+# host/lib/include/uhdlib/usrp/common/lmk04832.hpp
+# If any changes are needed in this file, consider if making the change in the C++ counterpart is
+# also necessary.
 """LMK04832 parent driver class."""
 
 import time
