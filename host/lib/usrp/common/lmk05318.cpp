@@ -3,6 +3,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
+// This class also has an MPM python counterpart in mpm/python/usrp_mpm/chips/lmk05318.py
+// If any changes are needed in this file, consider if making the change in the python
+// counterpart is also necessary.
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
