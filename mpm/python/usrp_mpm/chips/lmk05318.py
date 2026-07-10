@@ -146,6 +146,7 @@ class LMK05318:
             # the actual programming takes about 230ms, poll the busy bit to see when it's done
             if not _wait_for_busy(self, 1):
                 self.log.error("EEPROM does not start programming, something went wrong")
+            time.sleep(0.2)
             if not _wait_for_busy(self, 0):
                 self.log.error("EEPROM is still busy after programming, something went wrong")
 

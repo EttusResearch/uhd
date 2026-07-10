@@ -139,6 +139,7 @@ public:
                 UHD_LOG_ERROR("LMK05318",
                     "EEPROM does not start programming, something went wrong");
             }
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
             if (!_wait_for_busy(false)) {
                 UHD_LOG_ERROR("LMK05318",
                     "EEPROM is still busy after programming, something went wrong");
