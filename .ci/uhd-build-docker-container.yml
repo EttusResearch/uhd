@@ -76,8 +76,7 @@ variables:
   # Match with Ubuntu images in linuxDockerImages
   value:
     "{'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'},
-    'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'},
-    'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','ubuntuReleaseName':'questing'}}"
+    'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'}}"
 
 - name: macOSBuilders
   value:
@@ -338,7 +337,7 @@ jobs:
           -DVCPKG_MANIFEST_DIR=c:\uhd-vcpkg ^
           -G "$(cmakeCompiler)" -A $(cmakeArch)
     displayName: Test image with cmake uhd
-  - script: | 
+  - script: |
         call $(Build.SourcesDirectory)\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
         cd c:\uhddev\build
         "%vsToolsInstallDir%\VC\Auxiliary\Build\vcvarsall.bat" $(vsArch)
