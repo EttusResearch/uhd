@@ -202,14 +202,17 @@ static std::string get_fpga_path(
         if (!dev_addr.has_key("product")) {
             throw uhd::runtime_error("Found a device but could not "
                                      "auto-generate an image filename.");
-        } else if (fpga_type.empty()) {
-            return find_image_path("usrp_"
-                                   + boost::algorithm::to_lower_copy(dev_addr["product"])
-                                   + "_fpga.bit");
         } else {
-            return find_image_path("usrp_"
-                                   + boost::algorithm::to_lower_copy(dev_addr["product"])
-                                   + "_fpga_" + fpga_type + ".bit");
+            std::string base_name =
+                "usrp_" + boost::algorithm::to_lower_copy(dev_addr["product"]) + "_fpga";
+            std::string type_name = fpga_type.empty() ? "" : "_" + fpga_type;
+            std::string image_path;
+            try {
+                image_path = find_image_path(base_name + type_name + ".bit");
+            } catch (const uhd::io_error&) {
+                image_path = find_image_path(base_name + type_name + ".bin");
+            }
+            return image_path;
         }
     }
 }
