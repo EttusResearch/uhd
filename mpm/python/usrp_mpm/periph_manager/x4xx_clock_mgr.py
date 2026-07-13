@@ -128,7 +128,7 @@ class X4xxClockManager:
         self.num_dboards = 2
         # Tasks to be executed by the host if queried
         self.tasks = {}
-        self.skip_adc_selfcal = False
+        self.skip_adc_selfcal = str2bool(args.get("skip_adc_selfcal", False))
 
         if self._clocking_auxbrd:
             self._safe_sync_source = {
@@ -333,7 +333,11 @@ class X4xxClockManager:
         args["initializing"] = True
         # This flag is used to skip the self-cal that otherwise is marked as required
         # after each clocking change
-        self.skip_adc_selfcal = args.get("skip_adc_selfcal", False)
+        self.skip_adc_selfcal = str2bool(
+            args.get("skip_adc_selfcal", self.skip_adc_selfcal)
+        )
+        if self.skip_adc_selfcal:
+            self._clear_adc_selfcal_tasks()
         # This flag will be used to force a full run of the clocking initialization.
         # If False, MPM may still decide to do a full clocking initialization,
         # depending on other settings.
@@ -804,6 +808,12 @@ class X4xxClockManager:
         return self.clk_ctrl.get_prc_rate()
 
     @no_rpc
+    def _clear_adc_selfcal_tasks(self):
+        """Clear pending ADC self-cal tasks for all daughterboards."""
+        for db in range(self.num_dboards):
+            self.tasks[f"db{db}_ADCSelfCal"] = []
+
+    @no_rpc
     def restart_tiles(self):
         """Configure and (re-)start the tiles."""
         clk_settings = self.clk_policy.get_config(
@@ -823,6 +833,9 @@ class X4xxClockManager:
         if not self.skip_adc_selfcal:
             for db in range(self.num_dboards):
                 self.tasks[f"db{db}_ADCSelfCal"] = [{"Run": "True"}]
+        else:
+            self._clear_adc_selfcal_tasks()
+            self.log.debug("Skipping ADC self-cal task scheduling (skip_adc_selfcal=1).")
 
     ###########################################################################
     # Clock/Time API (this is a public MPM API)
