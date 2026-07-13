@@ -10,6 +10,7 @@ set(USRP_MPM_SYSUTILS_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/dtoverlay.py
     ${CMAKE_CURRENT_SOURCE_DIR}/i2c_dev.py
     ${CMAKE_CURRENT_SOURCE_DIR}/net.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/sysfs_fpga_manager.py
     ${CMAKE_CURRENT_SOURCE_DIR}/sysfs_gpio.py
     ${CMAKE_CURRENT_SOURCE_DIR}/sysfs_thermal.py
     ${CMAKE_CURRENT_SOURCE_DIR}/udev.py

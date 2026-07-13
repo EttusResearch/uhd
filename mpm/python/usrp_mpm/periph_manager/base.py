@@ -20,6 +20,7 @@ from usrp_mpm.mpmutils import get_dboard_class_from_pid
 from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.sys_utils import dtoverlay, net
 from usrp_mpm.sys_utils.filesystem_status import get_fs_version, get_mender_artifact
+from usrp_mpm.sys_utils.sysfs_fpga_manager import FpgaManager
 from usrp_mpm.sys_utils.udev import (
     get_eeprom_paths,
     get_eeprom_paths_by_symbol,
@@ -242,6 +243,7 @@ class PeriphManagerBase:
         # this is to compare the FPGA compat number with a given compat number
         # that added a feature.
         self.fpga_features = set()
+        self.fpga_manager = FpgaManager()
         self._default_args = ""
         # CHDR transport managers. These need to be instantiated by the child
         # classes.
@@ -591,6 +593,11 @@ class PeriphManagerBase:
         # Need to wait here a second to make sure the ethernet interfaces are up
         # TODO: Fine-tune this number, or wait for some smarter signal.
         sleep(1)
+        fpga_state = self.fpga_manager.get_state()
+        if fpga_state != "operating":
+            msg = f'Failed to apply overlays {requested_overlays}, FPGA is in state "{fpga_state}"'
+            self.log.error(msg)
+            raise RuntimeError(msg)
 
     def _init_dboards(self, dboard_infos, override_dboard_pids, default_args):
         """

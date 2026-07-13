@@ -285,6 +285,11 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         # Need to wait here a second to make sure the ethernet interfaces are up
         # TODO: Fine-tune this number, or wait for some smarter signal.
         sleep(1)
+        fpga_state = self.fpga_manager.get_state()
+        if fpga_state != "operating":
+            msg = f'Failed to apply overlays {requested_overlays}, FPGA is in state "{fpga_state}"'
+            self.log.error(msg)
+            raise RuntimeError(msg)
 
     ###########################################################################
     # Ctor and device initialization tasks
