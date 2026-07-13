@@ -43,13 +43,13 @@ variables:
 - ${{ if parameters.build_linux }}:
   - name: linuxDockerImages
     value:
-      "{'Fedora-42-builder':{'buildOSName':'fedora42','dockerImageName':'uhd-builder-fedora42'},
-      'Fedora-43-builder':{'buildOSName':'fedora43','dockerImageName':'uhd-builder-fedora43'},
-      'Fedora-44-builder':{'buildOSName':'fedora44','dockerImageName':'uhd-builder-fedora44'},
-      'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004'},
-      'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204'},
-      'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404'},
-      'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510'}}"
+      "{'Fedora-42-builder':{'buildOSName':'fedora42','dockerImageName':'uhd-builder-fedora42','releaseName':'42'},
+      'Fedora-43-builder':{'buildOSName':'fedora43','dockerImageName':'uhd-builder-fedora43','releaseName':'43'},
+      'Fedora-44-builder':{'buildOSName':'fedora44','dockerImageName':'uhd-builder-fedora44','releaseName':'44'},
+      'Ubuntu-2004-builder':{'buildOSName':'ubuntu2004','dockerImageName':'uhd-builder-ubuntu2004','releaseName':'focal'},
+      'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','releaseName':'jammy'},
+      'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','releaseName':'noble'},
+      'Ubuntu-2510-builder':{'buildOSName':'ubuntu2510','dockerImageName':'uhd-builder-ubuntu2510','releaseName':'questing'}}"
 - ${{ else }}:
   - name: linuxDockerImages
     value:
@@ -72,27 +72,9 @@ variables:
   - name: winDockerImages
     value:
 
-- name: ubuntuDebDockerImages
-  # Match with Ubuntu images in linuxDockerImages
-  value:
-    "{'Ubuntu-2204-builder':{'buildOSName':'ubuntu2204','dockerImageName':'uhd-builder-ubuntu2204','ubuntuReleaseName':'jammy'},
-    'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'}}"
-
 - name: macOSBuilders
   value:
     "{'macOS-15-x64':{'buildOSName':'macOS-15-x64', 'macOSVersionDemand':'15', 'macOSArchDemand': 'X64'}}"
-
-- name: sourcePackageBuilders
-  # Match with one of the Ubuntu images in linuxDockerImages
-  value:
-    "{'Ubuntu-2404-builder':{'buildOSName':'ubuntu2404','dockerImageName':'uhd-builder-ubuntu2404','ubuntuReleaseName':'noble'}}"
-
-- name: fedoraRpmDockerImages
-  # Match with Fedora images in linuxDockerImages
-  value:
-    "{'Fedora-42-builder':{'buildOSName':'fedora42','dockerImageName':'uhd-builder-fedora42','fedoraReleaseName':'42'},
-    'Fedora-43-builder':{'buildOSName':'fedora43','dockerImageName':'uhd-builder-fedora43','fedoraReleaseName':'43'},
-    'Fedora-44-builder':{'buildOSName':'fedora44','dockerImageName':'uhd-builder-fedora44','fedoraReleaseName':'44'}}"
 
 - name: winDockerImagesPythonBuild
   # Match with one of the images in winDockerImages
@@ -248,7 +230,7 @@ jobs:
       ) else (
         echo ##vso[task.setvariable variable=DOCKER_CONFIG]$(dockerImageName)
       )
-      
+
       REM Set PYTHON_VERSION_ARG based on pythonVersion
       if "$(pythonVersion)"=="python310" (
         echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]--build-arg PYTHON_VERSION=$(python310_version)
@@ -352,7 +334,9 @@ jobs:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands: sh
   steps:
-  - checkout: none
+  - checkout: self
+    clean: true
+    sparseCheckoutDirectories: .ci
   - script: |
       cd $(Build.ArtifactStagingDirectory)
       touch $(UHDPipelineDockerImageArtifactName)
@@ -360,12 +344,13 @@ jobs:
       echo "${{ variables.dockerImagePrefix }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.linuxDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.winDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
-      echo "${{ variables.ubuntuDebDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.macOSBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
-      echo "${{ variables.sourcePackageBuilders }}" >> $(UHDPipelineDockerImageArtifactName)
-      echo "${{ variables.fedoraRpmDockerImages }}" >> $(UHDPipelineDockerImageArtifactName)
       echo "${{ variables.winDockerImagesPythonBuild }}" >> $(UHDPipelineDockerImageArtifactName)
     displayName: Generate created image list
+  - script: |
+      cd $(Build.SourcesDirectory)
+      python3 .ci/utils/tests/test_derive_docker_image_matrix.py --artifact-file "$(Build.ArtifactStagingDirectory)/$(UHDPipelineDockerImageArtifactName)"
+    displayName: Validate generated image list with matrix unit test
   - task: PublishPipelineArtifact@1
     inputs:
       targetPath: $(Build.ArtifactStagingDirectory)
