@@ -147,6 +147,14 @@ private:
             return;
         }
 
+        if (_needs_flush_for_stale_data) {
+            // Flush any stale data in the rx buffer to ensure we get fresh data
+            _flush();
+            // Wait a bit to allow new data to arrive
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(GPS_NMEA_NORMAL_FRESHNESS));
+        }
+
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
         static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
@@ -203,7 +211,10 @@ private:
     }
 
 public:
-    gps_ctrl_impl(uart_iface::sptr uart) : _uart(uart), _gps_type(GPS_TYPE_NONE)
+    gps_ctrl_impl(uart_iface::sptr uart, bool needs_flush_for_stale_data)
+        : _uart(uart)
+        , _needs_flush_for_stale_data(needs_flush_for_stale_data)
+        , _gps_type(GPS_TYPE_NONE)
     {
         std::string reply;
         bool i_heard_some_nmea = false, i_heard_something_weird = false;
@@ -453,6 +464,7 @@ private:
     }
 
     uart_iface::sptr _uart;
+    bool _needs_flush_for_stale_data;
 
     void _flush(void)
     {
@@ -477,7 +489,7 @@ private:
 /***********************************************************************
  * Public make function for the GPS control
  **********************************************************************/
-gps_ctrl::sptr gps_ctrl::make(uart_iface::sptr uart)
+gps_ctrl::sptr gps_ctrl::make(uart_iface::sptr uart, bool needs_flush_for_stale_data)
 {
-    return sptr(new gps_ctrl_impl(uart));
+    return sptr(new gps_ctrl_impl(uart, needs_flush_for_stale_data));
 }

@@ -24,8 +24,12 @@ public:
 
     /*!
      * Make a GPS config for internal GPSDOs or generic NMEA GPS devices
+     * \param uart the UART interface to communicate with the GPS device
+     * \param needs_flush_for_stale_data set to true for devices that don't have anything
+     * clearing the UART buffer in the background. This will flush the UART buffer before
+     * reading messages to make sure stale messages aren't used. Defaults to false.
      */
-    static sptr make(uart_iface::sptr uart);
+    static sptr make(uart_iface::sptr uart, bool needs_flush_for_stale_data = false);
 
     /*!
      * Retrieve the list of sensors this GPS object provides
