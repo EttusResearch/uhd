@@ -225,10 +225,11 @@ public:
         _send("*IDN?\r\n"); // request identity from the GPSDO
 
         // then we loop until we either timeout, or until we get a response that indicates
-        // we're a JL device maximum response time was measured at ~320ms, so we set the
-        // timeout at 650ms
-        const auto comm_timeout =
-            std::chrono::steady_clock::now() + std::chrono::milliseconds(650);
+        // we're a JL device maximum response time was measured at ~320ms. For a generic
+        // nmea device, the messages will generally be sent every second. So wait the
+        // longer of the two for determining if a GPS chip is present.
+        const auto comm_timeout = std::chrono::steady_clock::now()
+                                  + std::chrono::milliseconds(GPS_NMEA_NORMAL_FRESHNESS);
         while (std::chrono::steady_clock::now() < comm_timeout) {
             reply = _recv();
             // known devices are JL "FireFly", "GPSTCXO", and "LC_XO"
