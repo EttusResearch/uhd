@@ -156,7 +156,7 @@ private:
         }
 
         static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
-        static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
+        static const std::regex gp_msg_regex("^\\$GP.*\\*[0-9A-F]{2}$");
         std::map<std::string, std::string> msgs;
 
         // Get all GPSDO messages available
