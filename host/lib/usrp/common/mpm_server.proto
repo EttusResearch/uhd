@@ -1365,6 +1365,7 @@ message EnableIqSwapResponse {}
 // GetDboardSampleRate
 message GetDboardSampleRateRequest {
   string token = 1;
+  uint32 db_idx = 2;
 }
 
 message GetDboardSampleRateResponse {
@@ -1374,6 +1375,7 @@ message GetDboardSampleRateResponse {
 // GetDboardPrcRate
 message GetDboardPrcRateRequest {
   string token = 1;
+  uint32 db_idx = 2;
 }
 
 message GetDboardPrcRateResponse {

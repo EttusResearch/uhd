@@ -289,34 +289,6 @@ public:
         return {{{"pid", s2u8("mock")}, {"serial", s2u8("HBX_MOCK_NO_CAL")}}};
     }
 
-    double get_dboard_prc_rate() override
-    {
-        const double mcr = _device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
-        static const std::map<double, double> prc_rate_map{
-            {1250e6, 62.5e6},
-            {491.52e6, 61.44e6},
-            {245.76e6, 61.44e6},
-            {250e6, 62.5e6},
-        };
-        const auto it = prc_rate_map.find(mcr);
-        if (it != prc_rate_map.end()) {
-            return it->second;
-        }
-        return 62.5e6;
-    }
-
-    double get_dboard_sample_rate() override
-    {
-        const double mcr = _device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
-        static const std::map<double, double> spll_map{
-            {1250e6, 2.5e9},
-            {491.52e6, 3932160000.0},
-            {245.76e6, 1966080000.0},
-            {250e6, 2e9},
-        };
-        return spll_map.at(mcr);
-    }
-
     std::vector<std::map<std::string, std::string>> pop_host_tasks(std::string) override
     {
         return {};
@@ -536,6 +508,34 @@ public:
         double get_master_clock_rate() override
         {
             return _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+        }
+        double get_dboard_prc_rate() override
+        {
+            const double mcr =
+                _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+            static const std::map<double, double> prc_rate_map{
+                {1250e6, 62.5e6},
+                {491.52e6, 61.44e6},
+                {245.76e6, 61.44e6},
+                {250e6, 62.5e6},
+            };
+            const auto it = prc_rate_map.find(mcr);
+            if (it != prc_rate_map.end()) {
+                return it->second;
+            }
+            return 62.5e6;
+        }
+        double get_dboard_sample_rate() override
+        {
+            const double mcr =
+                _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+            static const std::map<double, double> spll_map{
+                {1250e6, 2.5e9},
+                {491.52e6, 3932160000.0},
+                {245.76e6, 1966080000.0},
+                {250e6, 2e9},
+            };
+            return spll_map.at(mcr);
         }
         double set_bw_filter(std::string, double bw) override
         {

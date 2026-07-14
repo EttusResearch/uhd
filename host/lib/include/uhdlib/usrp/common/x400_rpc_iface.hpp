@@ -17,10 +17,12 @@ namespace uhd { namespace usrp {
 //! X400 motherboard RPC interface
 using x400_rpc_iface = uhd::rpc_client;
 
-//! X400 daughterboard RPC helper class
-// Provides convenient access to X400 dboard-specific RPC methods.
-// X400 accesses dboard methods through get_dboard(idx), similar to N3xx.
-// This helper simplifies the access pattern without inheriting from dboard_iface.
+/*! \brief X400 daughterboard RPC helper class
+ *
+ * Provides convenient access to X400 dboard-specific RPC methods.
+ * X400 accesses dboard methods through get_dboard(idx), similar to N3xx.
+ * This helper simplifies the access pattern without inheriting from dboard_iface.
+ */
 class x400_dboard_rpc_iface
 {
 public:
@@ -51,12 +53,12 @@ public:
 
     double get_dboard_sample_rate()
     {
-        return _rpcc->get_dboard_sample_rate();
+        return get_dboard_iface().get_dboard_sample_rate();
     }
 
     double get_dboard_prc_rate()
     {
-        return _rpcc->get_dboard_prc_rate();
+        return get_dboard_iface().get_dboard_prc_rate();
     }
 
     // Convenience methods for X400-specific dboard methods
@@ -87,8 +89,10 @@ using zbx_rpc_iface = x400_dboard_rpc_iface;
 //! FBX daughterboard RPC interface
 using fbx_rpc_iface = x400_dboard_rpc_iface;
 
-//! HBX daughterboard RPC interface
-// Extends x400_dboard_rpc_iface with set_data_path for RFDC mode switching.
+/*! \brief HBX daughterboard RPC interface
+ *
+ * Extends x400_dboard_rpc_iface with set_data_path for RFDC mode switching.
+ */
 class hbx_rpc_iface : public x400_dboard_rpc_iface
 {
 public:

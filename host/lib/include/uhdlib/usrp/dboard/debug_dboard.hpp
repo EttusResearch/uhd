@@ -488,7 +488,7 @@ public:
 
     double get_converter_rate() const final
     {
-        return _rpcc->get_dboard_sample_rate();
+        return _rpcc->get_dboard(_db_idx).get_dboard_sample_rate();
     }
 
 private:

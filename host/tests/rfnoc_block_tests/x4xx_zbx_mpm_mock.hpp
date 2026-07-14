@@ -232,26 +232,6 @@ public:
         }};
     }
 
-    double get_dboard_prc_rate() override
-    {
-        const double mcr = _device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
-        static const std::map<double, double> prc_map{
-            {122.88e6, 61.44e6}, {125e6, 62.5e6}};
-        return prc_map.at(mcr);
-    }
-
-
-    double get_dboard_sample_rate() override
-    {
-        const double mcr = _device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
-        static const std::map<double, double> spll_map{
-            // One line per entry
-            {122.88e6, 2.94912e9},
-            {122.88e6 * 4, 2.94912e9} // End of entries
-        };
-        return spll_map.at(mcr);
-    }
-
     std::vector<std::map<std::string, std::string>> pop_host_tasks(std::string) override
     {
         return {};
@@ -695,6 +675,25 @@ public:
         double get_master_clock_rate() override
         {
             return _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+        }
+        double get_dboard_prc_rate() override
+        {
+            const double mcr =
+                _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+            static const std::map<double, double> prc_map{
+                {122.88e6, 61.44e6}, {125e6, 62.5e6}};
+            return prc_map.at(mcr);
+        }
+        double get_dboard_sample_rate() override
+        {
+            const double mcr =
+                _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+            static const std::map<double, double> spll_map{
+                // One line per entry
+                {122.88e6, 2.94912e9},
+                {122.88e6 * 4, 2.94912e9} // End of entries
+            };
+            return spll_map.at(mcr);
         }
         double set_bw_filter(std::string /*which*/, double bw) override
         {

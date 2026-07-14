@@ -235,27 +235,6 @@ public:
         }};
     }
 
-    // rfdc methods moved to dboard_iface - not in main rpc_client
-
-    double get_dboard_sample_rate() override
-    {
-        const double mcr = _device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
-        static const std::map<double, double> spll_map{
-            // One line per entry
-            {122.88e6, 2.94912e9},
-            {122.88e6 * 4, 2.94912e9},
-            // TODO: These entries need to be updated for more sample rates.
-            {4e9, 4.0e9} // End of entries
-        };
-        return spll_map.at(mcr);
-    }
-
-    double get_dboard_prc_rate() override
-    {
-        // FBX does not model a PRC path in this mock; return a sentinel value.
-        return 0.0;
-    }
-
     std::vector<std::map<std::string, std::string>> pop_host_tasks(std::string) override
     {
         return {};
@@ -700,6 +679,24 @@ public:
         double get_master_clock_rate() override
         {
             return _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+        }
+        double get_dboard_sample_rate() override
+        {
+            const double mcr =
+                _parent->_device_info.cast<double>("master_clock_rate", DEFAULT_MCR);
+            static const std::map<double, double> spll_map{
+                // One line per entry
+                {122.88e6, 2.94912e9},
+                {122.88e6 * 4, 2.94912e9},
+                // TODO: These entries need to be updated for more sample rates.
+                {4e9, 4.0e9} // End of entries
+            };
+            return spll_map.at(mcr);
+        }
+        double get_dboard_prc_rate() override
+        {
+            // FBX does not model a PRC path in this mock; return a sentinel value.
+            return 0.0;
         }
         double set_bw_filter(std::string /*which*/, double bw) override
         {
