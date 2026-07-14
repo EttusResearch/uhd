@@ -126,4 +126,4 @@ data:
 
 fpga_includes:
   - include: "fpga/${ MODULE_NAME }/rfnoc_${ type }_${ blockname }/Makefile.srcs"
-    make_var: "$(RFNOC_BLOCK_${ MODULE_NAME.upper() }_SRCS)"
+    make_var: "$(RFNOC_BLOCK_${ blockname.upper() }_SRCS)"
