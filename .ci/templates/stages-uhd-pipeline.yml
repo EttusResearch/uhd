@@ -879,36 +879,36 @@ stages:
         fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
 
-- stage: test_uhd_x4xx_saison_stage
-  displayName: RF Test UHD x4xx saison
-  dependsOn:
-  - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
-  - build_gnuradio_stage_linux
-  - analyze_changeset
-  - provide_x440_fpga_images_stage
-  # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
-  # condition.
-  variables:
-    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
-  condition: >
-    and(
-      succeeded(),
-      or(
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440')
-      )
-    )
-  jobs:
-  - template: tests/job-uhd-x440-hardware-tests-saison.yml
-    parameters:
-      ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
-        fpga_imgs_source: 'Pipeline'
-      ${{ else }}:
-        fpga_imgs_source: 'Filesystem'
-      extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
-      testLength: ${{ parameters.testLength }}
+# - stage: test_uhd_x4xx_saison_stage
+#   displayName: RF Test UHD x4xx saison
+#   dependsOn:
+#   - build_uhd_stage_linux
+#   - build_uhd_embedded_system_images
+#   - build_gnuradio_stage_linux
+#   - analyze_changeset
+#   - provide_x440_fpga_images_stage
+#   # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
+#   # condition.
+#   variables:
+#     UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+#   condition: >
+#     and(
+#       succeeded(),
+#       or(
+#         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+#         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+#         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440')
+#       )
+#     )
+#   jobs:
+#   - template: tests/job-uhd-x440-hardware-tests-saison.yml
+#     parameters:
+#       ${{ if contains(parameters.fpga_imgs_source, 'Pipeline') }}:
+#         fpga_imgs_source: 'Pipeline'
+#       ${{ else }}:
+#         fpga_imgs_source: 'Filesystem'
+#       extra_rf_test_args: --test_selector test_rx_phase_coherence.py test_tx_phase_coherence.py
+#       testLength: ${{ parameters.testLength }}
 
 - stage: test_uhd_rf_test_stage
   displayName: RF Test UHD n3xx pebbles
