@@ -24,7 +24,7 @@ module axi_fifo_flop
     output space,
     output occupied);
 
-   assign i_tready = ~reset & (~o_tvalid | o_tready);
+   assign i_tready = ~o_tvalid | o_tready;
 
    always @(posedge clk)
      if(reset | clear)
