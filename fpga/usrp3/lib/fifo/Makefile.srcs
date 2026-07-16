@@ -23,6 +23,7 @@ axi_fifo_large.sv \
 axi_fifo_cascade.v \
 axi_fifo_flop2.v \
 axi_fifo_flop.v \
+fifo_xpm_2clk.sv \
 axi_fifo_short.v \
 axi_fifo.v \
 axi_filter_mux4.v \

@@ -63,7 +63,7 @@ module axi_fifo_2clk #(
         .space(), .occupied()
       );
     end else begin
-      assign {i_pipe_tdata, i_pipe_tvalid} = {i_tdata, i_tvalid}; 
+      assign {i_pipe_tdata, i_pipe_tvalid} = {i_tdata, i_tvalid};
       assign i_tready = i_pipe_tready;
     end
 
@@ -89,6 +89,16 @@ module axi_fifo_2clk #(
   wire             o_ext_tready;
 
   // Derive constants based on device.
+  // The XPM based FIFO cannot be used for X300/X310 based devices due to the
+  // timing constraints. Deriving a local parameter to use for later checks.
+  `ifdef X300
+    localparam DEVICE_X3XX = 1;
+  `elsif X310
+    localparam DEVICE_X3XX = 1;
+  `else
+    localparam DEVICE_X3XX = 0;
+  `endif
+
   // First triple of values is for Intel's MAX10 FPGAs. The FIFO generator for
   // those devices supports embedded memory only (SRL_THRESHOLD = 0).
   // The later triple has been optimized for Xilinx 7Series FPGAs. They also
@@ -101,50 +111,73 @@ module axi_fifo_2clk #(
   localparam NUM_FIFOS = ((WIDTH-1)/BASE_WIDTH)+1;
   localparam INT_WIDTH = BASE_WIDTH * NUM_FIFOS;
 
-  wire [INT_WIDTH-1:0] wr_data, rd_data;
-  wire [NUM_FIFOS-1:0] full, empty;
+  wire                 fifo_full, fifo_empty;
   wire                 wr_en, rd_en;
 
-  // Read/write logic for FIFO sections
-  assign wr_data       = {{(INT_WIDTH-WIDTH){1'b0}}, i_pipe_tdata};
+  // Read/write logic
   assign wr_en         = i_pipe_tready & i_pipe_tvalid;
-  assign i_pipe_tready = &(~full);
-  assign o_ext_tdata   = rd_data[WIDTH-1:0];
-  assign o_ext_tvalid  = &(~empty);
+  assign i_pipe_tready = ~fifo_full;
+  assign o_ext_tvalid  = ~fifo_empty;
   assign rd_en         = o_ext_tready & o_ext_tvalid;
 
-  // FIFO IP instantiation
-  genvar i;
   generate
-    for (i = 0; i < NUM_FIFOS; i = i + 1) begin: fifo_section
-      if (SIZE <= SRL_THRESHOLD) begin
-        fifo_short_2clk impl_srl_i (
-          .rst          (i_arst),
-          .wr_clk       (i_aclk),
-          .din          (wr_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
-          .wr_en        (wr_en),
-          .full         (full[i]),
-          .wr_data_count(),
-          .rd_clk       (o_aclk),
-          .dout         (rd_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
-          .rd_en        (rd_en),
-          .empty        (empty[i]),
-          .rd_data_count()
-        );
-      end else begin
-        fifo_4k_2clk impl_bram_i (
-          .rst          (i_arst),
-          .wr_clk       (i_aclk),
-          .din          (wr_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
-          .wr_en        (wr_en),
-          .full         (full[i]),
-          .wr_data_count(),
-          .rd_clk       (o_aclk),
-          .dout         (rd_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
-          .rd_en        (rd_en),
-          .empty        (empty[i]),
-          .rd_data_count()
-        );
+    // XPM based FIFO for Xilinx FPGAs except for the X300/X310 based devices.
+    if (DEVICE != "MAX10" && !DEVICE_X3XX) begin: xpm_fifo_section
+      localparam XPM_SIZE = (SIZE < SRL_THRESHOLD) ? SRL_THRESHOLD : SIZE;
+
+      fifo_xpm_2clk #(.WIDTH(WIDTH), .DEPTH(1 << XPM_SIZE)) impl_xpm_i (
+        .rst          (i_arst),
+        .wr_clk       (i_aclk),
+        .din          (i_pipe_tdata),
+        .wr_en        (wr_en),
+        .full         (fifo_full),
+        .wr_data_count(),
+        .rd_clk       (o_aclk),
+        .dout         (o_ext_tdata),
+        .rd_en        (rd_en),
+        .empty        (fifo_empty),
+        .rd_data_count()
+      );
+    end else begin: legacy_fifo_section
+      wire [INT_WIDTH-1:0] wr_data, rd_data;
+      wire [NUM_FIFOS-1:0] full, empty;
+
+      assign wr_data       = {{(INT_WIDTH-WIDTH){1'b0}}, i_pipe_tdata};
+      assign fifo_full     = |full;
+      assign o_ext_tdata   = rd_data[WIDTH-1:0];
+      assign fifo_empty    = |empty;
+
+      genvar i;
+      for (i = 0; i < NUM_FIFOS; i = i + 1) begin: fifo_section
+        if (SIZE <= SRL_THRESHOLD) begin
+          fifo_short_2clk impl_srl_i (
+            .rst          (i_arst),
+            .wr_clk       (i_aclk),
+            .din          (wr_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
+            .wr_en        (wr_en),
+            .full         (full[i]),
+            .wr_data_count(),
+            .rd_clk       (o_aclk),
+            .dout         (rd_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
+            .rd_en        (rd_en),
+            .empty        (empty[i]),
+            .rd_data_count()
+          );
+        end else begin
+          fifo_4k_2clk impl_bram_i (
+            .rst          (i_arst),
+            .wr_clk       (i_aclk),
+            .din          (wr_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
+            .wr_en        (wr_en),
+            .full         (full[i]),
+            .wr_data_count(),
+            .rd_clk       (o_aclk),
+            .dout         (rd_data[((i+1)*BASE_WIDTH)-1:i*BASE_WIDTH]),
+            .rd_en        (rd_en),
+            .empty        (empty[i]),
+            .rd_data_count()
+          );
+        end
       end
     end
   endgenerate
