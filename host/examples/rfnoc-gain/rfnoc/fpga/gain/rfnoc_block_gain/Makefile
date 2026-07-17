@@ -25,7 +25,9 @@ include $(BASE_DIR)/../tools/make/viv_sim_preamble.mak
 
 # In-tree IP
 LIB_IP_DIR = $(BASE_DIR)/../lib/ip
-include $(LIB_IP_DIR)/complex_multiplier/Makefile.inc
+# This does not import in-tree IP, but if we did, we would import it here like
+# this:
+#include $(LIB_IP_DIR)/$name_of_ip/Makefile.inc
 
 # Out-of-tree IP
 OOT_FPGA_DIR = $(dir $(abspath $(firstword $(MAKEFILE_LIST))))/../

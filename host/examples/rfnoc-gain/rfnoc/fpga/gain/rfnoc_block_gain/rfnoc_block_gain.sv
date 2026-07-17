@@ -20,7 +20,6 @@
 //   IP_OPTION   : Select which IP to use for the complex multiply. Use one of
 //                 the following options:
 //                 HDL_IP         = In-tree RFNoC HDL, with a DSP48E1 primitive
-//                 IN_TREE_IP     = In-tree "complex_multiplier" (Xilinx IP)
 //                 OUT_OF_TREE_IP = Out-of-tree "cmplx_mul" (Xilinx IP)
 //
 
@@ -319,32 +318,6 @@ module rfnoc_block_gain #(
         .p_tready    (mult_tready)
       );
 
-    end else if (IP_OPTION == "IN_TREE_IP") begin : gen_in_tree_ip
-      // Use the "cmul" module, which uses the in-tree "complex_multiplier" IP.
-      // This is a Xilinx Complex Multiplier LogiCORE IP located in the UHD
-      // repository in fpga/usrp3/lib/ip/.
-
-      // The LSB of the output is clipped in this IP, so double the gain to
-      // compensate. This limits the maximum gain in this version.
-      wire [15:0] gain = 2*reg_gain;
-
-      cmul cmul_i (
-        .clk      (axis_data_clk),
-        .reset    (axis_data_rst),
-        .a_tdata  ({gain, 16'b0}),
-        .a_tlast  (m_in_payload_tlast ),
-        .a_tvalid (m_in_payload_tvalid),
-        .a_tready (),
-        .b_tdata  (m_in_payload_tdata ),
-        .b_tlast  (m_in_payload_tlast ),
-        .b_tvalid (m_in_payload_tvalid),
-        .b_tready (m_in_payload_tready),
-        .o_tdata  (mult_tdata),
-        .o_tlast  (mult_tlast),
-        .o_tvalid (mult_tvalid),
-        .o_tready (mult_tready)
-      );
-
     end else if (IP_OPTION == "OUT_OF_TREE_IP") begin : gen_oot_ip
       // Use the out-of-tree "cmplx_mul" IP, which is a Xilinx Complex
       // Multiplier LogiCORE IP located in the IP directory of this example.
@@ -378,6 +351,8 @@ module rfnoc_block_gain #(
       assign mult_tdata[63:32] = m_axis_dout_tdata[31: 0]; // Real
       assign mult_tdata[31: 0] = m_axis_dout_tdata[71:40]; // Imaginary
 
+    end else begin
+      ERROR_Invalid_multiplier_IP_option();
     end
   endgenerate
 
