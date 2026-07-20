@@ -70,7 +70,8 @@ The Condensed Hierarchical Datagram for RFNoC (CHDR) is a protocol that defines 
   <caption>Memory layout of a CHDR packet.</caption>
     <tr>
       <th align="center">#</th>
-      <th align="center" colspan="8"> Memory Layout <br> `<--------------` CHDR_W = 64 bits `------------->`</th>
+      <th align="center" colspan="8"> Memory Layout <br>
+          `63 <-----------` CHDR_W = 64 bits `-----------> 0`</th>
       <th align="center">Required?</th>
     </tr>
     <tr>
@@ -496,7 +497,7 @@ The rationale for not requiring timestamps mid-burst is twofold: First, timestam
 
 ## Control Packets
 
-When the CHDR PktType field is 0x4, the payload is interpreted as a control packet. The control packet encodes memory-mapped transactions. The length can range from 12 bytes (no timestamp or data words) to 80 bytes (with timestamp and 15 data words).
+When the CHDR PktType field is 0x4, the payload is interpreted as a control packet. The control packet encodes memory-mapped transactions. The control payload can range from 12 bytes (no timestamp or data words) to 80 bytes (with timestamp and 15 data words).
 
 The table below shows the format of the CHDR payload of a control packet. For simplicity, the rest of the CHDR packet is not shown. Note that a timestamp may be present in both the CHDR packet header and in the control packet contents. This simplifies the parsing of control and data packets.
 
@@ -507,53 +508,54 @@ The table below shows the format of the CHDR payload of a control packet. For si
   </caption>
     <tr>
       <th align="center"> # </th>
-      <th align="center" colspan="8"> Memory Layout <br>
-          `<--------------` CHDR_W = 64 bits `------------->` </th>
+      <th align="center" colspan="10"> Memory Layout <br>
+          `63 <-----------` CHDR_W = 64 bits `-----------> 0` </th>
       <th align="center"> Required? </th>
     </tr>
     <tr>
       <td align="center"> 0 </td>
-      <td align="center"> Reserved <br> (16) </td>
-      <td align="center"> SrcEPID<br> (16) </td>
+      <td align="center"> ReqSize<br> (4) </td>
+      <td align="center"> SeqNum<br> (8) </td>
+      <td align="center"> Reserved<br> (10) </td>
+      <td align="center"> SrcPort<br> (10) </td>
+      <td align="center" colspan="2"> SrcEPID<br> (16) </td>
       <td align="center"> IsACK<br> (1) </td>
       <td align="center"> HasTime<br> (1) </td>
-      <td align="center"> SeqNum<br> (6) </td>
       <td align="center"> NumData<br> (4) </td>
-      <td align="center"> SrcPort<br> (10) </td>
       <td align="center"> DstPort<br> (10) </td>
       <td align="center"> Y </td>
     </tr>
     <tr>
       <td align="center"> 1 </td>
-      <td align="center" colspan="8"> Timestamp (64)</td>
+      <td align="center" colspan="10"> Timestamp (64)</td>
       <td align="center"> N </td>
     </tr>
     <tr>
       <td align="center"> 2 </td>
-      <td align="center" colspan="3"> Data\[0\] <br> (32) </td>
+      <td align="center" colspan="4"> Data\[0\] <br> (32) </td>
       <td align="center"> Status<br> (2) </td>
       <td align="center"> Reserved<br> (2) </td>
       <td align="center"> OpCode<br> (4) </td>
       <td align="center"> ByteEnable<br> (4) </td>
-      <td align="center"> Address<br> (20) </td>
+      <td align="center" colspan="2"> Address<br> (20) </td>
       <td align="center"> Y </td>
     </tr>
     <tr>
       <td align="center"> 3 </td>
       <td align="center" colspan="4"> Data\[2\] <br> (32) </td>
-      <td align="center" colspan="4"> Data\[1\] <br> (32) </td>
+      <td align="center" colspan="6"> Data\[1\] <br> (32) </td>
       <td align="center"> N </td>
     </tr>
     <tr>
       <td align="center"> ... </td>
       <td align="center" colspan="4"> ... </td>
-      <td align="center" colspan="4"> ... </td>
+      <td align="center" colspan="6"> ... </td>
       <td align="center"> ... </td>
     </tr>
     <tr>
       <td align="center"> 9 </td>
       <td align="center" colspan="4"> Data\[14\] <br> (32) </td>
-      <td align="center" colspan="4"> Data\[13\] <br> (32) </td>
+      <td align="center" colspan="6"> Data\[13\] <br> (32) </td>
       <td align="center"> N </td>
     </tr>
 </table>
@@ -572,16 +574,51 @@ A detailed description of the fields is listed in the table below. Each control 
       <th>Type</th>
     </tr>
     <tr>
+      <td> ReqSize</td>
+      <td> 4</td>
+      <td> The number of 32-bit data words requested. This <br>
+           field is only used by Read and Block Read requests <br>
+           (IsAck = 0), where it indicates the number of words <br>
+           to read. The response echoes the same value. It is <br>
+           unused for all other operations.
+      </td>
+      <td> Required</td>
+    </tr>
+    <tr>
+      <td> SeqNum </td>
+      <td> 8</td>
+      <td> Packet sequence number. For each master, the <br>
+           value shall start at 0, increment by 1 and roll over <br>
+           to 0 after 255 (2<sup>8</sup>-1). This control-specific sequence <br>
+           number is independent of the CHDR sequence <br>
+           number. <br>
+           *NOTE: The sequence number may not be <br>
+           sequential over the wire in a multi-master case. It <br>
+           will be sequential in the masters’ ingress queue <br>
+           because the slave and the transport modules will <br>
+           not modify it.*
+      </td>
+      <td> Required</td>
+    </tr>
+    <tr>
       <td> Reserved</td>
-      <td> 16</td>
+      <td> 10</td>
       <td> This field is not used in a CHDR control packet <br>
            but could be used in the future. <br>
            *Note: This field gets used as the RemDstPort* <br>
            *when the control payload is passed to the* <br>
-           *AXIS-Ctrl bus. See the* \ref control_plane_anchor "Control Plane" <br>
-           *section for details.* <br>
+           *AXIS-Ctrl bus. See the \ref control_plane_anchor* <br>
+           *"Control Plane" section for details.* <br>
        </td>
       <td> N/A</td>
+    </tr>
+    <tr>
+      <td> SrcPort</td>
+      <td> 10</td>
+      <td> The port within the source stream endpoint that <br>
+          this transaction originated from.
+      </td>
+      <td> Required</td>
     </tr>
     <tr>
       <td> SrcEPID</td>
@@ -605,36 +642,18 @@ A detailed description of the fields is listed in the table below. Each control 
       <td> Required</td>
     </tr>
     <tr>
-      <td> SeqNum </td>
-      <td> 6</td>
-      <td> Packet sequence number. For each master, the <br>
-           value shall start at 0, increment by 1 and roll over <br>
-           to 0 after 63 (2<sup>6</sup>-1). This control-specific sequence <br>
-           number is independent of the CHDR sequence <br>
-           number. <br>
-           *NOTE: The sequence number may not be <br>
-           sequential over the wire in a multi-master case. It <br>
-           will be sequential in the masters’ ingress queue <br>
-           because the slave and the transport modules will <br>
-           not modify it.*
-      </td>
+      <td> HasTime</td>
+      <td> 1</td>
+      <td> Is the Timestamp field present? </td>
       <td> Required</td>
     </tr>
     <tr>
       <td> NumData</td>
       <td> 4</td>
-      <td> The number of 32-bit data words present in the packet. <br>
-           For Read and Block Read requests (IsAck = 0), this field <br>
-           indicates the number of words being requested and no data <br>
-           words are present in the packet.
-      </td>
-      <td> Required</td>
-    </tr>
-    <tr>
-      <td> SrcPort</td>
-      <td> 10</td>
-      <td> The port within the source stream endpoint that <br>
-          this transaction originated from.
+      <td> The number of 32-bit data words actually present <br>
+           in the packet. Read and Block Read requests carry <br>
+           no data words (NumData = 0); the requested word <br>
+           count is given by ReqSize instead.
       </td>
       <td> Required</td>
     </tr>
@@ -666,6 +685,14 @@ A detailed description of the fields is listed in the table below. Each control 
             0x3 = WARNING (Slave asserted a non-critical error)<br>
       </td>
       <td> Required</td>
+    </tr>
+    <tr>
+      <td> Reserved</td>
+      <td> 2</td>
+      <td> This field is not used in a CHDR control packet <br>
+           but could be used in the future. <br>
+       </td>
+      <td> N/A</td>
     </tr>
     <tr>
       <td> OpCode</td>
@@ -730,7 +757,7 @@ OpCode in both the request (IsAck = 0) and the response (IsAck = 1).
       <td> NumData = 1 <br>
            Data\[0\] = Stall cycles </td>
       <td> NumData = 0 <br>
-           No data is included in the response. </td>
+           No data words are included in the response. </td>
       <td> Do nothing and stall the control endpoint for <br>
            *Data*\[0\] clock cycles of the control interface <br>
            clock.
@@ -753,14 +780,15 @@ OpCode in both the request (IsAck = 0) and the response (IsAck = 1).
     <tr>
       <td> 2</td>
       <td> Read</td>
-      <td> NumData = Number of data words to read (1 to 15) <br>
+      <td> ReqSize = Number of data words to read (1 to 15) <br>
+           NumData = 0 <br>
            No data words are included in the request.</td>
       <td> NumData = Number of data words in response <br>
            Data\[0\] = Value of first word read <br>
            ... <br>
            Data\[*NumData*-1\] = Value of last word read
       </td>
-      <td> Read *NumData* times from *Address*. <br>
+      <td> Read *ReqSize* times from *Address*. <br>
            The response contains each read result in *Data*\[*n*\]. <br>
       </td>
     </tr>
@@ -786,25 +814,26 @@ OpCode in both the request (IsAck = 0) and the response (IsAck = 1).
            Data\[*NumData*-1\] = Value of last word to write
       </td>
       <td> NumData = 0 <br>
-           No data is included in the response.</td>
+           No data words are included in the response.</td>
       <td> Write *Data*\[*n*\] to registers sequentially at <br>
-           (*Address* + 4⋅*n*) at all bytes *p* where <br>
+           (*Address* + 4⋅<em>n</em>) at all bytes *p* where <br>
            *ByteEnable*\[*p*\] = 1, for n = 0 .. *NumData*-1.
       </td>
     </tr>
     <tr>
       <td> 5</td>
       <td> Block Read</td>
-      <td> NumData = Number of data words to read (1 to 15) <br>
-           No data words are included in the request.</td>
+      <td> ReqSize = Number of data words to read (1 to 15) <br>
+           NumData = 0 <br>
+           No data words are included in the request. </td>
       <td> NumData = Number of data words in the response <br>
            Data\[0\] = Value of first word read <br>
            ... <br>
            Data\[*NumData*-1\] = Value of last word read
       </td>
-      <td> Read *NumData* registers sequentially starting at *Address*, <br>
-           incrementing by 4 each step (*Address* + 4⋅*n*, <br>
-           n = 0 .. *NumData*-1). The response contains <br>
+      <td> Read *ReqSize* registers sequentially starting at *Address*, <br>
+           incrementing by 4 each step (*Address* + 4⋅<em>n</em>, <br>
+           n = 0 .. *ReqSize*-1). The response contains <br>
            the register values in Data\[0\]..Data\[*NumData*-1\].
       </td>
     </tr>
@@ -865,16 +894,6 @@ the following requirements:
 - The `Address`, `OpCode`, and `SeqNum` fields must have the same values as the
   control packet that is being acknowledged. These fields may be used to
   validate an acknowledgement packet.
-- For Read (OpCode 2) and Block Read (OpCode 5) operations, the response Data
-  field contains the read result(s): one 32-bit word per register read, in
-  order.
-- For Read-then-Write (OpCode 3) operations, the response contains one data
-  word with the register value read before the write was performed.
-- For Poll (OpCode 6) operations, the response contains one data word with
-  the last sampled register value, regardless of whether the condition was
-  met or timed out.
-- For Write (OpCode 1), Block Write (OpCode 4), and Sleep (OpCode 0)
-  operations, the response contains no data words.
 
 ## Stream Status Packets \[Internal Only\]
 
@@ -891,7 +910,7 @@ The following is a 64-bit serialized representation of the stream status packet.
     <tr>
       <th align="center"> # </th>
       <th align="center" colspan="4"> Memory Layout <br>
-          `<--------------` 64-bits `------------->` </th>
+          `63 <-----------` 64 bits `-----------> 0` </th>
       <th align="center"> Required? </th>
     </tr>
     <tr>
@@ -1021,7 +1040,7 @@ The following is a 64-bit serialized representation of the stream status packet.
     <tr>
       <th align="center"> # </th>
       <th align="center" colspan="4"> Memory Layout <br>
-          `<--------------` 64-bits `------------->` </th>
+          `63 <-----------` 64 bits `-----------> 0` </th>
       <th align="center"> Required? </th>
     </tr>
     <tr>
@@ -1171,7 +1190,7 @@ The following is a 64-bit serialized representation of a management packet. For 
     <tr>
       <th align="center"> # </th>
       <th align="center" colspan="5"> Memory Layout <br>
-          `<--------------` 64-bits `------------->` </th>
+          `63 <-----------` 64 bits `-----------> 0` </th>
       <th align="center"> Required? </th>
     </tr>
     <tr>
@@ -1498,25 +1517,24 @@ transactions* and require the use of two additional fields, `RemDstEPID` and
     <tr>
       <th align="center"> # </th>
       <th align="center" colspan="6"> Memory Layout <br>
-          `<-------------- 32-bits ------------->` </th>
+          `31 <-----------` 32 bits `-----------> 0` </th>
       <th align="center"> Required? </th>
     </tr>
     <tr>
       <td align="center"> 0 </td>
+      <td align="center" colspan="2"> RemDstEPID <br> (16) </td>
       <td align="center"> IsACK <br> (1) </td>
       <td align="center"> HasTime<br> (1) </td>
-      <td align="center"> SeqNum<br> (6) </td>
       <td align="center"> NumData<br> (4) </td>
-      <td align="center"> SrcPort<br> (10) </td>
       <td align="center"> DstPort<br> (10) </td>
       <td align="center"> Y </td>
     </tr>
     <tr>
       <td align="center"> 1 </td>
-      <td align="center"> Reserved <br> (2)</td>
-      <td align="center"> DataLength <br> (4)</td>
+      <td align="center"> ReqSize <br> (4)</td>
+      <td align="center"> SeqNum<br> (8) </td>
       <td align="center" colspan="2"> RemDstPort <br> (10) </td>
-      <td align="center" colspan="2"> RemDstEPID <br> (16) </td>
+      <td align="center" colspan="2"> SrcPort <br> (10) </td>
       <td align="center"> Y </td>
     </tr>
     <tr>
@@ -1570,14 +1588,15 @@ transactions* and require the use of two additional fields, `RemDstEPID` and
       <th>Type</th>
     </tr>
     <tr>
-      <td> DataLength </td>
-      <td> 4 </td>
+      <td> RemDstEPID </td>
+      <td>  16 </td>
       <td>
-         The number of data words present in the packet. <br>
-         For example, for read requests, DataLength is 0. <br>
-         For read responses, DataLength equals NumData. <br>
-         *Note: This field is not present in a CHDR control* <br>
-         *packet.*
+         Remote Destination Endpoint ID: The ID of the <br>
+         remote stream endpoint that this packet is destined <br>
+         towards. <br>
+         *Note: This field is used as the SrcEPID field in* <br>
+         *a CHDR control packet.*<br>
+         *Note: EPID = 0 implies that the transaction is local*
       </td>
       <td> Required </td>
     </tr>
@@ -1590,19 +1609,6 @@ transactions* and require the use of two additional fields, `RemDstEPID` and
          destined towards. <br>
          *Note: This field is not present in a CHDR control* <br>
          *packet.*
-      </td>
-      <td> Required </td>
-    </tr>
-    <tr>
-      <td> RemDstEPID </td>
-      <td>  16 </td>
-      <td>
-         Remote Destination Endpoint ID: The ID of the <br>
-         remote stream endpoint that this packet is destined <br>
-         towards. <br>
-         *Note: This field is used as the SrcEPID field in* <br>
-         *a CHDR control packet.*<br>
-         *Note: EPID = 0 implies that the transaction is local*
       </td>
       <td> Required </td>
     </tr>
