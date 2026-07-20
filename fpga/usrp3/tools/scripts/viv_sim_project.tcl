@@ -54,7 +54,7 @@ foreach src_file $design_srcs {
     set src_ext [file extension $src_file ]
     if [expr [lsearch {.vhd .vhdl} $src_ext] >= 0] {
         puts "BUILDER: Adding VHDL    : $src_file"
-        read_vhdl $src_file
+        read_vhdl -vhdl2008 $src_file
     } elseif [expr [lsearch {.v .vh} $src_ext] >= 0] {
         puts "BUILDER: Adding Verilog : $src_file"
         read_verilog $src_file

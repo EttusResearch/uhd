@@ -153,7 +153,7 @@ if { [string compare $cmd "create"] == 0 } {
                         if { $file_type == "VHDL" } {
                             puts $fh "read_vhdl           -library work \$script_dir/$rel_file_path"
                         } else {
-                            puts $fh "read_vhdl ‑vhdl2008 -library work \$script_dir/$rel_file_path"
+                            puts $fh "read_vhdl -vhdl2008 -library work \$script_dir/$rel_file_path"
                         }
                     # must be one of the verilog types
                     } else {
