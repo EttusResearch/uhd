@@ -124,7 +124,7 @@ module ctrlport_reg_ro #(
   // Read Logic
   //---------------------------------------------------------------------------
 
-  reg [WIDTH-1:0] cache_reg;
+  reg [NUM_BYTES*8-1:0] cache_reg;
 
   assign s_ctrlport_resp_status = 0;  // Status is always "OK" (0)
 
