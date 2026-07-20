@@ -194,14 +194,17 @@ pf_mgmt_op_conf_address  = ProtoField.uint16("rfnoc.mgmt.conf.Address",     "add
 pf_mgmt_op_conf_data     = ProtoField.uint32("rfnoc.mgmt.conf.Data",        "data",          base.HEX)
 
 -- Control packet fields
+-- Word 0
 pf_ctrl_dst_port      = ProtoField.uint32("rfnoc.ctrl.DstPort",      "dst port",     base.DEC, nil,           0x000003FF)
-pf_ctrl_src_port      = ProtoField.uint32("rfnoc.ctrl.SrcPort",      "src port",     base.DEC, nil,           0x000FFC00)
-pf_ctrl_num_data      = ProtoField.uint32("rfnoc.ctrl.NumData",      "num data",     base.DEC, nil,           0x00F00000)
-pf_ctrl_ctrl_seq_num  = ProtoField.uint32("rfnoc.ctrl.SeqNum",       "ctrl seq num", base.DEC, nil,           0x3F000000)
-pf_ctrl_has_timestamp = ProtoField.uint32("rfnoc.ctrl.HasTimestamp", "has time",     base.DEC, yesno,         0x40000000)
-pf_ctrl_is_ack        = ProtoField.uint32("rfnoc.ctrl.IsACK",        "is ACK",       base.DEC, yesno,         0x80000000)
-pf_ctrl_src_epid      = ProtoField.uint32("rfnoc.ctrl.SrcEPID",      "src EPID",     base.DEC, nil,           0x0000FFFF)
--- reserved                                                                                                   0xFFFF0000
+pf_ctrl_num_data      = ProtoField.uint32("rfnoc.ctrl.NumData",      "num data",     base.DEC, nil,           0x00003C00)
+pf_ctrl_has_timestamp = ProtoField.uint32("rfnoc.ctrl.HasTimestamp", "has time",     base.DEC, yesno,         0x00004000)
+pf_ctrl_is_ack        = ProtoField.uint32("rfnoc.ctrl.IsACK",        "is ACK",       base.DEC, yesno,         0x00008000)
+pf_ctrl_src_epid      = ProtoField.uint32("rfnoc.ctrl.SrcEPID",      "src EPID",     base.DEC, nil,           0xFFFF0000)
+-- Word 1
+pf_ctrl_src_port      = ProtoField.uint32("rfnoc.ctrl.SrcPort",      "src port",     base.DEC, nil,           0x000003FF)
+-- rem dst port (reserved in a CHDR control packet)                                                           0x000FFC00
+pf_ctrl_ctrl_seq_num  = ProtoField.uint32("rfnoc.ctrl.SeqNum",       "ctrl seq num", base.DEC, nil,           0x0FF00000)
+pf_ctrl_req_size      = ProtoField.uint32("rfnoc.ctrl.ReqSize",      "req size",     base.DEC, nil,           0xF0000000)
 pf_ctrl_timestamp     = ProtoField.uint64("rfnoc.ctrl.Timestamp",    "timestamp",    base.HEX)
 pf_ctrl_address       = ProtoField.uint32("rfnoc.ctrl.Address",      "address",      base.HEX, nil,           0x000FFFFF)
 pf_ctrl_byte_enable   = ProtoField.uint32("rfnoc.ctrl.ByteEnable",   "byte enable",  base.HEX, nil,           0x00F00000)
@@ -264,6 +267,7 @@ rfnoc_proto.fields = {
   pf_ctrl_src_port,
   pf_ctrl_num_data,
   pf_ctrl_ctrl_seq_num,
+  pf_ctrl_req_size,
   pf_ctrl_has_timestamp,
   pf_ctrl_is_ack,
   pf_ctrl_src_epid,
@@ -499,15 +503,16 @@ end
 function dissect_ctrl_packet(header_buffer, buffer, pinfo, tree)
   local header = tree:add(rfnoc_proto, buffer(), "Control")
   header:add_le(pf_ctrl_dst_port, buffer(0,4))
-  header:add_le(pf_ctrl_src_port, buffer(0,4))
   header:add_le(pf_ctrl_num_data, buffer(0,4))
-  header:add_le(pf_ctrl_ctrl_seq_num, buffer(0,4))
   header:add_le(pf_ctrl_has_timestamp, buffer(0,4))
   header:add_le(pf_ctrl_is_ack, buffer(0,4))
-  header:add_le(pf_ctrl_src_epid, buffer(4,4))
+  header:add_le(pf_ctrl_src_epid, buffer(0,4))
+  header:add_le(pf_ctrl_src_port, buffer(4,4))
+  header:add_le(pf_ctrl_ctrl_seq_num, buffer(4,4))
+  header:add_le(pf_ctrl_req_size, buffer(4,4))
   local offset = 8
-  local has_ts = buffer(3,1):bitfield(1)
-  local is_ack = buffer(3,1):bitfield(0) == 1
+  local has_ts = buffer(1,1):bitfield(1)
+  local is_ack = buffer(1,1):bitfield(0) == 1
   local ack_info = ""
   local time_info = ""
   if is_ack then
@@ -522,29 +527,15 @@ function dissect_ctrl_packet(header_buffer, buffer, pinfo, tree)
   header:add_le(pf_ctrl_byte_enable, buffer(offset, 4))
   header:add_le(pf_ctrl_op_code, buffer(offset, 4))
   header:add_le(pf_ctrl_status, buffer(offset, 4))
-  local op_code_val = buffer(offset + 3):bitfield(4, 4)
   local num_data_hdr = buffer(2, 1):bitfield(0, 4)
-  -- Use the buffer length as an upper bound to guard against malformed packets
-  -- where num_data is larger than the data actually present. Note: for CHDR
-  -- widths > 64-bits, this may include trailing padding words, but since
-  -- num_data_hdr is at most 15, the math.min below will dominate for any
-  -- valid or near-valid packet.
+  -- NumData is the number of data words actually present in the packet. Use
+  -- the buffer length as an upper bound to guard against malformed packets
+  -- where NumData is larger than the data actually present. For CHDR widths >
+  -- 64 bits this may include trailing padding words, but since num_data_hdr is
+  -- at most 15, the math.min below dominates for any valid or near-valid
+  -- packet.
   local buffer_data_words = math.max(0, math.floor((buffer:len() - offset - 4) / 4))
-  -- For write requests and read responses, num_data accurately encodes the
-  -- data word count, so use it (capped by buffer size for safety). For read
-  -- requests and write/sleep ACKs, no data is present on the wire. Using the
-  -- buffer length for those cases is unreliable because CHDR widths > 64 bits
-  -- include trailing padding bytes that are indistinguishable from data.
-  local is_write_request = (not is_ack)
-      and (op_code_val == 0 or op_code_val == 1 or op_code_val == 3
-           or op_code_val == 4 or op_code_val == 6)
-  local is_read_response = is_ack and (op_code_val == 2 or op_code_val == 5)
-  local actual_data_words
-  if is_write_request or is_read_response then
-    actual_data_words = math.min(num_data_hdr, buffer_data_words)
-  else
-    actual_data_words = 0
-  end
+  local actual_data_words = math.min(num_data_hdr, buffer_data_words)
   local data_hex = ""
   for i = 0, actual_data_words - 1 do
     local item = header:add_le(pf_ctrl_data, buffer(offset + 4 + i * 4, 4))

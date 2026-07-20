@@ -65,6 +65,7 @@ static int hf_rfnoc_ctrl = -1;
 static int hf_rfnoc_ctrl_dst_port = -1;
 static int hf_rfnoc_ctrl_src_port = -1;
 static int hf_rfnoc_ctrl_num_data = -1;
+static int hf_rfnoc_ctrl_req_size = -1;
 static int hf_rfnoc_ctrl_seqnum = -1;
 static int hf_rfnoc_ctrl_has_time = -1;
 static int hf_rfnoc_ctrl_is_ack = -1;
@@ -303,23 +304,25 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     auto payload = pkt->get_payload();
 
                     /* Add source EPID */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_src_epid, tvb, offset+4, 2, payload.src_epid);
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_src_epid, tvb, offset+2, 2, payload.src_epid);
                     /* Add source port */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_src_port, tvb, offset+1, 2, payload.src_port);
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_src_port, tvb, offset+4, 2, payload.src_port);
                     /* Add dest port */
                     proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_dst_port, tvb, offset, 2, payload.dst_port);
                     /* Add num data */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+2, 1, payload.num_data);
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+1, 1, payload.num_data);
+                    /* Add requested size */
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_req_size, tvb, offset + 7, 1, payload.req_size);
                     /* Add is_ack */
-                    proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+3, 1, payload.is_ack);
+                    proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+1, 1, payload.is_ack);
                     /* Add sequence number */
-                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_seqnum, tvb, offset+3, 1, payload.seq_num);
+                    proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_seqnum, tvb, offset+5, 2, payload.seq_num);
                     /* Add timestamp */
                     if (payload.has_timestamp()) {
                         proto_tree_add_uint64(ctrl_tree, hf_rfnoc_timestamp, tvb, offset+8, 8, *payload.timestamp);
                         offset += 8;
                     } else {
-                        proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_has_time, tvb, offset+3, 1, payload.has_timestamp());
+                        proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_has_time, tvb, offset+1, 1, payload.has_timestamp());
                     }
                     /* Add op code */
                     proto_tree_add_string(
@@ -627,6 +630,12 @@ void proto_register_rfnoc(void)
         },
         { &hf_rfnoc_ctrl_num_data,
             { "Num Data", "rfnoc.ctrl.num_data",
+                FT_UINT8, BASE_DEC,
+                NULL, 0x00,
+                NULL, HFILL }
+        },
+        { &hf_rfnoc_ctrl_req_size,
+            {"Req Size", "rfnoc.ctrl.req_size",
                 FT_UINT8, BASE_DEC,
                 NULL, 0x00,
                 NULL, HFILL }
