@@ -182,6 +182,7 @@ void export_utils(py::module& m)
         .def_readwrite("src_epid", &chdr_rfnoc::ctrl_payload::src_epid)
         .def_readwrite("address", &chdr_rfnoc::ctrl_payload::address)
         .def_readwrite("num_data", &chdr_rfnoc::ctrl_payload::num_data)
+        .def_readwrite("req_size", &chdr_rfnoc::ctrl_payload::req_size)
         .def_readwrite("byte_enable", &chdr_rfnoc::ctrl_payload::byte_enable)
         .def_readwrite("op_code", &chdr_rfnoc::ctrl_payload::op_code)
         .def_readwrite("status", &chdr_rfnoc::ctrl_payload::status)
@@ -192,6 +193,7 @@ void export_utils(py::module& m)
         .def("set_data",
             [](chdr_rfnoc::ctrl_payload& self, std::vector<uint32_t> data) {
                 self.data_vtr = data;
+                self.num_data = data.size();
             })
         .def("__str__", &chdr_rfnoc::ctrl_payload::to_string)
         .def("__repr__", &chdr_rfnoc::ctrl_payload::to_string);

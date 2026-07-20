@@ -17,6 +17,7 @@ def make_control_packet0():
     payload = chdr.CtrlPayload()
     payload.src_epid = 1
     payload.set_data([])
+    payload.req_size = 1
     payload.op_code = chdr.CtrlOpCode.READ
     return chdr.ChdrPacket(CHDR_W, header, payload)
 
@@ -29,6 +30,7 @@ def make_control_packet1():
     payload.src_epid = 2
     payload.is_ack = True
     payload.set_data([0x12C60100])
+    payload.req_size = 1
     payload.op_code = chdr.CtrlOpCode.READ
     return chdr.ChdrPacket(CHDR_W, header, payload)
 
@@ -148,7 +150,7 @@ def make_data_packet0():
     header.seq_num = 1
     timestamp = 0x7C40C83
     data_src = rfnoc_packets_data.peer1_9
-    data = bytes(data_src[(2 * 8):])
+    data = bytes(data_src[(2 * 8) :])
     return chdr.ChdrPacket(CHDR_W, header, data, timestamp)
 
 def make_data_packet1():
@@ -160,7 +162,7 @@ def make_data_packet1():
     header.seq_num = 1716
     timestamp = 0x21452B97
     data_src = rfnoc_packets_data.eob_packet
-    data = bytes(data_src[(2 * 8):])
+    data = bytes(data_src[(2 * 8) :])
     return chdr.ChdrPacket(CHDR_W, header, data, timestamp)
 
 packets = [
@@ -174,7 +176,7 @@ packets = [
     (make_strc_packet0(), rfnoc_packets_data.peer1_5),
     (make_strc_packet1(), rfnoc_packets_data.peer1_29),
     (make_data_packet0(), rfnoc_packets_data.peer1_9),
-    (make_data_packet1(), rfnoc_packets_data.eob_packet)
+    (make_data_packet1(), rfnoc_packets_data.eob_packet),
 ]
 
 names = [
@@ -188,5 +190,5 @@ names = [
     "Stream_Command_Packet_0",
     "Stream_Command_Packet_1",
     "Data_Packet_0",
-    "Data_Packet_1"
+    "Data_Packet_1",
 ]

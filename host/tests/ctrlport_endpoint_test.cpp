@@ -12,6 +12,7 @@
 #include <condition_variable>
 #include <boost/test/unit_test.hpp>
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -48,6 +49,13 @@ public:
     {
         // Create send function that captures packets
         send_fn = [this](const ctrl_payload& pkt, double timeout) {
+            // Exercise payload serialization at the mock transport boundary.
+            // This catches malformed packets that packet capture alone would
+            // not detect, such as when num_data does not match
+            // data_vtr.size().
+            std::array<uint32_t, 20> scratch;
+            pkt.serialize(scratch.data(), sizeof(scratch), [](uint32_t x) { return x; });
+
             std::lock_guard<std::mutex> lock(sent_packets_mutex);
             sent_packets.push_back(pkt);
             last_timeout = timeout;
@@ -181,7 +189,8 @@ private:
         ctrl_payload response;
         response.dst_port  = request.src_port;
         response.src_port  = request.dst_port;
-        response.num_data  = request.num_data;
+        response.num_data  = request.req_size;
+        response.req_size  = request.req_size;
         response.seq_num   = request.seq_num;
         response.timestamp = request.timestamp;
         response.is_ack    = true;
@@ -191,7 +200,7 @@ private:
         response.status    = CMD_OKAY;
         // Echo back the address as the data for predictable testing
         response.data_vtr.clear();
-        for (size_t i = 0; i < request.num_data; i++) {
+        for (size_t i = 0; i < request.req_size; i++) {
             uint32_t addr = request.address + static_cast<uint32_t>(i * sizeof(uint32_t));
             response.data_vtr.push_back(static_cast<uint32_t>(addr + 0xDEADBEEF));
         }
@@ -206,6 +215,7 @@ private:
         response.dst_port  = request.src_port;
         response.src_port  = request.dst_port;
         response.num_data  = 0;
+        response.req_size  = request.req_size;
         response.seq_num   = request.seq_num;
         response.timestamp = request.timestamp;
         response.is_ack    = true;
@@ -359,7 +369,8 @@ BOOST_FIXTURE_TEST_CASE(test_peek32_basic, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
     BOOST_CHECK_EQUAL(packet.address, test_addr);
-    BOOST_CHECK_EQUAL(packet.num_data, 1);
+    BOOST_CHECK_EQUAL(packet.num_data, 0);
+    BOOST_CHECK_EQUAL(packet.req_size, 1);
     BOOST_CHECK(packet.data_vtr.empty());
     BOOST_CHECK_EQUAL(result, test_addr + 0xDEADBEEF);
 }
@@ -378,7 +389,8 @@ BOOST_FIXTURE_TEST_CASE(test_peek32_with_timestamp, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
     BOOST_CHECK_EQUAL(packet.address, test_addr);
-    BOOST_CHECK_EQUAL(packet.num_data, 1);
+    BOOST_CHECK_EQUAL(packet.num_data, 0);
+    BOOST_CHECK_EQUAL(packet.req_size, 1);
     BOOST_CHECK(packet.data_vtr.empty());
     BOOST_CHECK(packet.has_timestamp());
 
@@ -454,7 +466,8 @@ BOOST_FIXTURE_TEST_CASE(test_block_peek32, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_BLOCK_READ);
     BOOST_CHECK_EQUAL(packet.address, base_addr);
-    BOOST_CHECK_EQUAL(packet.num_data, length);
+    BOOST_CHECK_EQUAL(packet.num_data, 0);
+    BOOST_CHECK_EQUAL(packet.req_size, length);
     BOOST_CHECK(packet.data_vtr.empty()); // No data in read request
 
     // Verify result vector has correct size
@@ -547,7 +560,8 @@ BOOST_FIXTURE_TEST_CASE(test_burst_peek32, ctrlport_endpoint_fixture)
     auto packet = get_last_sent_packet();
     BOOST_CHECK_EQUAL(packet.op_code, OP_READ);
     BOOST_CHECK_EQUAL(packet.address, addr);
-    BOOST_CHECK_EQUAL(packet.num_data, length);
+    BOOST_CHECK_EQUAL(packet.num_data, 0);
+    BOOST_CHECK_EQUAL(packet.req_size, length);
     BOOST_CHECK(packet.data_vtr.empty()); // No data in read request
 
     // Verify result vector has correct size
@@ -703,7 +717,7 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
 
     // Add a bunch of pokes to bring the sequence number back around,
     // ack them all for now
-    for (i = 0; i < 60; i++) {
+    for (i = 0; i < 252; i++) {
         endpoint->poke32(test_addr + (i * 4), test_data + i);
         send_ack(get_last_sent_packet());
         // Synchronize ACKs so they all get delivered in order. This is so we
@@ -712,39 +726,39 @@ BOOST_FIXTURE_TEST_CASE(test_dropped_ack_handling, small_buffer_fixture)
     }
 
     wait_for_all_responses();
-    BOOST_CHECK_EQUAL(get_sent_packet_count(), 63); // 3 from before + 60 new ones
+    BOOST_CHECK_EQUAL(get_sent_packet_count(), 255); // 3 from before + 252 new ones
     BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
-    BOOST_CHECK_EQUAL(get_last_sent_packet().seq_num, 62);
+    BOOST_CHECK_EQUAL(get_last_sent_packet().seq_num, 254);
 
     // Send two more pokes to bring the counter around, but drop the first ACK
-    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 63
+    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 255
     i++;
-    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 0
+    endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 0 (8-bit wrap)
     i++;
     // Sequence number should have wrapped around to 0
     BOOST_CHECK_EQUAL(get_last_sent_packet().seq_num, 0);
-    // ACK sequence number 0, but not 63
+    // ACK sequence number 0, but not 255
     send_ack(get_last_sent_packet()); // ACK the last one, but not the previous one
     wait_for_all_responses();
     BOOST_CHECK_EQUAL(endpoint->get_stats().buffer_fullness, 0);
     BOOST_CHECK_EQUAL(endpoint->get_stats().ctrl_dropped, 2);
 
-    // Now ack the seqnum 63 packet. This is too late, and the response queue
+    // Now ack the seqnum 255 packet. This is too late, and the response queue
     // should be empty, so we get a warning.
-    auto seqnum_63_pkt = sent_packets[sent_packets.size() - 2];
-    send_ack(seqnum_63_pkt);
+    auto seqnum_255_pkt = sent_packets[sent_packets.size() - 2];
+    send_ack(seqnum_255_pkt);
     wait_for_all_responses();
 
     // Now fill the request queue again, so our algorithm has something to do
     endpoint->poke32(test_addr + (i * 4), test_data + i); // seqnum 1
     i++;
 
-    // Now ack the seqnum 63 packet again. This will produce the same warning
+    // Now ack the seqnum 255 packet again. This will produce the same warning
     // again
-    send_ack(seqnum_63_pkt);
+    send_ack(seqnum_255_pkt);
     wait_for_all_responses();
 
-    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 65);
+    BOOST_CHECK_EQUAL(endpoint->get_stats().ack_packets_received, 257);
 }
 
 // Verify that a stale ACK with matching seq_num but wrong op_code/address is

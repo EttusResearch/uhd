@@ -35,10 +35,8 @@ constexpr double DEFAULT_TIMEOUT = 1.0;
 constexpr double MASSIVE_TIMEOUT = 10.0;
 //! Default value for whether ACKs are always required
 constexpr bool DEFAULT_FORCE_ACKS = false;
-//! Sequence numbers are 6 bits long
-constexpr uint8_t SEQ_NUM_MASK = 0b111111; // 0x3F
-//! Sequence number limit for control packets.
-constexpr uint8_t MAX_SEQ_NUM = SEQ_NUM_MASK + 1;
+//! Sequence numbers are 8 bits long
+constexpr uint8_t SEQ_NUM_MASK = 0b11111111; // 0xFF
 } // namespace
 
 
@@ -254,8 +252,8 @@ public:
                         resp_status = RESP_SIZEERR;
                     }
                 } else if (is_read_op) {
-                    // Read responses must return exactly num_data words.
-                    if (rx_ctrl.data_vtr.size() != _req_queue.front().num_data) {
+                    // Read responses must return exactly req_size words.
+                    if (rx_ctrl.data_vtr.size() != _req_queue.front().req_size) {
                         resp_status = RESP_SIZEERR;
                     }
                 } else if (is_sleep_op) {
@@ -319,16 +317,18 @@ public:
             std::unique_lock<std::mutex> lock(_mutex);
             // Peek at the request queue to check the expected sequence number.
             // If the request queue is empty, then we always have an error so
-            // we simply set a big value in seq_num_diff.
+            // we simply set a non-zero sentinel in seq_num_diff.
+            // Note: with 8-bit seq_nums, uint8_t subtraction wraps mod 256
+            // naturally, so no explicit modulo is needed.
             const uint8_t seq_num_diff =
                 _req_queue.empty()
-                    ? MAX_SEQ_NUM
-                    : uint8_t(rx_ctrl.seq_num - _req_queue.front().seq_num) % MAX_SEQ_NUM;
+                    ? uint8_t(1)
+                    : uint8_t(rx_ctrl.seq_num - _req_queue.front().seq_num);
             if (seq_num_diff == 0) { // No sequence error by seq_num
                 // Also verify op_code and address to guard against stale ACKs
-                // that happen to share the same 6-bit seq_num (either from the
+                // that happen to share the same 8-bit seq_num (either from the
                 // previous session or from earlier in the current session when
-                // the 6-bit counter wraps). A genuine ACK always echoes op_code
+                // the 8-bit counter wraps). A genuine ACK always echoes op_code
                 // and address unchanged.
                 const bool op_addr_match = _req_queue.front().op_code == rx_ctrl.op_code
                                            && _req_queue.front().address
@@ -410,6 +410,7 @@ public:
                 tx_ctrl.src_epid   = _my_epid;
                 tx_ctrl.status     = status;
                 tx_ctrl.data_vtr   = {};
+                tx_ctrl.num_data   = 0;
                 const auto timeout = [&]() {
                     std::unique_lock<std::mutex> lock(_mutex);
                     return _policy.timeout;
@@ -534,7 +535,7 @@ private:
         const std::vector<uint32_t>& data_vtr,
         const uhd::time_spec_t& time_spec,
         const bool require_ack,
-        const size_t num_data = 0) // 0 = derive from data_vtr.size()
+        const size_t req_size = 0)
     {
         if (!_client_clk.is_running()) {
             UHD_LOG_THROW(
@@ -563,7 +564,8 @@ private:
         tx_ctrl.src_epid    = _my_epid;
         tx_ctrl.address     = address;
         tx_ctrl.data_vtr    = data_vtr;
-        tx_ctrl.num_data    = (num_data != 0) ? num_data : data_vtr.size();
+        tx_ctrl.num_data    = data_vtr.size();
+        tx_ctrl.req_size    = req_size;
         tx_ctrl.byte_enable = 0xF;
         tx_ctrl.op_code     = op_code;
         tx_ctrl.status      = CMD_OKAY;
@@ -638,10 +640,10 @@ private:
         const std::vector<uint32_t>& data_vtr,
         const uhd::time_spec_t& time_spec,
         const bool require_ack = true,
-        const size_t num_data  = 0) // 0 = derive from data_vtr.size()
+        const size_t req_size  = 0)
     {
         const auto [tx_ctrl, registered] = fire_request_packet(
-            op_code, address, data_vtr, time_spec, require_ack, num_data);
+            op_code, address, data_vtr, time_spec, require_ack, req_size);
         if (registered) {
             return {tx_ctrl, collect_ack_response(tx_ctrl)};
         }

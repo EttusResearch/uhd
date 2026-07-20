@@ -260,7 +260,7 @@ public: // Members
     uint16_t dst_port = 0;
     //! Source port for transaction (10 bits)
     uint16_t src_port = 0;
-    //! Sequence number (6 bits)
+    //! Sequence number (8 bits)
     uint8_t seq_num = 0;
     //! Has Time Flag (1 bit) and timestamp (64 bits)
     std::optional<uint64_t> timestamp{};
@@ -272,9 +272,10 @@ public: // Members
     uint32_t address = 0;
     //! Data for transaction (vector of 32 bits)
     std::vector<uint32_t> data_vtr = {0};
-    //! Number of 32-bit data words present in the packet, or the requested
-    //! word count for read requests (4 bits)
+    //! Number of 32-bit data words present in the packet (4 bits)
     size_t num_data = 1;
+    //! Number of 32-bit data words requested (4 bits)
+    size_t req_size = 0;
     //! Byte-enable mask for transaction (4 bits)
     uint8_t byte_enable = 0xF;
     //! Operation code (4 bits)
@@ -343,8 +344,9 @@ public: // Functions
     }
 
     //! Returns true if this is a read request (OP_READ or OP_BLOCK_READ, not
-    //! an ACK). For such packets, num_data in the header encodes the requested
-    //! word count, but no data beats are transmitted on the wire.
+    //! an ACK). For such packets, req_size in the header encodes the
+    //! requested word count, and num_data is 0 since no data beats are
+    //! transmitted on the wire.
     bool is_read_request() const
     {
         return !is_ack && (op_code == OP_READ || op_code == OP_BLOCK_READ);
@@ -383,7 +385,8 @@ private:
     static constexpr size_t DST_PORT_WIDTH    = 10;
     static constexpr size_t SRC_PORT_WIDTH    = 10;
     static constexpr size_t NUM_DATA_WIDTH    = 4;
-    static constexpr size_t SEQ_NUM_WIDTH     = 6;
+    static constexpr size_t REQ_SIZE_WIDTH    = 4;
+    static constexpr size_t SEQ_NUM_WIDTH     = 8;
     static constexpr size_t HAS_TIME_WIDTH    = 1;
     static constexpr size_t IS_ACK_WIDTH      = 1;
     static constexpr size_t SRC_EPID_WIDTH    = 16;
@@ -395,13 +398,14 @@ private:
     // Bit offsets within each 32-bit wire word
     // Ctrl header word 0
     static constexpr size_t DST_PORT_OFFSET = 0;
-    static constexpr size_t SRC_PORT_OFFSET = 10;
-    static constexpr size_t NUM_DATA_OFFSET = 20;
-    static constexpr size_t SEQ_NUM_OFFSET  = 24;
-    static constexpr size_t HAS_TIME_OFFSET = 30;
-    static constexpr size_t IS_ACK_OFFSET   = 31;
+    static constexpr size_t NUM_DATA_OFFSET = 10;
+    static constexpr size_t HAS_TIME_OFFSET = 14;
+    static constexpr size_t IS_ACK_OFFSET   = 15;
+    static constexpr size_t SRC_EPID_OFFSET = 16;
     // Ctrl header word 1
-    static constexpr size_t SRC_EPID_OFFSET = 0;
+    static constexpr size_t SRC_PORT_OFFSET = 0;
+    static constexpr size_t SEQ_NUM_OFFSET  = 20;
+    static constexpr size_t REQ_SIZE_OFFSET = 28;
     // Op-word
     static constexpr size_t ADDRESS_OFFSET     = 0;
     static constexpr size_t BYTE_ENABLE_OFFSET = 20;

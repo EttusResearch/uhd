@@ -25,6 +25,8 @@ chdr_util::chdr_packet make_control_packet0()
     auto payload     = chdr_rfnoc::ctrl_payload();
     payload.src_epid = 1;
     payload.data_vtr = {};
+    payload.num_data = 0;
+    payload.req_size = 1;
     payload.op_code  = chdr_rfnoc::OP_READ;
     return chdr_util::chdr_packet(CHDR_W, header, payload);
 }
@@ -39,6 +41,8 @@ chdr_util::chdr_packet make_control_packet1()
     payload.src_epid = 2;
     payload.is_ack   = true;
     payload.data_vtr = {0x12C60100};
+    payload.num_data = 1;
+    payload.req_size = 1;
     payload.op_code  = chdr_rfnoc::OP_READ;
     return chdr_util::chdr_packet(CHDR_W, header, payload);
 }

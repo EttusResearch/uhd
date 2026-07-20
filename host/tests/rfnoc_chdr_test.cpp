@@ -45,12 +45,17 @@ ctrl_payload populate_ctrl_payload()
     } else {
         pyld.timestamp = {};
     }
-    // Set num_data and data_vtr based on packet type.
-    // Read requests and write responses carry no data words on the wire.
-    // For read requests, num_data encodes the requested word count.
-    if (pyld.is_read_request() || pyld.is_write_response()) {
+    // Set num_data, req_size, and data_vtr based on packet type.
+    // Read requests and write/sleep responses carry no data words on the wire.
+    // For read requests, req_size encodes the requested word count.
+    if (pyld.is_read_request()) {
         pyld.data_vtr = {};
-        pyld.num_data = (rand64() % 15) + 1; // 1 to 15
+        pyld.num_data = 0;
+        pyld.req_size = (rand64() % 15) + 1; // 1 to 15
+    } else if (pyld.is_write_response()) {
+        pyld.data_vtr = {};
+        pyld.num_data = 0;
+        pyld.req_size = 0;
     } else {
         const size_t num_words = (rand64() % ctrl_payload::MAX_DATA_WORDS) + 1;
         pyld.data_vtr.resize(num_words);
@@ -58,6 +63,7 @@ ctrl_payload populate_ctrl_payload()
             word = rand64() & 0xFFFFFFFF;
         }
         pyld.num_data = pyld.data_vtr.size();
+        pyld.req_size = 0;
     }
     return pyld;
 }
