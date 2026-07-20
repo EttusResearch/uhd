@@ -89,7 +89,7 @@ module axis_ctrl_master #(
 
   // State variables
   reg [3:0]   state = ST_IDLE;    // Current state for FSM
-  reg [5:0]   seq_num = 6'd0;     // Expected seqnum for response
+  reg [7:0]   seq_num = 8'd0;     // Expected seqnum for response
   // Request state
   reg [3:0]   req_opcode;         // Cached opcode for transaction request
   reg [19:0]  req_addr;           // Cached address for transaction request
@@ -108,7 +108,7 @@ module axis_ctrl_master #(
   always @(posedge clk) begin
     if (rst) begin
       state <= ST_IDLE;
-      seq_num <= 6'd0;
+      seq_num <= 8'd0;
     end else begin
       case (state)
 
@@ -189,8 +189,6 @@ module axis_ctrl_master #(
           if (s_axis_ctrl_tvalid) begin
             // Remeber if the packet is supposed to have a timestamp
             resp_has_time <= axis_ctrl_get_has_time(s_axis_ctrl_tdata);
-            // Check for a sequence error
-            resp_seq_err <= (axis_ctrl_get_seq_num(s_axis_ctrl_tdata) != seq_num);
             // Assert a command error if:
             // - The port ID does not match
             // - The response was too short (the next check)
@@ -206,6 +204,8 @@ module axis_ctrl_master #(
         end
         ST_RESP_HDR_HI: begin
           if (s_axis_ctrl_tvalid) begin
+            // Check for a sequence error
+            resp_seq_err <= (axis_ctrl_get_seq_num(s_axis_ctrl_tdata) != seq_num);
             if (!s_axis_ctrl_tlast) begin
               state <= resp_has_time ? ST_RESP_TS_LO : ST_RESP_OP_WORD;
             end else begin
@@ -249,7 +249,7 @@ module axis_ctrl_master #(
               // Writes don't require data words in the response, so they get
               // acknowledged in this state if there's no data.
               state   <= s_axis_ctrl_tlast ? ST_IDLE : ST_RESP_OP_DATA;
-              seq_num <= seq_num + 6'd1;
+              seq_num <= seq_num + 8'd1;
             end else begin
               // Reads do require additional data words.
               if (s_axis_ctrl_tlast) begin
@@ -265,7 +265,7 @@ module axis_ctrl_master #(
           if (s_axis_ctrl_tvalid) begin
             // If the packet was too long then just drop the rest without complaining
             state <= s_axis_ctrl_tlast ? ST_IDLE : ST_DROP_PKT;
-            seq_num <= seq_num + 6'd1;
+            seq_num <= seq_num + 8'd1;
           end
         end
 
@@ -284,7 +284,7 @@ module axis_ctrl_master #(
         ST_IMMEDIATE_ACK: begin
           // Provide immediate ACK for write operation
           state <= ST_IDLE;
-          seq_num <= seq_num + 6'd1;
+          seq_num <= seq_num + 8'd1;
         end
 
         default: begin
@@ -298,22 +298,22 @@ module axis_ctrl_master #(
   // Logic to drive m_axis_ctrl_*
   // ------------------------------------
 
-  // Number of data words requested. This block only issues 1-word requests.
-  wire [3:0] req_num_data = 4'd1;
-
   // Number of data words present in requests. 1 for writes, 0 for reads.
-  wire [3:0] data_length = (req_opcode == AXIS_CTRL_OPCODE_READ) ? 4'd0 : 4'd1;
+  wire [3:0] num_data = (req_opcode == AXIS_CTRL_OPCODE_READ) ? 4'd0 : 4'd1;
+
+  // Number of data words requested. This module only requests a single word.
+  wire [3:0] req_size = (req_opcode == AXIS_CTRL_OPCODE_READ) ? 4'd1 : 4'd0;
 
   always @(*) begin
     case (state)
       ST_REQ_HDR_LO: begin
         m_axis_ctrl_tdata = axis_ctrl_build_hdr_lo(
-          1'b0 /* is_ack*/, req_has_time, seq_num,
-          req_num_data, THIS_PORTID, req_portid);
+          req_rem_epid, 1'b0 /* is_ack */, req_has_time,
+          num_data, req_portid);
       end
       ST_REQ_HDR_HI: begin
         m_axis_ctrl_tdata = axis_ctrl_build_hdr_hi(
-          data_length, req_rem_portid, req_rem_epid);
+          req_size, seq_num, req_rem_portid, THIS_PORTID);
       end
       ST_REQ_TS_LO: begin
         m_axis_ctrl_tdata = req_time[31:0];

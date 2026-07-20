@@ -13,21 +13,21 @@
 // -----------------------
 // Bits     Name          Meaning
 // ----     ----          -------
-// 31       is_ack        Is this an acknowledgment to a transaction?
-// 30       has_time      Does the transaction have a timestamp?
-// 29:24    seq_num       Sequence number
-// 23:20    num_data      Number of data words
-// 19:10    src_port      Ctrl XB port that the source block is on 
-// 9:0      dst_port      Ctrl XB port that the destination block is on 
+// 31:16    rem_dst_epid  Endpoint ID of the remote dest of this msg
+// 15       is_ack        Is this an acknowledgment to a transaction?
+// 14       has_time      Does the transaction have a timestamp?
+// 13:10    num_data      Number of data words
+// 9:0      dst_port      Ctrl XB port that the destination block is on
 
 // -----------------------
 //  Line 1: HDR_1
 // -----------------------
 // Bits     Name          Meaning
 // ----     ----          -------
-// 31:26    <Reserved>
-// 25:16    rem_dst_port  Ctrl XB port that the remote dest block is on
-// 15:0     rem_dst_epid  Endpoint ID of the remote dest of this msg
+// 31:28    req_size      Number of data words requested (Read/Block Read)
+// 27:20    seq_num       Sequence number
+// 19:10    rem_dst_port  Ctrl XB port that the remote dest block is on
+// 9:0      src_port      Ctrl XB port that the source block is on
 
 // -----------------------
 //  Line 2: TS_LO (Optional)
@@ -74,23 +74,23 @@ localparam [3:0] AXIS_CTRL_OPCODE_POLL        = 4'd6;
 // AXIS-Ctrl Getter Functions
 //
 function [0:0] axis_ctrl_get_is_ack(input [31:0] header);
-  axis_ctrl_get_is_ack = header[31];
+  axis_ctrl_get_is_ack = header[15];
 endfunction
 
 function [0:0] axis_ctrl_get_has_time(input [31:0] header);
-  axis_ctrl_get_has_time = header[30];
+  axis_ctrl_get_has_time = header[14];
 endfunction
 
-function [5:0] axis_ctrl_get_seq_num(input [31:0] header);
-  axis_ctrl_get_seq_num = header[29:24];
+function [7:0] axis_ctrl_get_seq_num(input [31:0] header);
+  axis_ctrl_get_seq_num = header[27:20];
 endfunction
 
 function [3:0] axis_ctrl_get_num_data(input [31:0] header);
-  axis_ctrl_get_num_data = header[23:20];
+  axis_ctrl_get_num_data = header[13:10];
 endfunction
 
 function [9:0] axis_ctrl_get_src_port(input [31:0] header);
-  axis_ctrl_get_src_port = header[19:10];
+  axis_ctrl_get_src_port = header[9:0];
 endfunction
 
 function [9:0] axis_ctrl_get_dst_port(input [31:0] header);
@@ -98,15 +98,15 @@ function [9:0] axis_ctrl_get_dst_port(input [31:0] header);
 endfunction
 
 function [15:0] axis_ctrl_get_rem_dst_epid(input [31:0] header);
-  axis_ctrl_get_rem_dst_epid = header[15:0];
+  axis_ctrl_get_rem_dst_epid = header[31:16];
 endfunction
 
-function [3:0] axis_ctrl_get_data_length(input [31:0] header);
-  axis_ctrl_get_data_length = header[29:26];
+function [3:0] axis_ctrl_get_req_size(input [31:0] header);
+  axis_ctrl_get_req_size = header[31:28];
 endfunction
 
 function [9:0] axis_ctrl_get_rem_dst_port(input [31:0] header);
-  axis_ctrl_get_rem_dst_port = header[25:16];
+  axis_ctrl_get_rem_dst_port = header[19:10];
 endfunction
 
 function [1:0] axis_ctrl_get_status(input [31:0] header);
@@ -128,41 +128,40 @@ endfunction
 // AXIS-Ctrl Setter Functions
 //
 function [31:0] axis_ctrl_build_hdr_lo(
+  input [15:0] rem_dst_epid,
   input [0:0]  is_ack,
   input [0:0]  has_time,
-  input [5:0]  seq_num,
   input [3:0]  num_data,
-  input [9:0]  src_port,
   input [9:0]  dst_port
 );
-  axis_ctrl_build_hdr_lo = {is_ack, has_time, seq_num, num_data, src_port, dst_port};
+  axis_ctrl_build_hdr_lo = {rem_dst_epid, is_ack, has_time, num_data, dst_port};
 endfunction
 
 function [31:0] axis_ctrl_build_hdr_hi(
-  input [3:0]  data_length,
+  input [3:0]  req_size,
+  input [7:0]  seq_num,
   input [9:0]  rem_dst_port,
-  input [15:0] rem_dst_epid
+  input [9:0]  src_port
 );
-  axis_ctrl_build_hdr_hi = {
-    2'b00, data_length, rem_dst_port, rem_dst_epid
-  };
+  axis_ctrl_build_hdr_hi = {req_size, seq_num, rem_dst_port, src_port};
 endfunction
 
 function [31:0] chdr_ctrl_build_hdr_lo(
+  input [15:0] src_epid,
   input [0:0]  is_ack,
   input [0:0]  has_time,
-  input [5:0]  seq_num,
   input [3:0]  num_data,
-  input [9:0]  src_port,
   input [9:0]  dst_port
 );
-  chdr_ctrl_build_hdr_lo = {is_ack, has_time, seq_num, num_data, src_port, dst_port};
+  chdr_ctrl_build_hdr_lo = {src_epid, is_ack, has_time, num_data, dst_port};
 endfunction
 
 function [31:0] chdr_ctrl_build_hdr_hi(
-  input [15:0] src_epid
+  input [3:0]  req_size,
+  input [7:0]  seq_num,
+  input [9:0]  src_port
 );
-  chdr_ctrl_build_hdr_hi = {16'h0, src_epid};
+  chdr_ctrl_build_hdr_hi = {req_size, seq_num, 10'h0, src_port};
 endfunction
 
 function [31:0] axis_ctrl_build_op_word(

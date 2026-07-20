@@ -78,9 +78,9 @@ package rfnoc_chdr_utils_pkg;
     CTRL_STS_WARNING = 2'd3
   } ctrl_status_t;                    // Control OpCode Type
 
-  typedef bit [ 5:0] ctrl_seq_num_t;  // AXIS-Ctrl SeqNum field
+  typedef bit [ 7:0] ctrl_seq_num_t;  // AXIS-Ctrl SeqNum field
   typedef bit [ 3:0] ctrl_num_data_t; // AXIS-Ctrl NumData field
-  typedef bit [ 3:0] ctrl_data_len_t; // AXIS-Ctrl DataLength field
+  typedef bit [ 3:0] ctrl_req_size_t; // AXIS-Ctrl ReqSize field
   typedef bit [ 9:0] ctrl_port_t;     // AXIS-Ctrl source/destination port field
   typedef bit [ 3:0] ctrl_byte_en_t;  // AXIS-Ctrl ByteEnable field
   typedef bit [19:0] ctrl_address_t;  // AXIS-Ctrl Address field
@@ -168,16 +168,15 @@ package rfnoc_chdr_utils_pkg;
   // AXIS-Ctrl packet header
   typedef struct packed {
     // Word 1
-    bit [ 1:0]      _rsvd_0;
-    ctrl_data_len_t data_length;
+    ctrl_req_size_t req_size;
+    ctrl_seq_num_t  seq_num;
     ctrl_port_t     rem_dst_port;
-    chdr_epid_t     rem_dst_epid;
+    ctrl_port_t     src_port;
     // Word 0
+    chdr_epid_t     rem_dst_epid;
     bit             is_ack;
     bit             has_time;
-    ctrl_seq_num_t  seq_num;
     ctrl_num_data_t num_data;
-    ctrl_port_t     src_port;
     ctrl_port_t     dst_port;
   } axis_ctrl_header_t;
 
@@ -192,13 +191,16 @@ package rfnoc_chdr_utils_pkg;
 
   // Ctrl packet header when in the payload of a CHDR packet
   typedef struct packed {
-    bit [15:0]      _rsvd_0;
+    // Word 1
+    ctrl_req_size_t req_size;
+    ctrl_seq_num_t  seq_num;
+    bit [ 9:0]      _rsvd_0;
+    ctrl_port_t     src_port;
+    // Word 0
     chdr_epid_t     src_epid;
     bit             is_ack;
     bit             has_time;
-    ctrl_seq_num_t  seq_num;
     ctrl_num_data_t num_data;
-    ctrl_port_t     src_port;
     ctrl_port_t     dst_port;
   } chdr_ctrl_header_t;
 

@@ -15,13 +15,13 @@
 //
 //     SLEEP       : Hold the bus idle for a specified number of cycles.
 //     WRITE       : Write num_data words to the same address.
-//     READ        : Read one num_data words from the same address.
+//     READ        : Read one req_size words from the same address.
 //     READ_WRITE  : Simultaneously issues a CtrlPort read and write to
 //                   address. The read data (pre-write value) is returned in
 //                   the response.
 //     BLOCK_WRITE : Write num_data words to consecutive word addresses (addr,
 //                   addr+4, addr+8, ...).
-//     BLOCK_READ  : Read num_data words from consecutive addresses (addr,
+//     BLOCK_READ  : Read req_size words from consecutive addresses (addr,
 //                   addr+4, addr+8, ...).
 //     POLL        : Poll on address until its value for all bits in mask
 //                   matches data & mask, or until timeout.
@@ -163,8 +163,8 @@ module axis_ctrl_slave (
   logic           blk_inc_addr  = '0;   // Increment address after each CtrlPort transaction
 
   // Response accumulation
-  ctrl_status_t   resp_status = CTRL_STS_OKAY;  // Accumulated CtrlPort status
-  ctrl_num_data_t data_length = '0;             // Actual data words in response
+  ctrl_status_t   resp_status   = CTRL_STS_OKAY;  // Accumulated CtrlPort status
+  ctrl_num_data_t num_data      = '0;             // Actual data words in response
 
   logic fifo_has_rd_data = '0;
 
@@ -217,7 +217,7 @@ module axis_ctrl_slave (
       cached_hdr   <= 'X;
       cached_ts    <= 'X;
       cached_op    <= 'X;
-      data_length  <= 'X;
+      num_data     <= 'X;
       drain_to     <= state_t'('X);
       blk_addr     <= 'X;
       blk_inc_addr <= 'X;
@@ -278,9 +278,10 @@ module axis_ctrl_slave (
               // READ and BLOCK_READ carry no data words, so tlast on op-word
               // is normal.
               CTRL_OP_READ, CTRL_OP_BLOCK_READ: begin
-                data_length <= cached_hdr.num_data;
-                if (cached_hdr.num_data == 0) begin
-                  // num_data == 0 is invalid for a read. Respond with CMDERR.
+                num_data <= cached_hdr.req_size;
+                blk_words_rem <= cached_hdr.req_size;
+                if (cached_hdr.req_size == 0) begin
+                  // req_size == 0 is invalid for a read. Respond with CMDERR.
                   resp_status <= CTRL_STS_CMDERR;
                   if (!s_axis_ctrl_tlast) begin
                     drain_to <= ST_OUT_HDR_0;
@@ -307,7 +308,7 @@ module axis_ctrl_slave (
               // respond with CMDERR.
 
               CTRL_OP_SLEEP: begin
-                data_length <= 4'd0;
+                num_data <= 4'd0;
                 if (s_axis_ctrl_tlast || cached_hdr.num_data != 1) begin
                   // No data words (num_data == 0 or truncated). Respond with
                   // CMDERR.
@@ -323,19 +324,19 @@ module axis_ctrl_slave (
               CTRL_OP_POLL: begin
                 if (s_axis_ctrl_tlast || cached_hdr.num_data != 3) begin
                   // Truncated or wrong num_data. Respond with CMDERR.
-                  data_length <= 4'd0;
+                  num_data    <= 4'd0;
                   resp_status <= CTRL_STS_CMDERR;
                   state       <= s_axis_ctrl_tlast ? ST_OUT_HDR_0 : ST_DRAIN;
                   drain_to    <= ST_OUT_HDR_0;
                 end else begin
-                  data_length <= 4'd1;
+                  num_data    <= 4'd1;
                   resp_status <= CTRL_STS_OKAY;
                   state       <= ST_POLL_LOAD_DATA;
                 end
               end
 
               CTRL_OP_WRITE, CTRL_OP_BLOCK_WRITE: begin
-                data_length <= 4'd0;
+                num_data <= 4'd0;
                 if (s_axis_ctrl_tlast || cached_hdr.num_data == 0) begin
                   // No data words (num_data == 0 or truncated). Respond with
                   // CMDERR.
@@ -354,12 +355,12 @@ module axis_ctrl_slave (
               CTRL_OP_READ_WRITE: begin
                 if (s_axis_ctrl_tlast || cached_hdr.num_data != 1) begin
                   // Invalid number of words or truncated. Respond with CMDERR.
-                  data_length <= 4'd0;
+                  num_data    <= 4'd0;
                   resp_status <= CTRL_STS_CMDERR;
                   state       <= s_axis_ctrl_tlast ? ST_OUT_HDR_0 : ST_DRAIN;
                   drain_to    <= ST_OUT_HDR_0;
                 end else begin
-                  data_length <= 4'd1;
+                  num_data    <= 4'd1;
                   blk_addr    <= op_word.address;
                   resp_status <= CTRL_STS_OKAY;
                   state       <= ST_RW_IN_DATA;
@@ -368,7 +369,7 @@ module axis_ctrl_slave (
 
               default: begin
                 // Unknown opcode. Drain data words then respond with CMDERR.
-                data_length <= 4'd0;
+                num_data    <= 4'd0;
                 resp_status <= CTRL_STS_CMDERR;
                 state       <= s_axis_ctrl_tlast ? ST_OUT_HDR_0 : ST_DRAIN;
                 drain_to    <= ST_OUT_HDR_0;
@@ -726,12 +727,11 @@ module axis_ctrl_slave (
         m_axis_ctrl_tvalid = 1;
         m_axis_ctrl_tlast  = 0;
         m_axis_ctrl_tdata  = axis_ctrl_build_hdr_lo(
+          cached_hdr.rem_dst_epid,
           1'b1,                    // is_ack
           cached_hdr.has_time,
-          cached_hdr.seq_num,
-          data_length,
-          cached_hdr.dst_port,     // Swap the source and destination
-          cached_hdr.src_port
+          num_data,
+          cached_hdr.src_port      // Swap the source and destination
         );
       end
 
@@ -739,9 +739,10 @@ module axis_ctrl_slave (
         m_axis_ctrl_tvalid = 1;
         m_axis_ctrl_tlast  = 0;
         m_axis_ctrl_tdata  = axis_ctrl_build_hdr_hi(
-          data_length,
+          cached_hdr.req_size,
+          cached_hdr.seq_num,
           cached_hdr.rem_dst_port,
-          cached_hdr.rem_dst_epid
+          cached_hdr.dst_port      // Swap the source and destination
         );
       end
 

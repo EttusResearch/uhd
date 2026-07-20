@@ -65,7 +65,8 @@ package PkgCtrlIfaceBfm;
       ctrl_packet = new();
       ctrl_packet.header = '{
         seq_num  : seq_num++,
-        num_data : 1,
+        num_data : 0,
+        req_size : 1,
         src_port : src_port,
         dst_port : dst_port,
         has_time : (timestamp != RESERVED_TS),
@@ -346,7 +347,8 @@ package PkgCtrlIfaceBfm;
         ctrl_packet = new();
         ctrl_packet.header = '{
           seq_num  : seq_num++,
-          num_data : chunk_size,
+          num_data : 0,
+          req_size : chunk_size,
           src_port : src_port,
           dst_port : dst_port,
           has_time : (offset == 0 && timestamp != RESERVED_TS),

@@ -202,7 +202,7 @@ module ctrlport_endpoint_tb;
     .WIDTH(32), .SIZE(2), .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(0)
   ) demux_i (
     .clk(rfnoc_ctrl_clk), .reset(rfnoc_ctrl_rst), .clear(1'b0),
-    .header(in_hdr), .dest(in_hdr[31]),
+    .header(in_hdr), .dest(in_hdr[15]),
     .i_tdata (axis_slv_tdata ),
     .i_tlast (axis_slv_tlast ),
     .i_tvalid(axis_slv_tvalid),
@@ -254,13 +254,13 @@ module ctrlport_endpoint_tb;
   // ------------------------------------------------------------
   // [AXIS-Ctrl Packet Length Monitor]
   // Monitors all packets output from the DUT on axis_slv and
-  // validates that the num_data field in the upper header matches
+  // validates that the NumData field in the lower header matches
   // the actual number of data words in the packet. This covers
   // both AXIS-Ctrl slave responses and master requests.
   // ------------------------------------------------------------
   initial begin : axis_slv_length_monitor
     logic        has_time;
-    logic [3:0]  hdr_hi_num_data;
+    logic [3:0]  hdr_num_data;
     int          actual_data_words, expected_data_words;
     logic        is_ack;
 
@@ -270,13 +270,13 @@ module ctrlport_endpoint_tb;
         // Start of a new packet. Capture header low word.
         has_time = axis_ctrl_get_has_time(axis_slv_tdata);
         is_ack   = axis_ctrl_get_is_ack(axis_slv_tdata);
+        hdr_num_data = axis_ctrl_get_num_data(axis_slv_tdata);
 
         // Wait for header high word
         @(posedge rfnoc_ctrl_clk);
         while (!axis_slv_tvalid || !axis_slv_tready) @(posedge rfnoc_ctrl_clk);
-        hdr_hi_num_data = axis_ctrl_get_data_length(axis_slv_tdata);
-        // Expected length is timestamp + op-word + num data words
-        expected_data_words = (has_time ? 2 : 0) + 1 + hdr_hi_num_data;
+        // Expected length is timestamp + op-word + num data words present
+        expected_data_words = (has_time ? 2 : 0) + 1 + hdr_num_data;
 
         // Count remaining words until tlast
         actual_data_words = 0;
@@ -287,12 +287,12 @@ module ctrlport_endpoint_tb;
         end
 
         // The remaining words should be the timestamp (2 words if present),
-        // the op-word (1 word), and the data words (hdr_hi_num_data).
+        // the op-word (1 word), and the data words (hdr_num_data).
         `ASSERT_ERROR(
           actual_data_words == expected_data_words,
           $sformatf({"AXIS-Ctrl DUT output packet length mismatch: ",
             "expected=%0d, actual=%0d, is_ack=%0d"}, (has_time ? 2 : 0) + 1 +
-            hdr_hi_num_data, actual_data_words, is_ack));
+            hdr_num_data, actual_data_words, is_ack));
       end
     end
   end
@@ -303,7 +303,7 @@ module ctrlport_endpoint_tb;
   // Receives each request packet, transforms it into a response, and
   // retransmits it:
   //   Write / BlockWrite / Sleep: response has no data words
-  //   Read  / BlockRead:          response has num_data generated words
+  //   Read  / BlockRead:          response has req_size generated words
   //   WriteRead:                  response has 1 generated word
   // Status in ACK op-word = addr[19:18]
   // Generated read data   = {~addr[15:0], addr[15:0]}
@@ -312,7 +312,6 @@ module ctrlport_endpoint_tb;
   initial begin : axis_ctrl_slv
     AxisCtrlPacket pkt;
     logic [19:0]   base_addr;
-    int            num_data;
 
     // Wait until the BFM is initialized by the main initial block.
     wait (axis_ctrl_slv_bfm != null);
@@ -325,18 +324,18 @@ module ctrlport_endpoint_tb;
       pkt.header.is_ack  = 1'b1;
       pkt.op_word.status = ctrl_status_t'(pkt.op_word.address[19:18]);
       base_addr          = pkt.op_word.address;
-      num_data           = int'(pkt.header.num_data);
 
-      // Build response data words based on opcode.
+      // Build response data words based on opcode. Reads return req_size
+      // words; read-write returns one word; all others return no data.
       case (pkt.op_word.op_code)
         CTRL_OP_READ: begin
           pkt.data = '{};
-          repeat (num_data)
+          repeat (int'(pkt.header.req_size))
             pkt.data.push_back({~base_addr[15:0], base_addr[15:0]});
         end
         CTRL_OP_BLOCK_READ: begin
           pkt.data = '{};
-          for (int word_idx = 0; word_idx < num_data; word_idx++) begin
+          for (int word_idx = 0; word_idx < int'(pkt.header.req_size); word_idx++) begin
             pkt.data.push_back(
               {~(base_addr[15:0] + 16'(4 * word_idx)),
                  base_addr[15:0] + 16'(4 * word_idx)});
@@ -350,6 +349,8 @@ module ctrlport_endpoint_tb;
           pkt.data = '{};
         end
       endcase
+
+      pkt.header.num_data = pkt.data.size();
 
       // Retransmit as response.
       axis_ctrl_slv_bfm.put_ctrl(pkt);
@@ -449,7 +450,7 @@ module ctrlport_endpoint_tb;
   endfunction : accum_status
 
   // Task to send a AxisCtrl request and receive a response
-  logic [5:0] cached_seq_num = 0;
+  logic [7:0] cached_seq_num = 0;
   task axis_ctrl_transact(
     input  [3:0]  opcode,
     input  [19:0] addr,
@@ -460,7 +461,7 @@ module ctrlport_endpoint_tb;
     input  [3:0]  byte_en,
     input         has_time,
     input  [63:0] timestamp,
-    input  int    num_data,
+    input  [3:0]  req_size,
     output [1:0]  resp_status,
     output [31:0] resp_data
   );
@@ -475,49 +476,46 @@ module ctrlport_endpoint_tb;
     // Opcode specific logic
     case (ctrl_opcode_t'(opcode))
       CTRL_OP_SLEEP: begin
-        if (num_data != 1) begin
+        if (data.size() != 1) begin
           // Bad data count. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
         end else begin
           // data[0] = cycles of sleep. Limit its value to avoid long
           // simulations.
-          if (data.size() > 0) data[0][31:5] = 0;
+          data[0][31:5] = 0;
           exp_status = CTRL_STS_OKAY;
           exp_data   = '{};
         end
       end
       CTRL_OP_READ_WRITE: begin
-        if (num_data != 1) begin
-          // Bad num_data, slave responds with CMDERR.
+        if (data.size() != 1) begin
+          // Bad data count. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
         end else begin
           exp_status = ctrl_status_t'(blk_status_mode ? addr[3:2] : 2'b00);
           exp_data = '{};
           exp_data.push_back({~addr[15:0], addr[15:0]});
-          if (data.size() > 0) begin
-            exp_cp_req = '{default: '0, wr: 1'b1, rd: 1'b1, addr: addr, data: data[0]};
-            exp_cp_reqs.push_back(exp_cp_req);
-          end
+          exp_cp_req = '{default: '0, wr: 1'b1, rd: 1'b1, addr: addr, data: data[0]};
+          exp_cp_reqs.push_back(exp_cp_req);
         end
       end
       CTRL_OP_WRITE: begin
-        if (num_data == 0) begin
+        if (data.size() == 0) begin
           // No write data. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
-        end else if (num_data == 1) begin
+        end else if (data.size() == 1) begin
           // Single write. One ctrlport request, no response data.
           exp_status = ctrl_status_t'(blk_status_mode ? addr[3:2] : 2'b00);
           exp_data   = '{};
-          if (data.size() > 0) begin
-            exp_cp_req = '{default: '0, wr: 1'b1, rd: 1'b0, addr: addr, data: data[0]};
-            exp_cp_reqs.push_back(exp_cp_req);
-          end
+          exp_cp_req = '{default: '0, wr: 1'b1, rd: 1'b0, addr: addr, data: data[0]};
+          exp_cp_reqs.push_back(exp_cp_req);
         end else begin
-          // Multi-word write (num_data > 1). N writes at the same address (no
-          // increment). Status is accumulated across all sub-writes.
+          // Multi-word write (more than one data word). N writes at the same
+          // address (no increment). Status is accumulated across all
+          // sub-writes.
           exp_status      = CTRL_STS_OKAY;
           exp_data        = '{};
           blk_status_mask = '0;
@@ -535,24 +533,24 @@ module ctrlport_endpoint_tb;
         end
       end
       CTRL_OP_READ: begin
-        if (num_data == 0) begin
-          // Invalid num_data. Slave will respond with CMDERR.
+        if (req_size == 0) begin
+          // Invalid req_size. Slave will respond with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
-        end else if (num_data == 1) begin
+        end else if (req_size == 1) begin
           // One ctrlport request, one response word.
           exp_status = ctrl_status_t'(blk_status_mode ? addr[3:2] : '0);
           exp_data = '{};
           exp_data.push_back({~addr[15:0], addr[15:0]});
           exp_cp_req = '{default: '0, wr: 1'b0, rd: 1'b1, addr: addr, data: '0};
           exp_cp_reqs.push_back(exp_cp_req);
-        end else begin  // num_data > 1
+        end else begin  // req_size > 1
           // Multi-word read. N reads at the same address (no increment).
           // Status word returns the value based on address.
           exp_status      = CTRL_STS_OKAY;
           exp_data        = '{};
           blk_status_mask = '0;
-          for (int i = 0; i < num_data; i++) begin
+          for (int i = 0; i < req_size; i++) begin
             automatic logic [1:0] rd_status = blk_status_mode ? addr[3:2] : 2'b00;
             exp_status = accum_status(exp_status, ctrl_status_t'(rd_status));
             blk_status_mask[rd_status] = 1'b1;
@@ -566,7 +564,7 @@ module ctrlport_endpoint_tb;
         end
       end
       CTRL_OP_BLOCK_WRITE: begin
-        if (num_data == 0) begin
+        if (data.size() == 0) begin
           // No write data. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
@@ -596,12 +594,12 @@ module ctrlport_endpoint_tb;
         // data based on address.
         exp_data        = '{};
         blk_status_mask = '0;
-        if (num_data == 0) begin
-          // Invalid num_data. Slave responds with CMDERR.
+        if (req_size == 0) begin
+          // Invalid req_size. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
         end else begin
           exp_status = CTRL_STS_OKAY;
-          for (int i = 0; i < num_data; i++) begin
+          for (int i = 0; i < req_size; i++) begin
             automatic logic [19:0] sa = addr + 20'(i*4);
             automatic logic [1:0] sa_status = blk_status_mode ? sa[3:2] : 2'b00;
             exp_status = accum_status(exp_status, ctrl_status_t'(sa_status));
@@ -616,8 +614,8 @@ module ctrlport_endpoint_tb;
         end
       end
       CTRL_OP_POLL: begin
-        if (num_data != 3) begin
-          // Invalid num_data. Slave returns CMDERR.
+        if (data.size() != 3) begin
+          // Bad data count. Slave responds with CMDERR.
           exp_status = CTRL_STS_CMDERR;
           exp_data   = '{};
         end else begin
@@ -656,7 +654,9 @@ module ctrlport_endpoint_tb;
       is_ack       : 1'b0,
       has_time     : has_time,
       seq_num      : cached_seq_num,
-      num_data     : num_data,
+      num_data     : data.size(),
+      req_size     : (ctrl_opcode_t'(opcode) == CTRL_OP_READ ||
+                      ctrl_opcode_t'(opcode) == CTRL_OP_BLOCK_READ) ? req_size : 0,
       src_port     : THIS_PORTID,
       dst_port     : portid
     };
@@ -669,16 +669,17 @@ module ctrlport_endpoint_tb;
     };
     tx_pkt.write_ctrl(header, op_word, data, timestamp);
 
-    // Always expect a response. The slave now responds with CMDERR for all
-    // malformed requests (num_data=0, truncated, or unknown opcode) rather
-    // than silently dropping them.
+    // Always expect a response. The slave responds with CMDERR for malformed
+    // requests (e.g., incorrect word count, a truncated packet, or an unknown
+    // opcode) rather than silently dropping them.
     exp_pkt = tx_pkt.copy();
     exp_pkt.header.is_ack  = 1'b1;
     exp_pkt.op_word.status = exp_status;
     exp_pkt.data.delete();
     for (int data_idx = 0; data_idx < exp_data.size(); data_idx++)
       exp_pkt.data.push_back(exp_data[data_idx]);
-    exp_pkt.header.data_length = exp_data.size();
+    // NumData reflects the response's data words. ReqSize is echoed from the
+    // request (already present in the copied header).
     exp_pkt.header.num_data = exp_data.size();
 
     if (VERBOSE) $display("*******************");
@@ -734,14 +735,14 @@ module ctrlport_endpoint_tb;
   );
     logic [3:0]  rand_opcode;
     logic [19:0] rand_addr;
-    int          rand_num_data;
+    int          rand_req_size;
     logic [31:0] data_vtr[$];
     logic [31:0] slave_val;
     logic        poll_hit;
 
     rand_opcode     = $urandom_range(AXIS_CTRL_OPCODE_POLL + 1); // Allow bad op-codes
     rand_addr       = $urandom();
-    rand_num_data   = $urandom_range(15);
+    rand_req_size   = $urandom_range(15);
     blk_status_mode = $urandom_range(1); // 50% chance of non-OKAY statuses
     data_vtr.delete();
 
@@ -750,17 +751,18 @@ module ctrlport_endpoint_tb;
       // guaranteed match (OKAY) and a guaranteed mismatch (CMDERR).
       slave_val     = {~rand_addr[15:0], rand_addr[15:0]};
       poll_hit      = $urandom_range(1);
-      rand_num_data = 3;
+      rand_req_size = 3;
       data_vtr.push_back(poll_hit ? slave_val : ~slave_val); // data[0]: target
       data_vtr.push_back(32'hFFFFFFFF);                      // data[1]: mask
       data_vtr.push_back($urandom_range(10));                // data[2]: timeout
     end else if (rand_opcode == CTRL_OP_READ ||
                  rand_opcode == CTRL_OP_BLOCK_READ) begin
       // For reads, extra data words are ignored, so throw in a random number.
-      repeat($urandom_range(rand_num_data)) data_vtr.push_back($urandom());
+      repeat($urandom_range(rand_req_size)) data_vtr.push_back($urandom());
     end else begin
-      // For writes, num_data should match number of words given.
-      repeat(rand_num_data) data_vtr.push_back($urandom());
+      // For all other opcodes, ReqSize is unused and the word count is
+      // determined entirely by the size of data_vtr.
+      repeat(rand_req_size) data_vtr.push_back($urandom());
     end
 
     axis_ctrl_transact(
@@ -773,7 +775,7 @@ module ctrlport_endpoint_tb;
       $urandom_range(15),       // byte_en
       $urandom_range(1),        // has_time
       {$urandom(), $urandom()}, // timestamp
-      rand_num_data,
+      rand_req_size,
       resp_status,
       resp_data
     );
@@ -878,10 +880,10 @@ module ctrlport_endpoint_tb;
 
     // Multi-word READ/WRITE Test
     // ----------------------------------------
-    // Verify that READ and WRITE with num_data > 1 repeat at the same address
-    // (no increment), unlike BLOCK_READ/BLOCK_WRITE which increment. The dummy
-    // ctrlport slave verifies the exact address of every sub-request via
-    // cp_req_mbox.
+    // Verify that READ and WRITE with multiple words repeat at the same
+    // address (no increment), unlike BLOCK_READ/BLOCK_WRITE which increment.
+    // The dummy ctrlport slave verifies the exact address of every sub-request
+    // via cp_req_mbox.
     test.start_test("Multi-word READ/WRITE (no address increment)");
     begin
       axis_ctrl_mst_bfm.set_master_stall_prob(FAST_STALL_PROB);
@@ -986,7 +988,7 @@ module ctrlport_endpoint_tb;
       // Build read packet. N words from addr.
       tmp_data.delete();  // Read request carries no data payload
       hdr = '{ default: '0, is_ack: 1'b0, has_time: 1'b0,
-               seq_num: cached_seq_num, num_data: N,
+               seq_num: cached_seq_num, num_data: 0, req_size: N,
                src_port: THIS_PORTID, dst_port: THIS_PORTID };
       op  = '{ default: '0, status: CTRL_STS_OKAY, op_code: CTRL_OP_READ,
                byte_enable: 4'hF, address: addr };
