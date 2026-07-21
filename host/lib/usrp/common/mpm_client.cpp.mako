@@ -13,6 +13,7 @@
 #include <uhd/utils/log.hpp>
 #include <stdexcept>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <optional>
 #include <mutex>
@@ -20,6 +21,14 @@
 #include <grpcpp/grpcpp.h>
 #include "mpm_server.pb.h"
 #include "mpm_server.grpc.pb.h"
+
+
+// GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL is not declared by older gRPC releases
+// (e.g. the version shipped with Ubuntu 20.04), but the underlying channel-arg
+// key string is stable across versions.
+#ifndef GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL
+#define GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL "grpc.use_local_subchannel_pool"
+#endif
 
 using uhd::rpc_exception;
 
@@ -73,6 +82,28 @@ private:
     std::optional<std::chrono::milliseconds> _scoped_timeout;
     mutable std::recursive_mutex _rpc_call_mutex;
     std::array<std::unique_ptr<dboard_iface_impl>, MAX_DBOARDS> dboard_instances_;
+
+    // Diagnostics for tracking gRPC channel/transport lifecycle. Each client
+    // gets a unique id so its create/RPC/destroy events can be correlated in
+    // the logs (e.g. to see whether tearing down a stale session's channel
+    // drops the active session's connection).
+    static std::atomic<uint64_t> _client_id_counter;
+    uint64_t _client_id;
+    std::string _server_address;
+    std::shared_ptr<grpc::Channel> _channel;
+
+    // Human-readable name for a gRPC connectivity state.
+    static const char* connectivity_state_str(grpc_connectivity_state s)
+    {
+        switch (s) {
+            case GRPC_CHANNEL_IDLE: return "IDLE";
+            case GRPC_CHANNEL_CONNECTING: return "CONNECTING";
+            case GRPC_CHANNEL_READY: return "READY";
+            case GRPC_CHANNEL_TRANSIENT_FAILURE: return "TRANSIENT_FAILURE";
+            case GRPC_CHANNEL_SHUTDOWN: return "SHUTDOWN";
+            default: return "UNKNOWN";
+        }
+    }
 
     // RAII guard that applies a scoped timeout while serializing concurrent RPCs.
     class timeout_scope_impl : public uhd::rpc_client::timeout_scope
@@ -168,15 +199,31 @@ private:
 public:
     rpc_client_impl(const std::string& server_name, uint16_t port, uint64_t timeout_ms)
         : _timeout(std::chrono::milliseconds(timeout_ms))
+        , _client_id(_client_id_counter++)
     {
         std::string server_address = server_name + ":" + std::to_string(port);
+        _server_address = server_address;
 
         // Set channel arguments with MAX_GRPC_MESSAGE_SIZE limit (in bytes).
         grpc::ChannelArguments args;
         args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, MAX_GRPC_MESSAGE_SIZE);
         args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, MAX_GRPC_MESSAGE_SIZE);
 
+        // Give every channel its own subchannel (and thus its own HTTP/2
+        // transport) instead of sharing gRPC's global subchannel pool. All
+        // clients here target the same MPM address with identical channel
+        // args, so with the default global pool they would collapse onto a
+        // single shared TCP/HTTP2 connection. When a stale session's channel
+        // is destroyed (which, with the phase-coherence tests, happens tens of
+        // seconds after that session was unclaimed), tearing down the shared
+        // transport surfaces on the *active* session as
+        // "<RPC> RPC failed: Socket closed" even though the MPM is healthy.
+        // A local subchannel pool isolates each channel so destroying an old
+        // session cannot drop the active session's connection.
+        args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
+
         auto channel = grpc::CreateCustomChannel(server_address, grpc::InsecureChannelCredentials(), args);
+        _channel = channel;
         stub_ = ${package_name}::${service_name}::NewStub(channel);
 
         // Eagerly establish the TCP connection so subsequent RPC calls don't
@@ -185,10 +232,26 @@ public:
         // call report the failure naturally in that case.
         channel->WaitForConnected(std::chrono::system_clock::now() + _timeout);
 
+        UHD_LOGGER_TRACE("MPM_CLIENT")
+            << "rpc_client #" << _client_id << " CREATED -> " << _server_address
+            << " state=" << connectivity_state_str(_channel->GetState(false));
+
         // Pre-allocate all daughterboard instances
         for (size_t i = 0; i < MAX_DBOARDS; ++i) {
             dboard_instances_[i] = std::make_unique<dboard_iface_impl>(this, i);
         }
+    }
+
+    ~rpc_client_impl() override
+    {
+        // This destruction is the event of interest: with the phase-coherence
+        // tests, a stale session's client is destroyed tens of seconds after
+        // it was unclaimed. Log it (with the last-known channel state) so it
+        // can be correlated with any "Socket closed" seen on the active session.
+        UHD_LOGGER_TRACE("MPM_CLIENT")
+            << "rpc_client #" << _client_id << " DESTROYED -> " << _server_address
+            << " state="
+            << (_channel ? connectivity_state_str(_channel->GetState(false)) : "n/a");
     }
 
     void set_token(const std::string& token) override {
@@ -209,6 +272,10 @@ public:
 
     uhd::rpc_client::sptr get_raw_rpc_client() override {
         return shared_from_this();
+    }
+
+    uint64_t get_client_id() const override {
+        return _client_id;
     }
 
 private:
@@ -406,6 +473,12 @@ public:
             throw rpc_exception("Authentication failed: " + status.error_message());
         } else {
             UHD_LOG_TRACE("RPC", "!!! ${method['camel_name']} FAILED [" << status.error_code() << "]: " << status.error_message());
+            UHD_LOGGER_TRACE("MPM_CLIENT")
+                << "rpc_client #" << _client_id << " ${method['camel_name']} FAILED ["
+                << status.error_code() << "]: " << status.error_message()
+                << " | channel state="
+                << (_channel ? connectivity_state_str(_channel->GetState(false)) : "n/a")
+                << " -> " << _server_address;
             throw rpc_exception("${method['camel_name']} RPC failed: " + status.error_message());
         }
     }
@@ -592,6 +665,8 @@ public:
     // Make helper methods accessible to dboard implementation
     friend class dboard_iface_impl;
 };
+
+std::atomic<uint64_t> rpc_client_impl::_client_id_counter{0};
 
 // Factory implementation
 uhd::rpc_client::sptr uhd::rpc_client::make(const std::string& server_name, uint16_t port, uint64_t timeout_ms) {

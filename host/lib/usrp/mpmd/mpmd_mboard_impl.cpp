@@ -404,7 +404,11 @@ uhd::task::sptr mpmd_mboard_impl::make_claim_loop_task()
         [this] {
             auto now = std::chrono::steady_clock::now();
             if (not this->claim()) {
-                throw uhd::value_error("mpmd device reclaiming loop failed!");
+                UHD_LOG_THROW(uhd::value_error,
+                    _log_id,
+                    "Claimer task (rpc_client #"
+                        << _claim_rpc->get_client_id()
+                        << ") failed to reclaim device; exiting claim loop!");
             } else {
                 try {
                     this->dump_logs();
@@ -430,6 +434,10 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
     _claim_rpc->set_token(rpc_token);
     rpc->set_token(rpc_token);
     _token = rpc_token;
+    UHD_LOG_DEBUG(_log_id,
+        "Claim established: claimer rpc_client #" << _claim_rpc->get_client_id()
+                                                  << ", main rpc_client #"
+                                                  << rpc->get_client_id());
     // Optionally clear log buf
     if (mb_args.has_key("skip_oldlog")) {
         try {
@@ -448,6 +456,8 @@ void mpmd_mboard_impl::reset_claim_loop()
     _claimer_task.reset();
     _claim_rpc = make_mpm_rpc_client(_rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT);
     _claim_rpc->set_token(_token);
+    UHD_LOG_DEBUG(_log_id,
+        "Reset claim loop: new claimer rpc_client #" << _claim_rpc->get_client_id());
     _claimer_task = make_claim_loop_task();
 }
 

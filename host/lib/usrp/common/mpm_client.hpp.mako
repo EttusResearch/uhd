@@ -45,6 +45,10 @@ public:
     virtual void set_timeout(uint64_t timeout_ms) = 0;
     virtual timeout_scope_uptr set_scope_timeout(uint64_t timeout_ms) = 0;
 
+    // Unique per-client id, used to correlate this client with its gRPC
+    // channel lifecycle logs (see "MPM_CLIENT rpc_client #<id> ..." messages).
+    virtual uint64_t get_client_id() const = 0;
+
     // Return this RPC client (for compatibility)
     virtual sptr get_raw_rpc_client() = 0;
 

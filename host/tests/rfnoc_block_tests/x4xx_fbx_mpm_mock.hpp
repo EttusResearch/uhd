@@ -49,6 +49,10 @@ public:
     // Non-RPC helper methods
     void set_token(const std::string& /*token*/) override {}
     void set_timeout(uint64_t /*timeout_ms*/) override {}
+    uint64_t get_client_id() const override
+    {
+        return 0;
+    }
     uhd::rpc_client::timeout_scope_uptr set_scope_timeout(
         uint64_t /*timeout_ms*/) override
     {
