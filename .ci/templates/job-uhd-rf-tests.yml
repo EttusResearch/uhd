@@ -253,6 +253,13 @@ jobs:
             --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests \
             --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
             $(parameters.extra_rf_test_args)" || rf_test_status=$?
+      elif [ "$(devType)" = "b3xx" ]; then
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
+        export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/:$HOME/adrv9032_images
+        uhd_usrp_probe --args type=$(devType),serial=$(devSerial)
+        python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
+          --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) ${{ parameters.extra_rf_test_args }} || rf_test_status=$?
+        cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests
       fi
       python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
         --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests_non_rf \

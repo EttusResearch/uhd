@@ -244,6 +244,26 @@ jobs:
     displayName: Run x3xx devtest on $(devName) $(devFpga)
 
   - script: |
+      cd $(Agent.TempDirectory)
+      python3 -m venv devtest_venv
+      source devtest_venv/bin/activate
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
+      pip3 install -r $(Build.SourcesDirectory)/uhddev/.ci/utils/requirements.txt
+      mkdir -p $(Common.TestResultsDirectory)/devtest
+      cd $(Common.TestResultsDirectory)/devtest
+      export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
+      export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
+      export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/:$HOME/adrv9032_images
+      python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
+          --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \
+          --devtest-pattern $(devtestPattern) --args type=$(devType),serial=$(devSerial) \
+          --build-type Release --build-dir $(Build.BinariesDirectory)/uhddev/build \
+          --python-interp python3 --xml
+    continueOnError: true
+    condition: and(succeeded(), eq(variables.devType, 'b3xx'))
+    displayName: Run b3xx devtest on $(devName)
+
+  - script: |
       cat $(Common.TestResultsDirectory)/devtest/log*.log
       echo ""
     displayName: cat devtest log
@@ -256,7 +276,7 @@ jobs:
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
     displayName: Format devtest xml
-    condition: and(always(), eq(variables.devType, 'b200'))
+    condition: and(always(), or(eq(variables.devType, 'b200'), eq(variables.devType, 'b3xx')))
 
   - script: |
       cd $(Common.TestResultsDirectory)/devtest
@@ -266,7 +286,7 @@ jobs:
         $(Common.TestResultsDirectory)/devtest/devtestresults.xml
     continueOnError: true
     displayName: Format devtest xml
-    condition: and(always(), ne(variables.devType, 'b200'))
+    condition: and(always(), and(ne(variables.devType, 'b200'), ne(variables.devType, 'b3xx')))
 
   - publish: $(Common.TestResultsDirectory)
     artifact: test-logs-devtest-$(devName)-$(devModel)-$(devFpga)-run$(System.JobAttempt)

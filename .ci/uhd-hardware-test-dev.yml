@@ -18,7 +18,7 @@ parameters:
 - name: selected_streaming_tests
   type: string
   displayName: Streaming Tests Multi-Select (comma-separated)
-  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
+  default: 'B206,B210,B310,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 - name: run_devtests
   type: boolean
   displayName: Run devtests
@@ -54,6 +54,14 @@ parameters:
 - name: run_lv_test
   type: boolean
   displayName: Run LabVIEW test
+  default: false
+- name: run_b310_devtests
+  type: boolean
+  displayName: Run B310 devtests
+  default: false
+- name: run_b310_rf_tests
+  type: boolean
+  displayName: Run B310 RF tests
   default: false
 - name: fpga_imgs_source
   type: string
@@ -272,6 +280,31 @@ stages:
   condition: ${{ parameters.run_obx_devtests }}
   jobs:
   - template: templates/job-uhd-devtest-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+
+- stage: test_b310_rf_tests
+  displayName: Test B310 RF Tests
+  dependsOn: []
+  condition: ${{ parameters.run_b310_rf_tests }}
+  jobs:
+  - template: templates/job-uhd-rf-tests-b310.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
+
+- stage: test_b310_devtest
+  displayName: Test B310 Devtest
+  dependsOn: []
+  condition: ${{ parameters.run_b310_devtests }}
+  jobs:
+  - template: templates/job-uhd-devtest-b310.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)
       uhdArtifactSource: uhd_mono_pipeline

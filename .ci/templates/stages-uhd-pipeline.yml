@@ -29,7 +29,7 @@ parameters:
 - name: selected_streaming_tests
   type: string
   displayName: Streaming Tests Multi-Select (comma-separated)
-  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
+  default: 'B206,B210,B310,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 - name: create_sbom
   type: boolean
   displayName: Create SBOMs
@@ -979,6 +979,33 @@ stages:
       uhdSrcDir: $(Build.SourcesDirectory)
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
   - template: job-uhd-rf-tests-x310-obx.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)/uhddev
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- stage: test_uhd_b310_stage
+  displayName: Test UHD B310
+  dependsOn:
+  - analyze_changeset
+  - build_uhd_stage_linux
+  - build_gnuradio_stage_linux
+  - provide_b310_fpga_images_stage
+  condition: >
+    and(
+      succeeded(),
+      or(
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.b3xx'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.b3xx')
+      )
+    )
+  jobs:
+  - template: job-uhd-devtest-b310.yml
+    parameters:
+      uhdSrcDir: $(Build.SourcesDirectory)
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+  - template: job-uhd-rf-tests-b310.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       fpga_imgs_source: ${{ parameters.fpga_imgs_source }}

@@ -1,0 +1,39 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+- name: testDevices
+  type: string
+  default: 'b3xx'
+- name: extra_rf_test_args
+  type: string
+  default: ''
+
+jobs:
+- template: job-uhd-rf-tests.yml
+  parameters:
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: ${{ parameters.uhdFpgaArtifactSource }}
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    extra_rf_test_args: '${{ parameters.extra_rf_test_args }}'
+    dutMatrix:
+        b310:
+          devType: 'b3xx'
+          devModel: 'b310'
+          devName: 'b310-ATS'
+          devSerial: '3665BFD'
+          devBus: 'pcie'
+          devFpga: 'defaultFPGA'
+          devtestPattern: 'b3xx'
+          pytestDUT: 'b310'
+          pytestAtsConfig: 'b300_ats'
+          pipelineAgent: 'b310-dev2'

@@ -121,7 +121,7 @@ parameters:
 - name: selected_streaming_tests
   type: string
   displayName: Streaming Tests Multi-Select (comma-separated)
-  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
+  default: 'B206,B210,B310,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 
 trigger:
   batch: true

@@ -1,0 +1,30 @@
+parameters:
+- name: uhdSrcDir
+  type: string
+- name: uhdArtifactSource
+  type: string
+  default: current
+- name: uhdFpgaArtifactSource
+  type: string
+  default: current
+- name: fpga_imgs_source
+  type: string
+
+jobs:
+- template: job-uhd-devtest.yml
+  parameters:
+    suiteName: 'b310_test'
+    knownHost: '|1|1Ir2Dw9+Rd+biaBZN5Y7qMvSHjw=|Sy23JOB66jDO1soYN3LheEsiS88= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLxbGUC5lRxvFvnY4tDCNa6FpVE6QKXorgcc2Tn/6OhG2uVnSA7PlH+viTI/6ij8vkJqEuHpUdWJoPgm8NaYx8w='
+    toolset: 'make'
+    uhdSrcDir: '${{ parameters.uhdSrcDir }}'
+    uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
+    uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
+    fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
+    dutMatrix:
+        b310:
+          devType: 'b3xx'
+          devModel: 'b310'
+          devName: 'b310-ATS'
+          devSerial: '3665BFD'
+          devBus: 'pcie'
+          devtestPattern: 'b3xx'

@@ -127,3 +127,15 @@ stages:
     rfnoc_include_dir: ${{ parameters.rfnoc_include_dir }}
 
 ### END: E320 stages
+
+### START: B310 stages
+
+- template: ../devices/job-build-fpga-b310.yml
+  parameters:
+    clean_ip_build: ${{ parameters.clean_ip_build }}
+    publish_int_files:  ${{ parameters.publish_int_files }}
+    package_and_publish_images: ${{ parameters.package_and_publish_images }}
+    package_access: ${{ parameters.package_access }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+### END: B310 stages

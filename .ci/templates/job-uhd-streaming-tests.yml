@@ -130,6 +130,16 @@
       dutNumSendFrames: ''
       sfpInt0: '$(x440_sfpInt0)'
       sfpInt1: '$(x440_sfpInt1)'
+    B310:
+      timeoutInMinutes: 120
+      dutName: 'streaming-b310'
+      dutFamily: 'b3xx'
+      dutType: 'b310'
+      dutFPGA: 'B310'
+      dutResource: '$(b310_resource)'
+      dutNameId: ''
+      dutNumRecvFrames: ''
+      dutNumSendFrames: ''
 
 jobs:
 - ${{ each dutEntry in parameters.dutMatrix }}:
@@ -149,6 +159,7 @@ jobs:
         dutAddr: ${{ dutEntry.value.dutAddr }}
         dutSecondAddr: ${{ dutEntry.value.dutSecondAddr }}
         dutFPGA: ${{ dutEntry.value.dutFPGA }}
+        dutResource: ${{ dutEntry.value.dutResource }}
         dutNameId: ${{ dutEntry.value.dutNameId }}
         dutNumRecvFrames: ${{ dutEntry.value.dutNumRecvFrames }}
         dutNumSendFrames: ${{ dutEntry.value.dutNumSendFrames }}
@@ -228,7 +239,7 @@ jobs:
       - download: ${{ parameters.uhdFpgaArtifactSource }}
         artifact: $(FPGA_ARTIFACT)
         displayName: Download FPGA images (from artifacts)
-        condition: and(not(or(failed(), canceled())), ne(variables.dutGetFpgaImagesMethod, 'uhd_images_downloader'))
+        condition: and(not(or(failed(), canceled())), ne(variables.dutGetFpgaImagesMethod, 'uhd_images_downloader'), not(eq(variables.dutFamily, 'b3xx')))
     
       - task: ExtractFiles@1
         inputs:
@@ -370,12 +381,32 @@ jobs:
           sleep 5
           exit $EXITCODE
         displayName: setup interfaces for use without DPDK
+        condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')))
         timeoutInMinutes: 5
+      
+      - script: |
+          if [ "$(dutFamily)" = "b3xx" ]; then
+            cd ${{ parameters.uhdSrcDir }}/host/tests/streaming_performance
+            sudo ./setupPCIe.sh -v -s
+            EXITCODE=$?
+            sleep 5
+            exit $EXITCODE
+          fi
+        displayName: setup B310 PCIe interface
+        condition: and(succeeded(), eq(variables.dutFamily, 'b3xx'))
+        timeoutInMinutes: 1
     
       - script: |
           rm -fv TEST-*
         workingDirectory: $(Common.TestResultsDirectory)
         displayName: remove old test results no dpdk
+
+      - script: |
+          export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/:$HOME/adrv9032_images
+          echo '##vso[task.setvariable variable=UHD_IMAGES_DIR]'$UHD_IMAGES_DIR
+          echo UHD_IMAGES_DIR=$UHD_IMAGES_DIR
+        displayName: Set UHD_IMAGES_DIR for B3xx
+        condition: and(succeeded(), eq(variables.dutFamily, 'b3xx'))
     
       - script: |
           echo "##[group]Printing Environment"
@@ -396,7 +427,7 @@ jobs:
             --capture=tee-sys -o junit_logging=all \
             --dut_type $(dutType) --test_length ${{ parameters.testLength }} \
             --uhd_build_dir $(Build.BinariesDirectory)/uhddev/build --junitxml $(Common.TestResultsDirectory)/TEST-$(dutName)-no_DPDK.xml \
-            --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) \
+            --addr $(dutAddr) --second_addr $(dutSecondAddr) --mgmt_addr $USRP_EMB_TARGET_IP --name $(dutNameId) --resource $(dutResource) \
             --result_csv $(Common.TestResultsDirectory)/TEST-$(dutName)-no_DPDK.csv \
             --num_recv_frames $(dutNumRecvFrames) --num_send_frames $(dutNumSendFrames)
         env:
@@ -417,12 +448,14 @@ jobs:
           fi
           sleep 5
         displayName: setup interfaces for use raw udp streaming
+        condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')))
         timeoutInMinutes: 5
     
       - script: |
           rm -fv TEST-*
         workingDirectory: $(Common.TestResultsDirectory)
         displayName: remove old test results raw udp
+        condition: and(succeeded(), not(in(variables.dutFamily, 'b3xx')))
     
       - script: |
           export PYTHON_VERSION=$(python3 -c "import sys; print('python'+str(sys.version_info.major) + '.' + str(sys.version_info.minor))")
@@ -482,7 +515,7 @@ jobs:
           sleep 5
           exit $EXITCODE
         displayName: Setup interfaces for use with DPDK
-        condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')))
+        condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')))
         timeoutInMinutes: 5
     
       - ${{ each dpdkVersion in parameters.dpdkVersions }}:
@@ -525,7 +558,7 @@ jobs:
             DPDK_VERSION_STRING=$(utils/uhd_config_info --dpdk-version | awk '{print $3;}')
             echo "##vso[task.setvariable variable=DPDK_VERSION_STRING]$DPDK_VERSION_STRING"
           displayName: "[DPDK ${{ dpdkVersion }}] Build UHD for DPDK"
-          condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')), eq(variables.dpdkDirExists, 'true'))
+          condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')), eq(variables.dpdkDirExists, 'true'))
     
         - script: |
             config_file="$(Agent.TempDirectory)/uhd_dpdk.conf"
@@ -544,7 +577,7 @@ jobs:
               --fpga_flavor $(dutFPGA) \
               --output_path $config_file
           displayName: "[DPDK ${{ dpdkVersion }}] Provide UHD config file"
-          condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')), eq(variables.dpdkDirExists, 'true'))
+          condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')), eq(variables.dpdkDirExists, 'true'))
     
         - script: |
             echo "##[group]Printing Environment"
@@ -569,12 +602,12 @@ jobs:
             UHD_IMAGES_DIR: $(UHD_IMAGES_DIR)
           continueOnError: true
           displayName: "[DPDK ${{ dpdkVersion }}] Run streaming tests on $(dutName)"
-          condition: and(succeeded(), not(eq(variables.dutFamily, 'b200')), eq(variables.dpdkDirExists, 'true'))
+          condition: and(succeeded(), not(in(variables.dutFamily, 'b200', 'b3xx')), eq(variables.dpdkDirExists, 'true'))
     
         - publish: $(Common.TestResultsDirectory)
           artifact: test-logs-streamingtest-$(dutName)-$(dutFpga)-dpdk$(DPDK_VERSION_STRING)-run$(System.JobAttempt)
           displayName: "[DPDK ${{ dpdkVersion }}] Upload Test Logs"
-          condition: and(succeededOrFailed(), not(eq(variables.dutFamily, 'b200')), eq(variables.dpdkDirExists, 'true'))
+          condition: and(succeededOrFailed(), not(in(variables.dutFamily, 'b200', 'b3xx')), eq(variables.dpdkDirExists, 'true'))
     
         - task: PublishTestResults@2
           inputs:
@@ -585,7 +618,7 @@ jobs:
             mergeTestResults: true
             failTaskOnFailedTests: false
           displayName: "[DPDK ${{ dpdkVersion }}] Upload streaming test results"
-          condition: and(succeededOrFailed(), not(eq(variables.dutFamily, 'b200')), eq(variables.dpdkDirExists, 'true'))
+          condition: and(succeededOrFailed(), not(in(variables.dutFamily, 'b200', 'b3xx')), eq(variables.dpdkDirExists, 'true'))
     
       - script: |
           echo "A previous step failed. See steps with warnings."

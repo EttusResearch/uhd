@@ -1,0 +1,108 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+#   This template defines a stages-based pipeline for building B310 FPGA
+#   targets.
+#
+#   See https://aka.ms/yaml for pipeline YAML documentation.
+#
+
+parameters:
+## Optional parameters
+# Option to ignore cached artifacts (if available) and perform
+# a clean IP build.
+- name: clean_ip_build
+  type: boolean
+  default: false
+# Number of parallel jobs to use for IP build
+- name: num_ip_jobs
+  type: number
+  default: 5
+# Option to publish intermediate files
+- name: publish_int_files
+  type: boolean
+  default: false
+# Package and publish images
+- name: package_and_publish_images
+  type: boolean
+  default: true
+# Package access in the SDR server ('Internal' or 'Public')
+- name: package_access
+  type: string
+  default: 'Internal'
+# From where to pull FPGA bitfiles if we're not building them
+- name: fpga_imgs_source
+  type: string
+  default: 'Mono Pipeline'
+# B310 FPGA targets to build
+- name: b310_full_targets_matrix
+  type: object
+  default:
+    B310_REPLAY:
+      image_core: b310_replay_rfnoc_image_core.yml
+      target_name: B310
+      image_core_name: usrp_b310_fpga_replay
+      artifact_name: B310_REPLAY
+      timeout: 720
+      max_attempts: 2
+    B310_FIFO:
+      image_core: b310_fifo_rfnoc_image_core.yml
+      target_name: B310
+      image_core_name: usrp_b310_fpga_fifo
+      artifact_name: B310_FIFO
+      timeout: 720
+      max_attempts: 2
+- name: b310_reduced_targets_matrix
+  type: object
+  default:
+    B310_REPLAY:
+      image_core: b310_replay_rfnoc_image_core.yml
+      target_name: B310
+      image_core_name: usrp_b310_fpga_replay
+      artifact_name: B310_REPLAY
+      timeout: 720
+      max_attempts: 2
+    B310_FIFO:
+      image_core: b310_fifo_rfnoc_image_core.yml
+      target_name: B310
+      image_core_name: usrp_b310_fpga_fifo
+      artifact_name: B310_FIFO
+      timeout: 720
+      max_attempts: 2
+
+
+stages:
+
+### START: B310 stages
+
+- stage: provide_b310_fpga_images_stage
+  displayName: Provide B310 FPGA Images
+  dependsOn: analyze_changeset
+  variables:
+    UhdTestList: $[stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList']]
+    BuildRequired: $[or(
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.b310'),
+                    contains(stageDependencies.analyze_changeset.analyze.outputs['gen_testlist.UhdTestList'], 'fpga.usrp3.all')
+                  )]
+  jobs:
+  - template: ../templates/jobs-provide-fpga-artifacts.yml
+    parameters:
+      id: b310
+      device_name: B310
+      ip_target: B310_IP
+      package_name: b310_fpga_default
+      clean_ip_build: ${{ parameters.clean_ip_build }}
+      num_ip_jobs: ${{ parameters.num_ip_jobs }}
+      publish_int_files: ${{ parameters.publish_int_files }}
+      package_and_publish_images: ${{ parameters.package_and_publish_images }}
+      package_access: ${{ parameters.package_access }}
+      fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+      top_dir: uhddev/fpga/usrp3/top/b300
+      target_full_matrix: ${{ parameters.b310_full_targets_matrix }}
+      target_reduced_matrix: ${{ parameters.b310_reduced_targets_matrix }}
+
+### END: B310 stages

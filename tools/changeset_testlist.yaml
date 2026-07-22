@@ -119,6 +119,12 @@
     - uhd.build.all
     - hw.rf.x3xx
     - hw.rf.n2xx
+- re: host/lib/usrp/b300/
+  add:
+    - uhd.build.all
+    - hw.rf.b3xx
+    - hw.streaming.b3xx
+    - devtest.b3xx
 - re: host/lib/usrp/b200/
   add:
     - uhd.build.all
@@ -350,6 +356,12 @@
 - re: host/include/uhd/rfnoc/core/n3.._bsp.yml
   add:
     - fpga.usrp3.n3xx
+- re: fpga/usrp3/top/b300
+  add:
+    - fpga.usrp3.b310
+- re: host/include/uhd/rfnoc/core/b310_bsp.yml
+  add:
+    - fpga.usrp3.b310
 
 # CPLD related changes
 - re: fpga/usrp3/top/x400/cpld
