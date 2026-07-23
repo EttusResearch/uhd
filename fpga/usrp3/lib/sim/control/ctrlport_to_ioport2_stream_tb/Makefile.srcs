@@ -1,0 +1,12 @@
+#
+# Copyright 2026 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+CTRLPORT_TO_IOPORT2_STREAM_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/io_port2/, \
+ioport2_msg_pkg.sv \
+ioport2_msg_codec.v \
+pcie_basic_regs.v \
+ctrlport_to_ioport2_stream.sv \
+))

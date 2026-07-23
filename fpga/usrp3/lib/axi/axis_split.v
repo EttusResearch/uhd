@@ -18,17 +18,22 @@
 //
 // Parameters:
 //
-//   DATA_W    : The bit width of tdata for all ports.
-//   NUM_PORTS : The number of output ports on which to duplicate the input.
-//   INPUT_REG : Set to 1 to add an input register stage to break combinatorial
-//               paths. Set to 0 to allow combinatorial input paths.
+//   DATA_W        : The bit width of tdata for all ports.
+//   NUM_PORTS     : The number of output ports on which to duplicate the
+//                   input.
+//   INPUT_REG     : Set to 1 to add an input register stage to break
+//                   combinatorial paths. Set to 0 to allow combinatorial input
+//                   paths.
+//   OUT_FIFO_SIZE : Configures the per-port output FIFO size. Defaults to a
+//                   short (32-deep) FIFO.
 //
 
 
 module axis_split #(
-  parameter DATA_W     = 32,
-  parameter NUM_PORTS  = 4,
-  parameter INPUT_REG  = 0
+  parameter DATA_W        = 32,
+  parameter NUM_PORTS     = 4,
+  parameter INPUT_REG     = 0,
+  parameter OUT_FIFO_SIZE = 5
 ) (
   input wire clk,
   input wire rst,
@@ -106,11 +111,20 @@ module axis_split #(
   genvar i;
   for (i = 0; i < NUM_PORTS; i = i + 1) begin : gen_ports
 
-    // We use axi_fifo_short specifically because it can tolerate tvalid
-    // de-asserting at any time. This is normally not allowed by AXI-Stream.
-    axi_fifo_short #(
-      .WIDTH (DATA_W)
-    ) axi_fifo_short_i (
+    // We add a FIFO on each output port because our axi_fifo tolerates tvalid
+    // de-asserting at any time, which is normally not allowed by AXI-Stream.
+    // This may occur here because the output streams are independent and we
+    // block all transfers when any one output stalls. To ensure we have this
+    // protection built in, we do not allow bypass mode.
+
+    if (OUT_FIFO_SIZE < 0) begin : gen_bypass_mode
+      OUT_FIFO_SIZE_must_be_non_negative();
+    end
+
+    axi_fifo #(
+      .WIDTH (DATA_W),
+      .SIZE  (OUT_FIFO_SIZE)
+    ) axi_fifo_i (
       .clk      (clk),
       .reset    (rst),
       .clear    (1'b0),

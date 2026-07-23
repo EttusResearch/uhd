@@ -18,9 +18,15 @@ axi_forwarding_cam.v \
 axi_setting_reg.v \
 axi_slave_mux.v \
 axi_test_vfifo.v \
+axis_to_ctrlport.sv \
+ctrlport_to_axis.sv \
+axis_spi.sv \
 bin2gray.v \
 binary_encoder.v \
 clock_div.v \
+../rfnoc/core/ctrlport_pkg.sv \
+ctrlport_spi_adrv_pkg.sv \
+ctrlport_spi_adrv.sv \
 db_control.v \
 fe_control.v \
 filter_bad_sid.v \
@@ -65,6 +71,9 @@ axil_ctrlport_master.v\
 handshake.v\
 handshake_latch.sv\
 ctrlport_to_regport.v \
+ctrlport_to_wb_i2c.v \
+ctrlport_to_wb_uart.v \
+ctrlport_to_simple_spi.sv \
 glitch_free_mux.v \
 regport_if.sv \
 ))

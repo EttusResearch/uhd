@@ -1,13 +1,13 @@
 //
-// Copyright 2021 Ettus Research, A National Instruments Brand
+// Copyright 2025 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: ctrlport_to_i2c
+// Module: ctrlport_to_wb_uart
 //
 // Description:
 //
-//   This module wraps a I2C master and provides a ControlPort interface.
+//   This module wraps a simple UART and provides a ControlPort interface.
 //
 // Parameters:
 //
@@ -18,9 +18,11 @@
 `default_nettype wire
 
 
-module ctrlport_to_wb_i2c #(
+module ctrlport_to_wb_uart #(
   parameter BASE_ADDRESS = 0,
-  parameter REG_STRIDE_SIZE = 1
+  parameter REG_STRIDE_SIZE = 1,
+  parameter CLKDIV_DEFAULT = 0,
+  parameter RX_SIZE = 8
 ) (
   //---------------------------------------------------------------
   // ControlPort Slave
@@ -39,35 +41,34 @@ module ctrlport_to_wb_i2c #(
   output reg  [31:0] s_ctrlport_resp_data    = 0,
 
   //---------------------------------------------------------------
-  // I2C signals
+  // UART signals
   //---------------------------------------------------------------
-  // i2c clock line
-  input  wire scl_pad_i,       // SCL-line input
-  output wire scl_pad_o,       // SCL-line output
-  output wire scl_pad_en_o,    // SCL-line output enable (active low)
 
-  // i2c data line
-  input  wire sda_pad_i,       // SDA-line input
-  output wire sda_pad_o,       // SDA-line output
-  output wire sda_pad_en_o     // SDA-line output enable (active low)
+  input  wire uart_rx,
+  output wire uart_tx
 );
 
   `include "../rfnoc/core/ctrlport.vh"
-  `include "../wishbone/i2c_master.vh"
 
   //---------------------------------------------------------------
-  // Translating CtrlPort <-> Wishbone I2C core
+  // Translating CtrlPort <-> Wishbone UART core
   //---------------------------------------------------------------
 
   reg         wb_cyc_i;         // Active bus cycle
   reg         wb_we_i  = 1'b0;  // Write access
-  reg  [ 4:0] wb_adr_i = 5'b0;
+  reg  [ 4:0] wb_adr_i = 3'b0;
   reg  [31:0] wb_dat_i = 32'b0;
   wire        wb_ack_o;
   wire [31:0] wb_dat_o;
 
-  // Check for address to be in range [base_addr..base_addr+8*stride)
-  localparam REG_WINDOW_SIZE = 8*REG_STRIDE_SIZE;
+  localparam SUART_CLKDIV = 0;
+  localparam SUART_TXLEVEL = 1;
+  localparam SUART_RXLEVEL = 2;
+  localparam SUART_TXCHAR = 3;
+  localparam SUART_RXCHAR = 4;
+
+  // Check for address to be in range [base_addr..base_addr+5*stride)
+  localparam REG_WINDOW_SIZE = 5*REG_STRIDE_SIZE;
 
   wire address_in_range = (s_ctrlport_req_addr >= BASE_ADDRESS) &&
                           (s_ctrlport_req_addr < BASE_ADDRESS + REG_WINDOW_SIZE);
@@ -95,7 +96,8 @@ module ctrlport_to_wb_i2c #(
           wb_cyc_i <= 1'b0;
           s_ctrlport_resp_ack  <= 1'b1;
           s_ctrlport_resp_data <= wb_dat_o;
-          //removed error condition since there is no error signal in i2c master
+          //removed error condition since there is no error signal in UART
+          //core
           s_ctrlport_resp_status <= CTRL_STS_OKAY;
         end
 
@@ -109,20 +111,20 @@ module ctrlport_to_wb_i2c #(
           wb_dat_i <= s_ctrlport_req_data;
         end
         case (s_ctrlport_req_addr)
-          BASE_ADDRESS + WB_PRER_LO * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_PRER_LO;
+          BASE_ADDRESS + SUART_CLKDIV * REG_STRIDE_SIZE: begin
+            wb_adr_i = SUART_CLKDIV;
           end
-          BASE_ADDRESS + WB_PRER_HI * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_PRER_HI;
+          BASE_ADDRESS + SUART_TXLEVEL * REG_STRIDE_SIZE: begin
+            wb_adr_i = SUART_TXLEVEL;
           end
-          BASE_ADDRESS + WB_CTR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_CTR;
+          BASE_ADDRESS + SUART_RXLEVEL * REG_STRIDE_SIZE: begin
+            wb_adr_i = SUART_RXLEVEL;
           end
-          BASE_ADDRESS + WB_TXR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_TXR;
+          BASE_ADDRESS + SUART_TXCHAR * REG_STRIDE_SIZE: begin
+            wb_adr_i = SUART_TXCHAR;
           end
-          BASE_ADDRESS + WB_CR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_CR;
+          BASE_ADDRESS + SUART_RXCHAR * REG_STRIDE_SIZE: begin
+            wb_adr_i = SUART_RXCHAR;
           end
 
         endcase
@@ -136,25 +138,25 @@ module ctrlport_to_wb_i2c #(
           wb_we_i <= 1'b0;
 
           case (s_ctrlport_req_addr)
-            BASE_ADDRESS + WB_PRER_LO * REG_STRIDE_SIZE: begin
-              wb_adr_i <= WB_PRER_LO;
+            BASE_ADDRESS + SUART_CLKDIV * REG_STRIDE_SIZE: begin
+              wb_adr_i <= SUART_CLKDIV;
             end
-            BASE_ADDRESS + WB_PRER_HI * REG_STRIDE_SIZE: begin
-              wb_adr_i <= WB_PRER_HI;
+            BASE_ADDRESS + SUART_TXLEVEL * REG_STRIDE_SIZE: begin
+              wb_adr_i <= SUART_TXLEVEL;
             end
-            BASE_ADDRESS + WB_CTR * REG_STRIDE_SIZE: begin
-              wb_adr_i <= WB_CTR;
+            BASE_ADDRESS + SUART_RXLEVEL * REG_STRIDE_SIZE: begin
+              wb_adr_i <= SUART_RXLEVEL;
             end
-            BASE_ADDRESS + WB_RXR * REG_STRIDE_SIZE: begin
-              wb_adr_i = WB_RXR;
+            BASE_ADDRESS + SUART_TXCHAR * REG_STRIDE_SIZE: begin
+              wb_adr_i = SUART_TXCHAR;
             end
-            BASE_ADDRESS + WB_SR * REG_STRIDE_SIZE: begin
-              wb_adr_i = WB_SR;
+            BASE_ADDRESS + SUART_RXCHAR * REG_STRIDE_SIZE: begin
+              wb_adr_i = SUART_RXCHAR;
             end
             // Respond with 0
             default: begin
-                s_ctrlport_resp_ack <= 1'b1;
-                s_ctrlport_resp_data <= 'b0;
+              s_ctrlport_resp_ack <= 1'b1;
+              s_ctrlport_resp_data <= 'b0;
             end
 
           endcase
@@ -163,27 +165,25 @@ module ctrlport_to_wb_i2c #(
     end
   end
 
-  //wishbone-based i2c core
-  i2c_master_top #(
-    .ARST_LVL(1)
-  ) i2c_master (
-    .wb_clk_i(ctrlport_clk),
-    .wb_rst_i(ctrlport_rst),
-    .arst_i(1'b0),
-    .wb_adr_i(wb_adr_i),
-    .wb_dat_i(wb_dat_i),
-    .wb_dat_o(wb_dat_o),
-    .wb_we_i(wb_we_i),
-    .wb_stb_i(wb_cyc_i),
-    .wb_cyc_i(wb_cyc_i),
-    .wb_ack_o(wb_ack_o),
-    .wb_inta_o(),
-    .scl_pad_i(scl_pad_i),
-    .scl_pad_o(scl_pad_o),
-    .scl_padoen_o(scl_pad_en_o),
-    .sda_pad_i(sda_pad_i),
-    .sda_pad_o(sda_pad_o),
-    .sda_padoen_o(sda_pad_en_o)
+  //wishbone-based UART core
+  // Makin default baud
+  simple_uart #(
+    .CLKDIV_DEFAULT(CLKDIV_DEFAULT),
+    .RX_SIZE(RX_SIZE)
+  ) simple_uart_i (
+    .clk_i(ctrlport_clk),
+    .rst_i(ctrlport_rst),
+    .adr_i(wb_adr_i),
+    .dat_i(wb_dat_i),
+    .dat_o(wb_dat_o),
+    .we_i(wb_we_i),
+    .stb_i(wb_cyc_i),
+    .cyc_i(wb_cyc_i),
+    .ack_o(wb_ack_o),
+    .rx_int_o(),
+    .tx_int_o(),
+    .tx_o(uart_tx),
+    .rx_i(uart_rx)
   );
 
 endmodule
