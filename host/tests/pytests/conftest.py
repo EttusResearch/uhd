@@ -1,23 +1,22 @@
 import os
-import psutil
 import re
 import shlex
 import subprocess
 import time
+from collections import namedtuple
 
 import parse_benchmark_rate
+import psutil
 import pytest
 import run_benchmark_rate
 import util_test_length
-
-from collections import namedtuple
-
 
 dut_type_list = [
     "N310",
     "N320",
     "B206",
     "B210",
+    "B310",
     "E320",
     "X310",
     "X310_TwinRx",
@@ -60,9 +59,7 @@ def run_remote_rx():
         pkt_capture_proc = subprocess.Popen(
             pkt_capture_proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        proc = subprocess.run(
-            proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        proc = subprocess.run(proc_params, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         # Send stop signal (CTRL + C) after remote streaming process has ended
         poll = pkt_capture_proc.poll()
         if poll is None:
@@ -96,9 +93,7 @@ def run_remote_rx():
 
         # Note: Status messages of tcpdump are written to stderr
         pkt_capture_err_print = pkt_capture_proc.stderr.read().decode("ASCII")
-        match = re.search(
-            f"tcpdump: listening on {host_interface}", pkt_capture_err_print
-        )
+        match = re.search(f"tcpdump: listening on {host_interface}", pkt_capture_err_print)
         if match is None:
             if stop_on_error:
                 msg = "Exception occurred while running tcpdump\n"
@@ -250,9 +245,7 @@ def iterate_benchmark(run_benchmark, threshold, collect_system_info):
     def _iterate_benchmark(path, iterations, extraruns, benchmark_rate_params):
         # extract the parameter "use_dpdk" from the benchmark_rate_params for later evaluation
         args_dict = dict(
-            pair.split("=")
-            for pair in benchmark_rate_params["args"].split(",")
-            if "=" in pair
+            pair.split("=") for pair in benchmark_rate_params["args"].split(",") if "=" in pair
         )
         use_dpdk = args_dict.get("use_dpdk", 0) == 1
         for key, val in benchmark_rate_params.items():
@@ -269,10 +262,7 @@ def iterate_benchmark(run_benchmark, threshold, collect_system_info):
             single_pass = (
                 result.dropped_samps <= threshold["single_run"].dropped_samps
                 and result.overruns <= threshold["single_run"].overruns
-                and (
-                    result.underruns <= threshold["single_run"].underruns
-                    or not use_dpdk
-                )
+                and (result.underruns <= threshold["single_run"].underruns or not use_dpdk)
                 and result.late_commands <= threshold["single_run"].late_commands
                 and result.rx_timeouts <= threshold["single_run"].rx_timeouts
                 and result.rx_seq_errs <= threshold["single_run"].rx_seq_errs
@@ -322,9 +312,7 @@ def collect_system_info(request):
             args_dict = {f"args_{k}": v for k, v in args_dict.items()}
             test_results_dict.update(args_dict)
             # Replace commata with plus sign for csv output
-            params = {
-                k: v.replace(",", "+") for k, v in params.items() if isinstance(v, str)
-            }
+            params = {k: v.replace(",", "+") for k, v in params.items() if isinstance(v, str)}
             test_results_dict.update(params)
 
         # Add system information to the dictionary
@@ -334,9 +322,7 @@ def collect_system_info(request):
             if os.path.exists(state_info_path) and os.path.isfile(state_info_path):
                 try:
                     module_name = os.path.splitext(os.path.basename(state_info_path))[0]
-                    spec = importlib.util.spec_from_file_location(
-                        module_name, state_info_path
-                    )
+                    spec = importlib.util.spec_from_file_location(module_name, state_info_path)
                     state_info_module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(state_info_module)
                 except Exception as e:
@@ -411,6 +397,7 @@ def pytest_addoption(parser):
         "--second_addr", type=str, nargs="?", help="address of second 10 GbE interface"
     )
     parser.addoption("--name", type=str, nargs="?", help="name of B2xx device")
+    parser.addoption("--resource", type=str, nargs="?", help="PCIe resource of B310 device")
     parser.addoption(
         "--mgmt_addr",
         type=str,

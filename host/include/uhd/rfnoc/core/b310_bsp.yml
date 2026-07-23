@@ -1,0 +1,74 @@
+#
+# Copyright 2025 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+type: b310
+type_id: B310
+family: 7SERIES
+
+parameters:
+  NUM_PORTS_PER_RADIO: 2
+  ENABLE_DRAM: True
+  NUM_DRAM_CHANS: 2
+  PCIE_LINK_WIDTH: 4
+
+checks:
+  - condition: ${ (parameters['NUM_PORTS_PER_RADIO'] == 2) }
+    message: |
+      The NUM_PORTS_PER_RADIO value is not valid. The default values of NUM_PORTS_PER_RADIO will
+      be correct, so please remove the NUM_PORTS_PER_RADIO parameter from the image core file.
+    severity: error
+
+make_defs:
+  - ENABLE_DRAM=${1 if parameters['ENABLE_DRAM'] else 0}
+  - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
+  - G2X${parameters['PCIE_LINK_WIDTH']}=1
+
+transports:
+  - name: pcie
+    type: PCIe
+    width: 128
+
+clocks:
+  - name: radio
+  - name: ce
+  - name: dram
+
+io_ports:
+  ctrlport_radio0:
+    type: ctrlport
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio0_\2
+  time:
+    type: timekeeper
+    drive: broadcaster
+  radio0:
+    type: radio
+    drive: master
+    parameters:
+      spc: 1
+      num_ports: ${ config.device.parameters['NUM_PORTS_PER_RADIO'] }
+    rename:
+      pattern: (.*)
+      repl: \1_radio0
+  dram:
+    type: axi4_mm
+    drive: slave
+  serial:
+    type: device_dna
+    drive: listener
+    parameters:
+      width: 64
+
+default_secure_image_core:
+    modules:
+      device_dna:
+        block_desc: 'device_dna.yml'
+        parameters:
+          device_type: "7SERIES"
+    connections:
+    - { srcblk: device_dna, srcport: device_dna, dstblk: _device_, dstport: serial}

@@ -1843,3 +1843,204 @@ ADI_API void adrv903x_CpuErrorDebugCheck(adi_adrv903x_Device_t* const device)
 
     (void) recoveryAction;
 }
+
+ADI_API adi_adrv903x_ErrAction_e adrv903x_CpuCmdSendNoResponseParse(adi_adrv903x_Device_t* const    device,
+                                                                    const adi_adrv903x_CpuType_e    cpuType,
+                                                                    const adrv903x_LinkId_e         linkId,
+                                                                    const adrv903x_CpuCmdId_t       cmdId,
+                                                                    void* const                     pCmdPayload,
+                                                                    const size_t                    cmdPayloadSz,
+                                                                    void* const                     pRespPayload,
+                                                                    const size_t                    respPayloadSz,
+                                                                    adrv903x_CpuCmdStatus_e* const  status)
+{
+    /* Union to determine maximum buffer size needed for both CPU command and response */
+    typedef union
+    {
+        uint8_t maxCmdBuf[ADRV903X_CPU_CMD_MAX_SIZE_BYTES];
+        uint8_t maxCmdRspBuf[ADRV903X_CPU_CMD_RESP_MAX_SIZE_BYTES];
+    } adrv903x_MaxCpuCmdBufSz_t;
+
+    adi_adrv903x_ErrAction_e recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    adrv903x_CpuCmd_t *txCmd = NULL;
+    ADI_PLATFORM_LARGE_ARRAY_ALLOC(uint8_t, cmdBuf, sizeof(adrv903x_MaxCpuCmdBufSz_t));
+
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+
+    ADI_FUNCTION_ENTRY_LOG(&device->common, ADI_HAL_LOG_API_PRIV);
+
+    /* Initialize the caller's status parameter, if applicable. */
+    if (status != NULL)
+    {
+        *status = ADRV903X_CPU_CMD_STATUS_GENERIC;
+    }
+
+    /* If the command payload size is nonzero, verify the pointer is not null */
+    if (cmdPayloadSz != 0)
+    {
+        ADI_ADRV903X_NULL_PTR_REPORT_RETURN(&device->common, pCmdPayload);
+    }
+    else if (pCmdPayload != NULL)
+    {
+        /* If the command payload size is zero, pointer must be null */
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, pCmdPayload, "pCmdPayload must be NULL if cmdPayloadSz is 0");
+        return recoveryAction;
+    }
+
+    /* If the command response payload size is nonzero, verify the pointer is not null */
+    if (respPayloadSz != 0)
+    {
+        ADI_ADRV903X_NULL_PTR_REPORT_RETURN(&device->common, pRespPayload);
+    }
+    else if (pRespPayload != NULL)
+    {
+        /* If the command response payload size is zero, pointer must be null */
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, pRespPayload, "pRespPayload must be NULL if respPayloadSz is 0");
+        return recoveryAction;
+    }
+
+    /* Verify cpuType */
+    if ((cpuType >= ADI_ADRV903X_CPU_TYPE_MAX_RADIO) ||
+            (cpuType <= ADI_ADRV903X_CPU_TYPE_UNKNOWN))
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, cpuType, "Invalid CPU type");
+        return recoveryAction;
+    }
+
+    /* Verify cmdId */
+    if (cmdId >= ADRV903X_CPU_CMD_ID_NUM_CMDS)
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, cmdId, "Invalid command ID");
+        return recoveryAction;
+    }
+
+    /* Verify linkId */
+    if ((linkId >= ADRV903X_LINK_ID_MAX) || (linkId <= ADRV903X_LINK_ID_UNKNOWN))
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, linkId, "Invalid link ID");
+        return recoveryAction;
+    }
+
+    /* Verify command payload size is acceptable */
+    if (cmdPayloadSz > (sizeof(adrv903x_MaxCpuCmdBufSz_t) - sizeof(adrv903x_CpuCmd_t)))
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, cmdPayloadSz, "cmdPayloadSz is too large for command buffer.");
+        return recoveryAction;
+    }
+
+    /* Verify response payload size is acceptable */
+    if (respPayloadSz > (sizeof(adrv903x_MaxCpuCmdBufSz_t) - sizeof(adrv903x_CpuCmdResp_t)))
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, respPayloadSz, "respPayloadSz is too large for command buffer.");
+        return recoveryAction;
+    }
+
+    /* Overlay the command header and response header on the buffer */
+    txCmd = (adrv903x_CpuCmd_t*)cmdBuf;
+
+    /* Copy the caller's payload to the correct location. Size is verified above. */
+    if (cmdPayloadSz != 0)
+    {
+        ADI_LIBRARY_MEMCPY((void*)((uint8_t*)txCmd + sizeof(adrv903x_CpuCmd_t)), pCmdPayload, cmdPayloadSz) ;
+    }
+
+    /* Send the command */
+    recoveryAction = adrv903x_CpuCmdWriteNoWait(device, cpuType, linkId, cmdId, txCmd, cmdPayloadSz);
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Failed to send command to CPU");
+        goto debug;
+    }
+
+    /* We are intentionally not waiting for the CPU response since we are avoiding reading/polling */
+    /* This could lead us to missing errors from the CPU if those commands fail. */
+
+    return recoveryAction;
+
+debug:
+    /* Disable Error Clearing for Private API Call Case e.g. CpuPing */
+    ++device->common.publicCnt;
+
+    adrv903x_CpuErrorDebugCheck(device);
+
+    --device->common.publicCnt;
+
+    return recoveryAction;
+}
+
+ADI_API adi_adrv903x_ErrAction_e adrv903x_CpuCmdWriteNoWait(adi_adrv903x_Device_t* const    device,
+                                                            const adi_adrv903x_CpuType_e    cpuType,
+                                                            const adrv903x_LinkId_e         linkId,
+                                                            const adrv903x_CpuCmdId_t       cmdId,
+                                                            adrv903x_CpuCmd_t* const        cmd,
+                                                            const uint32_t                  payloadSize)
+{
+    adi_adrv903x_ErrAction_e recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    adi_adrv903x_CpuAddr_t *cpuAddr = NULL;
+
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+
+    ADI_FUNCTION_ENTRY_LOG(&device->common, ADI_HAL_LOG_API_PRIV);
+
+    ADI_ADRV903X_NULL_PTR_REPORT_RETURN(&device->common, cmd);
+
+    if ((cpuType == ADI_ADRV903X_CPU_TYPE_0) ||
+        (cpuType == ADI_ADRV903X_CPU_TYPE_1))
+    {
+        /* check for valid cmd id */
+        if (cmdId >= ADRV903X_CPU_CMD_ID_NUM_CMDS)
+        {
+            recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+            ADI_PARAM_ERROR_REPORT(&device->common,
+                                   recoveryAction,
+                                   cmdId,
+                                   "Invalid Command ID Provided");
+            return recoveryAction;
+        }
+    }
+    else
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common,
+                               recoveryAction,
+                               cpuType,
+                               "Invalid CPU Type Provided");
+        return recoveryAction;
+    }
+
+    /* We are intentionally not waiting for the CPU to not be busy to avoid reading/polling */
+    /* Instead the caller must handle the timing before calling this function */
+
+    cpuAddr = &(device->devStateInfo.cpu.cpuAddr[cpuType]);
+    ADI_ADRV903X_NULL_PTR_REPORT_RETURN(&device->common, cpuAddr);
+
+    ++cpuAddr->curTransactionId[linkId];
+    cmd->cmdId = ADRV903X_HTOCS(cmdId);
+    cmd->tId = ADRV903X_HTOCS(cpuAddr->curTransactionId[linkId]);
+
+    recoveryAction = adrv903x_CpuMailboxBufferWrite(device,
+                                                    cpuType,
+                                                    linkId,
+                                                    (const uint8_t *)cmd,
+                                                    payloadSize+sizeof(adrv903x_CpuCmd_t));
+    if(recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_API_ERROR_REPORT(&device->common, recoveryAction, "CPU Mailbox Buffer Write Issue");
+        return recoveryAction;
+    }
+
+    if ((cpuType == ADI_ADRV903X_CPU_TYPE_0) ||
+           (cpuType == ADI_ADRV903X_CPU_TYPE_1))
+    {
+        /* Write to CPU's Mailbox CMD bitfield (armX_spiX_command) to notify it of incoming command. */
+        ADRV903X_SPIWRITEBYTE_RETURN("CPU_COMMAND", cpuAddr->cmdAddr, linkId, recoveryAction);
+    }
+    return recoveryAction;
+}

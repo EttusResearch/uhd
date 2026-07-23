@@ -973,5 +973,22 @@ ADI_API adi_adrv903x_ErrAction_e  adi_adrv903x_TxPfirCoeffsRead(adi_adrv903x_Dev
                                                                 const adi_adrv903x_TxChannels_e txChannel,
                                                                 adi_adrv903x_TxPfirCoeff_t* const pfirCoeffs);
 
+ /**
+ * \brief Version of adi_adrv903x_TxNcoShifterSet which avoids any reads. Sets the specified Tx Mix NCO to the given frequency, band number, and enable state in the adi_adrv903x_TxNcoMixConfig_t structure.
+ *
+ * \pre This function can be called after the CPU has been initialized.
+ *
+ * \dep_begin
+ * \dep{device->common.devHalInfo}
+ * \dep_end
+ *
+ * \param[in,out] device Context variable - Pointer to the ADRV903X device data structure containing settings
+ * \param[in] txNcoConfig Pointer to the TX NCO Mix configuration settings
+ *
+ * \retval adi_adrv903x_ErrAction_e - ADI_ADRV903X_ERR_ACT_NONE if Successful
+ */
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_TxNcoShifterSetNoReads(adi_adrv903x_Device_t* const device,
+                                                                const adi_adrv903x_TxNcoMixConfig_t * const txNcoConfig);
+
 #endif /* _ADI_ADRV903X_TX_H_ */
 

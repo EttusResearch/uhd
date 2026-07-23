@@ -110,8 +110,6 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuImageWrite(adi_adrv903x_Device_
 
     ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
 
-    ADI_ADRV903X_API_ENTRY(&device->common);
-
     ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, binary, cleanup);
 
      /* Verify cpuType */
@@ -243,23 +241,22 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuImageWrite(adi_adrv903x_Device_
 
     address[0U] = cpuAddr->progStartAddr + byteOffset;
 
-            recoveryAction = adi_adrv903x_RegistersByteWrite(device,
-                                                         NULL,
-                                                         address[0],
-                                                         binary,
-                                                         byteCount);
+    recoveryAction = adi_adrv903x_RegistersByteWrite(device,
+                                                    NULL,
+                                                    address[0],
+                                                    binary,
+                                                    byteCount);
 
-        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
-        {
-            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Register Write Issue");
-            goto cleanup;
-        }
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Register Write Issue");
+        goto cleanup;
+    }
 
         /* mark the image loaded */
     cpuAddr->enabled = ADI_TRUE;
-
 cleanup:
-    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
+    return recoveryAction;
 }
 
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuProfileWrite(adi_adrv903x_Device_t* const    device,
@@ -272,8 +269,6 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuProfileWrite(adi_adrv903x_Devic
     uint32_t profileByteCount = 0U;
 
     ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
-
-    ADI_ADRV903X_API_ENTRY(&device->common);
 
     ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, binary, cleanup);
 
@@ -365,8 +360,8 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuProfileWrite(adi_adrv903x_Devic
             ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Register Write Issue");
             goto cleanup;
         }
-    cleanup :
-    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
+cleanup:
+    return recoveryAction;
 }
 
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuStart(adi_adrv903x_Device_t* const device)
@@ -1454,8 +1449,11 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_HealthMonitorCpuStatusGet(adi_adrv
                                                                         adi_adrv903x_HealthMonitorCpuStatus_t* const    healthMonitorStatus)
 {
         static const uint32_t CPU_HEALTH_STATUS_ADDR_MASK = 0xFFFFFFFFU;
-    const uint32_t BYTE_COUNT = sizeof(adi_adrv903x_HealthMonitorCpuStatus_t);
-    const uint32_t WORD_COUNT = ((BYTE_COUNT + 3U) / 4U);
+// CHANGE FROM ADI: Needed to change from ADI implementation since ADI code didn't compile on Windows.
+#define BYTE_COUNT (sizeof(adi_adrv903x_HealthMonitorCpuStatus_t))
+#define WORD_COUNT ((BYTE_COUNT + 3U) / 4U)
+    //const uint32_t BYTE_COUNT = sizeof(adi_adrv903x_HealthMonitorCpuStatus_t);
+    //const uint32_t WORD_COUNT = ((BYTE_COUNT + 3U) / 4U);
     uint32_t readData[WORD_COUNT];
     ADI_LIBRARY_MEMSET(readData, 0, 4U * WORD_COUNT);
 
@@ -2072,4 +2070,119 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_BreakpointGlobalHaltMaskGet(adi_ad
 cleanup :
     ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 
+}
+
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuControlCmdExecNoParse(adi_adrv903x_Device_t* const    device,
+                                                                       const uint32_t                  objId,
+                                                                       const uint16_t                  cpuCmd,
+                                                                       const adi_adrv903x_Channels_e   channel,
+                                                                       const uint8_t                   cpuCtrlData[],
+                                                                       const uint32_t                  lengthSet,
+                                                                       uint32_t* const                 lengthResp,
+                                                                       uint8_t                         ctrlResp[],
+                                                                       const uint32_t                  lengthGet)
+{
+    adi_adrv903x_ErrAction_e                recoveryAction                                      = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    char                                    txBuf[sizeof(adrv903x_CpuCmd_SetCtrlMaxSize_t)];
+    char                                    rxBuf[sizeof(adrv903x_CpuCmd_SetCtrlRespMaxSize_t)];
+    adrv903x_CpuCmd_SetCtrl_t* const        setInfo                                             = (adrv903x_CpuCmd_SetCtrl_t*)&txBuf;
+    adrv903x_CpuCmd_SetCtrlResp_t* const    cmdRsp                                              = (adrv903x_CpuCmd_SetCtrlResp_t*)&rxBuf;
+    adrv903x_CpuCmdStatus_e                 cmdStatus                                           = ADRV903X_CPU_CMD_STATUS_GENERIC;
+    adrv903x_CpuErrorCode_e                 cpuErrorCode                                        = ADRV903X_CPU_SYSTEM_SIMULATED_ERROR;
+    uint32_t                                fwChannel                                           = 0U;
+    adi_adrv903x_CpuType_e                  cpuType                                             = ADI_ADRV903X_CPU_TYPE_UNKNOWN;
+
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+    ADI_ADRV903X_API_ENTRY(&device->common);
+    if (lengthSet > 0U)
+    {
+        ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, cpuCtrlData, cleanup);
+    }
+    ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, ctrlResp, cleanup);
+    ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, lengthResp, cleanup);
+
+    if (objId > 0xFFU)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, objId, "Ctrl command - Invalid Object ID.");
+        goto cleanup;
+    }
+
+    /* Allow lengthSet 0 for some use cases (RX_QEC) */
+    if (lengthSet > MAX_CTRL_DATA_SIZE)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, lengthSet, "Ctrl command length is greater than MAX_CTRL_DATA_SIZE");
+        goto cleanup;
+    }
+
+    if (lengthGet <= 0U)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, lengthGet, "Ctrl command response buffer size must be greater than 0");
+        goto cleanup;
+    }
+
+    /* Get the CPU that is responsible for the requested channel */
+    recoveryAction = adrv903x_CpuChannelMappingGet(device,
+                                                   channel,
+                                                   (adrv903x_CpuObjectId_e)objId,
+                                                   &cpuType);
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, channel, "Invalid channelMask provided");
+        goto cleanup;
+    }
+    else
+    {
+        fwChannel = adrv903x_ChannelToChannelId(channel);
+    }
+
+    ADI_LIBRARY_MEMSET(&txBuf[0U], 0, sizeof(txBuf));
+    ADI_LIBRARY_MEMSET(&rxBuf[0U], 0, sizeof(rxBuf));
+
+    /* Prepare the command payload */
+    setInfo->objId = ADRV903X_HTOCL(objId);
+    setInfo->ctrlCmd = ADRV903X_HTOCS(cpuCmd);
+    setInfo->channelNum = ADRV903X_HTOCL(fwChannel);
+    setInfo->length = ADRV903X_HTOCS((uint16_t)lengthSet);
+
+    if (lengthSet > 0U)
+    {
+        ADI_LIBRARY_MEMCPY((void*)((uint8_t*)setInfo + sizeof(adrv903x_CpuCmd_SetCtrl_t)), cpuCtrlData, lengthSet);
+    }
+
+    /* Send command and receive response.
+     * Since we don't know how much data the CPU will send back,
+     * we have to request MAX_CONFIG_DATA_SIZE bytes. We will only
+     * copy out cmdRsp->length bytes of it below.
+     */
+    recoveryAction = adrv903x_CpuCmdSendNoResponseParse(device,
+                                                        cpuType,
+                                                        ADRV903X_LINK_ID_0,
+                                                        ADRV903X_CPU_CMD_ID_SET_CTRL,
+                                                        (void*)setInfo,
+                                                        sizeof(adrv903x_CpuCmd_SetCtrl_t) + lengthSet,
+                                                        (void*)cmdRsp,
+                                                        sizeof(adrv903x_CpuCmd_SetCtrlResp_t) + MAX_CONFIG_DATA_SIZE,
+                                                        &cmdStatus);
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_ADRV903X_CPU_CMD_RESP_CHECK_GOTO(cmdRsp->cmdStatus, cmdStatus, cpuErrorCode, recoveryAction, cleanup);
+    }
+
+    /* Read the response data from the CPU, if the caller's buffer can hold it. */
+    *lengthResp = ADRV903X_CTOHS(cmdRsp->length);
+    if (*lengthResp <= lengthGet)
+    {
+        ADI_LIBRARY_MEMSET(ctrlResp, 0, lengthGet);
+        ADI_LIBRARY_MEMCPY(ctrlResp, (void*)((uint8_t*)cmdRsp + sizeof(adrv903x_CpuCmd_SetCtrlResp_t)), *lengthResp);
+    }
+    else
+    {
+        *lengthResp = 0U;
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, lengthGet, "Ctrl Cmd Response size is greater than response buffer size");
+        goto cleanup;
+    }
+
+cleanup:
+    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 }

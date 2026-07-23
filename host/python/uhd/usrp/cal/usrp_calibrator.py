@@ -376,6 +376,19 @@ class B200Calibrator(USRPCalibratorBase):
         self.ref_gain = 60
 
 
+class B3xxCalibrator(USRPCalibratorBase):
+    """B3xx calibrator class."""
+
+    mboard_ids = ("B310",)
+    # Choosing 3.84 MHz: It is a small rate, but carries enough bandwidth to
+    # receive a tone. It's 1/32 the default master clock rate (122.88e6), which
+    # means it'll engage max halfbands.
+    default_rate = 3.84e6
+    # B3xx non-timed tunes are currently very poke-intensive, so we give it some
+    # time to clear the command queue
+    tune_settling_time = 0.5
+
+
 class X300Calibrator(USRPCalibratorBase):
     """X300/X310 calibration class.
 

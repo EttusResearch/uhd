@@ -1126,4 +1126,21 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_GpioCtrlRxTxMapClear(adi_adrv903x_
                                                                    const adi_adrv903x_TxRxCtrlGpioMap_t txRxCtrlGpioMap[],
                                                                    const uint32_t numGpios);
 
+/**
+* \brief Version of adi_adrv903x_LoFrequencySet which removes any reads. Sets the RF LO settings for the desired LO.
+*
+* \pre This function can be called after the CPU has been initialized.
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param[in,out] device Context variable - Pointer to the ADRV903X device data structure containing settings
+* \param[in] loConfig Pointer to the LO config settings
+*
+* \retval adi_adrv903x_ErrAction_e - ADI_ADRV903X_ERR_ACT_NONE if Successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_LoFrequencySetNoReads(adi_adrv903x_Device_t* const device,
+                                                                    const adi_adrv903x_LoConfig_t* const loConfig);
+
 #endif /* _ADI_ADRV903X_RADIOCTRL_H_ */

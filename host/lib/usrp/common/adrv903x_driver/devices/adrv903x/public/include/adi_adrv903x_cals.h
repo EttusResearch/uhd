@@ -568,4 +568,19 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_DigDcOffsetCfgSet(adi_adrv903x_Dev
  */
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_DigDcOffsetCfgGet(adi_adrv903x_Device_t* const                    device,
                                                                 adi_adrv903x_CpuCmd_GetDcOffsetResp_t* const    dcOffSetCfg);
+
+/**
+* \brief Reset Tx QEC, doesn't wait for CPU ready to send command, so caller must ensure CPU is ready before calling this function.
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param[in,out] device Context variable -Context variable -A pointer to the device settings structure
+* \param[in] txQecReset pointer with special Tx QEC channel mask and reset type
+*
+* \retval adi_adrv903x_ErrAction_e, ADI_ADRV903X_ERR_ACT_NONE if successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_TxQecResetNoReads(adi_adrv903x_Device_t* const           device,
+                                                                const adi_adrv903x_TxQecReset_t* const txQecReset);
 #endif /* _ADI_ADRV903X_CALS_H_ */

@@ -4022,3 +4022,58 @@ cleanup:
     ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 }
 
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_TxNcoShifterSetNoReads(adi_adrv903x_Device_t* const device,
+                                                                     const adi_adrv903x_TxNcoMixConfig_t * const txNcoConfig)
+{
+        adi_adrv903x_ErrAction_e        recoveryAction  = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    adi_adrv903x_TxNcoMixConfig_t   txNcoInfo;
+    adrv903x_TxNcoMixConfigResp_t   cmdRsp;
+    adrv903x_CpuCmdStatus_e         cmdStatus       = ADRV903X_CPU_CMD_STATUS_GENERIC;
+    adrv903x_CpuErrorCode_e         cpuErrorCode    = ADRV903X_CPU_SYSTEM_SIMULATED_ERROR;
+    uint32_t                        cpuTypeIdx      = 0U;
+
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+    ADI_ADRV903X_API_ENTRY(&device->common);
+    ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, txNcoConfig, cleanup);
+
+    ADI_LIBRARY_MEMSET(&txNcoInfo, 0, sizeof(txNcoInfo));
+    ADI_LIBRARY_MEMSET(&cmdRsp, 0, sizeof(cmdRsp));
+
+    if (txNcoConfig->chanSelect == 0U)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, txNcoConfig->chanSelect, "Invalid chanSelect provided.");
+        goto cleanup;
+    }
+
+    if (txNcoConfig->enable > 1U)
+    {
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, txNcoConfig->enable, "Invalid enable provided.");
+        goto cleanup;
+    }
+
+    /* Prepare the command payload */
+    txNcoInfo.chanSelect   = (uint8_t) txNcoConfig->chanSelect;
+    txNcoInfo.enable       = (uint8_t) txNcoConfig->enable;
+    txNcoInfo.phase        = (uint32_t) ADRV903X_HTOCL(txNcoConfig->phase);
+    txNcoInfo.frequencyKhz = (int32_t) ADRV903X_HTOCL(txNcoConfig->frequencyKhz);
+
+    /* We aren't looping through the CPUs, our channels are both on CPU0. */
+
+    /* Send command and receive response */
+    recoveryAction = adrv903x_CpuCmdSendNoResponseParse(device,
+                                                        (adi_adrv903x_CpuType_e)cpuTypeIdx,
+                                                        ADRV903X_LINK_ID_0,
+                                                        ADRV903X_CPU_CMD_ID_SET_TX_MIX_NCO,
+                                                        (void*)&txNcoInfo,
+                                                        sizeof(txNcoInfo),
+                                                        (void*)&cmdRsp,
+                                                        sizeof(cmdRsp),
+                                                        &cmdStatus);
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_ADRV903X_CPU_CMD_RESP_CHECK_GOTO(cmdRsp.status, cmdStatus, cpuErrorCode, recoveryAction, cleanup);
+    }
+
+cleanup :
+    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
+}

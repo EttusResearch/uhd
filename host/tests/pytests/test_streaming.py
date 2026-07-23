@@ -139,6 +139,28 @@ def _generate_b210_test_cases(metafunc, test_length):
     parametrize_test_length(metafunc, test_length, fast_params, stress_params)
 
 
+def _generate_b310_test_cases(metafunc, test_length):
+    test_cases = [
+        # fmt: off
+        # Test Lengths                                         dual_sfp  rate     rx_rate  rx_channels tx_rate  tx_channels tx_sample_align test case ID          # noqa: W505
+        # ---------------------------------------------------------------------------------------------------------------------------------------- # noqa: W505
+        [{Test_Length_Smoke},                     pytest.param(False,    122.88e6, 122.88e6, "0",        0,        "",         None,           id="1xRX@122.88e6")],
+        [{Test_Length_Smoke},                     pytest.param(False,    122.88e6, 122.88e6, "0,1",      0,        "",         None,           id="2xRX@122.88e6")],
+        [{Test_Length_Smoke},                     pytest.param(False,    122.88e6, 0,        "",         122.88e6, "0",        None,           id="1xTX@122.88e6")],
+        [{Test_Length_Smoke},                     pytest.param(False,    122.88e6, 0,        "",         122.88e6, "0,1",      None,           id="2xTX@122.88e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    122.88e6, 122.88e6, "0",        122.88e6, "0",        None,           id="1xTRX@122.88e6")],
+        [{Test_Length_Stress, Test_Length_Smoke}, pytest.param(False,    122.88e6, 61.44e6,  "0,1",      61.44e6,  "0,1",      None,           id="2xTRX@61.44e6")],
+        # fmt: on
+    ]
+
+    argvalues = util_test_length.select_test_cases_by_length(test_length, test_cases)
+    metafunc.parametrize(ARGNAMES_DUAL_SFP, argvalues)
+
+    fast_params = util_test_length.test_length_params(iterations=2, duration=60)
+    stress_params = util_test_length.test_length_params(iterations=2, duration=600)
+    parametrize_test_length(metafunc, test_length, fast_params, stress_params)
+
+
 def _generate_e320_test_cases(metafunc, test_length):
     test_cases = [
         # fmt: off
@@ -210,7 +232,7 @@ def _generate_x410_test_cases(metafunc, test_length, dut_fpga):
         test_cases = [
             # fmt: off
             # Test Lengths                                         dual_sfp  rate     rx_rate  rx_channels tx_rate  tx_channels  tx_sample_align test case ID                 # noqa: W505
-            # ------------------------------------------------------------------------------------------------------------------------------                  # noqa: W505 
+            # ------------------------------------------------------------------------------------------------------------------------------                  # noqa: W505
             #[{},                                      pytest.param(False,    200e6,   200e6,   "0",        0,       "",         None,           id="1x10GbE-1xRX@200e6")],  # noqa: W505
             #[{},                                      pytest.param(False,    200e6,   100e6,   "0,1",      0,       "",         None,           id="1x10GbE-2xRX@100e6")],  # noqa: W505
             #[{},                                      pytest.param(False,    200e6,   0,       "",         200e6,   "0",        None,           id="1x10GbE-1xTX@200e6")],  # noqa: W505
@@ -289,7 +311,7 @@ def pytest_generate_tests(metafunc):
 
     metafunc.parametrize("dut_type", [dut_type])
 
-    if dut_type.lower() in ["b210", "b206"]:
+    if dut_type.lower() in ["b210", "b206", "b310"]:
         argvalues_dpdk = [
             #            use_dpdk  test case ID  marks
             pytest.param(
@@ -316,6 +338,8 @@ def pytest_generate_tests(metafunc):
         _generate_b206_test_cases(metafunc, test_length)
     elif dut_type.lower() == "b210":
         _generate_b210_test_cases(metafunc, test_length)
+    elif dut_type.lower() == "b310":
+        _generate_b310_test_cases(metafunc, test_length)
     elif dut_type.lower() == "e320":
         _generate_e320_test_cases(metafunc, test_length)
     elif dut_type.lower() == "x310":
@@ -350,7 +374,7 @@ def test_streaming(
     device_args = ""
 
     # construct device args string
-    if dut_type.lower() in ["n310", "n320", "e320", "b206", "b210", "x440"]:
+    if dut_type.lower() in ["n310", "n320", "e320", "b206", "b210", "b310", "x440"]:
         device_args += f"master_clock_rate={rate},"
 
     # mpm reboot on x440 is for spurrious RF performance,
@@ -360,6 +384,8 @@ def test_streaming(
 
     if dut_type in ["B210", "B206"]:
         device_args += f"type=b200,name={pytestconfig.getoption('name')},"
+    elif dut_type.lower() in ["b310"]:
+        device_args += f"type=b3xx,resource={pytestconfig.getoption('resource')},"
     else:
         device_args += f"addr={pytestconfig.getoption('addr')},"
 
@@ -393,7 +419,7 @@ def test_streaming(
     benchmark_rate_params = {
         "args": device_args,
         "duration": duration,
-        "priority": "high",
+        "priority": "normal" if dut_type.lower() == "b310" else "high",
     }
 
     if rx_channels:

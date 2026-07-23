@@ -19,7 +19,8 @@ using namespace uhd::rfnoc;
 using namespace std::chrono_literals;
 
 namespace {
-const std::vector<std::string> SYNCHRONIZABLE_REF_SOURCES = {"gpsdo", "external"};
+const std::vector<std::string> SYNCHRONIZABLE_REF_SOURCES = {
+    "gpsdo", "external", "sync", "sync_gpsdo"};
 
 /*! Synchronize a list of timekeepers
  *

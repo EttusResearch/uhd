@@ -446,6 +446,60 @@ ADI_API adi_adrv903x_ErrAction_e adrv903x_CpuGpioGet(adi_adrv903x_Device_t* cons
 */
 ADI_API void adrv903x_CpuErrorDebugCheck(adi_adrv903x_Device_t* const device);
 
+/**
+* \brief Sends a command to a given CPU and doesn't parse or wait for the response back.
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param device  Structure pointer to the ADRV903X data structure containing settings
+* \param cpuType  ID of the desired CPU to execute this command on
+* \param linkId  ID of the desired CPU's link for the command
+* \param cmdId  ID of the command to send
+* \param pCmdPayload  Pointer to the data payload to send with this command. Optional. Set to NULL if not needed.
+* \param cmdPayloadSize Size of data payload, in bytes. Set to zero if pCmdPayload is set to NULL.
+* \param[out] pRespPayload  Pointer to buffer in which command response payload should be placed. Optional. Set to NULL if not needed.
+* \param respPayloadSz  Amount of data to copy into pRespPayload, in bytes. Set to zero if pRespPayload is set to NULL.
+* \param[out] status  Status of command response. Optional. Set to NULL if not needed.
+*
+* \retval ADI_ADRV903X_ERR_ACT_NONE if Successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adrv903x_CpuCmdSendNoResponseParse(adi_adrv903x_Device_t* const       device,
+                                                                    const adi_adrv903x_CpuType_e       cpuType,
+                                                                    const adrv903x_LinkId_e            linkId,
+                                                                    const adrv903x_CpuCmdId_t          cmdId,
+                                                                    void* const                        pCmdPayload,
+                                                                    const size_t                       cmdPayloadSz,
+                                                                    void* const                        pRespPayload,
+                                                                    const size_t                       respPayloadSz,
+                                                                    adrv903x_CpuCmdStatus_e* const     status);
+
+/**
+* \brief Low level helper function used by ADRV903X API to write CPU Command. This version of the function does not wait for the CPU to be ready.
+*
+* \pre The caller must control timing to not send commands too quickly to give the CPU time to process and be ready for the next command. 
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param device     Structure pointer to the ADRV903X data structure containing settings
+* \param cpuType    Selection of the desired CPU processor to execute this command on.
+* \param linkId     Selection of the desired Link for the command.
+* \param cmdId      To Identify a Command.
+* \param cmd        Contain command buffer.
+* \param payloadSize Number of bytes in the cmd payload
+*
+* \retval ADI_ADRV903X_ERR_ACT_NONE if Successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adrv903x_CpuCmdWriteNoWait(adi_adrv903x_Device_t* const    device,
+                                                            const adi_adrv903x_CpuType_e    cpuType,
+                                                            const adrv903x_LinkId_e         linkId,
+                                                            const adrv903x_CpuCmdId_t       cmdId,
+                                                            adrv903x_CpuCmd_t* const        cmd,
+                                                            const uint32_t                  payloadSize);
+
 #endif //CLIENT_IGNORE
 
 

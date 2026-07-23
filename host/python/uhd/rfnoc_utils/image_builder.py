@@ -38,6 +38,7 @@ BASH_EXECUTABLE = "/bin/bash"  # FIXME this should come from somewhere
 
 # Map device names to the corresponding directory under usrp3/top
 DEVICE_DIR_MAP = {
+    "b310": "b300",
     "x300": "x300",
     "x310": "x300",
     "e300": "e300",
@@ -54,6 +55,7 @@ DEVICE_DIR_MAP = {
 
 # Picks the default make target per device
 DEVICE_DEFAULTTARGET_MAP = {
+    "b310": "B310",
     "x300": "X300_HG",
     "x310": "X310_HG",
     "x410": "X410",
@@ -68,6 +70,7 @@ DEVICE_DEFAULTTARGET_MAP = {
 
 # Secure core RTL hierarchical path
 SECURE_CORE_INST_PATH = {
+    "b310": "b310_core_i/rfnoc_sandbox_i/secure_image_core_i",
     "x300": "x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i",
     "x310": "x300_core/bus_int/rfnoc_sandbox_i/secure_image_core_i",
     "e310": "e31x_core_inst/rfnoc_image_core_i/secure_image_core_i",

@@ -454,6 +454,18 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET "b310_blackout_avoidance_test.cpp"
+    INCLUDE_DIRS
+    ${UHD_SOURCE_DIR}/lib/usrp/b300
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/common
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/common/adi_error
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/common/adi_logging
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/common/adi_hal
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/devices/adrv903x/public/include
+    ${UHD_SOURCE_DIR}/lib/usrp/common/adrv903x_driver/platforms
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "ublox_msg_helper_test.cpp"
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/usrp/common/ublox_msg_helper.cpp

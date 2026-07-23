@@ -173,3 +173,12 @@ if(ENABLE_MPMD)
         )
     endif()
 endif(ENABLE_MPMD)
+
+if(ENABLE_B300)
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/adrv9032_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/adrv9032_device.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/adrv9032_manager.cpp
+    )
+    INCLUDE_SUBDIRECTORY(adrv903x_driver)
+endif(ENABLE_B300)

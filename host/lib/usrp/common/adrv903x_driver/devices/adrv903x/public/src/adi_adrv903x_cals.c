@@ -1789,3 +1789,66 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_DigDcOffsetCfgGet(adi_adrv903x_Dev
 cleanup:
     ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 }
+
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_TxQecResetNoReads(adi_adrv903x_Device_t* const           device,
+                                                                const adi_adrv903x_TxQecReset_t* const txQecReset)
+{
+    adi_adrv903x_ErrAction_e recoveryAction     = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    const uint16_t           TXQEC_CMD_RESET    = 5U;
+    uint32_t                 i                  = 0U;
+    uint32_t                 txChannel          = 0U;
+    uint32_t                 lengthResp         = 0U;
+    uint8_t                  ctrlData[1]        = { 0U };
+    uint8_t                  ctrlResp[1]        = { 0U };
+
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+
+    ADI_ADRV903X_API_ENTRY(&device->common);
+
+    ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, txQecReset, cleanup);
+
+    /* Tx channel mask range check */
+    if (txQecReset->channelMask >  (uint32_t) ADI_ADRV903X_TXALL)
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, txQecReset->channelMask, "Invalid Tx QEC Channel Mask");
+        goto cleanup;
+    }
+
+    if ((txQecReset->resetType != ADI_ADRV903X_TX_QEC_TRACKING_HARD_RESET)      &&
+        (txQecReset->resetType != ADI_ADRV903X_TX_QEC_TRACKING_QEC_RESET)       &&
+        (txQecReset->resetType != ADI_ADRV903X_TX_QEC_TRACKING_CHANNEL_RESET))
+    {
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, txQecReset->resetType, "Invalid Tx QEC Reset Type");
+        goto cleanup;
+    }
+
+    ctrlData[0U] = txQecReset->resetType;
+
+    for (i = 0U; i < ADI_ADRV903X_MAX_TXCHANNELS; ++i)
+    {
+        txChannel = (1U << i);
+
+        if ((txQecReset->channelMask & txChannel) == txChannel)
+        {
+            recoveryAction = adi_adrv903x_CpuControlCmdExecNoParse(device,
+                                                                   (uint32_t)ADRV903X_CPU_OBJID_TC_TXQEC,
+                                                                   TXQEC_CMD_RESET,
+                                                                   (adi_adrv903x_Channels_e)txChannel,
+                                                                   ctrlData,
+                                                                   1U,
+                                                                   &lengthResp,
+                                                                   ctrlResp,
+                                                                   1U);
+            if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+            {
+                ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, txChannel, "Tx QEC Reset Issue");
+                goto cleanup;
+            }
+        }
+    }
+
+cleanup:
+    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
+}

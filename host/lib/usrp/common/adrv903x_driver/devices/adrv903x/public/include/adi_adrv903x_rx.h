@@ -805,5 +805,21 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxSpurBaseBandFreqGet(adi_adrv903x
                                                                     const adi_adrv903x_RxChannels_e             rxChannelMask,
                                                                     adi_adrv903x_RxSpurFreqConfigResp_t* const  rxSpurRbConfig);
 
+/**
+* \brief Version of adi_adrv903x_RxNcoShifterSet which avoids any reads. Sets the specified Rx NCOs to the given frequency, band number, and enable state in the adi_adrv903x_RxNcoConfig_t structure.
+*
+* \pre This function can be called after the CPU has been initialized.
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param[in,out] device Context variable - Pointer to the ADRV903X device data structure containing settings
+* \param[in,out] rxNcoConfig Pointer to the RX NCO config settings
+*
+* \retval adi_adrv903x_ErrAction_e - ADI_ADRV903X_ERR_ACT_NONE if Successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxNcoShifterSetNoReads(adi_adrv903x_Device_t* const                device,
+                                                                     const adi_adrv903x_RxNcoConfig_t * const    rxNcoConfig);
 
 #endif /* _ADI_ADRV903X_RX_H_ */

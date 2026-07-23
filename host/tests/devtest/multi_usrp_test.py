@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" Test all python API functions for the connected device. """
+"""Test all python API functions for the connected device."""
 
 import argparse
 import sys
@@ -772,6 +772,19 @@ def get_device_config(usrp_type, device_config_path=None):
                 "get_gpio_attr",
                 "set_gpio_attr",
                 "get_gpio_banks",
+            ],
+        }
+    if usrp_type == "B310":
+        return {
+            "skip": [
+                # No DC offset on B310
+                "set_rx_dc_offset",
+                "set_tx_dc_offset",
+                # AGC not yet implemented
+                "set_rx_agc",
+                # No IQ imbalance on B310
+                "set_rx_iq_balance",
+                "set_tx_iq_balance",
             ],
         }
     if usrp_type == "x410":

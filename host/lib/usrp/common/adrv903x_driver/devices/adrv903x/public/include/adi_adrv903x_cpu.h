@@ -643,4 +643,35 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_BreakpointGlobalHaltMaskSet(adi_ad
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_BreakpointGlobalHaltMaskGet(adi_adrv903x_Device_t* const device,
                                                                           uint32_t * const globalHaltMask);
 
+/**
+* \brief Sets the specified Set Ctrl in the adrv903x_CpuCmd_SetCtrl_t structure, doesn't wait for CPU to be ready, 
+* so caller must ensure CPU is ready before calling this function.
+*
+* \pre This function can be called after the CPU has been initialized.
+*
+* \dep_begin
+* \dep{device->common.devHalInfo}
+* \dep_end
+*
+* \param[in] device Context variable - Pointer to the ADRV903X device data structure containing settings
+* \param[in] objId  Object ID of calibration or system component
+* \param[in] cpuCmd Command to be executed
+* \param[in] channel channel enum
+* \param[in] cpuCtrlData Pointer to data to send TO the CPU
+* \param[in] lengthSet Length of cpuCtrlData, in bytes, if 0, cpuCtrlData can be NULL
+* \param[out] lengthResp Length of data received FROM the CPU into ctrlResp buffer, in bytes
+* \param[out] ctrlResp Pointer to buffer in which data FROM the CPU should be received.
+* \param[in] lengthGet Size of ctrlResp buffer, in bytes. MUST be greater than or equal to lengthResp.
+*
+* \retval adi_adrv903x_ErrAction_e - ADI_ADRV903X_ERR_ACT_NONE if Successful
+*/
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_CpuControlCmdExecNoParse(adi_adrv903x_Device_t* const    device,
+                                                                       const uint32_t                  objId,
+                                                                       const uint16_t                  cpuCmd,
+                                                                       const adi_adrv903x_Channels_e   channel,
+                                                                       const uint8_t                   cpuCtrlData[],
+                                                                       const uint32_t                  lengthSet,
+                                                                       uint32_t* const                 lengthResp,
+                                                                       uint8_t                         ctrlResp[],
+                                                                       const uint32_t                  lengthGet);
 #endif /* _ADI_ADRV903X_CPU_H_ */

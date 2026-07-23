@@ -30,6 +30,8 @@
 #define ADRV903X_LITTLE_ENDIAN (__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__)
 #elif defined  __ICCARM__
 #define ADRV903X_LITTLE_ENDIAN (__LITTLE_ENDIAN__ == 1)
+#elif defined  _WIN32
+#define ADRV903X_LITTLE_ENDIAN 1
 #else
 #error( "Define the ADRV903X_LITTLE_ENDIAN macro for your platform.")
 #endif

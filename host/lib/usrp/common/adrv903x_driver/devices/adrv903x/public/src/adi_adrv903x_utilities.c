@@ -399,6 +399,7 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_StreamImageLoad(adi_adrv903x_Devic
         goto cleanup;
     }
 
+    adi_common_LogWrite(&device->common, ADI_HAL_LOG_MSG, "Writing Streaming Image...");
     /* Read Stream binary file */
     for (chunkIndex = 0U; chunkIndex < numFileChunks; ++chunkIndex)
     {
@@ -445,12 +446,16 @@ cleanup :
     ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 }
 
+// CHANGE FROM ADI: Needed to change from ADI implementation since ADI code didn't compile on Windows.
+#define LINE_BUFFER_SIZE 128U
+#define HEADER_BUFFER_SIZE 16U
+
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxGainTableLoad(adi_adrv903x_Device_t* const            device,
                                                               const adi_adrv903x_RxGainTableInfo_t    rxGainTableInfo[],
                                                               const uint32_t                          rxGainTableArrSize)
 {
-        const uint8_t                   LINE_BUFFER_SIZE    = 128U;
-    const uint8_t                   HEADER_BUFFER_SIZE  = 16U;
+        //const uint8_t                   LINE_BUFFER_SIZE    = 128U;
+    //const uint8_t                   HEADER_BUFFER_SIZE  = 16U;
     const uint8_t                   NUM_COLUMNS         = 5U;
     adi_adrv903x_ErrAction_e        recoveryAction      = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
     uint8_t                         arrayIndex          = 0U;
@@ -545,14 +550,15 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxGainTableLoad(adi_adrv903x_Devic
                        (uint32_t*)&tableVersion.buildVer) != NUM_COLUMNS)
 #endif
 #else
+// CHANGE FROM ADI: version variable was not defined, so changed to tableVersion.
                     if (sscanf_s(rxGainTableLineBuffer,
                                  "%[^,],%d,%d,%d,%d",
                                  headerStr1,
                                  (uint32_t)sizeof(headerStr1),
-                                 &version.majorVer,
-                                 &version.minorVer,
-                                 &version.maintenanceVer,
-                                 &version.buildVer) != NUM_COLUMNS)
+                                 &tableVersion.majorVer,
+                                 &tableVersion.minorVer,
+                                 &tableVersion.maintenanceVer,
+                                 &tableVersion.buildVer) != NUM_COLUMNS)
 #endif
                 {
                     recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
@@ -1988,6 +1994,7 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_PostMcsInit(adi_adrv903x_Device_t*
         (utilityInit->initCals.orxChannelMask != 0U) ||
         (utilityInit->initCals.calMask != 0U))
     {
+        adi_common_LogWrite(&device->common, ADI_HAL_LOG_MSG, "Running Initial Calibrations...");
         recoveryAction = adi_adrv903x_InitCalsRun(device, &utilityInit->initCals);
         if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
         {
@@ -4439,7 +4446,9 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_JrxRepairFileLoad(adi_adrv903x_Dev
                                                                 const adi_adrv903x_JrxRepairBinaryInfo_t* const  fileInfo,
                                                                 adi_adrv903x_JrxRepairHistory_t* const           repairHistory)
 {
-        const uint32_t                  expectedFileSize  = 41U;
+// CHANGE FROM ADI: Needed to change from ADI implementation since ADI code didn't compile on Windows.
+#define expectedFileSize 41U
+        //const uint32_t                  expectedFileSize  = 41U;
 
     adi_adrv903x_JrxRepairHistory_t repairHistoryRd;
     adi_adrv903x_ErrAction_e        recoveryAction    = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
@@ -4470,7 +4479,8 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_JrxRepairFileLoad(adi_adrv903x_Dev
     if (ADI_LIBRARY_FOPEN_S(&repairHistoryFile, (const char *)fileInfo->filePath, "rb") != 0)
     {
         recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
-        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, filePath, "Invalid File or Path Detected");
+// CHANGE FROM ADI: Needed to change to fileInfo->filePath since filePath by itself is not a valid variable.
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, fileInfo->filePath, "Invalid File or Path Detected");
         goto cleanup;
     }
 #endif
@@ -6588,6 +6598,7 @@ static adi_adrv903x_ErrAction_e adrv903x_CpuLoadUtil(adi_adrv903x_Device_t* cons
         return recoveryAction;
     }
 
+        adi_common_LogWrite(&device->common, ADI_HAL_LOG_MSG, "Writing CPU%s Image...", cpuType == ADI_ADRV903X_CPU_TYPE_0 ? "0" : "1");
         for (chunkIndex = 0U; chunkIndex < numFileChunks; ++chunkIndex)
     {
         /* Read Segment of CPU Image */
@@ -6710,8 +6721,8 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxGainTableChecksumRead(adi_adrv90
                                                                       uint32_t* const rxGainTableChecksum)
 {
         adi_adrv903x_ErrAction_e    recoveryAction      = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
-    const uint8_t               LINE_BUFFER_SIZE    = 128U;
-    const uint8_t               HEADER_BUFFER_SIZE  = 16U;
+    //const uint8_t               LINE_BUFFER_SIZE    = 128U;
+    //const uint8_t               HEADER_BUFFER_SIZE  = 16U;
     const uint8_t               NUM_COLUMNS         = 5U;
     FILE*                       rxGainTableFilePtr  = NULL;
     char                        rxGainTableLineBuffer[LINE_BUFFER_SIZE];
@@ -6776,14 +6787,15 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxGainTableChecksumRead(adi_adrv90
                (uint32_t*)&tableVersion.maintenanceVer,
                (uint32_t*)&tableVersion.buildVer) != NUM_COLUMNS)
 #else
+// CHANGE FROM ADI: version variable was not defined, so changed to tableVersion.
         if (sscanf_s(rxGainTableLineBuffer,
                      "%[^,],%d,%d,%d,%d",
                      headerStr1,
                      (uint32_t)sizeof(headerStr1),
-                     &version.majorVer,
-                     &version.minorVer,
-                     &version.maintenanceVer,
-                     &version.buildVer) != NUM_COLUMNS)
+                     &tableVersion.majorVer,
+                     &tableVersion.minorVer,
+                     &tableVersion.maintenanceVer,
+                     &tableVersion.buildVer) != NUM_COLUMNS)
 #endif
     {
         recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
@@ -6999,7 +7011,8 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_InitDataExtract(adi_adrv903x_Devic
     if (ADI_LIBRARY_FOPEN_S(&cpuProfileFilePtr, (const char*)cpuBinaryInfo->filePath, "rb") != 0)
     {
         recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
-        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, cpuProfileBinaryInfoPtr->filePath, "Unable to open CPU Profile Binary. Please check filepath is correct");
+// CHANGE FROM ADI: cpuProfileBinaryInfoPtr was not defined, so changed to cpuBinaryInfo.
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, cpuBinaryInfo->filePath, "Unable to open CPU Profile Binary. Please check filepath is correct");
         goto cleanup;
     }
 #endif

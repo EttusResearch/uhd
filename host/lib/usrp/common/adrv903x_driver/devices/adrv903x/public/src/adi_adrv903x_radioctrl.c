@@ -237,8 +237,6 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_StreamImageWrite(adi_adrv903x_Devi
     
     ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
 
-    ADI_ADRV903X_API_ENTRY(&device->common);
-
     ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, binary, cleanup);
 
     if ((byteCount == 0U) ||
@@ -618,7 +616,7 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_StreamImageWrite(adi_adrv903x_Devi
     }
 
 cleanup:
-    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
+    return recoveryAction;
 }
 
 ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_RxTxEnableSet(adi_adrv903x_Device_t* const   device,
@@ -4434,5 +4432,211 @@ ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_GpioCtrlRxTxMapClear(adi_adrv903x_
 cleanup:
     ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 
+}
+
+ADI_API adi_adrv903x_ErrAction_e adi_adrv903x_LoFrequencySetNoReads(adi_adrv903x_Device_t* const          device,
+                                                                    const adi_adrv903x_LoConfig_t* const  loConfig)
+{
+        adi_adrv903x_ErrAction_e recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+    adrv903x_BfTxFuncsChanAddr_e txBaseAddr = ADRV903X_BF_SLICE_TX_0__TX_FUNCS;
+    adrv903x_CpuCmdStatus_e cmdStatus = ADRV903X_CPU_CMD_STATUS_GENERIC;
+
+    adrv903x_CpuCmd_SetLoFreq_t loInfo;
+    adrv903x_CpuCmd_SetLoFreqResp_t cmdRsp;
+    adrv903x_CpuErrorCode_e cpuErrorCode = ADRV903X_CPU_SYSTEM_SIMULATED_ERROR;
+
+    uint8_t writeGpIntPin1Bool = 0U;
+    uint8_t writeGpIntPin0Bool = 0U;
+    uint8_t writePllUnlockMaskBool[ADI_ADRV903X_MAX_TXCHANNELS];
+
+    uint8_t tmpPllRampDownMask = 0U;
+    uint8_t origPllRampDownMask[ADI_ADRV903X_MAX_TXCHANNELS];
+    uint8_t i = 0U;
+    uint8_t pllUnlockRampDownMask = 0U;
+    uint32_t tmpTxChannelMask = 0U;
+
+    uint8_t  gpIntMaskRegsOrig[4] = { 0U, 0U, 0U, 0U };
+    uint8_t  gpIntMaskRegsTmp[4]  = { 0U, 0U, 0U, 0U };
+    uint8_t* gpIntMaskPin1Byte9   = &gpIntMaskRegsOrig[0];
+    uint8_t* gpIntMaskPin0Byte9   = &gpIntMaskRegsOrig[2];
+
+    static const uint8_t GPINT_RF1_PLL_OVERRANGE_BYTE9_MASK = (1U << 4U);
+    static const uint8_t GPINT_RF0_PLL_OVERRANGE_BYTE9_MASK = (1U << 5U);
+    static const uint8_t GPINT_RF1_PLL_UNLOCK_BYTE9_MASK    = (1U << 7U);
+    static const uint8_t GPINT_RF0_PLL_UNLOCK_BYTE10_MASK   = (1U << 0U);
+        /* Check device pointer is not null */
+    ADI_ADRV903X_NULL_DEVICE_PTR_RETURN(device);
+    ADI_ADRV903X_API_ENTRY(&device->common);
+    ADI_ADRV903X_NULL_PTR_REPORT_GOTO(&device->common, loConfig, cleanup);
+
+    ADI_LIBRARY_MEMSET(&loInfo, 0, sizeof(adrv903x_CpuCmd_SetLoFreq_t));
+    ADI_LIBRARY_MEMSET(&cmdRsp, 0, sizeof(adrv903x_CpuCmd_SetLoFreqResp_t));
+    ADI_LIBRARY_MEMSET(&writePllUnlockMaskBool, 0, sizeof(writePllUnlockMaskBool));
+    ADI_LIBRARY_MEMSET(&origPllRampDownMask, 0, sizeof(origPllRampDownMask));
+
+    /* Skip Range Checking, trust the UHD functions to have coerced. */
+
+    /* Skip Reading GPINT mask registers, they are always the same on B310. */
+    *gpIntMaskPin1Byte9 = 255;
+    *gpIntMaskPin0Byte9 = 255;
+    ADI_LIBRARY_MEMCPY(gpIntMaskRegsTmp, gpIntMaskRegsOrig, sizeof(gpIntMaskRegsOrig));
+    gpIntMaskPin1Byte9 = &gpIntMaskRegsTmp[0];
+    gpIntMaskPin0Byte9 = &gpIntMaskRegsTmp[2];
+
+    /* Based on loName determine the GPINT and PLL-unlock Tx rampdown to disable */
+    switch (loConfig->loName) 
+    {
+    case ADI_ADRV903X_LO0:
+        pllUnlockRampDownMask = (uint8_t)ADI_ADRV903X_RDT_RF0_PLL_UNLOCK;
+        gpIntMaskPin1Byte9[1] |= GPINT_RF0_PLL_UNLOCK_BYTE10_MASK;
+        gpIntMaskPin0Byte9[1] |= GPINT_RF0_PLL_UNLOCK_BYTE10_MASK;
+        break;
+    case ADI_ADRV903X_LO1:
+        pllUnlockRampDownMask = (uint8_t)ADI_ADRV903X_RDT_RF1_PLL_UNLOCK;
+        gpIntMaskPin1Byte9[0] |= GPINT_RF1_PLL_UNLOCK_BYTE9_MASK;
+        gpIntMaskPin0Byte9[0] |= GPINT_RF1_PLL_UNLOCK_BYTE9_MASK;
+        break;
+            default:
+        recoveryAction = ADI_ADRV903X_ERR_ACT_CHECK_PARAM;
+        ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, loConfig->loName, "Invalid LO selected for setting LO frequency");
+        goto cleanup;
+    }
+
+    pllUnlockRampDownMask >>= 3U;
+
+    /* Disable various GP INTs while changing frequency */
+    gpIntMaskPin1Byte9[0] |= (GPINT_RF0_PLL_OVERRANGE_BYTE9_MASK | GPINT_RF1_PLL_OVERRANGE_BYTE9_MASK);
+    gpIntMaskPin0Byte9[0] |= (GPINT_RF0_PLL_OVERRANGE_BYTE9_MASK | GPINT_RF1_PLL_OVERRANGE_BYTE9_MASK);
+        /* Write GPINT registers if Byte9 or Byte10 have been changed */
+    writeGpIntPin1Bool = (gpIntMaskPin1Byte9[0] != gpIntMaskRegsOrig[0]) || (gpIntMaskPin1Byte9[1] != gpIntMaskRegsOrig[1]);
+    writeGpIntPin0Bool = (gpIntMaskPin0Byte9[0] != gpIntMaskRegsOrig[2]) || (gpIntMaskPin0Byte9[1] != gpIntMaskRegsOrig[3]);
+    if (writeGpIntPin1Bool)
+    {
+        recoveryAction = adi_adrv903x_RegistersByteWrite(device, NULL, ADRV903X_ADDR_GPINT_MASK_PIN1_BYTE9, gpIntMaskPin1Byte9, 2U);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Registers32Write GPINT_PIN1 issue");
+            goto cleanup;
+        }
+    }
+    if (writeGpIntPin0Bool)
+    {
+        recoveryAction = adi_adrv903x_RegistersByteWrite(device, NULL, ADRV903X_ADDR_GPINT_MASK_PIN0_BYTE9, gpIntMaskPin0Byte9, 2U);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Registers32Write GPINT_PIN0 issue");
+            goto cleanup;
+        }
+    }
+
+    /* Store current PLL Unlock mask for ramp down configuration for each channel and update them temporarily */
+    for (i = 0U; i < ADI_ADRV903X_MAX_TXCHANNELS; ++i)
+    {
+        tmpTxChannelMask = (uint32_t)((uint32_t)1U << i);
+
+        if (((device->devStateInfo.initializedChannels >> ADI_ADRV903X_TX_INITIALIZED_CH_OFFSET) & tmpTxChannelMask) == 0U)
+        {
+            /* skip for uninitialized channels */
+            continue;
+        }
+
+        /* Retrieve the base address for selected tx channel */
+        recoveryAction = adrv903x_TxFuncsBitfieldAddressGet(device, (adi_adrv903x_TxChannels_e)tmpTxChannelMask, &txBaseAddr);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, tmpTxChannelMask, "Invalid Tx Channel used to determine SPI address");
+            goto cleanup;
+        }
+
+        /* Store pll unlock mask. Skip Reading from device, it is always the same on B310. */
+        origPllRampDownMask[i] = 15;
+
+        tmpPllRampDownMask =  origPllRampDownMask[i] | pllUnlockRampDownMask; /* 1 means disabled */
+        /* store boolean on whether temporary values to be written are different from the original */
+        writePllUnlockMaskBool[i] = (tmpPllRampDownMask != origPllRampDownMask[i]);
+
+        /* update pll unlock mask if tmp value is different */
+        if (writePllUnlockMaskBool[i])
+        {
+            recoveryAction = adrv903x_TxFuncs_PllUnlockMask_BfSet(device, NULL, txBaseAddr, tmpPllRampDownMask);
+            if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+            {
+                ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Error while writing temporary Tx Pll Unlock Mask for ramp-down config");
+                goto cleanup;
+            }
+        }
+    }
+
+        /* Prepare the command payload */
+    loInfo.loName = (adi_adrv903x_LoName_t) loConfig->loName;
+    loInfo.loConfigSel = (adi_adrv903x_LoOption_t) ADRV903X_HTOCL(loConfig->loConfigSel) ;
+    loInfo.loFrequency_Hz = (uint64_t) ADRV903X_HTOCLL(loConfig->loFrequency_Hz);
+        /* Send command and receive response */
+    recoveryAction = adrv903x_CpuCmdSendNoResponseParse(device,
+                                                        ADI_ADRV903X_CPU_TYPE_0,
+                                                        ADRV903X_LINK_ID_0,
+                                                        ADRV903X_CPU_CMD_ID_SET_LO_FREQUENCY,
+                                                        (void*)&loInfo,
+                                                        sizeof(loInfo),
+                                                        (void*)&cmdRsp,
+                                                        sizeof(cmdRsp),
+                                                        &cmdStatus);
+    if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+    {
+        ADI_ADRV903X_CPU_CMD_RESP_CHECK_GOTO(cmdRsp.status, cmdStatus, cpuErrorCode, recoveryAction, cleanup);
+    }
+
+        /* Write back original GPINT settings */
+    gpIntMaskPin1Byte9 = &gpIntMaskRegsOrig[0];
+    gpIntMaskPin0Byte9 = &gpIntMaskRegsOrig[2];
+    if (writeGpIntPin1Bool)
+    {
+        recoveryAction = adi_adrv903x_RegistersByteWrite(device, NULL, ADRV903X_ADDR_GPINT_MASK_PIN1_BYTE9, gpIntMaskPin1Byte9, 2U);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Registers32Write GPINT_PIN1 issue");
+            goto cleanup;
+        }
+    }
+    if (writeGpIntPin0Bool)
+    {
+        recoveryAction = adi_adrv903x_RegistersByteWrite(device, NULL, ADRV903X_ADDR_GPINT_MASK_PIN0_BYTE9, gpIntMaskPin0Byte9, 2U);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Registers32Write GPINT_PIN0 issue");
+            goto cleanup;
+        }
+    }
+
+    /* Restore Pll unlock masks for ramp-down configuration */
+    for (i = 0; i < ADI_ADRV903X_MAX_TXCHANNELS; ++i) 
+    {
+        tmpTxChannelMask = (uint32_t)((uint32_t)1U << i);
+
+        if ((((device->devStateInfo.initializedChannels >> ADI_ADRV903X_TX_INITIALIZED_CH_OFFSET) & tmpTxChannelMask) == 0U) ||
+            (writePllUnlockMaskBool[i] == 0U))
+        {
+            /* skip for uninitialized channels or unchanged Pll unlock masks*/
+            continue;
+        }
+
+        /* Retrieve the base address for selected tx channel */
+        recoveryAction = adrv903x_TxFuncsBitfieldAddressGet(device, (adi_adrv903x_TxChannels_e)tmpTxChannelMask, &txBaseAddr);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_PARAM_ERROR_REPORT(&device->common, recoveryAction, tmpTxChannelMask, "Invalid Tx Channel used to determine SPI address");
+            goto cleanup;
+        }
+
+        recoveryAction = adrv903x_TxFuncs_PllUnlockMask_BfSet(device, NULL, txBaseAddr, origPllRampDownMask[i]);
+        if (recoveryAction != ADI_ADRV903X_ERR_ACT_NONE)
+        {
+            ADI_API_ERROR_REPORT(&device->common, recoveryAction, "Error while writing temporary Tx Pll Unlock Mask for ramp-down config");
+            goto cleanup;
+        }
+    }
+
+cleanup:
+    ADI_ADRV903X_API_EXIT(&device->common, recoveryAction);
 }
 

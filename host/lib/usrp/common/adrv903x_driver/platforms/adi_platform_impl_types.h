@@ -13,12 +13,21 @@
 #define __ADI_PLATFORM_IMPL_TYPES_H__
 
 #ifndef __KERNEL__
+#ifdef _WIN32
+// TODO: Figure out better Windows alternatives, if we even end up using adi_hal_thread_t
+// and adi_hal_mutex_t
+#include <windows.h>
+typedef CRITICAL_SECTION adi_hal_mutex_t;
+typedef HANDLE adi_hal_thread_t;
+#else
 #include <pthread.h>
 typedef pthread_mutex_t adi_hal_mutex_t;
 typedef pthread_t adi_hal_thread_t;
+#endif
 #else
 typedef struct mutex adi_hal_mutex_t;
 #endif
+
 /**
  *  \brief  Default filepath for logfiles if none provided
  *

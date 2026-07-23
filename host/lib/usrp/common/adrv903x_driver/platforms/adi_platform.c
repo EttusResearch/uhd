@@ -13,17 +13,10 @@
 
 #include "adi_platform.h"
 
-#ifdef _ADI_ADS10_PLATFORM
-#include "ads10/ads10_init.h"
-#include "ads10/ads10_i2c.h"
-#include "ads10/ads10_spi.h"
-#include "ads10/ads10_timer.h"
-#include "ads10/ads10_bbic_control.h"
-#include "posix/posix_mutex.h"
-#endif
+#include "../platforms/common/adi_logging.h"
 
 #include "../platforms/common/tls.h"
-#include "../platforms/common/adi_logging.h"
+#include <uhdlib/usrp/common/adrv9032_device.hpp>
 
 /*
  * Function pointer assignment for default configuration
@@ -129,57 +122,41 @@ ADI_API adi_hal_Err_e adi_hal_PlatformSetup(const adi_hal_Platforms_e platform)
 {
     adi_hal_Err_e error = ADI_HAL_ERR_PARAM;
 
-    switch (platform)
-    {
-    case ADI_ADS10_PLATFORM:
-#ifdef _ADI_ADS10_PLATFORM
-        adi_hal_HwOpen = ads10_HwOpen;
-        adi_hal_HwClose = ads10_HwClose;
-        adi_hal_HwReset = ads10_HwReset;
-        adi_hal_DevHalCfgCreate = ads10_DevHalCfgCreate;
-        adi_hal_DevHalCfgFree = ads10_DevHalCfgFree;
-
-#ifdef ADI_ADRV903X_SPI_DEV_DRIVER_EN
-        adi_hal_SpiWrite = ads10_SpiWrite;
-        adi_hal_SpiRead = ads10_SpiRead;
-#else
-        adi_hal_SpiWrite = ads10_SpiWrite_v2;
-        adi_hal_SpiRead = ads10_SpiRead_v2;
-#endif
-        adi_hal_I2cWrite = NULL; /* ADS10 does not require I2C interface to any devices used in device API layer */
-        adi_hal_I2cRead = NULL;  /* ADS10 does not require I2C interface to any devices used in device API layer */
-
-        adi_hal_LogFileOpen     = adi_LogFileOpen;
-        adi_hal_LogLevelSet     = adi_LogLevelSet;
-        adi_hal_LogLevelGet     = adi_LogLevelGet;
-        adi_hal_LogStatusGet    = adi_LogStatusGet;
-        adi_hal_LogConsoleSet   = adi_LogConsoleSet;
-        adi_hal_LogWrite        = adi_LogWrite;
-        adi_hal_LogFileClose    = adi_LogFileClose;
-
-        adi_hal_Wait_us = ads10_TimerWait_us;
-        adi_hal_Wait_ms = ads10_TimerWait_ms;
-
-        /* only required to support the ADI FPGA*/
-        adi_hal_BbicRegisterRead   = ads10_BbicRegisterRead;
-        adi_hal_BbicRegisterWrite  = ads10_BbicRegisterWrite;
-        adi_hal_BbicRegistersRead  = ads10_BbicRegistersRead;
-        adi_hal_BbicRegistersWrite = ads10_BbicRegistersWrite;
-
-        adi_hal_ThreadSelf = posix_ThreadSelf;
-        adi_hal_TlsGet = common_TlsGet;
-        adi_hal_TlsSet = common_TlsSet;
-        adi_hal_MutexInit = posix_MutexInit;
-        adi_hal_MutexLock = posix_MutexLock;
-        adi_hal_MutexUnlock = posix_MutexUnlock;
-        adi_hal_MutexDestroy = posix_MutexDestroy;
-        adi_hal_BoardIdentify = ads10_BoardIdentify;
-        error = common_TlsInit();
-#else
-        error = ADI_HAL_ERR_NOT_IMPLEMENTED;
-#endif
-        break;
-                default:
+    switch (platform) {
+        case USRP_B310:
+            adi_hal_HwOpen             = uhd_HwOpen;
+            adi_hal_HwClose            = uhd_HwClose;
+            adi_hal_HwReset            = uhd_HwReset;
+            adi_hal_DevHalCfgCreate    = uhd_hal_DevHalCfgCreate;
+            adi_hal_DevHalCfgFree      = uhd_DevHalCfgFree;
+            adi_hal_SpiWrite           = uhd_hal_SpiWrite;
+            adi_hal_SpiRead            = uhd_hal_SpiRead;
+            adi_hal_I2cWrite           = uhd_hal_I2cWrite;
+            adi_hal_I2cRead            = uhd_hal_I2cRead;
+            adi_hal_LogFileOpen        = uhd_hal_LogFileOpen;
+            adi_hal_LogLevelSet        = uhd_hal_LogLevelSet;
+            adi_hal_LogLevelGet        = uhd_hal_LogLevelGet;
+            adi_hal_LogStatusGet       = uhd_hal_LogStatusGet;
+            adi_hal_LogConsoleSet      = uhd_hal_LogConsoleSet;
+            adi_hal_LogWrite           = uhd_hal_LogWrite;
+            adi_hal_LogFileClose       = uhd_hal_LogFileClose;
+            adi_hal_Wait_ms            = uhd_hal_Wait_ms;
+            adi_hal_Wait_us            = uhd_hal_Wait_us;
+            adi_hal_BbicRegisterRead   = uhd_hal_BbicRegisterRead;
+            adi_hal_BbicRegisterWrite  = uhd_hal_BbicRegisterWrite;
+            adi_hal_BbicRegistersRead  = uhd_hal_BbicRegistersRead;
+            adi_hal_BbicRegistersWrite = uhd_hal_BbicRegistersWrite;
+            adi_hal_ThreadSelf         = uhd_hal_ThreadSelf;
+            adi_hal_TlsSet             = common_TlsSet;
+            adi_hal_TlsGet             = common_TlsGet;
+            adi_hal_MutexInit          = uhd_hal_MutexInit;
+            adi_hal_MutexLock          = uhd_hal_MutexLock;
+            adi_hal_MutexUnlock        = uhd_hal_MutexUnlock;
+            adi_hal_MutexDestroy       = uhd_hal_MutexDestroy;
+            adi_hal_BoardIdentify      = uhd_hal_BoardIdentify;
+            error                      = ADI_HAL_ERR_OK;
+            break;
+        default:
             error = ADI_HAL_ERR_PARAM;
             break;
     }

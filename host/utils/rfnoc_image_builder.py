@@ -17,6 +17,7 @@ from uhd.rfnoc_utils import image_builder, log as rfnoc_log
 def get_valid_targets():
     """Get valid targets (--target parameter)."""
     target_fpga_map = {
+        "B310": [""],
         "E310_SG1": ["", "IDLE"],
         "E310_SG3": ["", "IDLE"],
         "E320": ["1G", "XG", "AA"],

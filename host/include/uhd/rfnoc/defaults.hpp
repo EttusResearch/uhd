@@ -54,10 +54,12 @@ using noc_id_t = uint32_t;
 /*** Device Identifiers ******************************************************/
 //! Device Type
 using device_type_t = uint16_t;
-// first nibble for device family (E = E, N = 1, X = A), remaining three nibbles
+// first nibble for device family (B = B, E = E, N = 1, X = A), remaining three nibbles
 // for device number
 //! placeholder for unspecified device
 static const device_type_t ANY_DEVICE = 0xFFFF;
+//! B300 device family
+static const device_type_t B310 = 0xB310;
 //! E300 device family
 static const device_type_t E300 = 0xE300;
 //! E310 device

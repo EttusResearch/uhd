@@ -163,8 +163,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
         != sensor_names.end()) {
         std::cout << "Waiting for ref_locked..." << std::flush;
+        int timeout_secs = 30;
+        if (usrp->get_mboard_name(0) == "B310") {
+            // B310 takes much longer to lock as we need to wait for the DPLL to
+            // lock in order for the oscillator to actually be disciplined by the
+            // GPS chip rather than free-running.
+            timeout_secs = 600;
+        }
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
-        auto end = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        auto end = std::chrono::steady_clock::now() + std::chrono::seconds(timeout_secs);
         while (!ref_locked.to_bool() && std::chrono::steady_clock::now() < end) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
