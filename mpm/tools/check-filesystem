@@ -137,7 +137,7 @@ class CheckFilesystem(unittest.TestCase):
             m1 = r1.match(line)
             if m1:
                 result = m1[2]
-        self.assertEqual(result, "('true', 'No errors.')")
+        self.assertEqual(result, "['true', 'No errors.']")
 
 def args_parser(argv):
     parser = argparse.ArgumentParser()
