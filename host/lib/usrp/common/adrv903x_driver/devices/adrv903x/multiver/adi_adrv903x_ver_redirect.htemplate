@@ -1,0 +1,86 @@
+/**
+* Copyright 2015 - 2025 Analog Devices Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+/**
+*   \file   adi_adrv903x_ver_redirect.h
+* 
+*   \brief  Auto generated function pointer shim layer to ease linking to one of multiple 
+            versions of the API at runtime
+*
+*   Generated from ADRV903X API Version: 2.12.1.4
+*/
+
+#ifndef API_VER_REDIRECT_H
+#define API_VER_REDIRECT_H
+
+#include <stdio.h>
+
+/* Used to mark extern functions correctly for C vs C++ */
+#ifndef ADI_API
+  #ifdef __cplusplus
+    #define ADI_API extern "C"
+  #else
+    #define ADI_API
+  #endif
+#endif
+
+/* Used to mark extern functions correctly for C vs C++ */
+#ifndef ADI_API_EX
+  #ifdef __cplusplus
+    #define ADI_API_EX ADI_API
+  #else
+    #define ADI_API_EX ADI_API extern
+  #endif
+#endif
+
+#include "adi_adrv903x_all_types.h"
+
+/** Single set of fn ptrs as seen by Application - compatible with the normal
+ * API (i.e. no change in app required to use versioned/non-versioned libs)
+ *
+ * Application linking directly to specific API version pulls in fn decls
+ * resolved at link time.
+ *
+ * Application linking to API-versioning shim pull in a bunch of function
+ * pointers which are populated at run-time by calling
+ * api_adrv903x_VersionLoad().
+ */
+
+$H_FUNCTIONPTR_PROTOS$
+
+/**
+ * \brief Loads the version of the ADRV903X device contained in the shared
+ * library supplied for use by the application.
+ *
+ * Opens the specified library and searches it for implementations of all the
+ * functions in the ADRV903X API. Then assigns the global function pointer
+ * corresponding to each function to the implementation in the specified shared
+ * library.
+ *
+ * \param[in] soPath The shared library to open. Unless this is a relative or fully
+ * qualified path LD_LIBRARY_PATH env var or other shared object location
+ * mechanism must be correctly set to find the shared lib.
+ *
+ * Note: The default is that applications statically link to the device
+ * library. To  use this function the application must be compiled as a
+ * multiversioning capable application. See the ADRV903X Software User Guide
+ * for details.
+ *
+ * \returns Returns 0 on success.
+ */
+ADI_API int adi_adrv903x_VersionLoad(const char* const soPath);
+
+/**
+ * \brief Same as adi_adrv903x_VersionLoad but with control of log messages.
+ *
+ * \param[in] soPath Same as adi_adrv903x_VersionLoad.
+ * \param[in] logStream A valid FILE* stream where error messages will be sent. If NULL
+ *     error are not logged.
+ *
+ * \returns Same as adi_adrv903x_VersionLoad.
+ */
+ADI_API int adi_adrv903x_VersionLoad_vLogCtl(const char* const soPath, FILE* const logStream);
+
+#endif

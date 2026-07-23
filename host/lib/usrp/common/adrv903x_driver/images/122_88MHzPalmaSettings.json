@@ -1,0 +1,1831 @@
+{
+  "trxFileInfo": {
+    "stream": {
+      "filePath": "resources/stream_image.bin"
+    },
+    "cpu": {
+      "filePath": "resources/ADRV9030_FW.bin"
+    },
+    "cpuProfile": {
+      "filePath": "resources/DeviceProfileTest.bin"
+    },
+    "rxGainTable": [
+      {
+        "channelMask": 255,
+        "filePath": "resources/RxGainTable.csv"
+      }
+    ],
+    "DeviceType": 9030
+  },
+  "clockSetting": {
+    "DeviceClk_kHz": 122880,
+    "RefA_kHz": 122880,
+    "Vcxo_kHz": 122880,
+    "FpgaDeviceClk_kHz": 122880
+  },
+  "streamSettings": {
+    "TestMacro": true,
+    "CaptureRamDelayUs": 0,
+    "Gpio00Selection": 255,
+    "Gpio01Selection": 255,
+    "Gpio02Selection": 255,
+    "Gpio03Selection": 255,
+    "Gpio04Selection": 255,
+    "Gpio05Selection": 255,
+    "Gpio06Selection": 255,
+    "Gpio07Selection": 255,
+    "Gpio08Selection": 255,
+    "Gpio09Selection": 255,
+    "Gpio10Selection": 255,
+    "Gpio11Selection": 255,
+    "Gpio12Selection": 255,
+    "Gpio13Selection": 255,
+    "Gpio14Selection": 255,
+    "Gpio15Selection": 255,
+    "Gpio16Selection": 255,
+    "Gpio17Selection": 255,
+    "Gpio18Selection": 255,
+    "Gpio19Selection": 255,
+    "Gpio20Selection": 255,
+    "Gpio21Selection": 255,
+    "Gpio22Selection": 255,
+    "Gpio23Selection": 255,
+    "TxToOrxObservability": 513,
+    "TxToOrxMappingMode": 8,
+    "TxToOrxMappingPinTableOrx0_00": 0,
+    "TxToOrxMappingPinTableOrx0_01": 8,
+    "TxToOrxMappingPinTableOrx0_02": 8,
+    "TxToOrxMappingPinTableOrx0_03": 8,
+    "TxToOrxMappingPinTableOrx0_04": 8,
+    "TxToOrxMappingPinTableOrx0_05": 8,
+    "TxToOrxMappingPinTableOrx0_06": 8,
+    "TxToOrxMappingPinTableOrx0_07": 8,
+    "TxToOrxMappingPinTableOrx0_08": 8,
+    "TxToOrxMappingPinTableOrx0_09": 8,
+    "TxToOrxMappingPinTableOrx0_10": 8,
+    "TxToOrxMappingPinTableOrx0_11": 8,
+    "TxToOrxMappingPinTableOrx0_12": 8,
+    "TxToOrxMappingPinTableOrx0_13": 8,
+    "TxToOrxMappingPinTableOrx0_14": 8,
+    "TxToOrxMappingPinTableOrx0_15": 8,
+    "TxToOrxMappingPinTableOrx1_00": 4,
+    "TxToOrxMappingPinTableOrx1_01": 8,
+    "TxToOrxMappingPinTableOrx1_02": 8,
+    "TxToOrxMappingPinTableOrx1_03": 8,
+    "TxToOrxMappingPinTableOrx1_04": 8,
+    "TxToOrxMappingPinTableOrx1_05": 8,
+    "TxToOrxMappingPinTableOrx1_06": 8,
+    "TxToOrxMappingPinTableOrx1_07": 8,
+    "TxToOrxMappingPinTableOrx1_08": 8,
+    "TxToOrxMappingPinTableOrx1_09": 8,
+    "TxToOrxMappingPinTableOrx1_10": 8,
+    "TxToOrxMappingPinTableOrx1_11": 8,
+    "TxToOrxMappingPinTableOrx1_12": 8,
+    "TxToOrxMappingPinTableOrx1_13": 8,
+    "TxToOrxMappingPinTableOrx1_14": 8,
+    "TxToOrxMappingPinTableOrx1_15": 8,
+    "TxToOrxMappingAutoSwitchAttenEnable": false,
+    "EnableGpioAntCal": false,
+    "EnableAntCal": false,
+    "EnableNco": false,
+    "DisableTxRx": false,
+    "DtxPreserveClocks": false,
+    "PaProtExtendedGpInt": true,
+    "TxToOrxMappingAutoSwitchNcoEnable": false,
+    "DeviceType": 9030
+  },
+  "configSettings": {
+    "Rx": {
+      "profiles": [
+        {
+          "rx_band0_output_sample_rate_in_kHz": 122880,
+          "rx_band0_output_signal_BW_in_kHz": 100000,
+          "rx_band0_RF_center_frequency_in_kHz": 6500000,
+          "rx_band1_output_sample_rate_in_kHz": 0,
+          "rx_band1_output_signal_BW_in_kHz": 0,
+          "rx_band1_RF_center_frequency_in_kHz": 0,
+          "use_LO1": false,
+          "rx_lo_frequency_in_kHz": 6500000,
+          "pfir_mode": 0
+        },
+        {
+          "rx_band0_output_sample_rate_in_kHz": 0,
+          "rx_band0_output_signal_BW_in_kHz": 0,
+          "rx_band0_RF_center_frequency_in_kHz": 0,
+          "rx_band1_output_sample_rate_in_kHz": 0,
+          "rx_band1_output_signal_BW_in_kHz": 0,
+          "rx_band1_RF_center_frequency_in_kHz": 0,
+          "use_LO1": false,
+          "rx_lo_frequency_in_kHz": 0,
+          "pfir_mode": 0
+        },
+        {
+          "rx_band0_output_sample_rate_in_kHz": 0,
+          "rx_band0_output_signal_BW_in_kHz": 0,
+          "rx_band0_RF_center_frequency_in_kHz": 0,
+          "rx_band1_output_sample_rate_in_kHz": 0,
+          "rx_band1_output_signal_BW_in_kHz": 0,
+          "rx_band1_RF_center_frequency_in_kHz": 0,
+          "use_LO1": false,
+          "rx_lo_frequency_in_kHz": 0,
+          "pfir_mode": 0
+        },
+        {
+          "rx_band0_output_sample_rate_in_kHz": 0,
+          "rx_band0_output_signal_BW_in_kHz": 0,
+          "rx_band0_RF_center_frequency_in_kHz": 0,
+          "rx_band1_output_sample_rate_in_kHz": 0,
+          "rx_band1_output_signal_BW_in_kHz": 0,
+          "rx_band1_RF_center_frequency_in_kHz": 0,
+          "use_LO1": false,
+          "rx_lo_frequency_in_kHz": 0,
+          "pfir_mode": 0
+        }
+      ]
+    },
+    "Tx": {
+      "profiles": [
+        {
+          "tx_band0_input_sample_rate_in_kHz": 122880,
+          "tx_band0_input_signal_BW_in_kHz": 100000,
+          "tx_band0_RF_center_frequency_in_kHz": 6100000,
+          "tx_synthesis_BW_upper_edge_in_kHz": 6150000,
+          "tx_synthesis_BW_lower_edge_in_kHz": 6050000,
+          "dpd_on_chip": false,
+          "txrx_channel_assign": 17,
+          "use_LO1": true,
+          "tx_lo_frequency_in_kHz": 6100000,
+          "en_tx_low_noise_mode": true,
+          "is_TDD": false,
+          "pfir_mode": 0
+        },
+        {
+          "tx_band0_input_sample_rate_in_kHz": 0,
+          "tx_band0_input_signal_BW_in_kHz": 0,
+          "tx_band0_RF_center_frequency_in_kHz": 0,
+          "tx_synthesis_BW_upper_edge_in_kHz": 0,
+          "tx_synthesis_BW_lower_edge_in_kHz": 0,
+          "dpd_on_chip": false,
+          "txrx_channel_assign": 0,
+          "use_LO1": false,
+          "tx_lo_frequency_in_kHz": 0,
+          "en_tx_low_noise_mode": true,
+          "is_TDD": false,
+          "pfir_mode": 0
+        },
+        {
+          "tx_band0_input_sample_rate_in_kHz": 0,
+          "tx_band0_input_signal_BW_in_kHz": 0,
+          "tx_band0_RF_center_frequency_in_kHz": 0,
+          "tx_synthesis_BW_upper_edge_in_kHz": 0,
+          "tx_synthesis_BW_lower_edge_in_kHz": 0,
+          "dpd_on_chip": false,
+          "txrx_channel_assign": 0,
+          "use_LO1": false,
+          "tx_lo_frequency_in_kHz": 0,
+          "en_tx_low_noise_mode": true,
+          "is_TDD": false,
+          "pfir_mode": 0
+        },
+        {
+          "tx_band0_input_sample_rate_in_kHz": 0,
+          "tx_band0_input_signal_BW_in_kHz": 0,
+          "tx_band0_RF_center_frequency_in_kHz": 0,
+          "tx_synthesis_BW_upper_edge_in_kHz": 0,
+          "tx_synthesis_BW_lower_edge_in_kHz": 0,
+          "dpd_on_chip": false,
+          "txrx_channel_assign": 0,
+          "use_LO1": false,
+          "tx_lo_frequency_in_kHz": 0,
+          "en_tx_low_noise_mode": true,
+          "is_TDD": false,
+          "pfir_mode": 0
+        }
+      ]
+    },
+    "Orx": {
+      "orx_enable": [
+        true,
+        true
+      ],
+      "orx_output_rate_in_kHz": [
+        491520,
+        491520
+      ],
+      "orx_profile_assign": [
+        0,
+        0
+      ],
+      "orx_deinterleave_ratio": [
+        1,
+        1
+      ]
+    },
+    "MiscInput": {
+      "part_num": "ADRV9032BBPZ-2T1",
+      "dev_clock_in_kHz": 122880,
+      "use_extLO0": false,
+      "extLO0_frequency_in_kHz": 0,
+      "use_extLO1": false,
+      "extLO1_frequency_in_kHz": 0,
+      "orx_rate_option": 0,
+      "datapath_mode": 0,
+      "clkpll_loop_filter_bw_hz": 0,
+      "clkpll_loop_filter_pm_deg": 0
+    },
+    "Jesd204": {
+      "enable204C": false,
+      "framer_cfg": [
+        {
+          "framer_M": 4,
+          "framer_sample_xbar": [
+            16,
+            17,
+            0,
+            1,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "framer_Np": 16,
+          "framer_L": 2,
+          "framer_lane_xbar": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "framer_K": 32,
+          "framer_E": 0,
+          "framer_S": 1,
+          "framer_subclass": 1,
+          "framer_bankId": 0,
+          "framer_deviceId": 0,
+          "framer_lane0Id": 0,
+          "framer_syncbInSPIMode": 0,
+          "framer_syncbInSelect": 0,
+          "framer_syncbInLvdsMode": 1,
+          "framer_syncbInLvdsPnInvert": 0,
+          "framer_newSysrefOnRelink": 0,
+          "framer_sysrefForStartup": 1,
+          "framer_sysrefNShotEnable": 0,
+          "framer_sysrefNShotCount": 0,
+          "framer_sysrefIgnoreWhenLinked": 0,
+          "framer_lmfc_offset": 0,
+          "framer_scramble": true
+        },
+        {
+          "framer_M": 0,
+          "framer_sample_xbar": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "framer_Np": 16,
+          "framer_L": 0,
+          "framer_lane_xbar": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "framer_K": 0,
+          "framer_E": 0,
+          "framer_S": 0,
+          "framer_subclass": 1,
+          "framer_bankId": 0,
+          "framer_deviceId": 0,
+          "framer_lane0Id": 0,
+          "framer_syncbInSPIMode": 0,
+          "framer_syncbInSelect": 3,
+          "framer_syncbInLvdsMode": 0,
+          "framer_syncbInLvdsPnInvert": 0,
+          "framer_newSysrefOnRelink": 0,
+          "framer_sysrefForStartup": 1,
+          "framer_sysrefNShotEnable": 0,
+          "framer_sysrefNShotCount": 0,
+          "framer_sysrefIgnoreWhenLinked": 0,
+          "framer_lmfc_offset": 0,
+          "framer_scramble": true
+        },
+        {
+          "framer_M": 0,
+          "framer_sample_xbar": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "framer_Np": 16,
+          "framer_L": 0,
+          "framer_lane_xbar": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "framer_K": 0,
+          "framer_E": 0,
+          "framer_S": 0,
+          "framer_subclass": 1,
+          "framer_bankId": 0,
+          "framer_deviceId": 0,
+          "framer_lane0Id": 0,
+          "framer_syncbInSPIMode": 0,
+          "framer_syncbInSelect": 3,
+          "framer_syncbInLvdsMode": 0,
+          "framer_syncbInLvdsPnInvert": 0,
+          "framer_newSysrefOnRelink": 0,
+          "framer_sysrefForStartup": 1,
+          "framer_sysrefNShotEnable": 0,
+          "framer_sysrefNShotCount": 0,
+          "framer_sysrefIgnoreWhenLinked": 0,
+          "framer_lmfc_offset": 0,
+          "framer_scramble": true
+        }
+      ],
+      "ls_framer_cfg": [
+        {
+          "ls_link_enable": false,
+          "framer_M": 0,
+          "framer_sample_xbar": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "framer_Np": 16,
+          "framer_K": 0,
+          "framer_S": 0
+        },
+        {
+          "ls_link_enable": false,
+          "framer_M": 0,
+          "framer_sample_xbar": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "framer_Np": 0,
+          "framer_K": 0,
+          "framer_S": 0
+        }
+      ],
+      "deframer_cfg": [
+        {
+          "deframer_M": 4,
+          "deframer_sample_xbar": [
+            2,
+            3,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            0,
+            1,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "deframer_Np": 16,
+          "deframer_L": 2,
+          "deframer_lane_xbar": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "deframer_K": 32,
+          "deframer_E": 0,
+          "deframer_S": 1,
+          "deframer_subclass": 1,
+          "deframer_bankId": 0,
+          "deframer_deviceId": 0,
+          "deframer_lane0Id": 0,
+          "deframer_syncbOutSelect": 0,
+          "deframer_syncbOutLvdsMode": 1,
+          "deframer_syncbOutLvdsPnInvert": 0,
+          "deframer_syncbOutCmosSlewRate": 0,
+          "deframer_syncbOutCmosDriveLevel": 0,
+          "deframer_newSysrefOnRelink": 0,
+          "deframer_sysrefForStartup": 1,
+          "deframer_sysrefNShotEnable": 0,
+          "deframer_sysrefNShotCount": 0,
+          "deframer_sysrefIgnoreWhenLinked": 0,
+          "deframer_lmfc_offset": 0,
+          "deframer_scramble": false
+        },
+        {
+          "deframer_M": 0,
+          "deframer_sample_xbar": [
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128,
+            128
+          ],
+          "deframer_Np": 16,
+          "deframer_L": 0,
+          "deframer_lane_xbar": [
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255,
+            255
+          ],
+          "deframer_K": 0,
+          "deframer_E": 0,
+          "deframer_S": 0,
+          "deframer_subclass": 1,
+          "deframer_bankId": 0,
+          "deframer_deviceId": 0,
+          "deframer_lane0Id": 0,
+          "deframer_syncbOutSelect": 3,
+          "deframer_syncbOutLvdsMode": 0,
+          "deframer_syncbOutLvdsPnInvert": 0,
+          "deframer_syncbOutCmosSlewRate": 0,
+          "deframer_syncbOutCmosDriveLevel": 0,
+          "deframer_newSysrefOnRelink": 0,
+          "deframer_sysrefForStartup": 0,
+          "deframer_sysrefNShotEnable": 0,
+          "deframer_sysrefNShotCount": 0,
+          "deframer_sysrefIgnoreWhenLinked": 0,
+          "deframer_lmfc_offset": 0,
+          "deframer_scramble": true
+        }
+      ],
+      "deser_lane_cfg": [
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 51,
+          "configOption1": 168036352,
+          "configOption2": 14156153,
+          "configOption3": 47841753,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 77,
+          "configOption1": 151072768,
+          "configOption2": 71569218,
+          "configOption3": 1064173677,
+          "configOption4": 980562545,
+          "configOption5": 4228,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        },
+        {
+          "desInvertLanePolarity": 0,
+          "highBoost": 0,
+          "configOption1": 0,
+          "configOption2": 0,
+          "configOption3": 0,
+          "configOption4": 0,
+          "configOption5": 0,
+          "configOption6": 0,
+          "configOption7": 0,
+          "configOption8": 0,
+          "configOption9": 0,
+          "configOption10": 0
+        }
+      ],
+      "ser_lane_cfg": [
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        },
+        {
+          "serAmplitude": 0,
+          "serPreEmphasis": 0,
+          "serPostEmphasis": 0,
+          "serInvertLanePolarity": 0
+        }
+      ]
+    }
+  },
+  "adrvgen6Init": {
+    "spiOptionsInit": {
+      "allowSpiStreaming": 1,
+      "allowAhbAutoIncrement": 1,
+      "allowAhbSpiFifoMode": 1
+    },
+    "clocks": {
+      "DevClkOnChipTermResEn": 0
+    },
+    "cpuMemDump": {
+      "filePath": "DeviceCpuMemDump.bin"
+    },
+    "rx": {
+      "rxChannelCfg": [
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        },
+        {
+          "rxDataFormat": {
+            "formatSelect": 0,
+            "floatingPointConfig": {
+              "fpDataFormat": 0,
+              "fpRoundMode": 0,
+              "fpNumExpBits": 0,
+              "fpAttenSteps": 0,
+              "fpHideLeadingOne": 0,
+              "fpEncodeNan": 0
+            },
+            "integerConfigSettings": {
+              "intEmbeddedBits": 0,
+              "intSampleResolution": 2,
+              "intParity": 2,
+              "intEmbeddedPos": 0
+            },
+            "slicerConfigSettings": {
+              "extSlicerStepSize": 0,
+              "intSlicerStepSize": 0,
+              "extSlicerGpioSelect": 0,
+              "intSlicerGpioSelect": [
+                24,
+                24,
+                24,
+                24
+              ]
+            },
+            "embOvldMonitorSettings": {
+              "embeddedMonitorSrcLsbI": 0,
+              "embeddedMonitorSrcLsbQ": 0,
+              "embeddedMonitorSrcLsbPlusOneI": 0,
+              "embeddedMonitorSrcLsbPlusOneQ": 0,
+              "embeddedMonitorHb2LowSrcSel": 0,
+              "embeddedMonitorHb2HighSrcSel": 0,
+              "embeddedMonitorApdLowSrcSel": 0,
+              "embeddedMonitorApdHighSrcSel": 0,
+              "invertHb2Flag": 0,
+              "invertApdFlag": 0
+            },
+            "externalLnaGain": 0,
+            "tempCompensationEnable": 0
+          },
+          "rxGainIndexInit": 255
+        }
+      ]
+    },
+    "tx": {
+      "txChannelCfg": [
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        },
+        {
+          "txAttenCfg": {
+            "updateCfg": {
+              "srcCfg": {
+                "updateSrc": 0,
+                "s0OrS1Gpio": 24
+              },
+              "trgCfg": {
+                "updateTrg": 0,
+                "triggerGpio": 24
+              }
+            },
+            "txAttenStepSize": 0
+          },
+          "txAttenInit_mdB": 0,
+          "txpowerMonitorCfg": {
+            "inputSel": 0,
+            "peakThreshold": 0,
+            "measDuration": 0,
+            "peakCount": 0,
+            "peakErrorClearRequired": 0,
+            "peakPowerEnable": 0,
+            "peakPowerIrqEnable": 0,
+            "avgThreshold": 0,
+            "avgErrorClearRequired": 0,
+            "avgPowerEnable": 0,
+            "avgPowerIrqEnable": 0,
+            "avgPeakRatioEnable": 0
+          },
+          "srlCfg": {
+            "inputSel": 0,
+            "srdOffset": 0,
+            "srdEnable": 0,
+            "srdIrqEnable": 0,
+            "autoRecoveryWaitTime": 0,
+            "autoRecoveryEnable": 0,
+            "autoRecoveryDisableTimerWhenTxOff": 0,
+            "srdStatisticsEnable": 0,
+            "srdStatisticsMode": 0
+          },
+          "protectionRampCfg": {
+            "rampDownMask": 0,
+            "altEventClearReqd": 0
+          }
+        }
+      ]
+    },
+    "uart": [
+      {
+        "enable": 0,
+        "pinSelect": 9
+      },
+      {
+        "enable": 0,
+        "pinSelect": 10
+      },
+      {
+        "enable": 0,
+        "pinSelect": 11
+      },
+      {
+        "enable": 0,
+        "pinSelect": 12
+      }
+    ],
+    "gpIntPreInit": {
+      "gpInt0Mask": {
+        "lowerMask": 281474976710655,
+        "upperMask": 281474976710655
+      },
+      "gpInt1Mask": {
+        "lowerMask": 281474976710655,
+        "upperMask": 281474976710655
+      }
+    },
+    "DeviceType": 9030
+  },
+  "adrvgen6PostMcsInit": {
+    "radioCtrlCfg": {
+      "txRadioCtrlModeCfg": {
+        "txEnableMode": 0,
+        "txChannelMask": 17
+      },
+      "rxRadioCtrlModeCfg": {
+        "rxEnableMode": 0,
+        "rxChannelMask": 17
+      },
+      "orxRadioCtrlModeCfg": {
+        "orxEnableMode": 0,
+        "orxChannelMask": 768
+      }
+    },
+    "radioCtrlGpioCfg": {
+      "txEnMapping": [
+        16,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0
+      ],
+      "txAltMapping": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "rxEnMapping": [
+        0,
+        16,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      "rxAltMapping": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "radioCtrlTxRxEnPinSel": 255,
+    "radioCtrlTxRxEnCfgSel": 5,
+    "gpIntPostInit": {
+      "gpInt0Mask": {
+        "lowerMask": 281474976710655,
+        "upperMask": 281474976710655
+      },
+      "gpInt1Mask": {
+        "lowerMask": 281474976710655,
+        "upperMask": 281474976710655
+      }
+    },
+    "initCals": {
+      "calMask": 20222,
+      "rxChannelMask": 17,
+      "txChannelMask": 17,
+      "orxChannelMask": 3,
+      "warmBoot": 0
+    },
+    "DeviceType": 9030
+  }
+}

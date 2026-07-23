@@ -1,0 +1,79 @@
+/**
+* Copyright 2015 - 2025 Analog Devices Inc.
+* SPDX-License-Identifier: Apache-2.0
+*/
+
+/**
+*   \file   adi_adrv903x_ver_redirect.c
+* 
+*   \brief  Auto generated function pointer shim layer to ease linking to one of multiple 
+            versions of the API at runtime
+*
+*   Generated from ADRV903X API Version: 2.12.1.4
+*/
+
+#include <stdio.h>
+#include <dlfcn.h>
+
+#include "adi_adrv903x_ver_redirect.h"
+
+/* The redirect-table comprising a fn ptr for each PUBLIC API fn */
+$C_FUNCTIONPTR_PROTOS$
+
+/* There is a not-implmented fn per device type, not per API implementation/release or API extension. */
+static adi_adrv903x_ErrAction_e adi_adrv903x_NotImplemented(void)
+{
+    return ADI_ADRV903X_ERR_ACT_CHECK_MULTIVERSIONING;
+}
+
+/* Maps from fnname to fnptr */
+typedef struct fnNamesAndNullImpl {
+    const char* fnName;
+    void** fnPtrPtr;
+} fnNamesAndNullImpl_t;
+
+static fnNamesAndNullImpl_t fnNamesAndDefaults[] = {
+/*  {"adi_adrv903x_FuncName", (void**) &adi_adrv903x_FuncName, (void*) adrv903x_not_implemented},*/
+    $C_FUNCTION_LINK_ARRAY$
+};
+
+ADI_API int adi_adrv903x_VersionLoad(const char* const soPath)
+{
+    return adi_adrv903x_VersionLoad_vLogCtl(soPath, stderr);
+}
+
+ADI_API int adi_adrv903x_VersionLoad_vLogCtl(const char* const soPath, FILE* const logStream)
+{
+    void *soHandle = NULL;
+    char* errStr = NULL;
+    unsigned idx = 0;
+
+    /* Open the .so. Use DEEPBIND to prevent calls to API 'private' fns being fixed
+     * up to the incorrect library when loading multiple API libs. */
+    soHandle = dlopen(soPath, RTLD_NOW | RTLD_DEEPBIND );
+    if (!soHandle)
+    {
+        fprintf (stderr, "Failed to open '%s' (%s)\n", soPath, dlerror());
+        return -1;
+    }
+
+    /* Exract and set the fn ptrs */
+    for (idx = 0; idx < (sizeof(fnNamesAndDefaults) / sizeof(fnNamesAndDefaults[0])); idx++)
+    {
+        *fnNamesAndDefaults[idx].fnPtrPtr = dlsym(soHandle, fnNamesAndDefaults[idx].fnName);
+        errStr = dlerror();
+        if (errStr)
+        {
+            /* Fn does not exist in so - use null Impl */
+            fprintf (logStream, "Shared lib does not implement '%s'\n", fnNamesAndDefaults[idx].fnName);
+            
+            /* Disable compiler message "ISO C forbids conversion of function pointer to object pointer type [-Werror=pedantic]" */
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wpedantic"
+            *fnNamesAndDefaults[idx].fnPtrPtr = adi_adrv903x_NotImplemented;
+            #pragma GCC diagnostic pop
+        }
+    }
+
+    return 0;
+}
