@@ -39,5 +39,6 @@ ctrlport_if_combiner.sv \
 ctrlport_if_decoder.sv \
 ctrlport_if_splitter.sv \
 ctrlport_if_terminator.sv \
+ctrlport_if_timer.sv \
 ctrlport_if_window.sv \
 ))
