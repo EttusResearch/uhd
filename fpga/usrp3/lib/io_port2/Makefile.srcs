@@ -9,6 +9,8 @@ IOPORT2_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/io_port2/, \
 ./LvFpga_Chinch_Interface.v \
 ./LvFpga_Chinch_Interface.ngc \
 ./ioport2_msg_codec.v \
+./ioport2_msg_pkg.sv \
+./ctrlport_to_ioport2_stream.sv \
 ./pcie_pkt_route_specifier.v \
 ./pcie_axi_wb_conv.v \
 ./pcie_wb_reg_core.v \

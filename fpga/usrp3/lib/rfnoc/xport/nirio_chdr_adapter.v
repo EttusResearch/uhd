@@ -1,12 +1,13 @@
 //
-// Copyright 2019 Ettus Research, A National Instruments Brand
+// Copyright 2025 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: nirio_chdr64_adapter
+// Module: nirio_chdr_adapter
 //
 // Description: A transport adapter specific to connecting an NI-RIO streaming
-//   interface to CHDR. It assumes to be connected to x300_pcie_int.
+//   interface to CHDR. It assumes to be connected to a single AXI stream
+//   (as generate by x300_pcie_int and b310_pcie_int).
 //   See also chdr_xport_adapter_generic.
 //
 //   The tuser inputs/outputs used for routing are the index of the DMA channel.
@@ -14,10 +15,11 @@
 //   bits wide.
 //
 // Parameters:
-//   - PROTOVER: RFNoC protocol version {8'd<major>, 8'd<minor>}
-//   - MTU: Log2 of the MTU of the packet in 64-bit words
+//   - PROTOVER:    RFNoC protocol version {8'd<major>, 8'd<minor>}
+//   - DATA_W:      Word size for elements in stream to/from the MAC
+//   - MTU:         Log2 of the MTU of the packet in DATA_W-bit words
 //   - RT_TBL_SIZE: Log2 of the depth of the return-address routing table
-//   - NODE_INST: The node type to return for a node-info discovery
+//   - NODE_INST:   The node type to return for a node-info discovery
 //
 // Signals:
 //   - device_id : The ID of the device that has instantiated this module
@@ -27,8 +29,9 @@
 //   - m_chdr_*: The output CHDR stream to the rfnoc infrastructure
 //
 
-module nirio_chdr64_adapter #(
+module nirio_chdr_adapter #(
   parameter [15:0] PROTOVER         = {8'd1, 8'd0},
+  parameter        DATA_W           = 64,
   parameter        MTU              = 10,
   parameter        RT_TBL_SIZE      = 6,
   parameter        NODE_INST        = 0,
@@ -40,30 +43,30 @@ module nirio_chdr64_adapter #(
   // Device info
   input  wire [15:0] device_id,
   // AXI-Stream interface to/from DMA engines
-  input  wire [63:0]              s_dma_tdata,
+  input  wire [DATA_W-1:0]        s_dma_tdata,
   input  wire [DMA_ID_WIDTH-1:0]  s_dma_tuser,
   input  wire                     s_dma_tlast,
   input  wire                     s_dma_tvalid,
   output wire                     s_dma_tready,
-  output wire [63:0]              m_dma_tdata,
+  output wire [DATA_W-1:0]        m_dma_tdata,
   output wire [DMA_ID_WIDTH-1:0]  m_dma_tuser,
   output wire                     m_dma_tlast,
   output wire                     m_dma_tvalid,
   input  wire                     m_dma_tready,
   // AXI-Stream interface to/from CHDR infrastructure
-  input  wire [63:0] s_chdr_tdata,
-  input  wire        s_chdr_tlast,
-  input  wire        s_chdr_tvalid,
-  output wire        s_chdr_tready,
-  output wire [63:0] m_chdr_tdata,
-  output wire        m_chdr_tlast,
-  output wire        m_chdr_tvalid,
-  input  wire        m_chdr_tready
+  input  wire [DATA_W-1:0] s_chdr_tdata,
+  input  wire              s_chdr_tlast,
+  input  wire              s_chdr_tvalid,
+  output wire              s_chdr_tready,
+  output wire [DATA_W-1:0] m_chdr_tdata,
+  output wire              m_chdr_tlast,
+  output wire              m_chdr_tvalid,
+  input  wire              m_chdr_tready
 );
 
-  `include "../../lib/rfnoc/core/rfnoc_chdr_utils.vh"
-  `include "../../lib/rfnoc/core/rfnoc_chdr_internal_utils.vh"
-  `include "../../lib/rfnoc/xport/rfnoc_xport_types.vh"
+  `include "../core/rfnoc_chdr_utils.vh"
+  `include "../core/rfnoc_chdr_internal_utils.vh"
+  `include "./rfnoc_xport_types.vh"
 
   //---------------------------------------
   // CHDR Transport Adapter
@@ -71,7 +74,7 @@ module nirio_chdr64_adapter #(
 
   chdr_xport_adapter_generic #(
     .PROTOVER     (PROTOVER),
-    .CHDR_W       (64),
+    .CHDR_W       (DATA_W),
     .USER_W       (DMA_ID_WIDTH),
     .TBL_SIZE     (RT_TBL_SIZE),
     .NODE_SUBTYPE (NODE_SUBTYPE_XPORT_NIRIO_CHDR64),

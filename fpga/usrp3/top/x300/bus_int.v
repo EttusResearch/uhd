@@ -746,8 +746,9 @@ module bus_int #(
     wire [63:0] 	  c2p_tdata;
     wire        	  c2p_tlast, c2p_tvalid, c2p_tready;
     // Transport adapter with the management interface
-    nirio_chdr64_adapter #(
+    nirio_chdr_adapter #(
        .PROTOVER(RFNOC_PROTOVER),
+       .DATA_W(64),
        .DMA_ID_WIDTH(DMA_RX_DEST_WIDTH)
     ) nirio_xport_adapter
     (

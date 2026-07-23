@@ -59,7 +59,6 @@ x300_core.v \
 x300_sfpp_io_core.v \
 x300_zpu_config.vhd \
 x300_eth_interface.v \
-nirio_chdr64_adapter.v \
 soft_ctrl.v \
 capture_ddrlvds.v \
 gen_ddrlvds.v \
