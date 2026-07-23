@@ -26,3 +26,7 @@ set(UHD_RUAMEL_YAML_MIN_VERSION     "0.15"    )
 set(UHD_PY_MAKO_MIN_VERSION         "0.4.2"   )
 set(UHD_PY_REQUESTS_MIN_VERSION     "2.0"     )
 set(UHD_PYBIND11_MIN_VERSION        "2.7"     )
+# gRPC/Protobuf: The floor is the minimum version shipped
+# the oldest validated distribution (Ubuntu 22.04 / jammy).
+set(UHD_GRPC_MIN_VERSION            "1.30"    )
+set(UHD_PROTOBUF_MIN_VERSION        "3.12"    )
