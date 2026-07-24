@@ -6,6 +6,8 @@
   block_domain = block.get('domain')
   ctrl_clk_index = config.get_clock_index(block.get('ctrl_clock'))
   timebase_clk_index = config.get_clock_index(block.get('timebase_clock'))
+  block_chdr_w = block['block_chdr_width'] if core_domain == 'top' else 'BLOCK_CHDR_W'
+  block_mtu = f'BYTE_MTU - $clog2({block_chdr_w}/8)' if core_domain == 'top' else 'BLOCK_MTU'
   # Create two strings, one for the input and one for the output, that each
   # contains all the signal names to be connected to the input or output
   # AXIS-CHDR ports of this block.
@@ -30,13 +32,13 @@
 % endfor
 % if core_domain != 'secure_core': ## In the secure core, these are ports, not wires
   % if axis_inputs:
-  wire [BLOCK_CHDR_W-1:0] ${axis_inputs.format("s", "tdata ")};
+  wire [${block_chdr_w}-1:0] ${axis_inputs.format("s", "tdata ")};
   wire                    ${axis_inputs.format("s", "tlast ")};
   wire                    ${axis_inputs.format("s", "tvalid")};
   wire                    ${axis_inputs.format("s", "tready")};
   % endif
   % if axis_outputs:
-  wire [BLOCK_CHDR_W-1:0] ${axis_outputs.format("m", "tdata ")};
+  wire [${block_chdr_w}-1:0] ${axis_outputs.format("m", "tdata ")};
   wire                    ${axis_outputs.format("m", "tlast ")};
   wire                    ${axis_outputs.format("m", "tvalid")};
   wire                    ${axis_outputs.format("m", "tready")};
@@ -55,7 +57,7 @@
 
   rfnoc_block_${block.desc.module_name} #(
     .THIS_PORTID         (BLOCK_PORT_IDS[${i}]),
-    .CHDR_W              (BLOCK_CHDR_W),
+    .CHDR_W              (${block_chdr_w}),
 %for name, value in block_params.items():
     .${"%-20s" % name}(${value}),
 %endfor
@@ -65,7 +67,7 @@
 %if timebase_clk_index is not None:
     .TB_CLK_IDX          (${timebase_clk_index}),
 %endif
-    .MTU                 (BLOCK_MTU)
+    .MTU                 (${block_mtu})
   ) b_${block_name}_${'s' if core_domain == 'secure_core' else ''}${i} (
     .rfnoc_chdr_clk      (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),

@@ -28,11 +28,11 @@
     REQ_BUFF_SIZE_${ep_name} < 2*(2**${ep_name}_MTU) ? ${ep_name}_MTU+1 :
                                          $clog2(REQ_BUFF_SIZE_${ep_name});
 
-  wire [BLOCK_CHDR_W-1:0] ${axis_outputs[sep].format(sep,"tdata")};
+  wire [${seps[sep]["block_chdr_width"]}-1:0] ${axis_outputs[sep].format(sep,"tdata")};
   wire                    ${axis_outputs[sep].format(sep,"tlast")};
   wire                    ${axis_outputs[sep].format(sep,"tvalid")};
   wire                    ${axis_outputs[sep].format(sep,"tready")};
-  wire [BLOCK_CHDR_W-1:0] ${axis_inputs[sep].format(sep,"tdata")};
+  wire [${seps[sep]["block_chdr_width"]}-1:0] ${axis_inputs[sep].format(sep,"tdata")};
   wire                    ${axis_inputs[sep].format(sep,"tlast")};
   wire                    ${axis_inputs[sep].format(sep,"tvalid")};
   wire                    ${axis_inputs[sep].format(sep,"tready")};
@@ -45,7 +45,7 @@
     .DEVICE_FAMILY      ("${config.device.family}"),
     .PROTOVER           (PROTOVER),
     .CHDR_W             (${ep_name + "_W"}),
-    .BLOCK_CHDR_W       (BLOCK_CHDR_W),
+    .BLOCK_CHDR_W       (${seps[sep]["block_chdr_width"]}),
     .AXIS_CTRL_EN       (${int(seps[sep]["ctrl"])}),
     .AXIS_DATA_EN       (${int(seps[sep]["data"])}),
     .NUM_DATA_I         (${int(seps[sep]["num_data_i"])}),

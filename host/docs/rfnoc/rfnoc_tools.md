@@ -221,6 +221,7 @@ schema: rfnoc_imagebuilder_args         # Identifier for the schema used to vali
 version: "1.0"                          # File version
 rfnoc_version: "1.0"                    # RFNoC protocol version
 chdr_width: 64                          # Bit width of the CHDR bus for this image
+block_chdr_width: 64                    # Default CHDR width between blocks
 device: 'x310'                          # USRP device to build for
 default_target: 'X310_HG'               # Default FPGA image type to build
 
@@ -231,6 +232,7 @@ stream_endpoints:
   ep0:                                  # Stream endpoint name
     ctrl: True                          # Endpoint passes control traffic
     data: True                          # Endpoint passes data traffic
+    block_chdr_width: 64                # Optional block-facing CHDR width
     num_data_i: 1                       # Number of data input ports
     num_data_o: 2                       # Number of data output ports
     buff_size: 32768                    # Ingress buffer size for data
@@ -277,3 +279,12 @@ clk_domains:
     - {srcblk: _device_, srcport: radio,    dstblk: blk1, dstport: user0  }
 ...
 ```
+
+The image-level `block_chdr_width` defaults to `chdr_width`. A stream endpoint
+may override it for its entire static subgraph. A static subgraph is a connected
+group of stream endpoints and NoC blocks formed by the CHDR data connections in
+the `connections` section. Connection direction does not matter when determining
+the group, and clock or other non-data connections are not included. For example,
+the connections above place `ep0`, `ep1`, `blk0`, and `blk1` in one static
+subgraph. RFNoC Image Builder reports an error if stream endpoints in the same
+subgraph specify conflicting overrides.

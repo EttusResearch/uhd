@@ -62,6 +62,7 @@
             "type": "object",
             "properties": {
                 "chdr_width":{ "enum":  [64, 128, 256, 512] },
+                "block_chdr_width": { "enum":  [64, 128, 256, 512] },
                 "ctrl":      { "type": "boolean" },
                 "data":      { "type": "boolean" },
                 "num_data_i":{ "type": "integer", "minimum": 1 },

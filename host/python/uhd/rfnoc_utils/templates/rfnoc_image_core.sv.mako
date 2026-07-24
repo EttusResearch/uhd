@@ -68,8 +68,8 @@ module rfnoc_image_core #(
 % endif
 );
 
-  // BLOCK_CHDR_W is the CHDR width between blocks, and between blocks and
-  // stream endpoints. It defaults to CHDR_W, but can be set to be a different
+  // BLOCK_CHDR_W is the default CHDR width between blocks, and between blocks
+  // and stream endpoints. It defaults to CHDR_W, but can be set to be a different
   // value than the global CHDR width, and therefore gets its own constant.
   localparam BLOCK_CHDR_W  = ${config.block_chdr_width};
   localparam BYTE_MTU      = MTU + $clog2(CHDR_W/8);

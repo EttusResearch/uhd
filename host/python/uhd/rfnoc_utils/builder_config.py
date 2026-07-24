@@ -40,6 +40,7 @@ class ImageBuilderConfig:
         """Initialize."""
         self.rfnoc_version = config.get("rfnoc_version", RFNOC_PROTO_VERSION)
         self.chdr_width = config["chdr_width"]
+        self.block_chdr_width = config.get("block_chdr_width", self.chdr_width)
         self.parameters = {}
         self.crossbar_routes = config.get("crossbar_routes", [])
         self.noc_blocks = {}
@@ -87,6 +88,7 @@ class ImageBuilderConfig:
         self._collect_io_ports()
         self._collect_clocks_and_resets()
         connections.check_and_sanitize(self)
+        self._apply_block_chdr_widths()
         self._check_resets()
         self._check_clk_domains()
         self._annotate_modules()
@@ -318,9 +320,6 @@ class ImageBuilderConfig:
                 requested_version,
             )
         self.rfnoc_version = RFNOC_PROTO_VERSION
-        # Give block_chdr_width a default value
-        if not hasattr(self, "block_chdr_width"):
-            self.block_chdr_width = self.chdr_width
         # Check crossbar_routes
         if hasattr(self.device, "transports") and len(self.transport_adapters) > 0:
             failures += [
@@ -641,7 +640,47 @@ class ImageBuilderConfig:
                 self.stream_endpoints[sep]["num_data_o"] = 1
             if "chdr_width" not in self.stream_endpoints[sep]:
                 self.stream_endpoints[sep]["chdr_width"] = self.chdr_width
+            self.stream_endpoints[sep].setdefault("block_chdr_width", self.block_chdr_width)
 
+    def _apply_block_chdr_widths(self):
+        """Apply each stream endpoint's CHDR width to its static subgraph."""
+        # Build an undirected graph of all static data connections. Direction
+        # does not matter because one width applies to the entire subgraph.
+        graph = {name: set() for name in self.stream_endpoints.keys() | self.noc_blocks.keys()}
+        for connection in self.connections:
+            if connection["srctype"] == "output":
+                srcblk = connection["srcblk"]
+                dstblk = connection["dstblk"]
+                graph[srcblk].add(dstblk)
+                graph[dstblk].add(srcblk)
+
+        # Walk the graph from each SEP and record its width on every reachable
+        # node. Reaching a node with a different width identifies a conflict.
+        widths = {}
+        for sep, sep_info in self.stream_endpoints.items():
+            width = sep_info["block_chdr_width"]
+            pending = [sep]
+            while pending:
+                block = pending.pop()
+                if block in widths:
+                    if widths[block] != width:
+                        self.log.error(
+                            "Conflicting block_chdr_width on block %s in subgraph containing %s",
+                            block, sep,
+                        )
+                        raise ValueError("The image core configuration is invalid.")
+                    continue
+                widths[block] = width
+                pending.extend(graph[block])
+
+        # Apply the inherited width to each NoC block. Disconnected blocks use
+        # the image default, as do all blocks inside the secure core.
+        for name, block in self.noc_blocks.items():
+            width = widths.get(name, self.block_chdr_width)
+            if block.get("domain") == "secure_core" and width != self.block_chdr_width:
+                self.log.error("Secure-core block %s cannot override block_chdr_width", name)
+                raise ValueError("The image core configuration is invalid.")
+            block["block_chdr_width"] = width
 
     def _calculate_uram_usage(self):
         # recalculate the total number of URAM blocks based on the
