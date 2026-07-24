@@ -679,6 +679,12 @@ UHD_ADD_NONAPI_TEST(
     ${UHD_SOURCE_DIR}/lib/usrp/cores/complex_gain_3000.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "spi_core_4000_test.cpp"
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/cores/spi_core_4000.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
