@@ -70,7 +70,7 @@ Examples:
 
 \subsection usrpctl_reset reset
 Arguments:
--`-mpm`: reset MPM of USRP device (requires python package rpc-msgpack or msgpack-rpc-python)
+-`-mpm`: reset MPM of USRP device (requires the `grpcio` Python package; see \ref page_build_guide)
  
 The reset command resets specified subcomponents of a device. If `$ID` is not
 given, it scans the system for available, supported devices and resets the
