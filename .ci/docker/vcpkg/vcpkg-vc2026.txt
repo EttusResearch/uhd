@@ -2,3 +2,5 @@ The vcpkg.json manifest file is using vcpkg tag "2026.01.16" as builtin-baseline
 
 boost 1.90
 libusb 1.0.29
+grpc 1.71.0
+protobuf 5.29.5
