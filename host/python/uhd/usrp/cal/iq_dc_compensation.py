@@ -49,7 +49,7 @@ except ImportError as ex:
 TX_OFFSET_FREQUENCY = 3.1315e6
 WFM_UPLOAD_RETRIES = 4
 # The pattern of the log files for measurements
-LOGFILE_PATTERN = "measurements_{}.json"
+LOGFILE_PATTERN = "measurements_{}_{}.json"
 # Discard initial RX samples to allow the RX signal chain to settle after stream start.
 RX_SAMPLES_TO_DISCARD = 10000
 
@@ -391,9 +391,9 @@ def upload_waveform(tx, tx_waveform, mem_region=None):
         raise RuntimeError(f"Failed to upload TX waveform after {WFM_UPLOAD_RETRIES} retries.")
 
 
-def get_log_filename(db_serial):
-    """Get the log file name for a given DB serial number."""
-    return LOGFILE_PATTERN.format(db_serial)
+def get_log_filename(sample_rate, db_serial):
+    """Get the log file name for a given sample rate and DB serial number."""
+    return LOGFILE_PATTERN.format(int(sample_rate), db_serial)
 
 
 ###################################################################################################
@@ -441,7 +441,7 @@ class HBXCompensator:
         if args.log:
             print(
                 "Logging enabled. Measurement results will be saved to files "
-                f"`{get_log_filename('<db_serial>')}` in current directory."
+                f"`{get_log_filename(args.sample_rate, '<db_serial>')}` in current directory."
             )
             if not os.access(".", os.W_OK):
                 raise RuntimeError(
@@ -544,7 +544,7 @@ class HBXCompensator:
                 for ch in channels:
                     if self._args.log:
                         self._storage[ch].save_to_file(
-                            get_log_filename(self._storage[ch].db_serial)
+                            get_log_filename(self._args.sample_rate, self._storage[ch].db_serial)
                         )
                     self._cal_data = {}
                     for freq_point in self._storage[ch].freq_points:

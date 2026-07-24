@@ -84,7 +84,7 @@ def parse_args():
         "--log",
         action="store_true",
         help=(
-            "Enable logging of measurement results into file `measurements_<db_serial>.json` "
+            "Enable logging of measurement results into file `measurements_<sample_rate>_<db_serial>.json` "
             "in current directory (default: False). Current directory needs to be writable."
         ),
     )
