@@ -34,6 +34,13 @@ Change Log for Releases
   - Fully removed Boost.Thread, Boost.Date_Time, and Boost.Chrono dependencies
     for libuhd. Other Boost usage has been reduced.
   - Improved compatibility with newest compiler versions (e.g., gcc16).
+  - MPM RPC transport migrated from mprpc (msgpack-RPC) to gRPC/Protobuf.
+    The mprpc Python dependency is replaced by grpcio. On Linux, the host
+    build-time dependencies are libgrpc++-dev, libprotobuf-dev, and
+    protobuf-compiler-grpc. On Windows, there are no prebuilt distro packages,
+    so gRPC and Protobuf (including the grpc_cpp_plugin code-generation plugin)
+    must be obtained either by building from source (https://github.com/grpc/grpc)
+    or via a package manager such as vcpkg.
 
 ## 004.010.000.000
 * Highlights / Main Changes
