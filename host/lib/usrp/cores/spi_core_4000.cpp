@@ -73,14 +73,26 @@ public:
             periph_ctrl |= (1 << 26);
         }
         periph_ctrl |= ((num_bits & 0x3F) << 20);
+
+        /* In the FPGA, the offset between Port A and B is 16, but we only have 12 pins
+         * per port. To align this with the rest of the GPIO API, we need to adjust the
+         * pin numbers accordingly.
+         */
+        const auto get_bitfield = [](uint32_t pin, uint32_t offset) -> uint32_t {
+            const uint32_t adj = pin
+                                 + ((pin >= NUM_PINS_PER_PORT) ? static_cast<uint32_t>(
+                                        PORT_NUMBER_OFFSET - NUM_PINS_PER_PORT)
+                                                               : 0u);
+            return (adj & 0x1F) << offset;
+        };
         // periph_cs (which GPIO line for CS signal)
-        periph_ctrl |= (_spi_periph_config[which_periph].periph_cs & 0x1F) << 15;
+        periph_ctrl |= get_bitfield(_spi_periph_config[which_periph].periph_cs, 15);
         // periph_sdi (which GPIO line for serial data in from peripheral)
-        periph_ctrl |= (_spi_periph_config[which_periph].periph_sdi & 0x1F) << 10;
+        periph_ctrl |= get_bitfield(_spi_periph_config[which_periph].periph_sdi, 10);
         // periph_sdo (which GPIO line for serial data out to peripheral)
-        periph_ctrl |= (_spi_periph_config[which_periph].periph_sdo & 0x1F) << 5;
+        periph_ctrl |= get_bitfield(_spi_periph_config[which_periph].periph_sdo, 5);
         // periph_clk (which GPIO line for clk signal)
-        periph_ctrl |= (_spi_periph_config[which_periph].periph_clk & 0x1F) << 0;
+        periph_ctrl |= get_bitfield(_spi_periph_config[which_periph].periph_clk, 0);
 
         // conditionally send peripheral control
         if (_periph_ctrl_cache[which_periph] != periph_ctrl) {

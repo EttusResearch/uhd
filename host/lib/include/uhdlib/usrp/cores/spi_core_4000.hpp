@@ -14,6 +14,13 @@
 #include <memory>
 
 namespace uhd { namespace cores {
+// There are two ports, each with 12 user-configurable pins (GPIO0: [0..11], GPIO1:
+// [12..23])
+constexpr size_t NUM_PINS_PER_PORT = 12;
+
+// In the FPGA register map, Port B pin indices start at 16 (not 12)
+constexpr size_t PORT_NUMBER_OFFSET = 16;
+
 class spi_core_4000 : uhd::noncopyable, public uhd::spi_iface
 {
 public:
