@@ -148,6 +148,9 @@ resources:
   - pipeline: uhd_mono_pipeline
     source: 'uhddev mono pipeline'
     branch: master
+  - pipeline: uhd_mono_pipeline_pr
+    source: 'uhddev mono pipeline PR'
+    branch: master
   - pipeline: usrp-kas-pipeline
     source: 'usrp-kas'
     branch: scarthgap
@@ -155,9 +158,6 @@ resources:
   # fully populated.
   - pipeline: uhd_fpga_pipeline
     source: 'uhddev fpga pipeline'
-    branch: master
-  - pipeline: uhd_fpga_pr_pipeline
-    source: 'uhddev fpga pipeline PR'
     branch: master
   repositories:
   - repository: meta-ettus
