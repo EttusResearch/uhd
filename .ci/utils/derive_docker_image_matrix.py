@@ -44,6 +44,8 @@ SECTION_DATA_MAP = {
 
 
 def _parse_matrix_string(raw_value: str) -> dict[str, dict[str, Any]]:
+    if not raw_value:
+        return {}
     parsed = ast.literal_eval(raw_value)
     if not isinstance(parsed, dict):
         raise ValueError("Expected matrix content to parse as a dict")
