@@ -214,6 +214,130 @@ service MpmServerService {
   rpc PokeMb(PokeMbRequest) returns (PokeMbResponse);
   rpc PeekRfdc(PeekRfdcRequest) returns (PeekRfdcResponse);
   rpc PokeRfdc(PokeRfdcRequest) returns (PokeRfdcResponse);
+
+  rpc ClkauxConfigDac(ClkauxConfigDacRequest) returns (ClkauxConfigDacResponse);
+  rpc ClkauxConfigDpll(ClkauxConfigDpllRequest) returns (ClkauxConfigDpllResponse);
+  rpc ClkauxReadDac(ClkauxReadDacRequest) returns (ClkauxReadDacResponse);
+  rpc ClkauxStoreTuningWord(ClkauxStoreTuningWordRequest) returns (ClkauxStoreTuningWordResponse);
+  rpc ClkauxExportClock(ClkauxExportClockRequest) returns (ClkauxExportClockResponse);
+  rpc ClkauxSetSource(ClkauxSetSourceRequest) returns (ClkauxSetSourceResponse);
+  rpc ClkauxSetTrig(ClkauxSetTrigRequest) returns (ClkauxSetTrigResponse);
+  rpc ClkauxGetClockSource(ClkauxGetClockSourceRequest) returns (ClkauxGetClockSourceResponse);
+  rpc ClkauxSetRefLockLed(ClkauxSetRefLockLedRequest) returns (ClkauxSetRefLockLedResponse);
+  rpc ClkauxIsNsyncSupported(ClkauxIsNsyncSupportedRequest) returns (ClkauxIsNsyncSupportedResponse);
+  rpc ClkauxIsGpsSupported(ClkauxIsGpsSupportedRequest) returns (ClkauxIsGpsSupportedResponse);
+  rpc ClkauxIsGpsEnabled(ClkauxIsGpsEnabledRequest) returns (ClkauxIsGpsEnabledResponse);
+  rpc ClkauxGet3v3Pg(ClkauxGet3v3PgRequest) returns (ClkauxGet3v3PgResponse);
+  rpc ClkauxGetGpsAlarm(ClkauxGetGpsAlarmRequest) returns (ClkauxGetGpsAlarmResponse);
+  rpc ClkauxGetGpsLocked(ClkauxGetGpsLockedRequest) returns (ClkauxGetGpsLockedResponse);
+  rpc ClkauxGetGpsSurvey(ClkauxGetGpsSurveyRequest) returns (ClkauxGetGpsSurveyResponse);
+  rpc ClkauxGetGpsWarmup(ClkauxGetGpsWarmupRequest) returns (ClkauxGetGpsWarmupResponse);
+  rpc ClkauxGetGpsPhaseLock(ClkauxGetGpsPhaseLockRequest) returns (ClkauxGetGpsPhaseLockResponse);
+  rpc ClkauxGetNsyncChipIdValid(ClkauxGetNsyncChipIdValidRequest) returns (ClkauxGetNsyncChipIdValidResponse);
+  rpc ClkauxGetNsyncLmkEepromProgCycles(ClkauxGetNsyncLmkEepromProgCyclesRequest) returns (ClkauxGetNsyncLmkEepromProgCyclesResponse);
+  rpc ClkauxGetNsyncLmkStatusDpll(ClkauxGetNsyncLmkStatusDpllRequest) returns (ClkauxGetNsyncLmkStatusDpllResponse);
+  rpc ClkauxGetNsyncLmkStatusPllXo(ClkauxGetNsyncLmkStatusPllXoRequest) returns (ClkauxGetNsyncLmkStatusPllXoResponse);
+  rpc ClkauxSetNsyncLmkPowerEn(ClkauxSetNsyncLmkPowerEnRequest) returns (ClkauxSetNsyncLmkPowerEnResponse);
+  rpc ClkauxSetNsyncPriRefSource(ClkauxSetNsyncPriRefSourceRequest) returns (ClkauxSetNsyncPriRefSourceResponse);
+  rpc ClkauxSetNsyncRefSelect(ClkauxSetNsyncRefSelectRequest) returns (ClkauxSetNsyncRefSelectResponse);
+  rpc ClkauxSetNsyncSoftReset(ClkauxSetNsyncSoftResetRequest) returns (ClkauxSetNsyncSoftResetResponse);
+  rpc ClkauxSetNsyncTcxoEn(ClkauxSetNsyncTcxoEnRequest) returns (ClkauxSetNsyncTcxoEnResponse);
+  rpc ClkauxWriteNsyncLmkCfgRegsToEeprom(ClkauxWriteNsyncLmkCfgRegsToEepromRequest) returns (ClkauxWriteNsyncLmkCfgRegsToEepromResponse);
+  rpc ClkauxWriteNsyncLmkEepromToCfgRegs(ClkauxWriteNsyncLmkEepromToCfgRegsRequest) returns (ClkauxWriteNsyncLmkEepromToCfgRegsResponse);
+  rpc ClkauxPeek8(ClkauxPeek8Request) returns (ClkauxPeek8Response);
+  rpc ClkauxPoke8(ClkauxPoke8Request) returns (ClkauxPoke8Response);
+
+  rpc HasCompatVersion(HasCompatVersionRequest) returns (HasCompatVersionResponse);
+  rpc PeekLoSpi(PeekLoSpiRequest) returns (PeekLoSpiResponse);
+  rpc PokeLoSpi(PokeLoSpiRequest) returns (PokeLoSpiResponse);
+
+  rpc DioGetPinInput(DioGetPinInputRequest) returns (DioGetPinInputResponse);
+  rpc DioSetPinDirection(DioSetPinDirectionRequest) returns (DioSetPinDirectionResponse);
+  rpc DioSetPinOutput(DioSetPinOutputRequest) returns (DioSetPinOutputResponse);
+  rpc DioTearDown(DioTearDownRequest) returns (DioTearDownResponse);
+  rpc DioDebug(DioDebugRequest) returns (DioDebugResponse);
+
+  rpc GetGpsEnabledSensor(GetGpsEnabledSensorRequest) returns (GetGpsEnabledSensorResponse);
+  rpc GetGpsAlarmSensor(GetGpsAlarmSensorRequest) returns (GetGpsAlarmSensorResponse);
+  rpc GetGpsWarmupSensor(GetGpsWarmupSensorRequest) returns (GetGpsWarmupSensorResponse);
+  rpc GetGpsSurveySensor(GetGpsSurveySensorRequest) returns (GetGpsSurveySensorResponse);
+  rpc GetGpsPhaseLockSensor(GetGpsPhaseLockSensorRequest) returns (GetGpsPhaseLockSensorResponse);
+  rpc GetGpsSensorStatus(GetGpsSensorStatusRequest) returns (GetGpsSensorStatusResponse);
+
+  rpc GetMainPowerTempSensor0(GetMainPowerTempSensor0Request) returns (GetMainPowerTempSensor0Response);
+  rpc GetMainPowerTempSensor1(GetMainPowerTempSensor1Request) returns (GetMainPowerTempSensor1Response);
+  rpc GetScuInternalTempSensor(GetScuInternalTempSensorRequest) returns (GetScuInternalTempSensorResponse);
+  rpc GetSampleClockPcbTempSensor(GetSampleClockPcbTempSensorRequest) returns (GetSampleClockPcbTempSensorResponse);
+  rpc GetDramPcbTempSensor(GetDramPcbTempSensorRequest) returns (GetDramPcbTempSensorResponse);
+  rpc GetTmp464InternalTempSensor(GetTmp464InternalTempSensorRequest) returns (GetTmp464InternalTempSensorResponse);
+  rpc GetPowerSupplyPcbTempSensor(GetPowerSupplyPcbTempSensorRequest) returns (GetPowerSupplyPcbTempSensorResponse);
+  rpc GetFan0Sensor(GetFan0SensorRequest) returns (GetFan0SensorResponse);
+  rpc GetFan1Sensor(GetFan1SensorRequest) returns (GetFan1SensorResponse);
+
+  rpc Qsfp0IsAvailable(Qsfp0IsAvailableRequest) returns (Qsfp0IsAvailableResponse);
+  rpc Qsfp0EnableI2c(Qsfp0EnableI2cRequest) returns (Qsfp0EnableI2cResponse);
+  rpc Qsfp0AdapterId(Qsfp0AdapterIdRequest) returns (Qsfp0AdapterIdResponse);
+  rpc Qsfp0AdapterIdName(Qsfp0AdapterIdNameRequest) returns (Qsfp0AdapterIdNameResponse);
+  rpc Qsfp0Status(Qsfp0StatusRequest) returns (Qsfp0StatusResponse);
+  rpc Qsfp0DecodedStatus(Qsfp0DecodedStatusRequest) returns (Qsfp0DecodedStatusResponse);
+  rpc Qsfp0ConnectorType(Qsfp0ConnectorTypeRequest) returns (Qsfp0ConnectorTypeResponse);
+  rpc Qsfp0Info(Qsfp0InfoRequest) returns (Qsfp0InfoResponse);
+  rpc Qsfp0VendorName(Qsfp0VendorNameRequest) returns (Qsfp0VendorNameResponse);
+
+  rpc Qsfp1IsAvailable(Qsfp1IsAvailableRequest) returns (Qsfp1IsAvailableResponse);
+  rpc Qsfp1EnableI2c(Qsfp1EnableI2cRequest) returns (Qsfp1EnableI2cResponse);
+  rpc Qsfp1AdapterId(Qsfp1AdapterIdRequest) returns (Qsfp1AdapterIdResponse);
+  rpc Qsfp1AdapterIdName(Qsfp1AdapterIdNameRequest) returns (Qsfp1AdapterIdNameResponse);
+  rpc Qsfp1Status(Qsfp1StatusRequest) returns (Qsfp1StatusResponse);
+  rpc Qsfp1DecodedStatus(Qsfp1DecodedStatusRequest) returns (Qsfp1DecodedStatusResponse);
+  rpc Qsfp1ConnectorType(Qsfp1ConnectorTypeRequest) returns (Qsfp1ConnectorTypeResponse);
+  rpc Qsfp1Info(Qsfp1InfoRequest) returns (Qsfp1InfoResponse);
+  rpc Qsfp1VendorName(Qsfp1VendorNameRequest) returns (Qsfp1VendorNameResponse);
+
+  rpc InitRpu(InitRpuRequest) returns (InitRpuResponse);
+  rpc GetRpuFirmware(GetRpuFirmwareRequest) returns (GetRpuFirmwareResponse);
+  rpc GetRpuState(GetRpuStateRequest) returns (GetRpuStateResponse);
+  rpc SetRpuFirmware(SetRpuFirmwareRequest) returns (SetRpuFirmwareResponse);
+  rpc SetRpuState(SetRpuStateRequest) returns (SetRpuStateResponse);
+
+  rpc GetSpllFreq(GetSpllFreqRequest) returns (GetSpllFreqResponse);
+
+  rpc EnablePpsOut(EnablePpsOutRequest) returns (EnablePpsOutResponse);
+  rpc EnableRefClock(EnableRefClockRequest) returns (EnableRefClockResponse);
+  rpc Enable1gRefClock(Enable1gRefClockRequest) returns (Enable1gRefClockResponse);
+  rpc EnableWrRefClock(EnableWrRefClockRequest) returns (EnableWrRefClockResponse);
+
+  rpc BeginInitialization(BeginInitializationRequest) returns (BeginInitializationResponse);
+  rpc StartJesdRx(StartJesdRxRequest) returns (StartJesdRxResponse);
+  rpc StartJesdTx(StartJesdTxRequest) returns (StartJesdTxResponse);
+  rpc StartRadio(StartRadioRequest) returns (StartRadioResponse);
+  rpc StopRadio(StopRadioRequest) returns (StopRadioResponse);
+  rpc EnableJesdLoopback(EnableJesdLoopbackRequest) returns (EnableJesdLoopbackResponse);
+  rpc GetMultichipSyncStatus(GetMultichipSyncStatusRequest) returns (GetMultichipSyncStatusResponse);
+  rpc GetFramerStatus(GetFramerStatusRequest) returns (GetFramerStatusResponse);
+  rpc GetDeframerStatus(GetDeframerStatusRequest) returns (GetDeframerStatusResponse);
+  rpc GetIlasConfigMatch(GetIlasConfigMatchRequest) returns (GetIlasConfigMatchResponse);
+
+  rpc GetProductId(GetProductIdRequest) returns (GetProductIdResponse);
+  rpc GetDeviceRev(GetDeviceRevRequest) returns (GetDeviceRevResponse);
+  rpc GetApiVersion(GetApiVersionRequest) returns (GetApiVersionResponse);
+  rpc GetArmVersion(GetArmVersionRequest) returns (GetArmVersionResponse);
+  rpc GetClockRates(GetClockRatesRequest) returns (GetClockRatesResponse);
+  rpc GetGainRange(GetGainRangeRequest) returns (GetGainRangeResponse);
+  rpc EnableChannel(EnableChannelRequest) returns (EnableChannelResponse);
+  rpc GetLoLocked(GetLoLockedRequest) returns (GetLoLockedResponse);
+
+  rpc SetClkSafeState(SetClkSafeStateRequest) returns (SetClkSafeStateResponse);
+  rpc GetRefLock(GetRefLockRequest) returns (GetRefLockResponse);
+  rpc GetLowbandTxLoLockedSensor(GetLowbandTxLoLockedSensorRequest) returns (GetLowbandTxLoLockedSensorResponse);
+  rpc GetLowbandRxLoLockedSensor(GetLowbandRxLoLockedSensorRequest) returns (GetLowbandRxLoLockedSensorResponse);
+  rpc GetAd9371TxLoLockedSensor(GetAd9371TxLoLockedSensorRequest) returns (GetAd9371TxLoLockedSensorResponse);
+  rpc GetAd9371RxLoLockedSensor(GetAd9371RxLoLockedSensorRequest) returns (GetAd9371RxLoLockedSensorResponse);
+  rpc DbcorePeek(DbcorePeekRequest) returns (DbcorePeekResponse);
+  rpc DbcorePoke(DbcorePokeRequest) returns (DbcorePokeResponse);
+  rpc DumpJesdCore(DumpJesdCoreRequest) returns (DumpJesdCoreResponse);
+  rpc PeekDbCpld(PeekDbCpldRequest) returns (PeekDbCpldResponse);
+  rpc PokeDbCpld(PokeDbCpldRequest) returns (PokeDbCpldResponse);
 }
 
 // ==============================================================================
@@ -2231,3 +2355,936 @@ message PokeRfdcRequest {
 }
 
 message PokeRfdcResponse {}
+
+// ==============================================================================
+// Additional Clocking Aux Board (clkaux) Messages
+// ==============================================================================
+
+// ClkauxConfigDac — program the clkaux tuning DAC
+message ClkauxConfigDacRequest {
+  string token = 1;
+  uint32 tuning_word = 2;
+  uint32 out_select = 3;
+}
+message ClkauxConfigDacResponse {}
+
+// ClkauxConfigDpll — configure the digital PLL input source
+message ClkauxConfigDpllRequest {
+  string token = 1;
+  string source = 2;
+}
+message ClkauxConfigDpllResponse {}
+
+// ClkauxReadDac — read back the tuning DAC value for the given output
+message ClkauxReadDacRequest {
+  string token = 1;
+  uint32 out_select = 2;
+}
+message ClkauxReadDacResponse {
+  uint32 value = 1;
+}
+
+// ClkauxStoreTuningWord — persist the reference-clock tuning word
+message ClkauxStoreTuningWordRequest {
+  string token = 1;
+  uint32 tuning_word = 2;
+}
+message ClkauxStoreTuningWordResponse {}
+
+// ClkauxExportClock — enable/disable exporting the clkaux reference clock
+message ClkauxExportClockRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message ClkauxExportClockResponse {}
+
+// ClkauxSetSource — set clock and (optionally) time source on the clkaux board
+message ClkauxSetSourceRequest {
+  string token = 1;
+  string clock_source = 2;
+  string time_source = 3;
+}
+message ClkauxSetSourceResponse {}
+
+// ClkauxSetTrig — configure the trigger input/output
+message ClkauxSetTrigRequest {
+  string token = 1;
+  bool enable = 2;
+  string direction = 3;
+}
+message ClkauxSetTrigResponse {}
+
+// ClkauxGetClockSource — return the currently selected clock source
+message ClkauxGetClockSourceRequest {
+  string token = 1;
+}
+message ClkauxGetClockSourceResponse {
+  string source = 1;
+}
+
+// ClkauxSetRefLockLed — drive the reference-lock LED on the clkaux board
+message ClkauxSetRefLockLedRequest {
+  string token = 1;
+  uint32 val = 2;
+}
+message ClkauxSetRefLockLedResponse {}
+
+// ClkauxIsNsyncSupported — whether the Nsync IC is present/supported
+message ClkauxIsNsyncSupportedRequest {
+  string token = 1;
+}
+message ClkauxIsNsyncSupportedResponse {
+  bool supported = 1;
+}
+
+// ClkauxIsGpsSupported — whether GPS is supported on the clkaux board
+message ClkauxIsGpsSupportedRequest {
+  string token = 1;
+}
+message ClkauxIsGpsSupportedResponse {
+  bool supported = 1;
+}
+
+// ClkauxIsGpsEnabled — whether GPS is currently enabled
+message ClkauxIsGpsEnabledRequest {
+  string token = 1;
+}
+message ClkauxIsGpsEnabledResponse {
+  bool enabled = 1;
+}
+
+// ClkauxGet3v3Pg — read the 3.3V power-good status
+message ClkauxGet3v3PgRequest {
+  string token = 1;
+}
+message ClkauxGet3v3PgResponse {
+  bool power_good = 1;
+}
+
+// ClkauxGetGpsAlarm — read the GPS alarm status
+message ClkauxGetGpsAlarmRequest {
+  string token = 1;
+}
+message ClkauxGetGpsAlarmResponse {
+  bool alarm = 1;
+}
+
+// ClkauxGetGpsLocked — read the GPS locked status
+message ClkauxGetGpsLockedRequest {
+  string token = 1;
+}
+message ClkauxGetGpsLockedResponse {
+  bool locked = 1;
+}
+
+// ClkauxGetGpsSurvey — read the GPS survey status
+message ClkauxGetGpsSurveyRequest {
+  string token = 1;
+}
+message ClkauxGetGpsSurveyResponse {
+  bool survey = 1;
+}
+
+// ClkauxGetGpsWarmup — read the GPS warmup status
+message ClkauxGetGpsWarmupRequest {
+  string token = 1;
+}
+message ClkauxGetGpsWarmupResponse {
+  bool warmup = 1;
+}
+
+// ClkauxGetGpsPhaseLock — read the GPS phase-lock status
+message ClkauxGetGpsPhaseLockRequest {
+  string token = 1;
+}
+message ClkauxGetGpsPhaseLockResponse {
+  bool phase_lock = 1;
+}
+
+// ClkauxGetNsyncChipIdValid — whether the Nsync chip ID reads back as valid
+message ClkauxGetNsyncChipIdValidRequest {
+  string token = 1;
+}
+message ClkauxGetNsyncChipIdValidResponse {
+  bool valid = 1;
+}
+
+// ClkauxGetNsyncLmkEepromProgCycles — number of EEPROM program cycles used
+message ClkauxGetNsyncLmkEepromProgCyclesRequest {
+  string token = 1;
+}
+message ClkauxGetNsyncLmkEepromProgCyclesResponse {
+  uint32 cycles = 1;
+}
+
+// ClkauxGetNsyncLmkStatusDpll — Nsync LMK DPLL status string
+message ClkauxGetNsyncLmkStatusDpllRequest {
+  string token = 1;
+}
+message ClkauxGetNsyncLmkStatusDpllResponse {
+  string status = 1;
+}
+
+// ClkauxGetNsyncLmkStatusPllXo — Nsync LMK PLL/XO status string
+message ClkauxGetNsyncLmkStatusPllXoRequest {
+  string token = 1;
+}
+message ClkauxGetNsyncLmkStatusPllXoResponse {
+  string status = 1;
+}
+
+// ClkauxSetNsyncLmkPowerEn — enable/disable the Nsync LMK power rail
+message ClkauxSetNsyncLmkPowerEnRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message ClkauxSetNsyncLmkPowerEnResponse {}
+
+// ClkauxSetNsyncPriRefSource — set the Nsync LMK primary reference source
+message ClkauxSetNsyncPriRefSourceRequest {
+  string token = 1;
+  string source = 2;
+}
+message ClkauxSetNsyncPriRefSourceResponse {}
+
+// ClkauxSetNsyncRefSelect — select the Nsync reference input
+message ClkauxSetNsyncRefSelectRequest {
+  string token = 1;
+  string source = 2;
+}
+message ClkauxSetNsyncRefSelectResponse {}
+
+// ClkauxSetNsyncSoftReset — assert/deassert the Nsync soft reset
+message ClkauxSetNsyncSoftResetRequest {
+  string token = 1;
+  bool value = 2;
+}
+message ClkauxSetNsyncSoftResetResponse {
+  bool status = 1;
+}
+
+// ClkauxSetNsyncTcxoEn — enable/disable the Nsync TCXO
+message ClkauxSetNsyncTcxoEnRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message ClkauxSetNsyncTcxoEnResponse {}
+
+// ClkauxWriteNsyncLmkCfgRegsToEeprom — write Nsync LMK config registers to EEPROM
+message ClkauxWriteNsyncLmkCfgRegsToEepromRequest {
+  string token = 1;
+  string method = 2;
+}
+message ClkauxWriteNsyncLmkCfgRegsToEepromResponse {}
+
+// ClkauxWriteNsyncLmkEepromToCfgRegs — load Nsync LMK config registers from EEPROM
+message ClkauxWriteNsyncLmkEepromToCfgRegsRequest {
+  string token = 1;
+}
+message ClkauxWriteNsyncLmkEepromToCfgRegsResponse {}
+
+// ClkauxPeek8 — read an 8-bit register on the clkaux board
+message ClkauxPeek8Request {
+  string token = 1;
+  uint32 addr = 2;
+}
+message ClkauxPeek8Response {
+  uint32 value = 1;
+}
+
+// ClkauxPoke8 — write an 8-bit register on the clkaux board
+message ClkauxPoke8Request {
+  string token = 1;
+  uint32 addr = 2;
+  uint32 val = 3;
+  bool overwrite_mask = 4;
+}
+message ClkauxPoke8Response {}
+
+// HasCompatVersion — check the DB CPLD image against a minimum required version
+message HasCompatVersionRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 min_required_version = 3;
+}
+message HasCompatVersionResponse {
+  bool compatible = 1;
+}
+
+// PeekLoSpi — read an LO SPI register on a daughterboard; returns raw value
+message PeekLoSpiRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string lo_name = 3;
+  uint32 addr = 4;
+}
+message PeekLoSpiResponse {
+  uint32 value = 1;
+}
+
+// PokeLoSpi — write an LO SPI register on a daughterboard
+message PokeLoSpiRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string lo_name = 3;
+  uint32 addr = 4;
+  uint32 val = 5;
+}
+message PokeLoSpiResponse {}
+
+// DioGetPinInput — read the input value of a single DIO pin
+message DioGetPinInputRequest {
+  string token = 1;
+  string port = 2;
+  uint32 pin = 3;
+}
+message DioGetPinInputResponse {
+  uint32 value = 1;
+}
+
+// DioSetPinDirection — set the direction of a single DIO pin
+message DioSetPinDirectionRequest {
+  string token = 1;
+  string port = 2;
+  uint32 pin = 3;
+  uint32 value = 4;
+}
+message DioSetPinDirectionResponse {}
+
+// DioSetPinOutput — set the output value of a single DIO pin
+message DioSetPinOutputRequest {
+  string token = 1;
+  string port = 2;
+  uint32 pin = 3;
+  uint32 value = 4;
+}
+message DioSetPinOutputResponse {}
+
+// DioTearDown — tear down the DIO control peripheral
+message DioTearDownRequest {
+  string token = 1;
+}
+message DioTearDownResponse {}
+
+// DioDebug — return a human-readable dump of the DIO FPGA register maps
+message DioDebugRequest {
+  string token = 1;
+}
+message DioDebugResponse {
+  string debug_info = 1;
+}
+
+// GetGpsEnabledSensor — sensor dict describing whether GPS is enabled
+message GetGpsEnabledSensorRequest {
+  string token = 1;
+}
+message GetGpsEnabledSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsAlarmSensor — sensor dict describing the GPS alarm status
+message GetGpsAlarmSensorRequest {
+  string token = 1;
+}
+message GetGpsAlarmSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsWarmupSensor — sensor dict describing the GPS warmup status
+message GetGpsWarmupSensorRequest {
+  string token = 1;
+}
+message GetGpsWarmupSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsSurveySensor — sensor dict describing the GPS survey status
+message GetGpsSurveySensorRequest {
+  string token = 1;
+}
+message GetGpsSurveySensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsPhaseLockSensor — sensor dict describing the GPS phase-lock status
+message GetGpsPhaseLockSensorRequest {
+  string token = 1;
+}
+message GetGpsPhaseLockSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetGpsSensorStatus — debugging API returning all GPS status in one string
+message GetGpsSensorStatusRequest {
+  string token = 1;
+}
+message GetGpsSensorStatusResponse {
+  string status = 1;
+}
+
+// GetMainPowerTempSensor0 — temperature of PM-BUS 0 power supply devices
+message GetMainPowerTempSensor0Request {
+  string token = 1;
+}
+message GetMainPowerTempSensor0Response {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetMainPowerTempSensor1 — temperature of PM-BUS 1 power supply devices
+message GetMainPowerTempSensor1Request {
+  string token = 1;
+}
+message GetMainPowerTempSensor1Response {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetScuInternalTempSensor — STM32 SCU internal temperature sensor
+message GetScuInternalTempSensorRequest {
+  string token = 1;
+}
+message GetScuInternalTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetSampleClockPcbTempSensor — Sample Clock PCB temperature sensor
+message GetSampleClockPcbTempSensorRequest {
+  string token = 1;
+}
+message GetSampleClockPcbTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetDramPcbTempSensor — DRAM PCB temperature sensor
+message GetDramPcbTempSensorRequest {
+  string token = 1;
+}
+message GetDramPcbTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetTmp464InternalTempSensor — internal TMP464 temperature sensor
+message GetTmp464InternalTempSensorRequest {
+  string token = 1;
+}
+message GetTmp464InternalTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetPowerSupplyPcbTempSensor — Power Supply PCB temperature sensor
+message GetPowerSupplyPcbTempSensorRequest {
+  string token = 1;
+}
+message GetPowerSupplyPcbTempSensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetFan0Sensor — fan0 speed sensor
+message GetFan0SensorRequest {
+  string token = 1;
+}
+message GetFan0SensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// GetFan1Sensor — fan1 speed sensor
+message GetFan1SensorRequest {
+  string token = 1;
+}
+message GetFan1SensorResponse {
+  SensorValueMap sensor_data = 1;
+}
+
+// Qsfp0IsAvailable — whether the QSFP module in slot 0 is present
+message Qsfp0IsAvailableRequest {
+  string token = 1;
+}
+message Qsfp0IsAvailableResponse {
+  bool available = 1;
+}
+
+// Qsfp0EnableI2c — enable/disable the I2C bus to the QSFP module in slot 0
+message Qsfp0EnableI2cRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message Qsfp0EnableI2cResponse {}
+
+// Qsfp0AdapterId — numeric adapter identifier of the QSFP module in slot 0
+message Qsfp0AdapterIdRequest {
+  string token = 1;
+}
+message Qsfp0AdapterIdResponse {
+  uint32 adapter_id = 1;
+}
+
+// Qsfp0AdapterIdName — human-readable adapter name of the QSFP module in slot 0
+message Qsfp0AdapterIdNameRequest {
+  string token = 1;
+}
+message Qsfp0AdapterIdNameResponse {
+  string name = 1;
+}
+
+// Qsfp0Status — raw status values of the QSFP module in slot 0
+message Qsfp0StatusRequest {
+  string token = 1;
+}
+message Qsfp0StatusResponse {
+  repeated uint32 status = 1;
+}
+
+// Qsfp0DecodedStatus — decoded status strings of the QSFP module in slot 0
+message Qsfp0DecodedStatusRequest {
+  string token = 1;
+}
+message Qsfp0DecodedStatusResponse {
+  repeated string status = 1;
+}
+
+// Qsfp0ConnectorType — connector type of the QSFP module in slot 0
+message Qsfp0ConnectorTypeRequest {
+  string token = 1;
+}
+message Qsfp0ConnectorTypeResponse {
+  string connector_type = 1;
+}
+
+// Qsfp0Info — descriptive info string for the QSFP module in slot 0
+message Qsfp0InfoRequest {
+  string token = 1;
+}
+message Qsfp0InfoResponse {
+  string info = 1;
+}
+
+// Qsfp0VendorName — vendor name of the QSFP module in slot 0
+message Qsfp0VendorNameRequest {
+  string token = 1;
+}
+message Qsfp0VendorNameResponse {
+  string vendor_name = 1;
+}
+
+// Qsfp1IsAvailable — whether the QSFP module in slot 1 is present
+message Qsfp1IsAvailableRequest {
+  string token = 1;
+}
+message Qsfp1IsAvailableResponse {
+  bool available = 1;
+}
+
+// Qsfp1EnableI2c — enable/disable the I2C bus to the QSFP module in slot 1
+message Qsfp1EnableI2cRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message Qsfp1EnableI2cResponse {}
+
+// Qsfp1AdapterId — numeric adapter identifier of the QSFP module in slot 1
+message Qsfp1AdapterIdRequest {
+  string token = 1;
+}
+message Qsfp1AdapterIdResponse {
+  uint32 adapter_id = 1;
+}
+
+// Qsfp1AdapterIdName — human-readable adapter name of the QSFP module in slot 1
+message Qsfp1AdapterIdNameRequest {
+  string token = 1;
+}
+message Qsfp1AdapterIdNameResponse {
+  string name = 1;
+}
+
+// Qsfp1Status — raw status values of the QSFP module in slot 1
+message Qsfp1StatusRequest {
+  string token = 1;
+}
+message Qsfp1StatusResponse {
+  repeated uint32 status = 1;
+}
+
+// Qsfp1DecodedStatus — decoded status strings of the QSFP module in slot 1
+message Qsfp1DecodedStatusRequest {
+  string token = 1;
+}
+message Qsfp1DecodedStatusResponse {
+  repeated string status = 1;
+}
+
+// Qsfp1ConnectorType — connector type of the QSFP module in slot 1
+message Qsfp1ConnectorTypeRequest {
+  string token = 1;
+}
+message Qsfp1ConnectorTypeResponse {
+  string connector_type = 1;
+}
+
+// Qsfp1Info — descriptive info string for the QSFP module in slot 1
+message Qsfp1InfoRequest {
+  string token = 1;
+}
+message Qsfp1InfoResponse {
+  string info = 1;
+}
+
+// Qsfp1VendorName — vendor name of the QSFP module in slot 1
+message Qsfp1VendorNameRequest {
+  string token = 1;
+}
+message Qsfp1VendorNameResponse {
+  string vendor_name = 1;
+}
+
+// InitRpu — initialize the RPU manager
+message InitRpuRequest {
+  string token = 1;
+}
+message InitRpuResponse {}
+
+// GetRpuFirmware — read the firmware name currently loaded on an RPU core
+message GetRpuFirmwareRequest {
+  string token = 1;
+  uint32 core_number = 2;
+}
+message GetRpuFirmwareResponse {
+  string firmware = 1;
+}
+
+// GetRpuState — read the current state of an RPU core
+message GetRpuStateRequest {
+  string token = 1;
+  uint32 core_number = 2;
+  bool validate = 3;
+}
+message GetRpuStateResponse {
+  string state = 1;
+}
+
+// SetRpuFirmware — load firmware onto an RPU core
+message SetRpuFirmwareRequest {
+  string token = 1;
+  uint32 core_number = 2;
+  string firmware = 3;
+  uint32 start = 4;
+}
+message SetRpuFirmwareResponse {
+  string result = 1;
+}
+
+// SetRpuState — request a state transition on an RPU core
+message SetRpuStateRequest {
+  string token = 1;
+  uint32 core_number = 2;
+  string new_state_command = 3;
+  bool validate = 4;
+}
+message SetRpuStateResponse {
+  string result = 1;
+}
+
+// GetSpllFreq — return the current SPLL (sample PLL) frequency in Hz
+message GetSpllFreqRequest {
+  string token = 1;
+}
+message GetSpllFreqResponse {
+  double freq = 1;
+}
+
+// ==============================================================================
+// N310 MB-level Message Types
+// ==============================================================================
+
+// EnablePpsOut — export PPS/Trigger to back panel
+message EnablePpsOutRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message EnablePpsOutResponse {}
+
+// EnableRefClock — enable/disable the main reference clock voltage
+message EnableRefClockRequest {
+  string token = 1;
+  bool enable = 2;
+}
+message EnableRefClockResponse {}
+
+// Enable1gRefClock — enable 125 MHz refclock for 1G SFP interface
+message Enable1gRefClockRequest {
+  string token = 1;
+}
+message Enable1gRefClockResponse {}
+
+// EnableWrRefClock — enable 20 MHz White Rabbit reference clock
+message EnableWrRefClockRequest {
+  string token = 1;
+}
+message EnableWrRefClockResponse {}
+
+// ==============================================================================
+// N310 DB-level (AD9371 JESD init/control) Message Types
+// ==============================================================================
+
+// BeginInitialization — initialize the AD9371, prepare for SYSREF
+message BeginInitializationRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message BeginInitializationResponse {}
+
+// StartJesdRx — reset and start the JESD deframer (JESD Rx, RF Tx)
+message StartJesdRxRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message StartJesdRxResponse {}
+
+// StartJesdTx — start the JESD framer (JESD Tx, RF Rx)
+message StartJesdTxRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message StartJesdTxResponse {}
+
+// StartRadio — move AD9371 to running state (RF I/O unmuted)
+message StartRadioRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message StartRadioResponse {}
+
+// StopRadio — move AD9371 to idle state (RF I/O muted)
+message StopRadioRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message StopRadioResponse {}
+
+// EnableJesdLoopback — connect JESD Rx directly to JESD Tx
+message EnableJesdLoopbackRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 enable = 3;
+}
+message EnableJesdLoopbackResponse {}
+
+// GetMultichipSyncStatus — return multichip sync status byte
+message GetMultichipSyncStatusRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetMultichipSyncStatusResponse {
+  uint32 status = 1;
+}
+
+// GetFramerStatus — return JESD framer status byte
+message GetFramerStatusRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetFramerStatusResponse {
+  uint32 status = 1;
+}
+
+// GetDeframerStatus — return JESD deframer status byte
+message GetDeframerStatusRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetDeframerStatusResponse {
+  uint32 status = 1;
+}
+
+// GetIlasConfigMatch — return ILAS config match status
+message GetIlasConfigMatchRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetIlasConfigMatchResponse {
+  uint32 status = 1;
+}
+
+// ==============================================================================
+// N310 DB-level (AD9371 device info) Message Types
+// ==============================================================================
+
+// GetProductId — read product ID from the AD9371 device
+message GetProductIdRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetProductIdResponse {
+  uint32 product_id = 1;
+}
+
+// GetDeviceRev — read product revision from the AD9371 device
+message GetDeviceRevRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetDeviceRevResponse {
+  uint32 device_rev = 1;
+}
+
+// GetApiVersion — get AD9371 software driver API version string ("SILICON.MAJOR.MINOR.BUILD")
+message GetApiVersionRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetApiVersionResponse {
+  string api_version = 1;
+}
+
+// GetArmVersion — get currently loaded AD9371 ARM firmware version string ("MAJOR.MINOR.RC")
+message GetArmVersionRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetArmVersionResponse {
+  string arm_version = 1;
+}
+
+// GetClockRates — return list of valid master clock rates in Hz
+message GetClockRatesRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetClockRatesResponse {
+  repeated double clock_rates = 1;
+}
+
+// GetGainRange — return gain range [start, stop, step] for a frontend direction
+message GetGainRangeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // e.g., 'RX1', 'TX1'
+}
+message GetGainRangeResponse {
+  repeated double range = 1;  // [start, stop, step]
+}
+
+// EnableChannel — enable or disable the specified frontend channel
+message EnableChannelRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;
+  bool enable = 4;
+}
+message EnableChannelResponse {}
+
+// GetLoLocked — return LO lock status boolean for the given direction
+message GetLoLockedRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  string which = 3;  // e.g., 'TX', 'RX'
+}
+message GetLoLockedResponse {
+  bool locked = 1;
+}
+
+// ==============================================================================
+// N310 DB-level (Magnesium dboard) Message Types
+// ==============================================================================
+
+// SetClkSafeState — disable all clocking components before a clock change
+message SetClkSafeStateRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message SetClkSafeStateResponse {}
+
+// GetRefLock — return LMK reference lock status boolean
+message GetRefLockRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message GetRefLockResponse {
+  bool locked = 1;
+}
+
+// GetLowbandTxLoLockedSensor — TX lowband LO lock sensor dict
+message GetLowbandTxLoLockedSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+message GetLowbandTxLoLockedSensorResponse {
+  map<string, string> sensor = 1;
+}
+
+// GetLowbandRxLoLockedSensor — RX lowband LO lock sensor dict
+message GetLowbandRxLoLockedSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+message GetLowbandRxLoLockedSensorResponse {
+  map<string, string> sensor = 1;
+}
+
+// GetAd9371TxLoLockedSensor — TX AD9371 LO lock sensor dict
+message GetAd9371TxLoLockedSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+message GetAd9371TxLoLockedSensorResponse {
+  map<string, string> sensor = 1;
+}
+
+// GetAd9371RxLoLockedSensor — RX AD9371 LO lock sensor dict
+message GetAd9371RxLoLockedSensorRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 chan = 3;
+}
+message GetAd9371RxLoLockedSensorResponse {
+  map<string, string> sensor = 1;
+}
+
+// DbcorePeek — debug read from dboard core register
+message DbcorePeekRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+}
+message DbcorePeekResponse {
+  uint32 value = 1;
+}
+
+// DbcorePoke — debug write to dboard core register
+message DbcorePokeRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+  uint32 data = 4;
+}
+message DbcorePokeResponse {}
+
+// DumpJesdCore — debug dump of all JESD core registers
+message DumpJesdCoreRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+}
+message DumpJesdCoreResponse {}
+
+// PeekDbCpld — debug read from dboard CPLD register
+message PeekDbCpldRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+}
+message PeekDbCpldResponse {
+  uint32 value = 1;
+}
+
+// PokeDbCpld — debug write to dboard CPLD register; returns readback value
+message PokeDbCpldRequest {
+  uint32 db_idx = 1;
+  string token = 2;
+  uint32 addr = 3;
+  uint32 data = 4;
+}
+message PokeDbCpldResponse {
+  uint32 value = 1;
+}

@@ -579,6 +579,267 @@ public:
     void set_ref_clock_freq(double /*freq*/) override {}
     void reset_clock(bool /*value*/, std::string /*clock_to_reset*/) override {}
 
+    void clkaux_config_dac(uint32_t /*tuning_word*/, uint32_t /*out_select*/) override {}
+    void clkaux_config_dpll(std::string /*source*/) override {}
+    uint32_t clkaux_read_dac(uint32_t /*out_select*/) override
+    {
+        return 0;
+    }
+    void clkaux_store_tuning_word(uint32_t /*tuning_word*/) override {}
+    void clkaux_export_clock(bool /*enable*/) override {}
+    void clkaux_set_source(
+        std::string /*clock_source*/, std::string /*time_source*/) override
+    {
+    }
+    void clkaux_set_trig(bool /*enable*/, std::string /*direction*/) override {}
+    std::string clkaux_get_clock_source() override
+    {
+        return "";
+    }
+    void clkaux_set_ref_lock_led(uint32_t /*val*/) override {}
+    bool clkaux_is_nsync_supported() override
+    {
+        return false;
+    }
+    bool clkaux_is_gps_supported() override
+    {
+        return false;
+    }
+    bool clkaux_is_gps_enabled() override
+    {
+        return false;
+    }
+    bool clkaux_get3v3_pg() override
+    {
+        return false;
+    }
+    bool clkaux_get_gps_alarm() override
+    {
+        return false;
+    }
+    bool clkaux_get_gps_locked() override
+    {
+        return false;
+    }
+    bool clkaux_get_gps_survey() override
+    {
+        return false;
+    }
+    bool clkaux_get_gps_warmup() override
+    {
+        return false;
+    }
+    bool clkaux_get_gps_phase_lock() override
+    {
+        return false;
+    }
+    bool clkaux_get_nsync_chip_id_valid() override
+    {
+        return false;
+    }
+    uint32_t clkaux_get_nsync_lmk_eeprom_prog_cycles() override
+    {
+        return 0;
+    }
+    std::string clkaux_get_nsync_lmk_status_dpll() override
+    {
+        return "";
+    }
+    std::string clkaux_get_nsync_lmk_status_pll_xo() override
+    {
+        return "";
+    }
+    void clkaux_set_nsync_lmk_power_en(bool /*enable*/) override {}
+    void clkaux_set_nsync_pri_ref_source(std::string /*source*/) override {}
+    void clkaux_set_nsync_ref_select(std::string /*source*/) override {}
+    bool clkaux_set_nsync_soft_reset(bool /*value*/) override
+    {
+        return false;
+    }
+    void clkaux_set_nsync_tcxo_en(bool /*enable*/) override {}
+    void clkaux_write_nsync_lmk_cfg_regs_to_eeprom(std::string /*method*/) override {}
+    void clkaux_write_nsync_lmk_eeprom_to_cfg_regs() override {}
+    uint32_t clkaux_peek8(uint32_t /*addr*/) override
+    {
+        return 0;
+    }
+    void clkaux_poke8(
+        uint32_t /*addr*/, uint32_t /*val*/, bool /*overwrite_mask*/) override
+    {
+    }
+    uint32_t dio_get_pin_input(std::string /*port*/, uint32_t /*pin*/) override
+    {
+        return 0;
+    }
+    void dio_set_pin_direction(
+        std::string /*port*/, uint32_t /*pin*/, uint32_t /*value*/) override
+    {
+    }
+    void dio_set_pin_output(
+        std::string /*port*/, uint32_t /*pin*/, uint32_t /*value*/) override
+    {
+    }
+    void dio_tear_down() override {}
+    std::string dio_debug() override
+    {
+        return "";
+    }
+    std::map<std::string, std::string> get_gps_enabled_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_gps_alarm_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_gps_warmup_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_gps_survey_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_gps_phase_lock_sensor() override
+    {
+        return {};
+    }
+    std::string get_gps_sensor_status() override
+    {
+        return "";
+    }
+    std::map<std::string, std::string> get_main_power_temp_sensor0() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_main_power_temp_sensor1() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_scu_internal_temp_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_sample_clock_pcb_temp_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_dram_pcb_temp_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_tmp464_internal_temp_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_power_supply_pcb_temp_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_fan0_sensor() override
+    {
+        return {};
+    }
+    std::map<std::string, std::string> get_fan1_sensor() override
+    {
+        return {};
+    }
+    bool qsfp0_is_available() override
+    {
+        return false;
+    }
+    void qsfp0_enable_i2c(bool /*enable*/) override {}
+    uint32_t qsfp0_adapter_id() override
+    {
+        return 0;
+    }
+    std::string qsfp0_adapter_id_name() override
+    {
+        return "";
+    }
+    std::vector<uint32_t> qsfp0_status() override
+    {
+        return {};
+    }
+    std::vector<std::string> qsfp0_decoded_status() override
+    {
+        return {};
+    }
+    std::string qsfp0_connector_type() override
+    {
+        return "";
+    }
+    std::string qsfp0_info() override
+    {
+        return "";
+    }
+    std::string qsfp0_vendor_name() override
+    {
+        return "";
+    }
+    bool qsfp1_is_available() override
+    {
+        return false;
+    }
+    void qsfp1_enable_i2c(bool /*enable*/) override {}
+    uint32_t qsfp1_adapter_id() override
+    {
+        return 0;
+    }
+    std::string qsfp1_adapter_id_name() override
+    {
+        return "";
+    }
+    std::vector<uint32_t> qsfp1_status() override
+    {
+        return {};
+    }
+    std::vector<std::string> qsfp1_decoded_status() override
+    {
+        return {};
+    }
+    std::string qsfp1_connector_type() override
+    {
+        return "";
+    }
+    std::string qsfp1_info() override
+    {
+        return "";
+    }
+    std::string qsfp1_vendor_name() override
+    {
+        return "";
+    }
+    void init_rpu() override {}
+    std::string get_rpu_firmware(uint32_t /*core_number*/) override
+    {
+        return "";
+    }
+    std::string get_rpu_state(uint32_t /*core_number*/, bool /*validate*/) override
+    {
+        return "";
+    }
+    std::string set_rpu_firmware(
+        uint32_t /*core_number*/, std::string /*firmware*/, uint32_t /*start*/) override
+    {
+        return "";
+    }
+    std::string set_rpu_state(uint32_t /*core_number*/,
+        std::string /*new_state_command*/,
+        bool /*validate*/) override
+    {
+        return "";
+    }
+    double get_spll_freq() override
+    {
+        return 0.0;
+    }
+
+    void enable_pps_out(bool /*enable*/) override {}
+    void enable_ref_clock(bool /*enable*/) override {}
+    void enable1g_ref_clock() override {}
+    void enable_wr_ref_clock() override {}
+
     // Daughterboard interface implementation
     // Only implements X400-specific methods; unused AD9361/AD9371 methods are stubbed by
     // base class
@@ -926,6 +1187,109 @@ public:
         std::string peek_db(uint32_t /*addr*/) override
         {
             return "0x0";
+        }
+        bool has_compat_version(uint32_t /*min_required_version*/) override
+        {
+            return true;
+        }
+        uint32_t peek_lo_spi(std::string /*lo_name*/, uint32_t /*addr*/) override
+        {
+            return 0;
+        }
+        void poke_lo_spi(
+            std::string /*lo_name*/, uint32_t /*addr*/, uint32_t /*val*/) override
+        {
+        }
+
+        void begin_initialization() override {}
+        void start_jesd_rx() override {}
+        void start_jesd_tx() override {}
+        void start_radio() override {}
+        void stop_radio() override {}
+        void enable_jesd_loopback(uint32_t /*enable*/) override {}
+        uint32_t get_multichip_sync_status() override
+        {
+            return 0;
+        }
+        uint32_t get_framer_status() override
+        {
+            return 0;
+        }
+        uint32_t get_deframer_status() override
+        {
+            return 0;
+        }
+        uint32_t get_ilas_config_match() override
+        {
+            return 0;
+        }
+        uint32_t get_product_id() override
+        {
+            return 0;
+        }
+        uint32_t get_device_rev() override
+        {
+            return 0;
+        }
+        std::string get_api_version() override
+        {
+            return "";
+        }
+        std::string get_arm_version() override
+        {
+            return "";
+        }
+        std::vector<double> get_clock_rates() override
+        {
+            return {};
+        }
+        std::vector<double> get_gain_range(std::string /*which*/) override
+        {
+            return {};
+        }
+        void enable_channel(std::string /*which*/, bool /*enable*/) override {}
+        bool get_lo_locked(std::string /*which*/) override
+        {
+            return false;
+        }
+        void set_clk_safe_state() override {}
+        bool get_ref_lock() override
+        {
+            return false;
+        }
+        std::map<std::string, std::string> get_lowband_tx_lo_locked_sensor(
+            uint32_t /*chan*/) override
+        {
+            return {};
+        }
+        std::map<std::string, std::string> get_lowband_rx_lo_locked_sensor(
+            uint32_t /*chan*/) override
+        {
+            return {};
+        }
+        std::map<std::string, std::string> get_ad9371_tx_lo_locked_sensor(
+            uint32_t /*chan*/) override
+        {
+            return {};
+        }
+        std::map<std::string, std::string> get_ad9371_rx_lo_locked_sensor(
+            uint32_t /*chan*/) override
+        {
+            return {};
+        }
+        uint32_t dbcore_peek(uint32_t /*addr*/) override
+        {
+            return 0;
+        }
+        void dbcore_poke(uint32_t /*addr*/, uint32_t /*data*/) override {}
+        void dump_jesd_core() override {}
+        uint32_t peek_db_cpld(uint32_t /*addr*/) override
+        {
+            return 0;
+        }
+        uint32_t poke_db_cpld(uint32_t /*addr*/, uint32_t /*data*/) override
+        {
+            return 0;
         }
 
     private:
