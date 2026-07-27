@@ -17,6 +17,9 @@ ARG VCPKG_MANIFEST_FILE=vcpkg-vs2026.json
 ARG PIP_INDEX_HOST=""
 ARG PIP_INDEX_URL=""
 ENV VCPKG_DISABLE_METRICS=1
+# Optional argument for vcpkg binary cache directory
+ARG VCPKG_BINARY_CACHE_DIR="C:\vcpkg-cache"
+ENV VCPKG_BINARY_SOURCES=clear;files,${VCPKG_BINARY_CACHE_DIR},readwrite
 
 # Enable long file paths (>260 characters)
 RUN reg add HKLM\SYSTEM\CurrentControlSet\Control\FileSystem /v LongPathsEnabled /t REG_DWORD /d 1 /f
@@ -26,14 +29,22 @@ RUN @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" \
     -NoProfile -InputFormat None -ExecutionPolicy Bypass \
     -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; \
     iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && \
-    SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
-RUN choco install -y cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' --version=4.2.1
+    SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin" && \
+    choco config set webRequestTimeoutSeconds 600
 RUN choco install -y doxygen.install --version=1.9.8
+RUN choco install -y cmake.install --installargs 'ADD_CMAKE_TO_PATH=System' --version=4.2.1
 RUN choco install -y git
 RUN choco install -y NSIS --version=3.11.0
 RUN choco install -y vim
 RUN choco install -y python3 --version=%PYTHON_VERSION%
 
+# Re-define environment variables to avoid long path issues with pip and vcpkg
+RUN echo Read Environment Variables: TEMP=%TEMP% && echo TMP=%TMP%
+ENV TEMP=C:\t TMP=C:\t
+RUN mkdir %TEMP%
+RUN echo Read Environment Variables: TEMP=%TEMP% && echo TMP=%TMP%
+
+# Install vs build tools
 COPY .ci/docker/scripts/check-url.ps1 C:/Temp/check-url.ps1
 RUN powershell -NoProfile -ExecutionPolicy Bypass -File C:\Temp\check-url.ps1 \
     -Url "%VS_BUILD_TOOLS_URL%"
@@ -59,10 +70,18 @@ RUN setx VCPKG_INSTALL_DIR "c:\\vcpkg" /m
 RUN git clone https://github.com/microsoft/vcpkg %VCPKG_INSTALL_DIR% && \
     cd %VCPKG_INSTALL_DIR% && \
     bootstrap-vcpkg.bat
-    # Add custom UHD vcpkg triplet
+# Add custom UHD vcpkg triplet
 COPY host/cmake/vcpkg/* c:/vcpkg/triplets/
+# Define triplet to be used by this container
+RUN setx VCPKG_TARGET_TRIPLET "uhd-x64-windows-static-md" /m
+RUN echo set(VCPKG_BUILD_TYPE release)>>"%VCPKG_INSTALL_DIR%\triplets\%VCPKG_TARGET_TRIPLET%.cmake"
+RUN type "%VCPKG_INSTALL_DIR%\triplets\%VCPKG_TARGET_TRIPLET%.cmake"
+# Copy vcpkg cache from mapped folder to 
+RUN echo Current path %cd%
+COPY .cache/vcpkg ${VCPKG_BINARY_CACHE_DIR}
+
 RUN mkdir c:\\uhd-vcpkg
 COPY .ci/docker/vcpkg/${VCPKG_MANIFEST_FILE} c:/uhd-vcpkg/vcpkg.json
 RUN cd c:\\uhd-vcpkg && %VCPKG_INSTALL_DIR%\vcpkg.exe install \
-    --triplet uhd-x64-windows-static-md \
+    --triplet %VCPKG_TARGET_TRIPLET% \
     --clean-after-build
