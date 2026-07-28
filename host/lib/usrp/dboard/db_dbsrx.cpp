@@ -267,10 +267,10 @@ double dbsrx::set_lo_freq(double target_freq)
     int R = 0, N = 0, r = 0, m = 0;
     bool update_filter_settings = false;
     // choose refclock
-    std::vector<double> clock_rates =
-        this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX);
-    const double max_clock_rate = uhd::sorted(clock_rates).back();
-    for (auto ref_clock_it : uhd::reversed(uhd::sorted(clock_rates))) {
+    const std::vector<double> clock_rates =
+        uhd::sorted(this->get_iface()->get_clock_rates(dboard_iface::UNIT_RX));
+    const double max_clock_rate = clock_rates.back();
+    for (auto ref_clock_it : uhd::reversed(clock_rates)) {
         ref_clock = ref_clock_it;
         // USRP1 feeds the DBSRX clock from a FPGA GPIO line.
         // make sure that this clock does not exceed rate limit.
