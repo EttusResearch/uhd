@@ -87,6 +87,8 @@ clocks:
   index: 2
 - name: ce
   index: 3
+- name: fast_ce
+  index: 9
 - name: radio
   index: 4
 - name: radio_2x

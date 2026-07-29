@@ -558,6 +558,58 @@ module x4xx (
     .I(ce_gen_clkout0)
   );
 
+  //----------------------------------------------------------------------------
+  //  Output     Output      Phase    Duty Cycle   Pk-to-Pk     Phase
+  //   Clock     Freq (MHz)  (degrees)    (%)     Jitter (ps)  Error (ps)
+  //----------------------------------------------------------------------------
+  // clk_out1__333.33333______0.000______50.0_______88.896_____89.971
+  //
+  //----------------------------------------------------------------------------
+  // Input Clock   Freq (MHz)    Input Jitter (UI)
+  //----------------------------------------------------------------------------
+  // __primary_____________200____________0.010
+  
+  wire fast_ce_gen_clkfbout;
+  wire fast_ce_gen_clkout0;
+  wire fast_ce_clk;
+
+  PLLE4_ADV #(
+    .COMPENSATION      ("AUTO" ),
+    .STARTUP_WAIT      ("FALSE"),
+    .DIVCLK_DIVIDE     (1      ),
+    .CLKFBOUT_MULT     (5      ),
+    .CLKFBOUT_PHASE    (0.000  ),
+    .CLKOUT0_DIVIDE    (3      ),
+    .CLKOUT0_PHASE     (0.000  ),
+    .CLKOUT0_DUTY_CYCLE(0.500  ),
+    .CLKIN_PERIOD      (5.000  )
+  ) fast_ce_clk_gen_i (
+    .CLKFBOUT   (fast_ce_gen_clkfbout),
+    .CLKOUT0    (fast_ce_gen_clkout0 ),
+    .CLKOUT0B   (                     ),
+    .CLKOUT1    (                     ),
+    .CLKOUT1B   (                     ),
+    .CLKFBIN    (fast_ce_gen_clkfbout),
+    .CLKIN      (clk200               ),
+    .DADDR      (7'h0                 ),
+    .DCLK       (1'b0                 ),
+    .DEN        (1'b0                 ),
+    .DI         (16'h0                ),
+    .DO         (                     ),
+    .DRDY       (                     ),
+    .DWE        (1'b0                 ),
+    .CLKOUTPHYEN(1'b0                 ),
+    .CLKOUTPHY  (                     ),
+    .LOCKED     (                     ),
+    .PWRDWN     (1'b0                 ),
+    .RST        (areset               )
+  );
+
+  BUFG bufg_fast_ce_i (
+    .O(fast_ce_clk        ),
+    .I(fast_ce_gen_clkout0)
+  );
+
 
   //---------------------------------------------------------------------------
   // PPS Handling
@@ -3344,6 +3396,7 @@ module x4xx (
     .rfnoc_ctrl_clk                (clk40),
     .rfnoc_ctrl_rst                (clk40_rst),
     .ce_clk                        (ce_clk),
+    .fast_ce_clk                   (fast_ce_clk),
     .dram0_sys_clk_p               (DRAM0_REFCLK_P),
     .dram0_sys_clk_n               (DRAM0_REFCLK_N),
     .dram0_ck_t                    (DRAM0_CLK_P),

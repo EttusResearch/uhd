@@ -83,6 +83,8 @@ clocks:
   index: 2
 - name: ce
   index: 3
+- name: fast_ce
+  index: 9
 - name: radio0
   index: 4
 - name: radio1
