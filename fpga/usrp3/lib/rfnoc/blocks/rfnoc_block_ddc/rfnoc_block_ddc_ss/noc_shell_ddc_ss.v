@@ -21,7 +21,7 @@
 `default_nettype none
 
 
-module noc_shell_ddc #(
+module noc_shell_ddc_ss #(
   parameter [9:0] THIS_PORTID     = 10'd0,
   parameter       CHDR_W          = 64,
   parameter [5:0] MTU             = 10,
@@ -302,7 +302,7 @@ module noc_shell_ddc #(
     );
   end
 
-endmodule // noc_shell_ddc
+endmodule // noc_shell_ddc_ss
 
 
 `default_nettype wire

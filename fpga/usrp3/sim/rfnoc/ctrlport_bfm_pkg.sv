@@ -127,6 +127,30 @@ package ctrlport_bfm_pkg;
       wait_complete();
     endtask;
 
+    // Queue write transaction with a timestamp
+    task write_timed(
+      input logic [CTRLPORT_ADDR_W-1:0] addr,
+      input logic [CTRLPORT_TIME_W-1:0] timestamp,
+      input logic [CTRLPORT_DATA_W-1:0] data,
+      input ctrlport_status_t expected_status = STS_OKAY
+    );
+      ctrlport_request_t  request;
+      ctrlport_response_t response;
+
+      request           = '0;
+      request.wr        = '1;
+      request.addr      = addr;
+      request.data      = data;
+      request.has_time  = 1'b1;
+      request.timestamp = timestamp;
+
+      response        = '0;
+      response.status = expected_status;
+
+      async_request(request, response);
+      wait_complete();
+    endtask;
+
     // Perform a simple read transaction, no response data check, return data from interface
     task read(
       input logic[CTRLPORT_ADDR_W-1:0] addr,
@@ -141,6 +165,30 @@ package ctrlport_bfm_pkg;
       request.addr = addr;
 
       response = '0;
+      response.status = expected_status;
+
+      async_request(request, response, '1);
+      wait_complete();
+      data = response_data;
+    endtask;
+
+    // Queue read transaction with a timestamp
+    task read_timed(
+      input logic [CTRLPORT_ADDR_W-1:0] addr,
+      input logic [CTRLPORT_TIME_W-1:0] timestamp,
+      output logic [CTRLPORT_DATA_W-1:0] data,
+      input ctrlport_status_t expected_status = STS_OKAY
+    );
+      ctrlport_request_t  request;
+      ctrlport_response_t response;
+
+      request           = '0;
+      request.rd        = '1;
+      request.addr      = addr;
+      request.has_time  = 1'b1;
+      request.timestamp = timestamp;
+
+      response        = '0;
       response.status = expected_status;
 
       async_request(request, response, '1);

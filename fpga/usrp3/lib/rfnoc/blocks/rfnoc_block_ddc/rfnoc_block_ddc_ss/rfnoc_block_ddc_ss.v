@@ -4,9 +4,9 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: rfnoc_block_ddc
+// Module: rfnoc_block_ddc_ss
 //
-// Description:  An digital down-converter block for RFNoC.
+// Description: Single-sample (SPC=1) implementation for rfnoc_block_ddc.
 //
 // Parameters:
 //
@@ -19,7 +19,7 @@
 //   CIC_MAX_DECIM  : Maximum decimation to support in the CIC filter
 //
 
-module rfnoc_block_ddc #(
+module rfnoc_block_ddc_ss #(
   parameter THIS_PORTID    = 0,
   parameter CHDR_W         = 64,
   parameter NUM_PORTS      = 2,
@@ -76,8 +76,8 @@ module rfnoc_block_ddc #(
   localparam COMPAT_MAJOR  = 16'h0;
   localparam COMPAT_MINOR  = 16'h1;
 
-  `include "rfnoc_block_ddc_regs.vh"
-  `include "../../core/rfnoc_axis_ctrl_utils.vh"
+  `include "rfnoc_block_ddc_regs_ss.vh"
+  `include "../../../core/rfnoc_axis_ctrl_utils.vh"
 
 
   //---------------------------------------------------------------------------
@@ -119,12 +119,12 @@ module rfnoc_block_ddc #(
 
   wire ce_rst;
 
-  noc_shell_ddc #(
+  noc_shell_ddc_ss #(
     .THIS_PORTID (THIS_PORTID),
     .CHDR_W      (CHDR_W),
     .MTU         (MTU),
     .NUM_PORTS   (NUM_PORTS)
-  ) noc_shell_ddc_i (
+  ) noc_shell_ddc_ss_i (
     .rfnoc_chdr_clk          (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk          (rfnoc_ctrl_clk),
     .ce_clk                  (ce_clk),

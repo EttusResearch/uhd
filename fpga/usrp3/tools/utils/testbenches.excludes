@@ -11,6 +11,7 @@ top/x300/sim/x300_pcie_int
 # exclude due to memory leak in Vivado
 lib/rfnoc/blocks/rfnoc_block_fft
 lib/rfnoc/blocks/rfnoc_block_fft/fft_packetize_tb
+lib/dsp/sim/axis_hb_cascade_intp_tb
 
 # These testbenches only work in ModelSim
 lib/axi4s_sv/axi4s_remove_bytes_tb

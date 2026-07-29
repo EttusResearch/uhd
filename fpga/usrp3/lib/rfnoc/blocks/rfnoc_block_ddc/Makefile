@@ -1,5 +1,5 @@
 #
-# Copyright 2019 Ettus Research, a National Instruments Brand
+# Copyright 2026 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 #
@@ -37,10 +37,11 @@ $(RFNOC_BLOCK_DDC_SRCS) \
 # Testbench Specific
 #-------------------------------------------------
 MODELSIM_LIBS += unimacro_ver
-SIM_TOP = rfnoc_block_ddc_tb glbl
+SIM_TOP = rfnoc_block_ddc_tb_all glbl
 SIM_SRCS = \
 $(abspath $(IP_BUILD_DIR)/dds_sin_cos_lut_only/sim/dds_sin_cos_lut_only.vhd) \
 $(abspath $(IP_BUILD_DIR)/complex_multiplier_dds/sim/complex_multiplier_dds.vhd) \
+$(abspath rfnoc_block_ddc_tb_all.sv) \
 $(abspath rfnoc_block_ddc_tb.sv) \
 $(VIVADO_PATH)/data/verilog/src/glbl.v \
 

@@ -86,8 +86,13 @@ cvita_hdr_decoder.v \
 cvita_hdr_modify.v \
 axi_async_stream.v \
 axi_rate_change.v \
+axi_rate_change_ms_pkg.sv \
+axi_rate_change_ms.sv \
 axi_tag_time.v \
+axi_tag_time_ms_pkg.sv \
+axi_tag_time_ms.sv \
 axi_drop_partial_packet.v \
+duc_ms_regs_pkg.sv \
 ddc.v \
 duc.v \
 cic_decimate.v \
@@ -102,4 +107,8 @@ dds_freq_tune_duc.v \
 dds_timed.v \
 dds_wrapper.v \
 datapath_gatekeeper.v \
+ddc_ms_regs_pkg.sv \
+ddc_ms.sv \
+duc_ms.sv \
+dds_ms.sv \
 ))

@@ -1,0 +1,12 @@
+#
+# Copyright 2026 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+RFNOC_BLOCK_DUC_SRCS += $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_duc/rfnoc_block_duc_ms/, \
+rfnoc_block_duc_ms_pkg.sv \
+noc_shell_duc_ms.sv \
+rfnoc_block_duc_ms.sv \
+rfnoc_block_duc_ms_channel.sv \
+))

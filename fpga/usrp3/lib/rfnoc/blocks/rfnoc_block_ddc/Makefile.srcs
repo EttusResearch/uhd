@@ -5,7 +5,9 @@
 #
 
 RFNOC_BLOCK_DDC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_ddc/, \
-noc_shell_ddc.v \
-rfnoc_block_ddc_regs.vh \
-rfnoc_block_ddc.v \
+rfnoc_block_ddc.sv \
 ))
+
+include $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_ddc/rfnoc_block_ddc_ss/Makefile.srcs
+include $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_ddc/rfnoc_block_ddc_ms/Makefile.srcs
+

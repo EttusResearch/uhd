@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
-// Module: rfnoc_block_duc
+// Module: rfnoc_block_duc_ss
 //
 // Description:  An digital up-converter block for RFNoC.
 //
@@ -22,7 +22,7 @@
 
 
 
-module rfnoc_block_duc #(
+module rfnoc_block_duc_ss #(
   parameter THIS_PORTID    = 0,
   parameter CHDR_W         = 64,
   parameter NUM_PORTS      = 2,
@@ -79,8 +79,8 @@ module rfnoc_block_duc #(
   localparam COMPAT_MAJOR  = 16'h0;
   localparam COMPAT_MINOR  = 16'h1;
 
-  `include "rfnoc_block_duc_regs.vh"
-  `include "../../core/rfnoc_axis_ctrl_utils.vh"
+  `include "rfnoc_block_duc_regs_ss.vh"
+  `include "../../../core/rfnoc_axis_ctrl_utils.vh"
 
 
   //---------------------------------------------------------------------------
@@ -122,12 +122,12 @@ module rfnoc_block_duc #(
 
   wire ce_rst;
 
-  noc_shell_duc #(
+  noc_shell_duc_ss #(
     .THIS_PORTID (THIS_PORTID),
     .CHDR_W      (CHDR_W),
     .MTU         (MTU),
     .NUM_PORTS   (NUM_PORTS)
-  ) noc_shell_duc_i (
+  ) noc_shell_duc_ss_i (
     .rfnoc_chdr_clk          (rfnoc_chdr_clk),
     .rfnoc_ctrl_clk          (rfnoc_ctrl_clk),
     .ce_clk                  (ce_clk),
