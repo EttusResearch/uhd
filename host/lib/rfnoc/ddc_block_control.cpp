@@ -27,53 +27,109 @@ constexpr int DEFAULT_DECIM              = 1;
 constexpr double DEFAULT_FREQ            = 0.0;
 const uhd::rfnoc::io_type_t DEFAULT_TYPE = uhd::rfnoc::IO_TYPE_SC16;
 
-//! Space (in bytes) between register banks per channel
-constexpr uint32_t REG_CHAN_OFFSET = 2048;
+// Multisample DDC (V1) register address building blocks
+constexpr uint32_t MS_DDC_BASE      = 0x000;
+constexpr uint32_t MS_PORT_BASE     = 0x100;
+constexpr uint32_t MS_PORT_AXI_RATE = MS_PORT_BASE + 0x000;
+constexpr uint32_t MS_PORT_SR       = MS_PORT_BASE + 0x100;
+constexpr uint32_t MS_PORT_DDS      = MS_PORT_BASE + 0x200;
+
+constexpr uint32_t MS_PORT_ADDR_W = 11; // 2^11 = 2048 bytes between channels
+
+// MS shared registers
+constexpr uint32_t MS_NUM_HB_ADDR        = 0x04;
+constexpr uint32_t MS_CIC_MAX_DECIM_ADDR = 0x08;
+constexpr uint32_t MS_SPC_ADDR           = 0x0C;
+
+// MS Sample rate conversion registers (per-channel)
+constexpr uint32_t MS_DECIM_ADDR    = 0x00;
+constexpr uint32_t MS_SCALE_IQ_ADDR = 0x08;
+
+// MS DDS registers (per-channel)
+constexpr uint32_t MS_FREQ_ADDR = 0x00;
+
+// MS AXI rate registers (per-channel)
+constexpr uint32_t MS_TIME_INCR_ADDR = 0x08;
+
 
 } // namespace
 
 using namespace uhd::rfnoc;
 
-const uint16_t ddc_block_control::MINOR_COMPAT = 1;
-const uint16_t ddc_block_control::MAJOR_COMPAT = 0;
+const uint32_t ddc_block_control::RB_COMPAT_NUM = 0;
 
-const uint32_t ddc_block_control::RB_COMPAT_NUM    = 0; // read this first
-const uint32_t ddc_block_control::RB_NUM_HB        = 8;
-const uint32_t ddc_block_control::RB_CIC_MAX_DECIM = 16;
+const ddc_block_control::reg_addrs_t ddc_block_control::REG_ADDRS_V0 = {
+    .major_compat      = 0,
+    .minor_compat      = 1,
+    .rb_num_hb         = 8,
+    .rb_cic_max_decim  = 16,
+    .rb_spc            = std::nullopt,
+    .sr_decim_addr     = 134 * 8,
+    .sr_freq_addr      = 132 * 8,
+    .sr_scale_iq_addr  = 133 * 8,
+    .sr_n_addr         = 128 * 8,
+    .sr_m_addr         = 129 * 8,
+    .sr_time_incr_addr = 137 * 8,
+    .sr_config_addr    = 130 * 8,
+    .sr_mux_addr       = 135 * 8,
+    .sr_coeffs_addr    = 136 * 8,
+    .reg_chan_offset   = 2048, // legacy SS register bank spacing
+};
 
-const uint32_t ddc_block_control::SR_N_ADDR         = 128 * 8;
-const uint32_t ddc_block_control::SR_M_ADDR         = 129 * 8;
-const uint32_t ddc_block_control::SR_CONFIG_ADDR    = 130 * 8;
-const uint32_t ddc_block_control::SR_FREQ_ADDR      = 132 * 8;
-const uint32_t ddc_block_control::SR_SCALE_IQ_ADDR  = 133 * 8;
-const uint32_t ddc_block_control::SR_DECIM_ADDR     = 134 * 8;
-const uint32_t ddc_block_control::SR_MUX_ADDR       = 135 * 8;
-const uint32_t ddc_block_control::SR_COEFFS_ADDR    = 136 * 8;
-const uint32_t ddc_block_control::SR_TIME_INCR_ADDR = 137 * 8;
+const ddc_block_control::reg_addrs_t ddc_block_control::REG_ADDRS_V1 = {
+    .major_compat      = 1,
+    .minor_compat      = 0,
+    .rb_num_hb         = MS_DDC_BASE + MS_NUM_HB_ADDR,
+    .rb_cic_max_decim  = MS_DDC_BASE + MS_CIC_MAX_DECIM_ADDR,
+    .rb_spc            = MS_DDC_BASE + MS_SPC_ADDR,
+    .sr_decim_addr     = MS_PORT_SR + MS_DECIM_ADDR,
+    .sr_freq_addr      = MS_PORT_DDS + MS_FREQ_ADDR,
+    .sr_scale_iq_addr  = MS_PORT_SR + MS_SCALE_IQ_ADDR,
+    .sr_n_addr         = std::nullopt,
+    .sr_m_addr         = std::nullopt,
+    .sr_time_incr_addr = MS_PORT_AXI_RATE + MS_TIME_INCR_ADDR,
+    .sr_config_addr    = std::nullopt,
+    .sr_mux_addr       = std::nullopt,
+    .sr_coeffs_addr    = std::nullopt,
+    .reg_chan_offset   = 1 << MS_PORT_ADDR_W,
+};
 
 class ddc_block_control_impl : public ddc_block_control
 {
 public:
     RFNOC_BLOCK_CONSTRUCTOR(ddc_block_control)
-    , _ddc_reg_iface(*this, 0, REG_CHAN_OFFSET),
-        _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
-        _num_halfbands(regs().peek32(RB_NUM_HB)),
-        _cic_max_decim(regs().peek32(RB_CIC_MAX_DECIM)),
+    , _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
+        _reg_addrs(_fpga_compat.get_major() == REG_ADDRS_V1.major_compat ? REG_ADDRS_V1
+                                                                         : REG_ADDRS_V0),
+        _ddc_reg_iface(*this, 0, _reg_addrs.reg_chan_offset),
+        _num_halfbands(regs().peek32(_reg_addrs.rb_num_hb)),
+        _cic_max_decim(regs().peek32(_reg_addrs.rb_cic_max_decim)),
+        _spc(_reg_addrs.rb_spc ? regs().peek32(*_reg_addrs.rb_spc) : 1),
         _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
     {
+        if (_fpga_compat.get_major() > REG_ADDRS_V1.major_compat) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                get_unique_id(),
+                ": Unsupported DDC compat major version: "
+                    + std::to_string(_fpga_compat.get_major()));
+        }
+
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_decim > 0 && _cic_max_decim <= 0xFF);
-        uhd::assert_fpga_compat(MAJOR_COMPAT,
-            MINOR_COMPAT,
-            _fpga_compat,
+        uhd::assert_fpga_compat(_reg_addrs.major_compat,
+            _reg_addrs.minor_compat,
+            _fpga_compat.get(),
             get_unique_id(),
             get_unique_id(),
             false /* Let it slide if minors mismatch */
         );
-        RFNOC_LOG_DEBUG("Loading DDC with " << _num_halfbands
-                                            << " halfbands and "
-                                               "max CIC decimation "
-                                            << _cic_max_decim);
+        RFNOC_LOG_DEBUG("Loading DDC with "
+                        << _num_halfbands
+                        << " halfbands and "
+                           "max CIC decimation "
+                        << _cic_max_decim
+                        << ", map=" << (_reg_addrs.rb_spc ? "multisample" : "legacy")
+                        << ", SPC=" << _spc);
         // This line is not strictly necessary, as ONE_TO_ONE is the default.
         // We set it make it explicit how this block works.
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
@@ -106,6 +162,35 @@ public:
         }
         register_issue_stream_cmd();
         register_issue_tune_request();
+    }
+
+    inline void _poke_decim_word(const uint32_t decim_word, const size_t chan)
+    {
+        _ddc_reg_iface.poke32(_reg_addrs.sr_decim_addr, decim_word, chan);
+    }
+
+    inline void _poke_rate_n_m(const uint32_t n, const uint32_t m, const size_t chan)
+    {
+        if (_reg_addrs.sr_n_addr && _reg_addrs.sr_m_addr) {
+            _ddc_reg_iface.poke32(*_reg_addrs.sr_n_addr, n, chan);
+            _ddc_reg_iface.poke32(*_reg_addrs.sr_m_addr, m, chan);
+        }
+    }
+
+    inline void _poke_time_incr(const uint32_t time_incr, const size_t chan)
+    {
+        _ddc_reg_iface.poke32(_reg_addrs.sr_time_incr_addr, time_incr, chan);
+    }
+
+    inline void _poke_scale_iq(const uint32_t actual_factor, const size_t chan)
+    {
+        _ddc_reg_iface.poke32(_reg_addrs.sr_scale_iq_addr, actual_factor, chan);
+    }
+
+    inline void _poke_freq(
+        const uint32_t freq_word, const size_t chan, const uhd::time_spec_t& cmd_time)
+    {
+        _ddc_reg_iface.poke32(_reg_addrs.sr_freq_addr, freq_word, chan, cmd_time);
     }
 
     double set_freq(const double freq,
@@ -197,6 +282,14 @@ public:
         issue_stream_cmd_action_handler(dst_edge, new_action);
     }
 
+private:
+    // Declared before the protected _ddc_reg_iface so C++ initializes these first,
+    // allowing _reg_addrs.reg_chan_offset to be used in _ddc_reg_iface's construction.
+    //! Block compat number
+    const uhd::compat_num32 _fpga_compat;
+    //! Selected register address map (V0 = legacy, V1 = multisample)
+    const reg_addrs_t _reg_addrs;
+
 protected:
     //! Block-specific register interface
     multichan_register_iface _ddc_reg_iface;
@@ -210,7 +303,7 @@ private:
 
     /**************************************************************************
      * Initialization
-     *************************************************************************/
+     ************************************************************************/
     void _register_props(const size_t chan)
     {
         // Create actual properties and store them
@@ -584,15 +677,13 @@ private:
         UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
         UHD_ASSERT_THROW(cic_decim > 0 and cic_decim <= _cic_max_decim);
         const uint32_t decim_word = (hb_enable << 8) | cic_decim;
-        _ddc_reg_iface.poke32(SR_DECIM_ADDR, decim_word, chan);
+        _poke_decim_word(decim_word, chan);
 
         // Rate change = M/N
-        _ddc_reg_iface.poke32(SR_N_ADDR, decim, chan);
-        _ddc_reg_iface.poke32(SR_M_ADDR, 1, chan);
+        _poke_rate_n_m(uint32_t(decim), 1, chan);
 
-        // Configure time increment in ticks per M output samples
-        _ddc_reg_iface.poke32(
-            SR_TIME_INCR_ADDR, uint32_t(get_tick_rate() / get_output_rate(chan)), chan);
+        // Configure the time increment for each output word containing _spc samples.
+        _poke_time_incr(uint32_t(get_tick_rate() / get_output_rate(chan) * _spc), chan);
 
         if (cic_decim > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(
@@ -606,16 +697,17 @@ private:
                 << decim);
         }
 
-        constexpr double DDS_GAIN = 2.0;
+        // The multisample DDS normalizes its NCO internally; the legacy DDS
+        // requires the historical factor-of-two gain correction.
+        const double dds_gain = _reg_addrs.rb_spc ? 1.0 : 2.0;
         // Calculate algorithmic gain of CIC for a given decimation.
         // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         // The Ettus CIC also tries its best to compensate for the gain by
         // shifting the CIC output. This reduces the gain by a factor of
         // 2**ceil(log2(cic_gain))
         const double cic_gain = std::pow(double(cic_decim * 1), 4);
-        // DDS gain:
         const double total_gain =
-            DDS_GAIN * cic_gain / std::pow(2, uhd::math::ceil_log2(cic_gain));
+            dds_gain * cic_gain / std::pow(2, uhd::math::ceil_log2(cic_gain));
         update_scaling(total_gain, chan);
     }
 
@@ -633,7 +725,7 @@ private:
         const int32_t actual_factor = std::lround(target_factor);
         // Write DDC with scaling correction for CIC and DDS that maximizes
         // dynamic range
-        _ddc_reg_iface.poke32(SR_SCALE_IQ_ADDR, actual_factor, chan);
+        _poke_scale_iq(uint32_t(actual_factor), chan);
 
         // Calculate the error introduced by using fixedpoint representation for
         // the scaler, can be corrected in host later.
@@ -656,21 +748,23 @@ private:
         int32_t freq_word;
         std::tie(actual_freq, freq_word) =
             get_freq_and_freq_word(requested_freq, dds_rate);
-
-        _ddc_reg_iface.poke32(
-            SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
+        // Write freq_word directly (not scaled by SPC). The hardware
+        // dds_multisample uses freq_word as the per-sample phase
+        // increment and multiplies internally by SPC for the per-clock
+        // accumulator advance.
+        _poke_freq(uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;
     }
 
     /**************************************************************************
      * Attributes
      *************************************************************************/
-    //! Block compat number
-    const uint32_t _fpga_compat;
     //! Number of halfbands
     const size_t _num_halfbands;
     //! Max CIC decim
     const size_t _cic_max_decim;
+    //! Number of samples per clock as reported by hardware
+    const uint32_t _spc;
 
     //! List of valid decimation values
     uhd::meta_range_t _valid_decims;

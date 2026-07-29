@@ -26,7 +26,7 @@ constexpr size_t DEFAULT_MTU = 8000;
 
 } // namespace
 
-BOOST_AUTO_TEST_CASE(test_ddc_block)
+void run_ddc_block_test(const ddc_block_control::reg_addrs_t& reg_addrs)
 {
     node_accessor_t node_accessor{};
     constexpr uint32_t num_hb     = 2;
@@ -36,13 +36,24 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr int TEST_DECIM      = 20;
     constexpr double DEFAULT_RATE = 200e6; // Matches typical MCR of X310
 
+    if (reg_addrs.major_compat == 0) {
+        BOOST_REQUIRE(reg_addrs.sr_n_addr);
+        BOOST_REQUIRE(reg_addrs.sr_m_addr);
+    } else {
+        BOOST_CHECK(!reg_addrs.sr_n_addr);
+        BOOST_CHECK(!reg_addrs.sr_m_addr);
+    }
+
     auto block_container =
         get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t("foo=bar"));
     auto& ddc_reg_iface = block_container.reg_iface;
     ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
-        (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
-    ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
-    ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
+        uint32_t(reg_addrs.major_compat) << 16 | reg_addrs.minor_compat;
+    ddc_reg_iface->read_memory[reg_addrs.rb_num_hb]        = num_hb;
+    ddc_reg_iface->read_memory[reg_addrs.rb_cic_max_decim] = max_cic;
+    if (reg_addrs.rb_spc) {
+        ddc_reg_iface->read_memory[*reg_addrs.rb_spc] = 1;
+    }
     auto test_ddc = block_container.get_block<ddc_block_control>();
     BOOST_REQUIRE(test_ddc);
     BOOST_CHECK_EQUAL(test_ddc->get_block_args().get("foo"), "bar");
@@ -51,9 +62,13 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     UHD_LOG_DEBUG("TEST", "Init done.");
     test_ddc->set_property<int>("decim", TEST_DECIM, 0);
 
-    BOOST_REQUIRE(ddc_reg_iface->write_memory.count(ddc_block_control::SR_DECIM_ADDR));
+    BOOST_REQUIRE(ddc_reg_iface->write_memory.count(reg_addrs.sr_decim_addr));
     BOOST_CHECK_EQUAL(
-        ddc_reg_iface->write_memory.at(ddc_block_control::SR_DECIM_ADDR), 2 << 8 | 5);
+        ddc_reg_iface->write_memory.at(reg_addrs.sr_decim_addr), 2 << 8 | 5);
+    BOOST_REQUIRE(ddc_reg_iface->write_memory.count(reg_addrs.sr_scale_iq_addr));
+    const uint32_t expected_scale = reg_addrs.rb_spc ? 53687 : 26844;
+    BOOST_CHECK_EQUAL(
+        ddc_reg_iface->write_memory.at(reg_addrs.sr_scale_iq_addr), expected_scale);
     BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 0}), DEFAULT_MTU);
 
     // Now plop it in a graph
@@ -78,11 +93,12 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     mock_source_term.set_edge_property<size_t>(
         "mtu", NEW_MTU, {res_source_info::OUTPUT_EDGE, 0});
 
-#define CHECK_INPUT_RATE(req_rate)                                           \
-    BOOST_REQUIRE_CLOSE(mock_source_term.get_edge_property<double>(          \
-                            "samp_rate", {res_source_info::OUTPUT_EDGE, 0}), \
-        req_rate,                                                            \
-        1e-6);
+    auto check_input_rate = [&mock_source_term](double req_rate) {
+        BOOST_REQUIRE_CLOSE(mock_source_term.get_edge_property<double>(
+                                "samp_rate", {res_source_info::OUTPUT_EDGE, 0}),
+            req_rate,
+            1e-6);
+    };
 
     UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_source_term, test_ddc.get(), edge_info);
@@ -90,7 +106,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
     UHD_LOG_INFO("TEST", "Commit complete.");
-    CHECK_INPUT_RATE(DEFAULT_RATE);
+    check_input_rate(DEFAULT_RATE);
     // We need to set the decimation again, because the rates will screw it
     // change it w.r.t. to the previous setting
     test_ddc->set_property<int>("decim", TEST_DECIM, 0);
@@ -101,7 +117,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
                        "samp_rate", {res_source_info::INPUT_EDGE, 0})
                        * TEST_DECIM);
     // Input rate should remain unchanged
-    CHECK_INPUT_RATE(DEFAULT_RATE);
+    check_input_rate(DEFAULT_RATE);
     BOOST_CHECK(mock_sink_term.get_edge_property<double>(
                     "scaling", {res_source_info::INPUT_EDGE, 0})
                 != 1.0);
@@ -117,16 +133,14 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
         "Setting freq to 1/8 of input rate (to " << (DEFAULT_RATE / 8) / 1e6 << " MHz)");
     constexpr double TEST_FREQ = DEFAULT_RATE / 8;
     test_ddc->set_property<double>("freq", TEST_FREQ, 0);
-    const uint32_t freq_word_1 =
-        ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
+    const uint32_t freq_word_1 = ddc_reg_iface->write_memory.at(reg_addrs.sr_freq_addr);
     BOOST_REQUIRE(freq_word_1 != 0);
     UHD_LOG_INFO(
         "TEST", "Doubling input rate (to " << (DEFAULT_RATE / 4) / 1e6 << " MHz)");
     // Now this should change the freq word, but not the absolute frequency
     mock_source_term.set_edge_property<double>(
         "samp_rate", DEFAULT_RATE * 2, {res_source_info::OUTPUT_EDGE, 0});
-    const double freq_word_2 =
-        ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
+    const double freq_word_2 = ddc_reg_iface->write_memory.at(reg_addrs.sr_freq_addr);
     // The frequency word is the phase increment, which will halve. We skirt
     // around fixpoint/floating point accuracy issues by using CLOSE.
     BOOST_CHECK_CLOSE(double(freq_word_1) / double(freq_word_2), 2.0, 1e-6);
@@ -165,4 +179,30 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     BOOST_CHECK_CLOSE(tune_req_received->tune_result.target_dsp_freq,
         tune_req_received->tune_result.actual_dsp_freq,
         1e-5);
+}
+
+BOOST_AUTO_TEST_CASE(test_ddc_compat_mismatch)
+{
+    constexpr size_t num_chans   = 1;
+    constexpr noc_id_t noc_id    = DDC_BLOCK;
+    constexpr uint16_t BAD_MAJOR = 2; // above REG_ADDRS_V1.major_compat (1)
+
+    auto block_container =
+        get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t());
+    auto& ddc_reg_iface = block_container.reg_iface;
+    ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] = (BAD_MAJOR << 16) | 0;
+    ddc_reg_iface->read_memory[ddc_block_control::REG_ADDRS_V0.rb_num_hb]        = 2;
+    ddc_reg_iface->read_memory[ddc_block_control::REG_ADDRS_V0.rb_cic_max_decim] = 128;
+
+    BOOST_CHECK_THROW(block_container.get_block<ddc_block_control>(), uhd::runtime_error);
+}
+
+BOOST_AUTO_TEST_CASE(test_ddc_block)
+{
+    run_ddc_block_test(ddc_block_control::REG_ADDRS_V0);
+}
+
+BOOST_AUTO_TEST_CASE(test_ddc_block_ms)
+{
+    run_ddc_block_test(ddc_block_control::REG_ADDRS_V1);
 }

@@ -10,6 +10,7 @@
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/types/ranges.hpp>
 #include <boost/optional.hpp>
+#include <optional>
 
 namespace uhd { namespace rfnoc {
 
@@ -33,22 +34,38 @@ class UHD_API ddc_block_control : public noc_block_base
 public:
     RFNOC_DECLARE_BLOCK(ddc_block_control)
 
-    static const uint16_t MAJOR_COMPAT;
-    static const uint16_t MINOR_COMPAT;
-    // Readback addresses
+    //! Version-specific register map for the DDC block
+    struct reg_addrs_t
+    {
+        uint16_t major_compat; //!< Expected major compat number for this version
+        uint16_t minor_compat; //!< Expected minor compat number for this version
+        // Readback addresses
+        uint32_t rb_num_hb; //!< Address of num-halfbands readback register
+        uint32_t rb_cic_max_decim; //!< Address of max-CIC-decimation readback register
+        //! Address of samples-per-clock readback register; std::nullopt for V0
+        std::optional<uint32_t> rb_spc;
+        // Per-channel write addresses
+        uint32_t sr_decim_addr; //!< Decimation word
+        uint32_t sr_freq_addr; //!< DDS frequency word
+        uint32_t sr_scale_iq_addr; //!< IQ scale factor
+        std::optional<uint32_t> sr_n_addr; //!< Rate N; std::nullopt for V1
+        std::optional<uint32_t> sr_m_addr; //!< Rate M; std::nullopt for V1
+        uint32_t sr_time_incr_addr; //!< Timestamp increment
+        // Single-sample-only registers (not poked by block controller, exposed for
+        // external callers). std::nullopt for V1.
+        std::optional<uint32_t> sr_config_addr;
+        std::optional<uint32_t> sr_mux_addr;
+        std::optional<uint32_t> sr_coeffs_addr;
+        //! Per-channel register bank stride in bytes (= 2^DDC_PORT_ADDR_W in the RTL)
+        uint32_t reg_chan_offset;
+    };
+
+    //! Compat register address (same across all register map versions)
     static const uint32_t RB_COMPAT_NUM;
-    static const uint32_t RB_NUM_HB;
-    static const uint32_t RB_CIC_MAX_DECIM;
-    // Write addresses
-    static const uint32_t SR_N_ADDR;
-    static const uint32_t SR_M_ADDR;
-    static const uint32_t SR_CONFIG_ADDR;
-    static const uint32_t SR_FREQ_ADDR;
-    static const uint32_t SR_SCALE_IQ_ADDR;
-    static const uint32_t SR_DECIM_ADDR;
-    static const uint32_t SR_MUX_ADDR;
-    static const uint32_t SR_COEFFS_ADDR;
-    static const uint32_t SR_TIME_INCR_ADDR;
+    //! Register map for the single-sample (legacy) DDC (compat major 0)
+    static const reg_addrs_t REG_ADDRS_V0;
+    //! Register map for the multisample DDC (compat major 1)
+    static const reg_addrs_t REG_ADDRS_V1;
 
     /*! Set the DDS frequency
      *

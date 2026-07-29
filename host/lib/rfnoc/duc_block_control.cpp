@@ -28,43 +28,86 @@ constexpr double DEFAULT_FREQ            = 0.0;
 const uhd::rfnoc::io_type_t DEFAULT_TYPE = uhd::rfnoc::IO_TYPE_SC16;
 constexpr double TX_SIGN                 = -1.0;
 
-//! Space (in bytes) between register banks per channel
-constexpr uint32_t REG_CHAN_OFFSET = 2048;
+// Multisample DUC (V1) register address building blocks
+constexpr uint32_t MS_DUC_BASE  = 0x000;
+constexpr uint32_t MS_PORT_BASE = 0x100;
+// space in bytes between register banks per channel
+constexpr uint32_t MS_PORT_ADDR_W   = 11;
+constexpr uint32_t MS_CHAN_OFFSET   = 1 << MS_PORT_ADDR_W;
+constexpr uint32_t MS_PORT_AXI_RATE = MS_PORT_BASE + 0x000;
+constexpr uint32_t MS_PORT_SR       = MS_PORT_BASE + 0x100;
+constexpr uint32_t MS_PORT_DDS      = MS_PORT_BASE + 0x200;
+// MS shared registers (same for all channels)
+constexpr uint32_t MS_NUM_HB_ADDR         = 0x04;
+constexpr uint32_t MS_CIC_MAX_INTERP_ADDR = 0x08;
+// MS Sample rate conversion registers (per-channel)
+constexpr uint32_t MS_INTERP_ADDR   = 0x00;
+constexpr uint32_t MS_SCALE_IQ_ADDR = 0x08;
+// MS DDS registers (per-channel)
+constexpr uint32_t MS_FREQ_ADDR = 0x00;
+// MS AXI rate registers (per-channel)
+constexpr uint32_t MS_TIME_INCR_ADDR = 0x08;
 
 } // namespace
 
 using namespace uhd::rfnoc;
 
-const uint16_t duc_block_control::MINOR_COMPAT = 1;
-const uint16_t duc_block_control::MAJOR_COMPAT = 0;
+// Compat register address (shared across all versions)
+const uint32_t duc_block_control::REG_COMPAT_NUM = 0;
 
-const uint32_t duc_block_control::RB_COMPAT_NUM     = 0; // read this first
-const uint32_t duc_block_control::RB_NUM_HB         = 8;
-const uint32_t duc_block_control::RB_CIC_MAX_INTERP = 16;
+// Version 0.x register addresses
+const duc_block_control::reg_addrs_t duc_block_control::REG_ADDRS_V0 = {
+    .major_compat   = 0,
+    .minor_compat   = 1,
+    .num_hb         = 8,
+    .cic_max_interp = 16,
+    .n_addr         = 128 * 8,
+    .m_addr         = 129 * 8,
+    .config_addr    = 130 * 8,
+    .interp_addr    = 131 * 8,
+    .freq_addr      = 132 * 8,
+    .scale_iq_addr  = 133 * 8,
+    .time_incr_addr = 137 * 8,
+};
 
-const uint32_t duc_block_control::SR_N_ADDR         = 128 * 8;
-const uint32_t duc_block_control::SR_M_ADDR         = 129 * 8;
-const uint32_t duc_block_control::SR_CONFIG_ADDR    = 130 * 8;
-const uint32_t duc_block_control::SR_INTERP_ADDR    = 131 * 8;
-const uint32_t duc_block_control::SR_FREQ_ADDR      = 132 * 8;
-const uint32_t duc_block_control::SR_SCALE_IQ_ADDR  = 133 * 8;
-const uint32_t duc_block_control::SR_TIME_INCR_ADDR = 137 * 8;
+// Version 1.x register addresses (multisample DUC)
+const duc_block_control::reg_addrs_t duc_block_control::REG_ADDRS_V1 = {
+    .major_compat   = 1,
+    .minor_compat   = 0,
+    .num_hb         = MS_DUC_BASE + MS_NUM_HB_ADDR,
+    .cic_max_interp = MS_DUC_BASE + MS_CIC_MAX_INTERP_ADDR,
+    .n_addr         = std::nullopt,
+    .m_addr         = std::nullopt,
+    .config_addr    = std::nullopt, // not present in V1
+    .interp_addr    = MS_PORT_SR + MS_INTERP_ADDR,
+    .freq_addr      = MS_PORT_DDS + MS_FREQ_ADDR,
+    .scale_iq_addr  = MS_PORT_SR + MS_SCALE_IQ_ADDR,
+    .time_incr_addr = MS_PORT_AXI_RATE + MS_TIME_INCR_ADDR,
+};
 
 class duc_block_control_impl : public duc_block_control
 {
 public:
     RFNOC_BLOCK_CONSTRUCTOR(duc_block_control)
-    , _duc_reg_iface(*this, 0, REG_CHAN_OFFSET),
-        _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
-        _num_halfbands(regs().peek32(RB_NUM_HB)),
-        _cic_max_interp(regs().peek32(RB_CIC_MAX_INTERP)),
+    , _duc_reg_iface(*this, 0, MS_CHAN_OFFSET),
+        _fpga_compat(regs().peek32(REG_COMPAT_NUM)),
+        _reg_addrs(_fpga_compat.get_major() == 1 ? REG_ADDRS_V1 : REG_ADDRS_V0),
+        _num_halfbands(regs().peek32(_reg_addrs.num_hb)),
+        _cic_max_interp(regs().peek32(_reg_addrs.cic_max_interp)),
         _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_interp > 0 && _cic_max_interp <= 0xFF);
-        uhd::assert_fpga_compat(MAJOR_COMPAT,
-            MINOR_COMPAT,
-            _fpga_compat,
+        RFNOC_LOG_DEBUG("Compat number: " << _fpga_compat.to_string());
+        if (_fpga_compat.get_major() > REG_ADDRS_V1.major_compat) {
+            UHD_LOG_THROW(uhd::runtime_error,
+                get_unique_id(),
+                ": Unsupported DUC compat major version: "
+                    + std::to_string(_fpga_compat.get_major()));
+        }
+        uhd::assert_fpga_compat(_reg_addrs.major_compat,
+            _reg_addrs.minor_compat,
+            _fpga_compat.get(),
             get_unique_id(),
             get_unique_id(),
             false /* Let it slide if minors mismatch */
@@ -580,15 +623,18 @@ private:
         UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
         UHD_ASSERT_THROW(cic_interp > 0 and cic_interp <= _cic_max_interp);
         const uint32_t interp_word = (hb_enable << 8) | cic_interp;
-        _duc_reg_iface.poke32(SR_INTERP_ADDR, interp_word, chan);
+        _duc_reg_iface.poke32(_reg_addrs.interp_addr, interp_word, chan);
 
-        // Rate change = M/N, where N = 1
-        _duc_reg_iface.poke32(SR_M_ADDR, interp, chan);
-        _duc_reg_iface.poke32(SR_N_ADDR, 1, chan);
+        // Legacy rate change = M/N, where N = 1
+        if (_reg_addrs.m_addr && _reg_addrs.n_addr) {
+            _duc_reg_iface.poke32(*_reg_addrs.m_addr, interp, chan);
+            _duc_reg_iface.poke32(*_reg_addrs.n_addr, 1, chan);
+        }
 
-        // Configure time increment in ticks per M output samples
-        _duc_reg_iface.poke32(
-            SR_TIME_INCR_ADDR, uint32_t(get_tick_rate() / get_output_rate(chan)), chan);
+        // Configure the time increment for each output sample
+        _duc_reg_iface.poke32(_reg_addrs.time_incr_addr,
+            uint32_t(get_tick_rate() / get_output_rate(chan)),
+            chan);
 
         if (cic_interp > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(
@@ -625,7 +671,7 @@ private:
         const int32_t actual_factor = static_cast<int32_t>(std::lround(target_factor));
         // Write DUC with scaling correction for CIC and DDS that maximizes
         // dynamic range
-        _duc_reg_iface.poke32(SR_SCALE_IQ_ADDR, actual_factor, chan);
+        _duc_reg_iface.poke32(_reg_addrs.scale_iq_addr, actual_factor, chan);
 
         // Calculate the error introduced by using fixedpoint representation for
         // the scaler, can be corrected in host later.
@@ -650,7 +696,7 @@ private:
             get_freq_and_freq_word(requested_freq, dds_rate);
 
         _duc_reg_iface.poke32(
-            SR_FREQ_ADDR, uint32_t(freq_word), chan, get_command_time(chan));
+            _reg_addrs.freq_addr, uint32_t(freq_word), chan, get_command_time(chan));
         return actual_freq;
     }
 
@@ -658,7 +704,9 @@ private:
      * Attributes
      *************************************************************************/
     //! Block compat number
-    const uint32_t _fpga_compat;
+    const uhd::compat_num32 _fpga_compat;
+    //! Version-specific register addresses
+    const reg_addrs_t& _reg_addrs;
     //! Number of halfbands
     const size_t _num_halfbands;
     //! Max CIC interpolation

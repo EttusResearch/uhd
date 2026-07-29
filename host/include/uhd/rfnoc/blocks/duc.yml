@@ -14,6 +14,12 @@ parameters:
   NUM_PORTS: 1
   NUM_HB: 3
   CIC_MAX_INTERP: 255
+  # NIPC is calculated based on RF_BW, which is expected to be provided by the
+  # parent image YAML file. The formula rounds NIPC up to the nearest power of
+  # 2 that can support the given RF_BW, assuming each of the NIPC parallel
+  # chains supports 200 MHz of RF bandwidth (with a corresponding sampling rate
+  # of 250 MSps). If RF_BW is not provided or is zero, NIPC defaults to 1.
+  NIPC: "${ 1 << ((-(-int(config.device.parameters.get('RF_BW', 200) // 200)) - 1).bit_length()) }"
 
 clocks:
   - name: rfnoc_chdr
@@ -40,7 +46,7 @@ data:
     in:
       num_ports: NUM_PORTS
       item_width: 32
-      nipc: 1
+      nipc: NIPC
       info_fifo_depth: 32
       payload_fifo_depth: 32
       format: sc16
@@ -48,7 +54,7 @@ data:
     out:
       num_ports: NUM_PORTS
       item_width: 32
-      nipc: 1
+      nipc: NIPC
       info_fifo_depth: 32
       payload_fifo_depth: 2**MTU
       sideband_at_end: True

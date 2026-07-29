@@ -25,7 +25,7 @@ constexpr size_t DEFAULT_MTU = 8000;
 
 } // namespace
 
-BOOST_AUTO_TEST_CASE(test_duc_block)
+void test_duc_block(const duc_block_control::reg_addrs_t& ver)
 {
     node_accessor_t node_accessor{};
     constexpr uint32_t num_hb     = 2;
@@ -35,12 +35,20 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     constexpr int TEST_INTERP     = 20; // 2 halfbands, CIC==5
     constexpr double DEFAULT_RATE = 200e6; // Matches typical MCR of X310
 
+    if (ver.major_compat == 0) {
+        BOOST_REQUIRE(ver.n_addr);
+        BOOST_REQUIRE(ver.m_addr);
+    } else {
+        BOOST_CHECK(!ver.n_addr);
+        BOOST_CHECK(!ver.m_addr);
+    }
+
     auto block_container = get_mock_block(noc_id, num_chans, num_chans);
     auto& duc_reg_iface  = block_container.reg_iface;
-    duc_reg_iface->read_memory[duc_block_control::RB_COMPAT_NUM] =
-        (duc_block_control::MAJOR_COMPAT << 16) | duc_block_control::MINOR_COMPAT;
-    duc_reg_iface->read_memory[duc_block_control::RB_NUM_HB]         = num_hb;
-    duc_reg_iface->read_memory[duc_block_control::RB_CIC_MAX_INTERP] = max_cic;
+    duc_reg_iface->read_memory[duc_block_control::REG_COMPAT_NUM] =
+        (ver.major_compat << 16) | ver.minor_compat;
+    duc_reg_iface->read_memory[ver.num_hb]         = num_hb;
+    duc_reg_iface->read_memory[ver.cic_max_interp] = max_cic;
     auto test_duc = block_container.get_block<duc_block_control>();
     BOOST_REQUIRE(test_duc);
 
@@ -48,9 +56,13 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     UHD_LOG_DEBUG("TEST", "Init done.");
     test_duc->set_property<int>("interp", TEST_INTERP, 0);
 
-    BOOST_REQUIRE(duc_reg_iface->write_memory.count(duc_block_control::SR_INTERP_ADDR));
+    BOOST_REQUIRE(duc_reg_iface->write_memory.count(ver.interp_addr));
+    BOOST_CHECK_EQUAL(duc_reg_iface->write_memory.at(ver.interp_addr), 2 << 8 | 5);
+    BOOST_REQUIRE(duc_reg_iface->write_memory.count(ver.scale_iq_addr));
+    // CIC gain is 5^(4-1)=125, normalized by 128 in the FPGA.
+    constexpr uint32_t EXPECTED_SCALE_IQ = 33554;
     BOOST_CHECK_EQUAL(
-        duc_reg_iface->write_memory.at(duc_block_control::SR_INTERP_ADDR), 2 << 8 | 5);
+        duc_reg_iface->write_memory.at(ver.scale_iq_addr), EXPECTED_SCALE_IQ);
     BOOST_CHECK_EQUAL(test_duc->get_mtu({res_source_info::INPUT_EDGE, 0}), DEFAULT_MTU);
 
     // Now plop it in a graph
@@ -144,8 +156,7 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
         "Setting freq to 1/8 of input rate (to " << (DEFAULT_RATE / 8) / 1e6 << " MHz)");
     constexpr double TEST_FREQ = DEFAULT_RATE / 8;
     test_duc->set_property<double>("freq", TEST_FREQ, 0);
-    const uint32_t freq_word_1 =
-        duc_reg_iface->write_memory.at(duc_block_control::SR_FREQ_ADDR);
+    const uint32_t freq_word_1 = duc_reg_iface->write_memory.at(ver.freq_addr);
     BOOST_REQUIRE(freq_word_1 != 0);
     UHD_LOG_INFO(
         "TEST", "Doubling input rate (to " << (DEFAULT_RATE / 4) / 1e6 << " MHz)");
@@ -155,8 +166,7 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
             * mock_sink_term.get_edge_property<double>(
                 "samp_rate", {res_source_info::INPUT_EDGE, 0}),
         {res_source_info::INPUT_EDGE, 0});
-    const double freq_word_2 =
-        duc_reg_iface->write_memory.at(duc_block_control::SR_FREQ_ADDR);
+    const double freq_word_2 = duc_reg_iface->write_memory.at(ver.freq_addr);
     // The frequency word is the phase increment, which will halve. We skirt
     // around fixpoint/floating point accuracy issues by using CLOSE.
     BOOST_CHECK_CLOSE(double(freq_word_1) / double(freq_word_2), 2.0, 1e-6);
@@ -208,4 +218,14 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     BOOST_CHECK_CLOSE(tune_req_received->tune_result.target_dsp_freq,
         tune_req_received->tune_result.actual_dsp_freq,
         1e-5);
+}
+
+BOOST_AUTO_TEST_CASE(test_duc_block_v0)
+{
+    test_duc_block(duc_block_control::REG_ADDRS_V0);
+}
+
+BOOST_AUTO_TEST_CASE(test_duc_block_v1)
+{
+    test_duc_block(duc_block_control::REG_ADDRS_V1);
 }

@@ -35,20 +35,28 @@ class UHD_API duc_block_control : public noc_block_base
 public:
     RFNOC_DECLARE_BLOCK(duc_block_control)
 
-    static const uint16_t MAJOR_COMPAT;
-    static const uint16_t MINOR_COMPAT;
-    // Readback addresses
-    static const uint32_t RB_COMPAT_NUM;
-    static const uint32_t RB_NUM_HB;
-    static const uint32_t RB_CIC_MAX_INTERP;
-    // Write addresses
-    static const uint32_t SR_N_ADDR;
-    static const uint32_t SR_M_ADDR;
-    static const uint32_t SR_CONFIG_ADDR;
-    static const uint32_t SR_FREQ_ADDR;
-    static const uint32_t SR_SCALE_IQ_ADDR;
-    static const uint32_t SR_INTERP_ADDR;
-    static const uint32_t SR_TIME_INCR_ADDR;
+    //! Version-specific register addresses
+    struct reg_addrs_t
+    {
+        uint16_t major_compat;
+        uint16_t minor_compat;
+        uint32_t num_hb;
+        uint32_t cic_max_interp;
+        std::optional<uint32_t> n_addr;
+        std::optional<uint32_t> m_addr;
+        std::optional<uint32_t> config_addr;
+        uint32_t interp_addr;
+        uint32_t freq_addr;
+        uint32_t scale_iq_addr;
+        uint32_t time_incr_addr;
+    };
+
+    // Compat register address (same across all versions)
+    static const uint32_t REG_COMPAT_NUM;
+    // Register addresses for version 0.x
+    static const reg_addrs_t REG_ADDRS_V0;
+    // Register addresses for version 1.x
+    static const reg_addrs_t REG_ADDRS_V1;
 
     /*! Set the DDS frequency
      *

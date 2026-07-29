@@ -871,9 +871,11 @@ BOOST_FIXTURE_TEST_CASE(replay_test_graph_loop, replay_block_fixture)
         get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t(""));
     auto& ddc_reg_iface = block_container.reg_iface;
     ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
-        (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
-    ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
-    ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
+        uint32_t(ddc_block_control::REG_ADDRS_V0.major_compat) << 16
+        | ddc_block_control::REG_ADDRS_V0.minor_compat;
+    ddc_reg_iface->read_memory[ddc_block_control::REG_ADDRS_V0.rb_num_hb] = num_hb;
+    ddc_reg_iface->read_memory[ddc_block_control::REG_ADDRS_V0.rb_cic_max_decim] =
+        max_cic;
     auto test_ddc = block_container.get_block<ddc_block_control>();
 
     node_accessor.init_props(test_ddc.get());
