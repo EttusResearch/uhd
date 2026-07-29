@@ -333,6 +333,37 @@ public:
         return "Example_Extension";
     }
 
+    void set_rx_antenna(const std::string& ant, const size_t chan) override
+    {
+        _radio->set_rx_antenna(ant, chan);
+    }
+
+    void set_tx_antenna(const std::string& ant, const size_t chan) override
+    {
+        _radio->set_tx_antenna(ant, chan);
+    }
+
+    std::string get_rx_antenna(const size_t chan) const override
+    {
+        return _radio->get_rx_antenna(chan);
+    }
+
+    std::string get_tx_antenna(const size_t chan) const override
+    {
+        return _radio->get_tx_antenna(chan);
+    }
+
+
+    std::vector<std::string> get_rx_antennas(const size_t chan) const override
+    {
+        return _radio->get_rx_antennas(chan);
+    }
+
+    std::vector<std::string> get_tx_antennas(const size_t chan) const override
+    {
+        return _radio->get_tx_antennas(chan);
+    }
+
 private:
     uhd::rfnoc::radio_control::sptr _radio;
 
