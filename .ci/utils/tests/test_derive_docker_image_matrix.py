@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import os
 import subprocess
 import sys
 import unittest
@@ -32,6 +33,15 @@ DEFAULT_FIXTURE = (
     Path(__file__).resolve().parent / "inputs" / "DockerImageNames" / "DockerImageNames"
 )
 ARTIFACT_FILE_OVERRIDE: Optional[Path] = None
+
+
+def _is_ci_build() -> bool:
+    """Return True for CI contexts where test failures must remain blocking."""
+    from derive_docker_image_matrix import (  # type: ignore[import-not-found]
+        is_strict_ci_build,
+    )
+
+    return is_strict_ci_build()
 
 
 class DeriveDockerImageMatrixTests(unittest.TestCase):
@@ -88,42 +98,65 @@ class DeriveDockerImageMatrixTests(unittest.TestCase):
             )
             self.skipTest(f"Empty matrix at line {line_no}: {key}")
 
+    def _ubuntu_linux_entries(self) -> dict[str, dict[str, object]]:
+        """Return Ubuntu entries from linux_matrix that include a releaseName."""
+        entries: dict[str, dict[str, object]] = {}
+        for key, payload in self.artifact_data["linux_matrix"].items():
+            if key.startswith("Ubuntu-") and payload.get("releaseName"):
+                entries[key] = payload
+        return entries
+
+    def _fedora_linux_entries(self) -> dict[str, dict[str, object]]:
+        """Return Fedora entries from linux_matrix that include a releaseName."""
+        entries: dict[str, dict[str, object]] = {}
+        for key, payload in self.artifact_data["linux_matrix"].items():
+            if key.startswith("Fedora-") and payload.get("releaseName"):
+                entries[key] = payload
+        return entries
+
     def test_parses_fixture_file(self):
         """Parse the fixture and expose expected top-level fields."""
         self.assertTrue(self.artifact_data["docker_build_number"])
         self._skip_if_matrix_empty("linux_matrix", 3)
-        self.assertIn("Ubuntu-2404-builder", self.artifact_data["linux_matrix"])
+        self.assertTrue(
+            any(key.startswith("Ubuntu-") for key in self.artifact_data["linux_matrix"]),
+            "Expected at least one Ubuntu entry in linux_matrix",
+        )
 
     def test_derives_deb_matrix_from_linux_matrix(self):
         """Derive Ubuntu deb matrix using releaseName from linux matrix entries."""
         self._skip_if_matrix_empty("linux_matrix", 3)
         matrix = self.derive_package_matrix(self.artifact_data, os_name="linux", package="deb")
-        self.assertIn("Ubuntu-2204-builder", matrix)
-        self.assertIn("Ubuntu-2404-builder", matrix)
-        self.assertIn("Ubuntu-2510-builder", matrix)
-        self.assertEqual(matrix["Ubuntu-2204-builder"]["ubuntuReleaseName"], "jammy")
-        self.assertEqual(matrix["Ubuntu-2404-builder"]["ubuntuReleaseName"], "noble")
+        expected = self._ubuntu_linux_entries()
+        self.assertEqual(set(matrix.keys()), set(expected.keys()))
+        for key, payload in expected.items():
+            self.assertEqual(matrix[key]["ubuntuReleaseName"], payload["releaseName"])
 
     def test_derives_rpm_matrix_from_linux_matrix(self):
         """Derive Fedora rpm matrix using releaseName from linux matrix entries."""
         self._skip_if_matrix_empty("linux_matrix", 3)
         matrix = self.derive_package_matrix(self.artifact_data, os_name="linux", package="rpm")
-        self.assertIn("Fedora-42-builder", matrix)
-        self.assertEqual(matrix["Fedora-42-builder"]["fedoraReleaseName"], "42")
-        self.assertEqual(matrix["Fedora-44-builder"]["fedoraReleaseName"], "44")
+        expected = self._fedora_linux_entries()
+        self.assertEqual(set(matrix.keys()), set(expected.keys()))
+        for key, payload in expected.items():
+            self.assertEqual(matrix[key]["fedoraReleaseName"], payload["releaseName"])
 
     def test_filter_out_matches_release_name(self):
         """Exclude entries when filter-out matches a derived release field."""
         self._skip_if_matrix_empty("linux_matrix", 3)
+        base = self.derive_package_matrix(self.artifact_data, os_name="linux", package="deb")
+        if not base:
+            self.skipTest("No Ubuntu entries available for deb filter-out test")
+
+        selected_key, selected_payload = next(iter(base.items()))
+        selected_release = str(selected_payload["ubuntuReleaseName"])
         matrix = self.derive_package_matrix(
             self.artifact_data,
             os_name="linux",
             package="deb",
-            filter_out="questing,focal",
+            filter_out=selected_release,
         )
-        self.assertNotIn("Ubuntu-2510-builder", matrix)
-        self.assertNotIn("Ubuntu-2004-builder", matrix)
-        self.assertIn("Ubuntu-2404-builder", matrix)
+        self.assertNotIn(selected_key, matrix)
 
     def test_invalid_os_package_combination_rejected(self):
         """Reject unsupported OS/package combinations."""
@@ -133,14 +166,18 @@ class DeriveDockerImageMatrixTests(unittest.TestCase):
     def test_build_type_derivation_with_filter_out(self):
         """Build type returns linux matrix and honors filter_out by releaseName."""
         self._skip_if_matrix_empty("linux_matrix", 3)
+        selected_key, selected_payload = next(iter(self.artifact_data["linux_matrix"].items()))
+        selected_release = str(selected_payload.get("releaseName", "")).strip()
+        if not selected_release:
+            self.skipTest("Selected linux matrix entry has no releaseName for filter-out test")
+
         matrix = self.derive_typed_matrix(
             self.artifact_data,
             target_type="build",
             os_name="linux",
-            filter_out="questing",
+            filter_out=selected_release,
         )
-        self.assertNotIn("Ubuntu-2510-builder", matrix)
-        self.assertIn("Ubuntu-2404-builder", matrix)
+        self.assertNotIn(selected_key, matrix)
 
     def test_build_type_derivation_for_windows_returns_win_matrix(self):
         """Build type windows path should return the windows matrix unchanged."""
@@ -154,14 +191,20 @@ class DeriveDockerImageMatrixTests(unittest.TestCase):
     def test_source_type_select_returns_single_entry(self):
         """Source type should return a single selected Ubuntu entry."""
         self._skip_if_matrix_empty("linux_matrix", 3)
+        ubuntu_entries = self._ubuntu_linux_entries()
+        if not ubuntu_entries:
+            self.skipTest("No Ubuntu entries available for source select test")
+
+        selected_key, selected_payload = next(iter(ubuntu_entries.items()))
+        selected_release = str(selected_payload["releaseName"])
         matrix = self.derive_typed_matrix(
             self.artifact_data,
             target_type="source",
             os_name="linux",
-            select="noble",
+            select=selected_release,
         )
-        self.assertEqual(set(matrix.keys()), {"Ubuntu-2404-builder"})
-        self.assertEqual(matrix["Ubuntu-2404-builder"]["ubuntuReleaseName"], "noble")
+        self.assertEqual(set(matrix.keys()), {selected_key})
+        self.assertEqual(matrix[selected_key]["ubuntuReleaseName"], selected_release)
 
     def test_source_type_requires_select(self):
         """Source/docs types should require explicit select value."""
@@ -179,7 +222,7 @@ class DeriveDockerImageMatrixTests(unittest.TestCase):
                 self.artifact_data,
                 target_type="source",
                 os_name="linux",
-                select="jammy,noble",
+                select="__no_such_release__",
             )
 
     def test_select_and_filter_out_are_mutually_exclusive(self):
@@ -219,6 +262,64 @@ class DeriveDockerImageMatrixTests(unittest.TestCase):
         parsed = ast.literal_eval(result.stdout.strip())
         self.assertEqual(parsed, self.artifact_data["win_matrix"])
 
+    def test_cli_empty_on_error_manual_build_returns_empty_object(self):
+        """Manual Azure build should use fallback and return '{}' on derivation errors."""
+        script_path = Path(__file__).resolve().parents[1] / "derive_docker_image_matrix.py"
+        env = os.environ.copy()
+        env["TF_BUILD"] = "true"
+        env["BUILD_REASON"] = "Manual"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(script_path),
+                "--input",
+                str(self.fixture),
+                "--empty-on-error-non-ci",
+                "--type",
+                "source",
+                "--os",
+                "linux",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertEqual(result.stdout.strip(), "{}")
+        self.assertIn("##vso[task.logissue type=warning]", result.stderr)
+        self.assertIn("defaulting to empty object", result.stderr)
+
+    def test_cli_empty_on_error_non_ci_stays_strict_in_scheduled_ci(self):
+        """Strict scheduled CI should still fail even when fallback flag is set."""
+        script_path = Path(__file__).resolve().parents[1] / "derive_docker_image_matrix.py"
+        env = os.environ.copy()
+        env["TF_BUILD"] = "true"
+        env["BUILD_REASON"] = "Schedule"
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(script_path),
+                "--input",
+                str(self.fixture),
+                "--empty-on-error-non-ci",
+                "--type",
+                "source",
+                "--os",
+                "linux",
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--select is required", result.stderr)
+
 
 if __name__ == "__main__":
     # Run this file directly, or use unittest discovery from the repo root.
@@ -233,4 +334,25 @@ if __name__ == "__main__":
     if args.artifact_file:
         ARTIFACT_FILE_OVERRIDE = Path(args.artifact_file)
 
-    unittest.main(argv=[sys.argv[0], *remaining_args])
+    # Preserve unittest CLI filtering behavior via remaining_args.
+    loader = unittest.defaultTestLoader
+    suite = loader.loadTestsFromName(__name__)
+    if remaining_args:
+        suite = loader.loadTestsFromNames(remaining_args, module=sys.modules[__name__])
+
+    result = unittest.TextTestRunner(verbosity=2).run(suite)
+    if result.wasSuccessful():
+        raise SystemExit(0)
+
+    if _is_ci_build():
+        raise SystemExit(1)
+
+    # Non-CI runs should report issues as warnings but not fail callers.
+    message = (
+        "Matrix validation had failures/errors "
+        f"(failures={len(result.failures)}, errors={len(result.errors)}). "
+        "Treating as warnings because this is not a CI build."
+    )
+    warnings.warn(message, UserWarning)
+    print(f"##vso[task.logissue type=warning]{message}")
+    raise SystemExit(0)

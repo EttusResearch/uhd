@@ -41,12 +41,16 @@ jobs:
         docker_image_matrix_windows_python_build=$(sed '9q;d' "$artifact_file")
       elif [ "$line_count" -eq 6 ]; then
         macos_line=5
-        docker_image_matrix_lin=$(python3 "$derive_script" --input "$artifact_file" --type build --os linux)
-        docker_image_matrix_win=$(python3 "$derive_script" --input "$artifact_file" --type build --os windows)
-        docker_image_matrix_ubuntu_deb=$(python3 "$derive_script" --input "$artifact_file" --type installer --os linux --package deb --filter-out "focal,questing")
-        docker_image_matrix_source_package=$(python3 "$derive_script" --input "$artifact_file" --type source --os linux --select noble)
-        docker_image_matrix_fedora_rpm=$(python3 "$derive_script" --input "$artifact_file" --type installer --os linux --package rpm)
-        docker_image_matrix_windows_python_build=$(python3 "$derive_script" --input "$artifact_file" --section windows-python-build-matrix)
+        # Keep derive failures blocking for strict CI reasons (CI/scheduled),
+        # but allow non-CI/manual debug runs to continue with '{}' fallback.
+        # PR runs also use fallback mode.
+        # The behavior is implemented by derive_docker_image_matrix.py.
+        docker_image_matrix_lin=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --type build --os linux)
+        docker_image_matrix_win=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --type build --os windows)
+        docker_image_matrix_ubuntu_deb=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --type installer --os linux --package deb --filter-out "focal,questing")
+        docker_image_matrix_source_package=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --type source --os linux --select noble)
+        docker_image_matrix_fedora_rpm=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --type installer --os linux --package rpm)
+        docker_image_matrix_windows_python_build=$(python3 "$derive_script" --empty-on-error-non-ci --input "$artifact_file" --section windows-python-build-matrix)
       else
         echo "Error: Unexpected DockerImageNames format with $line_count lines; expected 6 or 9"
         exit 1

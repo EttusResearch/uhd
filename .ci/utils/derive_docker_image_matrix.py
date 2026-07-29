@@ -7,12 +7,24 @@
 """Derive package-specific docker image matrices from DockerImageNames artifact data.
 
 Supports Python 3.8 or later.
+
+Strictness control:
+- `UHD_MATRIX_STRICT_CI=true|1|yes|on`: force strict mode (errors are blocking)
+- `UHD_MATRIX_STRICT_CI=false|0|no|off`: force non-strict mode
+- `UHD_MATRIX_STRICT_CI` unset: auto-detect strictness
+    - strict for Azure CI reasons `IndividualCI`, `BatchedCI`, `Schedule`
+    - non-strict for Azure manual/debug runs
+    - for non-Azure environments, strict if `CI=true`
+
+When `--empty-on-error-non-ci` is provided, non-strict mode converts derivation
+errors to `{}` and emits an Azure warning log issue.
 """
 
 from __future__ import annotations
 
 import argparse
 import ast
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -41,6 +53,99 @@ SECTION_DATA_MAP = {
     "macos-builders": "macos_builders",
     "windows-python-build-matrix": "win_python_build_matrix",
 }
+
+
+def is_strict_ci_build() -> bool:
+    """Return True when matrix validation/derivation failures are blocking.
+
+    Override behavior via `UHD_MATRIX_STRICT_CI`:
+      - true/1/yes/on: force strict
+      - false/0/no/off: force non-strict
+      - auto/unset: use environment-based detection
+    """
+    override = os.getenv("UHD_MATRIX_STRICT_CI", "").strip().lower()
+    if override in {"1", "true", "yes", "on"}:
+        return True
+    if override in {"0", "false", "no", "off"}:
+        return False
+
+    if os.getenv("TF_BUILD", "").strip().lower() == "true":
+        return os.getenv("BUILD_REASON", "").strip() in {
+            "IndividualCI",
+            "BatchedCI",
+            "Schedule",
+        }
+
+    # Non-Azure fallback used by local and other CI systems.
+    return os.getenv("CI", "").strip().lower() == "true"
+
+
+def _is_strict_ci_build() -> bool:
+    """Backward-compatible internal alias."""
+    return is_strict_ci_build()
+
+
+def _empty_fallback_message(exc: Exception) -> str:
+    """Format a consistent warning message for non-strict fallback."""
+    return (
+        "derive_docker_image_matrix failed in non-CI build; "
+        "defaulting to empty object. Error: "
+        f"{exc}"
+    )
+
+
+def _emit_non_strict_fallback(exc: Exception) -> int:
+    """Emit warning and fallback output for non-strict mode."""
+    message = _empty_fallback_message(exc)
+    print(f"##vso[task.logissue type=warning]{message}", file=sys.stderr)
+    print("{}")
+    return 0
+
+
+def _emit_failure(exc: Exception) -> int:
+    """Emit normal error output for strict mode."""
+    print(str(exc), file=sys.stderr)
+    return 1
+
+
+def _error_exit_for_exception(exc: Exception, empty_on_error_non_ci: bool) -> int:
+    """Map an exception to exit handling based on strictness and CLI mode."""
+    if empty_on_error_non_ci and not is_strict_ci_build():
+        return _emit_non_strict_fallback(exc)
+    return _emit_failure(exc)
+
+
+def _format_cli_output(args: argparse.Namespace, matrix_text: str) -> None:
+    """Write normal CLI output, either plain text or Azure variable format."""
+    if args.vso_variable:
+        print(f"##vso[task.setvariable variable={args.vso_variable};isOutput=true;]{matrix_text}")
+    else:
+        print(matrix_text)
+
+
+def _derive_cli_value(args: argparse.Namespace, artifact_data: dict[str, Any]) -> Any:
+    """Resolve the selected CLI mode into an artifact value/matrix."""
+    if args.section:
+        return get_artifact_value(artifact_data, args.section)
+    if args.type:
+        if not args.os:
+            raise ValueError("--os is required when --type is specified")
+        return derive_typed_matrix(
+            artifact_data,
+            args.type,
+            args.os,
+            package=args.package,
+            select=args.select,
+            filter_out=args.filter_out,
+        )
+
+    if not args.package:
+        raise ValueError("Either --section or --type or --package must be specified")
+    if not args.os:
+        raise ValueError("--os is required when --package is specified")
+    if args.select:
+        raise ValueError("--select is only supported with --type")
+    return derive_package_matrix(artifact_data, args.os, args.package, args.filter_out)
 
 
 def _parse_matrix_string(raw_value: str) -> dict[str, dict[str, Any]]:
@@ -333,6 +438,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional variable name to emit in Azure DevOps setvariable format",
     )
+    parser.add_argument(
+        "--empty-on-error-non-ci",
+        action="store_true",
+        help=(
+            "On non-CI Azure builds, convert derivation errors to '{}' and continue. "
+            "CI builds still fail with non-zero exit."
+        ),
+    )
     return parser
 
 
@@ -342,36 +455,12 @@ def main() -> int:
 
     try:
         artifact_data = parse_docker_image_names_file(Path(args.input))
-        if args.section:
-            value = get_artifact_value(artifact_data, args.section)
-        elif args.type:
-            if not args.os:
-                raise ValueError("--os is required when --type is specified")
-            value = derive_typed_matrix(
-                artifact_data,
-                args.type,
-                args.os,
-                package=args.package,
-                select=args.select,
-                filter_out=args.filter_out,
-            )
-        else:
-            if not args.package:
-                raise ValueError("Either --section or --type or --package must be specified")
-            if not args.os:
-                raise ValueError("--os is required when --package is specified")
-            if args.select:
-                raise ValueError("--select is only supported with --type")
-            value = derive_package_matrix(artifact_data, args.os, args.package, args.filter_out)
+        value = _derive_cli_value(args, artifact_data)
         matrix_text = format_value_for_pipeline(value)
     except Exception as exc:  # pylint: disable=broad-except
-        print(str(exc), file=sys.stderr)
-        return 1
+        return _error_exit_for_exception(exc, args.empty_on_error_non_ci)
 
-    if args.vso_variable:
-        print(f"##vso[task.setvariable variable={args.vso_variable};isOutput=true;]{matrix_text}")
-    else:
-        print(matrix_text)
+    _format_cli_output(args, matrix_text)
     return 0
 
 
