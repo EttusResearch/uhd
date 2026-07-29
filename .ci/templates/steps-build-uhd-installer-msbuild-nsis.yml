@@ -43,6 +43,7 @@ steps:
 
 - script: |
     pip config list
+    python -m pip install --upgrade pip
     pip install -r ${{ parameters.uhdSrcDir }}\host\python\requirements.txt
   displayName: refresh python dependencies
 

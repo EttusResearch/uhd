@@ -249,7 +249,7 @@ jobs:
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_sysimg_test && mkdir -p ~/usrp_sysimg_test"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/meta-ettus-dev/contrib/test/tests root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install unittest-xml-reporting && cd ~/usrp_sysimg_test/tests && python3 -m xmlrunner discover . -v"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "python3 -m pip install -U pip && pip3 install unittest-xml-reporting && cd ~/usrp_sysimg_test/tests && python3 -m xmlrunner discover . -v"
       EXITCODE=$?
       scp -o StrictHostKeyChecking=no -r root@$USRP_EMB_TARGET_IP:~/usrp_sysimg_test .
       exit $EXITCODE
@@ -296,6 +296,7 @@ jobs:
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
+      python3 -m pip install --upgrade pip
       pip3 install -r $(Build.SourcesDirectory)/uhddev/host/tests/devtest/requirements.txt
       cd $(Common.TestResultsDirectory)/devtest
       python3 $(Build.SourcesDirectory)/uhddev/host/tests/devtest/run_testsuite.py \
@@ -342,6 +343,7 @@ jobs:
       
       # Activate virtual environment and install dependencies
       source $USRP_EMB_VENV/bin/activate
+      python3 -m pip install --upgrade pip
       pip3 install -r $(Build.SourcesDirectory)/ettus-rts/.ci/utils/x420_iq_dc_correction_requirements.txt
       
       # Run the X420 IQ correction script
@@ -385,7 +387,7 @@ jobs:
       mkdir -p $(Common.TestResultsDirectory)/pytest/embedded
       cd $(Common.TestResultsDirectory)/pytest/embedded
       ssh-keygen -f ~/.ssh/known_hosts -R $USRP_EMB_TARGET_IP
-      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "pip3 install --upgrade 'pytest<8.4.0' pytest-helpers-namespace pytest-tempdir pytest-salt"
+      ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "python3 -m pip install -U pip && pip3 install --upgrade 'pytest<8.4.0' pytest-helpers-namespace pytest-tempdir pytest-salt"
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "rm -rf ~/usrp_pytest && mkdir -p ~/usrp_pytest"
       scp -o StrictHostKeyChecking=no -r $(Build.SourcesDirectory)/ettus-rts/config/remote/ root@$USRP_EMB_TARGET_IP:~/usrp_pytest
       ssh -o StrictHostKeyChecking=no -tt root@$USRP_EMB_TARGET_IP "cd ~/usrp_pytest/remote/python_tests/pytests && \

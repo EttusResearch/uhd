@@ -183,6 +183,7 @@ jobs:
       py -3.10 -m venv lvtest_venv
       call lvtest_venv\Scripts\activate.bat
       echo "Installing required Python packages into the virtual environment"
+      python -m pip install --upgrade pip
       pip install lvtest
     displayName: Prepare venv (Python 3.10)
 

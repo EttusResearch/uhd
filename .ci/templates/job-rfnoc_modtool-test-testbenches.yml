@@ -44,6 +44,7 @@ jobs:
       # Init toolchain
       source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh $(Build.SourcesDirectory)/uhddev/fpga/usrp3/top/x300
       pushd $(Build.SourcesDirectory)/uhddev/fpga/usrp3/tools/utils
+      python3 -m pip install --upgrade pip
       pip3 install -r requirements.txt
       popd
       # Now run the test.

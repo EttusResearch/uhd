@@ -91,6 +91,7 @@ jobs:
         # twice.
         echo "##[group]Setting up build environment..."
         source $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/run_setup.sh ./
+        python3 -m pip install --upgrade pip
         pip3 install -U numpy mako "ruamel.yaml<0.18.0" jsonschema
         set -o xtrace
         # hwsetup.sh injects garbage cmake versions into PATH, so avoid that by

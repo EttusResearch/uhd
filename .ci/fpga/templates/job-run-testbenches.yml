@@ -36,6 +36,7 @@ jobs:
 
         echo "---- Run testbenches ----"
         pushd ./tools/utils
+        python3 -m pip install --upgrade pip
         pip3 install -r requirements.txt
         python3 ./run_testbenches.py --logged --simulator ${{ parameters.simulator }} --excludes=${{ variables.excludes_file }}.excludes -j4 --report $(Build.ArtifactStagingDirectory)/junit.xml run
         popd

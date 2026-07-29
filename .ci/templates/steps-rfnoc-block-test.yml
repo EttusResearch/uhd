@@ -60,6 +60,7 @@ steps:
       python3 -m venv rfnoc-block-test-venv
       source rfnoc-block-test-venv/bin/activate
       TEST_DIR=$(Build.SourcesDirectory)/uhddev/host/tests/rfnoc_block_tests_on_target
+      python3 -m pip install --upgrade pip
       pip install -r $TEST_DIR/requirements.txt
       pytest --args ${{ parameters.uhdArgs }} $TEST_DIR/${{ parameters.testSelector }} -vv --junitxml=$(Common.TestResultsDirectory)/${{ parameters.resultFileNameBase }}.xml
     displayName: "${{ parameters.resultFileNameBase }}: Run test"
