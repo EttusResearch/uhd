@@ -40,6 +40,24 @@ Change Log for Releases
       CHDR width).
     - Allow parallel initialization of RFNoC-based devices for faster session
       start when using multiple USRPs in a multi_usrp or rfnoc_graph object.
+    - Wideband DDC/DUC:
+      - Updated the RFNoC DDC and DUC blocks to support bandwidths > 200 MHz.
+        With this update, users can add the DDC and DUC blocks to their custom
+        FPGA images for bandwidths up to 1600 MHz (2000 MSps).
+    - Shipping FPGA images:
+      - Added DDC and DUC functionality for all channels to the following
+        shipping FPGA images:
+        - x410_X4_400
+        - x410_CG_400
+        - x420_X4_1000
+        - x420_CG_1000
+        - x440_X4_1600
+        - x440_CG_1600
+        For custom designs based on one of these updated rfnoc_image_core.yml
+        files, please note that the new addition of the DDC/DUC blocks to FPGA
+        images will have an impact on how much custom logic can fit into these
+        designs. If needed the DDC/DUC blocks can be removed to revert to the
+        previous behavior.
   - MPM-based devices can now be initialized in parallel within a MultiUSRP
     session.
   - X420:
@@ -78,6 +96,7 @@ Change Log for Releases
   - Added an option to resynchronize X4xx SPLL R-dividers after reference-lock
     loss using reset_spll_r_divider=1 in the synchronization arguments. This
     is intended for advanced users only.
+  - Minor DDC/DUC C++ API changes as part of the Wideband DDC/DUC update.
 * Codebase Management
   - Fully removed Boost.Thread, Boost.Date_Time, and Boost.Chrono dependencies
     for libuhd. Other Boost usage has been reduced.
