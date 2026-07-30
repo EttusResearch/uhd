@@ -30,7 +30,6 @@ find_dependency(Boost ${UHD_BOOST_MIN_VERSION}
   date_time
   filesystem
   program_options
-  system
   serialization
   thread
   unit_test_framework
