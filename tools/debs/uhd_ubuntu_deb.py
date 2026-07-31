@@ -20,7 +20,7 @@ import subprocess
 import sys
 import tarfile
 
-supported_ubuntu_releases = ["jammy", "noble", "plucky", "questing"]
+supported_ubuntu_releases = ["jammy", "noble", "plucky", "resolute"]
 tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='./fpga/usrp1' --exclude='./fpga/usrp2' --exclude='./fpga/usrp3/top/b200' --exclude='./fpga/usrp3/top/b2xxmini' --exclude='./fpga/usrp3/lib/*_200' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
 debuild_command = "debuild -S -i -sa"
 debuild_nosign = " -uc -us"
@@ -31,8 +31,11 @@ def main(args):
         print("Check path. This script must be run on uhd base path")
         sys.exit(1)
     if not args.release in supported_ubuntu_releases:
-        print("Unsupported release selected. Supported releases are {}".format(
-            supported_ubuntu_releases))
+        print(
+            "Unsupported release selected. Supported releases are {}".format(
+                supported_ubuntu_releases
+            )
+        )
         sys.exit(1)
 
     # Determine UHD version number
@@ -40,15 +43,14 @@ def main(args):
     orig_release = ""
     with open("host/cmake/debian/changelog") as cl:
         first_line = cl.readline()
-        uhd_version = re.findall("[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*", first_line)
+        uhd_version = re.findall(r"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+", first_line)
         if len(uhd_version) != 1:
             print("uhd_version in changelog malformed. Check host/cmake/debian/changelog")
             sys.exit(1)
         uhd_version = uhd_version[0]
         orig_release = re.findall("[A-Za-z_]*;", first_line)
         if len(orig_release) != 1:
-            print(
-                "orig_release in changelog malformed. Check host/cmake/debian/changelog")
+            print("orig_release in changelog malformed. Check host/cmake/debian/changelog")
             sys.exit(1)
         orig_release = orig_release[0].replace(";", "")
 
@@ -57,27 +59,28 @@ def main(args):
         shutil.rmtree(args.buildpath)
     os.mkdir(args.buildpath)
     print("Compressing UHD Source...")
-    result = subprocess.run(shlex.split(
-        tar_command.format(args.buildpath, uhd_version)))
+    result = subprocess.run(shlex.split(tar_command.format(args.buildpath, uhd_version)))
     if result.returncode:
         print("Compressing source failed")
         sys.exit(result.returncode)
 
     # Extract UHD source to build folder
-    uhd_deb_build_path = pathlib.Path(
-        args.buildpath, "uhd-{}".format(uhd_version))
+    uhd_deb_build_path = pathlib.Path(args.buildpath, "uhd-{}".format(uhd_version))
     if uhd_deb_build_path.exists():
         shutil.rmtree(uhd_deb_build_path)
-    with tarfile.open(args.buildpath + "/uhd_{}.orig.tar.xz".format(uhd_version), "r:xz") as uhd_archive:
+    with tarfile.open(
+        args.buildpath + "/uhd_{}.orig.tar.xz".format(uhd_version), "r:xz"
+    ) as uhd_archive:
         uhd_archive.extractall(path=uhd_deb_build_path)
 
     # Copy debian build files to build folder
     shutil.copytree("host/cmake/debian", uhd_deb_build_path / "debian")
     # Copy version specific files (e.g. debian/control.noble to debian/control)
-    for version_specific_file in pathlib.Path(uhd_deb_build_path / "debian").glob(f"*.{args.release}"):
+    for version_specific_file in pathlib.Path(uhd_deb_build_path / "debian").glob(
+        f"*.{args.release}"
+    ):
         shutil.copy2(version_specific_file, version_specific_file.with_suffix(""))
-    shutil.copy2("host/utils/uhd-usrp.rules",
-                 uhd_deb_build_path / "debian/uhd-host.udev")
+    shutil.copy2("host/utils/uhd-usrp.rules", uhd_deb_build_path / "debian/uhd-host.udev")
     with open(uhd_deb_build_path / "debian/uhd-host.manpages", "w") as man_file:
         for file in uhd_deb_build_path.glob("host/docs/*.1"):
             man_file.write(os.path.relpath(file, uhd_deb_build_path) + "\n")
@@ -86,11 +89,10 @@ def main(args):
         os.remove(file)
 
     # Modify changelog for selected release
-    with open(uhd_deb_build_path / "debian/changelog", 'r+') as cl:
+    with open(uhd_deb_build_path / "debian/changelog", "r+") as cl:
         cl_text = cl.read()
         cl_text = re.sub(orig_release, args.release, cl_text)
-        cl_text = re.sub(
-            "0ubuntu1", "0ubuntu1~{}1".format(args.release), cl_text)
+        cl_text = re.sub("0ubuntu1", "0ubuntu1~{}1".format(args.release), cl_text)
         cl.seek(0)
         cl.write(cl_text)
         cl.truncate()
@@ -99,11 +101,11 @@ def main(args):
     result = ""
     print("Running debuild / dsc generation")
     if args.sign:
-        result = subprocess.run(shlex.split(
-            debuild_command), cwd=uhd_deb_build_path)
+        result = subprocess.run(shlex.split(debuild_command), cwd=uhd_deb_build_path)
     else:
-        result = subprocess.run(shlex.split(
-            debuild_command + debuild_nosign), cwd=uhd_deb_build_path)
+        result = subprocess.run(
+            shlex.split(debuild_command + debuild_nosign), cwd=uhd_deb_build_path
+        )
     if result.returncode:
         print("debuild / dsc generation failed")
         sys.exit(result.returncode)
@@ -112,8 +114,14 @@ def main(args):
     if not args.nobuild:
         print("Building deb with dsc using pbuilder for {}".format(args.release))
         os.mkdir(args.buildpath + "/result")
-        result = subprocess.run(shlex.split(
-            "sudo pbuilder build --buildresult ./result uhd_{}-0ubuntu1~{}1.dsc".format(uhd_version, args.release)), cwd=args.buildpath)
+        result = subprocess.run(
+            shlex.split(
+                "sudo pbuilder build --buildresult ./result uhd_{}-0ubuntu1~{}1.dsc".format(
+                    uhd_version, args.release
+                )
+            ),
+            cwd=args.buildpath,
+        )
         if result.returncode:
             print("pbuilder failed")
             sys.exit(result.returncode)
@@ -123,8 +131,14 @@ def main(args):
         if not args.sign:
             print("Uploading requires signing. Add --sign.")
             sys.exit(1)
-        result = subprocess.run(shlex.split(
-            "dput ppa:ettusresearch/uhd uhd_${}-0ubuntu1~${}1_source.changes".format(uhd_version, args.release)), cwd=args.buildpath)
+        result = subprocess.run(
+            shlex.split(
+                "dput ppa:ettusresearch/uhd uhd_${}-0ubuntu1~${}1_source.changes".format(
+                    uhd_version, args.release
+                )
+            ),
+            cwd=args.buildpath,
+        )
         if result.returncode:
             print("PPA upload failed")
             sys.exit(result.returncode)
@@ -132,16 +146,23 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sign", action='store_true',
-                        help="Signs files with GPG key. Not required for test builds")
-    parser.add_argument("--upload", action='store_true',
-                        help="Uploads to launchpad. Requires--sign")
-    parser.add_argument("--nobuild", action='store_true',
-                        help="Disables building using pbuilder")
-    parser.add_argument("--buildpath", type=str, required=True,
-                        help="Output path for build files. "
-                             "Will get nuked before creating packages.")
-    parser.add_argument("release", type=str,
-                        help="Ubuntu release version. This must match pbuilder create --distribution if building.")
+    parser.add_argument(
+        "--sign", action="store_true", help="Signs files with GPG key. Not required for test builds"
+    )
+    parser.add_argument(
+        "--upload", action="store_true", help="Uploads to launchpad. Requires--sign"
+    )
+    parser.add_argument("--nobuild", action="store_true", help="Disables building using pbuilder")
+    parser.add_argument(
+        "--buildpath",
+        type=str,
+        required=True,
+        help="Output path for build files. " "Will get nuked before creating packages.",
+    )
+    parser.add_argument(
+        "release",
+        type=str,
+        help="Ubuntu release version. This must match pbuilder create --distribution if building.",
+    )
     args = parser.parse_args()
     main(args)
