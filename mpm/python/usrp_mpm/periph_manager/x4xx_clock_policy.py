@@ -380,6 +380,7 @@ class X440ClockPolicy(X4xxClockPolicy):
     bandwidth_to_default_mcr = {
         200: 245.76e6,
         400: 368.64e6,
+        800: 368.64e6,
         1600: 368.64e6,
     }
 

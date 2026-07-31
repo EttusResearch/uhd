@@ -4,7 +4,7 @@ family: ULTRASCALE
 
 parameters:
   RF_BW: 1600
-  NUM_PORTS_PER_RADIO: ${ 1 if parameters['RF_BW'] == 1600 else 4 }
+  NUM_PORTS_PER_RADIO: ${ 1 if parameters['RF_BW'] in (800, 1600) else 4 }
   ENABLE_DRAM: False
   NUM_DRAM_BANKS: 0
   NUM_DRAM_CHANS: 0
@@ -12,11 +12,12 @@ parameters:
   FP_GPIO_BANK_WIDTH: 12
   USE_FABRIC_RESAMPLERS: False
   DISABLE_TX: False
+  ENABLE_CLOCK_WD: False
   RADIO_NIPC: "${ 2 if parameters['USE_FABRIC_RESAMPLERS'] else 8 }"
 
 checks:
-  - condition: ${int(parameters['RF_BW'] in [200, 400, 1600])}
-    message: "RF_BW must be one of 200, 400, 1600 (is: ${parameters['RF_BW']})."
+  - condition: ${int(parameters['RF_BW'] in [200, 400, 800, 1600])}
+    message: "RF_BW must be one of 200, 400, 800, 1600 (is: ${parameters['RF_BW']})."
   - condition: ${not parameters['ENABLE_DRAM'] or int(parameters['NUM_DRAM_BANKS']) in [1, 2]}
     message: "NUM_DRAM_BANKS must be 1 or 2 when enabling DRAM (is: ${parameters['NUM_DRAM_BANKS']})."
   - condition: ${int(parameters['DRAM_WIDTH'] in [64, 128, 512])}
@@ -59,7 +60,7 @@ checks:
       The RADIO_NIPC value is not valid. The default values of RADIO_NIPC will
       be correct, so please remove the RADIO_NIPC parameter from the image core file.
     severity: error
-  - condition: ${ (parameters['NUM_PORTS_PER_RADIO'] == 1 and parameters['RF_BW'] == 1600) or (parameters['NUM_PORTS_PER_RADIO'] == 4 and parameters['RF_BW'] != 1600)}
+  - condition: ${ (parameters['NUM_PORTS_PER_RADIO'] == 1 and parameters['RF_BW'] in (800, 1600)) or (parameters['NUM_PORTS_PER_RADIO'] == 4 and parameters['RF_BW'] not in (800, 1600))}
     message: |
       The NUM_PORTS_PER_RADIO value is not valid. The default values of NUM_PORTS_PER_RADIO will
       be correct, so please remove the NUM_PORTS_PER_RADIO parameter from the image core file.
@@ -75,6 +76,7 @@ make_defs:
   - DRAM_W=${parameters['DRAM_WIDTH']}
   - USE_FABRIC_RESAMPLERS=${1 if parameters['USE_FABRIC_RESAMPLERS'] else 0}
   - DISABLE_TX=${1 if parameters['DISABLE_TX'] else 0}
+  - ENABLE_CLOCK_WD=${1 if parameters['ENABLE_CLOCK_WD'] else 0}
 
 generate_dts: True
 dts_includes:

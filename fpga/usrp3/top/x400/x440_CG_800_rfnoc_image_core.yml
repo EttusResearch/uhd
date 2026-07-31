@@ -1,0 +1,19 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args           # Identifier for the schema used to validate this file
+copyright: >-                             # Copyright information used in file headers
+  Copyright 2026 Ettus Research, a National Instruments Brand
+license: >-                               # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                            # File version
+chdr_width: 512                           # Bit width of the CHDR bus for this image
+device: 'x440'                            # USRP type
+image_core_name: 'usrp_x440_fpga_CG_800'  # Name to use for the generated output files
+default_target: 'X440'                    # Default make target
+
+inherit:
+  - 'x440_CG_1600_rfnoc_image_core.yml'
+
+parameters:
+  RF_BW: 800
+  ENABLE_CLOCK_WD: True                   # Enable 1GS/s limit for shipping bitfiles

@@ -404,6 +404,8 @@ module x4xx (
   wire data_clk_2x;
   wire [NUM_DBOARDS-1:0] radio_clk;
   wire [NUM_DBOARDS-1:0] radio_clk_2x;
+  wire [NUM_DBOARDS-1:0] rfdc_clk_fault;
+  wire data_clock_locked;
 
   // Low-power output clocks from PS to PL
   wire clk40;  //  40.000 MHz
@@ -609,6 +611,75 @@ module x4xx (
     .O(fast_ce_clk        ),
     .I(fast_ce_gen_clkout0)
   );
+
+
+  //---------------------------------------------------------------------------
+  // Clocking Watchdog
+  //---------------------------------------------------------------------------
+
+  // This is only defined for the products that support it, so define it to be
+  // disabled by default.
+  `ifndef ENABLE_CLOCK_WD
+    `define ENABLE_CLOCK_WD 0
+  `endif
+
+  if (`ENABLE_CLOCK_WD) begin : gen_clock_wd
+    // Mode-dependent max RFDC clock rate (in Hz)
+    // Maps sample rates to approximate rfdc_clk frequencies
+    // 125 MHz is the max rate for the RFDC interface clocks
+    localparam int MAX_RFDC_CLK_RATE = 1_000_000_000 / RFDC_SPC;
+
+    wire mgt_refclk_i;
+    wire mgt_refclk_fabric;
+    wire mgt_refclk_fabric_rst;
+
+    // The clocking watchdog needs a clock that cannot be changed by the PS.
+    // The LMK1 reference clock is a good choice since it is a fixed 100 MHz
+    // clock.
+
+    // Instantiate the MGT Input Buffer
+    IBUFDS_GTE4 #(
+      .REFCLK_HROW_CK_SEL (2'b00)  // Selects ODIV2 to be driven by I/IB
+    ) IBUFDS_GTE4_inst (
+      .I     (MGT_REFCLK_LMK1_P),
+      .IB    (MGT_REFCLK_LMK1_N),
+      .CEB   (1'b0),               // Clock enable (active-low)
+      .O     (),                   // Reserved for GT quad reference clock
+      .ODIV2 (mgt_refclk_i)        // 100 MHz LMK1
+    );
+
+    // Instantiate the GT Global Buffer
+    BUFG_GT BUFG_GT_inst (
+      .I       (mgt_refclk_i),
+      .CE      (1'b1),
+      .CEMASK  (1'b0),
+      .CLR     (1'b0),
+      .DIV     (3'b000),      // No divide
+      .O       (mgt_refclk_fabric)
+    );
+
+    // Synchronize areset into mgt_refclk_fabric domain
+    reset_sync reset_sync_mgt_refclk_fabric (
+      .clk       (mgt_refclk_fabric),
+      .reset_in  (areset),
+      .reset_out (mgt_refclk_fabric_rst)
+    );
+
+    for (genvar db_i = 0; db_i < NUM_DBOARDS; db_i = db_i + 1) begin : gen_clocking_watchdog
+      clocking_watchdog #(
+        .MAX_CLOCK_RATE(MAX_RFDC_CLK_RATE),
+        .MONITOR_CLK_FREQ(100_000_000)  // mgt_refclk_fabric is 100 MHz
+      ) rfdc_clocking_watchdog_i (
+        .monitor_clk       (mgt_refclk_fabric),
+        .rst               (mgt_refclk_fabric_rst),
+        .clock_locked      (data_clock_locked),
+        .watched_clk       (rfdc_clk[db_i]),
+        .clock_fault       (rfdc_clk_fault[db_i])
+      );
+    end
+  end else begin : gen_no_clock_wd
+    assign rfdc_clk_fault = '0;
+  end
 
 
   //---------------------------------------------------------------------------
@@ -1835,7 +1906,7 @@ module x4xx (
       .tx_resampler_reset_pulse_dclk (tx_resampler_reset_pulse_dclk),
       .data_clk                      (data_clk),
       .data_clk_2x                   (data_clk_2x),
-      .data_clock_locked             (),
+      .data_clock_locked             (data_clock_locked),
       .enable_gated_clocks_clk40     (1'b1),
       .enable_sysref_r0clk           (1'b1),
       .gated_base_clks_valid_clk40   (),
@@ -3335,11 +3406,18 @@ module x4xx (
   // the LSBs, whereas the interface of rf_core assumes that Q is in MSBs and I
   // is in the LSBs. Here we swap I and Q to match the ordering of each
   // interface.
-  genvar iq_i;
-  generate for ( iq_i = 0; iq_i < RADIO_SPC*NUM_CHANNELS; iq_i = iq_i + 1) begin : gen_iq_swap
-    assign rx_data_iq[iq_i*32 +: 32] = { rx_data_qi[iq_i*32 +: 16], rx_data_qi[iq_i*32+16 +: 16] };
-    assign tx_data_qi[iq_i*32 +: 32] = { tx_data_iq[iq_i*32 +: 16], tx_data_iq[iq_i*32+16 +: 16] };
-  end endgenerate
+  for (genvar db = 0; db < NUM_DBOARDS; db = db + 1) begin : gen_db
+    for (genvar ch = NUM_CH_PER_DB*db; ch < NUM_CH_PER_DB*(db+1); ch = ch + 1) begin : gen_ch
+      for (genvar iq_i = RADIO_SPC*ch; iq_i < RADIO_SPC*(ch+1); iq_i = iq_i + 1) begin : gen_iq_swap
+        assign rx_data_iq[iq_i*32 +: 32] = rfdc_clk_fault[db] ? '0
+                                         : { rx_data_qi[iq_i*32    +: 16],
+                                             rx_data_qi[iq_i*32+16 +: 16] };
+        assign tx_data_qi[iq_i*32 +: 32] = rfdc_clk_fault[db] ? '0
+                                         : { tx_data_iq[iq_i*32    +: 16],
+                                             tx_data_iq[iq_i*32+16 +: 16] };
+      end
+    end
+  end
 
   // Version information mapping
   // Each component consists of a 96-bit vector (refer to versioning_utils.vh)
