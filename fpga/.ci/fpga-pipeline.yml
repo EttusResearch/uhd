@@ -164,6 +164,14 @@ parameters:
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
+    X440_CG_800:
+      image_core: x440_CG_800_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_CG_800
+      target_name: X440
+      artifact_name: X440_CG_800
+      timeout: 1080
+      attempt_timeout: 360
+      max_attempts: 2
     X440_CG_400:
       image_core: x440_CG_400_rfnoc_image_core.yml
       image_core_name: usrp_x440_fpga_CG_400
@@ -177,6 +185,14 @@ parameters:
       image_core_name: usrp_x440_fpga_X4_1600
       target_name: X440
       artifact_name: X440_X4_1600
+      timeout: 720
+      attempt_timeout: 360
+      max_attempts: 2
+    X440_X4_800:
+      image_core: x440_X4_800_rfnoc_image_core.yml
+      image_core_name: usrp_x440_fpga_X4_800
+      target_name: X440
+      artifact_name: X440_X4_800
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
