@@ -23,6 +23,10 @@ list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}")
 
 include("${CMAKE_CURRENT_LIST_DIR}/UHDMinDepVersions.cmake")
 
+if(POLICY CMP0167)
+  cmake_policy(PUSH)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 include(CMakeFindDependencyMacro)
 find_dependency(Boost ${UHD_BOOST_MIN_VERSION}
   COMPONENTS
@@ -34,6 +38,9 @@ find_dependency(Boost ${UHD_BOOST_MIN_VERSION}
   thread
   unit_test_framework
 )
+if(POLICY CMP0167)
+  cmake_policy(POP)
+endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/UHDTargets.cmake")
 

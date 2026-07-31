@@ -34,7 +34,6 @@ find_package(UHD 4.3.0 REQUIRED)
 # Set components here, then include UHDBoost to do the actual finding
 set(UHD_BOOST_REQUIRED_COMPONENTS
     program_options
-    system
     thread
 )
 set(UHD_BOOST_MIN_VERSION 1.71)

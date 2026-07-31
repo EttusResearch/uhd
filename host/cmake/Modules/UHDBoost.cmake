@@ -143,10 +143,10 @@ if(POLICY CMP0093)
     cmake_policy(SET CMP0093 NEW)
 endif()
 
-# if no CXX STANDARD is set, default to that required by UHD: c++14
+# if no CXX STANDARD is set, default to that required by UHD: c++20
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-  message(WARNING "\nC++ standard not yet set; setting to C++14.\n")
+  set(CMAKE_CXX_STANDARD 20)
+  message(WARNING "\nC++ standard not yet set; setting to C++20.\n")
 endif()
 
 if(${UHD_BOOST_OPTIONAL_COMPONENTS_LEN} GREATER 0)

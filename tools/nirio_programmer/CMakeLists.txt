@@ -16,9 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.12)
 project(NIRIO_PROGRAMMER CXX)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 20)
 
 ### Set up build environment ##################################################
 # Choose a static or shared-library build (shared is default, and static will

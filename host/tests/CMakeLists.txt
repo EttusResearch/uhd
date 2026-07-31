@@ -106,8 +106,17 @@ if(NOT DEFINED Boost_USE_STATIC_LIBS OR Boost_USE_STATIC_LIBS)
     set(Boost_USE_STATIC_LIBS OFF)
 endif()
 # Duplicate find_package(Boost) arguments used in UHDBoost.cmake
+if(POLICY CMP0167)
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0167 NEW)
+endif()
+
 find_package(Boost ${UHD_BOOST_MIN_VERSION} QUIET
     COMPONENTS unit_test_framework ${UHD_BOOST_REQUIRED})
+
+if(POLICY CMP0167)
+    cmake_policy(POP)
+endif()
 
 if(Boost_VERBOSE OR Boost_DEBUG)
     # After: find_package(Boost REQUIRED COMPONENTS unit_test_framework)
