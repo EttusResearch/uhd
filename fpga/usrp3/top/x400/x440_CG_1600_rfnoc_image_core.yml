@@ -49,8 +49,24 @@ crossbar_routes:
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
+  duc0:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 1
+  ddc0:
+    block_desc: 'ddc.yml'
+    parameters:
+      NUM_PORTS: 1
   radio0:
     block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 1
+  duc1:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 1
+  ddc1:
+    block_desc: 'ddc.yml'
     parameters:
       NUM_PORTS: 1
   radio1:
@@ -67,17 +83,26 @@ noc_blocks:
 #   - dstport = Port on the destination block to connect
 connections:
   # RF A:0 TX
-  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  - { srcblk: ep0,    srcport: out0,  dstblk: duc0,   dstport: in_0 }
+  - { srcblk: duc0,   srcport: out_0, dstblk: radio0, dstport: in_0 }
   # RF A:0 RX
-  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  - { srcblk: radio0, srcport: out_0, dstblk: ddc0,   dstport: in_0 }
+  - { srcblk: ddc0,   srcport: out_0, dstblk: ep0,    dstport: in0  }
   #
   # RF B:0 TX
-  - { srcblk: ep1,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  - { srcblk: ep1,    srcport: out0,  dstblk: duc1,   dstport: in_0 }
+  - { srcblk: duc1,   srcport: out_0, dstblk: radio1, dstport: in_0 }
   # RF B:0 RX
-  - { srcblk: radio1, srcport: out_0, dstblk: ep1,    dstport: in0  }
+  - { srcblk: radio1, srcport: out_0, dstblk: ddc1,   dstport: in_0 }
+  - { srcblk: ddc1,   srcport: out_0, dstblk: ep1,    dstport: in0  }
   #
   - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio0 }
   - { srcblk: _device_, srcport: _none_, dstblk: _device_, dstport: gpio1 }
   # Other BSP connections are inherited from YAML include files
 
-# Clock domains are inherited from YAML include files
+# Radio clock domains are inherited from YAML include files
+clk_domains:
+  - { srcblk: _device_, srcport: ce, dstblk: duc0, dstport: ce }
+  - { srcblk: _device_, srcport: ce, dstblk: ddc0, dstport: ce }
+  - { srcblk: _device_, srcport: ce, dstblk: duc1, dstport: ce }
+  - { srcblk: _device_, srcport: ce, dstblk: ddc1, dstport: ce }

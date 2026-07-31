@@ -16,3 +16,18 @@ inherit:
 
 parameters:
   RF_BW: 100
+
+noc_blocks:
+  # Workaround for bug in NIPC calculation in DDC/DUC block configuration yaml for BW < 200 MHz.
+  duc0:
+    parameters:
+      NIPC: 1
+  ddc0:
+    parameters:
+      NIPC: 1
+  duc1:
+    parameters:
+      NIPC: 1
+  ddc1:
+    parameters:
+      NIPC: 1

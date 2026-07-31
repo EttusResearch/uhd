@@ -60,8 +60,24 @@ stream_endpoints:
 # A list of all NoC blocks in design
 # ----------------------------------
 noc_blocks:
+  duc0:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 2
+  ddc0:
+    block_desc: 'ddc.yml'
+    parameters:
+      NUM_PORTS: 2
   radio0:
     block_desc: 'radio.yml'
+    parameters:
+      NUM_PORTS: 2
+  duc1:
+    block_desc: 'duc.yml'
+    parameters:
+      NUM_PORTS: 2
+  ddc1:
+    block_desc: 'ddc.yml'
     parameters:
       NUM_PORTS: 2
   radio1:
@@ -90,22 +106,30 @@ noc_blocks:
 #   - dstport = Port on the destination block to connect
 connections:
   # RF A:0 TX
-  - { srcblk: ep0,    srcport: out0,  dstblk: radio0, dstport: in_0 }
+  - { srcblk: ep0,    srcport: out0,  dstblk: duc0,   dstport: in_0 }
+  - { srcblk: duc0,   srcport: out_0, dstblk: radio0, dstport: in_0 }
   # RF A:0 RX
-  - { srcblk: radio0, srcport: out_0, dstblk: ep0,    dstport: in0  }
+  - { srcblk: radio0, srcport: out_0, dstblk: ddc0,   dstport: in_0 }
+  - { srcblk: ddc0,   srcport: out_0, dstblk: ep0,    dstport: in0  }
   # RF A:1 TX
-  - { srcblk: ep1,    srcport: out0,  dstblk: radio0, dstport: in_1 }
+  - { srcblk: ep1,    srcport: out0,  dstblk: duc0,   dstport: in_1 }
+  - { srcblk: duc0,   srcport: out_1, dstblk: radio0, dstport: in_1 }
   # RF A:1 RX
-  - { srcblk: radio0, srcport: out_1, dstblk: ep1,    dstport: in0  }
+  - { srcblk: radio0, srcport: out_1, dstblk: ddc0,   dstport: in_1 }
+  - { srcblk: ddc0,   srcport: out_1, dstblk: ep1,    dstport: in0  }
   #
   # RF B:0 TX
-  - { srcblk: ep2,    srcport: out0,  dstblk: radio1, dstport: in_0 }
+  - { srcblk: ep2,    srcport: out0,  dstblk: duc1,   dstport: in_0 }
+  - { srcblk: duc1,   srcport: out_0, dstblk: radio1, dstport: in_0 }
   # RF B:0 RX
-  - { srcblk: radio1, srcport: out_0, dstblk: ep2,    dstport: in0  }
+  - { srcblk: radio1, srcport: out_0, dstblk: ddc1,   dstport: in_0 }
+  - { srcblk: ddc1,   srcport: out_0, dstblk: ep2,    dstport: in0  }
   # RF B:1 TX
-  - { srcblk: ep3,    srcport: out0,  dstblk: radio1, dstport: in_1 }
+  - { srcblk: ep3,    srcport: out0,  dstblk: duc1,   dstport: in_1 }
+  - { srcblk: duc1,   srcport: out_1, dstblk: radio1, dstport: in_1 }
   # RF B:1 RX
-  - { srcblk: radio1, srcport: out_1, dstblk: ep3,    dstport: in0  }
+  - { srcblk: radio1, srcport: out_1, dstblk: ddc1,   dstport: in_1 }
+  - { srcblk: ddc1,   srcport: out_1, dstblk: ep3,    dstport: in0  }
   #
   # Replay Connections
   - { srcblk: ep4,      srcport: out0,     dstblk: replay0,  dstport: in_0            }
@@ -134,5 +158,9 @@ connections:
 clk_domains:
   - { srcblk: _device_, srcport: radio, dstblk: radio0,  dstport: radio }
   - { srcblk: _device_, srcport: radio, dstblk: radio1,  dstport: radio }
+  - { srcblk: _device_, srcport: ce,    dstblk: duc0,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce,    dstblk: ddc0,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce,    dstblk: duc1,    dstport: ce    }
+  - { srcblk: _device_, srcport: ce,    dstblk: ddc1,    dstport: ce    }
   - { srcblk: _device_, srcport: dram,  dstblk: replay0, dstport: mem   }
   - { srcblk: _device_, srcport: dram,  dstblk: replay1, dstport: mem   }
