@@ -70,6 +70,7 @@ map/axis_muxed_kv_map.v \
 axil_ctrlport_master.v\
 handshake.v\
 handshake_latch.sv\
+clocking_watchdog.sv\
 ctrlport_to_regport.v \
 ctrlport_to_wb_i2c.v \
 ctrlport_to_wb_uart.v \
