@@ -12,12 +12,12 @@ pr: none
 parameters:
 - name: fpga_imgs_source
   type: string
+  displayName: FPGA Images Source
   values:
   - 'Filesystem/Images Downloader'
   - 'Mono Pipeline'
   - 'Mono Pipeline PR'
   - 'FPGA Pipeline'
-  displayName: FPGA Images Source
   default: 'Mono Pipeline'
 - name: testLength
   type: string
@@ -26,6 +26,10 @@ parameters:
   - 'full'
   - 'stress'
   default: 'smoke'
+- name: selected_streaming_tests
+  type: string
+  displayName: Streaming Tests Multi-Select (comma-separated)
+  default: 'B206,B210,X310_XG,X410_CG_400,X410_UC_200,X440_CG_400,X440_CG_1600'
 
 variables:
 - name: uhdFpgaArtifactSource
@@ -104,12 +108,13 @@ stages:
   displayName: Test UHD Streaming
   dependsOn: []
   jobs:
-  - template: templates/job-uhd-streaming-tests-matrix.yml
+  - template: templates/job-uhd-streaming-tests.yml
     parameters:
       uhdSrcDir: $(Build.SourcesDirectory)/uhddev
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       testLength: ${{ parameters.testLength }}
+      selectedTests: ${{ split(replace(parameters.selected_streaming_tests, ' ', ''), ',') }}
 
 - stage: test_rf_tests_stage
   displayName: Test UHD RF Tests
