@@ -1,0 +1,100 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+parameters:
+- name: stage_name
+  type: string
+- name: display_name
+  type: string
+- name: machine_name
+  type: string
+- name: stage_condition
+  type: string
+- name: enabled
+  type: boolean
+  default: true
+- name: create_sbom
+  type: boolean
+- name: build_sdk
+  type: boolean
+- name: cache_sstate
+  type: boolean
+- name: ext_fpga
+  type: boolean
+- name: fpga_imgs_source
+  type: string
+
+stages:
+- stage: ${{ parameters.stage_name }}
+  displayName: ${{ parameters.display_name }}
+  dependsOn: analyze_changeset
+  ${{ if parameters.enabled }}:
+    condition: >
+      and(
+        succeeded(),
+        ${{ parameters.stage_condition }}
+      )
+  ${{ else }}:
+    condition: false
+  variables:
+    AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
+  jobs:
+  - template: .ci/templates/job_build_filesystem.yml@meta-ettus
+    parameters:
+      create_sbom: ${{ parameters.create_sbom }}
+      build_sdk: ${{ parameters.build_sdk }}
+      cache_sstate: ${{ parameters.cache_sstate }}
+      cache_downloads: False
+      machines:
+        - ${{ parameters.machine_name }}
+      auto_conf: $AUTO_CONF
+      run_from_external_repo: true
+      prebuild_steps:
+      - script: |
+          rm $(AUTO_CONF)
+          touch $(AUTO_CONF)
+        displayName: create auto.conf
+      - template: .ci/templates/oe_localconf_externalsrc.yml@meta-ettus
+        parameters:
+          conf_file: $AUTO_CONF
+          repository: self
+          package_paths:
+            - package: uhd
+              path: host
+            - package: mpmd
+              path: mpm
+      - ${{ if parameters.ext_fpga }}:
+          - template: .ci/templates/oe_localconf_externalsrc_pipeline.yml@meta-ettus
+            parameters:
+              conf_file: $AUTO_CONF
+              pipeline: uhd_mono_pipeline
+              patterns: |
+                usrp_e310_*_fpga.*
+                usrp_e320_fpga_*.*
+                usrp_n3??_fpga_*.*
+                usrp_x4??_fpga_*.*
+              packages:
+              - uhd-fpga-images
+              flatten: true
+          - script: |
+              ls -l $(Agent.BuildDirectory)/uhd_mono_pipeline
+            displayName: list fpga images
+      - ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
+        - bash: |
+            cat <<EOF >>$AUTO_CONF
+            UHD_BASE_URL = "$FILE_SERVER_URL"
+            EOF
+          env:
+            FILE_SERVER_URL: $(InternalFileServerUrl)
+      - bash: |
+            cat <<EOF >>$AUTO_CONF
+            PREFERRED_UHD_VERSION = "4.11%"
+            EOF
+      postbuild_steps:
+      - script: |
+          rm $(AUTO_CONF)
+        displayName: delete auto.conf
+        condition: always()

@@ -236,6 +236,72 @@ parameters:
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
+# Next parameters are used to control conditional execution of embedded system image build stages.
+# They are not parameters that can be set by the user, 
+# but rather they are computed based on the output of the analyze_changeset stage.
+- name: embedded_stage_condition_e3xx
+  type: string
+  default: >
+    or(
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e320'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e320'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e320')
+    )
+- name: embedded_stage_condition_n3xx
+  type: string
+  default: >
+    or(
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n320'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n320'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n310'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n320')
+    )
+- name: embedded_stage_condition_x4xx
+  type: string
+  default: >
+    or(
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x4xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x410'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x420'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x440'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x410'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x420'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x440'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x4xx'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x410'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x420'),
+      contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x440')
+    )
 
 variables:
 - template: ../uhd-pipeline-vars.yml
@@ -411,105 +477,70 @@ stages:
       custom_boost_version_url: ${{ parameters.custom_boost_version_url }}
       grpc_version: ${{ parameters.grpc_version }}
 
-- stage: build_uhd_embedded_system_images
-  displayName: Build UHD Embedded System Images
-  dependsOn: analyze_changeset
-  # This can be improved:
-  # Right now, if any embedded condition is true, then all embedded targets
-  # with a checkbox will be built.
-  condition: >
-    and(
-      succeeded(),
-      or(
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'uhd.build.linux'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'mpm.build'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.e3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.n3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.streaming.x4'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.e3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.n3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'hw.rf.x4'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.x4')
-      )
-    )
-  variables:
-    AUTO_CONF: $(Agent.BuildDirectory)/auto.conf
-  jobs:
-    - template: .ci/templates/job_build_filesystem.yml@meta-ettus
-      parameters:
-        create_sbom: ${{ parameters.create_sbom }}
-        build_sdk: ${{ parameters.build_sdk }}
-        cache_sstate: ${{ parameters.cache_sstate }}
-        cache_downloads: False
-        machines:
-          - ${{ if parameters.build_e310_sg1 }}:
-            - e310_sg1
-          - ${{ if parameters.build_e310_sg3 }}:
-            - e310_sg3
-          - ${{ if parameters.build_e320 }}:
-            - e320
-          - ${{ if parameters.build_n3xx }}:
-            - n3xx
-          - ${{ if parameters.build_x4xx }}:
-            - x4xx
-        auto_conf: $AUTO_CONF
-        run_from_external_repo: true
-        prebuild_steps:
-        - script: |
-            rm $(AUTO_CONF)
-            touch $(AUTO_CONF)
-          displayName: create auto.conf
-        - template: .ci/templates/oe_localconf_externalsrc.yml@meta-ettus
-          parameters:
-            conf_file: $AUTO_CONF
-            repository: self
-            package_paths:
-              - package: uhd
-                path: host
-              - package: mpmd
-                path: mpm
-        - ${{ if parameters.ext_fpga }}:
-            - template: .ci/templates/oe_localconf_externalsrc_pipeline.yml@meta-ettus
-              parameters:
-                conf_file: $AUTO_CONF
-                pipeline: uhd_mono_pipeline
-                patterns: |
-                  usrp_e310_*_fpga.*
-                  usrp_e320_fpga_*.*
-                  usrp_n3??_fpga_*.*
-                  usrp_x4??_fpga_*.*
-                packages:
-                - uhd-fpga-images
-                flatten: true
-            - script: |
-                ls -l $(Agent.BuildDirectory)/uhd_mono_pipeline
-              displayName: list fpga images
-        # If requested, we set a variable "UHD_BASE_URL", which is consumed by
-        # the uhd-fpga-images recipe to an internal file server which is closer
-        # to the build machines. It is simply appended to auto.conf, where
-        # bitbake will pick it up and apply it to the recipe.
-        - ${{ if contains(parameters.fpga_imgs_source, 'Internal') }}:
-          - bash: |
-              cat <<EOF >>$AUTO_CONF
-              UHD_BASE_URL = "$FILE_SERVER_URL"
-              EOF
-            env:
-              FILE_SERVER_URL: $(InternalFileServerUrl)
-        - bash: |
-              cat <<EOF >>$AUTO_CONF
-              PREFERRED_UHD_VERSION = "4.11%"
-              EOF
-        postbuild_steps:
-        - script: |
-            rm $(AUTO_CONF)
-          displayName: delete auto.conf
-          condition: always()
+- template: stage-build-uhd-embedded-system-image.yml
+  parameters:
+    stage_name: build_uhd_embedded_system_images_e310_sg1
+    display_name: "[e310_sg1] Build UHD Embedded System Images"
+    machine_name: e310_sg1
+    stage_condition: ${{ parameters.embedded_stage_condition_e3xx }}
+    enabled: ${{ parameters.build_e310_sg1 }}
+    create_sbom: ${{ parameters.create_sbom }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    ext_fpga: ${{ parameters.ext_fpga }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- template: stage-build-uhd-embedded-system-image.yml
+  parameters:
+    stage_name: build_uhd_embedded_system_images_e310_sg3
+    display_name: "[e310_sg3] Build UHD Embedded System Images"
+    machine_name: e310_sg3
+    stage_condition: ${{ parameters.embedded_stage_condition_e3xx }}
+    enabled: ${{ parameters.build_e310_sg3 }}
+    create_sbom: ${{ parameters.create_sbom }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    ext_fpga: ${{ parameters.ext_fpga }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- template: stage-build-uhd-embedded-system-image.yml
+  parameters:
+    stage_name: build_uhd_embedded_system_images_e320
+    display_name: "[e320] Build UHD Embedded System Images"
+    machine_name: e320
+    stage_condition: ${{ parameters.embedded_stage_condition_e3xx }}
+    enabled: ${{ parameters.build_e320 }}
+    create_sbom: ${{ parameters.create_sbom }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    ext_fpga: ${{ parameters.ext_fpga }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- template: stage-build-uhd-embedded-system-image.yml
+  parameters:
+    stage_name: build_uhd_embedded_system_images_n3xx
+    display_name: "[n3xx] Build UHD Embedded System Images"
+    machine_name: n3xx
+    stage_condition: ${{ parameters.embedded_stage_condition_n3xx }}
+    enabled: ${{ parameters.build_n3xx }}
+    create_sbom: ${{ parameters.create_sbom }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    ext_fpga: ${{ parameters.ext_fpga }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
+
+- template: stage-build-uhd-embedded-system-image.yml
+  parameters:
+    stage_name: build_uhd_embedded_system_images_x4xx
+    display_name: "[x4xx] Build UHD Embedded System Images"
+    machine_name: x4xx
+    stage_condition: ${{ parameters.embedded_stage_condition_x4xx }}
+    enabled: ${{ parameters.build_x4xx }}
+    create_sbom: ${{ parameters.create_sbom }}
+    build_sdk: ${{ parameters.build_sdk }}
+    cache_sstate: ${{ parameters.cache_sstate }}
+    ext_fpga: ${{ parameters.ext_fpga }}
+    fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
 
 - stage: package_uhd_src
   displayName: Package UHD Source
@@ -768,7 +799,8 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_n3xx
+  - build_uhd_embedded_system_images_e320
   - provide_n300_fpga_images_stage
   - provide_n310_fpga_images_stage
   - provide_n320_fpga_images_stage
@@ -778,7 +810,7 @@ stages:
       succeeded(),
       or(
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.all'),
-        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3'),
+        contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.n3xx'),
         contains(dependencies.analyze_changeset.outputs['analyze.gen_testlist.UhdTestList'], 'devtest.e320')
       )
     )
@@ -794,7 +826,7 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_x4xx
   - build_gnuradio_stage_linux
   - provide_x410_fpga_images_stage
   - provide_x440_fpga_images_stage
@@ -833,7 +865,7 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_x4xx
   - build_gnuradio_stage_linux
   - provide_x410_fpga_images_stage
   - provide_x440_fpga_images_stage
@@ -871,7 +903,7 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_x4xx
   - build_gnuradio_stage_linux
   - provide_x420_fpga_images_stage
   # This will make $(UhdTestList) available to jobs/steps/tasks, but not for the
@@ -901,7 +933,7 @@ stages:
   displayName: RF Test UHD x4xx saison
   dependsOn:
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_x4xx
   - build_gnuradio_stage_linux
   - analyze_changeset
   - provide_x440_fpga_images_stage
@@ -933,7 +965,7 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_n3xx
   - build_gnuradio_stage_linux
   - provide_n300_fpga_images_stage
   - provide_n310_fpga_images_stage
@@ -1015,7 +1047,9 @@ stages:
   dependsOn:
   - analyze_changeset
   - build_uhd_stage_linux
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_e320
+  - build_uhd_embedded_system_images_n3xx
+  - build_uhd_embedded_system_images_x4xx
   - provide_e320_fpga_images_stage
   - provide_n300_fpga_images_stage
   - provide_n310_fpga_images_stage
@@ -1040,7 +1074,7 @@ stages:
   displayName: Test LabVIEW USRP Examples
   dependsOn:
   - analyze_changeset
-  - build_uhd_embedded_system_images
+  - build_uhd_embedded_system_images_x4xx
   - build_uhd_installer_stage_win
   - provide_x410_fpga_images_stage
   jobs:
