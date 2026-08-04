@@ -53,6 +53,16 @@
       dutNumRecvFrames: '256'
       dutNumSendFrames: '256'
       dutGetFpgaImagesMethod: 'uhd_images_downloader'
+    B310:
+      timeoutInMinutes: 60
+      dutName: 'streaming-b310'
+      dutFamily: 'b3xx'
+      dutType: 'b310'
+      dutFPGA: 'B310'
+      dutResource: '$(b310_resource)'
+      dutNameId: ''
+      dutNumRecvFrames: ''
+      dutNumSendFrames: ''
     X310_XG:
       timeoutInMinutes: 120
       dutName: 'streaming-x310'
@@ -130,16 +140,6 @@
       dutNumSendFrames: ''
       sfpInt0: '$(x440_sfpInt0)'
       sfpInt1: '$(x440_sfpInt1)'
-    B310:
-      timeoutInMinutes: 120
-      dutName: 'streaming-b310'
-      dutFamily: 'b3xx'
-      dutType: 'b310'
-      dutFPGA: 'B310'
-      dutResource: '$(b310_resource)'
-      dutNameId: ''
-      dutNumRecvFrames: ''
-      dutNumSendFrames: ''
 
 jobs:
 - ${{ each dutEntry in parameters.dutMatrix }}:
