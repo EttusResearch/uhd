@@ -14,6 +14,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+* Copyright 2026 Ettus Research, a National Instruments Company
+*
+* Modified from the original Analog Devices ADRV903X API v2.12.1.4 source.
+*/
+
 #ifndef __ADRV903X_PLATFORM_BYTE_ORDER_H__
 #define __ADRV903X_PLATFORM_BYTE_ORDER_H__
 

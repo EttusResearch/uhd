@@ -11,6 +11,12 @@
  * ADRV903X API Version: 2.12.1.4
  */
 
+/**
+* Copyright 2026 Ettus Research, a National Instruments Company
+*
+* Modified from the original Analog Devices ADRV903X API v2.12.1.4 source.
+*/
+
 #ifndef _ADI_ADRV903X_TX_H_
 #define _ADI_ADRV903X_TX_H_
 

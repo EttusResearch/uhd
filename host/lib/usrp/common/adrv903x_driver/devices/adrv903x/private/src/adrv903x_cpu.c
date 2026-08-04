@@ -4,6 +4,12 @@
 */
 
 /**
+* Copyright 2026 Ettus Research, a National Instruments Company
+*
+* Modified from the original Analog Devices ADRV903X API v2.12.1.4 source.
+*/
+
+/**
 * \file adrv903x_cpu.c
 *
 * ADRV903X API Version: 2.12.1.4
