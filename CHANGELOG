@@ -3,6 +3,8 @@ Change Log for Releases
 
 ## 004.next
 * Highlights / Main Changes
+  - Add support for the new USRP B310, a PCIe/Thunderbolt-based device which
+    supports 2x2 RF channels at up to 100 MHz bandwidth per channel.
   - Update underlying OE version on embedded devices to Scarthgap (5.0 LTS).
     Note that some of the MPM updates require this update.
   - Migrated the MPM RPC transport layer from mprpc (msgpack-RPC) to gRPC/Protobuf,
