@@ -26,13 +26,23 @@ else
     else
         VIVADO_BASE_PATH="/opt/Xilinx/Vivado"
     fi
-    if [[ -d "/opt/mentor/questasim" ]]; then
-        MODELSIM_BASE_PATH="/opt/mentor/questasim"
-    elif [[ -d "/opt/local/mentor/questasim" ]]; then
-        MODELSIM_BASE_PATH="/opt/local/mentor/questasim"
-    elif [[ -d "/opt/local/mentor/modelsim" ]]; then
-        MODELSIM_BASE_PATH="/opt/local/mentor/modelsim"
-    else
+    MODELSIM_BASE_PATH=""
+    for MODELSIM_BASE in /opt /opt/local /tools /opt/share /opt/synced; do
+        for MODELSIM_TOOL in \
+            mentor/questasim \
+            mentor/modelsim \
+            questasim \
+            modelsim \
+            questabase \
+            questa_base; do
+            MODELSIM_CANDIDATE="$MODELSIM_BASE/$MODELSIM_TOOL"
+            if [[ -d "$MODELSIM_CANDIDATE" ]]; then
+                MODELSIM_BASE_PATH="$MODELSIM_CANDIDATE"
+                break 2
+            fi
+        done
+    done
+    if [[ -z "$MODELSIM_BASE_PATH" ]]; then
         MODELSIM_BASE_PATH="/opt/mentor/modelsim"
     fi
 fi
@@ -55,13 +65,13 @@ Usage: source setupenv.sh [--help|-h] [--vivado-path=<PATH>] [--modelsim-path=<P
 
 --vivado-path    : Path to the directory for Xilinx Vivado where settings64.sh
                    is located, if Vivado is not installed in one of the default
-                   search locations (e.g., /opt/Xilinx/Vivado).
+                   search locations (e.g., /tools/Xilinx/Vivado).
 --modelsim-path  : Path to the base install directory for ModelSim if it is not
                    installed in one of the default search locations (e.g.,
-                   /opt/mentor/modelsim). This simulation tool is optional.
+                   /opt/modelsim). This simulation tool is optional.
 --questasim-path : Path to the base install directory for QuestaSim if it is
                    not installed in one of the default search locations (e.g.,
-                   /opt/mentor/questasim). This simulation tool is optional.
+                   /opt/questasim). This simulation tool is optional.
 --help -h        : Shows this message.
 
 This script sets up the environment required to build FPGA images for the Ettus
@@ -244,9 +254,9 @@ fi
 #----------------------------------------------------------------------------
 if [[ -d $MODELSIM_BASE_PATH ]]; then
     if [[ $VIV_PLATFORM = "Cygwin" ]]; then
-        VSIM_PATH=$(find -L $MODELSIM_BASE_PATH -maxdepth 3 -wholename '*win*/vsim.exe' | head -n 1)
+        VSIM_PATH=$(find -L $MODELSIM_BASE_PATH -maxdepth 4 -wholename '*win*/vsim.exe' | head -n 1)
     else
-        VSIM_PATH=$(find -L $MODELSIM_BASE_PATH -maxdepth 3 -wholename '*linux*/vsim' | head -n 1)
+        VSIM_PATH=$(find -L $MODELSIM_BASE_PATH -maxdepth 4 -wholename '*linux*/vsim' | head -n 1)
     fi
 fi
 if [[ $VSIM_PATH ]]; then
