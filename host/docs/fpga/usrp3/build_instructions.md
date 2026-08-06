@@ -72,7 +72,8 @@ Download and install Xilinx Vivado or Xilinx ISE based on the target USRP.
 
 If you prefer to use ModelSim, download and install Mentor ModelSim using the
 link above.
-- The recommended installation directory is `/opt/mentor/modelsim` for Linux and `C:\mentor\modelsim` in Windows
+- The recommended installation directory is `/opt/modelsim` for Linux and
+  `C:\mentor\modelsim` in Windows
 - Supported versions are PE, DE, SE, DE-64 and SE-64
 - You may need to acquire a license from Mentor Graphics to run ModelSim
 

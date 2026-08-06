@@ -53,8 +53,14 @@ Use the following one-time setup to install and configure ModelSim on your syste
 
 - Install the simulator of your choice from the
   [Siemens](http://www.siemens.com/) website. It is recommended that you
-  install it to the default location (``/opt/mentor/modelsim``,
-  ``/opt/mentor/questasim``)
+  install it to one of these locations on Linux, depending on your simulator:
+
+  - ModelSim: ``/opt/modelsim``
+  - Questa: ``/opt/questasim``
+  - Questa Base: ``/opt/questabase``
+
+  On Windows, use the default location for the simulator installer.
+
 - Run the setupenv.sh script for the USRP product that you want to simulate:
 
   ``$ source <repo>/fpga/usrp3/top/<product>/setupenv.sh``
@@ -67,7 +73,7 @@ Use the following one-time setup to install and configure ModelSim on your syste
 
       Setting up X3x0 FPGA build environment (64-bit)...
       - Vivado: Found (/opt/Xilinx/Vivado/2021.1/bin)
-      - ModelSim/Questa: Found (/opt/mentor/modelsim/modeltech/bin)
+      - ModelSim/Questa: Found (/opt/modelsim/modeltech/linux_x86_64)
       - ModelSim/Questa Compiled Libs: Found (/opt/Xilinx/Vivado/2021.1/modelsim)
 
       Environment successfully initialized.
@@ -207,7 +213,7 @@ If running the setupenv.sh script returns an error like the following:
 
     Setting up a 64-bit FPGA build environment for the USRP-X3x0...
     - Vivado: Found (/opt/Xilinx/Vivado/2019.1/bin)
-    - ModelSim/Questa: Found (/opt/mentor/modelsim/modeltech/bin)
+    - ModelSim/Questa: Found (/opt/modelsim/modeltech/bin)
     - ModelSim/Questa Compiled Libs: Not found! (Run build_simlibs to generate them.)
 
     Environment successfully initialized.
