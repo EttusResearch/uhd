@@ -536,11 +536,6 @@ p.offset_info, td.offset_info {
 
                 
     <p>
-        <a class="register" href="#BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED">VERSION_LAST_MODIFIED</a>
-    </p>
-
-                
-    <p>
         <a class="register" href="#BASIC_REGS_REGMAP|CORE_SCRATCH">CORE_SCRATCH</a>
     </p>
 
@@ -1400,7 +1395,6 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
         please refer to the register map documentation accordingly:
         <li> Current version: <a href="#BASIC_REGS_REGMAP|CORE_REVISION">CORE_REVISION</a>
         <li> Oldest compatible version: <a href="#BASIC_REGS_REGMAP|CORE_OLDEST_REVISION">CORE_OLDEST_REVISION</a>
-        <li> Version last modified: <a href="#BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED">VERSION_LAST_MODIFIED</a>
     
     <table class="enum" border="0" cellspacing="0" cellpadding="0">
         <tr class="header" valign="center">
@@ -1415,7 +1409,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">0</td>
-                            <td class="l">0x00000000</td>
+                            <td class="l">0x0000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_BUILD"></a>
@@ -1428,7 +1422,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">0</td>
-                            <td class="l">0x00000000</td>
+                            <td class="l">0x0000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MINOR"></a>
@@ -1441,7 +1435,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">0</td>
-                            <td class="l">0x00000000</td>
+                            <td class="l">0x0000</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_BUILD"></a>
@@ -1454,7 +1448,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">1</td>
-                            <td class="l">0x00000001</td>
+                            <td class="l">0x0001</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MINOR"></a>
@@ -1467,7 +1461,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">2</td>
-                            <td class="l">0x00000002</td>
+                            <td class="l">0x0002</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MAJOR"></a>
@@ -1480,7 +1474,7 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">2</td>
-                            <td class="l">0x00000002</td>
+                            <td class="l">0x0002</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR"></a>
@@ -1493,24 +1487,11 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                 
                     
                         <td class="value">45840</td>
-                            <td class="l">0x0000B310</td>
+                            <td class="l">0xB310</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="BASIC_REGS_REGMAP|FPGA_VERSION|BOARD_ID_VALUE"></a>
                                     BOARD_ID_VALUE
-                                </p>
-                                
-                            </td>
-            </tr>
-            <tr valign="top">
-                
-                    
-                        <td class="value">637933073</td>
-                            <td class="l">0x26061611</td>
-                            <td class="l" style="text-align: left;">
-                                <p class="name">
-                                    <a name="BASIC_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME"></a>
-                                    FPGA_VERSION_LAST_MODIFIED_TIME
                                 </p>
                                 
                             </td>
@@ -1766,98 +1747,6 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
                         <td>
                             <p><span class="name"><a name="BASIC_REGS_REGMAP|CORE_OLDEST_REVISION|OLDEST_REVISION_BUILD"></a>OLDEST_REVISION_BUILD</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p>Build number of the oldest compatible revision</p>
-                        </td>
-                    </tr>
-            </table>
-    </section>
-
-
-        
-            
-    <section class="register">
-        <a name="BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED"></a>
-        
-        <h3 class="register">
-            Offset 0x000C: VERSION_LAST_MODIFIED
-                Register
-            (R)
-            <a href="#BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED">&#x1F517;</a>
-        </h3>
-        <div class="sh">
-            <span class="opener sh-addrs">(<span class="sh-hidden">show</span><span class="sh-shown">hide</span> extended info)</span>
-            <div class="sh-content">
-                
-                <table class="extended_info">
-                        <tr>
-                                    <td class="outercell" rowspan="1">
-                                        <table border="0" cellspacing="0" cellpadding="0">
-  <tr><td class="offset_info" align="right"><a href="#B310_BAR0_REGMAP|BASIC_REGS_WINDOW">B310_BAR0_REGMAP|BASIC_REGS_WINDOW</a></td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x000000</td></tr>
-</table>
-                                    </td>
-                                    <td class="outercell" rowspan="1">
-                                        <table border="0" cellspacing="0" cellpadding="0">
-  <tr><td class="offset_info" align="right">VERSION_LAST_MODIFIED</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x000C</td></tr>
-</table>
-                                    </td>
-                                <td class="outercell" rowspan="1">
-                                    <table border="0" cellspacing="0" cellpadding="0">
-                                        <tr>
-                                                <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x00000C</td>
-                                        </tr>
-                                    </table>
-                                </td>
-                        </tr>
-                </table>
-                    <p class="reg_info">
-                        
-                            Initial Value not specified
-                    </p>
-                    <p class="reg_info">
-                            This register is defined in HDL source file basic_regs.sv.
-                    </p>
-            </div>
-        </div>
-        <div class="info">
-            This register contains the date/time when the version was last modified.
-        The time stamp is provided in hexadecimal format: 0xYYMMDDHH.
-        </div>
-        
-            <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
-                <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
-                
-                    
-                    <tr class="" valign="top">
-                        <td class="bits">31..24</td>
-                        <td>
-                            <p><span class="name"><a name="BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED|YY"></a>YY</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p>This is the year number after 2000 (e.g. 2019 = 0x19).</p>
-                        </td>
-                    </tr>
-                    
-                    <tr class="byte" valign="top">
-                        <td class="bits">23..16</td>
-                        <td>
-                            <p><span class="name"><a name="BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED|MM"></a>MM</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p></p>
-                        </td>
-                    </tr>
-                    
-                    <tr class="byte" valign="top">
-                        <td class="bits">15..8</td>
-                        <td>
-                            <p><span class="name"><a name="BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED|DD"></a>DD</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p></p>
-                        </td>
-                    </tr>
-                    
-                    <tr class="byte" valign="top">
-                        <td class="bits">7..0</td>
-                        <td>
-                            <p><span class="name"><a name="BASIC_REGS_REGMAP|VERSION_LAST_MODIFIED|HH"></a>HH</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p></p>
                         </td>
                     </tr>
             </table>
@@ -2905,7 +2794,8 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
             </div>
         </div>
         <div class="info">
-            Holds the lower 32 bits of the current radio time. Read the LOW register followed by the HIGH register to get a coherent 64-bit value.
+            Holds the lower 32 bits of the current radio time. Read the LOW
+       register followed by the HIGH register to get a coherent 64-bit value.
         </div>
         
     </section>
@@ -2960,7 +2850,9 @@ For information on NI trademark guidelines, please see <a href="http://www.ni.co
             </div>
         </div>
         <div class="info">
-            Holds the upper 32 bits of the radio time from when the LOW register was read. Read the LOW register followed by the HIGH register to get a coherent 64-bit value.
+            Holds the upper 32 bits of the radio time from when the LOW register
+       was read. Read the LOW register followed by the HIGH register to get a
+       coherent 64-bit value.
         </div>
         
     </section>

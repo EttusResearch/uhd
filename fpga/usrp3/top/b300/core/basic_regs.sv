@@ -144,7 +144,6 @@ endmodule
 //        please refer to the register map documentation accordingly:
 //        <li> Current version: @.BASIC_REGS_REGMAP..CORE_REVISION
 //        <li> Oldest compatible version: @.BASIC_REGS_REGMAP..CORE_OLDEST_REVISION
-//        <li> Version last modified: @.BASIC_REGS_REGMAP..VERSION_LAST_MODIFIED
 //      </info>
 //      <value name="BOARD_ID_VALUE"                       integer="0xB310"/>
 //      <value name="FPGA_CURRENT_VERSION_MAJOR"           integer="2"/>
@@ -153,7 +152,6 @@ endmodule
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR" integer="2"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_MINOR" integer="0"/>
 //      <value name="FPGA_OLDEST_COMPATIBLE_VERSION_BUILD" integer="0"/>
-//      <value name="FPGA_VERSION_LAST_MODIFIED_TIME"      integer="0x26061611"/>
 //    </enumeratedtype>
 //
 //   <register name="CORE_SIGNATURE" size="32" offset="0x00" attributes="Readable">
@@ -208,19 +206,6 @@ endmodule
 //         Build number of the oldest compatible revision
 //       </info>
 //     </bitfield>
-//   </register>
-//
-//   <register name="VERSION_LAST_MODIFIED" size="32" offset="0x0C" attributes="Readable">
-//     <info>
-//       This register contains the date/time when the version was last modified.
-//        The time stamp is provided in hexadecimal format: 0xYYMMDDHH.
-//     </info>
-//      <bitfield name="YY" range="31..24">
-//        <info>This is the year number after 2000 (e.g. 2019 = 0x19).</info>
-//      </bitfield>
-//      <bitfield name="MM" range="23..16"/>
-//      <bitfield name="DD" range="15..8"/>
-//      <bitfield name="HH" range="7..0"/>
 //   </register>
 //
 //   <register name="CORE_SCRATCH" size="32" offset="0x10" attributes="Readable|Writable">

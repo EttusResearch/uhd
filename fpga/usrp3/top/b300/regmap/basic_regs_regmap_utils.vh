@@ -14,12 +14,11 @@
 // A numerically ordered list of registers and their HDL source files
 //===============================================================================
 
-  // CORE_SIGNATURE        : 0x0 (basic_regs.sv)
-  // CORE_REVISION         : 0x4 (basic_regs.sv)
-  // CORE_OLDEST_REVISION  : 0x8 (basic_regs.sv)
-  // VERSION_LAST_MODIFIED : 0xC (basic_regs.sv)
-  // CORE_SCRATCH          : 0x10 (basic_regs.sv)
-  // GIT_HASH_REGISTER     : 0x14 (basic_regs.sv)
+  // CORE_SIGNATURE       : 0x0 (basic_regs.sv)
+  // CORE_REVISION        : 0x4 (basic_regs.sv)
+  // CORE_OLDEST_REVISION : 0x8 (basic_regs.sv)
+  // CORE_SCRATCH         : 0x10 (basic_regs.sv)
+  // GIT_HASH_REGISTER    : 0x14 (basic_regs.sv)
 
 //===============================================================================
 // RegTypes
@@ -30,7 +29,7 @@
 //===============================================================================
 
   // Enumerated type FPGA_VERSION
-  localparam FPGA_VERSION_SIZE = 8;
+  localparam FPGA_VERSION_SIZE = 7;
   localparam FPGA_CURRENT_VERSION_BUILD            = 'h0;  // FPGA_VERSION:FPGA_CURRENT_VERSION_BUILD
   localparam FPGA_OLDEST_COMPATIBLE_VERSION_MINOR  = 'h0;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_MINOR
   localparam FPGA_OLDEST_COMPATIBLE_VERSION_BUILD  = 'h0;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_BUILD
@@ -38,7 +37,6 @@
   localparam FPGA_CURRENT_VERSION_MAJOR            = 'h2;  // FPGA_VERSION:FPGA_CURRENT_VERSION_MAJOR
   localparam FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR  = 'h2;  // FPGA_VERSION:FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR
   localparam BOARD_ID_VALUE                        = 'hB310;  // FPGA_VERSION:BOARD_ID_VALUE
-  localparam FPGA_VERSION_LAST_MODIFIED_TIME       = 'h26061611;  // FPGA_VERSION:FPGA_VERSION_LAST_MODIFIED_TIME
 
   // CORE_SIGNATURE Register (from basic_regs.sv)
   localparam CORE_SIGNATURE = 'h0; // Register Offset
@@ -75,23 +73,6 @@
   localparam OLDEST_REVISION_MAJOR_SIZE =  8;  //CORE_OLDEST_REVISION:OLDEST_REVISION_MAJOR
   localparam OLDEST_REVISION_MAJOR_MSB  = 31;  //CORE_OLDEST_REVISION:OLDEST_REVISION_MAJOR
   localparam OLDEST_REVISION_MAJOR      = 24;  //CORE_OLDEST_REVISION:OLDEST_REVISION_MAJOR
-
-  // VERSION_LAST_MODIFIED Register (from basic_regs.sv)
-  localparam VERSION_LAST_MODIFIED = 'hC; // Register Offset
-  localparam VERSION_LAST_MODIFIED_SIZE = 32;  // register width in bits
-  localparam VERSION_LAST_MODIFIED_MASK = 32'hFFFFFFFF;
-  localparam HH_SIZE = 8;  //VERSION_LAST_MODIFIED:HH
-  localparam HH_MSB  = 7;  //VERSION_LAST_MODIFIED:HH
-  localparam HH      = 0;  //VERSION_LAST_MODIFIED:HH
-  localparam DD_SIZE =  8;  //VERSION_LAST_MODIFIED:DD
-  localparam DD_MSB  = 15;  //VERSION_LAST_MODIFIED:DD
-  localparam DD      =  8;  //VERSION_LAST_MODIFIED:DD
-  localparam MM_SIZE =  8;  //VERSION_LAST_MODIFIED:MM
-  localparam MM_MSB  = 23;  //VERSION_LAST_MODIFIED:MM
-  localparam MM      = 16;  //VERSION_LAST_MODIFIED:MM
-  localparam YY_SIZE =  8;  //VERSION_LAST_MODIFIED:YY
-  localparam YY_MSB  = 31;  //VERSION_LAST_MODIFIED:YY
-  localparam YY      = 24;  //VERSION_LAST_MODIFIED:YY
 
   // CORE_SCRATCH Register (from basic_regs.sv)
   localparam CORE_SCRATCH = 'h10; // Register Offset
