@@ -75,6 +75,7 @@ ctrlport_to_regport.v \
 ctrlport_to_wb_i2c.v \
 ctrlport_to_wb_uart.v \
 ctrlport_to_simple_spi.sv \
+ctrlport_to_jtag.v \
 glitch_free_mux.v \
 regport_if.sv \
 ))

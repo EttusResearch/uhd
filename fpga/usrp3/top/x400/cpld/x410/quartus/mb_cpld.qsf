@@ -401,7 +401,7 @@ set_global_assignment -name SDC_FILE ../common/common.sdc
 set_global_assignment -name SDC_FILE ../x410/db_spi_shared_constants.sdc
 set_global_assignment -name SDC_FILE ../x410/mb_cpld.sdc
 set_global_assignment -name VERILOG_FILE ../x410/mb_cpld.v -new_extractor
-set_global_assignment -name VERILOG_FILE ../x410/ctrlport_to_jtag.v
+set_global_assignment -name VERILOG_FILE ../../../../lib/control/ctrlport_to_jtag.v
 set_global_assignment -name VERILOG_FILE ../common/reconfig_engine.v
 set_global_assignment -name VERILOG_FILE ../common/ctrlport_to_spi.v
 set_global_assignment -name VERILOG_FILE ../common/pl_cpld_regs.v

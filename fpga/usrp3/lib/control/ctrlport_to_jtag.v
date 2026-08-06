@@ -49,8 +49,8 @@ module ctrlport_to_jtag #(
   output wire tms
 );
 
-  `include "../../../../lib/rfnoc/core/ctrlport.vh"
-  `include "../regmap/jtag_regmap_utils.vh"
+  `include "../rfnoc/core/ctrlport.vh"
+  `include "jtag_regmap_utils.vh"
 
   //---------------------------------------------------------------------------
   // Local Registers

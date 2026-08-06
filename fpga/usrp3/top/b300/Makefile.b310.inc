@@ -68,7 +68,6 @@ b310_xadc_wrapper.sv \
 constraints/b310.xdc \
 constraints/timing.xdc \
 constraints/b310_dram.xdc \
-../x400/cpld/x410/ctrlport_to_jtag.v \
 ../../lib/vivado_ipi/axi_bitq/bitq_fsm.vhd \
 
 
