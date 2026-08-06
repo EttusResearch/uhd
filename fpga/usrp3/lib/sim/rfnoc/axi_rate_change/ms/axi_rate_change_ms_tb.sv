@@ -17,7 +17,8 @@
 module axi_rate_change_ms_tb #(
   parameter int WIDTH = 32,
   parameter int MAX_N = 16,
-  parameter int MAX_M = 16
+  parameter int MAX_M = 16,
+  parameter bit EN_TIME_ALL_PKTS = 1'b1
 );
   `include "test_exec.svh"
 
@@ -130,7 +131,8 @@ module axi_rate_change_ms_tb #(
   axi_rate_change_ms #(
     .WIDTH(WIDTH),
     .SPC(SPC),
-    .SPC_MTU_LOG2(SPC_MTU_LOG2)
+    .SPC_MTU_LOG2(SPC_MTU_LOG2),
+    .EN_TIME_ALL_PKTS(EN_TIME_ALL_PKTS)
   ) dut (
     .clk(clk),
     .rst(rst),
@@ -402,7 +404,7 @@ module axi_rate_change_ms_tb #(
 
   always_ff @(posedge clk) begin
     if (clock_cnt_en) begin
-      if (noc_out.tvalid && !clock_cnt_start) begin
+      if (noc_out.tvalid && noc_out.tready && !clock_cnt_start) begin
         clock_cnt_start <= 1'b1;
         clock_cnt <= clock_cnt + 1;
       end else if (clock_cnt_start) begin
@@ -675,8 +677,10 @@ module axi_rate_change_ms_tb #(
             int last_idx = actual_pkt_size - 1;
             user_t actual_user = user_t'(actual_packet.user[last_idx]);
             logic [CHDR_TIMESTAMP_W-1:0] expected_last_timestamp;
+            bit expected_has_time;
 
             expected_last_timestamp = expected_timestamp;
+            expected_has_time = EN_TIME_ALL_PKTS || (pkt_idx == 0);
 
             `ASSERT_ERROR(
               actual_user.eob == is_last_packet,
@@ -685,17 +689,19 @@ module axi_rate_change_ms_tb #(
                 pkt_idx, actual_user.eob, is_last_packet)
             )
             `ASSERT_ERROR(
-              actual_user.has_time == 1'b1,
+              actual_user.has_time == expected_has_time,
               $sformatf({"random_spp pkt %0d:",
-                " Last-word HAS_TIME mismatch. Actual=%0d Expected=1"},
-                pkt_idx, actual_user.has_time)
+                " Last-word HAS_TIME mismatch. Actual=%0d Expected=%0d"},
+                pkt_idx, actual_user.has_time, expected_has_time)
             )
-            `ASSERT_ERROR(
-              actual_user.timestamp == expected_last_timestamp,
-              $sformatf({"random_spp pkt %0d:",
-                " Last-word timestamp mismatch. Actual=%0d Expected=%0d"},
-                pkt_idx, actual_user.timestamp, expected_last_timestamp)
-            )
+            if (expected_has_time) begin
+              `ASSERT_ERROR(
+                actual_user.timestamp == expected_last_timestamp,
+                $sformatf({"random_spp pkt %0d:",
+                  " Last-word timestamp mismatch. Actual=%0d Expected=%0d"},
+                  pkt_idx, actual_user.timestamp, expected_last_timestamp)
+              )
+            end
           end
 
           // Advance running timestamp for the next packet
@@ -830,6 +836,7 @@ module axi_rate_change_ms_tb #(
       axis_pkt_t packet = new();
       int words_in_packet;
       bit is_last_output_packet;
+      bit has_time;
 
       if (words_left_to_recv >= spp) begin
         words_in_packet = spp;
@@ -837,6 +844,7 @@ module axi_rate_change_ms_tb #(
         words_in_packet = words_left_to_recv;
       end
       is_last_output_packet = (words_left_to_recv <= spp);
+      has_time = EN_TIME_ALL_PKTS || (expected_packets.size() == 0);
 
       for (int i = 0; i < words_in_packet; i++) begin
         user_t user_word;
@@ -853,7 +861,7 @@ module axi_rate_change_ms_tb #(
           user_word = pack_user(
             16'd0,
             expected_timestamp,
-            1'b1,
+            has_time,
             is_last_output_packet
           );
         end
@@ -1007,8 +1015,9 @@ module axi_rate_change_ms_tb #(
     string tb_name;
 
     tb_name = $sformatf(
-      "AXI Rate Change CHDR Testbench (WIDTH=%0d, MAX_N=%0d, MAX_M=%0d)",
-      WIDTH, MAX_N, MAX_M);
+      {"AXI Rate Change CHDR Testbench (WIDTH=%0d, MAX_N=%0d, MAX_M=%0d, ",
+       "EN_TIME_ALL_PKTS=%0d)"},
+      WIDTH, MAX_N, MAX_M, EN_TIME_ALL_PKTS);
     test.start_tb(tb_name, 1s);
 
     //`ASSERT_ERROR(
@@ -1069,6 +1078,22 @@ module axi_rate_change_ms_tb #(
     test.start_test("Test Long First Packet Metadata Timing");
     test_rate(1, 1, DEFAULT_SPP * 4, DEFAULT_SPP * 4, 1'b0, 1'b0, 0);
     test.end_test();
+
+    if (!EN_TIME_ALL_PKTS) begin
+      test.start_test("Test First Packet Timestamp Only");
+      repeat (2) begin
+        test_rate(
+          .n(1),
+          .m(1),
+          .num_words(DEFAULT_SPP * 3),
+          .spp(DEFAULT_SPP),
+          .rand_delay_in(1'b1),
+          .rand_delay_out(1'b1),
+          .time_incr(3)
+        );
+      end
+      test.end_test();
+    end
 
     if (MAX_M >= 2) begin
       test.start_test("Test Interpolation Early Sideband Metadata");

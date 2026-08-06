@@ -43,6 +43,14 @@ module axi_rate_change_ms_all_tb;
     .MAX_M(1)
   ) tb_4 ();
 
+  // First-packet-only timestamp mode
+  axi_rate_change_ms_tb #(
+    .WIDTH(32),
+    .MAX_N(1),
+    .MAX_M(1),
+    .EN_TIME_ALL_PKTS(1'b0)
+  ) tb_5 ();
+
 endmodule : axi_rate_change_ms_all_tb
 
 `default_nettype wire

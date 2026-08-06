@@ -18,17 +18,20 @@
 //  internal state machine will terminate each burst even if the tlast does not
 //  make it through the user logic due to input data not matching the decimation
 //  rate.
-//  Generates timestamps on each packet of the burst or none depending on the
-//  first received packet of the burst.
+//  Generates timestamps on each packet of the burst or only the first packet,
+//  depending on EN_TIME_ALL_PKTS, when the burst is timed.
 //
 //   Parameters:
 //
-//     WIDTH        : Data bus width in bits (must match user logic).
-//     SPC          : Samples per clock cycle (must match user logic).
-//                    Width of sample stream tags.
-//     SPC_MTU_LOG2 : Log2 of the maximum packet size in internal
-//                    words(SPC*WIDTH wide). Internal counter widths
-//                    are derived from this value.
+//     WIDTH                  : Data bus width in bits (must match user logic).
+//     SPC                    : Samples per clock cycle (must match user logic).
+//                              Width of sample stream tags.
+//     SPC_MTU_LOG2           : Log2 of the maximum packet size in internal
+//                              words(SPC*WIDTH wide). Internal counter widths
+//                              are derived from this value.
+//     EN_TIME_ALL_PKTS       : When set to 1, generate timestamps for all packets in
+//                              a timed burst. When 0, generate a timestamp only for
+//                              the first packet in a timed burst.
 //     MAX_USER_LOGIC_LATENCY : Maximum latency of the user logic in cycles for the transfer from
 //                   m_axis_data_tlast to s_axis_data_tlast assuming that s_axis_data_tready is
 //                   always high.
@@ -41,6 +44,7 @@ module axi_rate_change_ms
   int WIDTH        = 32,
   int SPC          = 1,
   int SPC_MTU_LOG2 = 10,
+  bit EN_TIME_ALL_PKTS = 1'b1,
   int MAX_USER_LOGIC_LATENCY = 85 + 5*SPC // current value for DDC Multisample user logic
 )(
   input wire logic clk,
@@ -247,6 +251,7 @@ module axi_rate_change_ms
   logic                        first_pkt_timestamp_valid;
   logic                        burst_has_time = '0;
   logic                        first_burst_transfer = '1;
+  logic                        first_output_packet = '1;
 
   // determine first packet in burst
   always_ff @(posedge clk) begin
@@ -285,6 +290,16 @@ module axi_rate_change_ms
     // reset
     if (clear_user) begin
       burst_has_time <= 1'b0;
+    end
+  end
+
+  // Track the first output packet boundary in the burst. The state is
+  // consumed only when the packet boundary is accepted by the NoC shell.
+  always_ff @(posedge clk) begin
+    if (rst || clear) begin
+      first_output_packet <= 1'b1;
+    end else if (o_tvalid && o_tready && o_tlast) begin
+      first_output_packet <= o_teob;
     end
   end
 
@@ -360,7 +375,8 @@ module axi_rate_change_ms
   // insert generated signals
   assign o_tlast = end_of_packet | o_teob | terminate_burst;
   assign o_ttimestamp = timestamp_out;
-  assign o_thas_time = o_tlast && burst_has_time; //only valid on tlast
+  assign o_thas_time = o_tlast && burst_has_time &&
+                       (EN_TIME_ALL_PKTS || first_output_packet);
 
 
 endmodule
