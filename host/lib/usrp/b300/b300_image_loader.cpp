@@ -13,13 +13,19 @@
 #include <uhd/image_loader.hpp>
 #include <uhd/types/byte_vector.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <thread>
+
+namespace {
+constexpr const char* DEFAULT_FPGA_TYPE = "replay";
+}
 
 namespace uhd { namespace usrp { namespace b300 {
 
@@ -682,10 +688,47 @@ static bool b300_image_loader(const image_loader::image_loader_args_t& image_loa
 
     if (devs.empty())
         return false;
+    else if (devs.size() > 1) {
+        std::string err_msg =
+            "Could not resolve given args to a single B3xx-Series device.\n"
+            "Applicable devices:\n";
 
-    if (not std::filesystem::exists(image_loader_args.fpga_path)) {
-        throw uhd::runtime_error(
-            "Could not find image at path " + image_loader_args.fpga_path);
+        for (const uhd::device_addr_t& dev : devs) {
+            err_msg += " * " + dev.get("product", "b3xx")
+                       + " (resource=" + dev.get("resource") + ")\n";
+        }
+
+        err_msg += "\nSpecify one of these devices with the given args to load an image "
+                   "onto it.";
+
+        throw uhd::runtime_error(err_msg);
+    }
+
+    std::string fpga_path_to_program = image_loader_args.fpga_path;
+
+    if (!image_loader_args.fpga_path.empty()) {
+        if (not std::filesystem::exists(image_loader_args.fpga_path)) {
+            throw uhd::runtime_error(
+                "Could not find image at path " + image_loader_args.fpga_path);
+        }
+    } else {
+        std::string product_name = devs[0].get("product", "UNKNOWN");
+        std::transform(product_name.begin(),
+            product_name.end(),
+            product_name.begin(),
+            [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+        if (product_name == "unknown") {
+            throw uhd::runtime_error(
+                "Could not determine product name for the device. "
+                "Please either ensure the mb eeprom is programmed correctly "
+                "using the usrp_burn_mb_eeprom utility, or provide the FPGA path to "
+                "program explicitly with the '--fpga-path' argument.");
+        }
+
+        fpga_path_to_program = uhd::find_image_path(
+            "usrp_" + product_name + "_fpga_"
+            + image_loader_args.args.get("fpga", DEFAULT_FPGA_TYPE) + ".bit");
     }
 
     for (size_t i = 0; i < devs.size(); ++i) {
@@ -696,7 +739,7 @@ static bool b300_image_loader(const image_loader::image_loader_args_t& image_loa
         b300_image_loader_helper image_loader_helper(
             [pcie_mgr](uint32_t addr) { return pcie_mgr->peek32(addr); },
             [pcie_mgr](uint32_t addr, uint32_t value) { pcie_mgr->poke32(addr, value); });
-        image_loader_helper.writeBinToFlash(image_loader_args.fpga_path);
+        image_loader_helper.writeBinToFlash(fpga_path_to_program);
     }
 
     return true;
