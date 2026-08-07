@@ -118,6 +118,7 @@ module dds_ms
   logic [SPC:0]                din_tuser;
   logic                        din_tvalid;
   logic                        din_transfer_complete;
+  logic                        eob_transfer;
 
   // Phase increment
   logic [PHASE_WIDTH-1:0]      phase_inc_tdata = '0;
@@ -199,6 +200,14 @@ module dds_ms
               current_state <= WAIT_FOR_TAG;
               phase_update_pending <= '1;
             end
+          end else if (eob_transfer) begin
+            // Reuse the phase-update path to reload the accumulator at EoB while
+            // retaining the configured phase increment. The following burst
+            // remains stalled until the LUT has flushed stale values following the
+            // reload event.
+            timed_update_pending <= 1'b0;
+            phase_update_pending <= 1'b1;
+            current_state <= UPDATE_ACCUMULATOR;
           end
         end
         // Wait for data transfer to start blocking
@@ -268,7 +277,9 @@ module dds_ms
   // available.
 
   assign din_transfer_complete = (din_tvalid && din_tready[0]) || !din_tvalid;
-  assign data_lock = (!timed_update_pending || (din_tvalid && din_tuser[SPC:1] != '0)) && phase_update_pending;
+  assign eob_transfer = din_tvalid && din_tready[0] && din_tlast && din_tuser[0];
+  assign data_lock = (!timed_update_pending || (din_tvalid && din_tuser[SPC:1] != '0))
+                      && phase_update_pending;
   assign flush_enabled = current_state == FLUSH || current_state == UPDATE_ACCUMULATOR;
 
 

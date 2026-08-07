@@ -901,17 +901,15 @@ module dds_ms_tb #(
     test.end_test();
   endtask : randomize_test
 
-  // Test to verify freq shift once set is applied consistently
-  // across multiple bursts of samples unless changed.
+  // Test to verify that freq shift once set is applied consistently
+  // across multiple bursts of samples unless changed. It also checks that
+  // initial phase of dds-internal phase accumulator is constant (0.0) between bursts.
   task automatic continuous_run (int repeat_count, stall_config_t stall_cfg);
     axis_burst_queue_t                    input_bursts, received_bursts, expected_bursts;
     axis_pkt_queue_t                      pkts_in, pkts_out, expected_pkts_out;
     tone_config_t                         input_tone_cfg, dut_tone_cfg;
     logic           [PHASE_WIDTH-1:0]     phase_in_tdata;
     logic           [CTRLPORT_DATA_W-1:0] write_phase;
-    // Tracks the NCO phase continuously across bursts to match DUT accumulator state
-    real                                  expected_phase = 0.0;
-
     test.start_test("Continuous Run");
     write_phase                    = $urandom_range(MAX_PHASE);
     phase_in_tdata                 = write_phase[CTRLPORT_DATA_W-1 -: PHASE_WIDTH];
@@ -941,11 +939,8 @@ module dds_ms_tb #(
         pkts_in            = generate_burst(.num_pkts(3), .pkt_length(PKT_LENGTH),
                                             .tone_cfg(input_tone_cfg), .gen_mode(TONE));
         expected_pkts_out  = generate_expected_output(.num_pkts(3), .pkt_length(PKT_LENGTH),
-                                                      .initial_phase(expected_phase), .tone_cfg(dut_tone_cfg),
+                                                      .initial_phase(0.0), .tone_cfg(dut_tone_cfg),
                                                       .input_pkt_queue(pkts_in));
-        // Advance expected_phase by the number of words consumed in this burst
-        // (num_pkts * pkt_length words, each advancing phase by freq_norm)
-        expected_phase += 3 * PKT_LENGTH * dut_tone_cfg.freq_norm;
         input_bursts.push_back(pkts_in);
         expected_bursts.push_back(expected_pkts_out);
 
@@ -976,12 +971,6 @@ module dds_ms_tb #(
 
     int num_pkts   = 2;
     int pkt_length = PKT_LENGTH;
-    // Phase accumulated by the post-tag NCO by the end of the first burst,
-    // used as initial phase for the follow-up burst verification
-    int  words_pre_tag       = 0;
-    int  words_post_tag      = 0;
-    real timed_initial_phase = 0.0;
-
 
     test.start_test($sformatf("Simulated timed DDS test, master stall: %0d, slave stall: %0d",
                               stall_cfg.master_stall_prob, stall_cfg.slave_stall_prob));
@@ -1069,17 +1058,13 @@ module dds_ms_tb #(
     // Ensure that the DUT applies the last written frequency shift value if
     // new phase increment is sent but not valid
     phase_to_dut.tdata = '0;
-    // Derive the post-tag NCO phase at the end of the previous burst:
-    // the post-tag config becomes active at data_in_tag and runs for the
-    // remaining words in the burst.
-    words_pre_tag      = data_in_tag.packet * pkt_length + data_in_tag.word;
-    words_post_tag     = num_pkts * pkt_length - words_pre_tag;
-    timed_initial_phase = words_post_tag * timed_dut_tone_cfg.freq_norm;
+    // EOB reloads the accumulator after the preceding burst, so the follow-up
+    // burst starts at phase zero using the post-tag frequency increment.
     pkts_in = generate_burst(.num_pkts(num_pkts), .pkt_length(pkt_length),
                         .tone_cfg(input_tone_cfg),
                         .gen_mode(RAMP));
     expected_pkts_out  = generate_expected_output(.num_pkts(num_pkts), .pkt_length(pkt_length),
-                        .initial_phase(timed_initial_phase), .tone_cfg(timed_dut_tone_cfg),
+                        .initial_phase(0.0), .tone_cfg(timed_dut_tone_cfg),
                         .input_pkt_queue(pkts_in));
     input_bursts.push_back(pkts_in);
     expected_bursts.push_back(expected_pkts_out);
