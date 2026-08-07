@@ -227,9 +227,10 @@ module rfnoc_block_duc_ms_channel
 
 
   axi_rate_change_ms #(
-    .WIDTH       (SAMP_W*SPC  ),
-    .SPC         (SPC         ),
-    .SPC_MTU_LOG2(SPC_MTU_LOG2)
+    .WIDTH           (SAMP_W*SPC  ),
+    .SPC             (SPC         ),
+    .SPC_MTU_LOG2    (SPC_MTU_LOG2),
+    .EN_TIME_ALL_PKTS(1'b0)
   ) axi_rate_change_ms_i (
     .clk                    (ce_clk                       ),
     .rst                    (ce_rst                       ),

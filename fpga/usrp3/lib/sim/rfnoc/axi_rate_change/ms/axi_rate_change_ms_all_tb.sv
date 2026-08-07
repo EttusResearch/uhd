@@ -46,8 +46,8 @@ module axi_rate_change_ms_all_tb;
   // First-packet-only timestamp mode
   axi_rate_change_ms_tb #(
     .WIDTH(32),
-    .MAX_N(1),
-    .MAX_M(1),
+    .MAX_N(16),
+    .MAX_M(16),
     .EN_TIME_ALL_PKTS(1'b0)
   ) tb_5 ();
 

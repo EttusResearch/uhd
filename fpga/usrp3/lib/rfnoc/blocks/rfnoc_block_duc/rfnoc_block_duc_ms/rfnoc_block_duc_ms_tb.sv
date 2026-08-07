@@ -619,7 +619,7 @@ module rfnoc_block_duc_ms_tb #(
             `ASSERT_ERROR(recv_payload.size() == PKT_SIZE_WORDS, s);
 
             // Check the timestamp
-            if (has_time) begin
+            if (has_time && pkt == 0) begin
               chdr_timestamp_t expected_time;
               // Calculate what the timestamp should be
               expected_time = start_time + pkt * SPP;
@@ -802,7 +802,7 @@ module rfnoc_block_duc_ms_tb #(
             `ASSERT_ERROR(recv_payload.size() == pkt_length, s);
 
             // Check the timestamp
-            if (has_time) begin
+            if (has_time && pkt == 0) begin
               chdr_timestamp_t expected_time;
               // Calculate what the timestamp should be
               expected_time = start_time + pkt * local_spp;

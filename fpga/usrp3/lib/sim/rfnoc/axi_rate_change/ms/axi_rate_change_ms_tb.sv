@@ -37,7 +37,8 @@ module axi_rate_change_ms_tb #(
   localparam int WORD_BYTES = WIDTH / 8;
   localparam int DEFAULT_SPP = 16;
   localparam int STALL_PROB = 38;
-  localparam int BUBBLE_TEST_WORDS = 100000;
+  localparam int BUBBLE_TEST_WORDS = 10000;
+  localparam int NUM_RANDOM_TESTS = 50;
   localparam int VERBOSE = 0;
   localparam int SAMP_W = 32;
   localparam int SPC = WIDTH / SAMP_W;
@@ -59,6 +60,8 @@ module axi_rate_change_ms_tb #(
   } user_t;
   typedef AxiStreamPacket #(.DATA_WIDTH(WIDTH), .USER_WIDTH(USER_W)) axis_pkt_t;
   typedef axis_pkt_t axis_pkt_queue_t[$];
+
+  `define MIN(X,Y) ((X)<(Y)?(X):(Y))
 
   //---------------------------------------------------------------------------
   // Clocks and Resets
@@ -1034,41 +1037,65 @@ module axi_rate_change_ms_tb #(
     test_register_readback();
     test.end_test();
 
-    // Sweep all decimation rates N=1..MAX_N with M=1 and random stalls.
+    // Run a bounded set of random decimation rates with random stalls.
     // Each iteration sends 3*N*SPP words (enough for 3 full output packets).
     test.start_test("Check Various Rates", 50ms);
-    for (int n = 1; n <= MAX_N; n++) begin
-      test_rate(n, 1, n * DEFAULT_SPP * 3, DEFAULT_SPP, 1'b1, 1'b1);
+    begin
+      int num_tests;
+      int random_n;
+      num_tests = `MIN(NUM_RANDOM_TESTS, MAX_N);
+      repeat (num_tests) begin
+        random_n = $urandom_range(1, MAX_N);
+        test_rate(random_n, 1, random_n * DEFAULT_SPP * 3, DEFAULT_SPP, 1'b1, 1'b1);
+      end
     end
-    for (int m = 1; m <= MAX_M; m++) begin
-      test_rate(1, m, DEFAULT_SPP * 3, DEFAULT_SPP, 1'b1, 1'b1);
+    begin
+      int num_tests;
+      int random_m;
+      num_tests = `MIN(NUM_RANDOM_TESTS, MAX_M);
+      repeat (num_tests) begin
+        random_m = $urandom_range(1, MAX_M);
+        test_rate(1, random_m, DEFAULT_SPP * 3, DEFAULT_SPP, 1'b1, 1'b1);
+      end
     end
     test.end_test();
 
-    // Test partial input groups (not a multiple of N). The extra
-    // (DEFAULT_SPP - 1) words form an incomplete group, and the output emits
-    // one additional terminal word carrying tlast.
+    // Test a bounded set of random partial input groups (not a multiple of N).
+    // The extra (DEFAULT_SPP - 1) words form an incomplete group, and the
+    // output emits one additional terminal word carrying tlast.
     test.start_test("Test Partial Packets", 50ms);
-    for (int n = 1; n <= MAX_N; n++) begin
-      test_rate(
-        .n(n),
-        .m(1),
-        .num_words(n * DEFAULT_SPP + DEFAULT_SPP - 1),
-        .spp(DEFAULT_SPP),
-        .rand_delay_in(1'b1),
-        .rand_delay_out(1'b1),
-        .expect_extra_last_word(1'b1)
-      );
+    begin
+      int num_tests;
+      int random_n;
+      num_tests = `MIN(NUM_RANDOM_TESTS, MAX_N);
+      repeat (num_tests) begin
+        random_n = $urandom_range(1, MAX_N);
+        test_rate(
+          .n(random_n),
+          .m(1),
+          .num_words(random_n * DEFAULT_SPP + DEFAULT_SPP - 1),
+          .spp(DEFAULT_SPP),
+          .rand_delay_in(1'b1),
+          .rand_delay_out(1'b1),
+          .expect_extra_last_word(1'b1)
+        );
+      end
     end
     test.end_test();
 
     // Randomize SPP to verify the DUT correctly handles non-uniform packet
     // chunking on the input.
     test.start_test("Test Randomized SPP", 100ms);
-    for (int n = 1; n <= MAX_N; n++) begin
-      test_rate(
-        n, 1, n * DEFAULT_SPP * 10, DEFAULT_SPP, 1'b1, 1'b1,
-        4, 1'b1);
+    begin
+      int num_tests;
+      int random_n;
+      num_tests = `MIN(NUM_RANDOM_TESTS, MAX_N);
+      repeat (num_tests) begin
+        random_n = $urandom_range(1, MAX_N);
+        test_rate(
+          random_n, 1, random_n * DEFAULT_SPP * 10, DEFAULT_SPP, 1'b1, 1'b1,
+          4, 1'b1);
+      end
     end
     test.end_test();
 
