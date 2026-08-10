@@ -33,7 +33,7 @@ module clocking_watchdog_tb;
   `include "test_exec.svh"
   import PkgTestExec::*;
 
-  timeunit 1ns/1ps; 
+  timeunit 1ns/1ps;
   // Monitor clock frequency used to evaluate the 1 ms measurement window.
   localparam int MONITOR_CLK_FREQ = 100_000_000;
   // Maximum allowed watched_clk rate; matches the DUT parameter.
@@ -50,11 +50,11 @@ module clocking_watchdog_tb;
 
   localparam real MONITOR_CLK_PER_NS = 1.0e9 / MONITOR_CLK_FREQ;
 
-  logic monitor_clk  = 1'b0;
+  logic monitor_clk;
   logic monitor_rst;
   logic rst          = 1'b1;
   logic clock_locked = 1'b0;
-  logic watched_clk  = 1'b0;
+  logic watched_clk;
   logic watched_rst;
   logic clock_fault;
 
