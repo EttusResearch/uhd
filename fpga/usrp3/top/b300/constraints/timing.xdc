@@ -434,6 +434,88 @@ set_clock_groups -asynchronous -group [get_clocks fpga_to_cpld_clk] -group [get_
 set_clock_groups -asynchronous -group [get_clocks fpga_to_cpld_clk] -group [get_clocks clk_250mhz_x0y0]
 set_clock_groups -asynchronous -group [get_clocks fpga_to_cpld_clk] -group [get_clocks jesd_ref_clk]
 
+#*******************************************************************************
+## CPLD JTAG Interface
+#
+# TCK frequency = bus_clk / (2*(prescalar+1))
+# prescalar used by utilities = 12 → TCK ≈ 5.76 MHz (period ≈ 173 ns)
+#
+# Protocol:
+#   - TDI and TMS are launched on the falling edge of TCK (FSM HIGH→LOW transition)
+#     and captured by the CPLD on the rising edge of TCK.
+#   - TDO is launched by the CPLD on the falling edge of TCK and captured by the
+#     FPGA bitq_fsm on the rising edge of TCK (FSM LOW→HIGH transition).
+
+# divide_by 26 matches prescalar=12
+create_generated_clock \
+  -source [get_pins -hierarchical -filter {NAME =~ "*bus_clk_gen_i*CLKOUT0"}] \
+  -name jtag_cpld_tck_clk_out \
+  -divide_by 26 \
+  [get_ports JTAG_CPLD_TCK]
+
+# CPLD JTAG timing parameters
+# Board trace delays: conservative estimate for PCB traces (in reality, these are short ~0.7-1 in)
+set jtag_cpld_tck_max_trace       1.0  ;# TCK board trace max delay (ns)
+set jtag_cpld_tck_min_trace       0.0  ;# TCK board trace min delay (ns)
+set jtag_cpld_data_max_trace      1.0  ;# TDI/TMS board trace max delay (ns)
+set jtag_cpld_data_min_trace      0.0  ;# TDI/TMS board trace min delay (ns)
+set jtag_cpld_tdo_max_trace       1.0  ;# TDO board trace max delay (ns)
+set jtag_cpld_tdo_min_trace       0.0  ;# TDO board trace min delay (ns)
+# CPLD JTAG device requirements: From MACHXO2 datasheet
+set jtag_cpld_tdi_setup          10.0  ;# CPLD JTAG TDI/TMS setup before TCK rising (ns)
+set jtag_cpld_tdi_hold            8.0  ;# CPLD JTAG TDI/TMS hold after TCK rising (ns)
+set jtag_cpld_tdo_max_clk_to_out 10.0  ;# CPLD JTAG TDO max clock-to-output after TCK falling (ns)
+set jtag_cpld_tdo_min_clk_to_out  0.0  ;# CPLD JTAG TDO min clock-to-output after TCK falling (ns)
+
+# -------------------------------------------------------
+# -- Constraint for CPLD JTAG TDI and TMS (outputs) --
+# -------------------------------------------------------
+
+set_output_delay -clock jtag_cpld_tck_clk_out \
+  -max [expr {$jtag_cpld_tdi_setup + $jtag_cpld_data_max_trace - $jtag_cpld_tck_min_trace}] \
+  [get_ports {JTAG_CPLD_TDI JTAG_CPLD_TMS}]
+set_output_delay -clock jtag_cpld_tck_clk_out \
+  -min [expr {0 - $jtag_cpld_tck_max_trace - $jtag_cpld_tdi_hold + $jtag_cpld_data_min_trace}] \
+  [get_ports {JTAG_CPLD_TDI JTAG_CPLD_TMS}]
+
+# -------------------------------------------------------
+# -- Multi-cycle path for CPLD JTAG TDI and TMS --
+# -------------------------------------------------------
+# TDI and TMS are launched on the falling edge of TCK (half period before the capture
+# rising edge). With divide_by=26, data is stable for 13 bus_clk cycles before capture.
+#
+# bus_clk  __/--\__/--\__ ... __/--\__/--\__/--\__ ... __/--\__/--\__/--\__
+#    TCK   __/------------------------\________________________/-----------
+#                                     | launch edge (falling TCK)
+#                                     |     |      ...   |     |     |
+#                                     0     1      ...   12   13*   14
+#                                                    Edge used for setup N = 13
+#            |     |      ...   |     |     |      ...   |
+#           25    24      ...  13    12    11      ...   0
+#                                                   (Setup -1) edge, in case
+#                                                   of no hold multi-cycle path
+#           |
+#           \____ Edge used for hold = 25
+
+set_multicycle_path -setup -start -to [get_ports {JTAG_CPLD_TDI JTAG_CPLD_TMS}] 13
+set_multicycle_path -hold  -start -to [get_ports {JTAG_CPLD_TDI JTAG_CPLD_TMS}] 25
+
+# -------------------------------------------------------
+# -- Constraint for CPLD JTAG TDO (input) --
+# -------------------------------------------------------
+# TDO is launched by the CPLD on the falling edge of TCK and captured at the
+# next rising edge of TCK inside the bitq_fsm. Waveform is similar to TDI/TMS.
+
+set_input_delay -clock_fall -clock jtag_cpld_tck_clk_out \
+  -max [expr {$jtag_cpld_tck_max_trace + $jtag_cpld_tdo_max_clk_to_out + $jtag_cpld_tdo_max_trace}] \
+  [get_ports JTAG_CPLD_TDO]
+set_input_delay -clock_fall -clock jtag_cpld_tck_clk_out \
+  -min [expr {$jtag_cpld_tck_min_trace + $jtag_cpld_tdo_min_clk_to_out + $jtag_cpld_tdo_min_trace}] \
+  [get_ports JTAG_CPLD_TDO]
+
+# TDO multi-cycle path: same half-period relationship as TDI/TMS.
+set_multicycle_path -setup -end -from [get_ports JTAG_CPLD_TDO] 13
+set_multicycle_path -hold  -end -from [get_ports JTAG_CPLD_TDO] 25
 
 #*******************************************************************************
 ## Authentication chip interface timing
@@ -448,28 +530,24 @@ set_max_delay -datapath_only -from [get_ports AUTH_SDA] -to [all_registers -edge
 # #*******************************************************************************
 # ## ADRV9032 SPI Interface
 
-set adrv_spi_clk_register [get_pins {b310_core_i/ctrlport_spi_adrv_i/axis_spi_i/sclk_reg/Q}]
-
-create_generated_clock -source [get_clocks radio_clk] \
-  -name adrv_spi_clk $adrv_spi_clk_register \
-  -divide_by 30
-
 create_generated_clock \
-  -source $adrv_spi_clk_register \
-  -name adrv_spi_clk_out [get_ports {ADRV_SPI_CLK}]
+  -source [get_pins -hierarchical -filter {NAME =~ "*radio_clk_gen_i/*/CLKOUT0"}] \
+  -name adrv_spi_clk_out \
+  -divide_by 30 \
+  [get_ports {ADRV_SPI_CLK}]
 
 # DIO trace length is 2138.37 nils, which is roughly 0.36 ns. The main source for propagation delay
 # in this trace comes from filtering circuitry on the ADRV side slowing down rise times. The measured
 # delay is ~32ns. The constraint below is a conservative number to ensure timing closure.
-set adrv_dio_max_trace_delay 75.0
+set adrv_dio_max_trace_delay 50.0
 set adrv_dio_min_trace_delay 0.0
 # DO and CS has similar considerations as DIO, with both having a measured delay of ~45ns.
-set adrv_do_max_trace_delay 75.0
+set adrv_do_max_trace_delay 50.0
 set adrv_do_min_trace_delay 0.0
-set adrv_cs_max_trace_delay 75.0
+set adrv_cs_max_trace_delay 50.0
 set adrv_cs_min_trace_delay 0.0
 # And yet again, we conservatively constraint the delay of the SPI clock, measured at ~25ns.
-set adrv_clk_max_trace_delay 50.0
+set adrv_clk_max_trace_delay 35.0
 set adrv_clk_min_trace_delay 0.0
 
 # Values from the ADRV9032 datasheet, in ns
@@ -510,10 +588,10 @@ set_output_delay -clock adrv_spi_clk_out \
 #                                            0     1     2   ... 14   15*    16
 #                                                                     Edge used for
 #                                                                     setup analysis N = 15
-#                 |     |     |        |     |     |      |  ... |     |
-#                29     28    27  ... 16    15    14     13  ... 1     0
-#                                                                     (Setup -1) edge, in case
-#                                                                     of no hold multi-cycle path
+#                 |     |     |        |     |     |      |  ... |
+#                29     28    27  ... 15    14    13     12  ... 0
+#                                                                (Setup -1) edge, in case
+#                                                                of no hold multi-cycle path
 #                 |
 #                 \____ Edge used for hold = 29
 #
@@ -544,11 +622,11 @@ set_multicycle_path -hold  -end -from [get_ports {ADRV_SPI_DO}] 29
 # we will use conservative numbers that far exceed its trace delay to ensure timing closure
 # for all devices on this interface.
 
-set clocking_output_max_trace_delay 50.0
+set clocking_output_max_trace_delay 10.0
 set clocking_output_min_trace_delay 0.0
-set clocking_miso_max_trace_delay 50.0
+set clocking_miso_max_trace_delay 10.0
 set clocking_miso_min_trace_delay 0.0
-set clocking_sclk_max_trace_delay 50.0
+set clocking_sclk_max_trace_delay 10.0
 set clocking_sclk_min_trace_delay 0.0
 
 # Values from datasheets, in ns
@@ -560,16 +638,13 @@ set clock_spi_hold     0.0
 set clock_spi_max_tco  60.0
 set clock_spi_min_tco  0.0
 
-set clocking_sclk_register [get_pins {b310_core_i/clocking_spi_engine/sclk_reg_reg/Q}]
 
 # SPI divider uses default value of 30.
-create_generated_clock -source [get_clocks bus_clk] \
-  -name clocking_spi_clk $clocking_sclk_register \
-  -divide_by 30
-
 create_generated_clock \
-  -source $clocking_sclk_register \
-  -name clocking_spi_clk_out [get_ports {LMK32_SCLK LMK053_SCLK DAC_SCLK}]
+  -source [get_pins -hierarchical -filter {NAME =~ "*bus_clk_gen_i*CLKOUT0"}] \
+  -name clocking_spi_clk_out \
+  -divide_by 30 \
+  [get_ports {LMK32_SCLK LMK053_SCLK DAC_SCLK}]
 
 
 # ---------------------------------------------
@@ -600,10 +675,10 @@ set_output_delay -clock clocking_spi_clk_out \
 #                                            0     1     2   ... 14   15*    16
 #                                                                     Edge used for
 #                                                                     setup analysis N = 15
-#                 |     |     |        |     |     |      |  ... |     |
-#                29     28    27  ... 16    15    14     13  ... 1     0
-#                                                                     (Setup -1) edge, in case
-#                                                                     of no hold multi-cycle path
+#                 |     |     |        |     |     |     |   ... |
+#                29     28    27  ... 15    14    13    12   ... 0
+#                                                               (Setup -1) edge, in case
+#                                                                of no hold multi-cycle path
 #                 |
 #                 \____ Edge used for hold = 29
 #
