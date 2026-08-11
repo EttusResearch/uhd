@@ -65,6 +65,8 @@ variables:
       'VS2022-x64-py312-builder':{'buildOSName':'win-vs22-v143-x64-py312','dockerImageName':'uhd-builder-vs2022-v143-x64-py312','cmakeCompiler':'Visual Studio 17 2022','cmakeArch':'x64','vsArch':'x64','vsYear':'2022','pythonVersion':'python312'},
       'VS2026-x64-py310-builder':{'buildOSName':'win-vs26-v145-x64-py310','dockerImageName':'uhd-builder-vs2026-v145-x64-py310','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python310'},
       'VS2026-x64-py312-builder':{'buildOSName':'win-vs26-v145-x64-py312','dockerImageName':'uhd-builder-vs2026-v145-x64-py312','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python312'}}"
+      # temporarily exclude py313 Windows builder
+      # 'VS2026-x64-py313-builder':{'buildOSName':'win-vs26-v145-x64-py313','dockerImageName':'uhd-builder-vs2026-v145-x64-py313','cmakeCompiler':'Visual Studio 18 2026','cmakeArch':'x64','vsArch':'x64','vsYear':'2026','pythonVersion':'python313'}
   - name: python310_version
     value: '3.10.11'
   - name: python312_version
@@ -218,8 +220,6 @@ jobs:
   timeoutInMinutes: 600
   variables:
     uhdDockerImageVersion: $[ dependencies.set_uhd_docker_image_version.outputs['set_uhd_version.uhdDockerImageVersion'] ]
-    VCPKG_BINARY_CACHE_DIR: $(Build.SourcesDirectory)\.cache\vcpkg
-    VCPKG_BINARY_CACHE_CONTAINER_DIR: 'C:\vcpkg-binary-cache'
   pool:
     name: Drivers-NIBuildFarm-RFMIBUILD
     demands:
@@ -257,13 +257,6 @@ jobs:
         echo WARNING: pythonVersion is not defined or unknown value "$(pythonVersion)".
         echo ##vso[task.setvariable variable=PYTHON_VERSION_ARG]
       )
-
-      REM Create vcpkg cache directory if it does not exist (e.g. on a cache miss).
-      REM Docker COPY fails if the source path is absent from the build context.
-      REM mkdir creates the full path including intermediate directories in one call.
-      if not exist "$(VCPKG_BINARY_CACHE_DIR)" (
-        mkdir "$(VCPKG_BINARY_CACHE_DIR)"
-      )
     displayName: Set dynamic build variables
   - script: |
       call $(Build.SourcesDirectory)\.ci\utils\extract-vs-version.bat "$(cmakeCompiler)"
@@ -271,40 +264,6 @@ jobs:
   - powershell: |
       $(Build.SourcesDirectory)\.ci\docker\scripts\check-url.ps1 -Url "$(vsToolsUrl)"
     displayName: Verify expected VS Tools Installer URL
-  - powershell: |
-      $now = Get-Date
-      $calendar = [System.Globalization.CultureInfo]::InvariantCulture.Calendar
-      $week = $calendar.GetWeekOfYear(
-        $now,
-        [System.Globalization.CalendarWeekRule]::FirstFourDayWeek,
-        [System.DayOfWeek]::Monday
-      )
-      $cacheTimestamp = "{0}w{1:D2}" -f $now.Year, $week
-
-      Write-Host "CacheTimestamp=$cacheTimestamp"
-      Write-Host "##vso[task.setvariable variable=CacheTimestamp]$cacheTimestamp"
-    displayName: Set CacheTimestamp
-  - task: Cache@2
-    inputs:
-      key: |
-        "vcpkg" | "$(vsYear)" | "$(CacheTimestamp)"
-      ${{ if eq(variables['isPRorManualBuild'], 'true') }}:
-        restoreKeys: |
-          "vcpkg" | "$(vsYear)"
-      path: $(VCPKG_BINARY_CACHE_DIR)
-    displayName: Cache vcpkg binary packages
-  - script: |
-      echo Pruning dangling images and stopped containers to reclaim disk space before build.
-      docker container prune -f
-      REM Pass 1: remove old uhd-builder images from previous runs (largest space consumers).
-      for /f "tokens=3" %%i in ('docker images -a --format table ^| findstr "uhd-builder"') do docker rmi %%i >nul 2>&1
-      REM Pass 2: remove any <none> / <untagged> dangling layers left behind after pass 1.
-      for /f "tokens=3" %%i in ('docker images -a --format table ^| findstr /c:"<none>" /c:"<untagged>"') do docker rmi %%i >nul 2>&1
-      docker images --format table
-      REM Always exit with success (0) so this cleanup step never fails the pipeline.
-      exit /b 0
-    displayName: Prune dangling Docker images
-    condition: and(succeeded(), or(${{ parameters.prune_docker_images }}, ne(variables['isPRorManualBuild'], 'true')))
   - task: Docker@2
     displayName: Build Image
     inputs:
@@ -319,61 +278,11 @@ jobs:
       buildContext: $(Build.SourcesDirectory)
       arguments: >
         --no-cache --pull
-        --build-arg VCPKG_BINARY_CACHE_DIR=$(VCPKG_BINARY_CACHE_CONTAINER_DIR)
         --build-arg VS_BUILD_TOOLS_URL=$(vsToolsUrl)
         --build-arg PIP_INDEX_HOST=$(pip_index_host)
         --build-arg PIP_INDEX_URL=$(pip_index_url)
         --build-arg VCPKG_MANIFEST_FILE=$(vcpkgManifestFile)
         $(PYTHON_VERSION_ARG)
-  - script: |
-      docker images --format table
-      
-      set IMAGE_ID=
-      REM Match image by name:version in plain docker images output, independent of registry hostname prefix.
-      REM docker images --format with Go templates is unreliable on Windows Docker.
-      REM Standard output columns: REPOSITORY  TAG  IMAGE-ID  CREATED  SIZE  -> tokens=3 gives IMAGE-ID.
-      for /f "tokens=3" %%i in ('docker images --format table ^| findstr /i "$(dockerImageName)" ^| findstr /i "$(uhdDockerImageVersion)"') do set IMAGE_ID=%%i
-
-      if not defined IMAGE_ID (
-        echo WARNING: Could not find locally built image for $(dockerImagePrefix)$(dockerImageName):$(uhdDockerImageVersion)
-        echo WARNING: Skipping vcpkg cache extraction and preventing cache publish for this run.
-        if exist "$(VCPKG_BINARY_CACHE_DIR)" (
-          rmdir /s /q "$(VCPKG_BINARY_CACHE_DIR)"
-        )
-        exit /b 0
-      )
-
-      echo Using local IMAGE_ID=%IMAGE_ID%
-      docker rm -f vcpkgcache >nul 2>&1
-      
-      docker create --name vcpkgcache ^
-        %IMAGE_ID%
-      if errorlevel 1 (
-        echo WARNING: Failed to create temporary container for cache extraction.
-        echo WARNING: Skipping vcpkg cache extraction and preventing cache publish for this run.
-        if exist "$(VCPKG_BINARY_CACHE_DIR)" (
-          rmdir /s /q "$(VCPKG_BINARY_CACHE_DIR)"
-        )
-        exit /b 0
-      )
-      
-      docker images --format table
-      
-      if exist "$(VCPKG_BINARY_CACHE_DIR)" (
-        rmdir /s /q "$(VCPKG_BINARY_CACHE_DIR)"
-      )
-      docker cp vcpkgcache:$(VCPKG_BINARY_CACHE_CONTAINER_DIR) "$(VCPKG_BINARY_CACHE_DIR)"
-      if errorlevel 1 (
-        echo WARNING: Failed to copy vcpkg cache from built image.
-        echo WARNING: Skipping vcpkg cache publish for this run.
-        docker rm -f vcpkgcache >nul 2>&1
-        if exist "$(VCPKG_BINARY_CACHE_DIR)" (
-          rmdir /s /q "$(VCPKG_BINARY_CACHE_DIR)"
-        )
-        exit /b 0
-      )
-      docker rm vcpkgcache
-    displayName: Extract vcpkg cache
   - task: Docker@2
     displayName: Push Image
     inputs:
@@ -384,12 +293,6 @@ jobs:
         containerRegistry: rnd-docker-niartifacts-pre-publish
       repository: '$(dockerImagePrefix)$(dockerImageName)'
       tags: $(uhdDockerImageVersion)
-  - task: PublishPipelineArtifact@1
-    inputs:
-      targetPath: $(VCPKG_BINARY_CACHE_DIR)
-      artifactName: vcpkg-binary-cache-$(dockerImageName))-run$(Build.BuildId)
-    displayName: Publish vcpkg binary cache as artifact
-    condition: eq(variables['System.Debug'], 'true')
 
 - job: test_image_win
   displayName: Test Docker Image Windows
