@@ -18,7 +18,7 @@ endif
 
 MODULE = b200_main
 
-SOURCE += $(MODULE).c b200_i2c.c b200_usb_descriptors.c ../common/common_helpers.c ../common/common_descriptors.c cyfxtx.c
+SOURCE += $(MODULE).c b200_i2c.c b200_usb_descriptors.c syscalls.c ../common/common_helpers.c ../common/common_descriptors.c cyfxtx.c
 
 INCFLAGS = -I../common
 

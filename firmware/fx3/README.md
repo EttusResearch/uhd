@@ -16,10 +16,13 @@ managing the transport from the host to the FPGA by configuring IO and DMA.
 
 In order to compile the USRP B200 and B210 bootloader and firmware, you will
 need the FX3 SDK distributed by Cypress Semiconductor.  You can download the
-[FX3 SDK from here](https://www.cypress.com/documentation/software-and-drivers/ez-usb-fx3-software-development-kit)
+[FX3 SDK from here](https://www.cypress.com/documentation/software-and-drivers/ez-usb-fx3-software-development-kit).
+Version 1.3.5 is known to be working.
 
 From the SDK, extract the ARM cross-compile toolchain tarball `ARM-GCC.tar.gz`
 and the FX3 firmware tarball `fx3_firmware_linux.tar.gz`.
+Get the latest version of the [GNU Toolchains for ARM from arm.com](https://gitlab.arm.com/tooling/gnu-toolchains-for-arm)
+and extract it. Version 15.3.rel1 is known to be working.
 
 Set up the appropriate environment variables for the build:
 
@@ -32,15 +35,39 @@ Set up the appropriate environment variables for the build:
 These should look something like this:
 
 ```
-    $ export ARMGCC_INSTALL_PATH=/path/to/my/files/arm-2013.11
-    $ export ARMGCC_VERSION=4.8.1
+    $ export ARMGCC_INSTALL_PATH=/path/to/my/files/arm-gnu-toolchain-15.3.rel1-x86_64-arm-none-eabi
+    $ export ARMGCC_VERSION=15.3.1
     $ export FX3FWROOT=/path/to/my/files/cyfx3sdk
+```
+
+The SDK makefiles invoke `arm-none-eabi-gcc` unqualified and only use
+`ARMGCC_INSTALL_PATH` to locate the libraries, so the toolchain must also be on
+your `PATH`:
+
+```
+    $ export PATH=$ARMGCC_INSTALL_PATH/bin:$PATH
+```
+
+Without this, the build either fails with `arm-none-eabi-gcc: No such file or
+directory` or, if a different ARM toolchain happens to be installed, silently
+compiles with that compiler while linking against the libraries of the toolchain
+above. Verify the expected compiler is picked up:
+
+```
+    $ arm-none-eabi-gcc --version
 ```
 
 ## Applying the Patch to the Toolchain
 
-Now, you'll need to apply a patch to some files in the Cypress SDK. Apply the
-patch `b200/fx3_mem_map.patch` as follows:
+Now, you'll need to apply a patch to some files in the Cypress SDK. Before doing
+so, ensure all files in the SDK have Unix line endings and are writable for the user:
+
+```
+    $ cd $FX3FWROOT
+    $ find . -type f -exec dos2unix {} \; -exec chmod u+w {} \;
+```
+
+Apply the patch `b200/fx3_mem_map.patch` as follows:
 
 ```
     $ cd uhd.git/firmware/fx3

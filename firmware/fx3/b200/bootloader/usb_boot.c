@@ -5,36 +5,35 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "cyfx3usb.h"
 #include "cyfx3device.h"
-#include "cyfx3utils.h"
 #include "cyfx3i2c.h"
+#include "cyfx3usb.h"
+#include "cyfx3utils.h"
 
-#include "common_helpers.h"
 #include "common_descriptors.h"
+#include "common_helpers.h"
 #include "usb_descriptors.h"
 
-typedef enum
-{
-    eStall = 0,     /* Send STALL */
-    eDataIn,        /* Data IN Stage */
-    eDataOut,       /* Data Out Stage */
-    eStatus         /* Status Stage */
+typedef enum {
+    eStall = 0, /* Send STALL */
+    eDataIn, /* Data IN Stage */
+    eDataOut, /* Data Out Stage */
+    eStatus /* Status Stage */
 } eUsbStage;
 
 typedef int (*PFI)();
 
-#define USB_SETUP_DIR               (0x80) /* 0x80 = To Host */
-#define USB_SETUP_MASK              (0x60) /* Used to mask off request type */
-#define USB_STANDARD_REQUEST        (0x00) /* Standard Request */
-#define USB_VENDOR_REQUEST          (0x40) /* Vendor Request */
-#define USB_REQ_MASK                (0x3F) /* USB Request mask */
-#define USB_REQ_DEV                 (0)    /* Device Request */
-#define USB_REQ_INTERFACE           (1)    /* Interface Request */
-#define USB_REQ_ENDPOINT            (2)    /* Endpoint Request */
-#define USB_SET_INTERFACE           (11)
-#define USB_SC_SET_SEL              (0x30) /* Set system exit latency. */
-#define USB_SC_SET_ISOC_DELAY       (0x31)
+#define USB_SETUP_DIR         (0x80) /* 0x80 = To Host */
+#define USB_SETUP_MASK        (0x60) /* Used to mask off request type */
+#define USB_STANDARD_REQUEST  (0x00) /* Standard Request */
+#define USB_VENDOR_REQUEST    (0x40) /* Vendor Request */
+#define USB_REQ_MASK          (0x3F) /* USB Request mask */
+#define USB_REQ_DEV           (0) /* Device Request */
+#define USB_REQ_INTERFACE     (1) /* Interface Request */
+#define USB_REQ_ENDPOINT      (2) /* Endpoint Request */
+#define USB_SET_INTERFACE     (11)
+#define USB_SC_SET_SEL        (0x30) /* Set system exit latency. */
+#define USB_SC_SET_ISOC_DELAY (0x31)
 
 #define SELF_POWERED  (0x01)
 #define REMOTE_WAKEUP (0x02)
@@ -42,18 +41,18 @@ typedef int (*PFI)();
 #define U2_ENABLE     (0x08)
 #define LTM_ENABLE    (0x10)
 
-uint8_t glUsbState = 0;
-uint8_t gConfig = 0;      /* Variable to hold the config info. */
-uint8_t gAltSetting = 0;  /* Variable to hold the interface info. */
-uint8_t gUsbDevStatus = 0;
+uint8_t glUsbState           = 0;
+uint8_t gConfig              = 0; /* Variable to hold the config info. */
+uint8_t gAltSetting          = 0; /* Variable to hold the interface info. */
+uint8_t gUsbDevStatus        = 0;
 uint8_t glCheckForDisconnect = 0;
-uint8_t glInCompliance = 0;
+uint8_t glInCompliance       = 0;
 
 /* 4KB of buffer area used for control endpoint transfers. */
-#define gpUSBData                   (uint8_t*)(0x40077000)
-#define USB_DATA_BUF_SIZE           (1024*4)
+#define gpUSBData         (uint8_t*)(0x40077000)
+#define USB_DATA_BUF_SIZE (1024 * 4)
 
-CyU3PUsbDescrPtrs   *gpUsbDescPtr; /* Pointer to the USB Descriptors */
+CyU3PUsbDescrPtrs* gpUsbDescPtr; /* Pointer to the USB Descriptors */
 CyFx3BootUsbEp0Pkt_t gEP0;
 
 void myMemCopy(uint8_t* d, uint8_t* s, int32_t cnt)
@@ -77,52 +76,51 @@ void myMemSet(uint8_t* d, uint8_t c, int32_t cnt)
  ***********************************************/
 
 /* Function to handle the GET_STATUS Standard request. */
-int getStatus (void)
+int getStatus(void)
 {
     uint16_t data = 0;
 
-    switch (gEP0.bmReqType & USB_REQ_MASK)
-    {
+    switch (gEP0.bmReqType & USB_REQ_MASK) {
         case USB_REQ_DEV:
-            if (CyFx3BootUsbGetSpeed () == CY_FX3_BOOT_SUPER_SPEED)
-            {
+            if (CyFx3BootUsbGetSpeed() == CY_FX3_BOOT_SUPER_SPEED) {
                 data = (gpUsbDescPtr->usbSSConfigDesc_p[7] & 0x40) ? 1 : 0;
                 data |= gUsbDevStatus;
-            }
-            else
-            {
+            } else {
                 data = (gpUsbDescPtr->usbHSConfigDesc_p[7] & 0x40) ? 1 : 0;
                 data |= gUsbDevStatus;
             }
             break;
 
         case USB_REQ_INTERFACE:
-            if (!gConfig)
-            {
+            if (!gConfig) {
                 return eStall;
             }
             break;
 
-        case USB_REQ_ENDPOINT:
-            if (CyFx3BootUsbGetEpCfg (gEP0.bIdx0, 0, (CyBool_t *)&data) != 0)
-            {
+        case USB_REQ_ENDPOINT: {
+            CyBool_t isStall = CyFalse;
+            if (CyFx3BootUsbGetEpCfg(gEP0.bIdx0, 0, &isStall) != 0) {
                 return eStall;
             }
+            data = (isStall) ? 1 : 0;
             break;
+        }
         default:
             return eStall;
     }
 
-    *(uint16_t*)gEP0.pData = data;
+    /* USB is little endian; gEP0.pData is only byte aligned. */
+    gEP0.pData[0] = (uint8_t)(data & 0xFF);
+    gEP0.pData[1] = (uint8_t)(data >> 8);
     return eDataIn;
 }
 
 /* Function to handle the GET_DESCRIPTOR Standard request */
-int getDescriptor (void)
+int getDescriptor(void)
 {
-    uint32_t len = 0;
-    uint8_t *p = 0;
-    uint8_t *cfg_p = 0;
+    uint32_t len   = 0;
+    uint8_t* p     = 0;
+    uint8_t* cfg_p = 0;
     uint8_t usbSpeed;
 
     usbSpeed = CyFx3BootUsbGetSpeed();
@@ -130,176 +128,152 @@ int getDescriptor (void)
     gpUsbDescPtr->usbHSConfigDesc_p[1] = CY_U3P_USB_CONFIG_DESCR;
     gpUsbDescPtr->usbFSConfigDesc_p[1] = CY_U3P_USB_CONFIG_DESCR;
 
-    if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED)
-    {
+    if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED) {
         cfg_p = (uint8_t*)gpUsbDescPtr->usbHSConfigDesc_p;
-        len = ((gpUsbDescPtr->usbHSConfigDesc_p[3] << 8) | gpUsbDescPtr->usbHSConfigDesc_p[2]);
-    }
-    else if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED)
-    {
+        len   = ((gpUsbDescPtr->usbHSConfigDesc_p[3] << 8)
+               | gpUsbDescPtr->usbHSConfigDesc_p[2]);
+    } else if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED) {
         cfg_p = (uint8_t*)gpUsbDescPtr->usbSSConfigDesc_p;
-        len = ((gpUsbDescPtr->usbSSConfigDesc_p[3] << 8) | gpUsbDescPtr->usbSSConfigDesc_p[2]);
-    }
-    else if (usbSpeed == CY_FX3_BOOT_FULL_SPEED)
-    {
+        len   = ((gpUsbDescPtr->usbSSConfigDesc_p[3] << 8)
+               | gpUsbDescPtr->usbSSConfigDesc_p[2]);
+    } else if (usbSpeed == CY_FX3_BOOT_FULL_SPEED) {
         cfg_p = (uint8_t*)gpUsbDescPtr->usbFSConfigDesc_p;
-        len = ((gpUsbDescPtr->usbFSConfigDesc_p[3] << 8) | gpUsbDescPtr->usbFSConfigDesc_p[2]);
+        len   = ((gpUsbDescPtr->usbFSConfigDesc_p[3] << 8)
+               | gpUsbDescPtr->usbFSConfigDesc_p[2]);
     }
 
-    switch (gEP0.bVal1)
-    {
-        case CY_U3P_USB_DEVICE_DESCR:
-            {
-                if ((usbSpeed == CY_FX3_BOOT_HIGH_SPEED) || (usbSpeed == CY_FX3_BOOT_FULL_SPEED))
-                {
-                    p = (uint8_t*)gpUsbDescPtr->usbDevDesc_p;
-                    len = gpUsbDescPtr->usbDevDesc_p[0];
-                }
-                else if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED)
-                {
-                    p = (uint8_t*)gpUsbDescPtr->usbSSDevDesc_p;
-                    len = gpUsbDescPtr->usbSSDevDesc_p[0];
-                }
-                break;
-            }
-        case CY_U3P_BOS_DESCR:
-            {
-                p = (uint8_t *)gpUsbDescPtr->usbSSBOSDesc_p;
-                len = (gpUsbDescPtr->usbSSBOSDesc_p[3] << 8) | gpUsbDescPtr->usbSSBOSDesc_p[2];
-                break;
-            }
-        case CY_U3P_USB_CONFIG_DESCR:
-            {
-                p = cfg_p;
-                break;
-            }
-        case CY_U3P_USB_DEVQUAL_DESCR:
-            {
-                if ((usbSpeed == CY_FX3_BOOT_HIGH_SPEED)  || (usbSpeed == CY_FX3_BOOT_FULL_SPEED))
-                {
-                    p = (uint8_t*)gpUsbDescPtr->usbDevQualDesc_p;
-                    len = gpUsbDescPtr->usbDevQualDesc_p[0];
-                    break;
-                }
-                return eStall;
-            }
-        case CY_U3P_USB_STRING_DESCR:
-            {
-                /* Ensure that we do not index past the limit of the array. */
-                if (gEP0.bVal0 < CY_FX3_USB_MAX_STRING_DESC_INDEX)
-                {
-                    p = (uint8_t*)gpUsbDescPtr->usbStringDesc_p[gEP0.bVal0];
-                    if (p != 0)
-                        len = p[0];
-                }
-                else
-                    return eStall;
-                break;
-            }
-        case CY_U3P_USB_OTHERSPEED_DESCR:
-            {
-                if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED)
-                {
-                    gpUsbDescPtr->usbFSConfigDesc_p[1] = CY_U3P_USB_OTHERSPEED_DESCR;
-                    p = (uint8_t*)gpUsbDescPtr->usbFSConfigDesc_p;
-
-                    len = ((gpUsbDescPtr->usbFSConfigDesc_p[3] < 8) | gpUsbDescPtr->usbFSConfigDesc_p[2]);
-
-                    if (len > gEP0.wLen)
-                    {
-                        len = gEP0.wLen;
-                    }
-                }
-                else if (usbSpeed == CY_FX3_BOOT_FULL_SPEED)
-                {
-                    gpUsbDescPtr->usbHSConfigDesc_p[1] = CY_U3P_USB_OTHERSPEED_DESCR;
-                    p = (uint8_t*)gpUsbDescPtr->usbHSConfigDesc_p;
-                    len = ((gpUsbDescPtr->usbHSConfigDesc_p[3] < 8) | gpUsbDescPtr->usbHSConfigDesc_p[2]);
-
-                    if (len > gEP0.wLen)
-                    {
-                        len = gEP0.wLen;
-                    }
-                }
+    switch (gEP0.bVal1) {
+        case CY_U3P_USB_DEVICE_DESCR: {
+            if ((usbSpeed == CY_FX3_BOOT_HIGH_SPEED)
+                || (usbSpeed == CY_FX3_BOOT_FULL_SPEED)) {
+                p   = (uint8_t*)gpUsbDescPtr->usbDevDesc_p;
+                len = gpUsbDescPtr->usbDevDesc_p[0];
+            } else if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED) {
+                p   = (uint8_t*)gpUsbDescPtr->usbSSDevDesc_p;
+                len = gpUsbDescPtr->usbSSDevDesc_p[0];
             }
             break;
-        default:
-            {
-                return eStall;
+        }
+        case CY_U3P_BOS_DESCR: {
+            p   = (uint8_t*)gpUsbDescPtr->usbSSBOSDesc_p;
+            len = (gpUsbDescPtr->usbSSBOSDesc_p[3] << 8)
+                  | gpUsbDescPtr->usbSSBOSDesc_p[2];
+            break;
+        }
+        case CY_U3P_USB_CONFIG_DESCR: {
+            p = cfg_p;
+            break;
+        }
+        case CY_U3P_USB_DEVQUAL_DESCR: {
+            if ((usbSpeed == CY_FX3_BOOT_HIGH_SPEED)
+                || (usbSpeed == CY_FX3_BOOT_FULL_SPEED)) {
+                p   = (uint8_t*)gpUsbDescPtr->usbDevQualDesc_p;
+                len = gpUsbDescPtr->usbDevQualDesc_p[0];
+                break;
             }
+            return eStall;
+        }
+        case CY_U3P_USB_STRING_DESCR: {
+            /* Ensure that we do not index past the limit of the array. */
+            if (gEP0.bVal0 < CY_FX3_USB_MAX_STRING_DESC_INDEX) {
+                p = (uint8_t*)gpUsbDescPtr->usbStringDesc_p[gEP0.bVal0];
+                if (p != 0)
+                    len = p[0];
+            } else
+                return eStall;
+            break;
+        }
+        case CY_U3P_USB_OTHERSPEED_DESCR: {
+            if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED) {
+                gpUsbDescPtr->usbFSConfigDesc_p[1] = CY_U3P_USB_OTHERSPEED_DESCR;
+                p = (uint8_t*)gpUsbDescPtr->usbFSConfigDesc_p;
+
+                len = ((gpUsbDescPtr->usbFSConfigDesc_p[3] << 8)
+                       | gpUsbDescPtr->usbFSConfigDesc_p[2]);
+
+                if (len > gEP0.wLen) {
+                    len = gEP0.wLen;
+                }
+            } else if (usbSpeed == CY_FX3_BOOT_FULL_SPEED) {
+                gpUsbDescPtr->usbHSConfigDesc_p[1] = CY_U3P_USB_OTHERSPEED_DESCR;
+                p   = (uint8_t*)gpUsbDescPtr->usbHSConfigDesc_p;
+                len = ((gpUsbDescPtr->usbHSConfigDesc_p[3] << 8)
+                       | gpUsbDescPtr->usbHSConfigDesc_p[2]);
+
+                if (len > gEP0.wLen) {
+                    len = gEP0.wLen;
+                }
+            }
+        } break;
+        default: {
+            return eStall;
+        }
     }
 
-    if (p != 0)
-    {
-        myMemCopy (gpUSBData, p, len);
-        if (gEP0.wLen > len)
-        {
-            gEP0.wLen = len;
+    if (p != 0) {
+        /* Never copy or schedule more data than the host requested. */
+        if (len > gEP0.wLen) {
+            len = gEP0.wLen;
         }
+        myMemCopy(gpUSBData, p, len);
+        gEP0.wLen = len;
 
         return eDataIn;
-    }
-    else
+    } else
         /* Stall EP0 if the descriptor sought is not available. */
         return eStall;
 }
 
 /* Function to handle the SET_CONFIG Standard request */
-int setConfig (void)
+int setConfig(void)
 {
     uint8_t usbSpeed = 0;
     uint32_t retVal  = 0;
     CyFx3BootUsbEpConfig_t epCfg;
 
-    if ((gEP0.bVal0 == 0) || (gEP0.bVal0 == 1))
-    {
+    if ((gEP0.bVal0 == 0) || (gEP0.bVal0 == 1)) {
         glUsbState = gEP0.bVal0;
-        gConfig = gEP0.bVal0;
+        gConfig    = gEP0.bVal0;
 
         /* Get the Bus speed */
         usbSpeed = CyFx3BootUsbGetSpeed();
 
         epCfg.pcktSize = 512;
         /* Based on the Bus Speed configure the endpoint packet size */
-        if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED)
-        {
+        if (usbSpeed == CY_FX3_BOOT_HIGH_SPEED) {
             epCfg.pcktSize = 512;
         }
-        if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED)
-        {
+        if (usbSpeed == CY_FX3_BOOT_SUPER_SPEED) {
             epCfg.pcktSize = 1024;
         }
-        if (usbSpeed == CY_FX3_BOOT_FULL_SPEED)
-        {
+        if (usbSpeed == CY_FX3_BOOT_FULL_SPEED) {
             epCfg.pcktSize = 64;
         }
 
         /* Producer Endpoint configuration */
-        epCfg.enable = 1;
-        epCfg.epType = CY_FX3_BOOT_USB_EP_BULK;
+        epCfg.enable   = 1;
+        epCfg.epType   = CY_FX3_BOOT_USB_EP_BULK;
         epCfg.burstLen = 1;
-        epCfg.streams = 0;
-        epCfg.isoPkts = 0;
+        epCfg.streams  = 0;
+        epCfg.isoPkts  = 0;
 
         /* Configure the Endpoint */
         retVal = CyFx3BootUsbSetEpConfig(0x01, &epCfg);
-        if (retVal != 0)
-        {
+        if (retVal != 0) {
             /* TODO: Error Handling */
             return eStall;
         }
 
         /* Consumer Endpoint configuration */
-        epCfg.enable = 1;
-        epCfg.epType = CY_FX3_BOOT_USB_EP_BULK;
+        epCfg.enable   = 1;
+        epCfg.epType   = CY_FX3_BOOT_USB_EP_BULK;
         epCfg.burstLen = 1;
-        epCfg.streams = 0;
-        epCfg.isoPkts = 0;
+        epCfg.streams  = 0;
+        epCfg.isoPkts  = 0;
 
         /* Configure the Endpoint */
-        retVal = CyFx3BootUsbSetEpConfig (0x81, &epCfg);
-        if (retVal != 0)
-        {
+        retVal = CyFx3BootUsbSetEpConfig(0x81, &epCfg);
+        if (retVal != 0) {
             /* TODO: Error Handling */
             return eStall;
         }
@@ -311,71 +285,69 @@ int setConfig (void)
 }
 
 /* Function to handle the GET_INTERFACE Standard request */
-int getInterface (void)
+int getInterface(void)
 {
-    if (gConfig == 0)
-    {
+    if (gConfig == 0) {
         return eStall;
     }
 
-    gEP0.pData = (uint8_t *)&gAltSetting;
+    gEP0.pData = (uint8_t*)&gAltSetting;
     return eDataIn;
 }
 
 /* Function to handle the SET_INTERFACE Standard request */
-int setInterface (void)
+int setInterface(void)
 {
+    /* This configuration has only interface 0 and alternate setting 0. */
+    if ((gConfig == 0) || (gEP0.bIdx0 != 0) || (gEP0.bIdx1 != 0) || (gEP0.bVal0 != 0)
+        || (gEP0.bVal1 != 0)) {
+        return eStall;
+    }
+
     gAltSetting = gEP0.bVal0;
     return eStatus;
 }
 
 /* This function returns stall for not supported requests. */
-int stall (void)
+int stall(void)
 {
     return eStall;
 }
 
 /* Function to handle the SET_ADDRESS Standard request. */
-int setAddress (void)
+int setAddress(void)
 {
     return eStatus;
 }
 
 /* Function to handle the CLEAR_FEATURE Standard request. */
-int clearFeature (void)
+int clearFeature(void)
 {
     /* All of the actual handling for the CLEAR_FEATURE request is done in the API.
        We only need to update the device status flags here.
      */
-    if (CyFx3BootUsbSetClrFeature (0, (CyBool_t)glUsbState, &gEP0) != 0)
-    {
+    if (CyFx3BootUsbSetClrFeature(0, (CyBool_t)glUsbState, &gEP0) != 0) {
         return eStall;
     }
 
-    if (gEP0.bmReqType == USB_REQ_DEV)
-    {
+    if (gEP0.bmReqType == USB_REQ_DEV) {
         /* Update the device status flags as required. */
-        if (CyFx3BootUsbGetSpeed () == CY_FX3_BOOT_SUPER_SPEED)
-        {
-            switch (gEP0.bVal0)
-            {
-            case 48:
-                gUsbDevStatus &= ~U1_ENABLE;
-                break;
-            case 49:
-                gUsbDevStatus &= ~U2_ENABLE;
-                break;
-            case 50:
-                gUsbDevStatus &= ~LTM_ENABLE;
-                break;
-            default:
-                break;
+        if (CyFx3BootUsbGetSpeed() == CY_FX3_BOOT_SUPER_SPEED) {
+            switch (gEP0.bVal0) {
+                case 48:
+                    gUsbDevStatus &= ~U1_ENABLE;
+                    break;
+                case 49:
+                    gUsbDevStatus &= ~U2_ENABLE;
+                    break;
+                case 50:
+                    gUsbDevStatus &= ~LTM_ENABLE;
+                    break;
+                default:
+                    break;
             }
-        }
-        else
-        {
-            if (gEP0.bVal0 == 1)
-            {
+        } else {
+            if (gEP0.bVal0 == 1) {
                 gUsbDevStatus &= ~REMOTE_WAKEUP;
             }
         }
@@ -385,40 +357,33 @@ int clearFeature (void)
 }
 
 /* Function to handle the SET_FEATURE Standard request. */
-int setFeature (void)
+int setFeature(void)
 {
     /* All of the actual handling for the SET_FEATURE command is done in the API.
      * We only need to update the device status flags here.
      */
-    if (CyFx3BootUsbSetClrFeature (1, (CyBool_t)glUsbState, &gEP0) != 0)
-    {
+    if (CyFx3BootUsbSetClrFeature(1, (CyBool_t)glUsbState, &gEP0) != 0) {
         return eStall;
     }
 
-    if (gEP0.bmReqType == USB_REQ_DEV)
-    {
+    if (gEP0.bmReqType == USB_REQ_DEV) {
         /* Update the device status flags as required. */
-        if (CyFx3BootUsbGetSpeed () == CY_FX3_BOOT_SUPER_SPEED)
-        {
-            switch (gEP0.bVal0)
-            {
-            case 48:
-                gUsbDevStatus |= U1_ENABLE;
-                break;
-            case 49:
-                gUsbDevStatus |= U2_ENABLE;
-                break;
-            case 50:
-                gUsbDevStatus |= LTM_ENABLE;
-                break;
-            default:
-                break;
+        if (CyFx3BootUsbGetSpeed() == CY_FX3_BOOT_SUPER_SPEED) {
+            switch (gEP0.bVal0) {
+                case 48:
+                    gUsbDevStatus |= U1_ENABLE;
+                    break;
+                case 49:
+                    gUsbDevStatus |= U2_ENABLE;
+                    break;
+                case 50:
+                    gUsbDevStatus |= LTM_ENABLE;
+                    break;
+                default:
+                    break;
             }
-        }
-        else
-        {
-            if (gEP0.bVal0 == 1)
-            {
+        } else {
+            if (gEP0.bVal0 == 1) {
                 gUsbDevStatus |= REMOTE_WAKEUP;
             }
         }
@@ -427,26 +392,25 @@ int setFeature (void)
 }
 
 /* Function to handle the GET_CONFIG Standard request. */
-int getConfig (void)
+int getConfig(void)
 {
-    gEP0.pData = (uint8_t *)&gConfig;
+    gEP0.pData = (uint8_t*)&gConfig;
     return eDataIn;
 }
 
-const PFI chapter9_cmds[] =
-{
-    getStatus,        /* USB_GET_STATUS         0 */
-    clearFeature,     /* USB_CLEAR_FEATURE      1 */
-    stall,            /* Reserved               2 */
-    setFeature,       /* USB_SET_FEATURE        3 */
-    stall,            /* Reserved               4 */
-    setAddress,       /* USB_SET_ADDRESS        5 */
-    getDescriptor,    /* USB_GET_DESCRIPTOR     6 */
-    stall,            /* USB_SET_DESCRIPTOR     7 */
-    getConfig,        /* USB_GET_CONFIGURATION  8 */
-    setConfig,        /* USB_SET_CONFIGURATION  9 */
-    getInterface,     /* USB_GET_INTERFACE     10 */
-    setInterface,     /* USB_SET_INTERFACE     11 */
+const PFI chapter9_cmds[] = {
+    getStatus, /* USB_GET_STATUS         0 */
+    clearFeature, /* USB_CLEAR_FEATURE      1 */
+    stall, /* Reserved               2 */
+    setFeature, /* USB_SET_FEATURE        3 */
+    stall, /* Reserved               4 */
+    setAddress, /* USB_SET_ADDRESS        5 */
+    getDescriptor, /* USB_GET_DESCRIPTOR     6 */
+    stall, /* USB_SET_DESCRIPTOR     7 */
+    getConfig, /* USB_GET_CONFIGURATION  8 */
+    setConfig, /* USB_SET_CONFIGURATION  9 */
+    getInterface, /* USB_GET_INTERFACE     10 */
+    setInterface, /* USB_SET_INTERFACE     11 */
 };
 
 /* This function validates the addresses being written to/read from
@@ -454,23 +418,21 @@ const PFI chapter9_cmds[] =
     0 - Address is valid
    -1 - Address is not valid
 */
-int checkAddress (uint32_t address, uint32_t len)
+int checkAddress(uint32_t address, uint32_t len)
 {
-    if (address & 3)
-    {
+    if (address & 3) {
         /* expect long word boundary */
         return -1;
     }
 
-    len += address;
-
-    if ((address >= CY_FX3_BOOT_SYSMEM_BASE1) && (len <= CY_FX3_BOOT_SYSMEM_END))
-    {
+    /* Use subtraction for the upper bound so address + len cannot wrap. */
+    if ((address >= CY_FX3_BOOT_SYSMEM_BASE1) && (address <= CY_FX3_BOOT_SYSMEM_END)
+        && (len <= (CY_FX3_BOOT_SYSMEM_END - address))) {
         return 0;
     }
 
-    if (len <= CY_FX3_BOOT_ITCM_END)
-    {
+    /* The same overflow-safe check applies to the instruction TCM range. */
+    if ((address <= CY_FX3_BOOT_ITCM_END) && (len <= (CY_FX3_BOOT_ITCM_END - address))) {
         return 0;
     }
 
@@ -478,103 +440,97 @@ int checkAddress (uint32_t address, uint32_t len)
 }
 
 /* Function to handle the vendor commands. */
-void vendorCmdHandler (void)
+void vendorCmdHandler(void)
 {
     int stage;
     int status;
-    uint32_t address  = ((gEP0.bIdx1 << 24) | (gEP0.bIdx0 << 16) | (gEP0.bVal1 << 8) | (gEP0.bVal0));
+    uint32_t address =
+        ((gEP0.bIdx1 << 24) | (gEP0.bIdx0 << 16) | (gEP0.bVal1 << 8) | (gEP0.bVal0));
     uint16_t len  = gEP0.wLen;
     uint16_t bReq = gEP0.bReq;
     uint16_t dir  = gEP0.bmReqType & USB_SETUP_DIR;
 
-    if (len > USB_DATA_BUF_SIZE)
-    {
-        CyFx3BootUsbStall (0, CyTrue, CyFalse);
+    if (len > USB_DATA_BUF_SIZE) {
+        CyFx3BootUsbStall(0, CyTrue, CyFalse);
         return;
     }
 
-    if (dir)
-    {
+    if (dir) {
         stage = eDataIn;
-    }
-    else
-    {
+    } else {
         stage = eDataOut;
     }
 
     /* Vendor Command 0xA0 handling */
-    if (bReq == 0xA0)
-    {
-	/* Note: This is a command issued by the CyControl Application to detect the legacy products.
-	   As we are an FX3 device we stall the endpoint to indicate that this is not a legacy device.
-	 */
-	if (address == 0xE600)
-	{
-	    /* Stall the Endpoint */
-	    CyFx3BootUsbStall (0, CyTrue, CyFalse);
-	    return;
-	}
+    if (bReq == 0xA0) {
+        /* Note: This is a command issued by the CyControl Application to detect the
+           legacy products. As we are an FX3 device we stall the endpoint to indicate that
+           this is not a legacy device.
+         */
+        if (address == 0xE600) {
+            /* Stall the Endpoint */
+            CyFx3BootUsbStall(0, CyTrue, CyFalse);
+            return;
+        }
 
-        status = checkAddress (address, len);
-        if (len == 0)
-        {
+        /* Validate the complete requested range before reading, writing, or jumping. */
+        status = checkAddress(address, len);
+        if ((len == 0) && (status == 0)) {
             /* Mask the USB Interrupts and Disconnect the USB Phy. */
-            CyFx3BootUsbConnect (CyFalse, CyTrue);
+            CyFx3BootUsbConnect(CyFalse, CyTrue);
             /* Transfer to Program Entry */
-            CyFx3BootJumpToProgramEntry (address);
+            CyFx3BootJumpToProgramEntry(address);
             return;
         }
 
-        if (status < 0)
-        {
+        if (status < 0) {
             /* Stall the endpoint */
-            CyFx3BootUsbStall (0, CyTrue, CyFalse);
+            CyFx3BootUsbStall(0, CyTrue, CyFalse);
             return;
         }
 
-        /* Validate the SYSMEM address being accessed */
-        if ((address >= CY_FX3_BOOT_SYSMEM_BASE1) && (address < CY_FX3_BOOT_SYSMEM_END))
-        {
+        /* DMA can use system memory directly; ITCM transfers use gpUSBData below. */
+        if ((address >= CY_FX3_BOOT_SYSMEM_BASE1) && (address < CY_FX3_BOOT_SYSMEM_END)) {
             gEP0.pData = (uint8_t*)address;
         }
 
-        CyFx3BootUsbAckSetup ();
+        CyFx3BootUsbAckSetup();
 
-        if (eDataIn == stage)
-        {
-            if ((address + gEP0.wLen) <= CY_FX3_BOOT_ITCM_END)
-            {
-                myMemCopy(gEP0.pData, (uint8_t *)address , len);
+        if (eDataIn == stage) {
+            if (address < CY_FX3_BOOT_SYSMEM_BASE1) {
+                myMemCopy(gEP0.pData, (uint8_t*)address, len);
             }
 
-            status = CyFx3BootUsbDmaXferData (0x80, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
-            if (status != CY_FX3_BOOT_SUCCESS)
-            {
+            status = CyFx3BootUsbDmaXferData(
+                0x80, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
+            if (status != CY_FX3_BOOT_SUCCESS) {
                 /* USB DMA Transfer failed. Stall the Endpoint. */
-                CyFx3BootUsbStall (0, CyTrue, CyFalse);
+                CyFx3BootUsbStall(0, CyTrue, CyFalse);
                 return;
             }
-        }
-        else if (stage == eDataOut)
-        {
-            status = CyFx3BootUsbDmaXferData (0x00, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
-            if (status != CY_FX3_BOOT_SUCCESS)
-            {
+        } else if (stage == eDataOut) {
+            status = CyFx3BootUsbDmaXferData(
+                0x00, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
+            if (status != CY_FX3_BOOT_SUCCESS) {
                 /* USB DMA Transfer failed. Stall the Endpoint. */
-                CyFx3BootUsbStall (0, CyTrue, CyFalse);
+                CyFx3BootUsbStall(0, CyTrue, CyFalse);
                 return;
             }
 
-            /* Validate ITCM Memory */
-            if ((address + gEP0.wLen) <= CY_FX3_BOOT_ITCM_END)
-            {
-                /* Avoid writing to the interrupt table. */
-                if (address < 0xFF) {
-                    gEP0.pData += 0xFF-address;
-                    gEP0.wLen -= 0xFF-address;
-                    address = 0xFF;
+            /* Copy the staged transfer into ITCM only after the range was validated. */
+            if (address < CY_FX3_BOOT_SYSMEM_BASE1) {
+                /* Do not overwrite the interrupt table at the start of ITCM. */
+                if (address < 0x100) {
+                    uint32_t skip = 0x100 - address;
+                    /* A short request may be entirely inside the protected region. */
+                    if (gEP0.wLen <= skip) {
+                        return;
+                    }
+                    gEP0.pData += skip;
+                    gEP0.wLen -= skip;
+                    address = 0x100;
                 }
-                myMemCopy((uint8_t *)address, gEP0.pData, gEP0.wLen);
+                myMemCopy((uint8_t*)address, gEP0.pData, gEP0.wLen);
             }
         }
         return;
@@ -583,68 +539,62 @@ void vendorCmdHandler (void)
     /* Version request */
     if (dir && bReq == 0xB8) {
         uint8_t version_info[] = {1, 21, 0, 0, 0, 0};
+        uint16_t version_len   = sizeof(version_info);
 
-        CyFx3BootUsbAckSetup ();
-        status = CyFx3BootUsbDmaXferData (0x80, (uint32_t)version_info,
-                sizeof(version_info), CY_FX3_BOOT_WAIT_FOREVER);
+        /* USB wLength is the host's maximum; do not send a longer response. */
+        if (version_len > gEP0.wLen) {
+            version_len = gEP0.wLen;
+        }
+
+        CyFx3BootUsbAckSetup();
+        status = CyFx3BootUsbDmaXferData(
+            0x80, (uint32_t)version_info, version_len, CY_FX3_BOOT_WAIT_FOREVER);
         if (status != CY_FX3_BOOT_SUCCESS) {
             /* USB DMA Transfer failed. Stall the Endpoint. */
-            CyFx3BootUsbStall (0, CyTrue, CyFalse);
+            CyFx3BootUsbStall(0, CyTrue, CyFalse);
         }
 
         return;
     }
 
     /* Stall the Endpoint */
-    CyFx3BootUsbStall (0, CyTrue, CyFalse);
+    CyFx3BootUsbStall(0, CyTrue, CyFalse);
     return;
 }
 
 /* Setup Data handler */
-void setupDataHandler (uint32_t setupDat0, uint32_t setupDat1)
+void setupDataHandler(uint32_t setupDat0, uint32_t setupDat1)
 {
-    uint32_t *p;
+    uint32_t* p;
     int status = eStall;
 
-    p = (uint32_t*)&gEP0;
+    p    = (uint32_t*)&gEP0;
     p[0] = setupDat0;
     p[1] = setupDat1;
 
     gEP0.pData = gpUSBData;
 
-    switch (gEP0.bmReqType & USB_SETUP_MASK)
-    {
+    switch (gEP0.bmReqType & USB_SETUP_MASK) {
         case USB_STANDARD_REQUEST:
-            if (gEP0.bReq <= USB_SET_INTERFACE)
-            {
+            if (gEP0.bReq <= USB_SET_INTERFACE) {
                 status = (*chapter9_cmds[gEP0.bReq])();
-            }
-            else
-            {
-                if (gEP0.bReq == USB_SC_SET_SEL)
-                {
-                    if ((CyFx3BootUsbGetSpeed () == CY_FX3_BOOT_SUPER_SPEED) && (gEP0.bIdx0 == 0) &&
-                            (gEP0.bIdx1 == 0) && (gEP0.bVal0 == 0) && (gEP0.bVal1 == 0) && (gEP0.wLen == 6))
-                    {
+            } else {
+                if (gEP0.bReq == USB_SC_SET_SEL) {
+                    if ((CyFx3BootUsbGetSpeed() == CY_FX3_BOOT_SUPER_SPEED)
+                        && (gEP0.bIdx0 == 0) && (gEP0.bIdx1 == 0) && (gEP0.bVal0 == 0)
+                        && (gEP0.bVal1 == 0) && (gEP0.wLen == 6)) {
                         gEP0.wLen = 32;
-                        status = eDataOut;
-                    }
-                    else
-                    {
+                        status    = eDataOut;
+                    } else {
                         status = eStall;
                     }
-                }
-                else if (gEP0.bReq == USB_SC_SET_ISOC_DELAY)
-                {
+                } else if (gEP0.bReq == USB_SC_SET_ISOC_DELAY) {
                     status = eStatus;
-                    if ((CyFx3BootUsbGetSpeed () != CY_FX3_BOOT_SUPER_SPEED) || (gEP0.bIdx0 != 0) ||
-                            (gEP0.bIdx1 != 0) || (gEP0.wLen != 0))
-                    {
+                    if ((CyFx3BootUsbGetSpeed() != CY_FX3_BOOT_SUPER_SPEED)
+                        || (gEP0.bIdx0 != 0) || (gEP0.bIdx1 != 0) || (gEP0.wLen != 0)) {
                         status = eStall;
                     }
-                }
-                else
-                {
+                } else {
                     status = eStall;
                 }
             }
@@ -655,29 +605,27 @@ void setupDataHandler (uint32_t setupDat0, uint32_t setupDat1)
             return;
     }
 
-    switch (status)
-    {
+    switch (status) {
         case eDataIn:
-            CyFx3BootUsbAckSetup ();
-            status = CyFx3BootUsbDmaXferData (0x80, (uint32_t)gEP0.pData, gEP0.wLen, 1000);
-            if (status != CY_FX3_BOOT_SUCCESS)
-            {
-                CyFx3BootUsbStall (0, CyTrue, CyFalse);
+            CyFx3BootUsbAckSetup();
+            status = CyFx3BootUsbDmaXferData(0x80, (uint32_t)gEP0.pData, gEP0.wLen, 1000);
+            if (status != CY_FX3_BOOT_SUCCESS) {
+                CyFx3BootUsbStall(0, CyTrue, CyFalse);
             }
             break;
         case eDataOut:
-            CyFx3BootUsbAckSetup ();
-            status = CyFx3BootUsbDmaXferData (0x00, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
-            if (status != CY_FX3_BOOT_SUCCESS)
-            {
-                CyFx3BootUsbStall (0, CyTrue, CyFalse);
+            CyFx3BootUsbAckSetup();
+            status = CyFx3BootUsbDmaXferData(
+                0x00, (uint32_t)gEP0.pData, gEP0.wLen, CY_FX3_BOOT_WAIT_FOREVER);
+            if (status != CY_FX3_BOOT_SUCCESS) {
+                CyFx3BootUsbStall(0, CyTrue, CyFalse);
             }
             break;
         case eStatus:
-            CyFx3BootUsbAckSetup ();
+            CyFx3BootUsbAckSetup();
             break;
         default:
-            CyFx3BootUsbStall (0, CyTrue, CyFalse);
+            CyFx3BootUsbStall(0, CyTrue, CyFalse);
             return;
     }
 
@@ -687,31 +635,26 @@ void setupDataHandler (uint32_t setupDat0, uint32_t setupDat1)
 /* USB Event Handler. This function is invoked from the USB ISR and as such MUST not be
    blocked.
 */
-void usbEventCallback (CyFx3BootUsbEventType_t event)
+void usbEventCallback(CyFx3BootUsbEventType_t event)
 {
-    if (event == CY_FX3_BOOT_USB_RESET)
-    {
-        gConfig              = 0;
-        gAltSetting          = 0;
-        gUsbDevStatus        = 0;
-        glUsbState           = 0;
-        glInCompliance       = 0;
+    if (event == CY_FX3_BOOT_USB_RESET) {
+        gConfig        = 0;
+        gAltSetting    = 0;
+        gUsbDevStatus  = 0;
+        glUsbState     = 0;
+        glInCompliance = 0;
     }
 
-    if ((event == CY_FX3_BOOT_USB_CONNECT) ||
-        (event == CY_FX3_BOOT_USB_DISCONNECT))
-    {
+    if ((event == CY_FX3_BOOT_USB_CONNECT) || (event == CY_FX3_BOOT_USB_DISCONNECT)) {
         glUsbState    = 0;
         gUsbDevStatus = 0;
     }
 
-    if (event == CY_FX3_BOOT_USB_IN_SS_DISCONNECT)
-    {
+    if (event == CY_FX3_BOOT_USB_IN_SS_DISCONNECT) {
         glCheckForDisconnect = CyTrue;
     }
 
-    if (event == CY_FX3_BOOT_USB_COMPLIANCE)
-    {
+    if (event == CY_FX3_BOOT_USB_COMPLIANCE) {
         glInCompliance = CyTrue;
     }
 
@@ -743,21 +686,20 @@ void usbBoot()
     glInCompliance       = 0;
 
     /* Init */
-    CyFx3BootUsbStart (CyFalse, usbEventCallback);
+    CyFx3BootUsbStart(CyFalse, usbEventCallback);
 
     /* Run USB circuitry off of host power, not internal power. */
-    CyFx3BootUsbVBattEnable (CyFalse);
+    CyFx3BootUsbVBattEnable(CyFalse);
 
     /* Register callbacks */
-    CyFx3BootRegisterSetupCallback (setupDataHandler);
+    CyFx3BootRegisterSetupCallback(setupDataHandler);
 
     /* Enable I2C for EEPROM access */
     CyFx3BootI2cInit();
-    CyFx3BootI2cConfig_t i2cCfg = {
-        .bitRate    = 100000,
-        .isDma      = CyFalse,
-        .busTimeout = 0xFFFFFFFF,
-        .dmaTimeout = 0xFFFF};
+    CyFx3BootI2cConfig_t i2cCfg = {.bitRate = 100000,
+        .isDma                              = CyFalse,
+        .busTimeout                         = 0xFFFFFFFF,
+        .dmaTimeout                         = 0xFFFF};
     CyFx3BootI2cSetConfig(&i2cCfg);
 
     /* Retrieve VID and PID from EEPROM */
@@ -802,6 +744,5 @@ void usbBoot()
     gpUsbDescPtr = CyFx3BootUsbGetDesc();
 
     /* Connect! */
-    CyFx3BootUsbConnect (CyTrue, CyTrue);
+    CyFx3BootUsbConnect(CyTrue, CyTrue);
 }
-
