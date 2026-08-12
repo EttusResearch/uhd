@@ -1,3 +1,131 @@
+uhd (4.11.0.0-0ubuntu1) ubuntu_release; urgency=low
+
+  * Highlights / Main Changes
+    - Add support for the new USRP B310, a PCIe/Thunderbolt-based device which
+      supports 2x2 RF channels at up to 100 MHz bandwidth per channel.
+    - Update underlying OE version on embedded devices to Scarthgap (5.0 LTS).
+      Note that some of the MPM updates require this update.
+    - Migrated the MPM RPC transport layer from mprpc (msgpack-RPC) to gRPC/Protobuf,
+      impacting all embedded devices running MPM.
+  * New Features
+    - X440:
+      - The X440_X4_200 image now uses fabric resamplers instead of RFDC
+        resamplers, which ensures repeatable phase offsets between devices and
+        reboots. Note that this feature is currently mutually exclusive with dual
+        rate support, and it increases the resource utilization. To revert to the
+        previous image with non-repeatable phase offsets, a custom image must be
+        built. By default, it is set to false (i.e., same as old behavior),
+        except for the X440_X4_200 image.
+      - A new BSP parameter (USE_FABRIC_RESAMPLERS) is introduced to toggle this
+        new feature.
+    - X4xx: The ref_locked sensor no longer queries the sticky bits; instead, it
+      only reports the current lock state. The ref_stable sensor is added to
+      include the sticky bits.
+    - Python:
+      - The ref_clk_calibration feature is now accessible in the Python API.
+    - Streamers:
+      - Added get_stream_info() API call to streamers, which allows reading out
+        internal information about streamer objects.
+    - RFNoC:
+      - Added support for RFNoC 2.0 control operations, including block
+        read/write, poll, and burst read/write operations.
+      - Control packet sequence number width was increased to 8 bits, which
+        improves stability in environments with high packet loss or reordering
+        (e.g., in WSL containers). Note that this is a break in the protocol version;
+        Wireshark dissectors have been updated (but old dissectors will no
+        longer work).
+      - RFNoC control packets no longer require unnecessary dummy data words,
+        improving control interface efficiency.
+      - Improve ability to control the block CHDR width (aside from the regular
+        CHDR width).
+      - Allow parallel initialization of RFNoC-based devices for faster session
+        start when using multiple USRPs in a multi_usrp or rfnoc_graph object.
+      - Wideband DDC/DUC:
+        - Updated the RFNoC DDC and DUC blocks to support bandwidths > 200 MHz.
+          With this update, users can add the DDC and DUC blocks to their custom
+          FPGA images for bandwidths up to 1600 MHz (2000 MSps).
+      - Shipping FPGA images:
+        - Added DDC and DUC functionality for all channels to the following
+          shipping FPGA images:
+          - x410_X4_400
+          - x410_CG_400
+          - x420_X4_1000
+          - x420_CG_1000
+          - x440_X4_1600
+          - x440_CG_1600
+          For custom designs based on one of these updated rfnoc_image_core.yml
+          files, please note that the new addition of the DDC/DUC blocks to FPGA
+          images will have an impact on how much custom logic can fit into these
+          designs. If needed the DDC/DUC blocks can be removed to revert to the
+          previous behavior.
+    - MPM-based devices can now be initialized in parallel within a MultiUSRP
+      session.
+    - X420:
+      - Added support for the 400 MHz FPGA variants, including the X420_CG_400
+        and X420_X4_400 images.
+      - Added fabric-resampler support to the X420 FPGA designs.
+    - GPS:
+      - Added support for UBLOX communication.
+      - Improved compatibility with GPS receivers by accepting additional
+        constellation messages and handling device-specific message timing.
+    - Embedded devices: Migrated thermal/fan sensor handling to hwmon/sysfs. This
+      requires the embedded OS to be at least Scarthgap.
+  * Bug Fixes
+    - Fixed an X420 power-up issue caused by glitchy power readouts.
+    - Improved X4xx clock initialization and reference-lock handling, including
+      recovery from reference-clock glitches between UHD sessions.
+    - X4xx ADC self-calibration now honors skip_adc_selfcal during clock
+      reconfiguration.
+    - Fixed device filtering for image loading and other callers of
+      device-specific find_t implementations, including serial-based image
+      updates.
+    - Improved GPS message parsing and receive-buffer handling.
+    - Corrected the exit status reported by uhd_images_downloader on errors.
+    - RFNoC now reports the detected and expected RFNoC versions when a version
+      mismatch is encountered.
+    - Fixed `rfnoc_modtool make-yaml`; it produced an incorrect make_var entry.
+    - Many other, minor bug fixes (see commit list for details).
+  * API Changes
+    - All usage of boost::optional within the library has been removed. Public APIs
+      that used boost::optional are retained, but marked as deprecated.
+    - Some logging APIs that previously used boost::posix_time are now
+      declared deprecated, and alternatives that use standard C++ constructs have
+      been introduced.
+    - MPM device initialization is parallel by default. The serialize_init=1
+      device argument restores serial initialization.
+    - Added an option to resynchronize X4xx SPLL R-dividers after reference-lock
+      loss using reset_spll_r_divider=1 in the synchronization arguments. This
+      is intended for advanced users only.
+    - Minor DDC/DUC C++ API changes as part of the Wideband DDC/DUC update.
+  * FPGA
+    - Many improvements to resource utilization for improved build success rate
+      and compilation time.
+    - Enabled usage of VHDL 2008.
+  * Codebase Management
+    - Fully removed Boost.Thread, Boost.Date_Time, and Boost.Chrono dependencies
+      for libuhd. Other Boost usage has been reduced.
+    - Improved compatibility with newer compiler versions (e.g., gcc16).
+    - MPM RPC transport migrated from mprpc (msgpack-RPC) to gRPC/Protobuf.
+      The mprpc Python dependency is replaced by grpcio. On Linux, the host
+      build-time dependencies are libgrpc++-dev, libprotobuf-dev, and
+      protobuf-compiler-grpc. On Windows, there are no prebuilt distro packages,
+      so gRPC and Protobuf (including the grpc_cpp_plugin code-generation plugin)
+      must be obtained either by building from source (https://github.com/grpc/grpc)
+      or via a package manager such as vcpkg.
+    - Improved build reproducibility by removing the build-directory path from
+      embedded build information.
+  * Validated OS Environments
+    (Versions for build and runtime dependencies can be determined from the
+     docker container definitions in the UHD repository at .ci/docker/...)
+    - Linux:
+      - Ubuntu: jammy (22.04), noble (24.04), resolute (26.04)
+      - Fedora: 41, 42, 43
+    - Windows: 10 22H2, 11 24H2
+    - MacOS: Sequoia (15.7)
+
+ -- Ettus Research <uhd.maintainer@emerson.com>  Wed, 12 Aug 2026 02:05:23 -0800
+
+
 uhd (4.10.0.0-0ubuntu1) ubuntu_release; urgency=low
 
   * Highlights / Main Changes
@@ -155,7 +283,7 @@ uhd (4.9.0.1-0ubuntu1) ubuntu_release; urgency=low
       is required. Apart from the Boost build fixes, there are no other changes
       in this UHD release.
 
- -- Ettus Research <uhd.maintainer@emerson.com>  Wed, 08 Apr 2026 11:01:59 -0800
+ -- Ettus Research <uhd.maintainer@emerson.com>  Wed, 08 Apr 2026 11:01:58 -0800
 
 
 uhd (4.9.0.0-0ubuntu1) ubuntu_release; urgency=low

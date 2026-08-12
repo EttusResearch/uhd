@@ -1,7 +1,7 @@
 Change Log for Releases
 ==============================
 
-## 004.next
+## 004.011.000.000
 * Highlights / Main Changes
   - Add support for the new USRP B310, a PCIe/Thunderbolt-based device which
     supports 2x2 RF channels at up to 100 MHz bandwidth per channel.
@@ -99,6 +99,10 @@ Change Log for Releases
     loss using reset_spll_r_divider=1 in the synchronization arguments. This
     is intended for advanced users only.
   - Minor DDC/DUC C++ API changes as part of the Wideband DDC/DUC update.
+* FPGA
+  - Many improvements to resource utilization for improved build success rate
+    and compilation time.
+  - Enabled usage of VHDL 2008.
 * Codebase Management
   - Fully removed Boost.Thread, Boost.Date_Time, and Boost.Chrono dependencies
     for libuhd. Other Boost usage has been reduced.
@@ -112,10 +116,14 @@ Change Log for Releases
     or via a package manager such as vcpkg.
   - Improved build reproducibility by removing the build-directory path from
     embedded build information.
-* FPGA
-  - Many improvements to resource utilization for improved build success rate
-    and compilation time.
-  - Enabled usage of VHDL 2008.
+* Validated OS Environments
+  (Versions for build and runtime dependencies can be determined from the
+   docker container definitions in the UHD repository at .ci/docker/...)
+  - Linux:
+    - Ubuntu: jammy (22.04), noble (24.04), resolute (26.04)
+    - Fedora: 41, 42, 43
+  - Windows: 10 22H2, 11 24H2
+  - MacOS: Sequoia (15.7)
 
 ## 004.010.000.000
 * Highlights / Main Changes
