@@ -19,6 +19,17 @@ Files: host/lib/deps/flatbuffers/include/*
 Copyright: Copyright 2014 Google Inc.
 License: Apache-2.0
 
+Files: host/lib/usrp/common/adrv903x_driver/common/*
+       host/lib/usrp/common/adrv903x_driver/devices/*
+       host/lib/usrp/common/adrv903x_driver/platforms/*
+Copyright: Copyright 2015 - 2025 Analog Devices Inc.
+License: Apache-2.0
+
+Files: host/lib/usrp/b300/inchworm/user/libnifpga-usrp/src/linux/dma-heap.h
+Copyright: Copyright (c) 2011 Google, Inc.
+           Copyright (c) 2019 Linaro Ltd.
+License: GPL-2-Linux-syscall-note
+
 Files: firmware/fx2/*
 Copyright: 2003,2004,2006,2007 Free Software Foundation, Inc.
 License: GPL-3+
@@ -234,11 +245,11 @@ Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/board/eeprom/*
 Copyright: Copyright Ettus Research, A National Instruments Brand
 License: LGPL-3+
 
-Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/etherbone_core/*
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/etherbone-core/*
 Copyright: Copyright (C) GSI Helmholtz Centre for Heavy Ion Research GmbH
 License: LGPL-3+
 
-Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/general-cores/modules/common
+Files: fpga/usrp3/lib/white_rabbit/wr_cores_v4_2/ip_cores/general-cores/modules/common/*
 Copyright: Copyright (C) 2005 Geir Drange, gedra@opencores.org and OPENCORES.ORG
 License: LGPL-3+
 
@@ -254,7 +265,7 @@ Files: fpga/usrp3/lib/wishbone/i2c_master_bit_ctrl.v
 Copyright: Copyright (C) 2001 Richard Herveille richard@asics.ws
 License: 2-clause-BSD-wishbone
 
-Files: fpga/usrp3/lib/wishbone/wb1_master.v
+Files: fpga/usrp3/lib/wishbone/wb_1master.v
 Copyright: Copyright (C) 2000, 2007 Johny Chi, Matt Ettus and OPENCORES.ORG
 License: LGPL-2.1+
 
@@ -277,7 +288,6 @@ Files: fpga/usrp3/lib/zpu/zpu_bootram.v
 Copyright: Copyright Ettus Research, A National Instruments Brand
 License: LGPL-3+
 
-
 License: GPL-2+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -295,6 +305,16 @@ License: GPL-2+
  On Debian systems, the complete text of the GNU General
  Public License can be found in `/usr/share/common-licenses/GPL-3'.
 
+License: LGPL-2.1+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License version 2.1 can be found in
+ `/usr/share/common-licenses/LGPL-2.1'.
+
 License: GPL-3+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -311,6 +331,16 @@ License: GPL-3+
  .
  On Debian systems, the complete text of the GNU General
  Public License can be found in `/usr/share/common-licenses/GPL-3'.
+
+License: LGPL-3+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 3 of the License, or (at your option) any later version.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License version 3 can be found in
+ `/usr/share/common-licenses/LGPL-3'.
 
 License: Kitware-BSD
  Redistribution and use in source and binary forms, with or without
@@ -681,6 +711,27 @@ License: GPL-2
  .
  The latest version of this file can be found at:
       http://www.opencores.org/projects.cgi/web/spi_boot/overview
+
+License: GPL-2-Linux-syscall-note
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2 as
+ published by the Free Software Foundation.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 2 can be found in `/usr/share/common-licenses/GPL-2'.
+ .
+ NOTE! This copyright does *not* cover user programs that use kernel
+ services by normal system calls - this is merely considered normal use
+ of the kernel, and does *not* fall under the heading of "derived work".
+ Also note that the GPL below is copyrighted by the Free Software
+ Foundation, but the instance of code that it refers to (the Linux
+ kernel) is copyrighted by me and others who actually wrote it.
+ .
+ Also note that the only valid version of the GPL as far as the kernel
+ is concerned is _this_ particular version of the license (ie v2, not
+ v2.2 or v3.x or whatever), unless explicitly otherwise stated.
+ .
+ Linus Torvalds
 
 License: Milkymist-LGPL-2+
  * Milkymist is free software; you can redistribute it and/or modify it
