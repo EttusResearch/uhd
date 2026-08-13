@@ -829,7 +829,7 @@ module b310_core # (
 
   ctrlport_to_jtag #(
     .BASE_ADDRESS       (CPLD_JTAG_WINDOW),
-    .DEFAULT_PRESCALAR  (32)
+    .DEFAULT_PRESCALAR  (12)
   ) cpld_jtag_ctrl (
     .ctrlport_clk          (bus_clk),
     .ctrlport_rst          (bus_rst),
