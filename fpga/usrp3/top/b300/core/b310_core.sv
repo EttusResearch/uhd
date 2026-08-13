@@ -209,9 +209,6 @@ module b310_core # (
   `include "../regmap/core_regs_regmap_utils.vh"
   `include "../regmap/radio_control_regmap_utils.vh"
 
-  //vhook_sigstart
-  //vhook_sigend
-
   // Include the RFNoC image core header file
   `ifdef RFNOC_IMAGE_CORE_HDR
     `include `"`RFNOC_IMAGE_CORE_HDR`"
@@ -238,10 +235,6 @@ module b310_core # (
 
   ctrlport_if m_core_ctrlport_array [NUM_CORE_BLOCKS] (.clk(bus_clk), .rst(bus_rst));
 
-  //vhook_e ctrlport_if_splitter
-  //vhook_a NUM_SLAVES   NUM_CORE_BLOCKS
-  //vhook_a s_ctrlport   s_core_ctrlport
-  //vhook_a m_ctrlport   m_core_ctrlport_array
   ctrlport_if_splitter #(
     .NUM_SLAVES(NUM_CORE_BLOCKS)  //int:=2
   ) ctrlport_if_splitterx (
@@ -249,10 +242,6 @@ module b310_core # (
     .m_ctrlport(m_core_ctrlport_array)  // ctrlport_if.master[(NUM_SLAVES-1):0]
   );
 
-  //vhook_e basic_regs
-  //vhook_a BASE_ADDRESS BASIC_REGS_WINDOW
-  //vhook_a SIZE_ADDRESS BASIC_REGS_WINDOW_SIZE
-  //vhook_a s_ctrlport   m_core_ctrlport_array[0]
   basic_regs #(
     .BASE_ADDRESS(BASIC_REGS_WINDOW),      //wire[19:0]:=0
     .SIZE_ADDRESS(BASIC_REGS_WINDOW_SIZE)  //wire[19:0]:=0
@@ -271,15 +260,6 @@ module b310_core # (
   // dev_dna shouldn't change, but we use a synchronizer
   // anyway to avoid timing issues.
 
-  //vhook_e synchronizer sync_dev_dna
-  //vhook_a WIDTH             64
-  //vhook_a STAGES            2
-  //vhook_a INITIAL_VAL       0
-  //vhook_a FALSE_PATH_TO_IN  1
-  //vhook_a clk               bus_clk
-  //vhook_a rst               1'b0
-  //vhook_a in                dev_dna
-  //vhook_a out               bclk_device_dna
   synchronizer #(
     .WIDTH           (64),  //integer:=1
     .STAGES          (2),   //integer:=2
@@ -296,16 +276,6 @@ module b310_core # (
   logic bclk_radio_time_valid;
   logic [63:0] bclk_radio_time_hs;
 
-  //vhook_e handshake_latch radio_time_hs
-  //vhook_a WIDTH       64
-  //vhook_a clk_a       radio_clk
-  //vhook_a rst_a       radio_rst
-  //vhook_a data_a      radio_time
-  //vhook_a valid_a     1'b1
-  //vhook_a busy_a      {}
-  //vhook_a clk_b       bus_clk
-  //vhook_a data_b      bclk_radio_timestamp
-  //vhook_a valid_b     {}
   handshake_latch #(
     .WIDTH(64)  //int:=32
   ) radio_time_hs (
@@ -335,15 +305,6 @@ module b310_core # (
   logic lmk_clkin0_sync_sel;
   logic tbolt_pd_ctrl_rst_strobe;
 
-  //vhook_e core_regs
-  //vhook_a BASE_ADDRESS              CORE_REGS_WINDOW
-  //vhook_a SIZE_ADDRESS              CORE_REGS_WINDOW_SIZE
-  //vhook_a CHDR_WIDTH                CHDR_W
-  //vhook_a s_ctrlport                m_core_ctrlport_array[1]
-  //vhook_a dev_dna                   bclk_device_dna
-  //vhook_a radio_time                bclk_radio_timestamp
-  //vhook_a gps_lmk_pps_monitor       gps_lmk_pps_count
-  //vhook_a tbolt_pd_ctrl_pulse_rst   tbolt_pd_ctrl_rst_strobe
   core_regs #(
     .BASE_ADDRESS   (CORE_REGS_WINDOW),       //logic[19:0]:=0
     .SIZE_ADDRESS   (CORE_REGS_WINDOW_SIZE),  //logic[19:0]:=0
@@ -392,14 +353,6 @@ module b310_core # (
   logic mb_i2c_scl_pad_i, mb_i2c_scl_pad_o, mb_i2c_scl_en_n;
   logic mb_i2c_sda_pad_i, mb_i2c_sda_pad_o, mb_i2c_sda_en_n;
 
-  //vhook_e ctrlport_to_wb_i2c mb_i2c_ctrl
-  //vhook_a ctrlport_clk                    bus_clk
-  //vhook_a ctrlport_rst                    bus_rst
-  //vhook_a BASE_ADDRESS                    MBOARD_I2C_WINDOW
-  //vhook_a REG_STRIDE_SIZE                 4
-  //vhook_a {^s_ctrlport_(req|resp)_(.*)}   m_core_ctrlport_array[2].$1.$2
-  //vhook_a {^s(.*)_pad_en_o}               mb_i2c_s$1_en_n
-  //vhook_a {^s(.*)_pad_(.*)}               mb_i2c_s$1_pad_$2
   ctrlport_to_wb_i2c #(
     .BASE_ADDRESS   (MBOARD_I2C_WINDOW),  //integer:=0
     .REG_STRIDE_SIZE(4)                   //integer:=1
@@ -432,14 +385,6 @@ module b310_core # (
   logic tb_i2c_scl_pad_i, tb_i2c_scl_pad_o, tb_i2c_scl_en_n;
   logic tb_i2c_sda_pad_i, tb_i2c_sda_pad_o, tb_i2c_sda_en_n;
 
-  //vhook_e ctrlport_to_wb_i2c tb_i2c_ctrl
-  //vhook_a ctrlport_clk                    bus_clk
-  //vhook_a ctrlport_rst                    bus_rst
-  //vhook_a BASE_ADDRESS                    THUNDERBOLT_I2C_WINDOW
-  //vhook_a REG_STRIDE_SIZE                 4
-  //vhook_a {^s_ctrlport_(req|resp)_(.*)}   m_core_ctrlport_array[3].$1.$2
-  //vhook_a {^s(.*)_pad_en_o}               tb_i2c_s$1_en_n
-  //vhook_a {^s(.*)_pad_(.*)}               tb_i2c_s$1_pad_$2
   ctrlport_to_wb_i2c #(
     .BASE_ADDRESS   (THUNDERBOLT_I2C_WINDOW),  //integer:=0
     .REG_STRIDE_SIZE(4)                        //integer:=1
@@ -469,19 +414,6 @@ module b310_core # (
 
   //Clocking SPI
 
-  //vhook_e ctrlport_to_simple_spi clocking_spi_engine
-  //vhook_a ctrlport_clk                    bus_clk
-  //vhook_a ctrlport_rst                    bus_rst
-  //vhook_a BASE_ADDRESS                    CLOCKING_SPI_WINDOW
-  //vhook_a SEN_WIDTH                       CLOCKING_SPI_SLAVES_SIZE
-  //vhook_a CLK_IDLE                        '0
-  //vhook_a SEN_IDLE                        '1
-  //vhook_a {^s_ctrlport_(req|resp)_(.*)}   m_core_ctrlport_array[4].$1.$2
-  //vhook_a mosi                            clocking_spi_mosi
-  //vhook_a sclk                            clocking_spi_sclk
-  //vhook_a sen                             clocking_spi_sen_n
-  //vhook_a miso                            clocking_spi_miso
-  //vhook_a debug                           {}
   ctrlport_to_simple_spi #(
     .BASE_ADDRESS(CLOCKING_SPI_WINDOW),       //int:=0
     .SEN_WIDTH   (CLOCKING_SPI_SLAVES_SIZE),  //int:=8
@@ -507,8 +439,6 @@ module b310_core # (
   // Select either local refclk if using a single B310 or
   // external refclock if using multi device sync or a custom external reference.
   // TODO:  Think about needing to reset logic when switching this over?
-  // vhook_warn think about needing to reset logic when switching this over?
-
 
   logic [31:0] int_pps_div_delayed = 32'd122_880_000;
   logic        pps_reset = '1;
@@ -530,15 +460,6 @@ module b310_core # (
 
   // Synchronize pps_reset to local_ref_clk domain
 
-  //vhook_e pulse_synchronizer pps_reset_sync
-  //vhook_a MODE        "PULSE"
-  //vhook_a STAGES      2
-  //vhook_a clk_a       bus_clk
-  //vhook_a rst_a       bus_rst
-  //vhook_a pulse_a     pps_reset
-  //vhook_a busy_a      {}
-  //vhook_a clk_b       local_ref_clk
-  //vhook_a pulse_b     pps_reset_refclk
   pulse_synchronizer #(
     .MODE  ("PULSE"),  //string:="PULSE"
     .STAGES(2)         //integer:=2
@@ -553,12 +474,6 @@ module b310_core # (
 
   logic pps_reset_extended_refclk;
 
-  //vhook_e pulse_stretch   pp_reset_stretch
-  //vhook_a SCALE           8
-  //vhook_a clk             local_ref_clk
-  //vhook_a rst             1'b0
-  //vhook_a pulse           pps_reset_refclk
-  //vhook_a pulse_stretched pps_reset_extended_refclk
   pulse_stretch #(
     .SCALE(8)  //integer:=64'b0101111101011110000100000
   ) pp_reset_stretch (
@@ -572,16 +487,6 @@ module b310_core # (
   logic        int_pps_out;
   logic [31:0] int_pps_div_refclk;
 
-  //vhook_e handshake_latch pps_div_hs
-  //vhook_a WIDTH             32
-  //vhook_a clk_a             bus_clk
-  //vhook_a rst_a             bus_rst
-  //vhook_a data_a            int_pps_div
-  //vhook_a valid_a           1'b1
-  //vhook_a busy_a            {}
-  //vhook_a clk_b             local_ref_clk
-  //vhook_a data_b            int_pps_div_refclk
-  //vhook_a valid_b           {}
   handshake_latch #(
     .WIDTH(32)  //int:=32
   ) pps_div_hs (
@@ -617,15 +522,6 @@ module b310_core # (
 
   logic int_pps_rclk, ext_pps_rclk, pps_rclk;
 
-  //vhook_e synchronizer int_pps_sync
-  //vhook_a WIDTH             1
-  //vhook_a STAGES            2
-  //vhook_a INITIAL_VAL       '0
-  //vhook_a FALSE_PATH_TO_IN  1
-  //vhook_a clk               radio_clk
-  //vhook_a rst               radio_rst
-  //vhook_a in                int_pps_out
-  //vhook_a out               int_pps_rclk
   synchronizer #(
     .WIDTH           (1),   //integer:=1
     .STAGES          (2),   //integer:=2
@@ -646,15 +542,7 @@ module b310_core # (
   // The entire path is synchronous for case of 4 b310s synced to each other
   // via exported ref_clk and pps.
   logic pps_in_ext_ref_clk;
-  //vhook_e synchronizer pps_in_sync_ref_clk_i
-  //vhook_a WIDTH             1
-  //vhook_a STAGES            2
-  //vhook_a INITIAL_VAL       '0
-  //vhook_a FALSE_PATH_TO_IN  0
-  //vhook_a clk               ext_ref_clk
-  //vhook_a rst               '0
-  //vhook_a in                pps_in
-  //vhook_a out               pps_in_ext_ref_clk
+
   synchronizer #(
     .WIDTH           (1),   //integer:=1
     .STAGES          (2),   //integer:=2
@@ -668,10 +556,7 @@ module b310_core # (
   );
 
   logic ext_ref_clk_rst;
-  //vhook_e reset_sync  ext_ref_clk_sync
-  //vhook_a clk         ext_ref_clk
-  //vhook_a reset_in    bus_rst
-  //vhook_a reset_out   ext_ref_clk_rst
+
   reset_sync ext_ref_clk_sync (
     .clk      (ext_ref_clk),     //input wire
     .reset_in (bus_rst),         //input wire
@@ -679,12 +564,7 @@ module b310_core # (
   );
 
   logic pps_in_rclk;
-  //vhook_e b3xx_pps_sync b3xx_pps_sync_i
-  //vhook_a base_ref_clk  ext_ref_clk
-  //vhook_a ctrl_clk      bus_clk
-  //vhook_a brc_rst       ext_ref_clk_rst
-  //vhook_a pps_in_brc    pps_in_ext_ref_clk
-  //vhook_a debug         {}
+
   b3xx_pps_sync b3xx_pps_sync_i (
     .base_ref_clk        (ext_ref_clk),           //input wire
     .radio_clk_shifted   (radio_clk_shifted),     //input wire
@@ -705,15 +585,7 @@ module b310_core # (
   );
 
   logic use_external_pps_rclk;
-  //vhook_e synchronizer use_external_pps_sync
-  //vhook_a WIDTH             1
-  //vhook_a STAGES            2
-  //vhook_a INITIAL_VAL       '0
-  //vhook_a FALSE_PATH_TO_IN  0
-  //vhook_a clk               radio_clk
-  //vhook_a rst               radio_rst
-  //vhook_a in                use_external_pps
-  //vhook_a out               use_external_pps_rclk
+
   synchronizer #(
     .WIDTH           (1),   //integer:=1
     .STAGES          (2),   //integer:=2
@@ -737,12 +609,7 @@ module b310_core # (
   assign gpsdo_pps_in = gps_bypass_lmk ? gps_pps_out : gps_lmk_pps_in;
 
   logic gpsdo_pps_in_rclk;
-  //vhook_e pps_synchronizer gps_lmk_pps_rclk_sync
-  //vhook_a ref_clk       radio_clk
-  //vhook_a timebase_clk  radio_clk
-  //vhook_a pps_in        gpsdo_pps_in
-  //vhook_a pps_out       gpsdo_pps_in_rclk
-  //vhook_a pps_count     {}
+
   pps_synchronizer gps_lmk_pps_rclk_sync (
     .ref_clk     (radio_clk),          //input wire
     .timebase_clk(radio_clk),          //input wire
@@ -751,14 +618,6 @@ module b310_core # (
     .pps_count   ()                    //output reg
   );
 
-  // GPS PPS Monitor - Used only for register-based monitoring
-  // of the GPS PPS signal
-  //vhook_e pps_synchronizer gps_lmk_pps_bclk_sync
-  //vhook_a ref_clk       radio_clk
-  //vhook_a timebase_clk  bus_clk
-  //vhook_a pps_in        gpsdo_pps_in
-  //vhook_a pps_out       {}
-  //vhook_a pps_count     gps_lmk_pps_count
   pps_synchronizer gps_lmk_pps_bclk_sync (
     .ref_clk     (radio_clk),         //input wire
     .timebase_clk(bus_clk),           //input wire
@@ -773,18 +632,6 @@ module b310_core # (
   // Select internal/external PPS source
   assign pps_rclk = use_external_pps_rclk ? ext_pps_rclk : int_pps_rclk;
 
-  //vhook_e timekeeper timekeeper_i
-  //vhook_a BASE_ADDR                       TIMEKEEPER_WINDOW
-  //vhook_a TIME_INCREMENT                  RADIO_NIPC
-  //vhook_a tb_clk                          radio_clk
-  //vhook_a tb_rst                          radio_rst
-  //vhook_a s_ctrlport_clk                  bus_clk
-  //vhook_a time_increment                  '0
-  //vhook_a pps                             pps_rclk
-  //vhook_a sample_rx_stb                   radio_rx_data_valid
-  //vhook_a tb_timestamp                    radio_time
-  //vhook_a {^tb_(.*)}                      {}
-  //vhook_a {^s_ctrlport_(req|resp)_(.*)}   m_core_ctrlport_array[5].$1.$2
   timekeeper #(
     .BASE_ADDR     (TIMEKEEPER_WINDOW),  //integer:='b0
     .TIME_INCREMENT(RADIO_NIPC)          //integer:=1
@@ -878,12 +725,6 @@ module b310_core # (
   // Stretch the Thunderbolt PD Controller reset pulse
   localparam int RST_TICK_LENGTH = 500_000; // ~3ms at 150 MHz
 
-  //vhook_e pulse_stretch tbolt_pd_ctrl_pulse_rst_stretch
-  //vhook_a SCALE             RST_TICK_LENGTH
-  //vhook_a clk               bus_clk
-  //vhook_a rst               bus_rst
-  //vhook_a pulse             pulse_pd_ctrl_reset
-  //vhook_a pulse_stretched   tbolt_pd_ctrl_reset
   pulse_stretch #(
     .SCALE(RST_TICK_LENGTH)  //integer:=64'b0101111101011110000100000
   ) tbolt_pd_ctrl_pulse_rst_stretch (
@@ -912,12 +753,6 @@ module b310_core # (
   wire              s_chdr_tready;
   wire              s_chdr_tvalid;
 
-  //vhook_e nirio_chdr_adapter nirio_chdr_adapter_i
-  //vhook_a  DATA_W             CHDR_W
-  //vhook_a  clk                bus_clk
-  //vhook_a  rst                bus_rst
-  //vhook_a {^s_dma_t(.*)}      dma_tx_t$1
-  //vhook_a {^m_dma_t(.*)}      dma_rx_t$1
   nirio_chdr_adapter #(
     .PROTOVER    (PROTOVER),     //wire[15:0]:={8'b01,8'b0}
     .DATA_W      (CHDR_W),       //integer:=64
@@ -1033,24 +868,6 @@ module b310_core # (
   wire [3:0][1:0]  dram_ports_rresp;
   wire [3:0][0:0]  dram_ports_ruser;
 
-  //vhook_e rfnoc_image_core rfnoc_image_core_i
-  //vhook_a  PORT_W                   CHDR_W
-  //vhook_a  chdr_aclk                bus_clk
-  //vhook_a  ctrl_aclk                clk_40mhz
-  //vhook_a  core_arst                bus_rst
-  //vhook_a  ce_clk                   ce_clk
-  //vhook_a  dram_clk                 ddr3_axi_clk_x2
-  //vhook_a {^s_pcie(.*)}             m_chdr$1
-  //vhook_a {^m_pcie(.*)}             s_chdr$1
-  //vhook_a {^m_ctrlport_radio0_(.*)} radio_ctrlport_$1
-  //vhook_a  axi_rst                  ddr3_axi_rst
-  //vhook_a {^m_axi_((awuser)|(wuser)|(buser)|(ruser)|(aruser))} {}
-  //vhook_a  {^m_axi(.*)} {s00_ddr_axi$1, s01_ddr_axi$1}
-  //vhook_a  radio_rx_data_radio0     radio_rx_data
-  //vhook_a  radio_rx_stb_radio0      {NUM_CH_PER_RADIO{radio_rx_data_valid}}
-  //vhook_a  radio_tx_data_radio0     radio_tx_data
-  //vhook_a  radio_tx_stb_radio0      {NUM_CH_PER_RADIO{radio_tx_ready}}
-  //vhook_a  dna                      dev_dna
   rfnoc_image_core #(
     .CHDR_W    (CHDR_W),     //wire[31:0]:=128
     .PORT_W    (CHDR_W),     //wire[31:0]:=128
@@ -1498,14 +1315,6 @@ module b310_core # (
 
   logic [3:0] time_ignore_bits = $clog2(RADIO_NIPC);
 
-  //vhook_e ctrlport_if_timer radio_ctrlport_timer
-  //vhook_a EXEC_LATE_CMDS  1
-  //vhook_a clk             radio_clk
-  //vhook_a rst             radio_rst
-  //vhook_a time_now        radio_time
-  //vhook_a time_now_stb    radio_rx_data_valid
-  //vhook_a s_ctrlport      radio_ctrlport_if.slave
-  //vhook_a m_ctrlport      radio_ctrlport_timed.master
   ctrlport_if_timer #(
     .EXEC_LATE_CMDS(1)  //bit:=1
   ) radio_ctrlport_timer (
@@ -1523,12 +1332,6 @@ module b310_core # (
 
   ctrlport_if m_radio_ctrlport_array [NUM_RADIO_CTRLPORT_S] (.clk(radio_clk), .rst(radio_rst));
 
-  //vhook_e ctrlport_if_decoder radio_ctrlport_if_decoder
-  //vhook_a NUM_SLAVES   NUM_RADIO_CTRLPORT_S
-  //vhook_a PORT_BASE    '{RADIO0_CONTROL_WINDOW, RADIO_SPI_WINDOW, JESD_CTRL_WINDOW}
-  //vhook_a PORT_SIZE    '{RADIO0_CONTROL_WINDOW_SIZE, RADIO_SPI_WINDOW_SIZE, JESD_CTRL_WINDOW_SIZE}
-  //vhook_a s_ctrlport   radio_ctrlport_timed.slave
-  //vhook_a m_ctrlport   m_radio_ctrlport_array
   ctrlport_if_decoder #(
     .NUM_SLAVES(NUM_RADIO_CTRLPORT_S),                                                        //int:=2
     .PORT_BASE ('{RADIO0_CONTROL_WINDOW, RADIO_SPI_WINDOW, JESD_CTRL_WINDOW}),                //int:='{'b0,'b0100000000}
@@ -1556,13 +1359,6 @@ module b310_core # (
   logic [FP_GPIO_WIDTH-1:0] radio_ch0_fp_gpio_dir;
   logic [FP_GPIO_WIDTH-1:0] radio_ch1_fp_gpio_dir;
 
-  //vhook_e radio_control_regs radio_control_regs_i
-  //vhook_a BASE_ADDRESS  0
-  //vhook_a SIZE_ADDRESS  RADIO0_CONTROL_WINDOW_SIZE
-  //vhook_a s_ctrlport    m_radio_control_ctrlport
-  //vhook_a rx_running    radio_rx_running_radio0
-  //vhook_a tx_running    radio_tx_running_radio0
-  //vhook_a radio_fp_gpio_in fp_gpio_in
   radio_control_regs #(
     .BASE_ADDRESS(0),                          //logic[19:0]:=0
     .SIZE_ADDRESS(RADIO0_CONTROL_WINDOW_SIZE)  //logic[19:0]:=0
@@ -1594,22 +1390,6 @@ module b310_core # (
     .tx_running             (radio_tx_running_radio0)    //input wire[1:0]
   );
 
-  //vhook_e ctrlport_spi_adrv ctrlport_spi_adrv_i
-  //vhook_g BASE_ADDR                     0
-  //vhook_g NUM_BYTES_W                   8
-  //vhook_g HALF_PER                      14
-  //vhook_g HALF_PER_EN                   0
-  //vhook_g HALF_PER_W                    8
-  //vhook_g CS_HOLD                       1
-  //vhook_g CS_GUARD                      2
-  //vhook_gh RX_FIFO_SIZE
-  //vhook_a clk                           radio_clk
-  //vhook_a rst                           radio_rst
-  //vhook_a {^s_ctrlport_(req|resp)_(.*)} m_radio_spi_ctrlport.$1.$2
-  //vhook_a mosi                          radio_spi_mosi
-  //vhook_a sclk                          radio_spi_sclk
-  //vhook_a cs_n                          radio_spi_sen_n
-  //vhook_a miso                          radio_spi_miso
   ctrlport_spi_adrv #(
     .BASE_ADDR  (0),   //int:=0
     .NUM_BYTES_W(8),   //int:=8
@@ -1645,15 +1425,6 @@ module b310_core # (
   // This signal should not change during operation, the synchronizer
   // is used to avoid timing issues.
 
-  //vhook_e synchronizer fp_gpio_src_sync
-  //vhook_a WIDTH             FP_GPIO_SRC_WIDTH
-  //vhook_a STAGES            2
-  //vhook_a INITIAL_VAL       '0
-  //vhook_a FALSE_PATH_TO_IN  1
-  //vhook_a clk               radio_clk
-  //vhook_a rst               radio_rst
-  //vhook_a in                fp_gpio_src
-  //vhook_a out               rclk_fp_gpio_src
   synchronizer #(
     .WIDTH           (FP_GPIO_SRC_WIDTH),  //integer:=1
     .STAGES          (2),                  //integer:=2

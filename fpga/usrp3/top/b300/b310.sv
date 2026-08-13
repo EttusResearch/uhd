@@ -34,7 +34,6 @@ module b310
   input  wire   PCIE_RESET_N,
 
   // PCIe lanes
-  //vhook_nodgv Pcie[RT]x_[pn]
   input  wire [3:0] PCIE_RX_P,
   input  wire [3:0] PCIE_RX_N,
   output wire [3:0] PCIE_TX_P,
@@ -198,24 +197,17 @@ module b310
 
 );
 
-  logic pcie_arst;
-
-  //vhook_sigstart
-  logic bus_arst;
-  logic dma_clk;
-  logic lmk_lock_status;
-  logic lmk_reset;
-  logic lmk_source_select;
-  logic radio_clk;
-  logic radio_clk_2x;
-  logic radio_clk_gen_rst;
-  logic ref_clk_source;
-  logic tcxo_en;
-  //vhook_sigend
 
   //---------------------------------------------------------------------------
   // Clocking and resets
   //---------------------------------------------------------------------------
+
+  // Reset to PCIe IP
+  logic pcie_arst;
+  // Reset from PCIe IP to rest of the system
+  logic bus_arst;
+  // Clock for DMA operations
+  logic dma_clk;
 
   localparam int BUS_CLK_RATE = 150_000_000;
 
@@ -237,13 +229,6 @@ module b310
   logic clk_40mhz;
   logic ce_clk;
 
-  //vhook_e bus_clk_gen bus_clk_gen_i
-  //vhook_a clk_in1   bus_clk_in
-  //vhook_a clk_out1  bus_clk
-  //vhook_a clk_out2  clk_40mhz
-  //vhook_a clk_out3  ce_clk
-  //vhook_a reset     1'b0
-  //vhook_a locked    {}
   bus_clk_gen bus_clk_gen_i (
     .clk_out1(bus_clk),    //output wire
     .clk_out2(clk_40mhz),  //output wire
@@ -253,18 +238,12 @@ module b310
     .clk_in1 (bus_clk_in)  //input wire
   );
 
+  logic radio_clk;
+  logic radio_clk_2x;
   logic radio_clk_gen_locked;
   logic radio_clk_shifted;
+  logic radio_clk_gen_rst;
 
-  //vhook_e radio_clk_gen radio_clk_gen_i
-  //vhook_a clk_in1_p DEVCLK_P
-  //vhook_a clk_in1_n DEVCLK_N
-  //vhook_a clk_out1  radio_clk
-  //vhook_a clk_out2  radio_clk_2x
-  //vhook_a clk_out3  {}
-  //vhook_a clk_out4  radio_clk_shifted
-  //vhook_a reset     radio_clk_gen_rst
-  //vhook_a locked    radio_clk_gen_locked
   radio_clk_gen radio_clk_gen_i (
     .clk_out1 (radio_clk),             //output wire
     .clk_out2 (radio_clk_2x),          //output wire
@@ -279,15 +258,7 @@ module b310
 
   wire bclk_radio_clk_gen_locked;
 
-  //vhook_e synchronizer synchronizer_radio_clk_locked
-  //vhook_a WIDTH 1
-  //vhook_a STAGES 2
-  //vhook_a INITIAL_VAL 0
-  //vhook_a FALSE_PATH_TO_IN 1
-  //vhook_a clk bus_clk
-  //vhook_a rst 1'b0
-  //vhook_a in radio_clk_gen_locked
-  //vhook_a out bclk_radio_clk_gen_locked
+
   synchronizer #(
     .WIDTH           (1),  //integer:=1
     .STAGES          (2),  //integer:=2
@@ -304,30 +275,18 @@ module b310
   logic radio_rst;
   logic clk40_rst;
 
-  //vhook_e reset_sync  bus_rst_sync
-  //vhook_a clk         bus_clk
-  //vhook_a reset_in    bus_arst
-  //vhook_a reset_out   bus_rst
   reset_sync bus_rst_sync (
     .clk      (bus_clk),   //input wire
     .reset_in (bus_arst),  //input wire
     .reset_out(bus_rst)    //output reg
   );
 
-  //vhook_e reset_sync  radio_rst_sync
-  //vhook_a clk         radio_clk
-  //vhook_a reset_in    bus_arst
-  //vhook_a reset_out   radio_rst
   reset_sync radio_rst_sync (
     .clk      (radio_clk),  //input wire
     .reset_in (bus_arst),   //input wire
     .reset_out(radio_rst)   //output reg
   );
 
-  //vhook_e reset_sync  clk40_rst_sync
-  //vhook_a clk         clk_40mhz
-  //vhook_a reset_in    bus_arst
-  //vhook_a reset_out   clk40_rst
   reset_sync clk40_rst_sync (
     .clk      (clk_40mhz),  //input wire
     .reset_in (bus_arst),   //input wire
@@ -381,22 +340,6 @@ module b310
     .T  (auth_sda_out)   //in  std_ulogic
   );
 
-  //vhook_e b310_g2x4_host_interface b310_host_interface_i
-  //vhook_a pcie_rx_p                           PCIE_RX_P
-  //vhook_a pcie_rx_n                           PCIE_RX_N
-  //vhook_a pcie_tx_p                           PCIE_TX_P
-  //vhook_a pcie_tx_n                           PCIE_TX_N
-  //vhook_a pcie_ref_clk_p                      PCIE_REF_CLK_P
-  //vhook_a pcie_ref_clk_n                      PCIE_REF_CLK_N
-  //vhook_a core_ctrlport_req_time              host_ctrlport.req.timestamp
-  //vhook_a {^core_ctrlport_req_rem(.*)}        host_ctrlport.req.remote$1
-  //vhook_a {^core_ctrlport_req_(.*)}           host_ctrlport.req.$1
-  //vhook_a {^core_ctrlport_resp_(.*)}          host_ctrlport.resp.$1
-  //vhook_a {^pcie_usr_ctrlport_req_rem(.*)}    {}
-  //vhook_a pcie_usr_ctrlport_req_byte_en       {}
-  //vhook_a pcie_usr_ctrlport_req_has_time      {}
-  //vhook_a pcie_usr_ctrlport_req_time          {}
-  //vhook_a pcie_usr_ctrlport_req_port_id       {}
   b310_g2x4_host_interface b310_host_interface_i (
     .pcie_rx_p                       (PCIE_RX_P),                        //in  std_logic_vector(3:0)
     .pcie_rx_n                       (PCIE_RX_N),                        //in  std_logic_vector(3:0)
@@ -466,14 +409,7 @@ module b310
   wire                        dma_tx_tready;
   wire                  [2:0] dma_tx_tuser;
   wire                        dma_tx_tvalid;
-  //vhook_e b310_pcie_int b310_pcie_int_i
-  //vhook_a  dma_clk                dma_clk
-  //vhook_a  bus_clk                bus_clk
-  //vhook_a  reg_clk                dma_clk
-  //vhook_a  bus_rst                bus_arst
-  //vhook_a  misc_status           '0
-  //vhook_a  debug                  {}
-  //vhook_a  {^s_ctrlport_(.*)}     pcie_usr_ctrlport_$1
+
   b310_pcie_int #(
     .DMA_STREAM_WIDTH(DMA_STREAM_WIDTH),  //int:=128
     .NUM_TX_STREAMS  (NUM_TX_STREAMS),    //int:=5
@@ -541,7 +477,7 @@ module b310
 
   // Eventhough the ADRV chip has two SYNCOUT pins, we only use one of them.
   // This is due to each SYNC line connected to one deframer, and only
-  // deframer 0 is used in the B310.
+  // d;eframer 0 is used in the B310.
   IBUFDS dac_sync0_buf(
     .I(ADRV_SYNCOUT_P[0]),
     .IB(ADRV_SYNCOUT_N[0]),
@@ -574,35 +510,6 @@ module b310
   // JESD IP instance
   //----------------------------------------
 
-  //vhook_e b310_jesd204b b310_jesd204b_i
-  //vhook_a rclk_rst                        radio_rst
-  //vhook_a reg_clk                         radio_clk
-  //vhook_a sample_clk_1x                   radio_clk
-  //vhook_a sample_clk_2x                   radio_clk_2x
-  //vhook_a rclk_fpga_clocks_stable         bclk_radio_clk_gen_locked
-  //vhook_a rclk_jesd_ref_clk_present       {}
-  //vhook_a jesd_ref_clk_p                  JESD_CLK_P
-  //vhook_a jesd_ref_clk_n                  JESD_CLK_N
-  //vhook_a adc_rx_p                        JESD_RX_P
-  //vhook_a adc_rx_n                        JESD_RX_N
-  //vhook_a dac_tx_p                        JESD_TX_P
-  //vhook_a dac_tx_n                        JESD_TX_N
-  //vhook_a rclk_ctrlport_req_time          m_radio_jesd_ctrlport.req.timestamp
-  //vhook_a {^rclk_ctrlport_req_rem(.*)}    m_radio_jesd_ctrlport.req.remote$1
-  //vhook_a {^rclk_ctrlport_req_(.*)}       m_radio_jesd_ctrlport.req.$1
-  //vhook_a {^rclk_ctrlport_resp_(.*)}      m_radio_jesd_ctrlport.resp.$1
-  //vhook_a sysref_in_p                     SYSREF_P
-  //vhook_a sysref_in_n                     SYSREF_N
-  //vhook_a capture_sysref_clk              radio_clk
-  //vhook_a sclk_sysref_out                 {}
-  //vhook_a lmk_sync                        {}
-  //vhook_a sclk_adc_data_flatter           radio_rx_data
-  //vhook_a sclk_adc_data_valid             radio_rx_data_valid
-  //vhook_a sclk_dac_data_flatter           radio_tx_data
-  //vhook_a sclk_dac_ready_for_input        radio_tx_ready
-  //vhook_a adc_sync_out_n                  adc_sync_b
-  //vhook_a dac_sync_in_n                   dac_sync_b
-  //vhook_a *c_sync_out                     {}
   b310_jesd204b b310_jesd204b_i (
     .rclk_rst                    (radio_rst),                                //in  std_logic
     .reg_clk                     (radio_clk),                                //in  std_logic
@@ -734,9 +641,16 @@ module b310
   wire        clocking_spi_sclk;
   wire [2:0]  clocking_spi_sen_n;
 
+  logic ref_clk_source;
+  logic tcxo_en;
+
   logic local_ref_clk_buf;
   logic local_ref_clk;
   logic ext_ref_clk;
+
+  logic lmk_lock_status;
+  logic lmk_reset;
+  logic lmk_source_select;
 
   logic gps_lmk_pps_in;
   logic gps_pw_fault;
@@ -753,35 +667,6 @@ module b310
   logic        pwr_monitor_alert;
   logic [11:0] device_temp;
 
-  //vhook_e b310_core b310_core_i
-  //vhook_a PCIE_W                DMA_STREAM_WIDTH
-  //vhook_a clk_40mhz             clk_40mhz
-  //vhook_a s_core_ctrlport       host_ctrlport.slave
-  //vhook_a m_radio_jesd_ctrlport m_radio_jesd_ctrlport.master
-  //vhook_a mb_i2c_scl            MISC_I2C_SCL
-  //vhook_a mb_i2c_sda            MISC_I2C_SDA
-  //vhook_a tb_i2c_scl            TBOLT_SCL
-  //vhook_a tb_i2c_sda            TBOLT_SDA
-  //vhook_a pps_in                EXT_PPS_IN
-  //vhook_a pps_out               PPS_OUT
-  //vhook_a uart_rx               GPS_UART_TOFPGA
-  //vhook_a uart_tx               GPS_UART_TOGPS
-  //vhook_a gps_reset_n           GPS_RESET_N
-  //vhook_a gps_ant_pwr_en        ANT_PWR_EN
-  //vhook_a jtag_cpld_tck         JTAG_CPLD_TCK
-  //vhook_a jtag_cpld_tms         JTAG_CPLD_TMS
-  //vhook_a jtag_cpld_tdi         JTAG_CPLD_TDI
-  //vhook_a jtag_cpld_tdo         JTAG_CPLD_TDO
-  //vhook_a lmk_sync_reva         LMK_SYNC_REVA
-  //vhook_a lmk_sync              LMK_SYNC
-  //vhook_a lmk05318_pd_n         NSYNC_PDN
-  //vhook_a gps_lmk_status        NSYNC_STATUS
-  //vhook_a gps_lmk_gpio          NSYNC_GPIO0
-  //vhook_a gps_pps_out           GPS_PPS_OUT
-  //vhook_a tbolt_pd_ctrl_reset   TBOLT_PD_CTRL_RESET
-  //vhook_a pwr_1v2_pg            PG_1V2
-  //vhook_a pwr_typec_negotiated  TYPEC_PWR_NEGOTIATED
-  //vhook_a pwr_25w_src           GT_25W_PWR_SRC
   b310_core #(
     .PCIE_W          (DMA_STREAM_WIDTH),  //integer:=128
     .RADIO_NIPC      (RADIO_NIPC),        //integer:=1
@@ -1072,13 +957,6 @@ module b310
   // Front Panel GPIO
   //-----------------------------------------
 
-  //vhook_e gpio_atr_io fp_gpio_io
-  //vhook_a WIDTH       10
-  //vhook_a clk         radio_clk
-  //vhook_a gpio_ddr    fp_gpio_dir
-  //vhook_a gpio_in     fp_gpio_in
-  //vhook_a gpio_out    fp_gpio_out
-  //vhook_a gpio_pins   FP_GPIO
   gpio_atr_io #(
     .WIDTH(10)  //integer:=32
   ) fp_gpio_io (
@@ -1223,9 +1101,6 @@ module b310
   // Temperature monitor module
   localparam int SHUTDOWN_TEMP_C    = 100;  // OT shutdown temperature (degrees C)
 
-  //vhook_e b310_xadc_wrapper xadc_wrapper_i
-  //vhook_a clk         bus_clk
-  //vhook_a rst         bus_rst
   b310_xadc_wrapper #(
     .SHUTDOWN_TEMP_C(SHUTDOWN_TEMP_C)  //int:=125
   ) xadc_wrapper_i (

@@ -80,10 +80,6 @@ module core_regs #(
   import ctrlport_pkg::*;
   `include "../regmap/core_regs_regmap_utils.vh"
 
-  //vhook_sigstart
-  //vhook_sigend
-
-
   //----------------------------------------------------------
   // Handling of CtrlPort
   //----------------------------------------------------------

@@ -57,9 +57,6 @@ module radio_control_regs #(
   import ctrlport_pkg::*;
   `include "../regmap/radio_control_regmap_utils.vh"
 
-  //vhook_sigstart
-  //vhook_sigend
-
   // ATR readback signals
   logic [7:0] ch0_led_atr_rb;
   logic [7:0] ch1_led_atr_rb;
@@ -77,9 +74,6 @@ module radio_control_regs #(
 
   ctrlport_if m_radio_regs_ctrlport_array [NUM_REG_BLOCKS] (.clk(s_ctrlport.clk), .rst(s_ctrlport.rst));
 
-  //vhook_e ctrlport_if_splitter
-  //vhook_a NUM_SLAVES   NUM_REG_BLOCKS
-  //vhook_a m_ctrlport   m_radio_regs_ctrlport_array
   ctrlport_if_splitter #(
     .NUM_SLAVES(NUM_REG_BLOCKS)  //int:=2
   ) ctrlport_if_splitterx (
@@ -255,11 +249,6 @@ module radio_control_regs #(
 
   // Create a window for the ctrlport interface to the ATR registers.
 
-  //vhook_e ctrlport_if_window radio_atr_reg_window
-  //vhook_a BASE_ADDRESS BASE_ADDRESS+CH0_LED_ATR
-  //vhook_a WINDOW_SIZE  'h80
-  //vhook_a s_ctrlport m_radio_sb_ctrlport
-  //vhook_a m_ctrlport radio_atr_if
   ctrlport_if_window #(
     .BASE_ADDRESS(BASE_ADDRESS+CH0_LED_ATR),  //int:=0
     .WINDOW_SIZE ('h80)                       //int:=32
@@ -282,24 +271,6 @@ module radio_control_regs #(
   // CH0 LED ATR
   logic [7:0] ch0_led_atr_out;
 
-  //vhook_e gpio_atr ch0_led_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH0_LED_ATR
-  //vhook_a WIDTH 8
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[0]
-  //vhook_a tx tx_running[0]
-  //vhook_a gpio_in '0
-  //vhook_a gpio_out ch0_led_atr_out
-  //vhook_a gpio_ddr {/*unused, assumed output only*/}
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch0_led_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH0_LED_ATR),  //integer:=0
     .WIDTH       (8),                         //integer:=32
@@ -328,24 +299,6 @@ module radio_control_regs #(
   //CH1 LED ATR
   logic [7:0] ch1_led_atr_out;
 
-  //vhook_e gpio_atr ch1_led_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH1_LED_ATR
-  //vhook_a WIDTH 8
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[1]
-  //vhook_a tx tx_running[1]
-  //vhook_a gpio_in '0
-  //vhook_a gpio_out ch1_led_atr_out
-  //vhook_a gpio_ddr {/*unused, assumed output only*/}
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch1_led_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH1_LED_ATR),  //integer:=0
     .WIDTH       (8),                         //integer:=32
@@ -372,25 +325,6 @@ module radio_control_regs #(
   assign radio_led_rx_green[1] = ch1_led_atr_out[LED_RX_GREEN];
 
   // CH0 FP GPIO ATR
-
-  //vhook_e gpio_atr ch0_fp_gpio_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH0_FP_GPIO_ATR
-  //vhook_a WIDTH 10
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[0]
-  //vhook_a tx tx_running[0]
-  //vhook_a gpio_in radio_fp_gpio_in
-  //vhook_a gpio_out radio_ch0_fp_gpio_out
-  //vhook_a gpio_ddr radio_ch0_fp_gpio_dir
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch0_fp_gpio_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH0_FP_GPIO_ATR),  //integer:=0
     .WIDTH       (10),                            //integer:=32
@@ -413,25 +347,6 @@ module radio_control_regs #(
   );
 
   // CH1 FP GPIO ATR
-
-  //vhook_e gpio_atr ch1_fp_gpio_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH1_FP_GPIO_ATR
-  //vhook_a WIDTH 10
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[1]
-  //vhook_a tx tx_running[1]
-  //vhook_a gpio_in radio_fp_gpio_in
-  //vhook_a gpio_out radio_ch1_fp_gpio_out
-  //vhook_a gpio_ddr radio_ch1_fp_gpio_dir
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch1_fp_gpio_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH1_FP_GPIO_ATR),  //integer:=0
     .WIDTH       (10),                            //integer:=32
@@ -456,24 +371,6 @@ module radio_control_regs #(
   //CH0 ADRV GPIO ATR
   logic [7:0] ch0_adrv_gpio_atr_ddr;
 
-  //vhook_e gpio_atr ch0_adrv_gpio_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH0_ADRV_GPIO_ATR
-  //vhook_a WIDTH 8
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[0]
-  //vhook_a tx tx_running[0]
-  //vhook_a gpio_in {radio_ch0_adrv_gpio_in[3:0], ch0_adrv_gpio_atr_rb[3:0]}
-  //vhook_a gpio_out {radio_ch0_adrv_gpio_out[3:0], radio_ch0_adrv_trx_out[3:0]}
-  //vhook_a gpio_ddr ch0_adrv_gpio_atr_ddr
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch0_adrv_gpio_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH0_ADRV_GPIO_ATR),  //integer:=0
     .WIDTH       (8),                               //integer:=32
@@ -501,24 +398,6 @@ module radio_control_regs #(
   //CH1 ADRV GPIO ATR
   logic [7:0] ch1_adrv_gpio_atr_ddr;
 
-  //vhook_e gpio_atr ch1_adrv_gpio_atr_i
-  //vhook_a BASE BASE_ADDRESS+CH1_ADRV_GPIO_ATR
-  //vhook_a WIDTH 8
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[1]
-  //vhook_a tx tx_running[1]
-  //vhook_a gpio_in {radio_ch1_adrv_gpio_in[3:0], ch1_adrv_gpio_atr_rb[3:0]}
-  //vhook_a gpio_out {radio_ch1_adrv_gpio_out[3:0], radio_ch1_adrv_trx_out[3:0]}
-  //vhook_a gpio_ddr ch1_adrv_gpio_atr_ddr
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch1_adrv_gpio_atr_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH1_ADRV_GPIO_ATR),  //integer:=0
     .WIDTH       (8),                               //integer:=32
@@ -544,25 +423,6 @@ module radio_control_regs #(
 
 
   //CH0 Path Control ATR
-
-  //vhook_e gpio_atr ch0_path_ctrl_i
-  //vhook_a BASE BASE_ADDRESS+CH0_PATH_CTRL_ATR
-  //vhook_a WIDTH 2
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[0]
-  //vhook_a tx tx_running[0]
-  //vhook_a gpio_in '0
-  //vhook_a gpio_out {radio_rx_bypass[0], radio_enable_tdr[0]}
-  //vhook_a gpio_ddr {/*unused, assumed output only*/}
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch0_path_ctrl_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH0_PATH_CTRL_ATR),  //integer:=0
     .WIDTH       (2),                               //integer:=32
@@ -585,25 +445,6 @@ module radio_control_regs #(
   );
 
   //CH1 Path Control ATR
-
-  //vhook_e gpio_atr ch1_path_ctrl_i
-  //vhook_a BASE BASE_ADDRESS+CH1_PATH_CTRL_ATR
-  //vhook_a WIDTH 2
-  //vhook_a FAB_CTRL_EN '0
-  //vhook_a DEFAULT_DDR '1
-  //vhook_a DEFAULT_IDLE '0
-  //vhook_a clk s_ctrlport.clk
-  //vhook_a reset s_ctrlport.rst
-  //vhook_a set_stb radio_sb_stb
-  //vhook_a set_addr radio_sb_addr
-  //vhook_a set_data radio_sb_data
-  //vhook_a rx rx_running[1]
-  //vhook_a tx tx_running[1]
-  //vhook_a gpio_in '0
-  //vhook_a gpio_out {radio_rx_bypass[1], radio_enable_tdr[1]}
-  //vhook_a gpio_ddr {/*unused, assumed output only*/}
-  //vhook_a gpio_out_fab '0
-  //vhook_a gpio_sw_rb ch1_path_ctrl_rb
   gpio_atr #(
     .BASE        (BASE_ADDRESS+CH1_PATH_CTRL_ATR),  //integer:=0
     .WIDTH       (2),                               //integer:=32
