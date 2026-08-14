@@ -19,7 +19,7 @@ from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
-from usrp_mpm.rpc_utils import no_rpc
+from usrp_mpm.rpc_utils import no_claim, no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_thermal import read_sysfs_sensors_value
 from usrp_mpm.sys_utils.udev import get_eeprom_paths, get_spidev_nodes
