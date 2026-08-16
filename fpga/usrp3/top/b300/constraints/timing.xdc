@@ -156,14 +156,19 @@ set_output_delay -add_delay -clock ext_ref_clk -max [expr $sync_trace_max + $lmk
 set_false_path -from [get_pins b310_core_i/core_regsx/lmk_sync_clk_sel_reg/C] -to [get_ports LMK_SYNC_REVA]
 set_false_path -from [get_pins b310_core_i/core_regsx/lmk_sync_clk_sel_reg/C] -to [get_ports LMK_SYNC]
 
-# False path from ext_ref_clock source to output.  In this case clock is 30.72MHz max, so easier to meet
-# TODO:  Don't false path this, but make Vivado analyze this path at 30.72Mhz
-# Tricky part is I can't seem to find a way to get Vivado to analyze from 125MHz radio clock to ext_ref_clk
-# as well as from 30.72MHz ext_ref_clk to ext_ref_clk
-# No way I know of yet to false path the 30.72Mhz path for the 125MHz case but not 30.72MHz case
-# So just false pathing it all together.  Need to manually check timing of that port for now
-set_false_path -from [get_pins b310_core_i/b3xx_pps_sync_i/sync_brc_out_reg/C] -to [get_ports LMK_SYNC]
-set_false_path -from [get_pins b310_core_i/b3xx_pps_sync_i/sync_brc_out_reva_reg/C] -to [get_ports LMK_SYNC_REVA]
+# This path should only be relevant when running at 10/30.72 MHz ext_ref_clk.
+# For this reason, a set_max_delay constraint will be used over a set_output_delay constraint
+# (which uses a frequency of 125 MHz for the timing analysis).
+# The max delay on the LMK SYNC path to the LMK input has been calculated to be up to 3.44 ns.
+# The maximum insertion delay that has been observed on the ext_ref_clk path from its input
+# to the FPGA to the sync_brc_out_reg flip-flop has been measured to be up to 5ns. We will
+# conservatively use 10ns as the maximum insertion delay.
+# This would leave the timing budget within the FPGA to be:
+# Ext_ref_clk period(@30.72 MHz) - maximum insertion delay (10 ns) - maximum LMK SYNC path delay (3.44 ns)
+#   = 32.55 ns - 10ns - 3.44 ns
+#   = 19.11 ns
+set_max_delay -from [get_pins b310_core_i/b3xx_pps_sync_i/sync_brc_out_reg/C] -to [get_ports LMK_SYNC] 19.11
+set_max_delay -from [get_pins b310_core_i/b3xx_pps_sync_i/sync_brc_out_reva_reg/C] -to [get_ports LMK_SYNC_REVA] 19.11
 
 set BasePath b310_host_interface_i/b310_host_interfacex/CoreRegPortToCtrlPort/BaRegPortClockCrossingx/RequestHandshake
 ## Start include, file HandshakeSLV_RSD.xml
