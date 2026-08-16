@@ -436,14 +436,9 @@ module b310_core # (
     .debug                 ()                                       //output logic[31:0]
   );
 
-  // Select either local refclk if using a single B310 or
-  // external refclock if using multi device sync or a custom external reference.
-  // TODO:  Think about needing to reset logic when switching this over?
-
   logic [31:0] int_pps_div_delayed = 32'd122_880_000;
   logic        pps_reset = '1;
   logic        pps_reset_refclk;
-
 
   // Reset the internal PPS generator whenever the reference clock source
   // or the PPS period changes.
