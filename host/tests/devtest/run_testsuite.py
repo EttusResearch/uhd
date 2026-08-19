@@ -36,39 +36,24 @@ def setup_env(args):
     " Add build dir into lib + exe paths, depending on OS "
     def setup_env_win(env, build_dir, build_type):
         " Add build dir into paths (Windows)"
-        env['PATH'] = "{build_dir}/lib/{build_type};" + \
-                      "{build_dir}/examples/{build_type};" + \
-                      "{build_dir}/utils/{build_type};{path}".format(
-                          build_dir=build_dir,
-                          build_type=build_type,
-                          path=env.get('PATH', ''))
-        env['LIBPATH'] = "{build_dir}/lib/{build_type};{path}".format(
-            build_dir=build_dir, build_type=build_type, path=env.get('LIBPATH', '')
-        )
-        env['LIB'] = "{build_dir}/lib/{build_type};{path}".format(
-            build_dir=build_dir, build_type=build_type, path=env.get('LIB', '')
-        )
-        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
+        env['PATH'] = f"{build_dir}/lib/{build_type};" \
+                      f"{build_dir}/examples/{build_type};" \
+                      f"{build_dir}/utils/{build_type};{env.get('PATH', '')}"
+        env['LIBPATH'] = f"{build_dir}/lib/{build_type};{env.get('LIBPATH', '')}"
+        env['LIB'] = f"{build_dir}/lib/{build_type};{env.get('LIB', '')}"
+        env['PYTHONPATH'] = f"{build_dir}/python"
         return env
     def setup_env_unix(env, build_dir):
         " Add build dir into paths (Unices)"
-        env['PATH'] = "{build_dir}/examples:{build_dir}/utils:{path}".format(
-            build_dir=build_dir, path=env.get('PATH', '')
-        )
-        env['LD_LIBRARY_PATH'] = "{build_dir}/lib:{path}".format(
-            build_dir=build_dir, path=env.get('LD_LIBRARY_PATH', '')
-        )
-        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
+        env['PATH'] = f"{build_dir}/examples:{build_dir}/utils:{env.get('PATH', '')}"
+        env['LD_LIBRARY_PATH'] = f"{build_dir}/lib:{env.get('LD_LIBRARY_PATH', '')}"
+        env['PYTHONPATH'] = f"{build_dir}/python"
         return env
     def setup_env_osx(env, build_dir):
         " Add build dir into paths (OS X)"
-        env['PATH'] = "{build_dir}/examples:{build_dir}/utils:{path}".format(
-            build_dir=build_dir, path=env.get('PATH', '')
-        )
-        env['DYLD_LIBRARY_PATH'] = "{build_dir}/lib:{path}".format(
-            build_dir=build_dir, path=env.get('DYLD_LIBRARY_PATH', '')
-        )
-        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
+        env['PATH'] = f"{build_dir}/examples:{build_dir}/utils:{env.get('PATH', '')}"
+        env['DYLD_LIBRARY_PATH'] = f"{build_dir}/lib:{env.get('DYLD_LIBRARY_PATH', '')}"
+        env['PYTHONPATH'] = f"{build_dir}/python"
         return env
     ### Go
     env = os.environ
@@ -79,8 +64,7 @@ def setup_env(args):
     elif sys.platform.startswith('darwin'):
         env = setup_env_osx(env, args.build_dir)
     else:
-        print("Devtest not supported on this platform ({0})."
-              .format(sys.platform))
+        print(f"Devtest not supported on this platform ({sys.platform}).")
         exit(1)
     return env
 
@@ -88,7 +72,7 @@ def main():
     " Go, go, go! "
     args = setup_parser().parse_args()
     env = setup_env(args)
-    devtest_pattern = "devtest_{p}.py".format(p=args.devtest_pattern)
+    devtest_pattern = f"devtest_{args.devtest_pattern}.py"
     uhd_args_list = get_usrp_list(args.args, env)
     arg_dict = dict(arg.split('=') for arg in args.args.strip(',').split(','))
     if len(uhd_args_list) == 0:
@@ -96,24 +80,18 @@ def main():
         exit(1)
     tests_passed = True
     for uhd_idx, uhd_info in enumerate(uhd_args_list):
-        print('--- Running all tests for device {dev} ({prod}, Serial: {ser}).'.format(
-            dev=uhd_idx,
-            prod=uhd_info.get('product', 'USRP'),
-            ser=uhd_info.get('serial')
-        ))
+        print(f"--- Running all tests for device {uhd_idx} "
+              f"({uhd_info.get('product', 'USRP')}, Serial: {uhd_info.get('serial')}).")
         print('--- This will take some time. Better grab a cup of tea.')
         sys.stdout.flush()
         args_str = uhd_info['args']
-        logfile_name = "log{}.log".format(
-            args_str.replace('type=', '_').replace('serial=', '_').replace(',', '')
-        )
-        resultsfile_name = "results{}.log".format(
-            args_str.replace('type=', '_').replace('serial=', '_').replace(',', '')
-        )
+        args_suffix = args_str.replace('type=', '_').replace('serial=', '_').replace(',', '')
+        logfile_name = f"log{args_suffix}.log"
+        resultsfile_name = f"results{args_suffix}.log"
         if 'addr' in arg_dict:
-            args_str += ',addr={}'.format(arg_dict['addr'])
+            args_str += f",addr={arg_dict['addr']}"
         if 'master_clock_rate' in arg_dict:
-            args_str += ',master_clock_rate={}'.format(arg_dict['master_clock_rate'])
+            args_str += f",master_clock_rate={arg_dict['master_clock_rate']}"
         env['_UHD_TEST_ARGS_STR'] = args_str
         env['_UHD_TEST_LOGFILE'] = os.path.join(args.log_dir, logfile_name)
         env['_UHD_TEST_RESULTSFILE'] = os.path.join(args.log_dir, resultsfile_name)
