@@ -176,6 +176,10 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
         # (see periph_manager/base.py)
         from usrp_mpm.periph_manager import periph_manager
 
+        # True only while _reset_mgr() is actively tearing down and rebuilding
+        # the periph manager. A failed rebuild leaves periph_manager None but
+        # this flag False, so such errors surface instead of looking transient.
+        self._resetting = False
         self._mgr_generator = lambda: periph_manager(default_args)
         self.periph_manager = self._mgr_generator()
         device_info = self.periph_manager.get_device_info()
@@ -693,6 +697,14 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
                 self.log.error(err_msg + f"\n{traceback.format_exc()}")
                 context.abort(grpc.StatusCode.INTERNAL, err_msg)
             except RuntimeError as ex:
+                # A RuntimeError raised while the periph manager is actively
+                # being reset (e.g. during a component/FPGA update) is transient:
+                # tell the client to retry via UNAVAILABLE instead of logging a
+                # scary error. A failed rebuild leaves periph_manager None with
+                # _resetting False, so those errors still surface as INTERNAL.
+                if self._resetting:
+                    self.log.warning(f"{rpc_command} unavailable during reset: {str(ex)}")
+                    context.abort(grpc.StatusCode.UNAVAILABLE, str(ex))
                 # Handle runtime errors from device operations
                 err_msg = f"Runtime error in {rpc_command}: {str(ex)}"
                 self.log.error(err_msg)
@@ -954,9 +966,9 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
         This is as safe method which can be called without a claim on the device
         """
         if self.periph_manager is None:
-            err_msg = "Device is currently resetting, please retry."
-            self.log.warning(err_msg)
-            raise RuntimeError(err_msg)
+            # Raise so the dispatch wrapper aborts with UNAVAILABLE and the client
+            # retries; the wrapper logs this once, so no logging is done here.
+            raise RuntimeError("Device is currently resetting, please retry.")
         info = self.periph_manager.get_device_info()
         info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
         if "locked_fpga" in info:
@@ -1015,10 +1027,15 @@ class MPMServer(mpm_server_pb2_grpc.MpmServerServiceServicer):
                 self._dynamic_method_registry.pop(method, None)
         self._mb_methods = []
         self._db_methods = []
+        self._resetting = True
         self.periph_manager = None
-        # Create a new manager and register RPC calls for it.
-        self.periph_manager = self._mgr_generator()
-        self._init_rpc_calls(self.periph_manager)
+        # Create a new manager and register RPC calls for it. Clear the resetting
+        # flag once the rebuild finishes.
+        try:
+            self.periph_manager = self._mgr_generator()
+            self._init_rpc_calls(self.periph_manager)
+        finally:
+            self._resetting = False
         # Update the FPGA type information in the state
         device_info = self.periph_manager.get_device_info()
         self._state.dev_fpga_type.value = to_binary_str(device_info.get("fpga", "n/a"))
