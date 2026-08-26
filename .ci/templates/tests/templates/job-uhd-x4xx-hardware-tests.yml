@@ -451,7 +451,7 @@ jobs:
         displayString: 'X410/X4_400 RF subset'
         testFolder: 'pytests'
         pytestConfigDut: $(pytestConfigDut)
-        testSelector: 'test_ddc_response.py test_rx_offset_tone_sweep.py test_tx_offset_tone_sweep.py'
+        testSelector: 'test_ddc_response.py test_rx_offset_tone_sweep.py test_tx_offset_tone_sweep.py test_tx_evm.py test_rx_evm.py'
         testLength: ${{ parameters.testLength }}
         warmUpAfterBoot: ${{ parameters.warmUpAfterBoot }}
         toolset: ${{ parameters.toolset }}
