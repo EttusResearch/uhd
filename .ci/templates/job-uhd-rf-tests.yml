@@ -256,7 +256,7 @@ jobs:
         cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
         uhd_image_loader --args type=$(devType),serial=$(devSerial)
         sleep 10
-        export UHD_IMAGES_DIR=$HOME/adrv9032_images
+        uhd_images_downloader -t b3xx -t fw
         uhd_usrp_probe --args type=$(devType),serial=$(devSerial)
         python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
           --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) ${{ parameters.extra_rf_test_args }} || rf_test_status=$?

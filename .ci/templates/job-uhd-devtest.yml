@@ -254,7 +254,7 @@ jobs:
       export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build/fpga_images
       uhd_image_loader --args type=$(devType),serial=$(devSerial)
       sleep 10
-      export UHD_IMAGES_DIR=$HOME/adrv9032_images
+      $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b3xx -t fw
       uhd_usrp_probe --args type=$(devType),serial=$(devSerial)
       python3 ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest/run_testsuite.py \
           --src-dir ${{ parameters.uhdSrcDir }}/uhddev/host/tests/devtest \

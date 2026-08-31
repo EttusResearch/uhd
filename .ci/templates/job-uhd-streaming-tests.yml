@@ -402,7 +402,9 @@ jobs:
         displayName: remove old test results no dpdk
 
       - script: |
-          export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/:$HOME/adrv9032_images
+          export UHD_IMAGES_DIR=$(Build.BinariesDirectory)/uhddev/build-installed/share/uhd/images/
+          mkdir -p $(UHD_IMAGES_DIR)
+          $(Build.BinariesDirectory)/uhddev/build-installed/bin/uhd_images_downloader -t b3xx -t fw
           echo '##vso[task.setvariable variable=UHD_IMAGES_DIR]'$UHD_IMAGES_DIR
           echo UHD_IMAGES_DIR=$UHD_IMAGES_DIR
         displayName: Set UHD_IMAGES_DIR for B3xx
