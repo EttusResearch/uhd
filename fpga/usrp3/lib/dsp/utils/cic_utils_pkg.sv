@@ -34,6 +34,17 @@ package cic_utils_pkg;
     return integrator_dsp_latency(spc, order) + 1;
   endfunction
 
+  // The decimator has a registered compute_output stage and a 1-cycle
+  // output FIFO.
+  function automatic int decimator_latency();
+    return 2;
+  endfunction
+
+  // Each comb stage contains one registered output FIFO stage.
+  function automatic int comb_filter_latency(input int order);
+    return order;
+  endfunction
+
   class cic_utils #(
     parameter int SPC         = 8,   // Number of samples processed per clock cycle
     parameter int SAMP_W      = 48   // Input/output data width

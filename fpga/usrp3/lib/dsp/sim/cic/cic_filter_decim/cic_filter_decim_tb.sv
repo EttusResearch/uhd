@@ -155,6 +155,27 @@ module cic_filter_decim_tb #(
     .data_out      (o_data)
   );
 
+  // Monitor output packet activity during drain phase of backpressure test.
+  bit monitor_output_tvalid;
+  bit output_packet_active;
+
+  always_ff @(posedge clk) begin : track_output_packet
+    if (rst || clr) begin
+      output_packet_active <= 1'b0;
+    end else if (o_data.tvalid && o_data.tready) begin
+      output_packet_active <= !o_data.tlast;
+    end
+  end
+
+  always @(negedge o_data.tvalid) begin : assert_output_tvalid
+    if (monitor_output_tvalid && output_packet_active) begin
+      `ASSERT_ERROR(0, "Output tvalid deasserted before packet end")
+    end
+  end
+
+  // Saturation threshold for the output FIFO, used in backpressure tests.
+  localparam int SATURATION_WORDS = (2 ** (dut.OUTPUT_FIFO_SIZE + 1)) ;
+
   //---------------------------------------------------------------------------
   // Reference Model
   //---------------------------------------------------------------------------
@@ -292,6 +313,70 @@ module cic_filter_decim_tb #(
     @(negedge rst);
   endtask : test_cic_decim
 
+  //--------------------------------------------------------------------------
+  // Fill the output FIFO, observe input backpressure, then drain all data.
+  //--------------------------------------------------------------------------
+  task automatic test_output_fifo_backpressure();
+    axis_pkt_t input_pkt;
+    axis_pkt_t rx_pkt;
+    sample_queue_t input_samples;
+    sample_queue_t expected_samples;
+    sample_queue_t actual_samples;
+    model_sample_queue_t model_in;
+    model_sample_queue_t model_out;
+
+    set_decim_factor(1);
+    input_pkt = test_utils_c::generate_random_packet(SATURATION_WORDS);
+    input_samples = test_utils_c::pkt_to_samples(input_pkt.copy());
+
+    model_in = {};
+    foreach (input_samples[i]) begin
+      model_in.push_back(sign_extend_sample(input_samples[i]));
+    end
+    model.process(model_in, 1, model_out);
+    expected_samples = {};
+    foreach (model_out[i]) begin
+      expected_samples.push_back(shift_sample(model_out[i], 1));
+    end
+
+    bfm.set_master_stall_prob(0);
+    bfm.set_slave_stall_prob(100);
+    bfm.put(input_pkt);
+
+    // Ignore the initial credit startup delay, then wait for the FIFO credits
+    // to be exhausted while input data remains pending.
+    do begin
+      @(posedge clk);
+    end while (!i_data.tvalid || !i_data.tready);
+    @(negedge i_data.tready);
+    `ASSERT_ERROR(i_data.tvalid, "Input packet ended before backpressure was observed")
+
+    // Allow all admitted words to reach the output FIFO while it remains
+    // blocked. No new input should be accepted until output space is released.
+    clk_gen.clk_wait_r(SATURATION_WORDS);
+    `ASSERT_ERROR(!i_data.tready, "Input credits reopened while output remained blocked")
+
+    monitor_output_tvalid = 1;
+    bfm.set_slave_stall_prob(0);
+    bfm.get(rx_pkt);
+    monitor_output_tvalid = 0;
+    actual_samples = test_utils_c::pkt_to_samples(rx_pkt.copy());
+
+    `ASSERT_ERROR(actual_samples.size() == expected_samples.size(),
+                  $sformatf("Expected %0d output samples, received %0d",
+                            expected_samples.size(), actual_samples.size()))
+    foreach (expected_samples[i]) begin
+      `ASSERT_ERROR(actual_samples[i] === expected_samples[i],
+                    $sformatf("Backpressure sample %0d: expected 0x%0h, got 0x%0h",
+                              i, expected_samples[i], actual_samples[i]))
+    end
+
+    bfm.set_master_stall_prob(STALL_PROB_DEFAULT);
+    bfm.set_slave_stall_prob(STALL_PROB_DEFAULT);
+    clk_gen.reset();
+    @(negedge rst);
+  endtask : test_output_fifo_backpressure
+
   //---------------------------------------------------------------------------
   // Main Test Process
   //---------------------------------------------------------------------------
@@ -323,6 +408,13 @@ module cic_filter_decim_tb #(
     repeat (NUM_TESTS) begin
       test_cic_decim(1);
     end
+    test.end_test();
+
+    //-------------------------------------------------------------------------
+    // Test: output FIFO saturation and recovery
+    //-------------------------------------------------------------------------
+    test.start_test("CIC decim output FIFO backpressure", 1ms);
+    test_output_fifo_backpressure();
     test.end_test();
 
     //-------------------------------------------------------------------------

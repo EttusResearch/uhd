@@ -7,63 +7,89 @@
 //
 // Description:
 //
-//   CIC decimation filter for multiple samples per clock cycle, implementing
-//   the classic Hogenauer (CIC) decimation topology:
+//   CIC decimation filter for SPC complex samples per clock cycle. The datapath
+//   implements the classic Hogenauer topology and adds rate-dependent gain
+//   normalization and an output FIFO:
 //
 //                            data_in
-//                               │
-//                               v
-//               ┌───────────────────────────────┐
-//               │  ┌────────────────────────┐   │
-//               │  │      Integrator 0      │   │
-//               │  └───────────┬────────────┘   │
-//               │              │                │
-//               │             ···               │ ORDER stages
-//               │              │                │ (full input rate)
-//               │  ┌────────────────────────┐   │
-//               │  │   Integrator ORDER-1   │   │
-//               │  └───────────┬────────────┘   │
-//               └──────────────┼────────────────┘
-//                              │
-//                  ┌────────────────────────┐
-//     decim_factor─┤    Decimator (÷R)      │
-//                  └───────────┬────────────┘
-//                              │
-//               ┌──────────────┼────────────────┐
-//               │  ┌────────────────────────┐   │
-//               │  │        Comb 0          │   │
-//               │  └───────────┬────────────┘   │ ORDER stages
-//               │              │                │ (decimated rate)
-//               │             ...               │
-//               │              │                │
-//               │              │                │
-//               │  ┌────────────────────────┐   │
-//               │  │     Comb ORDER-1       │   │
-//               │  └───────────┬────────────┘   │
-//               └──────────────┼────────────────┘
+//                       (SPC x SAMP_W)
+//                               │   tready
+//                               v<─────────────────────────────────┐
+//               ┌───────────────────────────────┐                  │
+//               │      I/Q sign extension       │                  │
+//               │       SAMP_W -> ACCUM_W       │                  │
+//               └──────────────┬────────────────┘                  │
+//                              │                                   │
+//               ┌──────────────┼────────────────┐                  │
+//               │  ┌────────────────────────┐   │                  │
+//               │  │      Integrator 0      │   │                  │
+//               │  └───────────┬────────────┘   │                  │
+//               │              │                │ ORDER stages     │
+//               │             ...               │ (full input rate)│
+//               │              │                │                  │
+//               │  ┌────────────────────────┐   │                  │
+//               │  │   Integrator ORDER-1   │   │                  │
+//               │  └───────────┬────────────┘   │                  │
+//               └──────────────┼────────────────┘                  │
+//                              │                                   │
+//                  ┌────────────────────────┐                      │
+//    decim_factor ─┤    Decimator (÷R)      │                      │
+//                  └───────────┬────────────┘                      │
+//                              │                                   │
+//               ┌──────────────┼────────────────┐                  │
+//               │  ┌────────────────────────┐   │                  │
+//               │  │        Comb 0          │   │                  │
+//               │  └───────────┬────────────┘   │                  │
+//               │              │                │ ORDER stages     │
+//               │             ...               │ (decimated rate) │
+//               │              │                │                  │
+//               │  ┌────────────────────────┐   │                  │
+//               │  │     Comb ORDER-1       │   │                  │
+//               │  └───────────┬────────────┘   │                  │
+//               └──────────────┼────────────────┘                  │
+//                              │                                   │
+//               ┌───────────────────────────────┐                  │
+//               │      Normalize and round      │                  │
+//               │       ACCUM_W -> SAMP_W       │                  │
+//               └──────────────┬────────────────┘                  │
+//                              │                                   │
+//               ┌───────────────────────────────┐   fifo_space     │
+//               │          Output FIFO          │──────────────────┘
+//               └──────────────┬────────────────┘
 //                              │
 //                              v
-//                           data_out
+//                            data_out
+//                       (SPC x SAMP_W)
 //
-//   ORDER integrator stages run at the full input rate, accumulating partial
-//   sums across SPC parallel sample lanes. The single decimator then selects
-//   every R-th sample group (keeping SPC output samples per word). Finally,
-//   ORDER comb stages (y[n] = x[n] - x[n-D]) operate at the decimated rate.
+//   Each input word contains SPC packed complex samples. The module sign-extends
+//   each I and Q component to ACCUM_W, which includes the maximum CIC bit growth.
+//   The ORDER integrator stages process every input sample. For decimation factor
+//   R, the decimator consumes R input words and constructs one SPC-sample output
+//   word by selecting every R-th integrated sample. The ORDER comb stages then
+//   apply y[n] = x[n] - x[n-1] at the decimated rate.
 //
-//   All stages use the same SAMP_W, which must be pre-sized to accommodate
-//   the full CIC bit growth of N*log2(R_max*D_max). Internal stages do not
-//   clip or round; the final rate-dependent output conversion rounds before
-//   reducing the result to SAMP_W.
+//   The barrel shifter normalizes the CIC gain by right-shifting each accumulator
+//   component by ceil(log2(R**ORDER)). It rounds each result to SAMP_W/2 bits
+//   before packing the SPC output samples.
 //
-//   NOTE: This module is expected to run within the context of the axi_rate_change
-//   module, which ensures that the number of input words is always a multiple
-//   of the decimation factor and that the output tlast signals are correctly
-//   aligned.
+//   Downstream backpressure stops at the output FIFO. A registered credit gate
+//   admits input words only while the FIFO has room for every possible output
+//   already in flight, using the worst-case R=1 rate. Once accepted, a word can
+//   traverse the datapath without stalling on data_out.tready. If the reserved
+//   capacity runs low, data_in.tready deasserts until FIFO space becomes available.
+//
+//   The decimation factor is driven directly on decim_factor. It must be valid
+//   before reset is released and remain stable while data is actively
+//   processed.
+//
+//   NOTE: This module is expected to run within axi_rate_change, which ensures
+//   that each packet contains a multiple of R input words and that output tlast
+//   signals are correctly aligned.
 //
 // Parameters:
 //
-//   SPC      : Number of samples per clock cycle (must be power of 2, >= 1).
-//   SAMP_W    : Bit width of each sample (I + Q packed, each SAMP_W/2 bits).
+//   SPC       : Number of samples per clock cycle (must be power of 2, >= 1).
+//   SAMP_W    : External sample width (I + Q packed, each SAMP_W/2 bits).
 //   MAX_DECIM : Maximum decimation factor supported. Sizes internal registers.
 //   ORDER     : CIC filter order (number of integrator and comb stages).
 //
@@ -97,6 +123,22 @@ module cic_filter_decim #(
   localparam int ACCUM_W = 2 * (SAMP_W/2 + $clog2(MAX_DECIM*MAX_DELAY)*ORDER);
   localparam int COMP_W  = ACCUM_W/2; // Width of each I/Q component in the accumulator
 
+  import cic_utils_pkg::*;
+
+  // Reserve for the worst-case R=1 path, where every input word produces an
+  // output word, plus one cycle each for the registered FIFO-space decision
+  // and input_blocked state.
+  localparam int DATAPATH_LATENCY = integrator_latency(SPC, ORDER)
+                                  + decimator_latency()
+                                  + comb_filter_latency(ORDER)
+                                  + barrel_shift_latency(ACCUM_W, SAMP_W)
+                                  + 2; // Additional cycles for fifo_ready and input_blocked
+
+  // Set the output FIFO size to twice the datapath latency to allow continuous
+  // downstream traffic.
+  localparam int OUTPUT_FIFO_SIZE = $clog2(2 * DATAPATH_LATENCY);
+  localparam int OUTPUT_FIFO_DEPTH = 1 << OUTPUT_FIFO_SIZE;
+
   //---------------------------------------------------------------------------
   // Internal AXI-Stream buses
   //---------------------------------------------------------------------------
@@ -109,6 +151,10 @@ module cic_filter_decim #(
   // comb_bus[i] for i > 0 carries the output of comb stage i-1.
   AxiStreamIf #(SPC * ACCUM_W) comb_bus [ORDER+1] (.clk(clk), .rst(rst));
 
+  // The output of the barrel shift stage after the bus width is reduced back
+  // to SAMP_W bits from ACCUM_W bits.
+  AxiStreamIf #(SPC * SAMP_W) barrel_shift_out (.clk(clk), .rst(rst));
+
 
   //--------------------------------------------------------------------------
   // Sign extension to ACCUM_W bits for the input samples
@@ -118,9 +164,27 @@ module cic_filter_decim #(
   // bits, then pack into integ_bus[0].tdata as ACCUM_W-wide samples.
   //--------------------------------------------------------------------------
 
-  assign integ_bus[0].tvalid = data_in.tvalid;
-  assign integ_bus[0].tlast  = data_in.tlast;
-  assign data_in.tready      = integ_bus[0].tready;
+  logic fifo_ready;
+  logic input_blocked;
+
+  // Hold the input blocked until FIFO credit is restored.
+  always_ff @(posedge clk) begin
+    if (rst || clear) begin
+      input_blocked <= 1'b0;
+    end else begin
+      if (fifo_ready) begin
+        input_blocked <= 1'b0;
+      end else if (integ_bus[0].tvalid && integ_bus[0].tready) begin
+        input_blocked <= 1'b1;
+      end
+    end
+  end
+
+  always_comb begin
+    integ_bus[0].tvalid = data_in.tvalid & ~input_blocked;
+    integ_bus[0].tlast  = data_in.tlast;
+    data_in.tready      = integ_bus[0].tready & ~input_blocked;
+  end
 
   for (genvar samp_idx = 0; samp_idx < SPC; samp_idx++) begin : gen_sign_ext
     // Q component (lower half of each sample)
@@ -200,8 +264,54 @@ module cic_filter_decim #(
     .clear       (clear),
     .rate_factor (decim_factor),
     .data_in     (comb_bus[ORDER]),
-    .data_out    (data_out)
+    .data_out    (barrel_shift_out)
   );
+
+  // Downstream backpressure terminates at the output FIFO. The credit gate at
+  // data_in reserves enough room for every word already in the datapath.
+  assign barrel_shift_out.tready = 1'b1;
+
+  localparam FIFO_WIDTH = data_out.DATA_WIDTH + 1;
+  logic [15:0] fifo_space;
+  logic        output_fifo_i_tready;
+  logic [FIFO_WIDTH-1:0] fifo_data_in;
+  logic [FIFO_WIDTH-1:0] fifo_data_out;
+
+  assign fifo_data_in = {barrel_shift_out.tlast, barrel_shift_out.tdata};
+  assign {data_out.tlast, data_out.tdata} = fifo_data_out;
+
+  always_ff @(posedge clk) begin
+    if (rst || clear) begin
+      fifo_ready <= 1'b0;
+    end else begin
+      fifo_ready <= (fifo_space > DATAPATH_LATENCY);
+    end
+  end
+
+  axi_fifo #(
+    .WIDTH(FIFO_WIDTH),
+    .SIZE (OUTPUT_FIFO_SIZE)
+  ) output_fifo (
+    .clk      (clk),
+    .reset    (rst),
+    .clear    (clear),
+    .i_tdata  (fifo_data_in),
+    .i_tvalid (barrel_shift_out.tvalid),
+    .i_tready (output_fifo_i_tready),
+    .o_tdata  (fifo_data_out),
+    .o_tvalid (data_out.tvalid),
+    .o_tready (data_out.tready),
+    .space    (fifo_space),
+    .occupied ()
+  );
+
+  // synthesis translate_off
+  assert property (
+    @(posedge clk) disable iff (rst || clear)
+      barrel_shift_out.tvalid |-> output_fifo_i_tready
+  ) else
+    $error("cic_filter_decim: output FIFO not ready for valid data");
+  // synthesis translate_on
 
 endmodule : cic_filter_decim
 
