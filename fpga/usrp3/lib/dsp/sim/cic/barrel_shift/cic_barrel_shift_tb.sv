@@ -125,7 +125,7 @@ module cic_barrel_shift_tb #(
     shift_amount = $clog2(longint'(R) ** ORDER);
 
     // Wait for the rate lookup pipeline to select the requested rate.
-    clk_gen.clk_wait_r(3);
+    clk_gen.clk_wait_r(4);
 
     for (int lane = 0; lane < SPC; lane++) begin
       input_word[IN_WIDTH*lane +: IN_COMP_W] = IN_COMP_W'(vector_q[lane]);

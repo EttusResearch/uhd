@@ -283,3 +283,28 @@ set async_outputs [get_ports {FABRIC_CLK_OUT_P PPS_LED}]
 set_output_delay -clock [get_clocks async_out_clk] 0.000 $async_outputs
 set_max_delay -to $async_outputs 50.000
 set_min_delay -to $async_outputs 0.000
+
+###############################################################################
+# DDC / DUC multisample CIC barrel shift timing constraints
+###############################################################################
+
+# The barrel shifter is always the last stage after CIC integration and
+# decimation. Therefore, the rate/configuration has been stable for a long time
+# before data reaches this stage. The shift amount, which is derived from the
+# configuration registers, is consequently stable for more than one clock
+# cycle before being used by the barrel shifter.
+
+# CIC barrel shift amount registers (should be synthesized into a BRAM used as ROM)
+set shift_amount_regs [get_cells -hierarchical -filter {
+  NAME =~ "*/gen_cic_filter_interp.cic_filter_interp_i/cic_barrel_shift_i/shift_amount_reg*" ||
+  NAME =~ "*/cic_filter_decim_i/cic_barrel_shift_i/shift_amount_reg*"
+}]
+# all the axi_fifo_flop modules after each bit shift stage
+set shift_pipe_regs [get_cells -hierarchical -filter {
+  (NAME =~ "*/gen_cic_filter_interp.cic_filter_interp_i/cic_barrel_shift_i/*pipe_ff/*" ||
+   NAME =~ "*/cic_filter_decim_i/cic_barrel_shift_i/*pipe_ff/*") &&
+  IS_SEQUENTIAL
+}]
+# allow the setup path to take 2 clock cycles
+set_multicycle_path -setup 2 -from $shift_amount_regs -to $shift_pipe_regs
+set_multicycle_path -hold  1 -from $shift_amount_regs -to $shift_pipe_regs

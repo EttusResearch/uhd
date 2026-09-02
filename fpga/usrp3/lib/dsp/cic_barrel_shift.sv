@@ -123,10 +123,25 @@ module cic_barrel_shift #(
     // order, from the most significant set bit to the least significant one.
     logic signed [SHIFT_COMP_W-1:0] q_shifted[SHIFT_W+1];
     logic signed [SHIFT_COMP_W-1:0] i_shifted[SHIFT_W+1];
-    logic                           shifter_tvalid[SHIFT_W+1];
+    logic        [SHIFT_W:0]        shifter_tvalid;
     logic                           shifter_tlast[SHIFT_W+1];
 
     logic stage_tready [SHIFT_W+1];
+
+    // A rate change leading to a new shift amount is only legal while the
+    // barrel-shifter pipeline is empty. The shift amount is shared by all
+    // pipeline stages, so changing it with valid data in flight would apply the
+    // new amount to part of an old word. This assumption is also used by the
+    // barrel-shifter multicycle path in
+    // fpga/usrp3/top/x400/constraints/timing/common.xdc.
+    // The assertion is done even when reset or clear is present to ensure the
+    // multicycle path is used correctly at all times.
+    // synthesis translate_off
+    assert property (
+      @(posedge clk) $changed(shift_amount[1]) |-> (shifter_tvalid == 0)[*2]
+    ) else
+      $error("cic_barrel_shift: data processed before shift_amount was settled");
+    // synthesis translate_on
 
     // Input stage: scale up by one bit so the shift keeps the round bit.
     assign q_shifted[SHIFT_W] = {data_in.tdata[IN_WIDTH*samp_idx             +: IN_COMP_W], 1'b0};
