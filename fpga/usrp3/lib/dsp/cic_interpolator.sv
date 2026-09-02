@@ -308,6 +308,8 @@ module cic_interpolator #(
   //---------------------------------------------------------------------------
   // Output Register
   //---------------------------------------------------------------------------
+  logic [SPC*SAMP_W:0] fifo_out;
+
   axi_fifo #(
     .WIDTH (SPC*SAMP_W + 1  ),
     .SIZE  (1               )
@@ -318,12 +320,14 @@ module cic_interpolator #(
     .i_tdata  ({tlast_pipe[1], gen_tdata}),
     .i_tvalid (tvalid_pipe[1]        ),
     .i_tready (gen_tready            ),
-    .o_tdata  ({data_out.tlast, data_out.tdata}),
+    .o_tdata  (fifo_out              ),
     .o_tvalid (data_out.tvalid       ),
     .o_tready (data_out.tready       ),
     .space    (                      ),
     .occupied (                      )
   );
+
+  assign {data_out.tlast, data_out.tdata} = fifo_out;
 
 endmodule : cic_interpolator
 

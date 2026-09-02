@@ -96,8 +96,6 @@ module cic_barrel_shift_tb #(
 
   cic_barrel_shift #(
     .SPC      (SPC),
-    .OUT_WIDTH(OUT_WIDTH),
-    .IN_WIDTH (IN_WIDTH),
     .MAX_RATE (MAX_RATE),
     .ORDER    (ORDER)
   ) dut (

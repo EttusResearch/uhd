@@ -217,8 +217,6 @@ module cic_filter_decim #(
   // Barrel-shift each I/Q component and extract SAMP_W/2 output bits.
   cic_barrel_shift #(
     .SPC       (SPC),
-    .IN_WIDTH  (ACCUM_W),
-    .OUT_WIDTH (SAMP_W),
     .MAX_RATE  (MAX_DECIM),
     .ORDER     (ORDER)
   ) cic_barrel_shift_i (

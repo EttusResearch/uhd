@@ -33,10 +33,6 @@
 // Parameters:
 //
 //   SPC       : Number of samples per clock cycle (power of 2, >= 1).
-//   OUT_WIDTH : Output sample width in bits (I + Q packed, each OUT_WIDTH/2 bits).
-//               data_out.tdata must be SPC * OUT_WIDTH bits wide.
-//   IN_WIDTH  : Input sample width in bits (I + Q packed, each IN_WIDTH/2 bits).
-//               data_in.tdata must be SPC * IN_WIDTH bits wide.
 //   MAX_RATE : Maximum rate factor (decimation or interpolation ratio).
 //              Sizes the compile-time shift lookup table.
 //   ORDER    : CIC filter order (number of integrator/comb stages).
@@ -57,8 +53,6 @@
 
 module cic_barrel_shift #(
   parameter int SPC      = 4,
-  parameter int OUT_WIDTH   = 32,
-  parameter int IN_WIDTH   = 128,
   parameter int MAX_RATE = 255,
   parameter int ORDER    = 4
 )(
@@ -72,9 +66,11 @@ module cic_barrel_shift #(
   // Data out: SPC samples, each OUT_WIDTH bits wide ({I, Q} each OUT_WIDTH/2 bits)
   AxiStreamIf.master data_out
 );
+  import cic_utils_pkg::*;
 
-  localparam int MAX_SHIFT = IN_WIDTH/2 - OUT_WIDTH/2;
-  localparam int SHIFT_W   = $clog2(MAX_SHIFT + 1);
+  localparam int IN_WIDTH  = data_in.DATA_WIDTH / SPC;
+  localparam int OUT_WIDTH = data_out.DATA_WIDTH / SPC;
+  localparam int SHIFT_W   = barrel_shift_width(IN_WIDTH, OUT_WIDTH);
   localparam int IN_COMP_W = IN_WIDTH/2;
   localparam int OUT_COMP_W = OUT_WIDTH/2;
   // One extra LSB so the bit dropped by the shift is available for rounding.

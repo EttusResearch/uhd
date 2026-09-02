@@ -70,6 +70,8 @@ module cic_integrator #(
   AxiStreamIf.slave  data_in,
   AxiStreamIf.master data_out
 );
+  import cic_utils_pkg::*;
+
   // compile time check
   if (SAMP_W % 2 != 0) begin
       $error("cic_integrator: SAMP_W must be a multiple of 2");
@@ -82,7 +84,7 @@ module cic_integrator #(
   //   final prefix_accum                : 2 cycles
   //   de-staircase                      : SPC-1 cycles
   //   Total = ORDER*(SPC+1) + SPC + 1 cycles.
-  localparam int CIC_LATENCY = ORDER * (SPC + 2-1) + SPC + 1;
+  localparam int CIC_LATENCY = integrator_dsp_latency(SPC, ORDER);
   // OUT_FIFO_SIZE: The pipeline is gated by fifo_in_ready so it stalls in
   // lock-step with data_in.tready; the FIFO only needs to absorb the one
   // word in transit between the pipeline output register and the FIFO input.

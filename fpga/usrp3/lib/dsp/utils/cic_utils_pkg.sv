@@ -12,6 +12,28 @@
 
 package cic_utils_pkg;
 
+  function automatic int barrel_shift_width(
+    input int in_width,
+    input int out_width
+  );
+    return $clog2(in_width/2 - out_width/2 + 1);
+  endfunction
+
+  // The latency of the barrel shift stage is the number of stages in the barrel
+  // shifter plus one cycle for the output register.
+  function automatic int barrel_shift_latency(input int in_width, input int out_width);
+    return barrel_shift_width(in_width, out_width) + 1;
+  endfunction
+
+  function automatic int integrator_dsp_latency(input int spc, input int order);
+    return order * (spc + 1) + spc + 1;
+  endfunction
+
+  // The latency of the integrator is the DSP latency plus one cycle for the output register.
+  function automatic int integrator_latency(input int spc, input int order);
+    return integrator_dsp_latency(spc, order) + 1;
+  endfunction
+
   class cic_utils #(
     parameter int SPC         = 8,   // Number of samples processed per clock cycle
     parameter int SAMP_W      = 48   // Input/output data width

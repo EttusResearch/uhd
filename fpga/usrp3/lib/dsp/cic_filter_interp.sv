@@ -25,21 +25,31 @@
 //               │  └───────────┬────────────┘   │
 //               └──────────────┼────────────────┘
 //                              │
-//                  ┌────────────────────────┐
-//    interp_factor─┤    Interpolator (×R)   │
-//                  └───────────┬────────────┘
-//                              │
-//               ┌──────────────┼────────────────┐
-//               │  ┌────────────────────────┐   │
-//               │  │      Integrator 0      │   │
-//               │  └───────────┬────────────┘   │
-//               │              │                │ ORDER stages
-//               │             ···               │ (full output rate)
-//               │              │                │
-//               │  ┌────────────────────────┐   │
-//               │  │   Integrator ORDER-1   │   │
-//               │  └───────────┬────────────┘   │
-//               └──────────────┼────────────────┘
+//                  ┌────────────────────────┐   tready
+//    interp_factor─┤    Interpolator (×R)   │<──────────────┐
+//                  └───────────┬────────────┘               │
+//                              │                            │
+//               ┌──────────────┼────────────────┐           │
+//               │  ┌────────────────────────┐   │           │
+//               │  │      Integrator 0      │   │           │
+//               │  └────────────────────────┘   │           │
+//               │              │                │ ORDER     │
+//               │             ···               │ stages    │
+//               │              │                │           │
+//               │  ┌────────────────────────┐   │           │
+//               │  │   Integrator ORDER-1   │   │           │
+//               │  └────────────────────────┘   │           │
+//               └──────────────┼────────────────┘           │
+//                              │                            │
+//                              v                            │
+//               ┌───────────────────────────────┐           │
+//               │         Barrel shift          │           │
+//               └──────────────┬────────────────┘           │
+//                              │                            │
+//                              v                            │
+//               ┌───────────────────────────────┐           │
+//               │          Output FIFO          │───────────┘
+//               └───────────────────────────────┘
 //                              │
 //                              v
 //                           data_out
@@ -99,6 +109,8 @@ module cic_filter_interp #(
   AxiStreamIf.slave         data_in,
   AxiStreamIf.master        data_out
 );
+  `include "../axi4s_sv/axi4s.vh"
+
   //--------------------------------------------------------------------------
   // Local parameters
   //--------------------------------------------------------------------------
@@ -124,12 +136,17 @@ module cic_filter_interp #(
   // The interpolator operates at COMB_W bits. Its output is sign-extended to
   // ACCUM_W bits before entering the integrator chain.
   AxiStreamIf #(SPC * COMB_W) interp_bus (.clk(clk), .rst(rst));
+  AxiStreamIf #(SPC * ACCUM_W) interp_bus_extended (.clk(clk), .rst(rst));
 
   // Integrator path: two buses connecting the interpolator to the integrator
   // chain and carrying the chain output.
   // integ_bus[0] is driven by the interpolator.
   // integ_bus[1] carries the output of the ORDER-stage integrator chain.
   AxiStreamIf #(SPC * ACCUM_W) integ_bus [2] (.clk(clk), .rst(rst));
+
+  // Barrel Shift output bus
+  AxiStreamIf #(data_out.DATA_WIDTH) barrel_shift_out (.clk(clk), .rst(rst));
+  AxiStreamIf #(data_out.DATA_WIDTH) output_fifo_in (.clk(clk), .rst(rst));
 
   //---------------------------------------------------------------------------
   // Register configuration parameters
@@ -223,9 +240,9 @@ module cic_filter_interp #(
   // stages require ACCUM_W bits to accommodate their accumulated growth.
   //--------------------------------------------------------------------------
 
-  assign integ_bus[0].tvalid = interp_bus.tvalid;
-  assign integ_bus[0].tlast  = interp_bus.tlast;
-  assign interp_bus.tready   = integ_bus[0].tready;
+  assign interp_bus_extended.tvalid = interp_bus.tvalid;
+  assign interp_bus_extended.tlast  = interp_bus.tlast;
+  assign interp_bus.tready   = interp_bus_extended.tready;
 
   for (genvar samp_idx = 0; samp_idx < SPC; samp_idx++) begin : gen_interp_ext
     sign_extend #(
@@ -233,14 +250,14 @@ module cic_filter_interp #(
       .bits_out(ACCUM_W/2)
     ) sign_ext_q (
       .in (interp_bus.tdata[COMB_W*samp_idx +: COMB_W/2]),
-      .out(integ_bus[0].tdata[ACCUM_W*samp_idx +: ACCUM_W/2])
+      .out(interp_bus_extended.tdata[ACCUM_W*samp_idx +: ACCUM_W/2])
     );
     sign_extend #(
       .bits_in (COMB_W/2),
       .bits_out(ACCUM_W/2)
     ) sign_ext_i (
       .in (interp_bus.tdata[COMB_W*samp_idx + COMB_W/2 +: COMB_W/2]),
-      .out(integ_bus[0].tdata[ACCUM_W*samp_idx + ACCUM_W/2 +: ACCUM_W/2])
+      .out(interp_bus_extended.tdata[ACCUM_W*samp_idx + ACCUM_W/2 +: ACCUM_W/2])
     );
   end : gen_interp_ext
 
@@ -248,6 +265,32 @@ module cic_filter_interp #(
   //---------------------------------------------------------------------------
   // Integrator chain: ORDER stages at full output rate
   //---------------------------------------------------------------------------
+  // Starting here until the output FIFO the data flow is controlled by the
+  // output FIFO backpressure.
+  logic fifo_ready;
+  logic input_blocked;
+
+  // Align input locking with AXI transfer.
+  always_ff @(posedge clk) begin
+    if (rst || clear) begin
+      input_blocked <= 1'b0;
+    end else begin
+      if (fifo_ready) begin
+        input_blocked <= 1'b0;
+      end else if (interp_bus_extended.tvalid && interp_bus_extended.tready) begin
+        input_blocked <= 1'b1;
+      end
+    end
+  end
+
+  always_comb begin
+    `AXI4S_ASSIGN(integ_bus[0], interp_bus_extended)
+
+    // overwrite handshake signal to block input when FIFO is full
+    interp_bus_extended.tready = integ_bus[0].tready & ~input_blocked;
+    integ_bus[0].tvalid = interp_bus_extended.tvalid & ~input_blocked;
+  end
+
   cic_integrator #(
     .SAMP_W(ACCUM_W),
     .SPC   (SPC),
@@ -264,8 +307,6 @@ module cic_filter_interp #(
   // Barrel-shift each I/Q component and extract SAMP_W/2 output bits.
   cic_barrel_shift #(
     .SPC       (SPC),
-    .IN_WIDTH  (ACCUM_W),
-    .OUT_WIDTH (SAMP_W),
     .MAX_RATE  (MAX_INTERP),
     .ORDER     (ORDER-1) // An Nth order CIC interpolation filter has a Gain of
                          // R^(N-1) at DC, so we shift by ceil(log2(R^(N-1))) bits.
@@ -275,7 +316,63 @@ module cic_filter_interp #(
     .clear       (clear),
     .rate_factor (interp_factor_reg),
     .data_in     (integ_bus[1]),
-    .data_out    (data_out)
+    .data_out    (barrel_shift_out)
+  );
+
+  //---------------------------------------------------------------------------
+  // Output FIFO to absorb latency of bypassed modules
+  //---------------------------------------------------------------------------
+  import cic_utils_pkg::*;
+  localparam int LATENCY = integrator_latency(SPC, ORDER)
+                          + barrel_shift_latency(ACCUM_W, SAMP_W)
+                          + 1  // fifo_ready register
+                          + 1  // input_blocked register
+                          + 1; // output FIFO output register offset for space calculation
+
+
+  // assign the barrel shift output to the FIFO input, and always ready to
+  // accept data. The FIFO will backpressure the integrator chain when it is full.
+  always_comb begin
+    `AXI4S_ASSIGN(output_fifo_in, barrel_shift_out)
+    barrel_shift_out.tready = 1'b1;
+  end
+
+  // Allow the integrator chain to continue processing as long as the FIFO has
+  // enough space for the entire latency of the bypassed modules.
+  logic [15:0] fifo_space;
+  always_ff @(posedge clk) begin
+    if (rst || clear) begin
+      fifo_ready <= 1'b0;
+    end else begin
+      fifo_ready <= (fifo_space > LATENCY);
+    end
+  end
+
+  // FIFO depth is the next power of two at or above twice the calculated
+  // latency, ensuring sufficient buffering for constant data flow downstream
+  // after stalls.
+  localparam int FIFO_WIDTH = data_out.DATA_WIDTH + 1;
+  logic [FIFO_WIDTH-1:0] fifo_i_tdata;
+  logic [FIFO_WIDTH-1:0] fifo_o_tdata;
+
+  assign fifo_i_tdata   = {output_fifo_in.tlast, output_fifo_in.tdata};
+  assign {data_out.tlast, data_out.tdata} = fifo_o_tdata;
+
+  axi_fifo #(
+    .WIDTH(FIFO_WIDTH),
+    .SIZE ($clog2(2*LATENCY))
+  ) output_fifo (
+    .clk      (clk),
+    .reset    (rst | clear),
+    .clear    (1'b0),
+    .i_tdata  (fifo_i_tdata),
+    .i_tvalid (output_fifo_in.tvalid),
+    .i_tready (output_fifo_in.tready),
+    .o_tdata  (fifo_o_tdata),
+    .o_tvalid (data_out.tvalid),
+    .o_tready (data_out.tready),
+    .space    (fifo_space),
+    .occupied ()
   );
 
 endmodule : cic_filter_interp
