@@ -285,20 +285,40 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
 void benchmark_tx_rate_async_helper(uhd::tx_streamer::sptr tx_stream,
     const start_time_type& start_time,
-    std::atomic<bool>& burst_timer_elapsed)
+    std::atomic<bool>& burst_timer_elapsed,
+    int64_t tx_eob_ack_timeout)
 {
     // setup variables and allocate buffer
+    std::chrono::steady_clock::time_point eob_deadline;
     uhd::async_metadata_t async_md;
     bool exit_flag = false;
 
     while (true) {
-        if (burst_timer_elapsed) {
+        if (burst_timer_elapsed && !exit_flag) {
             exit_flag = true;
+            if (tx_eob_ack_timeout > 0) {
+                eob_deadline = std::chrono::steady_clock::now()
+                               + std::chrono::seconds(tx_eob_ack_timeout);
+                std::cout << "[" << NOW() << "] Waiting " << tx_eob_ack_timeout
+                          << " seconds for Tx EOB ACK..." << std::endl;
+            }
         }
 
         if (not tx_stream->recv_async_msg(async_md)) {
-            if (exit_flag == true)
-                return;
+            if (exit_flag) {
+                // Without a configured timeout we don't wait for the EOB ACK at all.
+                if (tx_eob_ack_timeout <= 0) {
+                    return;
+                }
+                if (std::chrono::steady_clock::now() > eob_deadline) {
+                    std::cerr << "[" << NOW()
+                              << "] Timed out waiting for Tx EOB ACK after "
+                              << tx_eob_ack_timeout << " seconds." << std::endl;
+                    return;
+                } else {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                }
+            }
             continue;
         }
 
@@ -352,7 +372,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         "                      [--drop-threshold DROP_THRESHOLD]\n"
         "                      [--seq-threshold SEQ_THRESHOLD]\n"
         "                      [--tx_delay TX_DELAY] [--rx_delay RX_DELAY]\n"
-        "                      [--priority PRIORITY] [--multi_streamer]"
+        "                      [--priority PRIORITY] [--multi_streamer]\n"
+        "                      [--tx_eob_ack_timeout TX_EOB_ACK_TIMEOUT]\n"
         "\n\n"
         "This example program benchmarks the streaming performance of a USRP\n"
         "device at user-specified RX and/or TX sample rate per channel. Specify\n"
@@ -433,6 +454,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     bool rx_stream_now = false;
     std::string priority;
     bool elevate_priority = false;
+    double tx_eob_ack_timeout;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -533,6 +555,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             "high).")
         ("multi_streamer", "Create a separate data streamer for each TX/RX channel, each running in a "
             "separate thread.")
+        ("tx_eob_ack_timeout", po::value<double>(&tx_eob_ack_timeout)->default_value(-1),
+         "Timeout (in seconds) to use when waiting for Tx EOB ACK. Defaults to not waiting for the ACK.")
     ;
     // clang-format on
     po::variables_map vm;
@@ -834,7 +858,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                     &threads.back(), "bmark_tx_strm" + std::to_string(count));
                 threads.emplace_back([=, &burst_timer_elapsed]() {
                     benchmark_tx_rate_async_helper(
-                        tx_stream, start_time, burst_timer_elapsed);
+                        tx_stream, start_time, burst_timer_elapsed, tx_eob_ack_timeout);
                 });
                 uhd::set_thread_name(
                     &threads.back(), "bmark_tx_hlpr" + std::to_string(count));
@@ -877,7 +901,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             uhd::set_thread_name(&threads.back(), "bmark_tx_stream");
             threads.emplace_back([=, &burst_timer_elapsed]() {
                 benchmark_tx_rate_async_helper(
-                    tx_stream, start_time, burst_timer_elapsed);
+                    tx_stream, start_time, burst_timer_elapsed, tx_eob_ack_timeout);
             });
             uhd::set_thread_name(&threads.back(), "bmark_tx_helper");
         }
