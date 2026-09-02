@@ -240,7 +240,10 @@ def parse_args():
         type=int,
         default=0,
         required=False,
-        help="Initial seed value to use.",
+        help=(
+            "Seed for the random number generator used to generate "
+            "the random BUILD_SEED value for each FPGA build attempt."
+        ),
     )
     parser.add_argument(
         "--fpga-jobs",
@@ -492,21 +495,6 @@ def run_ip_build(
     return Status.SUCCESS
 
 
-def next_build_seed(previous_seed):
-    """Determines the next seed to use based on the previous seed. This creates
-    a reproducible sequence of values with a specific initial value.
-
-    Args:
-        previous_seed: The previous integer seed from which to determine the
-            new seed.
-
-    Returns:
-        The next build seed value in the range of a 32-bit signed integer.
-    """
-    random.seed(previous_seed)
-    return random.randint(-0x80000000, 0x7FFFFFFF)
-
-
 def main():
     """Run the requested builds.
 
@@ -520,7 +508,7 @@ def main():
     if not args.target and not args.image_core:
         logging.error("Either --target or --image-core must be provided!")
         return Status.NONE.value
-    build_seed = args.seed
+    build_seed_rng = random.Random(args.seed)
     workers = Workers()
 
     if args.fpga_jobs > 1 and not args.image_core_name:
@@ -556,6 +544,8 @@ def main():
             ):
                 worker_num = workers.new()
                 build_num = worker_num + args.index
+                # Generate a random 32-bit signed BUILD_SEED for each build
+                build_seed = build_seed_rng.randint(-0x80000000, 0x7FFFFFFF)
                 thread = threading.Thread(
                     target=run_fpga_build,
                     args=(
@@ -576,7 +566,6 @@ def main():
                 )
                 workers.set(worker_num, thread=thread, start_time=time.time())
                 thread.start()
-                build_seed = next_build_seed(build_seed)
             else:
                 # We've maxed out the number of workers/jobs, so check the
                 # status periodically.
