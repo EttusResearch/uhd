@@ -119,8 +119,8 @@ module cic_barrel_shift #(
   assign data_in.tready = lane_tready[0];
 
   for (genvar samp_idx = 0; samp_idx < SPC; samp_idx++) begin : gen_shift_out
-    // Arithmetic right-shift pipeline: stage k shifts right by 2^k if
-    // shift_amount[1][k] is set.
+    // Arithmetic right-shift pipeline: stages shift right in descending bit
+    // order, from the most significant set bit to the least significant one.
     logic signed [SHIFT_COMP_W-1:0] q_shifted[SHIFT_W+1];
     logic signed [SHIFT_COMP_W-1:0] i_shifted[SHIFT_W+1];
     logic                           shifter_tvalid[SHIFT_W+1];
@@ -128,23 +128,23 @@ module cic_barrel_shift #(
 
     logic stage_tready [SHIFT_W+1];
 
-    // Stage 0: input scaled up by one bit so the shift keeps the round bit.
-    assign q_shifted[0] = {data_in.tdata[IN_WIDTH*samp_idx             +: IN_COMP_W], 1'b0};
-    assign i_shifted[0] = {data_in.tdata[IN_WIDTH*samp_idx + IN_COMP_W +: IN_COMP_W], 1'b0};
-    assign shifter_tvalid[0]     = data_in.tvalid;
-    assign shifter_tlast[0]      = data_in.tlast;
+    // Input stage: scale up by one bit so the shift keeps the round bit.
+    assign q_shifted[SHIFT_W] = {data_in.tdata[IN_WIDTH*samp_idx             +: IN_COMP_W], 1'b0};
+    assign i_shifted[SHIFT_W] = {data_in.tdata[IN_WIDTH*samp_idx + IN_COMP_W +: IN_COMP_W], 1'b0};
+    assign shifter_tvalid[SHIFT_W] = data_in.tvalid;
+    assign shifter_tlast[SHIFT_W]  = data_in.tlast;
 
-    for (genvar shift_bit = 0; shift_bit < SHIFT_W; shift_bit++) begin : gen_shift_bits
-      // Combinational next-stage values.
+    for (genvar shift_bit = SHIFT_W - 1; shift_bit >= 0; shift_bit--) begin : gen_shift_bits
+      // Combinational next-stage values for this shift bit.
       logic signed [SHIFT_COMP_W-1:0] q_next;
       logic signed [SHIFT_COMP_W-1:0] i_next;
       always_comb begin
         if (shift_amount[1][shift_bit]) begin
-          q_next = q_shifted[shift_bit] >>> (1 << shift_bit);
-          i_next = i_shifted[shift_bit] >>> (1 << shift_bit);
+          q_next = q_shifted[shift_bit + 1] >>> (2 ** shift_bit);
+          i_next = i_shifted[shift_bit + 1] >>> (2 ** shift_bit);
         end else begin
-          q_next = q_shifted[shift_bit];
-          i_next = i_shifted[shift_bit];
+          q_next = q_shifted[shift_bit + 1];
+          i_next = i_shifted[shift_bit + 1];
         end
       end
 
@@ -158,12 +158,12 @@ module cic_barrel_shift #(
         .clk     (clk),
         .reset   (rst),
         .clear   (clear),
-        .i_tdata ({shifter_tlast[shift_bit], i_next, q_next}),
-        .i_tvalid(shifter_tvalid[shift_bit]),
-        .i_tready(stage_tready[shift_bit]),
-        .o_tdata ({shifter_tlast[shift_bit+1], i_shifted[shift_bit+1], q_shifted[shift_bit+1]}),
-        .o_tvalid(shifter_tvalid[shift_bit+1]),
-        .o_tready(stage_tready[shift_bit+1]),
+        .i_tdata ({shifter_tlast[shift_bit + 1], i_next, q_next}),
+        .i_tvalid(shifter_tvalid[shift_bit + 1]),
+        .i_tready(stage_tready[shift_bit + 1]),
+        .o_tdata ({shifter_tlast[shift_bit], i_shifted[shift_bit], q_shifted[shift_bit]}),
+        .o_tvalid(shifter_tvalid[shift_bit]),
+        .o_tready(stage_tready[shift_bit]),
         .occupied(),
         .space()
       );
@@ -185,17 +185,17 @@ module cic_barrel_shift #(
       .clk     (clk),
       // axi_round_and_clip has no clear input, so flush it through reset.
       .reset   (rst | clear),
-      .i_tdata ({i_shifted[SHIFT_W][ROUND_COMP_W-1:0], q_shifted[SHIFT_W][ROUND_COMP_W-1:0]}),
-      .i_tlast (shifter_tlast[SHIFT_W]),
-      .i_tvalid(shifter_tvalid[SHIFT_W]),
-      .i_tready(stage_tready[SHIFT_W]),
+      .i_tdata ({i_shifted[0][ROUND_COMP_W-1:0], q_shifted[0][ROUND_COMP_W-1:0]}),
+      .i_tlast (shifter_tlast[0]),
+      .i_tvalid(shifter_tvalid[0]),
+      .i_tready(stage_tready[0]),
       .o_tdata (rounded),
       .o_tlast (rounded_tlast),
       .o_tvalid(rounded_tvalid),
       .o_tready(data_out.tready)
     );
 
-    assign lane_tready[samp_idx] = stage_tready[0];
+    assign lane_tready[samp_idx] = stage_tready[SHIFT_W];
     assign lane_tvalid[samp_idx] = rounded_tvalid;
     assign lane_tlast[samp_idx]  = rounded_tlast;
     assign lane_tdata[samp_idx]  = rounded;
