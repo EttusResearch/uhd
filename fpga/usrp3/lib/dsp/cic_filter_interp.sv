@@ -175,8 +175,9 @@ module cic_filter_interp #(
   //---------------------------------------------------------------------------
   for (genvar stage = 0; stage < ORDER; stage++) begin : gen_combs
     cic_comb_filter #(
-      .ACCUM_W (ACCUM_W),
-      .SPC     (SPC)
+      .ACCUM_W  (ACCUM_W),
+      .SPC      (SPC),
+      .FIFO_SIZE((stage == ORDER-1)? 1 : 0)
     ) cic_comb_filter_i (
       .clk     (clk),
       .rst     (rst),

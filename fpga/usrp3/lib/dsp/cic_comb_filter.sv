@@ -56,13 +56,17 @@
 //    SPC           : Number of samples processed per clock cycle. Must be a
 //                    power of 2 and at least 1.
 //
+//    FIFO_SIZE     : Log2 of the depth of the output buffer FIFO. Set to 0 for
+//                    a single-stage flop.
+//
 
 
 `default_nettype none
 
 module cic_comb_filter #(
   parameter int ACCUM_W        = 96,
-  parameter int SPC            = 4
+  parameter int SPC            = 4,
+  parameter int FIFO_SIZE      = 0
 ) (
   input wire              clk,
   input wire              rst,
@@ -178,14 +182,15 @@ module cic_comb_filter #(
   //---------------------------------------------------------------------------
   // Output FIFO (single stage)
   //
-  // Breaks the combinational path from data_out.tready to data_in.tready.
+  // Optionally breaks the combinational path from data_out.tready to
+  // data_in.tready.
   //---------------------------------------------------------------------------
 
   logic [SPC*ACCUM_W:0] fifo_out_tdata;
 
   axi_fifo #(
     .WIDTH(SPC * ACCUM_W + 1),
-    .SIZE (1)
+    .SIZE (FIFO_SIZE)
   ) output_buffer (
     .clk     (clk),
     .reset   (rst),
