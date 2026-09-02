@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-""" Test using benchmark_rate. """
+"""Test using benchmark_rate."""
 
 import re
 
@@ -15,6 +15,7 @@ DEFAULT_O_THRESHOLD = 1000
 DEFAULT_U_THRESHOLD = 1000
 DEFAULT_D_THRESHOLD = 50
 DEFAULT_S_THRESHOLD = 50
+DEFAULT_TX_EOB_ACK_TIMEOUT = -1  # Default to no waiting for EOB ACK
 
 
 class UhdBenchmarkRateTest(uhd_example_test_case):
@@ -63,6 +64,8 @@ class UhdBenchmarkRateTest(uhd_example_test_case):
             str(test_args.get("acceptable-D", DEFAULT_D_THRESHOLD)),
             "--seq-threshold",
             str(test_args.get("acceptable-S", DEFAULT_S_THRESHOLD)),
+            "--tx_eob_ack_timeout",
+            str(test_args.get("eob-ack-timeout", DEFAULT_TX_EOB_ACK_TIMEOUT)),
         ]
         if "tx" in test_args.get("direction", ""):
             args.append("--tx_rate")
@@ -70,7 +73,7 @@ class UhdBenchmarkRateTest(uhd_example_test_case):
         if "rx" in test_args.get("direction", ""):
             args.append("--rx_rate")
             args.append(str(samp_rate))
-        (app, run_results) = self.run_example("benchmark_rate", args)
+        app, run_results = self.run_example("benchmark_rate", args)
 
         match = re.search(r"(Num received samples):\s*(.*)", app.stdout)
         run_results["num_rx_samples"] = int(match.group(2)) if match else -1

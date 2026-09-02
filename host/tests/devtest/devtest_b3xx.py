@@ -24,6 +24,7 @@ UhdBenchmarkRateTest.tests = {
         "acceptable-overruns": 0,
         "acceptable-D": 0,
         "acceptable-S": 0,
+        "eob-ack-timeout": 180,
     },
     "tx_multi_chan": {
         "duration": 1,
@@ -37,6 +38,7 @@ UhdBenchmarkRateTest.tests = {
         "acceptable-overruns": 0,
         "acceptable-D": 0,
         "acceptable-S": 0,
+        "eob-ack-timeout": 180,
     },
     "rx_single_chan": {
         "duration": 1,
@@ -76,6 +78,7 @@ UhdBenchmarkRateTest.tests = {
         "acceptable-overruns": 0,
         "acceptable-D": 0,
         "acceptable-S": 0,
+        "eob-ack-timeout": 180,
     },
 }
 
