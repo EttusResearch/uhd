@@ -49,8 +49,10 @@
 //   Finally, ORDER integrator stages accumulate partial sums across SPC
 //   parallel sample lanes at the full output rate.
 //
-//   Internally, all stages operate at ACCUM_W bits, which is automatically
-//   computed to accommodate the full CIC bit growth of N*log2(R_max*D_max).
+//   Comb and interpolator stages use COMB_W bits. COMB_W provides ORDER bits
+//   of growth per I/Q component for the comb cascade. Integrator stages use
+//   ACCUM_W bits, automatically computed to provide
+//   ORDER*ceil(log2(MAX_INTERP*MAX_DELAY)) bits of growth per component.
 //   Internal stages do not clip or round. The output is normalized back to
 //   SAMP_W with signed round-to-nearest quantization.
 //
@@ -102,9 +104,14 @@ module cic_filter_interp #(
   //--------------------------------------------------------------------------
   localparam int MAX_DELAY = 1;  // Maximum comb delay in samples
 
-  // Accumulator width to accommodate max CIC growth without overflow:
+  // Accumulator width for the maximum integrator growth without overflow.
   localparam int ACCUM_W = 2 * (SAMP_W/2 + $clog2(MAX_INTERP*MAX_DELAY)*ORDER);
-  localparam int COMP_W  = ACCUM_W/2; // Width of each I/Q component in the accumulator
+
+  // A cascade of ORDER comb stages has coefficients whose absolute sum is
+  // 2**ORDER, so each component needs ORDER bits of growth. The comb stages
+  // precede the interpolator and can therefore use less width than the full
+  // accumulation path.
+  localparam int COMB_W  = 2 * (SAMP_W/2 + ORDER);
 
   //---------------------------------------------------------------------------
   // Internal AXI-Stream buses
@@ -112,11 +119,16 @@ module cic_filter_interp #(
   // Comb chain: ORDER+1 buses connecting comb filter inputs/outputs.
   // comb_bus[0] is driven by the sign-extended input.
   // comb_bus[i] for i > 0 carries the output of comb stage i-1.
-  AxiStreamIf #(SPC * ACCUM_W) comb_bus [ORDER+1] (.clk(clk), .rst(rst));
+  AxiStreamIf #(SPC * COMB_W) comb_bus [ORDER+1] (.clk(clk), .rst(rst));
 
-  // Integrator chain: ORDER+1 buses connecting integrator outputs.
-  // integ_bus[0] is driven by the interpolator output.
-  // integ_bus[i] for i > 0 carries the output of integrator stage i-1.
+  // The interpolator operates at COMB_W bits. Its output is sign-extended to
+  // ACCUM_W bits before entering the integrator chain.
+  AxiStreamIf #(SPC * COMB_W) interp_bus (.clk(clk), .rst(rst));
+
+  // Integrator path: two buses connecting the interpolator to the integrator
+  // chain and carrying the chain output.
+  // integ_bus[0] is driven by the interpolator.
+  // integ_bus[1] carries the output of the ORDER-stage integrator chain.
   AxiStreamIf #(SPC * ACCUM_W) integ_bus [2] (.clk(clk), .rst(rst));
 
   //---------------------------------------------------------------------------
@@ -139,11 +151,11 @@ module cic_filter_interp #(
 
 
   //--------------------------------------------------------------------------
-  // Sign extension to ACCUM_W bits for the input samples
+  // Sign extension to COMB_W bits for the input samples
   //
   // Each sample in data_in is SAMP_W bits wide ({I, Q}). Sign-extend each I
-  // and Q component independently from SAMP_W/2 to COMP_W bits, then pack into
-  // comb_bus[0].tdata as ACCUM_W-wide samples.
+  // and Q component independently from SAMP_W/2 to COMB_W/2 bits, then pack
+  // into comb_bus[0].tdata as COMB_W-wide samples.
   //--------------------------------------------------------------------------
 
   assign comb_bus[0].tvalid = data_in.tvalid;
@@ -154,18 +166,18 @@ module cic_filter_interp #(
     // Q component (lower half of each sample)
     sign_extend #(
       .bits_in (SAMP_W/2),
-      .bits_out(COMP_W)
+      .bits_out(COMB_W/2)
     ) sign_ext_q (
       .in (data_in.tdata[SAMP_W*samp_idx +: SAMP_W/2]),
-      .out(comb_bus[0].tdata[ACCUM_W*samp_idx +: COMP_W])
+      .out(comb_bus[0].tdata[COMB_W*samp_idx +: COMB_W/2])
     );
     // I component (upper half of each sample)
     sign_extend #(
       .bits_in (SAMP_W/2),
-      .bits_out(COMP_W)
+      .bits_out(COMB_W/2)
     ) sign_ext_i (
       .in (data_in.tdata[SAMP_W*samp_idx + SAMP_W/2 +: SAMP_W/2]),
-      .out(comb_bus[0].tdata[ACCUM_W*samp_idx + COMP_W +: COMP_W])
+      .out(comb_bus[0].tdata[COMB_W*samp_idx + COMB_W/2 +: COMB_W/2])
     );
   end : gen_sign_ext
 
@@ -175,7 +187,7 @@ module cic_filter_interp #(
   //---------------------------------------------------------------------------
   for (genvar stage = 0; stage < ORDER; stage++) begin : gen_combs
     cic_comb_filter #(
-      .ACCUM_W  (ACCUM_W),
+      .ACCUM_W  (COMB_W),
       .SPC      (SPC),
       .FIFO_SIZE((stage == ORDER-1)? 1 : 0)
     ) cic_comb_filter_i (
@@ -192,17 +204,45 @@ module cic_filter_interp #(
   // Interpolator: increases sample rate by interp_factor
   //---------------------------------------------------------------------------
   cic_interpolator #(
-    .SAMP_W        (ACCUM_W),
+    .SAMP_W        (COMB_W),
     .SPC           (SPC),
     .R_MAX         (MAX_INTERP)
   ) cic_interpolator_i (
     .clk           (clk),
     .rst           (rst || clear),
     .data_in       (comb_bus[ORDER]),
-    .data_out      (integ_bus[0]),
+    .data_out      (interp_bus),
     .interp_factor (interp_factor_reg),
     .interp_changed(config_changed_reg)
   );
+
+  //--------------------------------------------------------------------------
+  // Sign extension from COMB_W to ACCUM_W bits.
+  //
+  // The interpolator does not increase the numeric width. The integrator
+  // stages require ACCUM_W bits to accommodate their accumulated growth.
+  //--------------------------------------------------------------------------
+
+  assign integ_bus[0].tvalid = interp_bus.tvalid;
+  assign integ_bus[0].tlast  = interp_bus.tlast;
+  assign interp_bus.tready   = integ_bus[0].tready;
+
+  for (genvar samp_idx = 0; samp_idx < SPC; samp_idx++) begin : gen_interp_ext
+    sign_extend #(
+      .bits_in (COMB_W/2),
+      .bits_out(ACCUM_W/2)
+    ) sign_ext_q (
+      .in (interp_bus.tdata[COMB_W*samp_idx +: COMB_W/2]),
+      .out(integ_bus[0].tdata[ACCUM_W*samp_idx +: ACCUM_W/2])
+    );
+    sign_extend #(
+      .bits_in (COMB_W/2),
+      .bits_out(ACCUM_W/2)
+    ) sign_ext_i (
+      .in (interp_bus.tdata[COMB_W*samp_idx + COMB_W/2 +: COMB_W/2]),
+      .out(integ_bus[0].tdata[ACCUM_W*samp_idx + ACCUM_W/2 +: ACCUM_W/2])
+    );
+  end : gen_interp_ext
 
 
   //---------------------------------------------------------------------------
