@@ -112,19 +112,19 @@ module ctrlport_to_wb_uart #(
         end
         case (s_ctrlport_req_addr)
           BASE_ADDRESS + SUART_CLKDIV * REG_STRIDE_SIZE: begin
-            wb_adr_i = SUART_CLKDIV;
+            wb_adr_i <= SUART_CLKDIV;
           end
           BASE_ADDRESS + SUART_TXLEVEL * REG_STRIDE_SIZE: begin
-            wb_adr_i = SUART_TXLEVEL;
+            wb_adr_i <= SUART_TXLEVEL;
           end
           BASE_ADDRESS + SUART_RXLEVEL * REG_STRIDE_SIZE: begin
-            wb_adr_i = SUART_RXLEVEL;
+            wb_adr_i <= SUART_RXLEVEL;
           end
           BASE_ADDRESS + SUART_TXCHAR * REG_STRIDE_SIZE: begin
-            wb_adr_i = SUART_TXCHAR;
+            wb_adr_i <= SUART_TXCHAR;
           end
           BASE_ADDRESS + SUART_RXCHAR * REG_STRIDE_SIZE: begin
-            wb_adr_i = SUART_RXCHAR;
+            wb_adr_i <= SUART_RXCHAR;
           end
 
         endcase
@@ -148,10 +148,10 @@ module ctrlport_to_wb_uart #(
               wb_adr_i <= SUART_RXLEVEL;
             end
             BASE_ADDRESS + SUART_TXCHAR * REG_STRIDE_SIZE: begin
-              wb_adr_i = SUART_TXCHAR;
+              wb_adr_i <= SUART_TXCHAR;
             end
             BASE_ADDRESS + SUART_RXCHAR * REG_STRIDE_SIZE: begin
-              wb_adr_i = SUART_RXCHAR;
+              wb_adr_i <= SUART_RXCHAR;
             end
             // Respond with 0
             default: begin
