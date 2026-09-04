@@ -830,6 +830,7 @@ stages:
     parameters:
       runSimulation: true
       publish: "false"
+      requestCiPublishPermission: false
 
 ###############################################################################
 # Hardware Test Stages. These require having valid software and FPGA images.
