@@ -183,7 +183,8 @@ module ctrlport_to_wb_uart #(
     .rx_int_o(),
     .tx_int_o(),
     .tx_o(uart_tx),
-    .rx_i(uart_rx)
+    .rx_i(uart_rx),
+    .baud_o()
   );
 
 endmodule
