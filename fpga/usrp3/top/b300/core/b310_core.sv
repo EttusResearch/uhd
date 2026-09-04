@@ -622,7 +622,21 @@ module b310_core # (
   );
 
   // Select external PPS source
-  assign ext_pps_rclk = ref_clk_source ? pps_in_rclk : gpsdo_pps_in_rclk;
+  reg ref_clk_source_rclk;
+
+  synchronizer #(
+    .WIDTH           (1),  //integer:=1
+    .STAGES          (2),  //integer:=2
+    .INITIAL_VAL     (0),  //integer:=0
+    .FALSE_PATH_TO_IN(1)   //integer:=1
+  ) synchronizer_ref_clk_source (
+    .clk(radio_clk),
+    .rst(1'b0),
+    .in (ref_clk_source),
+    .out(ref_clk_source_rclk)
+  );
+
+  assign ext_pps_rclk = ref_clk_source_rclk ? pps_in_rclk : gpsdo_pps_in_rclk;
 
   // Select internal/external PPS source
   assign pps_rclk = use_external_pps_rclk ? ext_pps_rclk : int_pps_rclk;

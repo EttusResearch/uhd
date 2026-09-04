@@ -256,7 +256,7 @@ module b310
   );
 
 
-  wire bclk_radio_clk_gen_locked;
+  wire rclk_radio_clk_gen_locked;
 
 
   synchronizer #(
@@ -265,10 +265,10 @@ module b310
     .INITIAL_VAL     (0),  //integer:=0
     .FALSE_PATH_TO_IN(1)   //integer:=1
   ) synchronizer_radio_clk_locked (
-    .clk(bus_clk),                   //input wire
+    .clk(radio_clk),                   //input wire
     .rst(1'b0),                      //input wire
     .in (radio_clk_gen_locked),      //input wire[(WIDTH-1):0]
-    .out(bclk_radio_clk_gen_locked)  //output wire[(WIDTH-1):0]
+    .out(rclk_radio_clk_gen_locked)  //output wire[(WIDTH-1):0]
   );
 
   logic bus_rst;
@@ -525,7 +525,7 @@ module b310
     .clk_40mhz                   (clk_40mhz),                                //in  std_logic
     .sample_clk_1x               (radio_clk),                                //in  std_logic
     .sample_clk_2x               (radio_clk_2x),                             //in  std_logic
-    .rclk_fpga_clocks_stable     (bclk_radio_clk_gen_locked),                //in  std_logic
+    .rclk_fpga_clocks_stable     (rclk_radio_clk_gen_locked),                //in  std_logic
     .jesd_ref_clk_p              (JESD_CLK_P),                               //in  std_logic
     .jesd_ref_clk_n              (JESD_CLK_N),                               //in  std_logic
     .rclk_jesd_ref_clk_present   (),                                         //out std_logic
@@ -951,7 +951,18 @@ module b310
 
   // GPS_REF[1] is the PPS signal from LMK05318, which is disciplined by the GPSDO.
   assign gps_lmk_pps_in = GPS_REF[1];
-  assign gps_pw_fault   = ~GPS_PWR_FAULT_N; // Active low power fault signal from GPSDO
+
+  synchronizer #(
+    .WIDTH           (1),  //integer:=1
+    .STAGES          (2),  //integer:=2
+    .INITIAL_VAL     (0),  //integer:=0
+    .FALSE_PATH_TO_IN(1)   //integer:=1
+  ) synchronizer_gps_pw_fault_in (
+    .clk(bus_clk),
+    .rst(1'b0),
+    .in (~GPS_PWR_FAULT_N),
+    .out(gps_pw_fault)
+  );
 
   synchronizer #(
     .WIDTH           (2),  //integer:=1
