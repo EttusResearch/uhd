@@ -7,12 +7,34 @@
 Network utilities for MPM
 """
 import itertools
+import os
 import socket
 
 import pyudev
-from pyroute2 import IPDB, IPRoute
+from pyroute2 import IPRoute
 from six import iteritems
 from usrp_mpm.mpmlog import get_logger
+
+# pyudev.Context() forks (find_library -> ldconfig) on creation; doing that on
+# every GetDeviceInfo interface enumeration trips gRPC's fork handlers and can
+# stall unrelated RPCs. Keep one context per process instead. IPRoute does not
+# fork, so it stays per-call (its own netlink socket, no shared state to lock).
+_udev_ctx = None
+_udev_pid = None
+
+
+def _get_udev_context():
+    """Return the shared pyudev.Context, recreating it if the PID changed.
+
+    The PID guard ensures a child process (e.g. spawned via multiprocessing)
+    never reuses a context inherited from its parent.
+    """
+    global _udev_ctx, _udev_pid
+    pid = os.getpid()
+    if _udev_ctx is None or _udev_pid != pid:
+        _udev_ctx = pyudev.Context()
+        _udev_pid = pid
+    return _udev_ctx
 
 
 def get_hostname():
@@ -27,22 +49,24 @@ def get_valid_interfaces(iface_list):
     Interfaces are checked for if they actually exist, and if so, if they're up.
     """
     valid_ifaces = []
+    from usrp_mpm import __simulated__
+
     with IPRoute() as ipr:
+        # Dump all links and addresses once and filter in Python, so the netlink
+        # round-trips stay constant instead of scaling with len(iface_list).
+        links_by_name = {link.get_attr("IFLA_IFNAME"): link for link in ipr.get_links()}
+        addrs_by_index = {}
+        for addr in ipr.get_addr(family=socket.AF_INET):
+            for ip_addr in addr.get_attrs("IFA_ADDRESS"):
+                addrs_by_index.setdefault(addr.get("index"), []).append(ip_addr)
         for iface in iface_list:
-            valid_iface_idx = ipr.link_lookup(ifname=iface)
-            if not valid_iface_idx:
+            link_info = links_by_name.get(iface)
+            if link_info is None:
                 continue
-            valid_iface_idx = valid_iface_idx[0]
-            link_list = ipr.get_links(valid_iface_idx)
-            if not link_list:
-                continue
-            link_info = link_list[0]
             # IFLA_OPERSTATE attribute isn't implemented on WSL
             # Workaround is ignore it in the simulator
-            from usrp_mpm import __simulated__
-
-            if (link_info.get_attr("IFLA_OPERSTATE") == "UP" or __simulated__) and len(
-                get_iface_addrs(link_info.get_attr("IFLA_ADDRESS"))
+            if (link_info.get_attr("IFLA_OPERSTATE") == "UP" or __simulated__) and addrs_by_index.get(
+                link_info.get("index")
             ):
                 assert link_info.get_attr("IFLA_IFNAME") == iface
                 valid_ifaces.append(iface)
@@ -116,7 +140,7 @@ def get_link_speed(ifname):
         return 1000
     net_sysfs = [
         device
-        for device in pyudev.Context().list_devices(subsystem="net")
+        for device in _get_udev_context().list_devices(subsystem="net")
         if device.sys_name == ifname
     ][0]
 
@@ -224,10 +248,17 @@ def get_local_ip_addrs(ipv4_only=False):
     """
     Return a set of IP addresses which are bound to local interfaces.
     """
-    with IPDB() as ipdb:
-        return {
-            ip_subnet[0]
-            for ip_subnet_list in [x["ipaddr"] for x in ipdb.interfaces.values()]
-            for ip_subnet in ip_subnet_list
-            if not ipv4_only or ip_subnet[0].find(":") == -1
-        }
+    # Use a single IPRoute netlink dump instead of IPDB, which spawns helper
+    # threads and builds a full interface/route database on every call
+    # (~100s of ms, non-yielding) - that starves other RPCs when GetDeviceInfo
+    # is flooded during discovery.
+    with IPRoute() as ipr:
+        addrs = ipr.get_addr()
+    # Prefer IFA_LOCAL, fall back to IFA_ADDRESS, matching how IPDB keyed
+    # addresses.
+    return {
+        ip_addr
+        for addr in addrs
+        for ip_addr in (addr.get_attrs("IFA_LOCAL") or addr.get_attrs("IFA_ADDRESS"))
+        if not ipv4_only or ip_addr.find(":") == -1
+    }
