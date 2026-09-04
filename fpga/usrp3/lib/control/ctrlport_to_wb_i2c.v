@@ -110,19 +110,19 @@ module ctrlport_to_wb_i2c #(
         end
         case (s_ctrlport_req_addr)
           BASE_ADDRESS + WB_PRER_LO * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_PRER_LO;
+            wb_adr_i <= WB_PRER_LO;
           end
           BASE_ADDRESS + WB_PRER_HI * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_PRER_HI;
+            wb_adr_i <= WB_PRER_HI;
           end
           BASE_ADDRESS + WB_CTR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_CTR;
+            wb_adr_i <= WB_CTR;
           end
           BASE_ADDRESS + WB_TXR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_TXR;
+            wb_adr_i <= WB_TXR;
           end
           BASE_ADDRESS + WB_CR * REG_STRIDE_SIZE: begin
-            wb_adr_i = WB_CR;
+            wb_adr_i <= WB_CR;
           end
 
         endcase
@@ -146,10 +146,10 @@ module ctrlport_to_wb_i2c #(
               wb_adr_i <= WB_CTR;
             end
             BASE_ADDRESS + WB_RXR * REG_STRIDE_SIZE: begin
-              wb_adr_i = WB_RXR;
+              wb_adr_i <= WB_RXR;
             end
             BASE_ADDRESS + WB_SR * REG_STRIDE_SIZE: begin
-              wb_adr_i = WB_SR;
+              wb_adr_i <= WB_SR;
             end
             // Respond with 0
             default: begin
