@@ -55,6 +55,9 @@
 //     - num_stages=1 activates hbi_2
 //     - num_stages=2 activates hbi_1 + hbi_2
 //     - num_stages=3 activates hbi_0 + hbi_1 + hbi_2
+//   num_stages must be valid one cycle before the corresponding data arrives and
+//   remain stable while that data is being processed. Change it only between bursts,
+//   after the previous burst has drained, or while resetting/clearing the cascade.
 //
 // Parameters:
 //   SAMP_W: Sample width in bits.
@@ -105,6 +108,18 @@ module axis_hb_cascade_intp #(
   output wire                  m_axis_tlast,
   input  wire [           1:0] num_stages
 );
+  // synthesis translate_off
+  logic s_axis_transfer;
+  assign s_axis_transfer = s_axis_tvalid && s_axis_tready;
+
+  // even check on reset and clear as this might happen between bursts
+  property p_num_stages_stable_before_input;
+    @(posedge clk) s_axis_transfer |-> $stable(num_stages);
+  endproperty
+  assert property (p_num_stages_stable_before_input)
+    else $error("num_stages changed during the cycle before an input transfer");
+  // synthesis translate_on
+
   // Utility function to compute per-stage SPC values.
   // Index 0 refers to the leftmost/input stage (narrowest SPC); index NUM_HB-1 is
   // the rightmost/output stage (SPC).
@@ -131,15 +146,27 @@ module axis_hb_cascade_intp #(
 
   localparam spc_arr_t SPC_PER_STAGE = spc_per_stage(SPC);
 
-  // Internal signal for selecting the filter stages ensuring num_stages does not exceed NUM_HB.
+  localparam int NUM_HB_NZ = (NUM_HB == 0) ? 1 : NUM_HB;
+
+  // Clamp num_stages to NUM_HB so out-of-range values are handled gracefully.
   logic [1:0] num_stages_int;
   assign num_stages_int = (num_stages > NUM_HB) ? NUM_HB : num_stages;
 
+  logic                  bypass_select    = '1;
+  logic [NUM_HB_NZ-1:0]  wc_direct_select = '0;
+  logic [NUM_HB_NZ-1:0]  wc_chain_select  = '0;
+
+  always_ff @(posedge clk) begin
+    bypass_select <= (num_stages_int == 0);
+    for (int i = 0; i < NUM_HB; i++) begin
+      wc_direct_select[i] <= (num_stages_int == (NUM_HB - i));
+      wc_chain_select[i]  <= (num_stages_int >  (NUM_HB - i));
+    end
+  end
+
   // Output signals of the hb cascade.
   // Driven by gen_stages[NUM_HB-1] (the rightmost/output stage) when NUM_HB > 0.
-  // Selected at the module output when num_stages_int != 0 (see bottom assigns).
-  // When NUM_HB = 0, these are never driven and never selected (num_stages_int is
-  // always 0 in that case, so s_axis_* pass through directly).
+  // Selected at the module output when bypass_select is deasserted (see bottom assigns).
   logic [SPC*SAMP_W-1:0] cascade_tdata;
   logic                  cascade_tvalid;
   logic                  cascade_tlast;
@@ -189,7 +216,7 @@ module axis_hb_cascade_intp #(
         .s_axis_rst   (rst | clear),
         .s_axis_tdata (s_axis_tdata),
         .s_axis_tkeep ('1),
-        .s_axis_tvalid(s_axis_tvalid && (num_stages_int != 2'd0)),
+        .s_axis_tvalid(s_axis_tvalid && !bypass_select),
         .s_axis_tready(s_axis_chain_tready),
         .s_axis_tlast (s_axis_tlast),
         .m_axis_aclk  (clk),
@@ -212,7 +239,7 @@ module axis_hb_cascade_intp #(
         .s_axis_rst   (rst | clear),
         .s_axis_tdata (gen_wconv[i+1].tdata[WC_IN_WORDS*SAMP_W-1:0]),
         .s_axis_tkeep ('1),
-        .s_axis_tvalid(gen_wconv[i+1].tvalid && (num_stages_int > (NUM_HB-1-i))),
+        .s_axis_tvalid(gen_wconv[i+1].tvalid && wc_chain_select[i+1]),
         .s_axis_tready(gen_wconv[i+1].chain_tready),
         .s_axis_tlast (gen_wconv[i+1].tlast),
         .m_axis_aclk  (clk),
@@ -231,14 +258,9 @@ module axis_hb_cascade_intp #(
       assign chain_tready = 1'b0;
     end
 
-    // Route tready from exactly one consumer, selected by num_stages_int:
-    //   num_stages_int == NUM_HB-i: gen_stages[i] is the active output stage
-    //                               → tready from its direct_tready
-    //   num_stages_int >  NUM_HB-i: a deeper (lower-index) stage is active
-    //                               → tready from chain_tready (next converter left)
-    //   num_stages_int <  NUM_HB-i: this converter is unused → tready = 0
-    assign tready = (num_stages_int == (NUM_HB - i)) ? gen_stages[i].direct_tready :
-                    ((num_stages_int >  (NUM_HB - i)) ? chain_tready : 1'b0);
+    // Route tready from exactly one registered control select.
+    assign tready = wc_direct_select[i] ? gen_stages[i].direct_tready :
+                    (wc_chain_select[i] ? chain_tready : 1'b0);
   end : gen_wconv
 
   // Inter-stage AXI-S connections: gen_stg_links[k] carries the output of
@@ -256,9 +278,9 @@ module axis_hb_cascade_intp #(
   // Stage i=0 is the leftmost (input) stage; i=NUM_HB-1 is the rightmost
   // (output) stage.
   //
-  // Each stage selects its input at runtime via input_select:
-  //   input_select = 0 (num_stages_int == NUM_HB-i): direct path from gen_wconv[i]
-  //   input_select = 1 (num_stages_int >  NUM_HB-i): prev path from gen_stg_links[i-1]
+  // Each stage selects its input at runtime via the registered stage controls:
+  //   input_select = 0: direct path from gen_wconv[i]
+  //   input_select = 1: previous path from gen_stg_links[i-1]
   //                                          (output of the adjacent left stage i-1)
   //
   // Stage output routing:
@@ -283,7 +305,7 @@ module axis_hb_cascade_intp #(
 
     if (i > 0) begin : with_prev
       assign prev_tdata                = gen_stg_links[i-1].tdata;
-      assign prev_tvalid               = (num_stages_int > (NUM_HB - i)) ? gen_stg_links[i-1].tvalid : 1'b0;
+      assign prev_tvalid               = wc_chain_select[i] ? gen_stg_links[i-1].tvalid : 1'b0;
       assign prev_tlast                = gen_stg_links[i-1].tlast;
       assign gen_stg_links[i-1].tready = prev_tready;
     end else begin : no_prev
@@ -301,11 +323,11 @@ module axis_hb_cascade_intp #(
       .clk          (clk),
       .rst          (rst),
       .clear        (clear),
-      .input_select ((num_stages_int > (NUM_HB - i)) ? 1'b1 : 1'b0),
+      .input_select (wc_chain_select[i]),
       .s_axis_tdata (gen_wconv[i].tdata[STG_IN_SPC*SAMP_W-1:0]),
-      .s_axis_tvalid((num_stages_int == (NUM_HB - i)) ? gen_wconv[i].tvalid : 1'b0),
+      .s_axis_tvalid(wc_direct_select[i] ? gen_wconv[i].tvalid : 1'b0),
       .s_axis_tready(direct_tready),
-      .s_axis_tlast ((num_stages_int == (NUM_HB - i)) ? gen_wconv[i].tlast : 1'b0),
+      .s_axis_tlast (wc_direct_select[i] ? gen_wconv[i].tlast : 1'b0),
       .s_prev_tdata (prev_tdata),
       .s_prev_tvalid(prev_tvalid),
       .s_prev_tready(prev_tready),
@@ -333,14 +355,14 @@ module axis_hb_cascade_intp #(
   // can accept data whenever the downstream is ready.
   assign cascade_tready = m_axis_tready;
 
-  // Output mux: when num_stages_int == 0 the module is a pass-through and s_axis_*
+  // Output mux: when bypass_select is set the module is a pass-through and s_axis_*
   // is wired directly to m_axis_*. Otherwise the cascade output is selected.
   // s_axis_tready is sourced from the width-converter chain (s_axis_chain_tready)
   // so backpressure propagates all the way back to the input.
-  assign s_axis_tready = (num_stages_int == 2'd0) ? m_axis_tready : s_axis_chain_tready;
-  assign m_axis_tdata  = (num_stages_int == 2'd0) ? s_axis_tdata  : cascade_tdata;
-  assign m_axis_tvalid = (num_stages_int == 2'd0) ? s_axis_tvalid : cascade_tvalid;
-  assign m_axis_tlast  = (num_stages_int == 2'd0) ? s_axis_tlast  : cascade_tlast;
+  assign s_axis_tready = bypass_select ? m_axis_tready : s_axis_chain_tready;
+  assign m_axis_tdata  = bypass_select ? s_axis_tdata  : cascade_tdata;
+  assign m_axis_tvalid = bypass_select ? s_axis_tvalid : cascade_tvalid;
+  assign m_axis_tlast  = bypass_select ? s_axis_tlast  : cascade_tlast;
 
 endmodule : axis_hb_cascade_intp
 

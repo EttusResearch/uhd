@@ -242,6 +242,7 @@ module axis_hb_cascade_decim_tb #(
     end else begin
       num_stages = stages_req[1:0];
     end
+    clk_gen.clk_wait_r(1);
 
     // Send packets to DUT and feed a copy into the reference model.
     foreach (test_data[i]) begin

@@ -57,6 +57,9 @@
 //
 //   The hbi_i output_select port steers the FIR output to either the WC chain
 //   (m_direct, when this is the last active stage) or the next stage.
+//   num_stages must be valid one cycle before the corresponding data arrives and
+//   remain stable while that data is being processed. Change it only between bursts,
+//   after the previous burst has drained, or while resetting/clearing the cascade.
 //
 // Parameters:
 //   SAMP_W:        Sample width in bits.
@@ -115,6 +118,18 @@ module axis_hb_cascade_decim #(
   if (NUM_HB > MAX_NUM_HB || NUM_HB < 0) begin : gen_num_hb_assertion
     $error("NUM_HB must be 0..MAX_NUM_HB (%0d), got NUM_HB=%0d", MAX_NUM_HB, NUM_HB);
   end
+
+  // synthesis translate_off
+  logic s_axis_transfer;
+  assign s_axis_transfer = s_axis_tvalid && s_axis_tready;
+
+  // even check on reset and clear as this might happen between bursts
+  property p_num_stages_stable_before_input;
+    @(posedge clk) s_axis_transfer |-> $stable(num_stages);
+  endproperty
+  assert property (p_num_stages_stable_before_input)
+    else $error("num_stages changed during the cycle before an input transfer");
+  // synthesis translate_on
 
   //---------------------------------------------------------------------------
   // Helper functions
@@ -198,9 +213,25 @@ module axis_hb_cascade_decim #(
   //---------------------------------------------------------------------------
   // Internal signals
   //---------------------------------------------------------------------------
+  localparam int NUM_HB_NZ = (NUM_HB == 0) ? 1 : NUM_HB;
+
   // Clamp num_stages to NUM_HB so out-of-range values are handled gracefully.
   logic [1:0] num_stages_int;
-  assign num_stages_int = (num_stages > NUM_HB[1:0]) ? NUM_HB[1:0] : num_stages;
+  assign num_stages_int = (num_stages > NUM_HB) ? NUM_HB : num_stages;
+
+  logic                 bypass_select       = '1;
+  logic [NUM_HB_NZ-1:0] stage_active_select = '0;
+  logic [NUM_HB_NZ-1:0] wc_direct_select    = '0;
+  logic [NUM_HB_NZ-1:0] wc_chain_select     = '0;
+
+  always_ff @(posedge clk) begin
+    bypass_select <= (num_stages_int == 0);
+    for (int i = 0; i < NUM_HB; i++) begin
+      stage_active_select[i] <= (num_stages_int  > i);
+      wc_direct_select[i]    <= (num_stages_int == (i + 1));
+      wc_chain_select[i]     <= (num_stages_int  > (i + 1));
+    end
+  end
 
   //---------------------------------------------------------------------------
   // Output signals of cascade (driven by gen_wconv[0] when NUM_HB > 0)
@@ -259,12 +290,12 @@ module axis_hb_cascade_decim #(
     // Input routing
     if (i == 0) begin : from_input
       assign stg_s_tdata  = s_axis_tdata;
-      assign stg_s_tvalid = s_axis_tvalid & (num_stages_int != 2'd0);
+      assign stg_s_tvalid = s_axis_tvalid & stage_active_select[i];
       assign stg_s_tlast  = s_axis_tlast;
       // s_axis_tready is assigned in gen_output below
     end else begin : from_prev_link
       assign stg_s_tdata  = gen_stg_links[i-1].tdata;
-      assign stg_s_tvalid = (num_stages_int > i) ? gen_stg_links[i-1].tvalid : 1'b0;
+      assign stg_s_tvalid = stage_active_select[i] ? gen_stg_links[i-1].tvalid : 1'b0;
       assign stg_s_tlast  = gen_stg_links[i-1].tlast;
       assign gen_stg_links[i-1].tready = stg_s_tready;
     end
@@ -279,7 +310,7 @@ module axis_hb_cascade_decim #(
       .clk            (clk),
       .rst            (rst),
       .clear          (clear),
-      .output_select  (num_stages_int > (i+1) ? 1'b1 : 1'b0),
+      .output_select  (wc_chain_select[i]),
       .s_axis_tdata   (stg_s_tdata),
       .s_axis_tvalid  (stg_s_tvalid),
       .s_axis_tready  (stg_s_tready),
@@ -349,11 +380,11 @@ module axis_hb_cascade_decim #(
       assign wc_s_tkeep  = '1;                            // stage output is always fully valid
       assign wc_s_tvalid = gen_stages[i].m_direct_tvalid;
       assign wc_s_tlast  = gen_stages[i].m_direct_tlast;
-      assign stg_m_direct_tready = (num_stages_int == (i+1)) ? wc_s_tready : 1'b0;
+      assign stg_m_direct_tready = wc_direct_select[i] ? wc_s_tready : 1'b0;
     end else begin : from_mux
       // Mux: deeper WC chain output (higher stages active) vs. this stage's m_direct
       wire mux_sel;
-      assign mux_sel = (num_stages_int > (i+1));
+      assign mux_sel = wc_chain_select[i];
       assign wc_s_tdata  = mux_sel ? gen_wconv[i+1].tdata  : gen_stages[i].m_direct_tdata;
       // Propagate partial-last-word tkeep from the upstream WC so this WC
       // receives the correct keep mask and can produce a valid output tkeep.
@@ -374,7 +405,7 @@ module axis_hb_cascade_decim #(
       assign tready         = cascade_tready;
     end else begin : to_prev_wc
       // Backpressure from gen_wconv[i-1]'s WC when this WC is in the active path
-      assign tready = (num_stages_int > i) ? gen_wconv[i-1].wc_s_tready : 1'b0;
+      assign tready = stage_active_select[i] ? gen_wconv[i-1].wc_s_tready : 1'b0;
     end
 
     axis_width_conv #(
@@ -408,11 +439,11 @@ module axis_hb_cascade_decim #(
   //   num_stages_int  > 0: cascade path — gen_wconv[0] -> cascade -> m_axis
   //---------------------------------------------------------------------------
   if (NUM_HB > 0) begin : gen_output
-    assign s_axis_tready = (num_stages_int == 2'd0) ? m_axis_tready : gen_stages[0].stg_s_tready;
-    assign m_axis_tdata  = (num_stages_int == 2'd0) ? s_axis_tdata  : cascade_tdata;
-    assign m_axis_tvalid = (num_stages_int == 2'd0) ? s_axis_tvalid : cascade_tvalid;
-    assign m_axis_tlast  = (num_stages_int == 2'd0) ? s_axis_tlast  : cascade_tlast;
-    assign m_axis_tkeep  = (num_stages_int == 2'd0) ? '1            : cascade_tkeep;
+    assign s_axis_tready = bypass_select ? m_axis_tready : gen_stages[0].stg_s_tready;
+    assign m_axis_tdata  = bypass_select ? s_axis_tdata  : cascade_tdata;
+    assign m_axis_tvalid = bypass_select ? s_axis_tvalid : cascade_tvalid;
+    assign m_axis_tlast  = bypass_select ? s_axis_tlast  : cascade_tlast;
+    assign m_axis_tkeep  = bypass_select ? '1            : cascade_tkeep;
   end else begin : gen_bypass
     assign s_axis_tready = m_axis_tready;
     assign m_axis_tdata  = s_axis_tdata;
