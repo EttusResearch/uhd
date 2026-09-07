@@ -8,6 +8,7 @@ import argparse
 import hashlib
 import logging
 import os
+import subprocess
 import sys
 
 from uhd import get_pkg_data_path
@@ -239,17 +240,27 @@ def get_fpga_path(args):
         else:
             logging.error("Bad fpga-dir argument. %s is not a valid directory.", args.fpga_dir)
             sys.exit(1)
-    # Try to find an fpga directory at the base of the repo
-    repo_base = os.getcwd()
-    while True:
-        repo_base = os.path.split(repo_base)[0]
-        top_dir = os.path.split(repo_base)[1]
-        if top_dir == "uhd" or top_dir == "uhddev":
-            fpga_path = os.path.join(repo_base, "fpga")
-            break
-        if top_dir == "":
-            fpga_path = None
-            break
+    # Try to find an fpga directory at the root of the current repo
+    try:
+        repo_base = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        fpga_path = os.path.join(repo_base, "fpga")
+    except (subprocess.CalledProcessError, OSError):
+        fpga_path = None
+    # Fall back to the legacy directory-name search if Git is unavailable
+    if fpga_path is None:
+        repo_base = os.getcwd()
+        while True:
+            repo_base = os.path.split(repo_base)[0]
+            top_dir = os.path.split(repo_base)[1]
+            if top_dir == "uhd" or top_dir == "uhddev":
+                fpga_path = os.path.join(repo_base, "fpga")
+                break
+            if top_dir == "":
+                break
     # Try to find an FPGA directory in the install prefix
     if fpga_path is None and os.path.isdir(
         os.path.join(get_pkg_data_path(), "rfnoc", "fpga", "usrp3")
