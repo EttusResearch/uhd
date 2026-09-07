@@ -295,7 +295,7 @@ module cic_interpolator #(
   //---------------------------------------------------------------------------
   // Output Register
   //---------------------------------------------------------------------------
-  logic [SPC*SAMP_W:0] fifo_out;
+  wire  [SPC*SAMP_W:0] fifo_out;
 
   axi_fifo #(
     .WIDTH (SPC*SAMP_W + 1  ),

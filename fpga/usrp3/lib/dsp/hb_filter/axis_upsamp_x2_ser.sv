@@ -119,9 +119,6 @@ module axis_upsamp_x2_ser #(
       unique case (state)
         IDLE_ST : begin
           if (s_axis_tvalid) begin
-            // Capture input unconditionally; synthesis prunes unused paths.
-            data_buf <= s_axis_tdata;
-            last_buf <= s_axis_tlast;
             if (oreg_tready) begin
               // Fast path: samp 1 passed through this cycle.
               state <= SEND_SAMP2_ST;
@@ -145,6 +142,14 @@ module axis_upsamp_x2_ser #(
       endcase
     end
   end : ser_state_proc
+
+  // Capture input unconditionally in IDLE state
+  always_ff @(posedge clk) begin
+    if (state == IDLE_ST && s_axis_tvalid) begin
+      data_buf <= s_axis_tdata;
+      last_buf <= s_axis_tlast;
+    end
+  end
 
   // Combinational output mux into the output register interface.
   // INTERPOLATION_PHASE is a static parameter so the synthesizer will select

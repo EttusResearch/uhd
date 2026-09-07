@@ -247,6 +247,8 @@ module cic_decimator #(
   // Output FIFO: buffers decimated output for AXI-Stream backpressure handling.
   // compute_output is used directly as FIFO valid, at this point output_word
   // and tlast_accum both contain the correct values for the completed group.
+  wire  [  SPC*SAMP_W:0] fifo_output;
+
   axi_fifo #(
     .WIDTH(SPC * SAMP_W + 1),
     .SIZE (1)
@@ -257,12 +259,14 @@ module cic_decimator #(
     .i_tdata ({tlast_accum, packed_output}),
     .i_tvalid(compute_output),
     .i_tready(data_in.tready),
-    .o_tdata ({data_out.tlast, data_out.tdata}),
+    .o_tdata (fifo_output),
     .o_tvalid(data_out.tvalid),
     .o_tready(data_out.tready),
     .space   (),
     .occupied()
   );
+
+  assign {data_out.tlast, data_out.tdata} = fifo_output;
 
 endmodule
 

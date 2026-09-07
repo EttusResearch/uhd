@@ -162,7 +162,7 @@ module ddc_ms
 
   // DDS
   logic [SPC*SAMP_W-1:0]  dds_out_tdata;
-  logic                   dds_out_tvalid, dds_out_tready;
+  logic                   dds_out_tvalid, dds_out_tready, dds_in_tready;
   logic                   dds_out_tlast, dds_out_tuser;
   // HBF
   wire                    hbf_out_tvalid, hbf_out_tready, hbf_out_tlast;
@@ -233,7 +233,7 @@ module ddc_ms
 
   logic allow_data_path;
   assign allow_data_path = (state == IDLE) || (state == PROCESSING);
-  assign sample_in_tready = allow_data_path && dds_out_tready;
+  assign sample_in_tready = allow_data_path && dds_in_tready;
 
   // -------------------------------------------------------------------------
   // Multisample DDS frequency shift
@@ -258,7 +258,7 @@ module ddc_ms
     .s_axis_din_tdata         (sample_in_tdata),
     .s_axis_din_tlast         (sample_in_tlast),
     .s_axis_din_tvalid        (sample_in_tvalid && allow_data_path),
-    .s_axis_din_tready        (sample_in_tready),
+    .s_axis_din_tready        (dds_in_tready),
     .s_axis_din_tuser         (sample_in_tuser),
     .s_axis_phase_tdata       (phase_in_tdata),
     .s_axis_phase_tvalid      (phase_in_tvalid),
