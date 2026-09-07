@@ -150,6 +150,8 @@ module duc_ms
   // HBF output → CIC input (plain logic; cic_in is driven from these after the HBF instance)
   logic                       hbf_out_tvalid, hbf_out_tready, hbf_out_tlast;
   logic [SPC-1:0][SAMP_W-1:0] hbf_out_tdata;
+  logic                       hbf_in_tready;
+
   // CIC
   AxiStreamIf #(SPC*SAMP_W) cic_in (
     .clk    (clk),
@@ -163,7 +165,7 @@ module duc_ms
 
   // Delay reset/clear by one cycle so updated configuration settles before
   // the DSP pipelines are cleared.
-  logic reset_or_clear;
+  logic reset_or_clear = '1;
   always_ff @(posedge clk) begin
     reset_or_clear <= reset | clear;
   end
@@ -176,37 +178,58 @@ module duc_ms
   logic [REG_SR_INTERP_W-1:0] interp_rate_latched;
   logic [  SCALING_WIDTH-1:0] scale_iq_latched;
   logic                       latched_rate_changed;
-  logic                       active_burst;
 
-  // Track whether input samples are currently being processed as a burst.
-  always_ff @(posedge clk) begin
-    if (reset || clear) begin
-      active_burst <= 1'b0;
-    end else if (!active_burst && sample_in_tvalid && sample_in_tready) begin
-      active_burst <= 1'b1;
-    end
-  end
+  typedef enum logic [1:0] {IDLE, PROCESSING, WAIT} state_t;
+  state_t state;
 
-  // Apply new configuration while idle and hold it through the burst.
-  // Changes written during a burst are applied after the EoB clear pulse.
+  // Capture configuration before a burst and settle it for one cycle before
+  // accepting input again.
   always_ff @(posedge clk) begin
-    latched_rate_changed <= 1'b0;
     if (reset) begin
+      state               <= WAIT;
       interp_rate_latched <= REG_SR_INTERP_W'(1);
       scale_iq_latched    <= 1 << SCALE_FRAC_W; // 1.0 in Q2.15 format
-    end else if (clear || !active_burst) begin
-      scale_iq_latched <= reg_scale_iq;
-      interp_rate_latched <= reg_interp;
-      if (clear || (reg_interp != interp_rate_latched)) begin
-        latched_rate_changed <= 1'b1;
-      end
+    end else begin
+      latched_rate_changed <= 1'b0;
+      case (state)
+        IDLE: begin
+          scale_iq_latched <= reg_scale_iq;
+          if (sample_in_tvalid && sample_in_tready) begin
+            state <= PROCESSING;
+          end else if (reg_interp != interp_rate_latched) begin
+            interp_rate_latched <= reg_interp;
+            latched_rate_changed <= 1'b1;
+            state <= WAIT;
+          end
+        end
+        PROCESSING: begin
+          if (clear) begin
+            interp_rate_latched <= reg_interp;
+            latched_rate_changed <= 1'b1;
+            state <= WAIT;
+          end
+        end
+        // Hold input until the registered reset or clear is released and
+        // downstream registers based on the updated configuration are settled.
+        WAIT: begin
+          if (!reset_or_clear) begin
+            state <= IDLE;
+          end
+        end
+        default: begin
+          state <= WAIT;
+        end
+      endcase
     end
   end
+
+  // Do not accept input while reset or configuration is being settled.
+  logic allow_data_path;
+  assign allow_data_path = (state == IDLE) || (state == PROCESSING);
+  assign sample_in_tready = allow_data_path && hbf_in_tready;
 
   assign cic_rate   = interp_rate_latched[7:0];
   assign hb_enables = interp_rate_latched[9:8];
-
-
 
   // -------------------------------------------------------------------------
   // HBF cascade interpolator
@@ -219,10 +242,10 @@ module duc_ms
   ) hbf_cascade_i (
     .clk           (clk),
     .rst           (reset_or_clear),
-    .clear         ('0),
+    .clear         (1'b0),
     .s_axis_tdata  (sample_in_tdata),
-    .s_axis_tvalid (sample_in_tvalid),
-    .s_axis_tready (sample_in_tready),
+    .s_axis_tvalid (sample_in_tvalid && allow_data_path),
+    .s_axis_tready (hbf_in_tready),
     .s_axis_tlast  (sample_in_tlast),
     .m_axis_tdata  (hbf_out_tdata),
     .m_axis_tvalid (hbf_out_tvalid),
@@ -249,7 +272,11 @@ module duc_ms
     ) cic_filter_interp_i (
       .clk            (clk),
       .rst            (reset_or_clear),
+<<<<<<< HEAD
       .clear          ('0),
+=======
+      .clear          (1'b0),
+>>>>>>> a7d5324fc3 (fixing stuff)
       .data_in        (cic_in),
       .data_out       (cic_out),
       .interp_factor  (cic_rate),
@@ -280,7 +307,7 @@ module duc_ms
       .USER_WIDTH (0)
     ) scale_factor_in (
       .clk (clk),
-      .rst (reset)
+      .rst (reset_or_clear)
     );
 
     AxiStreamIf #(
@@ -290,7 +317,7 @@ module duc_ms
       .USER_WIDTH (0)
     ) iq_in (
       .clk (clk),
-      .rst (reset)
+      .rst (reset_or_clear)
     );
 
     AxiStreamIf #(
@@ -300,7 +327,7 @@ module duc_ms
       .USER_WIDTH (0)
     ) iq_scaled_out (
       .clk (clk),
-      .rst (reset)
+      .rst (reset_or_clear)
     );
 
     // Convert real scale factor to complex format {q, i}

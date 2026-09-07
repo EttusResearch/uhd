@@ -178,9 +178,8 @@ module ddc_ms
     .rst    (reset)
   );
 
-  // Delay reset/clear by one cycle so updated configuration settles before
-  // the DSP pipelines are cleared.
-  logic reset_or_clear;
+  // Register reset or clear to reduce fanout on both signals.
+  logic reset_or_clear = '1;
   always_ff @(posedge clk) begin
     reset_or_clear <= reset | clear;
   end
@@ -190,34 +189,56 @@ module ddc_ms
   // by changing the decimation rate or scaling factor mid-burst.
   //--------------------------------------------------------------------------
   logic [REG_SR_DECIM_W-1:0] decim_rate_latched;
-  logic [   SCALING_WIDTH-1:0] scale_iq_latched;
+  logic [ SCALING_WIDTH-1:0] scale_iq_latched;
   logic latched_rate_changed;
-  logic active_burst;
+  typedef enum logic [1:0] {IDLE, PROCESSING, WAIT} state_t;
+  state_t state;
 
-  // Track whether input samples are currently being processed as a burst.
   always_ff @(posedge clk) begin
-    if (reset || clear) begin
-      active_burst <= 1'b0;
-    end else if (!active_burst && sample_in_tvalid && sample_in_tready) begin
-      active_burst <= 1'b1;
-    end
-  end
-
-  // Apply new configuration while idle and hold it through the burst.
-  // Changes written during a burst are applied after the EoB clear pulse.
-  always_ff @(posedge clk) begin
-    latched_rate_changed <= 1'b0;
     if (reset) begin
-      decim_rate_latched <= REG_SR_DECIM_W'(1);
-      scale_iq_latched   <= 1 << SCALE_FRAC_W; // 1.0 in Q2.15 format
-    end else if (clear || !active_burst) begin
-      scale_iq_latched <= reg_scale_iq;
-      decim_rate_latched  <= reg_decim;
-      if (clear || (reg_decim != decim_rate_latched)) begin
-        latched_rate_changed <= 1'b1;
-      end
+      state                <= WAIT;
+      decim_rate_latched   <= REG_SR_DECIM_W'(1);
+      scale_iq_latched     <= 1 << SCALE_FRAC_W; // 1.0 in Q2.15 format
+      latched_rate_changed <= 1'b0;
+    end else begin
+      latched_rate_changed <= 1'b0;
+      case (state)
+        IDLE: begin
+          // update scaling factor unconditionally as it aligns data as the last
+          // step of this filter.
+          scale_iq_latched <= reg_scale_iq;
+          if (sample_in_tvalid && sample_in_tready) begin
+            state <= PROCESSING;
+          end else if (reg_decim != decim_rate_latched) begin
+            decim_rate_latched <= reg_decim;
+            latched_rate_changed <= 1'b1;
+            state <= WAIT;
+          end
+        end
+        PROCESSING: begin
+          if (clear) begin
+            decim_rate_latched <= reg_decim;
+            latched_rate_changed <= 1'b1;
+            state <= WAIT;
+          end
+        end
+        // Hold input until the registered reset or clear is released and
+        // downstream registers based on the updated configuration are settled.
+        WAIT: begin
+          if (!reset_or_clear) begin
+            state <= IDLE;
+          end
+        end
+        default: begin
+          state <= WAIT;
+        end
+      endcase
     end
   end
+
+  logic allow_data_path;
+  assign allow_data_path = (state == IDLE) || (state == PROCESSING);
+  assign sample_in_tready = allow_data_path && dds_out_tready;
 
   // -------------------------------------------------------------------------
   // Multisample DDS frequency shift
@@ -241,7 +262,7 @@ module ddc_ms
     .rst                      (reset),
     .s_axis_din_tdata         (sample_in_tdata),
     .s_axis_din_tlast         (sample_in_tlast),
-    .s_axis_din_tvalid        (sample_in_tvalid),
+    .s_axis_din_tvalid        (sample_in_tvalid && allow_data_path),
     .s_axis_din_tready        (sample_in_tready),
     .s_axis_din_tuser         (sample_in_tuser),
     .s_axis_phase_tdata       (phase_in_tdata),
