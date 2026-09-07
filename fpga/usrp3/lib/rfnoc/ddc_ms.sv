@@ -178,6 +178,13 @@ module ddc_ms
     .rst    (reset)
   );
 
+  // Delay reset/clear by one cycle so updated configuration settles before
+  // the DSP pipelines are cleared.
+  logic reset_or_clear;
+  always_ff @(posedge clk) begin
+    reset_or_clear <= reset | clear;
+  end
+
   //--------------------------------------------------------------------------
   // Latch configuration during burst processing to avoid corrupted data caused
   // by changing the decimation rate or scaling factor mid-burst.
@@ -265,7 +272,7 @@ module ddc_ms
   localparam int DDS_LATENCY = 6; // matches MULTIPLY_LATENCY in dds_ms
   logic [DDS_LATENCY-1:0] dds_drain_mask;
   always_ff @(posedge clk) begin
-    if (reset || clear)
+    if (reset_or_clear)
       dds_drain_mask <= {DDS_LATENCY{1'b1}};  // arm: block next 6 beats
     else if (dds_out_tready)
       dds_drain_mask <= {1'b0, dds_drain_mask[DDS_LATENCY-1:1]}; // drain one per cycle
@@ -284,8 +291,8 @@ module ddc_ms
     .ORDER     (4)
   ) cic_filter_decim_i (
     .clk            (clk),
-    .rst            (reset),
-    .clear          (clear),
+    .rst            (reset_or_clear),
+    .clear          ('0),
     .data_in        (decim_in),
     .data_out       (decim_out),
     .decim_factor   (cic_rate),
@@ -303,8 +310,8 @@ module ddc_ms
     .PRELOAD_ZEROES (1)
   ) hbf_cascade_i (
     .clk           (clk),
-    .rst           (reset),
-    .clear         (clear),
+    .rst           (reset_or_clear),
+    .clear         ('0),
     .s_axis_tdata  (decim_out.tdata),
     .s_axis_tvalid (decim_out.tvalid),
     .s_axis_tready (decim_out.tready),

@@ -161,6 +161,13 @@ module duc_ms
     .rst    (reset)
   );
 
+  // Delay reset/clear by one cycle so updated configuration settles before
+  // the DSP pipelines are cleared.
+  logic reset_or_clear;
+  always_ff @(posedge clk) begin
+    reset_or_clear <= reset | clear;
+  end
+
 
   //-------------------------------------------------------------------------
   // Latch configuration during burst processing to avoid corrupted data caused
@@ -211,8 +218,8 @@ module duc_ms
     .PRELOAD_ZEROES (1)
   ) hbf_cascade_i (
     .clk           (clk),
-    .rst           (reset),
-    .clear         (clear),
+    .rst           (reset_or_clear),
+    .clear         ('0),
     .s_axis_tdata  (sample_in_tdata),
     .s_axis_tvalid (sample_in_tvalid),
     .s_axis_tready (sample_in_tready),
@@ -241,8 +248,8 @@ module duc_ms
       .ORDER     (4)
     ) cic_filter_interp_i (
       .clk            (clk),
-      .rst            (reset),
-      .clear          (clear),
+      .rst            (reset_or_clear),
+      .clear          ('0),
       .data_in        (cic_in),
       .data_out       (cic_out),
       .interp_factor  (cic_rate),

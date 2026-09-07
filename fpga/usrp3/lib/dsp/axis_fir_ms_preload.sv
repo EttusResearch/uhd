@@ -149,6 +149,7 @@ module axis_fir_ms_preload #(
   //----------------------------------------------------------------------------
   // Wrapped FIR instance
   //----------------------------------------------------------------------------
+  localparam bit RESET_DATA_PATH = !PRELOAD_ZEROES;
 
   axi_fir_multisample_filter #(
     .IN_WIDTH                (IN_WIDTH),
@@ -161,7 +162,8 @@ module axis_fir_ms_preload #(
     .COEFFS_VEC              (COEFFS_VEC),
     .RELOADABLE_COEFFS       (RELOADABLE_COEFFS),
     .BLANK_OUTPUT            (BLANK_OUTPUT),
-    .USE_EMBEDDED_REGS_COEFFS(USE_EMBEDDED_REGS_COEFFS)
+    .USE_EMBEDDED_REGS_COEFFS(USE_EMBEDDED_REGS_COEFFS),
+    .RESET_DATA_PATH         (RESET_DATA_PATH)
   ) fir_inst (
     .clk                 (clk),
     .reset               (reset),

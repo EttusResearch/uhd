@@ -27,13 +27,19 @@
 //   ACCUM_WIDTH              - Accumulator width
 //   COEFFS_VEC               - Vector of NUM_COEFFS values, each of width COEFF_WIDTH to
 //                              initialize coeffs. Defaults to an impulse.
-//   RELOADABLE_COEFFS        - Enable (1) or disable (0) reloading coefficients at runtime (via reload bus)
-//   BLANK_OUTPUT             - Disable (1) or enable (0) output when initially filling internal pipeline
-//   USE_EMBEDDED_REGS_COEFFS - Reduce register usage by only using embedded registers in DSP slices.
-//                              Updating taps while streaming will cause temporary output corruption!
-//  
+//   RELOADABLE_COEFFS        - Enable (1) or disable (0) reloading coefficients
+//                              at runtime (via reload bus)
+//   BLANK_OUTPUT             - Disable (1) or enable (0) output when initially filling internal
+//                              pipeline
+//   USE_EMBEDDED_REGS_COEFFS - Reduce register usage by only using embedded registers in DSP
+//                              slices. Updating taps while streaming will cause temporary output
+//                              corruption!
+//   RESET_DATA_PATH          - Reset FIR arithmetic pipeline registers when
+//                              reset or clear assert.
+//
 // Notes:
-// - If using USE_EMBEDDED_REGS_COEFFS, coefficients must be written at least once as COEFFS_VEC is ignored!
+// - If using USE_EMBEDDED_REGS_COEFFS, coefficients must be written at least once as COEFFS_VEC is
+//   ignored!
 // - If using RELOADABLE_COEFFS, coefficients must be written in reverse order!
 // - Optimizations: For static coefficients (RELOADABLE_COEFFS = 0), zero and symmetric coefficient
 //                  optimizations are automatically enabled to reduce DSP slice utilization.
@@ -52,7 +58,8 @@ module axi_fir_multisample_filter #(
   bit [COEFF_WIDTH-1:0] COEFFS_VEC [NUM_COEFFS] = '{0: (1 << (COEFF_WIDTH-1)) - 1, default: 0},
   bit RELOADABLE_COEFFS         = 1,
   bit BLANK_OUTPUT              = 1,
-  bit USE_EMBEDDED_REGS_COEFFS  = 1
+  bit USE_EMBEDDED_REGS_COEFFS  = 1,
+  bit RESET_DATA_PATH           = 1
 )(
   // clocks and control signals
   input  logic clk,
@@ -112,7 +119,8 @@ module axi_fir_multisample_filter #(
     ? check_coeffs_symmetric() : 0;
   localparam int NUM_SLICES      = OPTIMIZE_FOR_SYMMETRIC_COEFFS
     ? NUM_COEFFS/2 + NUM_COEFFS[0] : NUM_COEFFS;
-  localparam int PIPELINE_DELAY  = NUM_SLICES + 5 // +4 pipeline depth in fir_filter_slice.v, +1 of shift register
+  // +4 pipeline depth in fir_filter_slice.v, +1 of shift register
+  localparam int PIPELINE_DELAY  = NUM_SLICES + 5
     - (OPTIMIZE_FOR_ZERO_COEFFS ? count_zeros_up_to_index(NUM_SLICES) : 0);
   localparam int SHIFT_REG_WIDTH = (NUM_SPC + 1) * NUM_COEFFS; // length of shift register
 
@@ -262,7 +270,8 @@ module axi_fir_multisample_filter #(
         end else begin
           localparam int GAP = OPTIMIZE_FOR_ZERO_COEFFS ? count_zeros_up_to_index(j) : 0;
           localparam bit APPLY_SYMMETRY = (OPTIMIZE_FOR_SYMMETRIC_COEFFS == 1) // enabled?
-            && !((NUM_COEFFS[0] == 1) && (j == NUM_SLICES-1));  // not the center tap for odd NUM_COEFFS
+            && !((NUM_COEFFS[0] == 1) && (j == NUM_SLICES-1));
+            // not the center tap for odd NUM_COEFFS
 
           fir_filter_slice #(
             .IN_WIDTH(IN_WIDTH),
@@ -271,8 +280,8 @@ module axi_fir_multisample_filter #(
             .OUT_WIDTH(ACCUM_WIDTH))
           fir_filter_slice (
             .clk(clk),
-            .reset(reset),
-            .clear(clear),
+            .reset(RESET_DATA_PATH ? (reset | clear) : 1'b0),
+            .clear(1'b0),
             .sample_in_stb(s_axis_data_tvalid & s_axis_data_tready),
             // NUM_SPC is added j times due to the pipeline delay.
             // +1 for selecting the next index for the FIR result calculation
@@ -287,10 +296,13 @@ module axi_fir_multisample_filter #(
             // Mirror index is NUM_COEFFS-1-j, since sample_in_b inside fir_filter_slice
             // has one cycle delay less that sample_in_a, we need to take it one cycle
             // later such that both values are in-sync. Thus we add another NUM_SPC to the index.
-            .sample_in_b(APPLY_SYMMETRY ? data_shift_reg[ (NUM_COEFFS-1-j) + (j-GAP+1)*NUM_SPC + K_FLIPPED ] : '0),
+            .sample_in_b(APPLY_SYMMETRY ?
+                          data_shift_reg[ (NUM_COEFFS-1-j) + (j-GAP+1)*NUM_SPC + K_FLIPPED ] : '0),
             .sample_forward(),
-            // For proper coeffient loading, coeff_forward must be shifted in backwards. coeffs[] is already backwards
-            .coeff_in(((USE_EMBEDDED_REGS_COEFFS == 1) && (RELOADABLE_COEFFS == 1)) ? coeff_forward[j] : coeffs[j]),
+            // For proper coeffient loading, coeff_forward must be shifted in backwards.
+            // coeffs[] is already backwards
+            .coeff_in(((USE_EMBEDDED_REGS_COEFFS == 1) && (RELOADABLE_COEFFS == 1)) ?
+                        coeff_forward[j] : coeffs[j]),
             .coeff_forward(coeff_forward[j+1]),
             .coeff_load_stb(coeff_load_stb),
             .sample_accum(sample_accum[j]),

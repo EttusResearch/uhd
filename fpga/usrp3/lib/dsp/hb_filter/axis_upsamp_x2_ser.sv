@@ -114,9 +114,7 @@ module axis_upsamp_x2_ser #(
 
   always_ff @(posedge clk) begin : ser_state_proc
     if (rst || clr) begin
-      state    <= IDLE_ST;
-      data_buf <= '0;
-      last_buf <= 1'b0;
+      state <= IDLE_ST;
     end else begin
       unique case (state)
         IDLE_ST : begin

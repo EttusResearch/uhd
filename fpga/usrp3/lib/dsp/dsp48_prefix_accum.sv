@@ -87,7 +87,7 @@ module dsp48_prefix_accum #(
     if (k == 0) begin : gen_first
       dsp48_add3 #(.AB_CASCADE(0), .USE_PCIN(0)) dsp_inst (
         .clk    (clk),
-        .rst    (rst),
+        .rst    (1'b0),
         .en     (en),
         .ab     (accu_in),
         .c      (data_in[0]),
@@ -99,7 +99,7 @@ module dsp48_prefix_accum #(
     end else begin : gen_chain
       dsp48_add3 #(.AB_CASCADE(1), .USE_PCIN(USE_PCIN)) dsp_inst (
         .clk    (clk),
-        .rst    (rst),
+        .rst    (1'b0),
         .en     (en),
         .ab     (abcout_cas[k-1]),
         .c      (data_in[k]),

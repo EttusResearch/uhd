@@ -212,8 +212,6 @@ module cic_interpolator #(
   always_ff @(posedge clk) begin
     if (rst) begin
       input_busy  <= 1'b0;
-      input_last  <= 'X;
-      input_samps <= 'X;
     end else begin
       if (data_in.tvalid && data_in.tready) begin
         // Accepted a new input word; busy until end of interpolation group.
@@ -280,14 +278,13 @@ module cic_interpolator #(
   logic [1:0] tlast_pipe;
   logic [1:0][SPC-1:0][SAMP_W-1:0] tdata_pipe;
   always_ff @(posedge clk) begin
+    tlast_pipe  <= {tlast_pipe[0],  gen_tlast };
+    tdata_pipe  <= {tdata_pipe[0],  input_samps};
+
     if (rst) begin
       tvalid_pipe <= 2'b00;
-      tlast_pipe  <= 'X;
-      tdata_pipe  <= 'X;
     end else if (gen_tready) begin
       tvalid_pipe <= {tvalid_pipe[0], gen_tvalid};
-      tlast_pipe  <= {tlast_pipe[0],  gen_tlast };
-      tdata_pipe  <= {tdata_pipe[0],  input_samps};
     end
   end
 
