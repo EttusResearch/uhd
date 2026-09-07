@@ -11,7 +11,7 @@ import copy
 import threading
 from collections import namedtuple
 from os import path
-from time import sleep
+from time import monotonic, sleep
 
 from usrp_mpm import tlv_eeprom
 from usrp_mpm.compat_num import CompatNumber
@@ -47,6 +47,10 @@ X400_DEVICE_DNA_COMPAT = (8, 3)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0  # seconds
+# How long to cache the xport info. The result is stable per session
+# (init() invalidates it on IP changes), so it can be cached well beyond
+# the RPC deadline window.
+X400_XPORT_INFO_CACHE_TTL = 10.0  # seconds
 QSFPModuleConfig = namedtuple("QSFPModuleConfig", "modprs modsel devsymbol")
 X400_QSFP_I2C_CONFIGS = [
     QSFPModuleConfig(modprs="QSFP0_MODPRS", modsel="QSFP0_MODSEL_n", devsymbol="qsfp0_i2c"),
@@ -307,6 +311,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.ctrlport_regs = None
         self.cpld_control = None
         self.dio_control = None
+        self._xport_info_cache = None
+        self._xport_info_cache_ts = 0.0
+        self._xport_info_cache_lock = threading.Lock()
         try:
             self._init_peripherals(args)
             self.init_dboards(args)
@@ -667,6 +674,9 @@ class x4xx(ZynqComponents, PeriphManagerBase):
                 args.get("pps_export", X400_DEFAULT_ENABLE_PPS_EXPORT),
                 args.get("trig_direction", X400_DEFAULT_TRIG_DIRECTION),
             )
+        # Session init may have (re)assigned interface IPs; drop stale xport info.
+        with self._xport_info_cache_lock:
+            self._xport_info_cache = None
         return result
 
     def deinit(self):
@@ -719,7 +729,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         """
         if not self._device_initialized:
             return {}
-        device_info = self._xport_mgrs["udp"].get_xport_info()
+        device_info = dict(self._get_xport_info_cached())
         device_info.update(
             {
                 "fpga_version": "{}.{}".format(*self.mboard_regs_control.get_compat_number()),
@@ -730,6 +740,35 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         if "device_dna" in self.fpga_features:
             device_info.update({"device_dna": self._device_dna})
         return device_info
+
+    def _get_xport_info_cached(self):
+        """Return CHDR interface/IP info, cached for a short interval.
+
+        get_xport_info() enumerates network interfaces via netlink/pyudev, which
+        is slow and doesn't yield to the gevent loop. GetDeviceInfo is unclaimed
+        and gets flooded during device discovery, so caching this briefly (for
+        X400_XPORT_INFO_CACHE_TTL seconds) keeps it from starving other RPCs and
+        makes device discovery faster.
+
+        gRPC serves RPCs from a thread pool, so concurrent GetDeviceInfo calls
+        can all see a stale cache at once; the lock ensures only one of them
+        redoes the enumeration while the rest wait for that result instead of
+        each redundantly enumerating in parallel.
+        """
+        now = monotonic()
+        if (
+            self._xport_info_cache is None
+            or now - self._xport_info_cache_ts > X400_XPORT_INFO_CACHE_TTL
+        ):
+            with self._xport_info_cache_lock:
+                now = monotonic()
+                if (
+                    self._xport_info_cache is None
+                    or now - self._xport_info_cache_ts > X400_XPORT_INFO_CACHE_TTL
+                ):
+                    self._xport_info_cache = self._xport_mgrs["udp"].get_xport_info()
+                    self._xport_info_cache_ts = now
+        return self._xport_info_cache
 
     @no_claim
     def is_db_gpio_ifc_present(self, db_idx):
