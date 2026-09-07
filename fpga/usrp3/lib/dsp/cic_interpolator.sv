@@ -17,8 +17,8 @@
 //   interpolation factor while the module is processing data results in
 //   undefined output.
 //
-//   The interpolation factor is changed by strobing the interp_changed
-//   signal with the new rate input on interp_factor.
+//   The interpolation factor is driven directly on interp_factor. It must be
+//   valid before reset is released and remain stable while data is processed.
 //
 // Parameters:
 //
@@ -33,9 +33,7 @@
 //   rst            : Reset
 //   data_in        : AXI-Stream data input
 //   data_out       : AXI-Stream data output
-//   interp_factor  : Interpolation factor to load
-//   interp_changed : Assert for one clock cycle to load a new interpolation
-//                    factor from interp_factor.
+//   interp_factor  : Interpolation factor to use.
 //
 
 `default_nettype none
@@ -54,8 +52,7 @@ module cic_interpolator #(
   AxiStreamIf.slave  data_in,
   AxiStreamIf.master data_out,
 
-  input wire [FACTOR_W-1:0] interp_factor,
-  input wire                interp_changed
+  input wire [FACTOR_W-1:0] interp_factor
 );
   `include "usrp_utils.svh"
 
@@ -98,23 +95,12 @@ module cic_interpolator #(
   //---------------------------------------------------------------------------
   // Interpolation Factor
   //---------------------------------------------------------------------------
-
-  logic [FACTOR_W-1:0] factor        = 1;  // Current interpolation factor
   logic [FACTOR_W-1:0] factor_m2     = 0;  // Current factor minus 2
   logic                factor_is_one = 1;  // High when factor == 1
 
   always_ff @(posedge clk) begin
-    if (rst) begin
-      factor        <= 1;
-      factor_m2     <= 0;
-      factor_is_one <= 1'b1;
-    end else begin
-      if (interp_changed) begin
-        factor <= interp_factor;
-      end
-      factor_m2     <= factor - 2;
-      factor_is_one <= (factor == 1);
-    end
+    factor_m2     <= interp_factor - 2;
+    factor_is_one <= (interp_factor == 1);
   end
 
 
@@ -140,7 +126,7 @@ module cic_interpolator #(
 
   always_ff @(posedge clk) begin
     for (int idx = 0; idx < SPC; idx++) begin
-      accum[idx] <= idx * factor;
+      accum[idx] <= idx * interp_factor;
     end
   end
 
@@ -278,9 +264,13 @@ module cic_interpolator #(
   logic [1:0] tlast_pipe;
   logic [1:0][SPC-1:0][SAMP_W-1:0] tdata_pipe;
   always_ff @(posedge clk) begin
-    tlast_pipe  <= {tlast_pipe[0],  gen_tlast };
-    tdata_pipe  <= {tdata_pipe[0],  input_samps};
+    if (gen_tready) begin
+      tlast_pipe <= {tlast_pipe[0], gen_tlast};
+      tdata_pipe <= {tdata_pipe[0], input_samps};
+    end
+  end
 
+  always_ff @(posedge clk) begin
     if (rst) begin
       tvalid_pipe <= 2'b00;
     end else if (gen_tready) begin

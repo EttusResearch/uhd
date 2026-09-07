@@ -94,7 +94,6 @@ module cic_decimator_tb #(
   );
   // Decimation factor control
   logic [R_MAX_LOG2-1:0] decimation_factor;
-  logic                  decimation_factor_changed;
 
   //-----------------------------------------------------------------------------------------------
   // Bus Functional Models
@@ -119,8 +118,7 @@ module cic_decimator_tb #(
     .clr(clr),
     .data_in(i_data),
     .data_out(o_data),
-    .decim_factor(decimation_factor),
-    .decim_changed(decimation_factor_changed)
+    .decim_factor(decimation_factor)
   );
 
   //-----------------------------------------------------------------------------------------------
@@ -141,14 +139,10 @@ module cic_decimator_tb #(
     return output_samples;
   endfunction : sample_cic_decimate
 
-  // Utility task to set the decimation factor in the DUT. This task passes the given decimation
-  // factor to the DUT and pulses the change signal to notify the DUT of the new factor.
+  // Utility task to set the decimation factor in the DUT.
   task automatic set_decimation_factor(input int R);
     decimation_factor = R;
-    decimation_factor_changed = 1;  // Pulse the change signal to notify the DUT of the new factor
-    clk_gen.clk_wait_r(1);  // Wait for a clock cycle to ensure the DUT registers the change
-    decimation_factor_changed = 0;
-    clk_gen.clk_wait_r(1);  // Wait for another clock cycle to allow the DUT to react to the change
+    clk_gen.clk_wait_r(2);  // Allow the DUT to react to the change
   endtask : set_decimation_factor
 
   // Assert the DUT clear input and keeps it asserted for the specified number of full clock cycles.
@@ -165,7 +159,7 @@ module cic_decimator_tb #(
   //-----------------------------------------------------------------------------------------------
   // This testcase generates an input packet of random length (length is at least MIN_WORDS) with
   // length being a multiple of the decimation factor. The packet is sent to the DUT and the output
-  // is checked against a reference model. The decimation factor is randomly chosen for each test 
+  // is checked against a reference model. The decimation factor is randomly chosen for each test
   // iteration and can range from 1 to R_MAX.
   task automatic test_random_decimation_factor(test_mode_t mode = TEST_MODE_PACKET);
     // Randomize decimation factor between 1 and R_MAX

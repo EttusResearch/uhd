@@ -136,7 +136,6 @@ module cic_filter_decim_tb #(
   localparam int DECIM_W = $clog2(MAX_DECIM + 1);
 
   logic [DECIM_W-1:0] decim_factor;
-  logic               config_changed;
   logic               clr;
 
   //---------------------------------------------------------------------------
@@ -152,7 +151,6 @@ module cic_filter_decim_tb #(
     .rst           (rst),
     .clear         (clr),
     .decim_factor  (decim_factor),
-    .config_changed(config_changed),
     .data_in       (i_data),
     .data_out      (o_data)
   );
@@ -170,10 +168,8 @@ module cic_filter_decim_tb #(
   // Utility: set decimation factor on DUT
   //---------------------------------------------------------------------------
   task automatic set_decim_factor(input int R);
-    decim_factor   <= R;
-    config_changed <= 1;
+    decim_factor <= R;
     clk_gen.clk_wait_r(1);
-    config_changed <= 0;
     clk_gen.clk_wait_r(1);
   endtask : set_decim_factor
 
@@ -308,9 +304,8 @@ module cic_filter_decim_tb #(
     test.start_tb(tb_name, 10ms);
 
     // Initialize
-    clr            <= 0;
-    decim_factor   <= 1;
-    config_changed <= 0;
+    clr          <= 0;
+    decim_factor <= 1;
 
     clk_gen.start();
     bfm.run();

@@ -43,12 +43,10 @@
 //      with the end of a group, discarding words of a partial group at the
 //      end of a burst if necessary. This allows this downstream module to
 //      operate without needing to worry about partial groups of input samples.
-//    - The decimation factor can be changed at runtime by pulsing the
-//      decimation_factor_changed signal, but will result in incorrect output
-//      data if the decimation factor is changed in the middle of processing a
-//      group of input words. It is the responsibility of the user to only
-//      change the decimation factor when the module is idle (not processing
-//      input words).
+//    - The decimation factor can be changed at runtime, but will result in
+//      incorrect output data if it changes in the middle of processing a group
+//      of input words. It is the responsibility of the user to only change the
+//      decimation factor when the module is idle (not processing input words).
 
 `default_nettype none
 
@@ -66,8 +64,7 @@ module cic_decimator #(
   // Data out
   AxiStreamIf.master                   data_out,
   // Configuration interface
-  input wire [($clog2(R_MAX+1) - 1):0] decim_factor,
-  input wire                           decim_changed
+  input wire [($clog2(R_MAX+1) - 1):0] decim_factor
 );
 
   import cic_utils_pkg::*;
@@ -149,7 +146,7 @@ module cic_decimator #(
   //----------------------------------------------------------------------------
   // Word counter: counts from 0 to decimation_factor-1
   always_ff @(posedge clk) begin
-    if (rst || clr || decim_changed) begin
+    if (rst || clr) begin
       word_count <= '0;
     end else if (input_xfer) begin
       if (word_count == decim_factor - 1) begin
@@ -230,7 +227,7 @@ module cic_decimator #(
   // Pipeline: input_xfer (accumulate) -> compute_output (FIFO captures tlast_accum)
 
   always_ff @(posedge clk) begin
-    if (rst || clr || decim_changed) begin
+    if (rst || clr) begin
       tlast_accum <= 1'b0;
     end else if (input_xfer) begin
       if (word_count == 0) begin

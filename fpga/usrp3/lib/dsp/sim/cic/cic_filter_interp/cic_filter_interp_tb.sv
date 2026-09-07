@@ -137,7 +137,6 @@ module cic_filter_interp_tb #(
   localparam int INTERP_W = $clog2(MAX_INTERP + 1);
 
   logic [INTERP_W-1:0] interp_factor;
-  logic                config_changed;
   logic                clr;
 
   //---------------------------------------------------------------------------
@@ -153,7 +152,6 @@ module cic_filter_interp_tb #(
     .rst           (rst),
     .clear         (clr),
     .interp_factor (interp_factor),
-    .config_changed(config_changed),
     .data_in       (i_data),
     .data_out      (o_data)
   );
@@ -170,10 +168,7 @@ module cic_filter_interp_tb #(
   // Utility: set interpolation factor on DUT
   //---------------------------------------------------------------------------
   task automatic set_interp_factor(input int R);
-    interp_factor  <= R;
-    config_changed <= 1;
-    clk_gen.clk_wait_r(1);
-    config_changed <= 0;
+    interp_factor <= R;
     clk_gen.clk_wait_r(1);
   endtask : set_interp_factor
 
@@ -309,7 +304,6 @@ module cic_filter_interp_tb #(
     // Initialize
     clr            <= 0;
     interp_factor  <= 1;
-    config_changed <= 0;
 
     clk_gen.start();
     bfm.run();

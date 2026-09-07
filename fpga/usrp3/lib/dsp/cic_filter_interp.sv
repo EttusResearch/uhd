@@ -66,9 +66,8 @@
 //   Internal stages do not clip or round. The output is normalized back to
 //   SAMP_W with signed round-to-nearest quantization.
 //
-//   The interpolation factor may be changed at runtime by asserting
-//   config_changed for one clock cycle. Configuration must only be changed
-//   when the module is idle (not actively processing data).
+//   The interpolation factor is driven directly and must remain stable while
+//   the module is actively processing data.
 //
 // Parameters:
 //
@@ -83,8 +82,6 @@
 //   rst            : Synchronous reset input.
 //   clear          : State clear input.
 //   interp_factor  : Runtime-configurable interpolation ratio (1..MAX_INTERP).
-//   config_changed : Pulse high for 1 cycle after changing interp_factor.
-//                    Must only be asserted when the module is idle.
 //   data_in        : Input AXI-Stream bus carrying SPC packed SAMP_W-bit
 //                    samples per word.
 //   data_out       : Output AXI-Stream bus carrying SPC packed SAMP_W-bit
@@ -105,7 +102,6 @@ module cic_filter_interp #(
   input wire                rst,
   input wire                clear,
   input wire [FACTOR_W-1:0] interp_factor,
-  input wire                config_changed,
   AxiStreamIf.slave         data_in,
   AxiStreamIf.master        data_out
 );
@@ -147,24 +143,6 @@ module cic_filter_interp #(
   // Barrel Shift output bus
   AxiStreamIf #(data_out.DATA_WIDTH) barrel_shift_out (.clk(clk), .rst(rst));
   AxiStreamIf #(data_out.DATA_WIDTH) output_fifo_in (.clk(clk), .rst(rst));
-
-  //---------------------------------------------------------------------------
-  // Register configuration parameters
-  //---------------------------------------------------------------------------
-  logic [FACTOR_W-1:0] interp_factor_reg;
-  logic                config_changed_reg;
-
-  always_ff @(posedge clk) begin
-    config_changed_reg <= '0; // Default to no config change
-    if (config_changed) begin
-      interp_factor_reg  <= interp_factor;
-      config_changed_reg <= '1; // Pulse to indicate config change
-    end
-    if (rst) begin
-      interp_factor_reg  <= 1; // Default to no interpolation
-      config_changed_reg <= 1'b0;
-    end
-  end
 
 
   //--------------------------------------------------------------------------
@@ -229,8 +207,7 @@ module cic_filter_interp #(
     .rst           (rst || clear),
     .data_in       (comb_bus[ORDER]),
     .data_out      (interp_bus),
-    .interp_factor (interp_factor_reg),
-    .interp_changed(config_changed_reg)
+    .interp_factor (interp_factor)
   );
 
   //--------------------------------------------------------------------------
@@ -314,7 +291,7 @@ module cic_filter_interp #(
     .clk         (clk),
     .rst         (rst),
     .clear       (clear),
-    .rate_factor (interp_factor_reg),
+    .rate_factor (interp_factor),
     .data_in     (integ_bus[1]),
     .data_out    (barrel_shift_out)
   );

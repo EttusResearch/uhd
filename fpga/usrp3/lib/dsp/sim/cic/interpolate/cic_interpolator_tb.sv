@@ -90,8 +90,7 @@ module cic_interpolator_tb #(
   AxiStreamIf #(WORD_W) o_data (.clk, .rst);  // Output from the DUT
 
   // Interpolation factor control
-  logic [FACTOR_W-1:0] interp_factor;
-  logic                interp_changed;
+  logic [FACTOR_W-1:0] interp_factor = FACTOR_W'(1);
 
 
   //---------------------------------------------------------------------------
@@ -114,8 +113,7 @@ module cic_interpolator_tb #(
     .rst            (rst           ),
     .data_in        (i_data        ),
     .data_out       (o_data        ),
-    .interp_factor  (interp_factor ),
-    .interp_changed (interp_changed)
+    .interp_factor  (interp_factor )
   );
 
 
@@ -150,7 +148,8 @@ module cic_interpolator_tb #(
     return output_samps;
   endfunction : interpolate
 
-  // Updates the DUT interpolation factor and pulses the change indicator.
+  // Updates the directly driven DUT interpolation factor and waits for the
+  // derived state to settle before data is sent.
   //
   // Args:
   //   factor: Interpolation factor value to drive into the DUT.
@@ -158,9 +157,7 @@ module cic_interpolator_tb #(
   task automatic set_factor(int factor);
     @(posedge clk);
     interp_factor <= FACTOR_W'(factor);
-    interp_changed <= 1;
     @(posedge clk);
-    interp_changed <= 0;
     @(posedge clk);
   endtask : set_factor
 
@@ -177,10 +174,11 @@ module cic_interpolator_tb #(
     $write("\n");
   endfunction : print_word
 
-  
+
   // Waits for reset deassertion, then allows a few extra cycles for the DUT
   // and BFMs to settle before starting a test.
   task automatic reset_dut();
+    interp_factor <= FACTOR_W'(1);
     clk_gen.reset(1);
     clk_gen.clk_wait_r(3);
   endtask : reset_dut
@@ -212,7 +210,7 @@ module cic_interpolator_tb #(
       set_factor(factor);
       active_factor = factor;
     end else begin
-      active_factor = dut.factor;
+      active_factor = interp_factor;
     end
 
     if (factor) factor_desc = "Random";
@@ -428,7 +426,7 @@ module cic_interpolator_tb #(
 
       // Check the default interpolation factor
       test.start_test("Verify default interpolation factor");
-      `ASSERT_ERROR(dut.factor == 1, "Default factor is not 1!");
+      `ASSERT_ERROR(interp_factor == 1, "Default factor is not 1!");
       test.end_test();
       test_basic(.num_words(16), .factor(0));  // Test using default factor
 

@@ -150,8 +150,8 @@ module duc_ms
   // HBF output → CIC input (plain logic; cic_in is driven from these after the HBF instance)
   logic                       hbf_out_tvalid, hbf_out_tready, hbf_out_tlast;
   logic [SPC-1:0][SAMP_W-1:0] hbf_out_tdata;
+  logic                       hbf_in_tvalid;
   logic                       hbf_in_tready;
-
   // CIC
   AxiStreamIf #(SPC*SAMP_W) cic_in (
     .clk    (clk),
@@ -163,8 +163,8 @@ module duc_ms
     .rst    (reset)
   );
 
-  // Delay reset/clear by one cycle so updated configuration settles before
-  // the DSP pipelines are cleared.
+
+  // Register reset or clear to reduce fanout on both signals.
   logic reset_or_clear = '1;
   always_ff @(posedge clk) begin
     reset_or_clear <= reset | clear;
@@ -177,35 +177,32 @@ module duc_ms
   //-------------------------------------------------------------------------
   logic [REG_SR_INTERP_W-1:0] interp_rate_latched;
   logic [  SCALING_WIDTH-1:0] scale_iq_latched;
-  logic                       latched_rate_changed;
 
   typedef enum logic [1:0] {IDLE, PROCESSING, WAIT} state_t;
   state_t state;
 
-  // Capture configuration before a burst and settle it for one cycle before
-  // accepting input again.
+  // Configuration is captured before accepting the first sample of a burst.
   always_ff @(posedge clk) begin
     if (reset) begin
       state               <= WAIT;
       interp_rate_latched <= REG_SR_INTERP_W'(1);
       scale_iq_latched    <= 1 << SCALE_FRAC_W; // 1.0 in Q2.15 format
     end else begin
-      latched_rate_changed <= 1'b0;
       case (state)
         IDLE: begin
+          // update scaling factor unconditionally as it aligns data as the last
+          // step of this filter.
           scale_iq_latched <= reg_scale_iq;
           if (sample_in_tvalid && sample_in_tready) begin
             state <= PROCESSING;
           end else if (reg_interp != interp_rate_latched) begin
             interp_rate_latched <= reg_interp;
-            latched_rate_changed <= 1'b1;
-            state <= WAIT;
+            state               <= WAIT;
           end
         end
         PROCESSING: begin
           if (clear) begin
             interp_rate_latched <= reg_interp;
-            latched_rate_changed <= 1'b1;
             state <= WAIT;
           end
         end
@@ -217,16 +214,15 @@ module duc_ms
           end
         end
         default: begin
-          state <= WAIT;
+          state <= IDLE;
         end
       endcase
     end
   end
 
-  // Do not accept input while reset or configuration is being settled.
-  logic allow_data_path;
-  assign allow_data_path = (state == IDLE) || (state == PROCESSING);
-  assign sample_in_tready = allow_data_path && hbf_in_tready;
+  // Do not accept input while configuration is being captured or settled.
+  assign hbf_in_tvalid    = (state != WAIT) && sample_in_tvalid;
+  assign sample_in_tready = (state != WAIT) && hbf_in_tready;
 
   assign cic_rate   = interp_rate_latched[7:0];
   assign hb_enables = interp_rate_latched[9:8];
@@ -244,7 +240,7 @@ module duc_ms
     .rst           (reset_or_clear),
     .clear         (1'b0),
     .s_axis_tdata  (sample_in_tdata),
-    .s_axis_tvalid (sample_in_tvalid && allow_data_path),
+    .s_axis_tvalid (hbf_in_tvalid),
     .s_axis_tready (hbf_in_tready),
     .s_axis_tlast  (sample_in_tlast),
     .m_axis_tdata  (hbf_out_tdata),
@@ -272,15 +268,10 @@ module duc_ms
     ) cic_filter_interp_i (
       .clk            (clk),
       .rst            (reset_or_clear),
-<<<<<<< HEAD
-      .clear          ('0),
-=======
       .clear          (1'b0),
->>>>>>> a7d5324fc3 (fixing stuff)
       .data_in        (cic_in),
       .data_out       (cic_out),
-      .interp_factor  (cic_rate),
-      .config_changed (latched_rate_changed)
+      .interp_factor  (cic_rate)
     );
   end else begin : gen_cic_filter_bypass
     // Bypass the CIC filter if CIC_MAX_INTERP is set to 0 or lower.

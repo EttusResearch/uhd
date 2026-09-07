@@ -190,7 +190,6 @@ module ddc_ms
   //--------------------------------------------------------------------------
   logic [REG_SR_DECIM_W-1:0] decim_rate_latched;
   logic [ SCALING_WIDTH-1:0] scale_iq_latched;
-  logic latched_rate_changed;
   typedef enum logic [1:0] {IDLE, PROCESSING, WAIT} state_t;
   state_t state;
 
@@ -199,9 +198,7 @@ module ddc_ms
       state                <= WAIT;
       decim_rate_latched   <= REG_SR_DECIM_W'(1);
       scale_iq_latched     <= 1 << SCALE_FRAC_W; // 1.0 in Q2.15 format
-      latched_rate_changed <= 1'b0;
     end else begin
-      latched_rate_changed <= 1'b0;
       case (state)
         IDLE: begin
           // update scaling factor unconditionally as it aligns data as the last
@@ -211,14 +208,12 @@ module ddc_ms
             state <= PROCESSING;
           end else if (reg_decim != decim_rate_latched) begin
             decim_rate_latched <= reg_decim;
-            latched_rate_changed <= 1'b1;
             state <= WAIT;
           end
         end
         PROCESSING: begin
           if (clear) begin
             decim_rate_latched <= reg_decim;
-            latched_rate_changed <= 1'b1;
             state <= WAIT;
           end
         end
@@ -316,8 +311,7 @@ module ddc_ms
     .clear          ('0),
     .data_in        (decim_in),
     .data_out       (decim_out),
-    .decim_factor   (cic_rate),
-    .config_changed (latched_rate_changed)
+    .decim_factor   (cic_rate)
   );
 
   // -------------------------------------------------------------------------

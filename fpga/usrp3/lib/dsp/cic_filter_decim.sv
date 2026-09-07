@@ -55,10 +55,6 @@
 //   clip or round; the final rate-dependent output conversion rounds before
 //   reducing the result to SAMP_W.
 //
-//   The decimation factor may be changed at runtime by asserting
-//   config_changed for one clock cycle. Configuration must only be changed
-//   when the module is idle (not actively processing data).
-//
 //   NOTE: This module is expected to run within the context of the axi_rate_change
 //   module, which ensures that the number of input words is always a multiple
 //   of the decimation factor and that the output tlast signals are correctly
@@ -73,8 +69,6 @@
 //
 // Signals:
 //   decim_factor   : Runtime-configurable decimation ratio (1..MAX_DECIM).
-//   config_changed : Pulse high for 1 cycle after changing decim_factor.
-//                    Must only be asserted when the module is idle.
 //
 
 `default_nettype none
@@ -89,7 +83,6 @@ module cic_filter_decim #(
   input wire                              rst,
   input wire                              clear,
   input wire [$clog2(MAX_DECIM+1)-1:0]    decim_factor,
-  input wire                              config_changed,
   // Data in (SPC * SAMP_W wide)
   AxiStreamIf.slave                       data_in,
   // Data out (SPC * SAMP_W wide)
@@ -115,23 +108,6 @@ module cic_filter_decim #(
   // comb_bus[0] is driven by the decimator output.
   // comb_bus[i] for i > 0 carries the output of comb stage i-1.
   AxiStreamIf #(SPC * ACCUM_W) comb_bus [ORDER+1] (.clk(clk), .rst(rst));
-
-  //---------------------------------------------------------------------------
-  // Register configuration parameters
-  //---------------------------------------------------------------------------
-  logic [$clog2(MAX_DECIM+1)-1:0] decim_factor_reg;
-  logic                           config_changed_reg;
-  always_ff @(posedge clk) begin
-    config_changed_reg <= '0; // Default to no config change
-    if (config_changed) begin
-      decim_factor_reg <= decim_factor;
-      config_changed_reg <= '1; // Pulse to indicate config change
-    end
-    if (rst) begin
-      decim_factor_reg   <= 1; // Default to no decimation
-      config_changed_reg <= 1'b0;
-    end
-  end
 
 
   //--------------------------------------------------------------------------
@@ -193,8 +169,7 @@ module cic_filter_decim #(
     .clr           (clear),
     .data_in       (integ_bus[1]),
     .data_out      (comb_bus[0]),
-    .decim_factor  (decim_factor_reg),
-    .decim_changed (config_changed_reg)
+    .decim_factor  (decim_factor)
   );
 
   //---------------------------------------------------------------------------
@@ -223,7 +198,7 @@ module cic_filter_decim #(
     .clk         (clk),
     .rst         (rst),
     .clear       (clear),
-    .rate_factor (decim_factor_reg),
+    .rate_factor (decim_factor),
     .data_in     (comb_bus[ORDER]),
     .data_out    (data_out)
   );
