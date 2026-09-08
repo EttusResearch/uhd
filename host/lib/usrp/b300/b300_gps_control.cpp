@@ -141,11 +141,9 @@ public:
             {CFG_TP_PULSE_LENGTH_DEF, {0x01}}, // Set Time Pulse to interpret as length (us)
             {CFG_TP_PERIOD_TP1,       {0x00, 0x00, 0x00, 0x00}}, // Disable TP Period when there is no GPS lock
             {CFG_TP_LEN_TP1,          {0x00, 0x00, 0x00, 0x00}}, // Disable TP when there is no GPS lock
-            {CFG_TP_POL_TP1,          {0x00}}, // Set TP1 polarity to falling edge
             {CFG_TP_TIMEGRID_TP1,     {0x01}}, // Set TP1 Time grid to use GPS time reference
             {CFG_TP_ALIGN_TO_TOW_TP1, {0x01}}, // Set Align TP1 to top of second
             {CFG_TP_USE_LOCKED_TP1,   {0x01}}, // Use locked parameters when possible for TP1
-            {CFG_TP_POL_TP1,          {0x01}}, // Set TP1 polarity to rising edge
             {CFG_TP_PERIOD_LOCK_TP1,  {0x00, 0x0F, 0x42, 0x40}}, // Set TP1 period when locked to GNSS time (us)
             {CFG_TP_LEN_LOCK_TP1,     {0x00, 0x07, 0xA1, 0x20}}, // Set TP1 length when locked to GNSS time (us)
             {CFG_TP_POL_TP1,          {0x01}} // Set TP1 polarity to rising edge
