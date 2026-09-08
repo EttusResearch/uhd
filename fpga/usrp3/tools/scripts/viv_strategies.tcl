@@ -137,8 +137,18 @@ proc ::vivado_strategies::implement_design {strategy} {
 
     # Optimize the current routed netlist.
     if [dict get $strategy "post_route_phys_opt_design.is_enabled"] {
-        set pr_physopt_dir [dict get $strategy "post_route_phys_opt_design.directive"]
-        phys_opt_design -directive $pr_physopt_dir
+        # Check routing health before post-route optimization. Running phys_opt_design
+        # on a design with routing failures is ineffective and wastes build time.
+        set unrouted  [llength [get_nets -hierarchical -filter {ROUTE_STATUS == "NOROUTE"}]]
+        set partial   [llength [get_nets -hierarchical -filter {ROUTE_STATUS == "PARTIAL"}]]
+        set conflicts [llength [get_nets -hierarchical -filter {ROUTE_STATUS == "CONFLICTS"}]]
+        if {$unrouted > 0 || $partial > 0 || $conflicts > 0} {
+            puts "BUILDER: WARNING: Routing incomplete ($unrouted unrouted, $partial partial, $conflicts conflicting nets)."
+            puts "BUILDER: Skipping post-route phys_opt_design (ineffective on failed route)."
+        } else {
+            set pr_physopt_dir [dict get $strategy "post_route_phys_opt_design.directive"]
+            phys_opt_design -directive $pr_physopt_dir
+        }
     }
 }
 
