@@ -63,7 +63,7 @@ proc ::vivado_strategies::get_impl_preset {preset} {
             dict set strategy "route_design.directive"                  "Explore"
             dict set strategy "route_design.more_options"               "-tns_cleanup"
             dict set strategy "post_route_phys_opt_design.is_enabled"   1
-            dict set strategy "post_route_phys_opt_design.directive"    "Explore"
+            dict set strategy "post_route_phys_opt_design.directive"    "ExploreWithHoldFix"
         }
     }
     return $strategy

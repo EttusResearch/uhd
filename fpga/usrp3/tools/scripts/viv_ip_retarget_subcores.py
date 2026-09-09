@@ -71,6 +71,13 @@ def get_empty_match_str(item):
     )
 
 
+def get_json_match_str(item):
+    """Produce the regex string to match a JSON XCI parameter value."""
+    return (
+        r'(\s*"' + item + r'"\s*:\s*\[\s*\{\s*"value"\s*:\s*")([^"]*)(\".*)'
+    )
+
+
 def retarget_subcore(path, file, output_dir, target_tok):
     """Update target parameter for the specified sub-core."""
     # Read XCI File
@@ -115,6 +122,16 @@ def retarget_subcore(path, file, output_dir, target_tok):
                         + replace_dict[m.group(2)]
                         + "</spirit:configurableElementValue>\n"
                     )
+                else:
+                    # Try JSON format
+                    m = re.search(
+                        get_json_match_str(
+                            "(" + "|".join(list(replace_dict.keys())) + ")"
+                        ),
+                        r_line,
+                    )
+                    if m is not None:
+                        w_line = m.group(1) + replace_dict[m.group(2)] + m.group(4) + "\n"
             out_file.write(w_line)
 
 

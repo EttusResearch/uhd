@@ -10,22 +10,11 @@ export VIV_PLATFORM=$(uname -o)
 
 # Vivado specific
 if [[ $VIV_PLATFORM = "Cygwin" ]]; then
-    if [[ -d "/cygdrive/c/Xilinx/Vivado_Lab" ]]; then
-        VIVADO_BASE_PATH="/cygdrive/c/Xilinx/Vivado_Lab"
-    else
-        VIVADO_BASE_PATH="/cygdrive/c/Xilinx/Vivado"
-    fi
+    VIVADO_BASE_PATH="/cygdrive/c/Xilinx/Vivado"
     MODELSIM_BASE_PATH="/cygdrive/c/mentor/modelsim"
 else
-    if [[ -d "/tools/Xilinx/Vivado_Lab" ]]; then
-        VIVADO_BASE_PATH="/tools/Xilinx/Vivado_Lab"
-    elif [[ -d "/tools/Xilinx/Vivado" ]]; then
-        VIVADO_BASE_PATH="/tools/Xilinx/Vivado"
-    elif [[ -d "/opt/Xilinx/Vivado_Lab" ]]; then
-        VIVADO_BASE_PATH="/opt/Xilinx/Vivado_Lab"
-    else
-        VIVADO_BASE_PATH="/opt/Xilinx/Vivado"
-    fi
+    # Find the requested Vivado version below the standard Xilinx roots later.
+    VIVADO_BASE_PATH=""
     MODELSIM_BASE_PATH=""
     for MODELSIM_BASE in /opt /opt/local /tools /opt/share /opt/synced; do
         for MODELSIM_TOOL in \
@@ -53,6 +42,38 @@ function resolve_viv_path {
     else
         echo $1
     fi
+}
+
+# Locate a requested Vivado version below either an explicit path or the
+# standard Xilinx installation roots.
+function find_vivado_path {
+    local vivado_root
+    local vivado_candidate
+    local -a vivado_roots
+
+    if [[ -n "$VIVADO_BASE_PATH" ]]; then
+        # An explicit path restricts discovery to that installation tree.
+        vivado_roots=("$VIVADO_BASE_PATH")
+    else
+        # Search the standard roots in priority order when none was provided.
+        vivado_roots=(/tools/Xilinx /opt/Xilinx)
+    fi
+
+    for vivado_root in "${vivado_roots[@]}"; do
+        [[ -d "$vivado_root" ]] || continue
+        while IFS= read -r vivado_candidate; do
+            # Convert <install>/bin/vivado to its installation directory.
+            vivado_candidate=$(dirname "$(dirname "$vivado_candidate")")
+            # Require the requested version as a complete path component.
+            [[ "/$vivado_candidate/" == *"/$VIVADO_VER/"* ]] || continue
+            export VIVADO_PATH="$vivado_candidate"
+            return 0
+        # The supported layouts place bin/vivado within four levels of the root.
+        done < <(find "$vivado_root" -maxdepth 5 \( -type f -o -type l \) \
+            \( -path '*/Vivado/*/bin/vivado' -o -path '*/Vivado/bin/vivado' \) \
+            -print 2>/dev/null)
+    done
+    return 1
 }
 
 #----------------------------------------------------------------------------
@@ -190,8 +211,23 @@ if [[ ${VIVADO_VER^^} = "CMDLINE_ARG" ]]; then
         VIVADO_VER=$VIVADO_USER_VER
     fi
 fi
-export VIVADO_PATH=$VIVADO_BASE_PATH/$VIVADO_VER
-export VIVADO_HLS_PATH=$VIVADO_BASE_PATH/../Vitis_HLS/$VIVADO_VER
+# Find a requested-version install. An explicit --vivado-path may name the
+# install or either parent.
+if ! find_vivado_path; then
+    # Preserve the historical fallback to report a useful missing-path error.
+    export VIVADO_PATH="$VIVADO_BASE_PATH/$VIVADO_VER/Vivado"
+fi
+
+# Unified installs place Vitis beside Vivado. Older installs use a separate
+# Vitis_HLS/<version> hierarchy beside Vivado/<version>.
+VIVADO_INSTALL_PARENT=$(dirname "$VIVADO_PATH")
+if [[ -d "$VIVADO_INSTALL_PARENT/Vitis" ]]; then
+    export VIVADO_HLS_PATH="$VIVADO_INSTALL_PARENT/Vitis"
+else
+    export VIVADO_HLS_PATH="$(dirname "$VIVADO_INSTALL_PARENT")/Vitis_HLS/$VIVADO_VER"
+fi
+# Both Vivado layouts have the Xilinx root one level above the install parent.
+XILINX_ROOT=$(dirname "$VIVADO_INSTALL_PARENT")
 
 echo "Setting up a ${BITNESS}-bit FPGA build environment for the ${DISPLAY_NAME}..."
 
@@ -201,7 +237,7 @@ echo "Setting up a ${BITNESS}-bit FPGA build environment for the ${DISPLAY_NAME}
 if [ -d "$VIVADO_PATH/bin" ]; then
     echo "- Vivado: Found ($VIVADO_PATH/bin)"
 else
-    echo "- Vivado: Version $VIVADO_VER not found in $VIVADO_BASE_PATH (ERROR.. Builds and simulations will not work)"
+    echo "- Vivado: Version $VIVADO_VER not found${VIVADO_BASE_PATH:+ in $VIVADO_BASE_PATH} (ERROR.. Builds and simulations will not work)"
     if [[ -z $VIVADO_USER_VER ]]; then
         echo "          Use the --vivado-path option to override the search path"
     else
@@ -211,13 +247,15 @@ else
     return 1
 fi
 
-$VIVADO_PATH/settings${BITNESS}.sh
-$VIVADO_PATH/.settings${BITNESS}-Vivado.sh
-if [[ -e $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh ]]; then
-    $(readlink -f $VIVADO_HLS_PATH)/.settings${BITNESS}-Vitis_HLS.sh
+. "$VIVADO_PATH/settings${BITNESS}.sh"
+. "$VIVADO_PATH/.settings${BITNESS}-Vivado.sh"
+if [[ -e $(readlink -f "$VIVADO_HLS_PATH")/.settings${BITNESS}-Vitis_HLS.sh ]]; then
+    . "$(readlink -f "$VIVADO_HLS_PATH")/.settings${BITNESS}-Vitis_HLS.sh"
+elif [[ -e $(readlink -f "$VIVADO_HLS_PATH")/.settings${BITNESS}-Vitis_for_HLS.sh ]]; then
+    . "$(readlink -f "$VIVADO_HLS_PATH")/.settings${BITNESS}-Vitis_for_HLS.sh"
 fi
-if [[ -e $(readlink -f $VIVADO_BASE_PATH/..)/DocNav/.settings${BITNESS}-DocNav.sh ]]; then
-    $(readlink -f $VIVADO_BASE_PATH/..)/DocNav/.settings${BITNESS}-DocNav.sh
+if [[ -e $(readlink -f "$XILINX_ROOT")/DocNav/.settings${BITNESS}-DocNav.sh ]]; then
+    . "$(readlink -f "$XILINX_ROOT")/DocNav/.settings${BITNESS}-DocNav.sh"
 fi
 
 if [[ -x `which tput 2>/dev/null` ]] ; then
@@ -379,6 +417,17 @@ fi
 export PATH=$(echo ${PATH} | tr ':' '\n' | awk '$0 !~ "/Vivado/"' | paste -sd:)
 export PATH=${PATH}:$VIVADO_PATH:$VIVADO_PATH/bin:$VIVADO_HLS_PATH:$VIVADO_HLS_PATH/bin:$MODELSIM_PATH
 
+# In 2025.x+, vitis_hls is no longer a standalone executable. Provide a wrapper
+# function that invokes it through the Vitis loader. XILINX_VIVADO must be set
+# so that vitis_hls can locate device libraries from the Vivado installation.
+if [[ $VIVADO_VER == 2025* ]] && [[ ! -x "$(command -v vitis_hls 2>/dev/null)" ]]; then
+    export XILINX_VIVADO=$(readlink -f "$VIVADO_PATH")
+    vitis_hls() {
+        "$VIVADO_HLS_PATH/bin/loader" -exec vitis_hls "$@"
+    }
+    export -f vitis_hls
+fi
+
 for prod in "${!PRODUCT_ID_MAP[@]}"; do
     IFS='/' read -r -a prod_tokens <<< "${PRODUCT_ID_MAP[$prod]}"
     if [ ${#prod_tokens[@]} -eq 6 ]; then
@@ -532,9 +581,20 @@ function viv_upgrade_tcl_bd {
     fi
     bd_ip_repo="${src_path%/top*}/lib/vivado_ipi"
     if [[ -f $src_path ]]; then
-        $3 -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify_bdtcl $part_name $(resolve_viv_path $src_path) $(resolve_viv_path $bd_ip_repo)
-        echo "INFO: Vivado BD loaded, writing updated source TCL..."
-        $VIVADO_EXEC -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs write_bdtcl $part_name $(resolve_viv_path $src_path) upgrade
+        log_path="${src_path%.tcl}.viv_upgrade.log"
+        echo "Vivado log: $log_path"
+        : > "$log_path"
+        echo "=== Loading block design with $3 ===" | tee -a "$log_path"
+        $3 -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify_bdtcl $part_name $(resolve_viv_path $src_path) $(resolve_viv_path $bd_ip_repo) 2>&1 | tee -a "$log_path"
+        old_vivado_status=${PIPESTATUS[0]}
+        echo "INFO: Vivado BD loaded, writing updated source TCL..." | tee -a "$log_path"
+        echo "=== Writing upgraded block design with $VIVADO_EXEC ===" | tee -a "$log_path"
+        $VIVADO_EXEC -mode $viv_mode -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs write_bdtcl $part_name $(resolve_viv_path $src_path) upgrade 2>&1 | tee -a "$log_path"
+        new_vivado_status=${PIPESTATUS[0]}
+        if [[ $old_vivado_status -ne 0 ]]; then
+            return $old_vivado_status
+        fi
+        return $new_vivado_status
     else
         echo "ERROR: IP $src_path not found."
         return 1
@@ -577,7 +637,9 @@ function viv_upgrade_ip {
         if [[ -f $xci_path ]]; then
             echo "Upgrading $xci_path..."
             part_name=$(python3 $REPO_BASE_PATH/tools/scripts/viv_ip_xci_editor.py read_part $xci_path)
-            $VIVADO_EXEC -mode batch -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs upgrade $part_name $(resolve_viv_path $xci_path) | grep -v -E '(^$|^#|\*\*)'
+            log_path="${xci_path%.xci}.viv_upgrade.log"
+            echo "Vivado log: $log_path"
+            $VIVADO_EXEC -mode batch -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs upgrade $part_name $(resolve_viv_path $xci_path) 2>&1 | tee "$log_path" | grep -v -E '(^$|^#|\*\*)'
             test ${PIPESTATUS[0]} -eq 0
         else
             echo "ERROR: IP $xci_path not found."

@@ -20,7 +20,7 @@ BUILD_VIVADO_HLS_IP = \
 	echo "BUILDER: Building HLS IP $(1)"; \
 	echo "========================================================"; \
 	export HLS_IP_NAME=$(1); \
-	export PART_NAME=$(subst /,,$(2)); \
+	export PART_NAME=$(subst /,-,$(subst /-,-,$(2))); \
 	export HLS_IP_SRCS=$(call RESOLVE_PATHS,$(3)); \
 	export HLS_IP_INCLUDES=$(call RESOLVE_PATHS,$(6)); \
 	echo "BUILDER: Staging HLS IP in build directory..."; \
@@ -29,7 +29,7 @@ BUILD_VIVADO_HLS_IP = \
 	cd $(5); \
 	echo "BUILDER: Building HLS IP..."; \
 	export VIV_ERR=0; \
-	vitis_hls -f $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_hls_ip.tcl) -l $(1).log || export VIV_ERR=$$?; \
+	vitis-run --mode hls --tcl $(call RESOLVE_PATH,$(TOOLS_DIR)/scripts/viv_generate_hls_ip.tcl)  || export VIV_ERR=$$?; \
 	$(TOOLS_DIR)/scripts/shared-ip-loc-manage.sh --path=$(5)/$(1) release; \
 	exit $$(($$VIV_ERR))
 

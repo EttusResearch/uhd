@@ -69,6 +69,13 @@ def get_empty_match_str(item):
     return r'(.*\<spirit:configurableElementValue spirit:referenceId=".*\.' + item + r'")/\>'
 
 
+def get_json_match_str(item):
+    """Get the regex string to match a JSON XCI parameter value."""
+    return (
+        r'(\s*"' + item + r'"\s*:\s*\[\s*\{\s*"value"\s*:\s*")([^"]*)(\".*)'
+    )
+
+
 def main():
     """Main function."""
     args = parse_args()
@@ -98,6 +105,16 @@ def main():
                 )
                 if m is not None:
                     xci_info[m.group(2)] = ""
+                else:
+                    # Try JSON format
+                    m = re.search(
+                        get_json_match_str(
+                            "(ARCHITECTURE|DEVICE|PACKAGE|SPEEDGRADE|TEMPERATURE_GRADE|SILICON_REVISION)"
+                        ),
+                        line,
+                    )
+                    if m is not None:
+                        xci_info[m.group(2)] = m.group(3)
         if args.action == "read_target":
             print(
                 xci_info["ARCHITECTURE"]
@@ -167,7 +184,7 @@ def main():
             "C_XDEVICE": target_tok[1],
         }
         if len(target_tok) > 4:
-            replace_dict["TEMPERATURE_GRADE"] = target_tok[4]
+            replace_dict["TEMPERATURE_GRADE"] = target_tok[4].upper()
         if len(target_tok) > 5:
             replace_dict["SILICON_REVISION"] = target_tok[5]
         out_xci_filename = os.path.join(
@@ -193,6 +210,14 @@ def main():
                             + replace_dict[m.group(2)]
                             + "</spirit:configurableElementValue>\n"
                         )
+                    else:
+                        # Try JSON format
+                        m = re.search(
+                            get_json_match_str("(" + "|".join(list(replace_dict.keys())) + ")"),
+                            r_line,
+                        )
+                        if m is not None:
+                            w_line = m.group(1) + replace_dict[m.group(2)] + m.group(4) + "\n"
                 out_file.write(w_line)
     elif args.action == "rename":
         # Write a new XCI file with a new name
@@ -210,6 +235,8 @@ def main():
 
         replace_dict = {"Component_Name": new_name}
         replace_top_level = ("spirit:instanceName", new_name)
+        # For JSON format, also match xci_name
+        json_replace_dict = {"Component_Name": new_name}
         out_xci_filename = os.path.join(os.path.abspath(args.output_dir), new_name + ".xci")
 
         with open(out_xci_filename, "w") as out_file:
@@ -235,6 +262,25 @@ def main():
                         m = re.search(get_top_level_match_str(replace_top_level[0]), r_line)
                         if m is not None:
                             w_line = m.group(1) + replace_top_level[1] + m.group(3) + "\n"
+                        else:
+                            # Try JSON format
+                            m = re.search(
+                                get_json_match_str(
+                                    "(" + "|".join(list(json_replace_dict.keys())) + ")"
+                                ),
+                                r_line,
+                            )
+                            if m is not None:
+                                w_line = (
+                                    m.group(1) + json_replace_dict[m.group(2)] + m.group(4) + "\n"
+                                )
+                            else:
+                                # Also handle xci_name in JSON
+                                m = re.search(
+                                    r'(\s*"xci_name"\s*:\s*")([^"]*)(".*)', r_line
+                                )
+                                if m is not None:
+                                    w_line = m.group(1) + new_name + m.group(3) + "\n"
                 out_file.write(w_line)
 
 
