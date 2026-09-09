@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -294,11 +300,11 @@ proc create_root_design { parentCell } {
   
   # Create instance: adc_data_to_axi, and set properties
   set adc_data_to_axi [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 adc_data_to_axi ]
-  set_property -dict [ list \
-   CONFIG.HAS_TREADY {0} \
-   CONFIG.REG_CONFIG {1} \
-   CONFIG.TDATA_NUM_BYTES {4} \
- ] $adc_data_to_axi
+  set_property -dict [list \
+    CONFIG.HAS_TREADY {0} \
+    CONFIG.TDATA_NUM_BYTES {4} \
+  ] $adc_data_to_axi
+
 
   # Create instance: adc_gearbox_8x1_0, and set properties
   set block_name adc_gearbox_8x1
@@ -313,17 +319,19 @@ proc create_root_design { parentCell } {
   
   # Create instance: adc_i_data_from_axi, and set properties
   set adc_i_data_from_axi [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 adc_i_data_from_axi ]
-  set_property -dict [ list \
-   CONFIG.REG_CONFIG {0} \
-   CONFIG.TDATA_NUM_BYTES {16} \
- ] $adc_i_data_from_axi
+  set_property -dict [list \
+    CONFIG.REG_CONFIG {0} \
+    CONFIG.TDATA_NUM_BYTES {16} \
+  ] $adc_i_data_from_axi
+
 
   # Create instance: adc_q_data_from_axi, and set properties
   set adc_q_data_from_axi [ create_bd_cell -type ip -vlnv xilinx.com:ip:axis_register_slice:1.1 adc_q_data_from_axi ]
-  set_property -dict [ list \
-   CONFIG.REG_CONFIG {0} \
-   CONFIG.TDATA_NUM_BYTES {16} \
- ] $adc_q_data_from_axi
+  set_property -dict [list \
+    CONFIG.REG_CONFIG {0} \
+    CONFIG.TDATA_NUM_BYTES {16} \
+  ] $adc_q_data_from_axi
+
 
   # Create instance: const_1, and set properties
   set const_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 const_1 ]
@@ -341,34 +349,36 @@ proc create_root_design { parentCell } {
   
   # Create instance: fir_compiler_0, and set properties
   set fir_compiler_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:fir_compiler:7.2 fir_compiler_0 ]
-  set_property -dict [ list \
-   CONFIG.Clock_Frequency {384} \
-   CONFIG.CoefficientVector {-2,0,8,12,0,-26,-36,0,63,81,0,-130,-161,0,241,291,0,-415,-491,0,676,788,0,-1059,-1223,0,1621,1864,0,-2473,-2860,0,3892,4607,0,-6820,-8705,0,17900,36048,43690,36048,17900,0,-8705,-6820,0,4607,3892,0,-2860,-2473,0,1864,1621,0,-1223,-1059,0,788,676,0,-491,-415,0,291,241,0,-161,-130,0,81,63,0,-36,-26,0,12,8,0,-2}\
-   CONFIG.Coefficient_Fractional_Bits {0} \
-   CONFIG.Coefficient_Sets {1} \
-   CONFIG.Coefficient_Sign {Signed} \
-   CONFIG.Coefficient_Structure {Inferred} \
-   CONFIG.Coefficient_Width {18} \
-   CONFIG.ColumnConfig {14} \
-   CONFIG.Data_Fractional_Bits {0} \
-   CONFIG.Data_Width {16} \
-   CONFIG.Decimation_Rate {3} \
-   CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
-   CONFIG.Filter_Type {Decimation} \
-   CONFIG.Has_ARESETn {true} \
-   CONFIG.Interpolation_Rate {1} \
-   CONFIG.M_DATA_Has_TREADY {false} \
-   CONFIG.Number_Channels {1} \
-   CONFIG.Number_Paths {2} \
-   CONFIG.Output_Rounding_Mode {Convergent_Rounding_to_Even} \
-   CONFIG.Output_Width {17} \
-   CONFIG.Quantization {Integer_Coefficients} \
-   CONFIG.RateSpecification {Frequency_Specification} \
-   CONFIG.Reset_Data_Vector {true} \
-   CONFIG.S_DATA_Has_FIFO {false} \
-   CONFIG.Sample_Frequency {384} \
-   CONFIG.Zero_Pack_Factor {1} \
- ] $fir_compiler_0
+  set_property -dict [list \
+    CONFIG.Clock_Frequency {384} \
+    CONFIG.CoefficientVector {-2,0,8,12,0,-26,-36,0,63,81,0,-130,-161,0,241,291,0,-415,-491,0,676,788,0,-1059,-1223,0,1621,1864,0,-2473,-2860,0,3892,4607,0,-6820,-8705,0,17900,36048,43690,36048,17900,0,-8705,-6820,0,4607,3892,0,-2860,-2473,0,1864,1621,0,-1223,-1059,0,788,676,0,-491,-415,0,291,241,0,-161,-130,0,81,63,0,-36,-26,0,12,8,0,-2}\
+\
+    CONFIG.Coefficient_Fractional_Bits {0} \
+    CONFIG.Coefficient_Sets {1} \
+    CONFIG.Coefficient_Sign {Signed} \
+    CONFIG.Coefficient_Structure {Inferred} \
+    CONFIG.Coefficient_Width {18} \
+    CONFIG.ColumnConfig {14} \
+    CONFIG.Data_Fractional_Bits {0} \
+    CONFIG.Data_Width {16} \
+    CONFIG.Decimation_Rate {3} \
+    CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
+    CONFIG.Filter_Type {Decimation} \
+    CONFIG.Has_ARESETn {true} \
+    CONFIG.Interpolation_Rate {1} \
+    CONFIG.M_DATA_Has_TREADY {false} \
+    CONFIG.Number_Channels {1} \
+    CONFIG.Number_Paths {2} \
+    CONFIG.Output_Rounding_Mode {Convergent_Rounding_to_Even} \
+    CONFIG.Output_Width {17} \
+    CONFIG.Quantization {Integer_Coefficients} \
+    CONFIG.RateSpecification {Frequency_Specification} \
+    CONFIG.Reset_Data_Vector {true} \
+    CONFIG.S_DATA_Has_FIFO {false} \
+    CONFIG.Sample_Frequency {384} \
+    CONFIG.Zero_Pack_Factor {1} \
+  ] $fir_compiler_0
+
 
   # Create instance: scale_2x_0, and set properties
   set block_name scale_2x
@@ -380,9 +390,8 @@ proc create_root_design { parentCell } {
      catch {common::send_gid_msg -ssname BD::TCL -id 2096 -severity "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
      return 1
    }
-    set_property -dict [ list \
-   CONFIG.kDataWidth {32} \
- ] $scale_2x_0
+    set_property CONFIG.kDataWidth {32} $scale_2x_0
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net adc_data_combine_M_AXIS [get_bd_intf_ports adc_data_out] [get_bd_intf_pins adc_data_to_axi/M_AXIS]
@@ -391,26 +400,57 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net fir_compiler_0_M_AXIS_DATA [get_bd_intf_pins adc_3_1_clk_converter_0/s_axis] [get_bd_intf_pins fir_compiler_0/M_AXIS_DATA]
 
   # Create port connections
-  connect_bd_net -net adc_3_1_clk_converter_0_m_axis_tdata [get_bd_pins adc_3_1_clk_converter_0/m_axis_tdata] [get_bd_pins ddc_saturate/cDataIn]
-  connect_bd_net -net adc_3_1_clk_converter_0_m_axis_tvalid [get_bd_pins adc_3_1_clk_converter_0/m_axis_tvalid] [get_bd_pins ddc_saturate/cDataValidIn]
-  connect_bd_net -net adc_data_out_resetn_dclk_1 [get_bd_ports adc_data_out_resetn_dclk] [get_bd_pins adc_3_1_clk_converter_0/m_axis_resetn] [get_bd_pins adc_data_to_axi/aresetn]
-  connect_bd_net -net adc_gearbox_8x1_0_adc_data_out_2x [get_bd_pins adc_gearbox_8x1_0/adc_out_8x] [get_bd_pins fir_compiler_0/s_axis_data_tdata]
-  connect_bd_net -net adc_gearbox_8x1_0_rfi_1x [get_bd_pins adc_i_data_from_axi/m_axis_tready] [get_bd_pins adc_q_data_from_axi/m_axis_tready] [get_bd_pins const_1/dout]
-  connect_bd_net -net adc_gearbox_8x1_0_valid_out_2x [get_bd_pins adc_gearbox_8x1_0/valid_out_8x] [get_bd_pins fir_compiler_0/s_axis_data_tvalid]
-  connect_bd_net -net adc_q_data_breakout_m_axis_tdata [get_bd_pins adc_gearbox_8x1_0/adc_q_in_1x] [get_bd_pins adc_q_data_from_axi/m_axis_tdata]
-  connect_bd_net -net aresetn_0_1 [get_bd_ports fir_resetn_rclk8x] [get_bd_pins adc_3_1_clk_converter_0/s_axis_resetn] [get_bd_pins fir_compiler_0/aresetn]
-  connect_bd_net -net axis_register_slice_0_m_axis_tdata [get_bd_pins adc_gearbox_8x1_0/adc_i_in_1x] [get_bd_pins adc_i_data_from_axi/m_axis_tdata]
-  connect_bd_net -net axis_register_slice_0_m_axis_tvalid [get_bd_pins adc_gearbox_8x1_0/valid_in_1x] [get_bd_pins adc_i_data_from_axi/m_axis_tvalid]
-  connect_bd_net -net data_clock_mmcm_data_clk [get_bd_ports data_clk] [get_bd_pins adc_3_1_clk_converter_0/m_axis_clk] [get_bd_pins adc_data_to_axi/aclk] [get_bd_pins ddc_saturate/Clk]
-  connect_bd_net -net data_clock_mmcm_rfdc_clk [get_bd_ports rfdc_clk] [get_bd_pins adc_gearbox_8x1_0/clk1x] [get_bd_pins adc_i_data_from_axi/aclk] [get_bd_pins adc_q_data_from_axi/aclk]
-  connect_bd_net -net data_clock_mmcm_rfdc_clk_2x [get_bd_ports rfdc_clk_8x] [get_bd_pins adc_3_1_clk_converter_0/s_axis_clk] [get_bd_pins adc_gearbox_8x1_0/clk8x] [get_bd_pins fir_compiler_0/aclk]
-  connect_bd_net -net ddc_saturate_cDataOut [get_bd_pins ddc_saturate/cDataOut] [get_bd_pins scale_2x_0/cDataIn]
-  connect_bd_net -net ddc_saturate_cDataValidOut [get_bd_pins ddc_saturate/cDataValidOut] [get_bd_pins scale_2x_0/cDataValidIn]
-  connect_bd_net -net enable_data_to_fir_rclk_1 [get_bd_ports enable_data_to_fir_rclk] [get_bd_pins adc_gearbox_8x1_0/enable_1x]
-  connect_bd_net -net rfdc_adc_axi_resetn_rclk_1 [get_bd_ports rfdc_adc_axi_resetn_rclk] [get_bd_pins adc_gearbox_8x1_0/reset_n_1x] [get_bd_pins adc_i_data_from_axi/aresetn] [get_bd_pins adc_q_data_from_axi/aresetn]
-  connect_bd_net -net scale_2x_0_cDataOut [get_bd_pins adc_data_to_axi/s_axis_tdata] [get_bd_pins scale_2x_0/cDataOut]
-  connect_bd_net -net scale_2x_0_cDataValidOut [get_bd_pins adc_data_to_axi/s_axis_tvalid] [get_bd_pins scale_2x_0/cDataValidOut]
-  connect_bd_net -net swap_iq_2x_1 [get_bd_ports swap_iq_8x] [get_bd_pins adc_gearbox_8x1_0/swap_iq_8x]
+  connect_bd_net -net adc_3_1_clk_converter_0_m_axis_tdata  [get_bd_pins adc_3_1_clk_converter_0/m_axis_tdata] \
+  [get_bd_pins ddc_saturate/cDataIn]
+  connect_bd_net -net adc_3_1_clk_converter_0_m_axis_tvalid  [get_bd_pins adc_3_1_clk_converter_0/m_axis_tvalid] \
+  [get_bd_pins ddc_saturate/cDataValidIn]
+  connect_bd_net -net adc_data_out_resetn_dclk_1  [get_bd_ports adc_data_out_resetn_dclk] \
+  [get_bd_pins adc_3_1_clk_converter_0/m_axis_resetn] \
+  [get_bd_pins adc_data_to_axi/aresetn]
+  connect_bd_net -net adc_gearbox_8x1_0_adc_data_out_2x  [get_bd_pins adc_gearbox_8x1_0/adc_out_8x] \
+  [get_bd_pins fir_compiler_0/s_axis_data_tdata]
+  connect_bd_net -net adc_gearbox_8x1_0_rfi_1x  [get_bd_pins const_1/dout] \
+  [get_bd_pins adc_i_data_from_axi/m_axis_tready] \
+  [get_bd_pins adc_q_data_from_axi/m_axis_tready]
+  connect_bd_net -net adc_gearbox_8x1_0_valid_out_2x  [get_bd_pins adc_gearbox_8x1_0/valid_out_8x] \
+  [get_bd_pins fir_compiler_0/s_axis_data_tvalid]
+  connect_bd_net -net adc_q_data_breakout_m_axis_tdata  [get_bd_pins adc_q_data_from_axi/m_axis_tdata] \
+  [get_bd_pins adc_gearbox_8x1_0/adc_q_in_1x]
+  connect_bd_net -net aresetn_0_1  [get_bd_ports fir_resetn_rclk8x] \
+  [get_bd_pins adc_3_1_clk_converter_0/s_axis_resetn] \
+  [get_bd_pins fir_compiler_0/aresetn]
+  connect_bd_net -net axis_register_slice_0_m_axis_tdata  [get_bd_pins adc_i_data_from_axi/m_axis_tdata] \
+  [get_bd_pins adc_gearbox_8x1_0/adc_i_in_1x]
+  connect_bd_net -net axis_register_slice_0_m_axis_tvalid  [get_bd_pins adc_i_data_from_axi/m_axis_tvalid] \
+  [get_bd_pins adc_gearbox_8x1_0/valid_in_1x]
+  connect_bd_net -net data_clock_mmcm_data_clk  [get_bd_ports data_clk] \
+  [get_bd_pins adc_3_1_clk_converter_0/m_axis_clk] \
+  [get_bd_pins ddc_saturate/Clk] \
+  [get_bd_pins adc_data_to_axi/aclk]
+  connect_bd_net -net data_clock_mmcm_rfdc_clk  [get_bd_ports rfdc_clk] \
+  [get_bd_pins adc_gearbox_8x1_0/clk1x] \
+  [get_bd_pins adc_i_data_from_axi/aclk] \
+  [get_bd_pins adc_q_data_from_axi/aclk]
+  connect_bd_net -net data_clock_mmcm_rfdc_clk_2x  [get_bd_ports rfdc_clk_8x] \
+  [get_bd_pins adc_3_1_clk_converter_0/s_axis_clk] \
+  [get_bd_pins adc_gearbox_8x1_0/clk8x] \
+  [get_bd_pins fir_compiler_0/aclk]
+  connect_bd_net -net ddc_saturate_cDataOut  [get_bd_pins ddc_saturate/cDataOut] \
+  [get_bd_pins scale_2x_0/cDataIn]
+  connect_bd_net -net ddc_saturate_cDataValidOut  [get_bd_pins ddc_saturate/cDataValidOut] \
+  [get_bd_pins scale_2x_0/cDataValidIn]
+  connect_bd_net -net enable_data_to_fir_rclk_1  [get_bd_ports enable_data_to_fir_rclk] \
+  [get_bd_pins adc_gearbox_8x1_0/enable_1x]
+  connect_bd_net -net rfdc_adc_axi_resetn_rclk_1  [get_bd_ports rfdc_adc_axi_resetn_rclk] \
+  [get_bd_pins adc_gearbox_8x1_0/reset_n_1x] \
+  [get_bd_pins adc_i_data_from_axi/aresetn] \
+  [get_bd_pins adc_q_data_from_axi/aresetn]
+  connect_bd_net -net scale_2x_0_cDataOut  [get_bd_pins scale_2x_0/cDataOut] \
+  [get_bd_pins adc_data_to_axi/s_axis_tdata]
+  connect_bd_net -net scale_2x_0_cDataValidOut  [get_bd_pins scale_2x_0/cDataValidOut] \
+  [get_bd_pins adc_data_to_axi/s_axis_tvalid]
+  connect_bd_net -net swap_iq_2x_1  [get_bd_ports swap_iq_8x] \
+  [get_bd_pins adc_gearbox_8x1_0/swap_iq_8x]
 
   # Create address segments
 

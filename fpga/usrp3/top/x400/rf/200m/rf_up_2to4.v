@@ -84,7 +84,6 @@ module rf_up_2to4 #(
         .s_axis_data_tready (),
         .s_axis_data_tdata  (gear_to_filt_tdata),
         .m_axis_data_tvalid (filt_to_clip_tvalid),
-        .m_axis_data_tuser  (),
         .m_axis_data_tdata  (filt_to_clip_tdata)
       );
 

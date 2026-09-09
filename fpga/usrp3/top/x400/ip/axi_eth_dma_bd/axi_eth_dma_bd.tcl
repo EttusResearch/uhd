@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -263,26 +269,26 @@ proc create_root_design { parentCell } {
 
   # Create instance: axi_eth_dma, and set properties
   set axi_eth_dma [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dma:7.1 axi_eth_dma ]
-  set_property -dict [ list \
-   CONFIG.c_addr_width {36} \
-   CONFIG.c_enable_multi_channel {0} \
-   CONFIG.c_include_mm2s_dre {1} \
-   CONFIG.c_include_s2mm {1} \
-   CONFIG.c_include_s2mm_dre {1} \
-   CONFIG.c_m_axi_mm2s_data_width {64} \
-   CONFIG.c_m_axi_s2mm_data_width {64} \
-   CONFIG.c_m_axis_mm2s_tdata_width {64} \
-   CONFIG.c_micro_dma {0} \
-   CONFIG.c_mm2s_burst_size {8} \
-   CONFIG.c_s2mm_burst_size {16} \
-   CONFIG.c_sg_include_stscntrl_strm {0} \
- ] $axi_eth_dma
+  set_property -dict [list \
+    CONFIG.c_addr_width {36} \
+    CONFIG.c_enable_multi_channel {0} \
+    CONFIG.c_include_mm2s_dre {1} \
+    CONFIG.c_include_s2mm {1} \
+    CONFIG.c_include_s2mm_dre {1} \
+    CONFIG.c_m_axi_mm2s_data_width {64} \
+    CONFIG.c_m_axi_s2mm_data_width {64} \
+    CONFIG.c_m_axis_mm2s_tdata_width {64} \
+    CONFIG.c_micro_dma {0} \
+    CONFIG.c_mm2s_burst_size {8} \
+    CONFIG.c_s2mm_burst_size {16} \
+    CONFIG.c_sg_include_stscntrl_strm {0} \
+  ] $axi_eth_dma
+
 
   # Create instance: smartconnect_eth_dma, and set properties
   set smartconnect_eth_dma [ create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_eth_dma ]
-  set_property -dict [ list \
-   CONFIG.NUM_SI {3} \
- ] $smartconnect_eth_dma
+  set_property CONFIG.NUM_SI {3} $smartconnect_eth_dma
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net Conn3 [get_bd_intf_ports c2e] [get_bd_intf_pins axi_eth_dma/M_AXIS_MM2S]
@@ -294,15 +300,24 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net smartconnect_0_M00_AXI [get_bd_intf_ports axi_hp] [get_bd_intf_pins smartconnect_eth_dma/M00_AXI]
 
   # Create port connections
-  connect_bd_net -net axi_eth_dma_mm2s_introut [get_bd_ports eth_tx_irq] [get_bd_pins axi_eth_dma/mm2s_introut]
-  connect_bd_net -net axi_eth_dma_s2mm_introut [get_bd_ports eth_rx_irq] [get_bd_pins axi_eth_dma/s2mm_introut]
-  connect_bd_net -net clk40 [get_bd_ports clk40] [get_bd_pins axi_eth_dma/m_axi_mm2s_aclk] [get_bd_pins axi_eth_dma/m_axi_s2mm_aclk] [get_bd_pins axi_eth_dma/m_axi_sg_aclk] [get_bd_pins axi_eth_dma/s_axi_lite_aclk] [get_bd_pins smartconnect_eth_dma/aclk]
-  connect_bd_net -net clk40_rstn [get_bd_ports clk40_rstn] [get_bd_pins axi_eth_dma/axi_resetn] [get_bd_pins smartconnect_eth_dma/aresetn]
+  connect_bd_net -net axi_eth_dma_mm2s_introut  [get_bd_pins axi_eth_dma/mm2s_introut] \
+  [get_bd_ports eth_tx_irq]
+  connect_bd_net -net axi_eth_dma_s2mm_introut  [get_bd_pins axi_eth_dma/s2mm_introut] \
+  [get_bd_ports eth_rx_irq]
+  connect_bd_net -net clk40  [get_bd_ports clk40] \
+  [get_bd_pins axi_eth_dma/s_axi_lite_aclk] \
+  [get_bd_pins axi_eth_dma/m_axi_sg_aclk] \
+  [get_bd_pins axi_eth_dma/m_axi_mm2s_aclk] \
+  [get_bd_pins axi_eth_dma/m_axi_s2mm_aclk] \
+  [get_bd_pins smartconnect_eth_dma/aclk]
+  connect_bd_net -net clk40_rstn  [get_bd_ports clk40_rstn] \
+  [get_bd_pins axi_eth_dma/axi_resetn] \
+  [get_bd_pins smartconnect_eth_dma/aresetn]
 
   # Create address segments
-  assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_SG] [get_bd_addr_segs axi_hp/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_MM2S] [get_bd_addr_segs axi_hp/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_S2MM] [get_bd_addr_segs axi_hp/Reg] -force
+  assign_bd_address -offset 0x00000000 -range 0x001000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma/Data_SG] [get_bd_addr_segs axi_hp/Reg] -force
   assign_bd_address -offset 0x00000000 -range 0x010000000000 -target_address_space [get_bd_addr_spaces axi_eth_dma] [get_bd_addr_segs axi_eth_dma/S_AXI_LITE/Reg] -force
 
 

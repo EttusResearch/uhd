@@ -74,8 +74,7 @@ module rx_dec3 (
     .s_axis_data_tvalid (adc_data_in_tvalid),
     .s_axis_data_tready (adc_data_in_tready),
     .m_axis_data_tdata  (fir_tdata),
-    .m_axis_data_tvalid (fir_tvalid),
-    .m_axis_data_tuser  ()
+    .m_axis_data_tvalid (fir_tvalid)
   );
 
   //---------------------------------------------------------------------------

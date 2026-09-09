@@ -11,6 +11,10 @@ if {[regexp {X440=1} $viv_defs] && [regexp {RF_BW=200} $viv_defs] && [regexp {US
   # print a message to indicate that the modifications are being applied
   puts "Applying X440 200M RF modifications to block design"
 
+  # Load the custom HDL sources required by the block design IP before opening it.
+  set script_dir [file dirname [file normalize [info script]]]
+  source [file join $script_dir ip x4xx_ps_rfdc_bd x440_ps_rfdc_bd hdl_sources.tcl]
+
   # open the existing block design
   open_bd_design [get_files x440_ps_rfdc_bd.bd]
 
@@ -57,13 +61,6 @@ if {[regexp {X440=1} $viv_defs] && [regexp {RF_BW=200} $viv_defs] && [regexp {US
   # The changed RFDC interfaces have to be reflected in the upstream AXI
   # interfaces. A change to 2 samples/cycle is required for the calibration
   # muxes.
-  # As the file ordering is not yet done at this point in the flow. This means
-  # that the calibration mux kAxiWidth property might not be applied. This leads
-  # to critical warnings during synthesis about missing width of the AXI
-  # interfaces. As we narrow the source and desination with the calibration
-  # muxes in between the functionality is not affected as we just use the LSBs.
-  # The unused bits from the wider original 256 bit wide interfaces are
-  # optimized away during synthesis.
   set_property -dict [list CONFIG.kAxiWidth {64}] [get_bd_cells rfdc/calibration_muxes/gpio_to_axis_mux_0]
   set_property -dict [list CONFIG.TDATA_NUM_BYTES {8}] [get_bd_intf_ports dac_tile228_ch0_din]
   set_property -dict [list CONFIG.TDATA_NUM_BYTES {8}] [get_bd_intf_ports dac_tile228_ch1_din]

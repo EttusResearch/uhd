@@ -308,3 +308,32 @@ set shift_pipe_regs [get_cells -hierarchical -filter {
 # allow the setup path to take 2 clock cycles
 set_multicycle_path -setup 2 -from $shift_amount_regs -to $shift_pipe_regs
 set_multicycle_path -hold  1 -from $shift_amount_regs -to $shift_pipe_regs
+
+###############################################################################
+# Internal IP Clock Waivers (Vivado 2025.2)
+#
+# The following clocks are internal to IP primitives and are not accessible
+# from the block diagram. They do not drive user logic and require no timing
+# constraints. Creating clocks and setting false paths satisfies the
+# check_timing no_clock audit.
+###############################################################################
+
+# RFDC DAC INTERNAL_CLK_DIG: Internal digital clock within the RF Data
+# Converter DAC tiles. These are self-contained clocks inside the hard IP
+# and do not interact with fabric logic.
+create_clock -name rfdc_tx0_internal_clk_dig -period 10.000 \
+  [get_pins -quiet -hierarchical -filter {NAME =~ */rf_data_converter/inst/*rf_wrapper_i/tx0_u_dac/INTERNAL_CLK_DIG}]
+create_clock -name rfdc_tx1_internal_clk_dig -period 10.000 \
+  [get_pins -quiet -hierarchical -filter {NAME =~ */rf_data_converter/inst/*rf_wrapper_i/tx1_u_dac/INTERNAL_CLK_DIG}]
+set_false_path -from [get_clocks rfdc_tx0_internal_clk_dig]
+set_false_path -from [get_clocks rfdc_tx1_internal_clk_dig]
+set_false_path -to   [get_clocks rfdc_tx0_internal_clk_dig]
+set_false_path -to   [get_clocks rfdc_tx1_internal_clk_dig]
+
+# USR_ACCESS CCLK: The configuration clock of the USR_ACCESS primitive.
+# This is the internal FPGA configuration clock and is asynchronous to all
+# user logic.
+create_clock -name usr_access_cclk -period 10.000 \
+  [get_pins -quiet -hierarchical -filter {NAME =~ */usr_access_i/CCLK}]
+set_false_path -from [get_clocks usr_access_cclk]
+set_false_path -to   [get_clocks usr_access_cclk]

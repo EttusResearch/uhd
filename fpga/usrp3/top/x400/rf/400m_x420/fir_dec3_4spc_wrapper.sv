@@ -41,10 +41,6 @@
 //     [113:80]  = I sample 1    [119:114] = padding
 //     [153:120] = Q sample 1    [159:154] = padding
 //
-//   m_axis_data_tuser[0] = data_valid (indicates filter memory is fully
-//   flushed after reset).
-//
-
 module fir_dec3_4spc_wrapper (
   input  logic         aclk,
   input  logic         aresetn,
@@ -56,8 +52,7 @@ module fir_dec3_4spc_wrapper (
 
   // Output DATA channel (AXI4-Stream master)
   output logic [159:0] m_axis_data_tdata,
-  output logic         m_axis_data_tvalid,
-  output logic         m_axis_data_tuser
+  output logic         m_axis_data_tvalid
 );
 
   fir_dec3_4spc fir_dec3_4spc_i (
@@ -67,8 +62,7 @@ module fir_dec3_4spc_wrapper (
     .s_axis_data_tvalid (s_axis_data_tvalid),
     .s_axis_data_tready (s_axis_data_tready),
     .m_axis_data_tdata  (m_axis_data_tdata),
-    .m_axis_data_tvalid (m_axis_data_tvalid),
-    .m_axis_data_tuser  (m_axis_data_tuser)
+    .m_axis_data_tvalid (m_axis_data_tvalid)
   );
 
 endmodule : fir_dec3_4spc_wrapper

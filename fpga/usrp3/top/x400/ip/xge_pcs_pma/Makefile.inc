@@ -25,7 +25,7 @@ $(IP_BUILD_DIR)/xge_pcs_pma_ex/imports/xge_pcs_pma_common_wrapper.v \
 $(IP_BUILD_DIR)/xge_pcs_pma_ex/imports/xge_pcs_pma_gt_gtye4_common_wrapper.v \
 $(IP_BUILD_DIR)/xge_pcs_pma_ex/imports/gtwizard_ultrascale_v1_7_gtye4_common.v \
 
-IP_XGE_PCS_PMA_SRCS = $(IP_BUILD_DIR)/xge_pcs_pma/xge_pcs_pma.xci $(IP_BUILD_DIR)/xge_pcs_pma/xxv_ethernet_v4_0_0/xge_pcs_pma_wrapper.v
+IP_XGE_PCS_PMA_SRCS = $(IP_BUILD_DIR)/xge_pcs_pma/xge_pcs_pma.xci $(IP_BUILD_DIR)/xge_pcs_pma/xxv_ethernet_v5_0_2/xge_pcs_pma_wrapper.v
 
 IP_XGE_PCS_PMA_OUTS = \
 $(IP_BUILD_DIR)/xge_pcs_pma/xge_pcs_pma.xci.out \

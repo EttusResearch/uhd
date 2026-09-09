@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -249,22 +255,27 @@ proc create_root_design { parentCell } {
 
   # Create instance: axi_dwidth_converter_0, and set properties
   set axi_dwidth_converter_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_dwidth_converter:2.1 axi_dwidth_converter_0 ]
-  set_property -dict [ list \
-   CONFIG.FIFO_MODE {2} \
-   CONFIG.MI_DATA_WIDTH {512} \
-   CONFIG.SI_DATA_WIDTH {64} \
-   CONFIG.SYNCHRONIZATION_STAGES {3} \
- ] $axi_dwidth_converter_0
+  set_property -dict [list \
+    CONFIG.FIFO_MODE {2} \
+    CONFIG.MI_DATA_WIDTH {512} \
+    CONFIG.SI_DATA_WIDTH {64} \
+    CONFIG.SYNCHRONIZATION_STAGES {3} \
+  ] $axi_dwidth_converter_0
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net S0_AXI_1 [get_bd_intf_ports S0_AXI] [get_bd_intf_pins axi_dwidth_converter_0/S_AXI]
   connect_bd_intf_net -intf_net axi_dwidth_converter_0_M_AXI [get_bd_intf_ports M0_AXI] [get_bd_intf_pins axi_dwidth_converter_0/M_AXI]
 
   # Create port connections
-  connect_bd_net -net M0_AXI_ACLK_1 [get_bd_ports M0_AXI_ACLK] [get_bd_pins axi_dwidth_converter_0/m_axi_aclk]
-  connect_bd_net -net M0_AXI_ARESETN_1 [get_bd_ports M0_AXI_ARESETN] [get_bd_pins axi_dwidth_converter_0/m_axi_aresetn]
-  connect_bd_net -net S0_AXI_ACLK_1 [get_bd_ports S0_AXI_ACLK] [get_bd_pins axi_dwidth_converter_0/s_axi_aclk]
-  connect_bd_net -net S0_AXI_ARESETN_1 [get_bd_ports S0_AXI_ARESETN] [get_bd_pins axi_dwidth_converter_0/s_axi_aresetn]
+  connect_bd_net -net M0_AXI_ACLK_1  [get_bd_ports M0_AXI_ACLK] \
+  [get_bd_pins axi_dwidth_converter_0/m_axi_aclk]
+  connect_bd_net -net M0_AXI_ARESETN_1  [get_bd_ports M0_AXI_ARESETN] \
+  [get_bd_pins axi_dwidth_converter_0/m_axi_aresetn]
+  connect_bd_net -net S0_AXI_ACLK_1  [get_bd_ports S0_AXI_ACLK] \
+  [get_bd_pins axi_dwidth_converter_0/s_axi_aclk]
+  connect_bd_net -net S0_AXI_ARESETN_1  [get_bd_ports S0_AXI_ARESETN] \
+  [get_bd_pins axi_dwidth_converter_0/s_axi_aresetn]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x000100000000 -target_address_space [get_bd_addr_spaces S0_AXI] [get_bd_addr_segs M0_AXI/Reg] -force

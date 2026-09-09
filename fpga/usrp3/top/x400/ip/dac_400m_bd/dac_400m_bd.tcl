@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -263,31 +269,33 @@ proc create_root_design { parentCell } {
   
   # Create instance: dac_interpolator, and set properties
   set dac_interpolator [ create_bd_cell -type ip -vlnv xilinx.com:ip:fir_compiler:7.2 dac_interpolator ]
-  set_property -dict [ list \
-   CONFIG.Clock_Frequency {245.76} \
-   CONFIG.CoefficientVector {-7,0,24,37,0,-78,-107,0,189,244,0,-389,-484,0,723,873,0,-1245,-1473,0,2029,2364,0,-3177,-3668,0,4862,5592,0,-7418,-8579,0,11675,13820,0,-20461,-26115,0,53699,108144,131069,108144,53699,0,-26115,-20461,0,13820,11675,0,-8579,-7418,0,5592,4862,0,-3668,-3177,0,2364,2029,0,-1473,-1245,0,873,723,0,-484,-389,0,244,189,0,-107,-78,0,37,24,0,-7}\
-   CONFIG.Coefficient_Fractional_Bits {0} \
-   CONFIG.Coefficient_Sets {1} \
-   CONFIG.Coefficient_Sign {Signed} \
-   CONFIG.Coefficient_Structure {Non_Symmetric} \
-   CONFIG.Coefficient_Width {18} \
-   CONFIG.ColumnConfig {27} \
-   CONFIG.Decimation_Rate {1} \
-   CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
-   CONFIG.Filter_Type {Interpolation} \
-   CONFIG.Has_ARESETn {true} \
-   CONFIG.Interpolation_Rate {3} \
-   CONFIG.Number_Channels {1} \
-   CONFIG.Number_Paths {2} \
-   CONFIG.Output_Rounding_Mode {Convergent_Rounding_to_Even} \
-   CONFIG.Output_Width {18} \
-   CONFIG.Quantization {Integer_Coefficients} \
-   CONFIG.RateSpecification {Frequency_Specification} \
-   CONFIG.Reset_Data_Vector {false} \
-   CONFIG.S_DATA_Has_FIFO {false} \
-   CONFIG.Sample_Frequency {491.52} \
-   CONFIG.Zero_Pack_Factor {1} \
- ] $dac_interpolator
+  set_property -dict [list \
+    CONFIG.Clock_Frequency {245.76} \
+    CONFIG.CoefficientVector {-7,0,24,37,0,-78,-107,0,189,244,0,-389,-484,0,723,873,0,-1245,-1473,0,2029,2364,0,-3177,-3668,0,4862,5592,0,-7418,-8579,0,11675,13820,0,-20461,-26115,0,53699,108144,131069,108144,53699,0,-26115,-20461,0,13820,11675,0,-8579,-7418,0,5592,4862,0,-3668,-3177,0,2364,2029,0,-1473,-1245,0,873,723,0,-484,-389,0,244,189,0,-107,-78,0,37,24,0,-7}\
+\
+    CONFIG.Coefficient_Fractional_Bits {0} \
+    CONFIG.Coefficient_Sets {1} \
+    CONFIG.Coefficient_Sign {Signed} \
+    CONFIG.Coefficient_Structure {Non_Symmetric} \
+    CONFIG.Coefficient_Width {18} \
+    CONFIG.ColumnConfig {27} \
+    CONFIG.Decimation_Rate {1} \
+    CONFIG.Filter_Architecture {Systolic_Multiply_Accumulate} \
+    CONFIG.Filter_Type {Interpolation} \
+    CONFIG.Has_ARESETn {true} \
+    CONFIG.Interpolation_Rate {3} \
+    CONFIG.Number_Channels {1} \
+    CONFIG.Number_Paths {2} \
+    CONFIG.Output_Rounding_Mode {Convergent_Rounding_to_Even} \
+    CONFIG.Output_Width {18} \
+    CONFIG.Quantization {Integer_Coefficients} \
+    CONFIG.RateSpecification {Frequency_Specification} \
+    CONFIG.Reset_Data_Vector {false} \
+    CONFIG.S_DATA_Has_FIFO {false} \
+    CONFIG.Sample_Frequency {491.52} \
+    CONFIG.Zero_Pack_Factor {1} \
+  ] $dac_interpolator
+
 
   # Create instance: duc_400m_saturate_0, and set properties
   set block_name duc_400m_saturate
@@ -301,24 +309,48 @@ proc create_root_design { parentCell } {
    }
   
   # Create port connections
-  connect_bd_net -net dac_data_in_1 [get_bd_ports dac_data_in_tdata] [get_bd_pins dac_gearbox_4x2_0/data_in_1x]
-  connect_bd_net -net dac_data_in_resetn_dclk_1 [get_bd_ports dac_data_in_resetn_dclk] [get_bd_pins dac_gearbox_4x2_0/reset_n_1x] [get_bd_pins dac_gearbox_6x8_0/ac1Reset_n]
-  connect_bd_net -net dac_data_in_resetn_rclk_1 [get_bd_ports dac_data_in_resetn_rclk] [get_bd_pins dac_gearbox_6x8_0/arReset_n]
-  connect_bd_net -net dac_data_out_tready_1 [get_bd_ports dac_data_out_tready] [get_bd_pins dac_gearbox_6x8_0/rReadyForOutput]
-  connect_bd_net -net dac_data_valid_in_1 [get_bd_ports dac_data_in_tvalid] [get_bd_pins dac_gearbox_4x2_0/valid_in_1x]
-  connect_bd_net -net dac_gearbox_4x2_0_data_out_2x [get_bd_pins dac_gearbox_4x2_0/data_out_2x] [get_bd_pins dac_interpolator/s_axis_data_tdata]
-  connect_bd_net -net dac_gearbox_4x2_0_ready_out_1x [get_bd_ports dac_data_in_tready] [get_bd_pins dac_gearbox_4x2_0/ready_out_1x]
-  connect_bd_net -net dac_gearbox_4x2_0_valid_out_2x [get_bd_pins dac_gearbox_4x2_0/valid_out_2x] [get_bd_pins dac_interpolator/s_axis_data_tvalid]
-  connect_bd_net -net dac_gearbox_6x8_0_rDataOut [get_bd_ports dac_data_out_tdata] [get_bd_pins dac_gearbox_6x8_0/rDataOut]
-  connect_bd_net -net dac_gearbox_6x8_0_rDataValidOut [get_bd_ports dac_data_out_tvalid] [get_bd_pins dac_gearbox_6x8_0/rDataValidOut]
-  connect_bd_net -net dac_interpolator_m_axis_data_tdata [get_bd_pins dac_interpolator/m_axis_data_tdata] [get_bd_pins duc_400m_saturate_0/cDataIn]
-  connect_bd_net -net dac_interpolator_m_axis_data_tvalid [get_bd_pins dac_interpolator/m_axis_data_tvalid] [get_bd_pins duc_400m_saturate_0/cDataValidIn]
-  connect_bd_net -net data_clk_1 [get_bd_ports data_clk] [get_bd_pins dac_gearbox_4x2_0/clk1x] [get_bd_pins dac_gearbox_6x8_0/Clk1x]
-  connect_bd_net -net data_clk_2x_1 [get_bd_ports data_clk_2x] [get_bd_pins dac_gearbox_4x2_0/clk2x] [get_bd_pins dac_gearbox_6x8_0/Clk2x] [get_bd_pins dac_interpolator/aclk] [get_bd_pins duc_400m_saturate_0/Clk]
-  connect_bd_net -net data_resetn_dclk2x_1 [get_bd_ports dac_data_in_resetn_dclk2x] [get_bd_pins dac_gearbox_6x8_0/ac2Reset_n] [get_bd_pins dac_interpolator/aresetn]
-  connect_bd_net -net duc_400m_saturate_0_cDataOut [get_bd_pins dac_gearbox_6x8_0/c2DataIn] [get_bd_pins duc_400m_saturate_0/cDataOut]
-  connect_bd_net -net duc_400m_saturate_0_cDataValidOut [get_bd_pins dac_gearbox_6x8_0/c2DataValidIn] [get_bd_pins duc_400m_saturate_0/cDataValidOut]
-  connect_bd_net -net rfdc_clk_1 [get_bd_ports rfdc_clk] [get_bd_pins dac_gearbox_6x8_0/RfClk]
+  connect_bd_net -net dac_data_in_1  [get_bd_ports dac_data_in_tdata] \
+  [get_bd_pins dac_gearbox_4x2_0/data_in_1x]
+  connect_bd_net -net dac_data_in_resetn_dclk_1  [get_bd_ports dac_data_in_resetn_dclk] \
+  [get_bd_pins dac_gearbox_4x2_0/reset_n_1x] \
+  [get_bd_pins dac_gearbox_6x8_0/ac1Reset_n]
+  connect_bd_net -net dac_data_in_resetn_rclk_1  [get_bd_ports dac_data_in_resetn_rclk] \
+  [get_bd_pins dac_gearbox_6x8_0/arReset_n]
+  connect_bd_net -net dac_data_out_tready_1  [get_bd_ports dac_data_out_tready] \
+  [get_bd_pins dac_gearbox_6x8_0/rReadyForOutput]
+  connect_bd_net -net dac_data_valid_in_1  [get_bd_ports dac_data_in_tvalid] \
+  [get_bd_pins dac_gearbox_4x2_0/valid_in_1x]
+  connect_bd_net -net dac_gearbox_4x2_0_data_out_2x  [get_bd_pins dac_gearbox_4x2_0/data_out_2x] \
+  [get_bd_pins dac_interpolator/s_axis_data_tdata]
+  connect_bd_net -net dac_gearbox_4x2_0_ready_out_1x  [get_bd_pins dac_gearbox_4x2_0/ready_out_1x] \
+  [get_bd_ports dac_data_in_tready]
+  connect_bd_net -net dac_gearbox_4x2_0_valid_out_2x  [get_bd_pins dac_gearbox_4x2_0/valid_out_2x] \
+  [get_bd_pins dac_interpolator/s_axis_data_tvalid]
+  connect_bd_net -net dac_gearbox_6x8_0_rDataOut  [get_bd_pins dac_gearbox_6x8_0/rDataOut] \
+  [get_bd_ports dac_data_out_tdata]
+  connect_bd_net -net dac_gearbox_6x8_0_rDataValidOut  [get_bd_pins dac_gearbox_6x8_0/rDataValidOut] \
+  [get_bd_ports dac_data_out_tvalid]
+  connect_bd_net -net dac_interpolator_m_axis_data_tdata  [get_bd_pins dac_interpolator/m_axis_data_tdata] \
+  [get_bd_pins duc_400m_saturate_0/cDataIn]
+  connect_bd_net -net dac_interpolator_m_axis_data_tvalid  [get_bd_pins dac_interpolator/m_axis_data_tvalid] \
+  [get_bd_pins duc_400m_saturate_0/cDataValidIn]
+  connect_bd_net -net data_clk_1  [get_bd_ports data_clk] \
+  [get_bd_pins dac_gearbox_4x2_0/clk1x] \
+  [get_bd_pins dac_gearbox_6x8_0/Clk1x]
+  connect_bd_net -net data_clk_2x_1  [get_bd_ports data_clk_2x] \
+  [get_bd_pins dac_gearbox_4x2_0/clk2x] \
+  [get_bd_pins dac_gearbox_6x8_0/Clk2x] \
+  [get_bd_pins dac_interpolator/aclk] \
+  [get_bd_pins duc_400m_saturate_0/Clk]
+  connect_bd_net -net data_resetn_dclk2x_1  [get_bd_ports dac_data_in_resetn_dclk2x] \
+  [get_bd_pins dac_gearbox_6x8_0/ac2Reset_n] \
+  [get_bd_pins dac_interpolator/aresetn]
+  connect_bd_net -net duc_400m_saturate_0_cDataOut  [get_bd_pins duc_400m_saturate_0/cDataOut] \
+  [get_bd_pins dac_gearbox_6x8_0/c2DataIn]
+  connect_bd_net -net duc_400m_saturate_0_cDataValidOut  [get_bd_pins duc_400m_saturate_0/cDataValidOut] \
+  [get_bd_pins dac_gearbox_6x8_0/c2DataValidIn]
+  connect_bd_net -net rfdc_clk_1  [get_bd_ports rfdc_clk] \
+  [get_bd_pins dac_gearbox_6x8_0/RfClk]
 
   # Create address segments
 

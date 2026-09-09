@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -43,7 +49,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 set list_projs [get_projects -quiet]
 if { $list_projs eq "" } {
-   create_project project_1 myproj -part xczu28dr-ffvg1517-2-e
+   create_project project_1 myproj -part xczu28dr-ffvg1517-1-e
 }
 
 
@@ -251,33 +257,37 @@ proc create_root_design { parentCell } {
 
   # Create instance: axi_data_fifo_0, and set properties
   set axi_data_fifo_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_data_fifo:2.1 axi_data_fifo_0 ]
-  set_property -dict [ list \
-   CONFIG.DATA_WIDTH {512} \
-   CONFIG.READ_FIFO_DEPTH {512} \
-   CONFIG.WRITE_FIFO_DEPTH {512} \
- ] $axi_data_fifo_0
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {512} \
+    CONFIG.READ_FIFO_DEPTH {512} \
+    CONFIG.WRITE_FIFO_DEPTH {512} \
+  ] $axi_data_fifo_0
+
 
   # Create instance: axi_data_fifo_1, and set properties
   set axi_data_fifo_1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_data_fifo:2.1 axi_data_fifo_1 ]
-  set_property -dict [ list \
-   CONFIG.DATA_WIDTH {512} \
-   CONFIG.READ_FIFO_DEPTH {512} \
-   CONFIG.WRITE_FIFO_DEPTH {512} \
- ] $axi_data_fifo_1
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {512} \
+    CONFIG.READ_FIFO_DEPTH {512} \
+    CONFIG.WRITE_FIFO_DEPTH {512} \
+  ] $axi_data_fifo_1
+
 
   # Create instance: axi_register_slice_0, and set properties
   set axi_register_slice_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_0 ]
-  set_property -dict [ list \
-   CONFIG.DATA_WIDTH {512} \
-   CONFIG.ID_WIDTH {1} \
- ] $axi_register_slice_0
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {512} \
+    CONFIG.ID_WIDTH {1} \
+  ] $axi_register_slice_0
+
 
   # Create instance: axi_register_slice_2, and set properties
   set axi_register_slice_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_register_slice:2.1 axi_register_slice_2 ]
-  set_property -dict [ list \
-   CONFIG.DATA_WIDTH {512} \
-   CONFIG.ID_WIDTH {2} \
- ] $axi_register_slice_2
+  set_property -dict [list \
+    CONFIG.DATA_WIDTH {512} \
+    CONFIG.ID_WIDTH {2} \
+  ] $axi_register_slice_2
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net S_AXI_0_1 [get_bd_intf_ports S_AXI] [get_bd_intf_pins axi_register_slice_0/S_AXI]
@@ -288,10 +298,22 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net axi_register_slice_2_M_AXI [get_bd_intf_ports M_AXI] [get_bd_intf_pins axi_register_slice_2/M_AXI]
 
   # Create port connections
-  connect_bd_net -net m_axi_aclk_0_1 [get_bd_ports M_AXI_ACLK] [get_bd_pins axi_clock_converter_0/m_axi_aclk] [get_bd_pins axi_data_fifo_0/aclk] [get_bd_pins axi_register_slice_2/aclk]
-  connect_bd_net -net m_axi_aresetn_0_1 [get_bd_ports M_AXI_ARESETN] [get_bd_pins axi_clock_converter_0/m_axi_aresetn] [get_bd_pins axi_data_fifo_0/aresetn] [get_bd_pins axi_register_slice_2/aresetn]
-  connect_bd_net -net s_axi_aclk_0_1 [get_bd_ports S_AXI_ACLK] [get_bd_pins axi_clock_converter_0/s_axi_aclk] [get_bd_pins axi_data_fifo_1/aclk] [get_bd_pins axi_register_slice_0/aclk]
-  connect_bd_net -net s_axi_aresetn_0_1 [get_bd_ports S_AXI_ARESETN] [get_bd_pins axi_clock_converter_0/s_axi_aresetn] [get_bd_pins axi_data_fifo_1/aresetn] [get_bd_pins axi_register_slice_0/aresetn]
+  connect_bd_net -net m_axi_aclk_0_1  [get_bd_ports M_AXI_ACLK] \
+  [get_bd_pins axi_clock_converter_0/m_axi_aclk] \
+  [get_bd_pins axi_data_fifo_0/aclk] \
+  [get_bd_pins axi_register_slice_2/aclk]
+  connect_bd_net -net m_axi_aresetn_0_1  [get_bd_ports M_AXI_ARESETN] \
+  [get_bd_pins axi_clock_converter_0/m_axi_aresetn] \
+  [get_bd_pins axi_data_fifo_0/aresetn] \
+  [get_bd_pins axi_register_slice_2/aresetn]
+  connect_bd_net -net s_axi_aclk_0_1  [get_bd_ports S_AXI_ACLK] \
+  [get_bd_pins axi_clock_converter_0/s_axi_aclk] \
+  [get_bd_pins axi_data_fifo_1/aclk] \
+  [get_bd_pins axi_register_slice_0/aclk]
+  connect_bd_net -net s_axi_aresetn_0_1  [get_bd_ports S_AXI_ARESETN] \
+  [get_bd_pins axi_clock_converter_0/s_axi_aresetn] \
+  [get_bd_pins axi_data_fifo_1/aresetn] \
+  [get_bd_pins axi_register_slice_0/aresetn]
 
   # Create address segments
 
@@ -308,6 +330,9 @@ proc create_root_design { parentCell } {
 ##################################################################
 # MAIN FLOW
 ##################################################################
+
+
+common::send_gid_msg -ssname BD::TCL -id 2052 -severity "CRITICAL WARNING" "This Tcl script was generated from a block design that is out-of-date/locked. It is possible that design <$design_name> may result in errors during construction."
 
 create_root_design ""
 

@@ -20,12 +20,18 @@ set script_folder [_tcl::get_script_folder]
 ################################################################
 # Check if script is running in correct Vivado version.
 ################################################################
-set scripts_vivado_version 2021.1
+set scripts_vivado_version 2025.2
 set current_vivado_version [version -short]
 
 if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
    puts ""
-   catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+   if { [string compare $scripts_vivado_version $current_vivado_version] > 0 } {
+      catch {common::send_gid_msg -ssname BD::TCL -id 2042 -severity "ERROR" " This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Sourcing the script failed since it was created with a future version of Vivado."}
+
+   } else {
+     catch {common::send_gid_msg -ssname BD::TCL -id 2041 -severity "ERROR" "This script was generated using Vivado <$scripts_vivado_version> and is being run in <$current_vivado_version> of Vivado. Please run the script in Vivado <$scripts_vivado_version> then open the design in Vivado <$current_vivado_version>. Upgrade the design by running \"Tools => Report => Report IP Status...\", then run write_bd_tcl to create an updated script."}
+
+   }
 
    return 1
 }
@@ -263,47 +269,38 @@ proc create_root_design { parentCell } {
 
   # Create instance: cmac_usplus_0, and set properties
   set cmac_usplus_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:cmac_usplus:3.1 cmac_usplus_0 ]
-  set_property -dict [ list \
-   CONFIG.CMAC_CAUI4_MODE {1} \
-   CONFIG.CMAC_CORE_SELECT {CMACE4_X0Y0} \
-   CONFIG.ENABLE_AXI_INTERFACE {1} \
-   CONFIG.GT_DRP_CLK {100} \
-   CONFIG.GT_GROUP_SELECT {X0Y4~X0Y7} \
-   CONFIG.GT_REF_CLK_FREQ {156.25} \
-   CONFIG.INCLUDE_AUTO_NEG_LT_LOGIC {0} \
-   CONFIG.INCLUDE_RS_FEC {1} \
-   CONFIG.INCLUDE_SHARED_LOGIC {2} \
-   CONFIG.INCLUDE_STATISTICS_COUNTERS {1} \
-   CONFIG.LANE10_GT_LOC {NA} \
-   CONFIG.LANE1_GT_LOC {X0Y4} \
-   CONFIG.LANE2_GT_LOC {X0Y5} \
-   CONFIG.LANE3_GT_LOC {X0Y6} \
-   CONFIG.LANE4_GT_LOC {X0Y7} \
-   CONFIG.LANE5_GT_LOC {NA} \
-   CONFIG.LANE6_GT_LOC {NA} \
-   CONFIG.LANE7_GT_LOC {NA} \
-   CONFIG.LANE8_GT_LOC {NA} \
-   CONFIG.LANE9_GT_LOC {NA} \
-   CONFIG.NUM_LANES {4x25} \
-   CONFIG.RX_CHECK_ACK {0} \
-   CONFIG.RX_EQ_MODE {AUTO} \
-   CONFIG.RX_FLOW_CONTROL {1} \
-   CONFIG.TX_FLOW_CONTROL {1} \
-   CONFIG.USER_INTERFACE {LBUS} \
- ] $cmac_usplus_0
+  set_property -dict [list \
+    CONFIG.CMAC_CAUI4_MODE {1} \
+    CONFIG.CMAC_CORE_SELECT {CMACE4_X0Y0} \
+    CONFIG.ENABLE_AXI_INTERFACE {1} \
+    CONFIG.GT_DRP_CLK {100} \
+    CONFIG.GT_GROUP_SELECT {X0Y4~X0Y7} \
+    CONFIG.GT_REF_CLK_FREQ {156.25} \
+    CONFIG.INCLUDE_AUTO_NEG_LT_LOGIC {0} \
+    CONFIG.INCLUDE_RS_FEC {1} \
+    CONFIG.INCLUDE_SHARED_LOGIC {2} \
+    CONFIG.INCLUDE_STATISTICS_COUNTERS {1} \
+    CONFIG.NUM_LANES {4x25} \
+    CONFIG.RX_CHECK_ACK {0} \
+    CONFIG.RX_EQ_MODE {AUTO} \
+    CONFIG.RX_FLOW_CONTROL {1} \
+    CONFIG.TX_FLOW_CONTROL {1} \
+    CONFIG.USER_INTERFACE {LBUS} \
+  ] $cmac_usplus_0
+
 
   # Create instance: tie_loopback, and set properties
   set tie_loopback [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 tie_loopback ]
-  set_property -dict [ list \
-   CONFIG.CONST_VAL {0} \
-   CONFIG.CONST_WIDTH {12} \
- ] $tie_loopback
+  set_property -dict [list \
+    CONFIG.CONST_VAL {0} \
+    CONFIG.CONST_WIDTH {12} \
+  ] $tie_loopback
+
 
   # Create instance: tie_zero, and set properties
   set tie_zero [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 tie_zero ]
-  set_property -dict [ list \
-   CONFIG.CONST_VAL {0} \
- ] $tie_zero
+  set_property CONFIG.CONST_VAL {0} $tie_zero
+
 
   # Create interface connections
   connect_bd_intf_net -intf_net RefClk_1 [get_bd_intf_ports refclk] [get_bd_intf_pins cmac_usplus_0/gt_ref_clk]
@@ -314,24 +311,43 @@ proc create_root_design { parentCell } {
   connect_bd_intf_net -intf_net s_axi_1 [get_bd_intf_ports s_axi] [get_bd_intf_pins cmac_usplus_0/s_axi]
 
   # Create port connections
-  connect_bd_net -net SysClk_1 [get_bd_ports init_clk] [get_bd_pins cmac_usplus_0/init_clk]
-  connect_bd_net -net aResetIn_1 [get_bd_ports sys_reset] [get_bd_pins cmac_usplus_0/sys_reset]
-  connect_bd_net -net cmac_usplus_0_gt_txusrclk2 [get_bd_ports gt_txusrclk2] [get_bd_pins cmac_usplus_0/gt_txusrclk2]
-  connect_bd_net -net cmac_usplus_0_stat_rx_aligned [get_bd_ports stat_rx_aligned] [get_bd_pins cmac_usplus_0/stat_rx_aligned]
-  connect_bd_net -net cmac_usplus_0_stat_rx_pause_req [get_bd_ports stat_rx_pause_req] [get_bd_pins cmac_usplus_0/stat_rx_pause_req]
-  connect_bd_net -net cmac_usplus_0_tx_ovfout [get_bd_ports tx_ovfout] [get_bd_pins cmac_usplus_0/tx_ovfout]
-  connect_bd_net -net cmac_usplus_0_tx_unfout [get_bd_ports tx_unfout] [get_bd_pins cmac_usplus_0/tx_unfout]
-  connect_bd_net -net cmac_usplus_0_usr_rx_reset [get_bd_ports usr_rx_reset] [get_bd_pins cmac_usplus_0/usr_rx_reset]
-  connect_bd_net -net cmac_usplus_0_usr_tx_reset [get_bd_ports usr_tx_reset] [get_bd_pins cmac_usplus_0/usr_tx_reset]
-  connect_bd_net -net ctl_tx_pause_req_1 [get_bd_ports ctl_tx_pause_req] [get_bd_pins cmac_usplus_0/ctl_tx_pause_req]
-  connect_bd_net -net ctl_tx_resend_pause_1 [get_bd_ports ctl_tx_resend_pause] [get_bd_pins cmac_usplus_0/ctl_tx_resend_pause]
-  connect_bd_net -net drp_clk_1 [get_bd_ports drp_clk] [get_bd_pins cmac_usplus_0/drp_clk]
-  connect_bd_net -net pm_tick_1 [get_bd_ports pm_tick] [get_bd_pins cmac_usplus_0/pm_tick]
-  connect_bd_net -net rx_clk_1 [get_bd_ports rx_clk] [get_bd_pins cmac_usplus_0/rx_clk]
-  connect_bd_net -net s_axi_aclk_1 [get_bd_ports s_axi_aclk] [get_bd_pins cmac_usplus_0/s_axi_aclk]
-  connect_bd_net -net s_axi_sreset_1 [get_bd_ports s_axi_sreset] [get_bd_pins cmac_usplus_0/s_axi_sreset]
-  connect_bd_net -net tie_loopback_dout [get_bd_pins cmac_usplus_0/gt_loopback_in] [get_bd_pins tie_loopback/dout]
-  connect_bd_net -net tie_zero_dout [get_bd_pins cmac_usplus_0/gtwiz_reset_rx_datapath] [get_bd_pins cmac_usplus_0/gtwiz_reset_tx_datapath] [get_bd_pins tie_zero/dout]
+  connect_bd_net -net SysClk_1  [get_bd_ports init_clk] \
+  [get_bd_pins cmac_usplus_0/init_clk]
+  connect_bd_net -net aResetIn_1  [get_bd_ports sys_reset] \
+  [get_bd_pins cmac_usplus_0/sys_reset]
+  connect_bd_net -net cmac_usplus_0_gt_txusrclk2  [get_bd_pins cmac_usplus_0/gt_txusrclk2] \
+  [get_bd_ports gt_txusrclk2]
+  connect_bd_net -net cmac_usplus_0_stat_rx_aligned  [get_bd_pins cmac_usplus_0/stat_rx_aligned] \
+  [get_bd_ports stat_rx_aligned]
+  connect_bd_net -net cmac_usplus_0_stat_rx_pause_req  [get_bd_pins cmac_usplus_0/stat_rx_pause_req] \
+  [get_bd_ports stat_rx_pause_req]
+  connect_bd_net -net cmac_usplus_0_tx_ovfout  [get_bd_pins cmac_usplus_0/tx_ovfout] \
+  [get_bd_ports tx_ovfout]
+  connect_bd_net -net cmac_usplus_0_tx_unfout  [get_bd_pins cmac_usplus_0/tx_unfout] \
+  [get_bd_ports tx_unfout]
+  connect_bd_net -net cmac_usplus_0_usr_rx_reset  [get_bd_pins cmac_usplus_0/usr_rx_reset] \
+  [get_bd_ports usr_rx_reset]
+  connect_bd_net -net cmac_usplus_0_usr_tx_reset  [get_bd_pins cmac_usplus_0/usr_tx_reset] \
+  [get_bd_ports usr_tx_reset]
+  connect_bd_net -net ctl_tx_pause_req_1  [get_bd_ports ctl_tx_pause_req] \
+  [get_bd_pins cmac_usplus_0/ctl_tx_pause_req]
+  connect_bd_net -net ctl_tx_resend_pause_1  [get_bd_ports ctl_tx_resend_pause] \
+  [get_bd_pins cmac_usplus_0/ctl_tx_resend_pause]
+  connect_bd_net -net drp_clk_1  [get_bd_ports drp_clk] \
+  [get_bd_pins cmac_usplus_0/drp_clk]
+  connect_bd_net -net pm_tick_1  [get_bd_ports pm_tick] \
+  [get_bd_pins cmac_usplus_0/pm_tick]
+  connect_bd_net -net rx_clk_1  [get_bd_ports rx_clk] \
+  [get_bd_pins cmac_usplus_0/rx_clk]
+  connect_bd_net -net s_axi_aclk_1  [get_bd_ports s_axi_aclk] \
+  [get_bd_pins cmac_usplus_0/s_axi_aclk]
+  connect_bd_net -net s_axi_sreset_1  [get_bd_ports s_axi_sreset] \
+  [get_bd_pins cmac_usplus_0/s_axi_sreset]
+  connect_bd_net -net tie_loopback_dout  [get_bd_pins tie_loopback/dout] \
+  [get_bd_pins cmac_usplus_0/gt_loopback_in]
+  connect_bd_net -net tie_zero_dout  [get_bd_pins tie_zero/dout] \
+  [get_bd_pins cmac_usplus_0/gtwiz_reset_tx_datapath] \
+  [get_bd_pins cmac_usplus_0/gtwiz_reset_rx_datapath]
 
   # Create address segments
   assign_bd_address -offset 0x00000000 -range 0x00002000 -target_address_space [get_bd_addr_spaces s_axi] [get_bd_addr_segs cmac_usplus_0/s_axi/Reg] -force
