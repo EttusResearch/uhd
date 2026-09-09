@@ -21,10 +21,10 @@ def do_setup():
 
     # Note: The hwtools version for CI purposes is fixed in run_setup.sh
     rootapi.add_tool(name="hwtools", version="head")
-    rootapi.add_tool(name="Vivado", version="2021.1", allowlater=False)
-    rootapi.add_tool(name="modelsim", version="2020.4", allowlater=True)
-    rootapi.add_tool(name="Diamond", version="3.12", allowlater=True)
-    rootapi.add_tool(name="Quartus", version="20.1", allowlater=True)
+    rootapi.add_tool(name="Vivado", version="2025.2")
+    rootapi.add_tool(name="Questasim", version="2025.1")
+    rootapi.add_tool(name="Diamond", version="3.12")
+    rootapi.add_tool(name="Quartus", version="20.1")
 
 
 def do_finish():

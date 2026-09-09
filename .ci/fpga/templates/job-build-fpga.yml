@@ -132,7 +132,7 @@ jobs:
         python3 ../../tools/utils/repeat_fpga_build.py \
             --image-core $(image_core) $TARGET_ARG $BITFILE_NAME_ARG $INCLUDE_DIR_ARG \
             --image-core-name $IMAGE_CORE_NAME \
-            --vivado-path $(dirname $XILINX_VIVADO) \
+            --vivado-path $XILINX_VIVADO \
             --num $(max_attempts) --seed $BUILD_SEED --persistent \
             $TIMEOUT_ARG
         pip3 uninstall -y uhd

@@ -52,36 +52,12 @@ python $(dirname $BASH_SOURCE)/merge_modelsim_ini.py \
 # Removing the temporary files
 rm -f modelsim.mpf compileFpgaLib.log
 
-echo "---- Fetch Vivado patches ----"
-export PATCHES_DIR=$BUILD_SOURCESDIRECTORY/patches
-mkdir -p $PATCHES_DIR
-pushd $PATCHES_DIR
-# Fetch the AR76780 patch for Vivado
-cp /opt/synced/Xilinx/patches/AR76780_Vivado_2021_1_preliminary_rev1.zip ./AR76780_Vivado_2021_1_preliminary_rev1.zip
-unzip -q -o ./AR76780_Vivado_2021_1_preliminary_rev1.zip -d ./AR76780_Vivado_2021/
-rm -f AR76780_Vivado_2021_1_preliminary_rev1.zip
-# Add the AR76780 patch for the simulation library
-cp /opt/synced/modelsim/patches/fir_compiler_v7_2_76780.zip ./fir_compiler_v7_2_76780.zip
-unzip -q -o ./fir_compiler_v7_2_76780.zip -d ./fir_compiler_v7_2_76780/
-rm -f ./fir_compiler_v7_2_76780.zip
-popd
-
-echo "---- Apply the Vivado patches ----"
-pushd $BUILD_SOURCESDIRECTORY
-# Apply the patch to Vivado
-export XILINX_PATH=$PATCHES_DIR/AR76780_Vivado_2021/vivado
-# Add the FIR compiler simulation model to local modelsim.ini
-# Delete all lines containing "fir_compiler_v7_2_76780" to avoid duplicates
-sed -i -e '/fir_compiler_v7_2_76780/d' ./modelsim.ini
-# Duplicate line containing "fir_compiler_v7_2_16"
-sed -i -e '/fir_compiler_v7_2_16/p' ./modelsim.ini
-# Replace the first "fir_compiler_v7_2_16" line with our new library
-PATCHES_DIR_ESC=$(echo $PATCHES_DIR | sed 's_/_\\/_g')
-sed -i -e "0,/fir_compiler_v7_2_16/s/^fir_compiler_v7_2_16.*\$/fir_compiler_v7_2_76780 = $PATCHES_DIR_ESC\/fir_compiler_v7_2_76780/" ./modelsim.ini
+echo "---- Configure modelsim paths ----"
 # Tell our build tools to use this modelsim.ini for this session
-export MODELSIM_INI=$(pwd)/modelsim.ini
-export MSIM_VIV_COMPLIBDIR=$(pwd)
-popd
+export MODELSIM_INI=$BUILD_SOURCESDIRECTORY/modelsim.ini
+export MSIM_VIV_COMPLIBDIR=$BUILD_SOURCESDIRECTORY
 
 echo "---- Run setupenv ----"
-source $1/setupenv.sh --vivado-path $(dirname $XILINX_VIVADO) --modelsim-path $(dirname $MODELSIM)
+# update XILINX_VIVADO to the parent directory
+echo "Sourcing $1/setupenv.sh with Vivado path: $XILINX_VIVADO and Modelsim path: $(dirname $MODELSIM)"
+source $1/setupenv.sh --vivado-path $XILINX_VIVADO --modelsim-path $(dirname $MODELSIM)
