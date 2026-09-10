@@ -20,4 +20,3 @@ $(IP_RADIO_CLK_GEN_SRCS) $(IP_RADIO_CLK_GEN_OUTS): IP_RADIO_CLK_GEN_TRGT
 
 IP_RADIO_CLK_GEN_TRGT: $(IP_DIR)/radio_clk_gen/radio_clk_gen.xci
 	$(call BUILD_VIVADO_IP,radio_clk_gen,$(ARCH),$(PART_ID),$(IP_DIR),$(IP_BUILD_DIR),0)
-	patch $(IP_BUILD_DIR)/radio_clk_gen/radio_clk_gen.xdc $(IP_DIR)/radio_clk_gen/radio_clk_gen.xdc.patch

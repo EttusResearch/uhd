@@ -378,8 +378,16 @@ module x300
    ////////////////////////////////////////////////////////////////////
 
    wire radio_clk_locked;
+   wire fpga_clk_ibufds;
+
+   IBUFDS fpga_clk_ibufds_i (
+      .I(FPGA_CLK_p),
+      .IB(FPGA_CLK_n),
+      .O(fpga_clk_ibufds)
+   );
+
    radio_clk_gen radio_clk_gen (
-      .clk_in1_p(FPGA_CLK_p), .clk_in1_n(FPGA_CLK_n),
+      .clk_in1(fpga_clk_ibufds),
       .CLK_OUT1(radio_clk), .CLK_OUT2(radio_clk_2x), .CLK_OUT3(dac_dci_clk),
       .RESET(sw_rst[2]), .LOCKED(radio_clk_locked));
 

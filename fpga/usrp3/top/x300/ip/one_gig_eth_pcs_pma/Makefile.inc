@@ -18,6 +18,10 @@ one_gig_eth_pcs_pma_clocking.v \
 one_gig_eth_pcs_pma_gt_common.v \
 one_gig_eth_pcs_pma_resets.v \
 one_gig_eth_pcs_pma_support.v \
+) \
+$(addprefix $(IP_BUILD_DIR)/one_gig_eth_pcs_pma_ex/one_gig_eth_pcs_pma_ex.gen/sources_1/ip/one_gig_eth_pcs_pma_clk_wiz_0/, \
+one_gig_eth_pcs_pma_clk_wiz_0.v \
+one_gig_eth_pcs_pma_clk_wiz_0_clk_wiz.v \
 )
 
 IP_ONE_GIG_ETH_PCS_PMA_SRCS = $(IP_BUILD_DIR)/one_gig_eth_pcs_pma/one_gig_eth_pcs_pma.xci
