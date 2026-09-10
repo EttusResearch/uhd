@@ -128,6 +128,7 @@ jobs:
   - download: uhd_build_docker_container
   - template: .ci/templates/steps-setup.yml@ettus-rts
   - ${{ if eq(parameters.toolset, 'fedora_rpm') }}:
+    - template: steps-install-nib310rio-dev.yml
     - template: steps-build-uhd-installer-fedora-rpm.yml
       parameters:
         uhdSrcDir: $(uhdSrcDir)
