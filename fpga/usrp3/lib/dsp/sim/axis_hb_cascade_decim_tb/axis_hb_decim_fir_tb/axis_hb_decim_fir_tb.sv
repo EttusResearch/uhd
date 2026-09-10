@@ -262,6 +262,61 @@ module axis_hb_decim_fir_tb #(
   endtask : test_filter_response
 
 
+  // Verify packet boundaries when temporal decimation phase continues across
+  // consecutive odd-length packets. Three 3-word packets retain 2, 1, and 2
+  // samples respectively.
+  task automatic test_temporal_packet_boundaries();
+    localparam int NUM_PACKETS      = 3;
+    localparam int PACKET_LEN_WORDS = 3;
+    localparam int EXPECTED_LENGTHS [NUM_PACKETS] = '{2, 1, 2};
+    axis_input_pkt_t input_pkt;
+    axis_output_pkt_t received_pkt;
+    axis_input_pkt_mbox_t input_pkts = new();
+    axis_pkt_single_sample_mbox_t input_samples = new();
+    axis_pkt_single_sample_mbox_t expected_samples = new();
+    axis_pkt_single_sample_t expected_sample;
+    int input_stall_prob;
+    int output_stall_prob;
+    AxiFirHBDecimModel #(
+      .SAMP_W(SAMP_W),
+      .NUM_COEFFS(NUM_COEFFS)
+    ) hb_model = new();
+
+    input_stall_prob = axi_bfm_in.get_master_stall_prob();
+    output_stall_prob = axi_bfm_out.get_slave_stall_prob();
+    axi_bfm_in.set_master_stall_prob(0);
+    axi_bfm_out.set_slave_stall_prob(75);
+
+    repeat (NUM_PACKETS) begin
+      input_pkt = filter_utils_t::generate_zero_packet(PACKET_LEN_WORDS);
+      input_pkts.put(input_pkt.copy());
+      axi_bfm_in.put(input_pkt);
+    end
+
+    filter_utils_t::collect_and_serialize_packets(input_pkts, input_samples);
+    hb_model.process_samples(input_samples, expected_samples);
+
+    for (int packet = 0; packet < NUM_PACKETS; packet++) begin
+      axi_bfm_out.get(received_pkt);
+      `ASSERT_ERROR(received_pkt.data.size() == EXPECTED_LENGTHS[packet],
+        $sformatf("Output packet %0d: expected %0d words, received %0d",
+                  packet, EXPECTED_LENGTHS[packet], received_pkt.data.size()));
+      foreach (received_pkt.data[word]) begin
+        `ASSERT_ERROR(expected_samples.try_get(expected_sample),
+          $sformatf("Output packet %0d word %0d has no expected sample", packet, word));
+        `ASSERT_ERROR(received_pkt.data[word] == expected_sample.data[0],
+          $sformatf("Output packet %0d word %0d: expected 0x%0h, received 0x%0h",
+                    packet, word, expected_sample.data[0], received_pkt.data[word]));
+      end
+    end
+
+    `ASSERT_ERROR(expected_samples.num() == 0,
+      $sformatf("Expected model contains %0d unconsumed samples", expected_samples.num()));
+    axi_bfm_in.set_master_stall_prob(input_stall_prob);
+    axi_bfm_out.set_slave_stall_prob(output_stall_prob);
+  endtask : test_temporal_packet_boundaries
+
+
   // Test that after a `clear` pulse (without full reset) the PRELOAD_ZEROES
   // mechanism restores a clean filter state, producing an impulse response
   // identical to what follows a hard reset (both start from zero tap history).
@@ -291,9 +346,8 @@ module axis_hb_decim_fir_tb #(
   task automatic test_preload_after_clear();
     // Enough words to fill the entire FIR data shift register with non-zero data:
     //   SHIFT_REG_WIDTH = (SPC+1)*NUM_COEFFS entries; each word contributes SPC entries.
-    //   Using 2*NUM_COEFFS+1 words ensures an odd packet length so that the last
-    //   output always falls on a "kept" toggle-sample (toggle=1), preventing a
-    //   pending_tlast deadlock in axi_bfm_out.get().
+    //   Using 2*NUM_COEFFS+1 words ensures the packet contains enough retained
+    //   samples to drain and contaminate the complete filter history.
     localparam int CONTAM_LEN_WORDS  = 2 * NUM_COEFFS + 1;
     localparam int IMPULSE_LEN_WORDS = FILTER_PIPELINE_DELAY + NUM_COEFFS + 1;
     // Number of DSP-pipeline output samples to skip before checking impulse data.
@@ -327,12 +381,7 @@ module axis_hb_decim_fir_tb #(
     // Send the contam packet. Wait for full TX completion before draining output:
     // this guarantees no residual contam words remain queued in axi_bfm_in before
     // the clear pulse, so data_shift_reg is not re-dirtied after the preload.
-    // Use an odd packet length to guarantee the contam tlast falls on a "kept"
-    // toggle-sample slot (toggle_sample=1 at test start; odd length means the
-    // last word arrives on an even beat index, i.e., toggle=1 -> tlast fires
-    // immediately instead of setting pending_tlast, which would deadlock get()).
-    // Use a fixed odd length (not random) so the property holds regardless of
-    // test ordering or RNG seed.
+    // Use a fixed length so the test remains independent of RNG ordering.
     contam_pkt = filter_utils_t::generate_random_packet(
                     CONTAM_LEN_WORDS, CONTAM_LEN_WORDS);
     axi_bfm_in.put(contam_pkt);
@@ -441,6 +490,14 @@ module axis_hb_decim_fir_tb #(
     if (PRELOAD_ZEROES) begin
       test.start_test("Preload After Clear Test", 2ms);
       test_preload_after_clear();
+      clk_gen.reset();
+      @(negedge rst);
+      test.end_test();
+    end
+
+    if (SPC == 1) begin
+      test.start_test("Temporal Packet Boundary Test", 100us);
+      test_temporal_packet_boundaries();
       clk_gen.reset();
       @(negedge rst);
       test.end_test();

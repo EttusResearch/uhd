@@ -293,57 +293,102 @@ module axis_hb_decim_fir #(
 
   // Decimation logic to reduce samples by 2
   if ((SPC_IN == 1) && (SPC_OUT == 1)) begin : decim_over_time
-    // For single sample per clock, decimation is achieved by taking every 2nd sample in time
-    logic toggle_sample;
-    logic pair_phase;
-    logic delayed_tlast;
-    logic tlast_fifo_i_data, tlast_fifo_i_valid;
-    logic tlast_fifo_o_data, tlast_fifo_o_valid, tlast_fifo_o_ready;
+    // For a scalar stream, decimate continuously across packet boundaries.
+    // Hold each retained sample until the following dropped sample determines
+    // whether the retained sample is the last output of its packet.
+    // The state describes the action applied to the next accepted input sample:
+    // KEEP_ST retains it, while DROP_ST discards it.
+    typedef enum logic {
+      KEEP_ST,
+      DROP_ST
+    } decim_state_t;
+
+    decim_state_t decim_state;
+    // Indicates that output_tdata contains a retained sample whose TLAST is not
+    // yet known. It becomes AXI-valid when the following dropped sample arrives.
+    logic                      pending_tvalid;
+    logic [SPC_OUT*SAMP_W-1:0] output_tdata = 'X;
+    logic                      output_tvalid;
+    logic                      output_tlast = 'X;
+    logic                      output_tready;
+
+    // Internal output-register load enable: The register can be loaded when
+    // empty or when its current value transfers downstream on this cycle.
+    // (similar logic to axi_fifo_flop)
+    assign output_tready = !output_tvalid | out_tready;
+
+    // A DROP_ST input does not consume output storage. If it releases a pending
+    // sample, the output register is guaranteed to be invalid, so the input may
+    // be accepted independently of downstream backpressure.
+    assign post_filter_tready = output_tready | decim_state == DROP_ST;
 
     always_ff @(posedge clk) begin
-      if (rst | clear | in_tlast_i) begin
-        pair_phase <= 1'b0;
-        delayed_tlast <= 1'b0;
-      end else if (in_tvalid_i && enable && in_tready_i) begin
-        pair_phase <= ~pair_phase;
-        delayed_tlast <= in_tlast_i;
+      // Clear the output register when the downstream can accept it. A later
+      // assignment below may refill the register on the same edge.
+      if (out_tready) begin
+        output_tvalid <= 1'b0;
       end
-    end
 
-    // Store one tlast bit for each pair of input samples.
-    assign tlast_fifo_i_valid = in_tvalid_i && enable && in_tready_i && (pair_phase | in_tlast_i);
-    assign tlast_fifo_i_data = delayed_tlast | in_tlast_i;
-    assign tlast_fifo_o_ready = out_tvalid && out_tready;
+      // update state machine on transfer from halfband filter
+      if (post_filter_tvalid && post_filter_tready) begin
+        // toggle state for each new sample
+        decim_state    <= decim_state == KEEP_ST ? DROP_ST : KEEP_ST;
+        pending_tvalid <= 1'b0;
 
-    axi_fifo #(
-      .WIDTH(1),
-      .SIZE (1)
-    ) tlast_fifo (
-      .clk      (clk),
-      .reset    (rst),
-      .clear    (clear),
-      .i_tdata  (tlast_fifo_i_data),
-      .i_tvalid (tlast_fifo_i_valid),
-      .i_tready (),
-      .o_tdata  (tlast_fifo_o_data),
-      .o_tvalid (tlast_fifo_o_valid),
-      .o_tready (tlast_fifo_o_ready),
-      .space    (),
-      .occupied ()
-    );
+        case (decim_state)
+          KEEP_ST: begin
+            // always store the current sample in the output register
+            output_tdata <= post_filter_tdata;
 
-    always_ff @(posedge clk) begin
+            // if this is the last sample of the packet, it should be output immediately
+            if (post_filter_tlast) begin
+              output_tdata  <= post_filter_tdata;
+              output_tvalid <= 1'b1;
+              output_tlast  <= 1'b1;
+            // otherwise, the sample will be held until the next one arrives
+            end else begin
+              pending_tvalid <= 1'b1;
+            end
+          end
+          DROP_ST: begin
+            // when dropping a sample, nothing is stored in the output register
+            // Depending on a previously retained sample, it may be output now
+            if (pending_tvalid) begin
+              output_tvalid <= 1'b1;
+              output_tlast  <= post_filter_tlast;
+            end
+          end
+        endcase
+      end
+
       if (rst | clear) begin
-        toggle_sample <= ~DECIMATION_PHASE;
-      end else if (post_filter_tvalid && post_filter_tready) begin
-        toggle_sample <= ~toggle_sample;
+        decim_state    <= DECIMATION_PHASE ? DROP_ST : KEEP_ST;
+        pending_tvalid <= 1'b0;
+        output_tvalid  <= 1'b0;
       end
     end
-    assign out_tdata  = post_filter_tdata;                   // output the current sample directly
-    assign out_tvalid = post_filter_tvalid && toggle_sample && tlast_fifo_o_valid;
-    assign out_tlast  = tlast_fifo_o_valid && tlast_fifo_o_data;
-    assign post_filter_tready = toggle_sample
-      ? (out_tready && tlast_fifo_o_valid) : 1'b1;
+
+    assign out_tdata  = output_tdata;
+    assign out_tvalid = output_tvalid;
+    assign out_tlast  = output_tlast;
+
+    // synthesis translate_off
+    property p_packet_has_retained_sample;
+      @(posedge clk) disable iff (rst || clear)
+        post_filter_tvalid && post_filter_tready
+          && decim_state == DROP_ST && post_filter_tlast
+          |-> pending_tvalid;
+    endproperty
+    assert property (p_packet_has_retained_sample)
+      else $error("Temporal decimation cannot represent an empty output packet");
+
+    property p_pending_sample_matches_state;
+      @(posedge clk) disable iff (rst || clear)
+        decim_state == KEEP_ST |-> !pending_tvalid;
+    endproperty
+    assert property (p_pending_sample_matches_state)
+      else $error("Temporal decimation retained-sample state is inconsistent");
+    // synthesis translate_on
 
   end else begin : decim_by_2
     // For multiple samples per clock, decimation is achieved by taking every 2nd sample in the vector
