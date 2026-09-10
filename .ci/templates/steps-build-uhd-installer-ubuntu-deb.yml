@@ -8,13 +8,25 @@ parameters:
 - name: cmake_args
   type: string
   default: " "
+- name: nib310rioDebPackageDir
+  type: string
+  default: ""
 
 steps:
 - script: |
+    set -euo pipefail
     sudo pbuilder create --debootstrapopts --variant=buildd --distribution ${{ parameters.ubuntuReleaseName }}
   displayName: Setup pbuilder
 - script: |
+    set -euo pipefail
     mkdir -p ${{ parameters.uhdInstallerDir }}
     cd ${{ parameters.uhdSrcDir }}
-    python3 tools/debs/uhd_ubuntu_deb.py ${{ parameters.ubuntuReleaseName }} --buildpath ${{ parameters.uhdInstallerDir }}
+    pbuilder_args=()
+    if [[ -n "${{ parameters.nib310rioDebPackageDir }}" ]]; then
+      pushd "${{ parameters.nib310rioDebPackageDir }}"
+      dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz
+      popd
+      pbuilder_args+=(--pbuilder-extra-apt-repo "${{ parameters.nib310rioDebPackageDir }}")
+    fi
+    python3 tools/debs/uhd_ubuntu_deb.py ${{ parameters.ubuntuReleaseName }} --buildpath ${{ parameters.uhdInstallerDir }} "${pbuilder_args[@]}"
   displayName: Build dsc and debs

@@ -16,9 +16,11 @@ import pathlib
 import re
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
+import tempfile
 
 supported_ubuntu_releases = ["jammy", "noble", "plucky", "resolute"]
 tar_command = "tar --exclude='.git*' --exclude='./debian' --exclude='*.swp' --exclude='./fpga/usrp1' --exclude='./fpga/usrp2' --exclude='./fpga/usrp3/top/b200' --exclude='./fpga/usrp3/top/b2xxmini' --exclude='./fpga/usrp3/lib/*_200' --exclude='build' --exclude='./images/*.pyc' --exclude='./images/uhd-*' --exclude='tags' --exclude='.ci' --exclude='.clang*' -cJf {}/uhd_{}.orig.tar.xz ."
@@ -114,14 +116,45 @@ def main(args):
     if not args.nobuild:
         print("Building deb with dsc using pbuilder for {}".format(args.release))
         os.mkdir(args.buildpath + "/result")
-        result = subprocess.run(
-            shlex.split(
-                "sudo pbuilder build --buildresult ./result uhd_{}-0ubuntu1~{}1.dsc".format(
-                    uhd_version, args.release
+        pbuilder_command = [
+            "sudo",
+            "pbuilder",
+            "build",
+            "--buildresult",
+            "./result",
+        ]
+        # --othermirror is silently ignored by "pbuilder build" (it only applies
+        # to "pbuilder create"/"update --override-config"), so a local apt repo
+        # for extra build-deps has to be added via a hook script instead. The D
+        # hook runs after bind mounts are active but before build-deps are
+        # resolved, which is the documented place to call apt-get update.
+        if args.pbuilder_extra_apt_repo:
+            repo_dir = os.path.abspath(args.pbuilder_extra_apt_repo)
+            hook_dir = tempfile.mkdtemp(prefix="uhd-pbuilder-hooks-")
+            hook_path = os.path.join(hook_dir, "D50uhd_local_apt_repo")
+            with open(hook_path, "w") as hook_file:
+                hook_file.write(
+                    "#!/bin/bash\n"
+                    "set -euo pipefail\n"
+                    "echo 'deb [trusted=yes] file:{repo_dir} ./' "
+                    "> /etc/apt/sources.list.d/uhd-local-extra.list\n"
+                    "apt-get update\n".format(repo_dir=repo_dir)
                 )
-            ),
-            cwd=args.buildpath,
+            os.chmod(
+                hook_path, os.stat(hook_path).st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+            )
+            pbuilder_command.extend(
+                [
+                    "--bindmounts",
+                    repo_dir,
+                    "--hookdir",
+                    hook_dir,
+                ]
+            )
+        pbuilder_command.append(
+            "uhd_{}-0ubuntu1~{}1.dsc".format(uhd_version, args.release)
         )
+        result = subprocess.run(pbuilder_command, cwd=args.buildpath)
         if result.returncode:
             print("pbuilder failed")
             sys.exit(result.returncode)
@@ -158,6 +191,12 @@ if __name__ == "__main__":
         type=str,
         required=True,
         help="Output path for build files. " "Will get nuked before creating packages.",
+    )
+    parser.add_argument(
+        "--pbuilder-extra-apt-repo",
+        type=str,
+        default="",
+        help="Extra apt repository path to bind mount into pbuilder and use for build dependencies.",
     )
     parser.add_argument(
         "release",

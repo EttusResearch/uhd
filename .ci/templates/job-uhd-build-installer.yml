@@ -42,7 +42,7 @@ jobs:
     timeoutInMinutes: 120
   variables:
     # Need to use list format to support inclusion of variable groups.
-    # Variable group used by .ci/templates/steps-windows-sbom.yml@ettus-rts 
+    # Variable group used by .ci/templates/steps-windows-sbom.yml@ettus-rts
     - group: meta-ettus-vars
     # Variable group needed for code signing (signtool-p4-path)
     - ${{ if eq(parameters.toolset, 'msbuild') }}:
@@ -102,9 +102,9 @@ jobs:
   # Job uses template which causes self checkout to result in different values
   # for $(Build.SourcesDirectory) due to single vs multiple repositories use.
   # Switching to use manual path definition $(Pipeline.Workspace)/s/<RepoName>
-  # for consistent behavior to avoid 
+  # for consistent behavior to avoid
   # $(Pipeline.Workspace)/s vs $(Pipeline.Workspace)/s/<RepoName>).
-  # Custom path now includes <RepoName>, which is now hardcoded, rather than 
+  # Custom path now includes <RepoName>, which is now hardcoded, rather than
   # use name from git repo (avoids problem when building from public uhd repo).
   # Checkout path needs to be defined relative to $(Pipeline.Workspace).
   - checkout: self
@@ -139,7 +139,7 @@ jobs:
     - ${{ if parameters.create_sbom }}:
       - template: .ci/templates/steps-linux-sbom.yml@ettus-rts
         parameters:
-          toolset: ${{ parameters.toolset }} 
+          toolset: ${{ parameters.toolset }}
           installer: ${{ parameters.installer }}
           sbomComponentList: 'uhd libuhd libboost libusb'
           buildOSName: $(buildOSName)
@@ -148,16 +148,18 @@ jobs:
           uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
           releaseBinaries: ${{ parameters.releaseBinaries }}
   - ${{ if eq(parameters.toolset, 'ubuntu_deb') }}:
+    - template: steps-install-nib310rio-dev.yml
     - template: steps-build-uhd-installer-ubuntu-deb.yml
       parameters:
         uhdSrcDir: $(uhdSrcDir)
         uhdInstallerDir: $(Build.BinariesDirectory)/uhddev-installer
         ubuntuReleaseName: $(ubuntuReleaseName)
+        nib310rioDebPackageDir: $(Pipeline.Workspace)/nib310rio_kernel_packages/nib310rio-deb-packages
         cmake_args: ${{ parameters.cmake_args }}
     - ${{ if parameters.create_sbom }}:
       - template: .ci/templates/steps-linux-sbom.yml@ettus-rts
         parameters:
-          toolset: ${{ parameters.toolset }} 
+          toolset: ${{ parameters.toolset }}
           installer: ${{ parameters.installer }}
           sbomComponentList: 'uhd libuhd'
           buildOSName: $(buildOSName)
