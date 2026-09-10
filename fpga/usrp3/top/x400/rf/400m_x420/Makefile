@@ -61,7 +61,7 @@ $(IP_BUILD_DIR)/fir_dec3_4spc/fir_dec3*.mif \
 $(IP_BUILD_DIR)/fir_inp3_2spc/fir_inp3*.mif \
 ))
 
-MODELSIM_LIBS += secureip unisims_ver unimacro_ver xilinx_vip xpm fir_compiler_v7_2_76780
+MODELSIM_LIBS += secureip unisims_ver unimacro_ver xilinx_vip xpm fir_compiler_v7_2_26
 MODELSIM_ARGS += glbl -t 1fs
 
 msim modelsim vlint : SIM_SRCS += $(MODELSIM_IP_SRCS)

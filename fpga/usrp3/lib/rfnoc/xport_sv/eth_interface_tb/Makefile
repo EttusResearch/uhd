@@ -50,7 +50,7 @@ $(RFNOC_CORE_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-MODELSIM_LIBS += secureip unimacro_ver unisims_ver xilinx_vip xpm fifo_generator_v13_2_5
+MODELSIM_LIBS += secureip unimacro_ver unisims_ver xilinx_vip xpm fifo_generator_v13_2_14
 MODELSIM_ARGS += glbl -t 1fs
 # Define toplevel module
 TB_TOP_MODULE ?= eth_ifc_all_tb

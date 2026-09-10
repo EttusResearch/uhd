@@ -232,11 +232,15 @@ module axis_hb_decim_fir_tb #(
         if (VERBOSE) begin
           $display("Received sample %0d: 0x%0h", sample, received_sample);
         end
-        if (!expected_samples.try_get(expected_sample_pkt)) begin
+        if (expected_samples.num() == 0) begin
           `ASSERT_ERROR(0, $sformatf(
                         "Not enough expected samples for received data at sample %0d", sample));
         end else begin
           logic [SAMP_W-1:0] expected_sample;
+          // Keep the peek before get: Vivado XSim can SIGSEGV during elaboration
+          // when the mailbox item is consumed directly after num().
+          expected_samples.peek(expected_sample_pkt);
+          expected_samples.get(expected_sample_pkt);
           expected_sample = expected_sample_pkt.data[0];
           `ASSERT_ERROR(received_sample == expected_sample, $sformatf(
                         "Data mismatch at sample %0d: expected 0x%0h, got 0x%0h",
@@ -302,11 +306,18 @@ module axis_hb_decim_fir_tb #(
         $sformatf("Output packet %0d: expected %0d words, received %0d",
                   packet, EXPECTED_LENGTHS[packet], received_pkt.data.size()));
       foreach (received_pkt.data[word]) begin
-        `ASSERT_ERROR(expected_samples.try_get(expected_sample),
-          $sformatf("Output packet %0d word %0d has no expected sample", packet, word));
-        `ASSERT_ERROR(received_pkt.data[word] == expected_sample.data[0],
-          $sformatf("Output packet %0d word %0d: expected 0x%0h, received 0x%0h",
-                    packet, word, expected_sample.data[0], received_pkt.data[word]));
+        if (expected_samples.num() == 0) begin
+          `ASSERT_ERROR(0,
+            $sformatf("Output packet %0d word %0d has no expected sample", packet, word));
+        end else begin
+          // Keep the peek before get: Vivado XSim can SIGSEGV during elaboration
+          // when the mailbox item is consumed directly after num().
+          expected_samples.peek(expected_sample);
+          expected_samples.get(expected_sample);
+          `ASSERT_ERROR(received_pkt.data[word] == expected_sample.data[0],
+            $sformatf("Output packet %0d word %0d: expected 0x%0h, received 0x%0h",
+                      packet, word, expected_sample.data[0], received_pkt.data[word]));
+        end
       end
     end
 
@@ -427,10 +438,14 @@ module axis_hb_decim_fir_tb #(
       // 4b: Remaining samples must match the model's impulse response
       foreach (received_sample_pkt.data[i]) begin
         received_sample = received_sample_pkt.data[i];
-        if (!expected_samples.try_get(expected_sample_pkt)) begin
+        if (expected_samples.num() == 0) begin
           `ASSERT_ERROR(0, $sformatf(
             "After clear+preload: no expected sample at index %0d", i));
         end else begin
+          // Keep the peek before get: Vivado XSim can SIGSEGV during elaboration
+          // when the mailbox item is consumed directly after num().
+          expected_samples.peek(expected_sample_pkt);
+          expected_samples.get(expected_sample_pkt);
           `ASSERT_ERROR(received_sample == expected_sample_pkt.data[0], $sformatf(
             "After clear+preload: mismatch at sample %0d: expected 0x%0h, got 0x%0h",
             i, expected_sample_pkt.data[0], received_sample));

@@ -14,10 +14,10 @@ $(IP_XGE_PCS_PMA_EXAMPLE_SRCS)
 IP_XGE_PCS_PMA_HDL_SIM_SRCS = $(IP_DIR)/xge_pcs_pma/model_10gbe.sv \
 $(wildcard $(addprefix $(IP_BUILD_DIR)/xge_pcs_pma/, \
 xge_pcs_pma.v \
-hdl/xxv_ethernet_v4_0_vl_rfs.sv \
+hdl/xxv_ethernet_v5_0_vl_rfs.sv \
 ip_0/hdl/*.v \
 ip_0/sim/*.v \
-xxv_ethernet_v4_0_0/*.v \
+xxv_ethernet_v5_0_2/*.v \
 ))
 
 IP_XGE_PCS_PMA_EXAMPLE_SRCS = \

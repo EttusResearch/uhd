@@ -137,7 +137,7 @@ module duc #(
   axi_hb47 halfband1 (
     .aclk(clk),
     .aresetn(~(reset | clear | reset_on_change)),
-    .s_axis_data_tvalid(i_tvalid),
+    .s_axis_data_tvalid(i_tvalid & (hb_rate != 0)),
     .s_axis_data_tready(i_tready_hb1),
     .s_axis_data_tdata(o_tdata_extd),
     .m_axis_data_tvalid(o_tvalid_hb1),

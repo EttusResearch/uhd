@@ -134,6 +134,10 @@ module complex_multiply_iq #(
   // width is the same as the product. No rounding or clipping is needed in this
   // case.
   if (CLIP_BITS == 0 && MULT_OUTPUT_WIDTH == WIDTH_PRODUCT) begin
+    // Questa Workaround for illegal output connection (vsim-3053)
+    logic [product.DATA_WIDTH:0] out_flop_tdata;
+    assign {product.tdata, product.tlast} = out_flop_tdata;
+
     axi_fifo_flop2 #(
       .WIDTH(product.DATA_WIDTH + 1)
     ) out_flop (
@@ -143,7 +147,7 @@ module complex_multiply_iq #(
       .i_tdata ({product_full.tdata, product_full.tlast}),
       .i_tvalid(product_full.tvalid),
       .i_tready(product_full.tready),
-      .o_tdata ({product.tdata, product.tlast}),
+      .o_tdata (out_flop_tdata),
       .o_tvalid(product.tvalid),
       .o_tready(product.tready),
       .space   (),

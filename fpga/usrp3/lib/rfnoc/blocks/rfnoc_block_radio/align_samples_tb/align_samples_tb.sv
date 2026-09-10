@@ -129,6 +129,13 @@ module align_samples_tb #(
     i_dir    <= 'X;
     i_cfg_en <= 0;
 
+    // Push one sample with the new configuration to update the DUT carry
+    // state before normal samples are checked.
+    i_push <= 1;
+    i_data <= 'X;
+    i_user <= 'X;
+    clk_gen.clk_wait_r();
+
     // Send number of words based on argument
     for (int word_cnt=0; word_cnt < num_words;) begin
       // 50% probability of changing push
@@ -249,7 +256,8 @@ module align_samples_tb #(
           act_user = o_user;
         end
 
-        if (dir == 0 && first_reg == 1 && first == 1) begin
+        if (!$isunknown(exp_data) &&
+          dir == 0 && first_reg == 1 && first == 1) begin
           // If first word is left shifted, only check data shifted to account
           // for ModelSim/Vivado behavior.
           for (int val_check = SPC-1; val_check > shift; val_check--) begin
@@ -258,14 +266,16 @@ module align_samples_tb #(
               "Expected 0x%X Read 0x%X"},
               val_check, exp_data[val_check], act_data[val_check]));
           end
-        end else begin
+        end else if (!$isunknown(exp_data)) begin
           `ASSERT_ERROR(exp_data === act_data,
             $sformatf({"Output data not equal to expected data. ",
             "Expected 0x%X Read 0x%X"}, exp_data, act_data));
         end
-        `ASSERT_ERROR(exp_user === act_user,
-          $sformatf({"Output user data not equal to expected user data. ",
-          "Expected 0x%X Read 0x%X"}, exp_user, act_user));
+        if (!$isunknown(exp_user)) begin
+          `ASSERT_ERROR(exp_user === act_user,
+            $sformatf({"Output user data not equal to expected user data. ",
+            "Expected 0x%X Read 0x%X"}, exp_user, act_user));
+        end
       end
 
       // Check input if config changed and set expected data to invalid

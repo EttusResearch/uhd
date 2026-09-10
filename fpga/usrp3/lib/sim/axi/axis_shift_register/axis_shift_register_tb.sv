@@ -43,13 +43,13 @@ module axis_shift_register_tb();
 
   axis_shift_register #(
     .WIDTH(WIDTH), .NSPC(1), .LATENCY(2),
-    .SIDEBAND_DATAPATH(0), .GAPLESS(0), 
+    .SIDEBAND_DATAPATH(0), .GAPLESS(0),
     .PIPELINE("NONE")
   ) inst_0 (
     .clk(clk), .reset(reset),
-    .s_axis_tdata(i_tdata[0]), .s_axis_tkeep(i_tdata[0][WIDTH]), .s_axis_tlast(i_tlast[0]),
+    .s_axis_tdata(i_tdata[0][WIDTH-1:0]), .s_axis_tkeep(i_tdata[0][WIDTH]), .s_axis_tlast(i_tlast[0]),
     .s_axis_tvalid(i_tvalid[0]), .s_axis_tready(i_tready[0]),
-    .m_axis_tdata(o_tdata[0]), .m_axis_tkeep(o_tdata[0][WIDTH]), .m_axis_tlast(o_tlast[0]),
+    .m_axis_tdata(o_tdata[0][WIDTH-1:0]), .m_axis_tkeep(o_tdata[0][WIDTH]), .m_axis_tlast(o_tlast[0]),
     .m_axis_tvalid(o_tvalid[0]), .m_axis_tready(o_tready[0]),
     .stage_stb(stage_stb[0]), .stage_eop(stage_eop[0]),
     .m_sideband_data(), .m_sideband_keep(), .s_sideband_data()
@@ -57,13 +57,13 @@ module axis_shift_register_tb();
 
   axis_shift_register #(
     .WIDTH(WIDTH), .NSPC(1), .LATENCY(9),
-    .SIDEBAND_DATAPATH(0), .GAPLESS(0), 
+    .SIDEBAND_DATAPATH(0), .GAPLESS(0),
     .PIPELINE("BOTH")
   ) inst_1 (
     .clk(clk), .reset(reset),
-    .s_axis_tdata(i_tdata[1]), .s_axis_tkeep(i_tdata[1][WIDTH]), .s_axis_tlast(i_tlast[1]),
+    .s_axis_tdata(i_tdata[1][WIDTH-1:0]), .s_axis_tkeep(i_tdata[1][WIDTH]), .s_axis_tlast(i_tlast[1]),
     .s_axis_tvalid(i_tvalid[1]), .s_axis_tready(i_tready[1]),
-    .m_axis_tdata(o_tdata[1]), .m_axis_tkeep(o_tdata[1][WIDTH]), .m_axis_tlast(o_tlast[1]),
+    .m_axis_tdata(o_tdata[1][WIDTH-1:0]), .m_axis_tkeep(o_tdata[1][WIDTH]), .m_axis_tlast(o_tlast[1]),
     .m_axis_tvalid(o_tvalid[1]), .m_axis_tready(o_tready[1]),
     .stage_stb(stage_stb[1]), .stage_eop(stage_eop[1]),
     .m_sideband_data(), .m_sideband_keep(), .s_sideband_data()
@@ -71,13 +71,13 @@ module axis_shift_register_tb();
 
   axis_shift_register #(
     .WIDTH(WIDTH/2), .NSPC(2), .LATENCY(3),
-    .SIDEBAND_DATAPATH(1), .GAPLESS(0), 
+    .SIDEBAND_DATAPATH(1), .GAPLESS(0),
     .PIPELINE("NONE")
   ) inst_2 (
     .clk(clk), .reset(reset),
-    .s_axis_tdata(i_tdata[2]), .s_axis_tkeep(i_tdata[2][WIDTH]), .s_axis_tlast(i_tlast[2]),
+    .s_axis_tdata(i_tdata[2][WIDTH-1:0]), .s_axis_tkeep(i_tdata[2][WIDTH]), .s_axis_tlast(i_tlast[2]),
     .s_axis_tvalid(i_tvalid[2]), .s_axis_tready(i_tready[2]),
-    .m_axis_tdata(o_tdata[2]), .m_axis_tkeep(o_tdata[2][WIDTH]), .m_axis_tlast(o_tlast[2]),
+    .m_axis_tdata(o_tdata[2][WIDTH-1:0]), .m_axis_tkeep(o_tdata[2][WIDTH]), .m_axis_tlast(o_tlast[2]),
     .m_axis_tvalid(o_tvalid[2]), .m_axis_tready(o_tready[2]),
     .stage_stb(stage_stb[2]), .stage_eop(stage_eop[2]),
     .m_sideband_data(sb_dout), .m_sideband_keep(sb_keep), .s_sideband_data(sb_din)
@@ -85,13 +85,13 @@ module axis_shift_register_tb();
 
   axis_shift_register #(
     .WIDTH(WIDTH/8), .NSPC(8), .LATENCY(14),
-    .SIDEBAND_DATAPATH(0), .GAPLESS(1), 
+    .SIDEBAND_DATAPATH(0), .GAPLESS(1),
     .PIPELINE("NONE")
   ) inst_3 (
     .clk(clk), .reset(reset),
-    .s_axis_tdata(i_tdata[3]), .s_axis_tkeep(i_tdata[3][WIDTH]), .s_axis_tlast(i_tlast[3]),
+    .s_axis_tdata(i_tdata[3][WIDTH-1:0]), .s_axis_tkeep(i_tdata[3][WIDTH]), .s_axis_tlast(i_tlast[3]),
     .s_axis_tvalid(i_tvalid[3]), .s_axis_tready(i_tready[3]),
-    .m_axis_tdata(o_tdata[3]), .m_axis_tkeep(o_tdata[3][WIDTH]), .m_axis_tlast(o_tlast[3]),
+    .m_axis_tdata(o_tdata[3][WIDTH-1:0]), .m_axis_tkeep(o_tdata[3][WIDTH]), .m_axis_tlast(o_tlast[3]),
     .m_axis_tvalid(o_tvalid[3]), .m_axis_tready(o_tready[3]),
     .stage_stb(stage_stb[3]), .stage_eop(stage_eop[3]),
     .m_sideband_data(), .m_sideband_keep(), .s_sideband_data()

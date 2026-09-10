@@ -23,7 +23,7 @@
 package cic_comb_filter_test_pkg;
 
   `include "test_exec.svh"
-  
+
   import cic_utils_pkg::*;
   import cic_test_pkg::*;
   import PkgAxiStreamBfm::*;
@@ -115,7 +115,7 @@ package cic_comb_filter_test_pkg;
       end
       return packet_out;
     endfunction : deserialize_packet
-    
+
     //-------------------------------------------------------------------------
     // to_sample_queue: convert a single-sample AXI-Stream packet to a flat
     // sample queue, preserving sample order. Useful for passing data into
@@ -286,19 +286,21 @@ package cic_comb_filter_test_pkg;
       input  sample_queue_t samples_in,
       output sample_queue_t samples_out
     );
-      comp_t in_i, in_q, delayed_i, delayed_q;
+      comp_t in_i, in_q, delayed_i, delayed_q, diff_i, diff_q;
       samples_out = {};
       foreach (samples_in[i]) begin
-        in_q = comp_t'(samples_in[i][COMP_W-1:0]);
-        in_i = comp_t'(samples_in[i][ACCUM_W-1:COMP_W]);
+        in_q = samples_in[i][COMP_W-1:0];
+        in_i = samples_in[i][ACCUM_W-1:COMP_W];
         if (i < DELAY) begin
           delayed_q = '0;
           delayed_i = '0;
         end else begin
-          delayed_q = comp_t'(samples_in[i-DELAY][COMP_W-1:0]);
-          delayed_i = comp_t'(samples_in[i-DELAY][ACCUM_W-1:COMP_W]);
+          delayed_q = samples_in[i-DELAY][COMP_W-1:0];
+          delayed_i = samples_in[i-DELAY][ACCUM_W-1:COMP_W];
         end
-        samples_out.push_back({comp_t'(in_i - delayed_i), comp_t'(in_q - delayed_q)});
+        diff_i = in_i - delayed_i;
+        diff_q = in_q - delayed_q;
+        samples_out.push_back({diff_i, diff_q});
       end
     endfunction : process_samples
 

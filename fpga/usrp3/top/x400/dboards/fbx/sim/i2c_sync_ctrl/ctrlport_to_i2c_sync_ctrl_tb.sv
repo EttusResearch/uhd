@@ -16,7 +16,7 @@
 `define NUM_TEST_CASES 5
 `include "sim_exec_report.vh"
 `include "sim_clks_rsts.vh"
-`define SIM_TIMEOUT_US 200000 //overwrite this def from sim_exec_report.vh 
+`define SIM_TIMEOUT_US 200000 //overwrite this def from sim_exec_report.vh
 
 
 module ctrlport_to_i2c_sync_ctrl_tb();
@@ -79,7 +79,7 @@ module ctrlport_to_i2c_sync_ctrl_tb();
       `ASSERT_ERROR( s_ctrlport_resp_data == d, "CtrlPort read returned unexpected value.");
     end
   endtask
-  
+
   task cp_poll;
     input [19:0] a;
     input [31:0] d;
@@ -104,7 +104,7 @@ module ctrlport_to_i2c_sync_ctrl_tb();
       end
     end
   endtask
-  
+
 
   ctrlport_to_i2c_sync_ctrl #(
     .BASE_ADDRESS(0)
@@ -192,13 +192,12 @@ end
 endmodule
 
 module delay (in, out);
-  input  in;
-  output out;
+  input  wire in;
+  output reg  out;
 
-  assign out = in;
-
-  specify
-    (in => out) = (600,600);
-  endspecify
+  // apply transport delay
+  always @(in) begin
+    out <= #600 in;
+  end
 endmodule
 

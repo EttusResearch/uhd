@@ -29,8 +29,5 @@ lib/rfnoc/blocks/rfnoc_block_ddc/rfnoc_block_ddc_ms
 
 # exclude testbenches with Vivado Simulator kernel fatal errors
 lib/rfnoc/blocks/rfnoc_block_radio
-lib/rfnoc/blocks/rfnoc_block_switchboard
-lib/rfnoc/sim/chdr_channel_mux_tb
-lib/rfnoc/sim/chdr_resize_tb
 lib/rfnoc/sim/chdr_stream_endpoint_tb
 lib/sim/fifo

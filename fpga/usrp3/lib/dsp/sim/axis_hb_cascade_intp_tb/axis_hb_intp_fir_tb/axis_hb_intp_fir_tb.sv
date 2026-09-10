@@ -229,16 +229,20 @@ module axis_hb_intp_fir_tb #(
 
     foreach (received_sample_pkt.data[sample]) begin
       received_sample = received_sample_pkt.data[sample];
-      if (!samples_exp.try_get(expected_sample_pkt)) begin
+      if (samples_exp.num() == 0) begin
         `ASSERT_ERROR(0, $sformatf(
           "Not enough expected samples for received sample %0d", sample));
       end else begin
+        // Keep the peek before get: Vivado XSim can SIGSEGV during elaboration
+        // when the mailbox item is consumed directly after num().
+        samples_exp.peek(expected_sample_pkt);
+        samples_exp.get(expected_sample_pkt);
         `ASSERT_ERROR(received_sample == expected_sample_pkt.data[0], $sformatf(
           "Data mismatch at sample %0d: expected 0x%0h, got 0x%0h",
           sample, expected_sample_pkt.data[0], received_sample));
       end
     end
-    
+
   endtask : test_filter_response
 
   //---------------------------------------------------------------------------
@@ -308,10 +312,14 @@ module axis_hb_intp_fir_tb #(
     // Step 4b: Remaining samples must match the model's impulse response.
     foreach (received_sample_pkt.data[sample]) begin
       received_sample = received_sample_pkt.data[sample];
-      if (!samples_exp.try_get(expected_sample_pkt)) begin
+      if (samples_exp.num() == 0) begin
         `ASSERT_ERROR(0, $sformatf(
           "After clear+preload: no expected sample at sample %0d", sample));
       end else begin
+        // Keep the peek before get: Vivado XSim can SIGSEGV during elaboration
+        // when the mailbox item is consumed directly after num().
+        samples_exp.peek(expected_sample_pkt);
+        samples_exp.get(expected_sample_pkt);
         `ASSERT_ERROR(received_sample == expected_sample_pkt.data[0], $sformatf(
           "After clear+preload: mismatch at sample %0d: expected 0x%0h, got 0x%0h",
           sample, expected_sample_pkt.data[0], received_sample));

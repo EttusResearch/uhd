@@ -12,7 +12,7 @@ axi_interconnect_eth.sv \
 
 IP_AXI_INTERCONNECT_ETH_HDL_SIM_SRCS = $(wildcard $(addprefix $(IP_BUILD_DIR)/axi_interconnect_eth_bd/axi_interconnect_eth_bd/, \
 sim/axi_interconnect_eth_bd.v\
-ip/axi_interconnect_eth_bd_xbar_0/sim/axi_interconnect_eth_bd_xbar_0.v\
+ip/*/sim/*.v\
 ipshared/*/simulation/fifo_generator_vlog_beh.v\
 ipshared/*/hdl/*.v\
 ))

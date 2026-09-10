@@ -38,7 +38,7 @@ module dram_fifo_bist_tb();
   settings_bus_master #(.SR_AWIDTH(8),.SR_DWIDTH(32)) tst_set (.clk(bus_clk));
   cvita_master  cvita_fifo_in   (.clk(bus_clk));
   cvita_slave   cvita_fifo_out  (.clk(bus_clk));
-  
+
   // AXI DRAM FIFO Topology (Inline production BIST for DRAM FIFO):
   //
   // User Data ====> |---------|       |---------------|       |-----------| ====> User Data Out
@@ -54,14 +54,14 @@ module dram_fifo_bist_tb();
 
   axis_dram_fifo_single #(
   .USE_SRAM_MEMORY(`USE_SRAM_MIG),
-  .USE_BD_INTERCON(`USE_BD_INTERCON), 
+  .USE_BD_INTERCON(`USE_BD_INTERCON),
   .SR_BASE(SR_FIFO_BASE)
   ) dut_single (
     .bus_clk(bus_clk),
     .bus_rst(bus_rst),
     .sys_clk(sys_clk),
     .sys_rst(sys_rst),
-    
+
     .i_tdata(cvita_fifo_in.axis.tdata),
     .i_tlast(cvita_fifo_in.axis.tlast),
     .i_tvalid(cvita_fifo_in.axis.tvalid),
@@ -71,7 +71,7 @@ module dram_fifo_bist_tb();
     .o_tlast(cvita_fifo_out.axis.tlast),
     .o_tvalid(cvita_fifo_out.axis.tvalid),
     .o_tready(cvita_fifo_out.axis.tready),
-    
+
     .set_stb(tst_set.settings_bus.set_stb),
     .set_addr(tst_set.settings_bus.set_addr),
     .set_data(tst_set.settings_bus.set_data),
@@ -80,7 +80,7 @@ module dram_fifo_bist_tb();
     .forced_bit_err(forced_bit_err),
     .init_calib_complete(calib_complete)
   );
-  
+
   assign {error, done, running} = rb_data[3:0];
 
   //Testbench variables
@@ -100,7 +100,7 @@ module dram_fifo_bist_tb();
     while (bus_rst) @(posedge bus_clk);
     while (sys_rst) @(posedge sys_clk);
     `TEST_CASE_DONE(~bus_rst & ~sys_rst);
-    
+
     forced_bit_err <= 64'h0;
     repeat (200) @(posedge sys_clk);
 
@@ -253,7 +253,7 @@ module dram_fifo_bist_tb();
     `ASSERT_ERROR(error==2'b00, "BIST failed!");
     @(posedge bus_clk);
     `TEST_CASE_DONE(done & ~running);
-    
+
     `TEST_CASE_START("Validate Throughput");
     tst_set.write(SR_FIFO_BASE + 0, 3'd2);
     xfer_cnt = rb_data;
@@ -275,7 +275,7 @@ module dram_fifo_bist_tb();
 
     fork
       begin
-        integer curr_time = $time;
+        automatic time curr_time = $time;
         `TEST_CASE_START("Run BIST Continuous (Early interrupt)");
         tst_set.write(SR_BIST_BASE + 0, {2'd0, 2'd0, 1'b0, 1'b0});
         tst_set.write(SR_BIST_BASE + 0, {2'd2, 2'd0, 1'b1, 1'b1});
@@ -315,7 +315,7 @@ module dram_fifo_bist_tb();
 
     fork
       begin
-        integer curr_time = $time;
+        automatic time curr_time = $time;
         `TEST_CASE_START("Run BIST Continuous");
         tst_set.write(SR_BIST_BASE + 0, {2'd0, 2'd0, 1'b0, 1'b0});
         tst_set.write(SR_BIST_BASE + 0, {2'd2, 2'd0, 1'b1, 1'b1});

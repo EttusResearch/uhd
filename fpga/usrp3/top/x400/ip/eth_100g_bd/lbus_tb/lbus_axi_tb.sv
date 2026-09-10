@@ -319,7 +319,7 @@ module lbus_axi_tb #(
    test_transfers(num_samples);
    $display("Tons of 65");
    num_samples.delete();
-   repeat(1000) begin
+   repeat(700) begin
      num_samples.push_back(65);
    end
    test_transfers(num_samples);

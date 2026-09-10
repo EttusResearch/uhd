@@ -330,8 +330,9 @@ module ctrlport_endpoint_tb;
       case (pkt.op_word.op_code)
         CTRL_OP_READ: begin
           pkt.data = '{};
-          repeat (int'(pkt.header.req_size))
+          repeat (pkt.header.req_size) begin
             pkt.data.push_back({~base_addr[15:0], base_addr[15:0]});
+          end
         end
         CTRL_OP_BLOCK_READ: begin
           pkt.data = '{};

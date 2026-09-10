@@ -136,6 +136,10 @@ module timed_complex_gain_tb #(
   // DUT
   //---------------------------------------------------------------------------
 
+  logic [     CTRLPORT_STS_W-1:0] dut_ctrlport_if_resp_status;
+
+  assign dut_ctrlport_if.resp.status = ctrlport_status_t'(dut_ctrlport_if_resp_status);
+
   // Instantiate the DUT
   timed_complex_gain #(
     .ITEM_W             (ITEM_W),
@@ -156,7 +160,7 @@ module timed_complex_gain_tb #(
     .s_ctrlport_req_has_time(dut_ctrlport_if.req.has_time),
     .s_ctrlport_req_time    (dut_ctrlport_if.req.timestamp),
     .s_ctrlport_resp_ack    (dut_ctrlport_if.resp.ack),
-    .s_ctrlport_resp_status ({dut_ctrlport_if.resp.status}),
+    .s_ctrlport_resp_status (dut_ctrlport_if_resp_status),
     .s_ctrlport_resp_data   (dut_ctrlport_if.resp.data),
     .data_in                (dut_in_strobe_if.data),
     .data_out               (dut_out_strobe_if.data),

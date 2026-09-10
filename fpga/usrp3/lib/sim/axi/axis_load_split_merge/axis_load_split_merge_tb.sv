@@ -226,7 +226,7 @@ module axis_load_split_merge_tb #(
 
   task automatic test_packets(int num_pkts = NUM_PKTS);
     pkt_t::data_t data_count = 0;
-    mailbox pkt_mb = new();
+    mailbox #(pkt_t) pkt_mb = new();
 
     // Reset the packet counters
     clk_gen.clk_wait_f();

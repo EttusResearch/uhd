@@ -29,10 +29,11 @@ $(RFNOC_XBAR_SRCS) \
 #-------------------------------------------------
 # Testbench Specific
 #-------------------------------------------------
-SIM_TOP = axis_pyld_ctxt_converter_tb
+SIM_TOP = axis_pyld_ctxt_converter_all_tb
 
 SIM_SRCS = \
 $(abspath axis_pyld_ctxt_converter_tb.sv) \
+$(abspath axis_pyld_ctxt_converter_all_tb.sv) \
 
 # MODELSIM_USER_DO = $(abspath wave.do)
 

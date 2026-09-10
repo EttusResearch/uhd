@@ -293,10 +293,11 @@ module axis_hb_cascade_decim_tb #(
       foreach (received_sample_pkt.data[sample]) begin
         // For each sample in the word, check against expected data
         received_sample = received_sample_pkt.data[sample];
-        if (!expected_data.try_peek(expected_sample_pkt)) begin
+        if (expected_data.num() == 0) begin
           `ASSERT_ERROR(0, $sformatf(
                         "Not enough expected samples for received data at sample %0d", sample));
         end else begin
+          expected_data.peek(expected_sample_pkt);
           if (received_sample_pkt.keep[sample] == 0) begin
             if (VERBOSE)
               $display(

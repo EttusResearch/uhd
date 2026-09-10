@@ -66,7 +66,7 @@ MODELSIM_LIBS += \
 unisims_ver \
 unimacro_ver \
 secureip \
-fifo_generator_v13_2_5 \
+fifo_generator_v13_2_14 \
 xpm \
 
 

@@ -309,13 +309,17 @@ module radio_tx_core #(
           // requested timestamp. "send_early" means that the requested
           // timestamp is actually one word earlier than the word with the
           // matching timestamp because of the way the radio_time is aligned.
-          if (NSPC > 1) begin
+          if (NSPC > 1) begin : gen_calc_time_shift
+            // Workaround for Questa: Range width of 0 is not greater than zero (vopt-13448)
+            // For NSPC > 1, SHIFT_W = log2(NSPC) is >0, but Questa does not see that.
+            localparam SHIFT_W_MIN_ONE = SHIFT_W ? SHIFT_W : 1;
+
             if (s_axis_thas_time) begin
-              if (radio_offset > s_axis_ttimestamp[0+:SHIFT_W]) begin
-                time_shift <= NSPC - (radio_offset - s_axis_ttimestamp[0+:SHIFT_W]);
+              if (radio_offset > s_axis_ttimestamp[0+:SHIFT_W_MIN_ONE]) begin
+                time_shift <= NSPC - (radio_offset - s_axis_ttimestamp[0+:SHIFT_W_MIN_ONE]);
                 send_early <= 1'b1;
               end else begin
-                time_shift <= s_axis_ttimestamp[0+:SHIFT_W] - radio_offset;
+                time_shift <= s_axis_ttimestamp[0+:SHIFT_W_MIN_ONE] - radio_offset;
                 send_early <= 1'b0;
               end
             end else begin

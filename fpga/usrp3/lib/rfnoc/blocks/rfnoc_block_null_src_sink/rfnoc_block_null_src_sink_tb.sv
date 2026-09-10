@@ -58,6 +58,17 @@ module rfnoc_block_null_src_sink_tb #(
   RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl;
 
   // DUT
+  // Questa Workaround for illegal output connection (vsim-3053)
+  logic [CHDR_W*2-1:0] m_rfnoc_chdr_tdata;
+  logic [1:0] m_rfnoc_chdr_tlast;
+  logic [1:0] m_rfnoc_chdr_tvalid;
+  assign {s1_chdr.tdata , s0_chdr.tdata } = m_rfnoc_chdr_tdata;
+  assign {s1_chdr.tlast , s0_chdr.tlast } = m_rfnoc_chdr_tlast;
+  assign {s1_chdr.tvalid, s0_chdr.tvalid} = m_rfnoc_chdr_tvalid;
+
+  logic [1:0] s_rfnoc_chdr_tready;
+  assign {m1_chdr.tready , m0_chdr.tready } = s_rfnoc_chdr_tready;
+
   rfnoc_block_null_src_sink #(
     .THIS_PORTID        (THIS_PORTID),
     .CHDR_W             (CHDR_W),
@@ -72,10 +83,10 @@ module rfnoc_block_null_src_sink_tb #(
     .s_rfnoc_chdr_tdata ({m1_chdr.tdata  , m0_chdr.tdata  }),
     .s_rfnoc_chdr_tlast ({m1_chdr.tlast  , m0_chdr.tlast  }),
     .s_rfnoc_chdr_tvalid({m1_chdr.tvalid , m0_chdr.tvalid }),
-    .s_rfnoc_chdr_tready({m1_chdr.tready , m0_chdr.tready }),
-    .m_rfnoc_chdr_tdata ({s1_chdr.tdata , s0_chdr.tdata }),
-    .m_rfnoc_chdr_tlast ({s1_chdr.tlast , s0_chdr.tlast }),
-    .m_rfnoc_chdr_tvalid({s1_chdr.tvalid, s0_chdr.tvalid}),
+    .s_rfnoc_chdr_tready(s_rfnoc_chdr_tready),
+    .m_rfnoc_chdr_tdata (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid(m_rfnoc_chdr_tvalid),
     .m_rfnoc_chdr_tready({s1_chdr.tready, s0_chdr.tready}),
     .s_rfnoc_ctrl_tdata (m_ctrl.tdata  ),
     .s_rfnoc_ctrl_tlast (m_ctrl.tlast  ),

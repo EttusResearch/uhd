@@ -115,7 +115,6 @@ set_property verilog_define $verilog_defs [get_filesets $sim_fileset]
 
 # XSim specific settings
 set_property xsim.simulate.runtime "${sim_runtime}us" -objects [get_filesets $sim_fileset]
-set_property xsim.elaborate.debug_level "all" -objects [get_filesets $sim_fileset]
 set_property xsim.elaborate.unifast $sim_fast -objects [get_filesets $sim_fileset]
 # Set default timescale to prevent bogus warnings
 set_property xsim.elaborate.xelab.more_options -value {-timescale 1ns/1ns} -objects [get_filesets $sim_fileset]

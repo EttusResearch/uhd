@@ -85,6 +85,7 @@ IP_AXI_ETH_DMA_BD_HDL_SIM_SRCS = $(wildcard $(addprefix $(IP_BUILD_DIR)/axi_eth_
 sim/axi_eth_dma_bd.v \
 ip/*/sim/*.h \
 ip/*/sim/*.v \
+ip/*/sim/*.sv \
 ip/*/sim/*.vhd \
 ip/*/bd_0/hdl/*.v \
 ip/*/bd_0/sim/*.v \
@@ -120,7 +121,8 @@ $(MISC_IP_SIM_SRCS) \
 
 # Xilinx IP wants lots of libraries
 MODELSIM_LIBS += secureip unimacro_ver unisims_ver xilinx_vip xpm
-MODELSIM_ARGS += glbl -t 1fs
+# QuestaSim requires optimizer access enabled for this testbench to pass.
+MODELSIM_ARGS += glbl -t 1fs -voptargs=+acc
 # Needed for the HACK_SRC, speeds up the alignment phase (still long!)
 VLOG_ARGS += +define+SIM_SPEED_UP
 

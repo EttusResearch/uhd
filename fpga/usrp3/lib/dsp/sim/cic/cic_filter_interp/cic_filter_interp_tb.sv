@@ -178,8 +178,8 @@ module cic_filter_interp_tb #(
   function automatic model_sample_t sign_extend_sample(sample_t samp_in);
     logic signed [COMP_W-1:0]       q_in = samp_in[COMP_W-1:0];
     logic signed [COMP_W-1:0]       i_in = samp_in[SAMP_W-1:COMP_W];
-    logic signed [MODEL_COMP_W-1:0] q_ext = MODEL_COMP_W'(q_in);
-    logic signed [MODEL_COMP_W-1:0] i_ext = MODEL_COMP_W'(i_in);
+    logic signed [MODEL_COMP_W-1:0] q_ext = q_in;
+    logic signed [MODEL_COMP_W-1:0] i_ext = i_in;
     return {i_ext, q_ext};
   endfunction : sign_extend_sample
 

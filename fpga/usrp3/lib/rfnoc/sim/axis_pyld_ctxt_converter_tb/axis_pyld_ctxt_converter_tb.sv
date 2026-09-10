@@ -9,12 +9,19 @@
 `default_nettype none
 
 
-module axis_pyld_ctxt_converter_tb;
+module axis_pyld_ctxt_converter_tb #(
+  parameter realtime CLK_PERIOD = 6.0,
+  parameter int      ITEM_W = 64,
+  parameter int      NIPC = 1,
+  parameter int      CONTEXT_FIFO_SIZE = 5,
+  parameter int      PAYLOAD_FIFO_SIZE = 7,
+  parameter bit      CONTEXT_PREFETCH_EN = 1
+);
 
   // ----------------------------------------
   // Global settings
   // ----------------------------------------
-  
+
   // Include macros and time declarations for use with PkgTestExec
   `include "test_exec.svh"
 
@@ -28,33 +35,11 @@ module axis_pyld_ctxt_converter_tb;
   localparam int      CHDR_W            = 64;
   localparam int      MTU               = 7;
   localparam int      MTU_BITS          = (1 << MTU) * CHDR_W;
-  localparam int      NINST             = 6;
-  localparam int      START_INST        = 0;
-  localparam int      STOP_INST         = NINST-1;
   localparam int      NUM_PKTS_PER_TEST = 100;
   localparam int      FAST_STALL_PROB   = 0;
   localparam int      SLOW_STALL_PROB   = 35;
   localparam realtime CHDR_CLK_PERIOD   = 3.0;
   localparam int      MAX_PYLD_W        = 256;
-
-  typedef struct {
-    realtime clk_period;
-    int      item_w;
-    int      nipc;
-    int      ctxt_fifo;
-    int      pyld_fifo;
-    bit      prefetch;
-  } inst_params_t;
-
-  // Module instances to test
-  localparam inst_params_t INST_PARAMS[0:NINST-1] = {
-    '{clk_period: 6.0, item_w:64, nipc: 1, ctxt_fifo:5, pyld_fifo:7, prefetch:1},
-    '{clk_period:20.0, item_w:32, nipc: 6, ctxt_fifo:5, pyld_fifo:1, prefetch:1},
-    '{clk_period: 3.0, item_w:32, nipc: 4, ctxt_fifo:1, pyld_fifo:2, prefetch:0},
-    '{clk_period:10.0, item_w:16, nipc: 4, ctxt_fifo:8, pyld_fifo:5, prefetch:1},
-    '{clk_period: 3.0, item_w:32, nipc: 2, ctxt_fifo:1, pyld_fifo:7, prefetch:0},
-    '{clk_period: 3.0, item_w:8,  nipc:13, ctxt_fifo:1, pyld_fifo:7, prefetch:0}
-  };
 
   // ----------------------------------------
   // Interfaces and clocks
@@ -62,138 +47,133 @@ module axis_pyld_ctxt_converter_tb;
 
   // Clocks and resets
   bit             rfnoc_chdr_clk, rfnoc_chdr_rst;
-  bit [NINST-1:0] rfnoc_data_clk, rfnoc_data_rst;
+  bit             rfnoc_data_clk, rfnoc_data_rst;
   // Common CHDR Clock
   sim_clock_gen #(CHDR_CLK_PERIOD) chdr_clk_gen_i (rfnoc_chdr_clk, rfnoc_chdr_rst);
 
   // Flush interface
-  logic [31:0] r2c_framer_errors[0:NINST-1];
-  logic [31:0] r2c_flush_timeout[0:NINST-1], c2r_flush_timeout[0:NINST-1];
-  logic [0:0]  r2c_flush_en     [0:NINST-1], c2r_flush_en     [0:NINST-1];
-  wire  [0:0]  r2c_flush_active [0:NINST-1], c2r_flush_active [0:NINST-1];
-  wire  [0:0]  r2c_flush_done   [0:NINST-1], c2r_flush_done   [0:NINST-1];
+  logic [31:0] r2c_framer_errors;
+  logic [31:0] r2c_flush_timeout, c2r_flush_timeout;
+  logic [0:0]  r2c_flush_en, c2r_flush_en;
+  wire  [0:0]  r2c_flush_active, c2r_flush_active;
+  wire  [0:0]  r2c_flush_done, c2r_flush_done;
 
   // CHDR interface
-  wire [CHDR_W-1:0]  chdr_tdata [0:NINST-1];
-  wire               chdr_tlast [0:NINST-1];
-  wire               chdr_tvalid[0:NINST-1];
-  wire               chdr_tready[0:NINST-1];
+  wire [CHDR_W-1:0]  chdr_tdata;
+  wire               chdr_tlast;
+  wire               chdr_tvalid;
+  wire               chdr_tready;
 
   // AXIS interfaces and BFMs
-  AxiStreamIf  #(CHDR_W, 4)  r2c_ctxt [0:NINST-1] ();
-  AxiStreamIf  #(CHDR_W, 4)  c2r_ctxt [0:NINST-1] ();
-  AxiStreamIf  #(MAX_PYLD_W) r2c_pyld [0:NINST-1] ();
-  AxiStreamIf  #(MAX_PYLD_W) c2r_pyld [0:NINST-1] ();
-  AxiStreamBfm #(CHDR_W, 4)  ctxt_bfm [0:NINST-1]   ;
-  AxiStreamBfm #(MAX_PYLD_W) pyld_bfm [0:NINST-1]   ;
+  AxiStreamIf  #(CHDR_W, 4)  r2c_ctxt ();
+  AxiStreamIf  #(CHDR_W, 4)  c2r_ctxt ();
+  AxiStreamIf  #(MAX_PYLD_W) r2c_pyld ();
+  AxiStreamIf  #(MAX_PYLD_W) c2r_pyld ();
+  AxiStreamBfm #(CHDR_W, 4)  ctxt_bfm;
+  AxiStreamBfm #(MAX_PYLD_W) pyld_bfm;
 
   // Instantiate DUTs
-  genvar inst_i;
-  generate for (inst_i = 0; inst_i < NINST; inst_i++) begin: inst
 
     // Assign clocks and resets to ctxt and pyld streams
-    assign r2c_ctxt[inst_i].clk = rfnoc_data_clk[inst_i];
-    assign r2c_ctxt[inst_i].rst = rfnoc_data_rst[inst_i];
-    assign c2r_ctxt[inst_i].clk = rfnoc_data_clk[inst_i];
-    assign c2r_ctxt[inst_i].rst = rfnoc_data_rst[inst_i];
+    assign r2c_ctxt.clk = rfnoc_data_clk;
+    assign r2c_ctxt.rst = rfnoc_data_rst;
+    assign c2r_ctxt.clk = rfnoc_data_clk;
+    assign c2r_ctxt.rst = rfnoc_data_rst;
 
-    assign r2c_pyld[inst_i].clk = rfnoc_data_clk[inst_i];
-    assign r2c_pyld[inst_i].rst = rfnoc_data_rst[inst_i];
-    assign c2r_pyld[inst_i].clk = rfnoc_data_clk[inst_i];
-    assign c2r_pyld[inst_i].rst = rfnoc_data_rst[inst_i];
+    assign r2c_pyld.clk = rfnoc_data_clk;
+    assign r2c_pyld.rst = rfnoc_data_rst;
+    assign c2r_pyld.clk = rfnoc_data_clk;
+    assign c2r_pyld.rst = rfnoc_data_rst;
 
     // Instantiate clock generator
-    sim_clock_gen #(INST_PARAMS[inst_i].clk_period) dclk_gen (
-      rfnoc_data_clk[inst_i], rfnoc_data_rst[inst_i]
+    sim_clock_gen #(CLK_PERIOD) dclk_gen (
+      rfnoc_data_clk, rfnoc_data_rst
     );
 
     // Instantiate PyldCtxt to Chdr DUT
     axis_pyld_ctxt_to_chdr #(
       .CHDR_W               (CHDR_W),
-      .ITEM_W               (INST_PARAMS[inst_i].item_w),
-      .NIPC                 (INST_PARAMS[inst_i].nipc),
-      .SYNC_CLKS            (INST_PARAMS[inst_i].clk_period == CHDR_CLK_PERIOD),
-      .CONTEXT_FIFO_SIZE    (INST_PARAMS[inst_i].ctxt_fifo),
-      .PAYLOAD_FIFO_SIZE    (INST_PARAMS[inst_i].pyld_fifo),
+      .ITEM_W               (ITEM_W),
+      .NIPC                 (NIPC),
+      .SYNC_CLKS            (CLK_PERIOD == CHDR_CLK_PERIOD),
+      .CONTEXT_FIFO_SIZE    (CONTEXT_FIFO_SIZE),
+      .PAYLOAD_FIFO_SIZE    (PAYLOAD_FIFO_SIZE),
       .MTU                  (MTU),
-      .CONTEXT_PREFETCH_EN  (INST_PARAMS[inst_i].prefetch)
+      .CONTEXT_PREFETCH_EN  (CONTEXT_PREFETCH_EN)
     ) r2c_dut (
       .axis_chdr_clk        (rfnoc_chdr_clk),
       .axis_chdr_rst        (rfnoc_chdr_rst),
-      .axis_data_clk        (rfnoc_data_clk[inst_i]),
-      .axis_data_rst        (rfnoc_data_rst[inst_i]),
-      .m_axis_chdr_tdata    (chdr_tdata[inst_i]),
-      .m_axis_chdr_tlast    (chdr_tlast[inst_i]),
-      .m_axis_chdr_tvalid   (chdr_tvalid[inst_i]),
-      .m_axis_chdr_tready   (chdr_tready[inst_i]),
-      .s_axis_payload_tdata (r2c_pyld[inst_i].slave.tdata[(INST_PARAMS[inst_i].item_w*INST_PARAMS[inst_i].nipc)-1:0]),
-      .s_axis_payload_tkeep (r2c_pyld[inst_i].slave.tkeep[INST_PARAMS[inst_i].nipc-1:0]),
-      .s_axis_payload_tlast (r2c_pyld[inst_i].slave.tlast),
-      .s_axis_payload_tvalid(r2c_pyld[inst_i].slave.tvalid),
-      .s_axis_payload_tready(r2c_pyld[inst_i].slave.tready),
-      .s_axis_context_tdata (r2c_ctxt[inst_i].slave.tdata),
-      .s_axis_context_tuser (r2c_ctxt[inst_i].slave.tuser),
-      .s_axis_context_tlast (r2c_ctxt[inst_i].slave.tlast),
-      .s_axis_context_tvalid(r2c_ctxt[inst_i].slave.tvalid),
-      .s_axis_context_tready(r2c_ctxt[inst_i].slave.tready),
-      .framer_errors        (r2c_framer_errors[inst_i]),
-      .flush_en             (r2c_flush_en[inst_i]),
-      .flush_timeout        (r2c_flush_timeout[inst_i]),
-      .flush_active         (r2c_flush_active[inst_i]),
-      .flush_done           (r2c_flush_done[inst_i])
+      .axis_data_clk        (rfnoc_data_clk),
+      .axis_data_rst        (rfnoc_data_rst),
+      .m_axis_chdr_tdata    (chdr_tdata),
+      .m_axis_chdr_tlast    (chdr_tlast),
+      .m_axis_chdr_tvalid   (chdr_tvalid),
+      .m_axis_chdr_tready   (chdr_tready),
+      .s_axis_payload_tdata (r2c_pyld.slave.tdata[ITEM_W*NIPC-1:0]),
+      .s_axis_payload_tkeep (r2c_pyld.slave.tkeep[NIPC-1:0]),
+      .s_axis_payload_tlast (r2c_pyld.slave.tlast),
+      .s_axis_payload_tvalid(r2c_pyld.slave.tvalid),
+      .s_axis_payload_tready(r2c_pyld.slave.tready),
+      .s_axis_context_tdata (r2c_ctxt.slave.tdata),
+      .s_axis_context_tuser (r2c_ctxt.slave.tuser),
+      .s_axis_context_tlast (r2c_ctxt.slave.tlast),
+      .s_axis_context_tvalid(r2c_ctxt.slave.tvalid),
+      .s_axis_context_tready(r2c_ctxt.slave.tready),
+      .framer_errors        (r2c_framer_errors),
+      .flush_en             (r2c_flush_en),
+      .flush_timeout        (r2c_flush_timeout),
+      .flush_active         (r2c_flush_active),
+      .flush_done           (r2c_flush_done)
     );
 
     // Instantiate Chdr to PyldCtxt DUT
     chdr_to_axis_pyld_ctxt #(
       .CHDR_W               (CHDR_W),
-      .ITEM_W               (INST_PARAMS[inst_i].item_w),
-      .NIPC                 (INST_PARAMS[inst_i].nipc),
-      .SYNC_CLKS            (INST_PARAMS[inst_i].clk_period == CHDR_CLK_PERIOD),
-      .CONTEXT_FIFO_SIZE    (INST_PARAMS[inst_i].ctxt_fifo),
-      .PAYLOAD_FIFO_SIZE    (INST_PARAMS[inst_i].pyld_fifo),
-      .CONTEXT_PREFETCH_EN  (INST_PARAMS[inst_i].prefetch)
+      .ITEM_W               (ITEM_W),
+      .NIPC                 (NIPC),
+      .SYNC_CLKS            (CLK_PERIOD == CHDR_CLK_PERIOD),
+      .CONTEXT_FIFO_SIZE    (CONTEXT_FIFO_SIZE),
+      .PAYLOAD_FIFO_SIZE    (PAYLOAD_FIFO_SIZE),
+      .CONTEXT_PREFETCH_EN  (CONTEXT_PREFETCH_EN)
     ) c2r_dut (
       .axis_chdr_clk        (rfnoc_chdr_clk),
       .axis_chdr_rst        (rfnoc_chdr_rst),
-      .axis_data_clk        (rfnoc_data_clk[inst_i]),
-      .axis_data_rst        (rfnoc_data_rst[inst_i]),
-      .s_axis_chdr_tdata    (chdr_tdata[inst_i]),
-      .s_axis_chdr_tlast    (chdr_tlast[inst_i]),
-      .s_axis_chdr_tvalid   (chdr_tvalid[inst_i]),
-      .s_axis_chdr_tready   (chdr_tready[inst_i]),
-      .m_axis_payload_tdata (c2r_pyld[inst_i].master.tdata[(INST_PARAMS[inst_i].item_w*INST_PARAMS[inst_i].nipc)-1:0]),
-      .m_axis_payload_tkeep (c2r_pyld[inst_i].master.tkeep[INST_PARAMS[inst_i].nipc-1:0]),
-      .m_axis_payload_tlast (c2r_pyld[inst_i].master.tlast),
-      .m_axis_payload_tvalid(c2r_pyld[inst_i].master.tvalid),
-      .m_axis_payload_tready(c2r_pyld[inst_i].master.tready),
-      .m_axis_context_tdata (c2r_ctxt[inst_i].master.tdata),
-      .m_axis_context_tuser (c2r_ctxt[inst_i].master.tuser),
-      .m_axis_context_tlast (c2r_ctxt[inst_i].master.tlast),
-      .m_axis_context_tvalid(c2r_ctxt[inst_i].master.tvalid),
-      .m_axis_context_tready(c2r_ctxt[inst_i].master.tready),
-      .flush_en             (c2r_flush_en[inst_i]),
-      .flush_timeout        (c2r_flush_timeout[inst_i]),
-      .flush_active         (c2r_flush_active[inst_i]),
-      .flush_done           (c2r_flush_done[inst_i])
+      .axis_data_clk        (rfnoc_data_clk),
+      .axis_data_rst        (rfnoc_data_rst),
+      .s_axis_chdr_tdata    (chdr_tdata),
+      .s_axis_chdr_tlast    (chdr_tlast),
+      .s_axis_chdr_tvalid   (chdr_tvalid),
+      .s_axis_chdr_tready   (chdr_tready),
+      .m_axis_payload_tdata (c2r_pyld.master.tdata[ITEM_W*NIPC-1:0]),
+      .m_axis_payload_tkeep (c2r_pyld.master.tkeep[NIPC-1:0]),
+      .m_axis_payload_tlast (c2r_pyld.master.tlast),
+      .m_axis_payload_tvalid(c2r_pyld.master.tvalid),
+      .m_axis_payload_tready(c2r_pyld.master.tready),
+      .m_axis_context_tdata (c2r_ctxt.master.tdata),
+      .m_axis_context_tuser (c2r_ctxt.master.tuser),
+      .m_axis_context_tlast (c2r_ctxt.master.tlast),
+      .m_axis_context_tvalid(c2r_ctxt.master.tvalid),
+      .m_axis_context_tready(c2r_ctxt.master.tready),
+      .flush_en             (c2r_flush_en),
+      .flush_timeout        (c2r_flush_timeout),
+      .flush_active         (c2r_flush_active),
+      .flush_done           (c2r_flush_done)
     );
 
     // Assert Reset and start BFMs
     initial begin
       dclk_gen.reset();
-      r2c_flush_en[inst_i] = 0;
-      c2r_flush_en[inst_i] = 0;
-      pyld_bfm[inst_i] = new(r2c_pyld[inst_i], c2r_pyld[inst_i]);
-      pyld_bfm[inst_i].run();
-      ctxt_bfm[inst_i] = new(r2c_ctxt[inst_i], c2r_ctxt[inst_i]);
-      ctxt_bfm[inst_i].run();
+      r2c_flush_en = 0;
+      c2r_flush_en = 0;
+      pyld_bfm = new(r2c_pyld, c2r_pyld);
+      pyld_bfm.run();
+      ctxt_bfm = new(r2c_ctxt, c2r_ctxt);
+      ctxt_bfm.run();
     end
-  end endgenerate
 
   function automatic bit pyld_pkts_equal(
     ref AxiStreamPacket #(MAX_PYLD_W) exp,
-    ref AxiStreamPacket #(MAX_PYLD_W) act,
-    input int item_w,
-    input int nipc
+    ref AxiStreamPacket #(MAX_PYLD_W) act
   );
     if (exp.data.size() != act.data.size()) return 0;
     if (exp.keep.size() != act.keep.size()) return 0;
@@ -202,10 +182,11 @@ module axis_pyld_ctxt_converter_tb;
       automatic bit [MAX_PYLD_W-1:0] mask     = '0;
       automatic bit [MAX_PYLD_W-1:0] data_exp = exp.data[i];
       automatic bit [MAX_PYLD_W-1:0] data_act = act.data[i];
-      for (int r = 0; r < nipc; r++) begin
+      for (int r = 0; r < NIPC; r++) begin
         if (exp.keep[i][r] === 1'b1) begin
-          automatic bit [MAX_PYLD_W-1:0] samp_mask = ((1<<item_w)-1);
-          mask |= (samp_mask << (r*item_w));
+          automatic bit [MAX_PYLD_W-1:0] samp_mask = '1;
+          samp_mask >>= (MAX_PYLD_W-ITEM_W);
+          mask |= (samp_mask << (r*ITEM_W));
         end
       end
       if (exp.keep[i] !== act.keep[i]) return 0;
@@ -215,39 +196,33 @@ module axis_pyld_ctxt_converter_tb;
   endfunction
 
   task automatic send_recv_data_packets(
-    input int inst,
-    input inst_params_t params, //We pass this separately to work around Vivado bug
     input int num_pkts,
     input int mst_stall_prob,
     input int slv_stall_prob,
     input bit flushing = 0
   );
-    int nipc     = params.nipc;
-    int item_w   = params.item_w;
-    bit prefetch = params.prefetch;
-
     AxiStreamPacket #(MAX_PYLD_W) pyld_pkt_arr[$] = {};
     AxiStreamPacket #(CHDR_W, 4)  ctxt_pkt_arr[$] = {};
 
     // Set stall probabilities
-    ctxt_bfm[inst].set_master_stall_prob(mst_stall_prob);
-    ctxt_bfm[inst].set_slave_stall_prob(slv_stall_prob);
-    pyld_bfm[inst].set_master_stall_prob(mst_stall_prob);
-    pyld_bfm[inst].set_slave_stall_prob(slv_stall_prob);
+    ctxt_bfm.set_master_stall_prob(mst_stall_prob);
+    ctxt_bfm.set_slave_stall_prob(slv_stall_prob);
+    pyld_bfm.set_master_stall_prob(mst_stall_prob);
+    pyld_bfm.set_slave_stall_prob(slv_stall_prob);
 
     // Generate a stream of data packets
     for (int p = 0; p < num_pkts; p++) begin
-      int len_lines = $urandom_range((MTU_BITS/(item_w*nipc))-10, 1);
-      int keep_int = $urandom_range(nipc, 1);
+      int len_lines = $urandom_range((MTU_BITS/(ITEM_W*NIPC))-10, 1);
+      int keep_int = $urandom_range(NIPC, 1);
       pyld_pkt_arr[p] = new();
       for (int i = 0; i < len_lines; i++) begin
-        logic [MAX_PYLD_W-1:0] rand_samp;
+        logic [MAX_PYLD_W-1:0] rand_samp = '0;
         logic [(MAX_PYLD_W/8)-1:0] keep_val = 'x;
-        for (int r = 0; r < (((nipc*item_w)+31)/32); r++)
+        for (int r = 0; r < (((NIPC*ITEM_W)+31)/32); r++)
           rand_samp[r*32 +: 32] = $urandom();
         pyld_pkt_arr[p].data.push_back(rand_samp);
         pyld_pkt_arr[p].user.push_back('x);
-        for (int r = 0; r < nipc; r++) begin
+        for (int r = 0; r < NIPC; r++) begin
           if (i == len_lines-1)
             keep_val[r] = (r < keep_int) ? 1'b1 : 1'b0;
           else
@@ -265,15 +240,15 @@ module axis_pyld_ctxt_converter_tb;
       automatic int num_pyld_lines = pyld_pkt_arr[p].data.size();
       automatic int invalid_samps = 0;
       automatic int length;
-      for (int r = 0; r < nipc; r++)
+      for (int r = 0; r < NIPC; r++)
         if (pyld_pkt_arr[p].keep[num_pyld_lines-1][r] === 1'b0)
           invalid_samps++;
-      length = 
+      length =
         (CHDR_W/8) +                                        // header
         ((has_time && (CHDR_W == 64)) ? (CHDR_W/8) : 0) +   // timestamp
         (num_mdata * (CHDR_W/8)) +                          // metadata
-        (num_pyld_lines * nipc * (item_w/8)) +              // payload
-        (-invalid_samps * (item_w/8));                      // payload (back out empty slots)
+        (num_pyld_lines * NIPC * (ITEM_W/8)) +              // payload
+        (-invalid_samps * (ITEM_W/8));                      // payload (back out empty slots)
 
       chdr_hdr = '{
         vc        : $urandom_range(63),
@@ -308,18 +283,18 @@ module axis_pyld_ctxt_converter_tb;
         timeout_t timeout;
         for (int p = 0; p < num_pkts; p++) begin
           test.start_timeout(timeout, 50us, "Waiting to send TX context pkt");
-          ctxt_bfm[inst].put(ctxt_pkt_arr[p].copy());
+          ctxt_bfm.put(ctxt_pkt_arr[p].copy());
           test.end_timeout(timeout);
-          if (VERBOSE) $display("[INST%0d:TxContext:%0d]\n%s", inst, p, ctxt_pkt_arr[p].sprint());
+          if (VERBOSE) $display("[TxContext:%0d]\n%s", p, ctxt_pkt_arr[p].sprint());
         end
       end
       begin: tx_payload
         timeout_t timeout;
         for (int p = 0; p < num_pkts; p++) begin
           test.start_timeout(timeout, 50us, "Waiting to send TX payload pkt");
-          pyld_bfm[inst].put(pyld_pkt_arr[p].copy());
+          pyld_bfm.put(pyld_pkt_arr[p].copy());
           test.end_timeout(timeout);
-          if (VERBOSE) $display("[INST%0d:TxPayload:%0d]\n%s", inst, p, pyld_pkt_arr[p].sprint());
+          if (VERBOSE) $display("[TxPayload:%0d]\n%s", p, pyld_pkt_arr[p].sprint());
         end
       end
       begin: rx_context
@@ -328,10 +303,10 @@ module axis_pyld_ctxt_converter_tb;
           automatic AxiStreamPacket #(CHDR_W, 4) rx_ctxt_pkt;
           for (int p = 0; p < num_pkts; p++) begin
             test.start_timeout(timeout, 50us, "Waiting to recv RX context pkt");
-            ctxt_bfm[inst].get(rx_ctxt_pkt);
+            ctxt_bfm.get(rx_ctxt_pkt);
             test.end_timeout(timeout);
-            if (VERBOSE) $display("[INST%0d:RxContext:%0d]\n%s", inst, p, rx_ctxt_pkt.sprint());
-            if (VERBOSE) $display("[INST%0d:ExpContext:%0d]\n%s", inst, p, ctxt_pkt_arr[p].sprint());
+            if (VERBOSE) $display("[RxContext:%0d]\n%s", p, rx_ctxt_pkt.sprint());
+            if (VERBOSE) $display("[ExpContext:%0d]\n%s", p, ctxt_pkt_arr[p].sprint());
             `ASSERT_ERROR(ctxt_pkt_arr[p].equal(rx_ctxt_pkt), "RX context packet did not match TX");
           end
         end
@@ -342,11 +317,11 @@ module axis_pyld_ctxt_converter_tb;
           automatic AxiStreamPacket #(MAX_PYLD_W) rx_pyld_pkt;
           for (int p = 0; p < num_pkts; p++) begin
             test.start_timeout(timeout, 50us, "Waiting to recv RX payload pkt");
-            pyld_bfm[inst].get(rx_pyld_pkt);
+            pyld_bfm.get(rx_pyld_pkt);
             test.end_timeout(timeout);
-            if (VERBOSE) $display("[INST%0d:RxPayload:%0d]\n%s", inst, p, rx_pyld_pkt.sprint());
-            if (VERBOSE) $display("[INST%0d:ExpPayload:%0d]\n%s", inst, p, pyld_pkt_arr[p].sprint());
-            `ASSERT_ERROR(pyld_pkts_equal(pyld_pkt_arr[p], rx_pyld_pkt, item_w, nipc), "RX payload packet did not match TX");
+            if (VERBOSE) $display("[RxPayload:%0d]\n%s", p, rx_pyld_pkt.sprint());
+            if (VERBOSE) $display("[ExpPayload:%0d]\n%s", p, pyld_pkt_arr[p].sprint());
+            `ASSERT_ERROR(pyld_pkts_equal(pyld_pkt_arr[p], rx_pyld_pkt), "RX payload packet did not match TX");
           end
         end
       end
@@ -366,7 +341,8 @@ module axis_pyld_ctxt_converter_tb;
 
     // Initialize
     // ----------------------------------------
-    test.start_tb("axis_pyld_ctxt_converter_tb");
+    test.start_tb($sformatf(
+      "axis_pyld_ctxt_converter_tb: ITEM_W:%0d NIPC:%0d", ITEM_W, NIPC));
 
     // Reset
     // ----------------------------------------
@@ -381,85 +357,85 @@ module axis_pyld_ctxt_converter_tb;
     `ASSERT_ERROR(!rfnoc_chdr_rst && !(|rfnoc_data_rst), "Reset did not deassert");
     test.end_test();
 
-    for (int inst_num = START_INST; inst_num <= STOP_INST; inst_num++) begin
-      $display("-----------------------------------------------------------------------------------------------");
-      $display("Testing INST%0d:%p", inst_num, INST_PARAMS[inst_num]);
-      $display("-----------------------------------------------------------------------------------------------");
+    $display("-----------------------------------------------------------------------------------------------");
+    $display("Testing ITEM_W:%0d NIPC:%0d", ITEM_W, NIPC);
+    $display("-----------------------------------------------------------------------------------------------");
 
       // Stream Random Data
       // ----------------------------------------
       for (int cfg = 0; cfg < 4; cfg++) begin
         automatic integer mst_cfg = cfg[0];
         automatic integer slv_cfg = cfg[1];
-        $sformat(tc_label, "INST%0d: Stream Random Data (%s Mst, %s Slv)", 
-          inst_num,(mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
+        $sformat(tc_label, "Stream Random Data (%s Mst, %s Slv)",
+          (mst_cfg?"Slow":"Fast"), (slv_cfg?"Slow":"Fast"));
         test.start_test(tc_label);
-        send_recv_data_packets(inst_num, INST_PARAMS[inst_num], NUM_PKTS_PER_TEST,
+        send_recv_data_packets(NUM_PKTS_PER_TEST,
           mst_cfg ? SLOW_STALL_PROB : FAST_STALL_PROB,
           slv_cfg ? SLOW_STALL_PROB : FAST_STALL_PROB
         );
-        `ASSERT_ERROR(r2c_framer_errors[inst_num] === '0, "Encountered framer errors");
+        `ASSERT_ERROR(r2c_framer_errors === '0, "Encountered framer errors");
         test.end_test();
       end
 
       // Flush
       // ----------------------------------------
-      $sformat(tc_label, "INST%0d: Flush PyldCtxt => CHDR (Idle)", inst_num);
+      $sformat(tc_label, "Flush PyldCtxt => CHDR (Idle)");
       test.start_test(tc_label);
-      r2c_flush_timeout[inst_num] = $urandom_range(400, 200);
-      r2c_flush_en[inst_num] = 1'b1;
+      r2c_flush_timeout = $urandom_range(400, 200);
+      r2c_flush_en = 1'b1;
       repeat (100) @(posedge rfnoc_chdr_clk);
-      `ASSERT_ERROR(r2c_flush_active[inst_num] === 1, "Flushing did not begin on time");
-      `ASSERT_ERROR(r2c_flush_done[inst_num] === 0, "Flushing ended prematurely");
-      repeat (r2c_flush_timeout[inst_num] + 1) @(posedge rfnoc_chdr_clk);
-      `ASSERT_ERROR(r2c_flush_done[inst_num] === 1, "Flushing did not end on time");
-      r2c_flush_en[inst_num] = 1'b0;
+      `ASSERT_ERROR(r2c_flush_active === 1, "Flushing did not begin on time");
+      `ASSERT_ERROR(r2c_flush_done === 0, "Flushing ended prematurely");
+      repeat (r2c_flush_timeout + 1) @(posedge rfnoc_chdr_clk);
+      `ASSERT_ERROR(r2c_flush_done === 1, "Flushing did not end on time");
+      r2c_flush_en = 1'b0;
       @(posedge rfnoc_chdr_clk);
       test.end_test();
 
-      $sformat(tc_label, "INST%0d: Flush CHDR => PyldCtxt (Idle)", inst_num);
+      $sformat(tc_label, "Flush CHDR => PyldCtxt (Idle)");
       test.start_test(tc_label);
-      c2r_flush_timeout[inst_num] = $urandom_range(400, 200);
-      c2r_flush_en[inst_num] = 1'b1;
-      repeat (100) @(posedge rfnoc_data_clk[inst_num]);
-      `ASSERT_ERROR(c2r_flush_active[inst_num] === 1, "Flushing did not begin on time");
-      `ASSERT_ERROR(c2r_flush_done[inst_num] === 0, "Flushing ended prematurely");
-      repeat (c2r_flush_timeout[inst_num] + 1) @(posedge rfnoc_data_clk[inst_num]);
-      `ASSERT_ERROR(c2r_flush_done[inst_num] === 1, "Flushing did not end on time");
-      c2r_flush_en[inst_num] = 1'b0;
-      @(posedge rfnoc_data_clk[inst_num]);
+      c2r_flush_timeout = $urandom_range(400, 200);
+      c2r_flush_en = 1'b1;
+      repeat (100) @(posedge rfnoc_data_clk);
+      `ASSERT_ERROR(c2r_flush_active === 1, "Flushing did not begin on time");
+      `ASSERT_ERROR(c2r_flush_done === 0, "Flushing ended prematurely");
+      repeat (c2r_flush_timeout + 1) @(posedge rfnoc_data_clk);
+      `ASSERT_ERROR(c2r_flush_done === 1, "Flushing did not end on time");
+      c2r_flush_en = 1'b0;
+      @(posedge rfnoc_data_clk);
       test.end_test();
 
-      $sformat(tc_label, "INST%0d: Flush PyldCtxt => CHDR (Streaming)", inst_num);
+      $sformat(tc_label, "Flush PyldCtxt => CHDR (Streaming)");
       test.start_test(tc_label);
-      r2c_flush_timeout[inst_num] = $urandom_range(400, 200);
-      r2c_flush_en[inst_num] = 1'b1;
+      r2c_flush_timeout = $urandom_range(400, 200);
+      r2c_flush_en = 1'b1;
       repeat (100) @(posedge rfnoc_chdr_clk);
-      `ASSERT_ERROR(r2c_flush_active[inst_num] === 1, "Flushing did not begin on time");
-      `ASSERT_ERROR(r2c_flush_done[inst_num] === 0, "Flushing ended prematurely");
-      send_recv_data_packets(inst_num, INST_PARAMS[inst_num], NUM_PKTS_PER_TEST/10,
+      `ASSERT_ERROR(r2c_flush_active === 1, "Flushing did not begin on time");
+      `ASSERT_ERROR(r2c_flush_done === 0, "Flushing ended prematurely");
+      send_recv_data_packets(NUM_PKTS_PER_TEST/10,
         FAST_STALL_PROB, FAST_STALL_PROB, 1 /*flushing*/
       );
       repeat (NUM_PKTS_PER_TEST/10 * (1<<MTU) * 4) @(posedge rfnoc_chdr_clk);
-      repeat (r2c_flush_timeout[inst_num] + 1) @(posedge rfnoc_chdr_clk);
-      `ASSERT_ERROR(r2c_flush_done[inst_num] === 1, "Flushing did not end on time");
-      r2c_flush_en[inst_num] = 1'b0;
+      repeat (r2c_flush_timeout + 1) @(posedge rfnoc_chdr_clk);
+      `ASSERT_ERROR(r2c_flush_done === 1, "Flushing did not end on time");
+      r2c_flush_en = 1'b0;
       @(posedge rfnoc_chdr_clk);
       test.end_test();
 
-      $sformat(tc_label, "INST%0d: Stream Data After Flush", inst_num);
+      $sformat(tc_label, "Stream Data After Flush");
       test.start_test(tc_label);
-      send_recv_data_packets(inst_num, INST_PARAMS[inst_num], NUM_PKTS_PER_TEST/10,
+      send_recv_data_packets(NUM_PKTS_PER_TEST/10,
         FAST_STALL_PROB, FAST_STALL_PROB
       );
-      `ASSERT_ERROR(r2c_framer_errors[inst_num] === '0, "Encountered framer errors");
+      `ASSERT_ERROR(r2c_framer_errors === '0, "Encountered framer errors");
       test.end_test();
-    end
 
     // Finish Up
     // ----------------------------------------
     // Display final statistics and results
-    test.end_tb();
+    test.end_tb(0);
+    dclk_gen.kill();
+    chdr_clk_gen_i.kill();
   end
 
 endmodule

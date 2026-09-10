@@ -59,8 +59,8 @@ $(VIVADO_PATH)/data/verilog/src/glbl.v \
 
 MODELSIM_LIBS += \
 xpm \
-fifo_generator_v13_2_5 \
-blk_mem_gen_v8_4_4 \
+fifo_generator_v13_2_14 \
+blk_mem_gen_v8_4_12 \
 
 modelsim vlint : SIM_SRCS += $(MODELSIM_IP_SRCS)
 

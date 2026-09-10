@@ -362,6 +362,14 @@ module chdr_xport_adapter #(
 
   logic [USER_META_W-1:0] unused_tuser;
 
+  // Questa Workaround for illegal output connection (vsim-3053)
+  logic [2*(eth_rx.DATA_WIDTH+USER_META_W)-1:0] rtn_demux_tdata;
+  logic [1:0]                  rtn_demux_tlast;
+  logic [1:0]                  rtn_demux_tvalid;
+  assign {e2e.tuser, e2e.tdata, unused_tuser, e2v.tdata} = rtn_demux_tdata;
+  assign {e2e.tlast, e2v.tlast} = rtn_demux_tlast;
+  assign {e2e.tvalid, e2v.tvalid} = rtn_demux_tvalid;
+
   axis_switch #(
     .DATA_W(eth_rx.DATA_WIDTH+USER_META_W), .DEST_W(1), .IN_PORTS(1), .OUT_PORTS(2), .PIPELINE(0)
   ) rtn_demux_i (
@@ -369,10 +377,10 @@ module chdr_xport_adapter #(
     .s_axis_tdata({e2d.tuser, e2d.tdata}), .s_axis_alloc(1'b0),
     .s_axis_tdest(e2d_tid == CHDR_MGMT_RETURN_TO_SRC ? 2'b01 : 2'b00),
     .s_axis_tlast(e2d.tlast), .s_axis_tvalid(e2d.tvalid), .s_axis_tready(e2d.tready),
-    .m_axis_tdata({e2e.tuser, e2e.tdata, unused_tuser, e2v.tdata}),
+    .m_axis_tdata(rtn_demux_tdata),
     .m_axis_tdest(/* unused */),
-    .m_axis_tlast({e2e.tlast, e2v.tlast}),
-    .m_axis_tvalid({e2e.tvalid, e2v.tvalid}),
+    .m_axis_tlast(rtn_demux_tlast),
+    .m_axis_tvalid(rtn_demux_tvalid),
     .m_axis_tready({e2e.tready, e2v.tready})
   );
 
@@ -445,6 +453,10 @@ module chdr_xport_adapter #(
   // The data_fifo only takes the packet data (tdata, tlast). We use an
   // axi_fifo_short module for the data_fifo because it can tolerate tvalid
   // going low before a transfer completes.
+  // Questa Workaround for illegal output connection (vsim-3053)
+  logic [1+eth_rx.DATA_WIDTH-1:0] data_fifo_o_tdata;
+  assign {data_fifo_o.tlast, data_fifo_o.tdata} = data_fifo_o_tdata;
+
   axi_fifo_short #(
     .WIDTH (1+eth_rx.DATA_WIDTH)
   ) data_fifo (
@@ -454,7 +466,7 @@ module chdr_xport_adapter #(
     .i_tdata  ({data_fifo_i.tlast, data_fifo_i.tdata}),
     .i_tvalid (data_fifo_i.tvalid),
     .i_tready (data_fifo_i.tready),
-    .o_tdata  ({data_fifo_o.tlast, data_fifo_o.tdata}),
+    .o_tdata  (data_fifo_o_tdata),
     .o_tvalid (data_fifo_o.tvalid),
     .o_tready (data_fifo_o.tready),
     .space    (),
@@ -497,8 +509,12 @@ module chdr_xport_adapter #(
   // transfer completes.
 
   always_comb lookup_fifo_i.tdata   = {m2e_tdest, m2e.tuser, chdr_get_dst_epid(m2e.tdata[63:0])};
-  always_comb {lookup_fifo_tdest, lookup_fifo_tuser, lookup_fifo_tepid} = lookup_fifo_o.tdata;
   always_comb lookup_fifo_i.tvalid  = m2e.tvalid && m2e.tready && m2e_hdr;
+
+  // Questa Workaround for illegal output connection (vsim-3053)
+  logic [1+USER_META_W+16-1:0] lookup_fifo_o_tdata;
+  assign lookup_fifo_o.tdata = lookup_fifo_o_tdata;
+  assign {lookup_fifo_tdest, lookup_fifo_tuser, lookup_fifo_tepid} = lookup_fifo_o_tdata;
 
   axi_fifo_short #(
     .WIDTH (1+USER_META_W+16)
@@ -509,7 +525,7 @@ module chdr_xport_adapter #(
     .i_tdata  (lookup_fifo_i.tdata),
     .i_tvalid (lookup_fifo_i.tvalid),
     .i_tready (lookup_fifo_i.tready),
-    .o_tdata  (lookup_fifo_o.tdata),
+    .o_tdata  (lookup_fifo_o_tdata),
     .o_tvalid (lookup_fifo_o.tvalid),
     .o_tready (lookup_fifo_o.tready),
     .space    (),

@@ -62,14 +62,14 @@ $(VIVADO_PATH)/data/verilog/src/glbl.v \
 MODELSIM_LIBS += \
 xpm \
 secureip \
-fifo_generator_v13_2_5 \
-axi_register_slice_v2_1_24 \
+fifo_generator_v13_2_14 \
+axi_register_slice_v2_1_36 \
 axi_infrastructure_v1_1_0 \
-axi_dwidth_converter_v2_1_24 \
-axi_crossbar_v2_1_25 \
-blk_mem_gen_v8_4_4 \
-axi_data_fifo_v2_1_23 \
-generic_baseblocks_v2_1_0 \
+axi_dwidth_converter_v2_1_37 \
+axi_crossbar_v2_1_38 \
+blk_mem_gen_v8_4_12 \
+axi_data_fifo_v2_1_36 \
+generic_baseblocks_v2_1_2 \
 
 modelsim vlint : SIM_SRCS += $(MODELSIM_IP_SRCS)
 

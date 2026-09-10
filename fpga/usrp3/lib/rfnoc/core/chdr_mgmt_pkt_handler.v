@@ -130,6 +130,14 @@ module chdr_mgmt_pkt_handler #(
 
     assign {bypass_tid, bypass_tdest} = {CHDR_MGMT_ROUTE_EPID, 10'h0};
 
+    // Questa Workaround for illegal output connection (vsim-3053)
+    wire [CHDR_W+10+2-1:0] mgmt_mux_tdata;
+    wire                   mgmt_mux_tlast;
+    wire                   mgmt_mux_tvalid;
+    assign {m_axis_chdr_tid, m_axis_chdr_tdest, m_axis_chdr_tdata} = mgmt_mux_tdata;
+    assign m_axis_chdr_tlast = mgmt_mux_tlast;
+    assign m_axis_chdr_tvalid = mgmt_mux_tvalid;
+
     axi_mux #(
       .WIDTH(CHDR_W+10+2), .SIZE(2), .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(1)
     ) mgmt_mux_i (
@@ -137,9 +145,9 @@ module chdr_mgmt_pkt_handler #(
       .i_tdata({m_mgmt_tid, m_mgmt_tdest, m_mgmt_tdata, bypass_tid, bypass_tdest, bypass_tdata}),
       .i_tlast({m_mgmt_tlast, bypass_tlast}),
       .i_tvalid({m_mgmt_tvalid, bypass_tvalid}), .i_tready({m_mgmt_tready, bypass_tready}),
-      .o_tdata({m_axis_chdr_tid, m_axis_chdr_tdest, m_axis_chdr_tdata}),
-      .o_tlast(m_axis_chdr_tlast),
-      .o_tvalid(m_axis_chdr_tvalid), .o_tready(m_axis_chdr_tready)
+      .o_tdata(mgmt_mux_tdata),
+      .o_tlast(mgmt_mux_tlast),
+      .o_tvalid(mgmt_mux_tvalid), .o_tready(m_axis_chdr_tready)
     );
   end else begin : gen_mgmt_only
     // We are assuming that only management packets come into this module so we don't
