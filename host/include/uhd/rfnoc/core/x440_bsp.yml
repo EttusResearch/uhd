@@ -74,7 +74,7 @@ make_defs:
   - DRAM_BANKS=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_BANKS']}
   - DRAM_CH=${0 if not parameters['ENABLE_DRAM'] else parameters['NUM_DRAM_CHANS']}
   - DRAM_W=${parameters['DRAM_WIDTH']}
-  - USE_FABRIC_RESAMPLERS=${1 if parameters['USE_FABRIC_RESAMPLERS'] else 0}
+  - ${"X440_2SPC_PS_RFDC_BD=1" if parameters['USE_FABRIC_RESAMPLERS'] else ""}
   - DISABLE_TX=${1 if parameters['DISABLE_TX'] else 0}
   - ENABLE_CLOCK_WD=${1 if parameters['ENABLE_CLOCK_WD'] else 0}
 

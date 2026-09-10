@@ -43,12 +43,12 @@ include $(IP_DIR)/adc_100m_bd/Makefile.inc
 include $(IP_DIR)/dac_100m_bd/Makefile.inc
 include $(IP_DIR)/ddr4_64bits_x440/Makefile.inc
 include $(IP_DIR)/x4xx_ps_rfdc_bd/x440_ps_rfdc_bd/Makefile.inc
+include $(IP_DIR)/x4xx_ps_rfdc_bd/x440_2spc_ps_rfdc_bd/Makefile.inc
 include $(IP_DIR)/fir_dec3_2spc/Makefile.inc
 include $(IP_DIR)/fir_inp3_1spc/Makefile.inc
 endif
 
 BD_SRCS = \
-$(IP_X4XX_PS_RFDC_BD_SRCS) \
 $(IP_X4XX_PS_RFDC_HDL_SRCS) \
 $(IP_AXI_INTERCONNECT_APP_BD_SRCS) \
 $(IP_AXI_INTERCONNECT_ETH_BD_SRCS) \
@@ -81,11 +81,25 @@ $(IP_DAC_400M_HDL_SRCS)
 endif
 
 ifdef X440
+	# Both X440 RFDC block-diagram Makefiles assign the same source and output
+	# variables. For a binary target, select only the RFDC variant required by
+	# the image core so the shared variables identify the correct sources. For
+	# the IP target, BUILD_ALL_X440_RFDC selects both variants so all generated
+	# IP is available.
+	ifeq ($(BUILD_ALL_X440_RFDC),1)
+		BD_SRCS += $(IP_X4XX_PS_RFDC_BD_SRCS) $(IP_X4XX_2SPC_PS_RFDC_BD_SRCS)
+	else ifneq (,$(findstring X440_2SPC_PS_RFDC_BD=1,$(RFNOC_IMAGE_CORE_DEFS)))
+		BD_SRCS += $(IP_X4XX_2SPC_PS_RFDC_BD_SRCS)
+	else
+		BD_SRCS += $(IP_X4XX_PS_RFDC_BD_SRCS)
+	endif
 BD_SRCS += \
 $(IP_ADC_100M_BD_SRCS)   \
 $(IP_ADC_100M_HDL_SRCS)  \
 $(IP_DAC_100M_BD_SRCS)   \
 $(IP_DAC_100M_HDL_SRCS)
+else # default case for non-X440 devices
+ 	BD_SRCS += $(IP_X4XX_PS_RFDC_BD_SRCS)
 endif
 
 IP_XCI_SRCS = \
@@ -114,7 +128,6 @@ $(IP_FIR_INP3_1SPC_SRCS)
 endif
 
 BD_OUTPUTS = \
-$(BD_X4XX_PS_RFDC_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_APP_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_ETH_BD_OUTS) \
 $(BD_AXI_INTERCONNECT_DMA_BD_OUTS) \
@@ -128,6 +141,15 @@ $(BD_AXI_INTER_1X512_512_BD_OUTS) \
 $(BD_AXI_INTER_2X512_512_BD_OUTS) \
 $(BD_100G_BD_OUTS) \
 $(BD_AXI_ETH_DMA_BD_OUTS)
+
+# See the X440 BD_SRCS selection above for why these RFDC outputs are selected.
+ifeq ($(BUILD_ALL_X440_RFDC),1)
+	BD_OUTPUTS += $(BD_X4XX_PS_RFDC_BD_OUTS) $(BD_X4XX_2SPC_PS_RFDC_BD_OUTS)
+else ifneq (,$(findstring X440_2SPC_PS_RFDC_BD=1,$(RFNOC_IMAGE_CORE_DEFS)))
+	BD_OUTPUTS += $(BD_X4XX_2SPC_PS_RFDC_BD_OUTS)
+else
+	BD_OUTPUTS += $(BD_X4XX_PS_RFDC_BD_OUTS)
+endif
 
 ifdef X410
 BD_OUTPUTS += \

@@ -570,7 +570,7 @@ module x4xx (
   // Input Clock   Freq (MHz)    Input Jitter (UI)
   //----------------------------------------------------------------------------
   // __primary_____________200____________0.010
-  
+
   wire fast_ce_gen_clkfbout;
   wire fast_ce_gen_clkout0;
   wire fast_ce_clk;
@@ -1886,7 +1886,11 @@ module x4xx (
       .clk_adc0                      ()
     );
 `elsif X440
+  `ifdef X440_2SPC_PS_RFDC_BD
+    x440_2spc_ps_rfdc_bd x440_ps_rfdc_bd_i (
+  `else
     x440_ps_rfdc_bd x440_ps_rfdc_bd_i (
+  `endif
       .adc_enable_data_r0clk         (adc_enable_data_rclk[0]),
       .adc_enable_data_r1clk         (adc_enable_data_rclk[1]),
       .adc_reset_pulse_r0clk         (adc_reset_pulse[0]),

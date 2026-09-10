@@ -145,7 +145,7 @@ X420_IP:      ##Build X420 IP only. Use the -j option to build multiple IP block
 	+$(call vivado_ip,X420,$(DEFS) X420=1)
 
 X440_IP:      ##Build X440 IP only. Use the -j option to build multiple IP blocks simultaneously.
-	+$(call vivado_ip,X440,$(DEFS) X440=1)
+	+$(call vivado_ip,X440,$(DEFS) X440=1) BUILD_ALL_X440_RFDC=1
 
 $(BUILD_DIR)/x410-version-info.dtsi: regmap/x410/versioning_regs_regmap_utils.vh
 	tools/parse_versions_for_dts.py \

@@ -292,7 +292,7 @@ module eth_ipv4_internal #(
   localparam CPU_USER_W = $clog2(CPU_W/8)+1;  // SOF + trailing bytes
 
   // Host DMA interfaces
-  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(1), .TKEEP(0))
+  AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(1), .TKEEP(1))
     e2h_chdr(bus_clk, bus_rst);
   AxiStreamIf #(.DATA_WIDTH(CPU_W), .USER_WIDTH(CPU_USER_W), .TUSER(1), .TKEEP(0))
     h2e_chdr(bus_clk, bus_rst);

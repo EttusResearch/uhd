@@ -133,7 +133,7 @@ module eth_ipv4_chdr_adapter_wrapper #(
   // Interface
   //---------------------------------------------------------------------------
 
-  AxiStreamIf #(.DATA_WIDTH(ENET_W), .USER_WIDTH(ENET_USER_W), .TKEEP(0))
+  AxiStreamIf #(.DATA_WIDTH(ENET_W), .USER_WIDTH(ENET_USER_W), .TKEEP(1))
     eth_tx (eth_clk, eth_rst);
   AxiStreamIf #(.DATA_WIDTH(ENET_W), .USER_WIDTH(ENET_USER_W), .TKEEP(0))
     eth_rx (eth_clk, eth_rst);

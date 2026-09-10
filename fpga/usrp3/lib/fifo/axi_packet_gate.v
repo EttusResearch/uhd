@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Description:
-//   Holds packets in a FIFO until they are complete. This allows buffering 
+//   Holds packets in a FIFO until they are complete. This allows buffering
 //   slowly-built packets so they don't clog up downstream logic. If o_tready
 //   is held high, this module guarantees that o_tvalid will not be deasserted
 //   until a full packet is transferred. This module can also optionally drop
@@ -14,12 +14,12 @@
 //   NOTE:
 //   - The maximum size of a packet that can pass through this module is
 //     2^SIZE lines. If a larger packet is sent, this module will lock up.
-//   - Assuming that upstream is valid and downstream is ready, the maximum 
-//     in to out latency per packet  is (2^SIZE + 2) clock cycles. 
+//   - Assuming that upstream is valid and downstream is ready, the maximum
+//     in to out latency per packet  is (2^SIZE + 2) clock cycles.
 //     2^SIZE because this module gates a packet, 1 cycle for the RAM read and
 //     1 more cycle for the output register. This is not guaranteed behavior though.
 //   - The USE_AS_BUFF parameter can be used to treat this packet gate as
-//     a multi-packet buffer. When USE_AS_BUFF=0, the max number of packets 
+//     a multi-packet buffer. When USE_AS_BUFF=0, the max number of packets
 //     (regardless of size) that the module can store is 2. When USE_AS_BUFF=1,
 //     the entire storage of this module can be used to buffer packets but at
 //     the cost of some additional RAM. Beware the sequence of (big packet,
@@ -32,8 +32,8 @@ module axi_packet_gate #(
   parameter USE_AS_BUFF = 0,    // Allow the packet gate to be used as a buffer (uses more RAM)
   parameter MIN_PKT_SIZE= 0     // log2 of minimum valid packet size (rounded down, used to reduce addr fifo size)
 ) (
-  input  wire             clk, 
-  input  wire             reset, 
+  input  wire             clk,
+  input  wire             reset,
   input  wire             clear,
   input  wire [WIDTH-1:0] i_tdata,
   input  wire             i_tlast,
@@ -65,7 +65,7 @@ module axi_packet_gate #(
   ram_2port #(
     .DWIDTH (WIDTH+1), .AWIDTH(SIZE),
     .RW_MODE("NO-CHANGE"), .OUT_REG(0),
-    .RAM_TYPE(SIZE <= LUTRAM_THRESH ? "LUTRAM" : "AUTOMATIC")
+    .RAM_TYPE(SIZE <= LUTRAM_THRESH ? "LUTRAM" : "BRAM")
   ) ram_i (
     .clka (clk), .ena(1'b1), .wea(wr_en),
     .addra(wr_addr), .dia(wr_data), .doa(),
@@ -116,7 +116,7 @@ module axi_packet_gate #(
   // -------------------------------------------
   // The address FIFO will hold the write address
   // for the last line in a non-errant packet
-  
+
   wire [SIZE-1:0] afifo_i_tdata, afifo_o_tdata, afifo_p_tdata;
   wire            afifo_i_tvalid, afifo_i_tready;
   wire            afifo_o_tvalid, afifo_o_tready;

@@ -2,7 +2,7 @@
 // Copyright 2008-2013 Ettus Research LLC
 //
 
-module ten_gige_phy_clk_gen 
+module ten_gige_phy_clk_gen
 (
    input  areset,
    input  refclk_p,
@@ -16,7 +16,9 @@ module ten_gige_phy_clk_gen
    wire clk156_buf;
    wire dclk_buf;
    wire clkfbout;
-   
+   wire clkfb;
+   wire refclk_buf;
+
    IBUFDS_GTE2 ibufds_inst (
       .O     (refclk),
       .ODIV2 (),
@@ -25,21 +27,50 @@ module ten_gige_phy_clk_gen
       .IB    (refclk_n)
    );
 
-   BUFG clk156_bufg_inst (
+   // required buffer to get differential refclock from clock region without PLL instance to another
+   // one
+   BUFG refclk_bufg_inst (
       .I (refclk),
-      .O (clk156) 
+      .O (refclk_buf)
    );
 
-   // Divding independent clock by 2 as source for DRP clock
-   BUFR # (
-      .BUFR_DIVIDE ("2")
-   ) dclk_divide_by_2_buf (
-      .I   (clk156),
-      .O   (dclk_buf),
-      .CE  (1'b1),
-      .CLR (1'b0)
+   // Clock cleanup required with Vivado 2025.2 to remove hold timing violations downstream
+   PLLE2_BASE #(
+      .BANDWIDTH("HIGH"),
+      .CLKFBOUT_MULT(10),
+      .CLKFBOUT_PHASE(0.0),
+      .CLKIN1_PERIOD(6.4),
+      .CLKOUT0_DIVIDE(10),
+      .CLKOUT1_DIVIDE(20),
+      .DIVCLK_DIVIDE(1),
+      .REF_JITTER1(0.010),
+      .STARTUP_WAIT("FALSE")
+   ) pll_clk156_inst (
+      .CLKOUT0(clk156_buf),
+      .CLKOUT1(dclk_buf),
+      .CLKOUT2(),
+      .CLKOUT3(),
+      .CLKOUT4(),
+      .CLKOUT5(),
+      .CLKFBOUT(clkfbout),
+      .LOCKED(),
+      .CLKIN1(refclk_buf),
+      .PWRDWN(1'b0),
+      .RST(areset),
+      .CLKFBIN(clkfb)
    );
 
+   // PLL feedback clock buffer
+   BUFG clkfb_bufg_inst (
+      .I (clkfbout),
+      .O (clkfb)
+   );
+
+   // buffer for generated clocks
+   BUFG clk156_bufg_inst (
+      .I (clk156_buf),
+      .O (clk156)
+   );
    BUFG dclk_bufg_i (
       .I (dclk_buf),
       .O (dclk)

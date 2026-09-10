@@ -28,7 +28,7 @@ dict set e3xx_strategy "post_place_phys_opt_design.directive"    "Default"
 dict set e3xx_strategy "route_design.directive"                  "Default"
 dict set e3xx_strategy "route_design.more_options"               "-tns_cleanup"
 dict set e3xx_strategy "post_route_phys_opt_design.is_enabled"   1
-dict set e3xx_strategy "post_route_phys_opt_design.directive"    "Default"
+dict set e3xx_strategy "post_route_phys_opt_design.directive"    "ExploreWithAggressiveHoldFix"
 vivado_strategies::implement_design $e3xx_strategy
 
 # STEP#4: Generate reports

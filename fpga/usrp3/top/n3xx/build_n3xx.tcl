@@ -21,14 +21,14 @@ dict set n3xx_strategy "implementation.incremental"              0
 dict set n3xx_strategy "opt_design.is_enabled"                   1
 dict set n3xx_strategy "opt_design.directive"                    "NoBramPowerOpt"
 dict set n3xx_strategy "post_opt_power_opt_design.is_enabled"    0
-dict set n3xx_strategy "place_design.directive"                  "ExtraNetDelay_high"
+dict set n3xx_strategy "place_design.directive"                  "Explore"
 dict set n3xx_strategy "post_place_power_opt_design.is_enabled"  0
 dict set n3xx_strategy "post_place_phys_opt_design.is_enabled"   1
 dict set n3xx_strategy "post_place_phys_opt_design.directive"    "AggressiveExplore"
 dict set n3xx_strategy "route_design.directive"                  "Explore"
 dict set n3xx_strategy "route_design.more_options"               "-tns_cleanup"
 dict set n3xx_strategy "post_route_phys_opt_design.is_enabled"   1
-dict set n3xx_strategy "post_route_phys_opt_design.directive"    "Explore"
+dict set n3xx_strategy "post_route_phys_opt_design.directive"    "ExploreWithAggressiveHoldFix"
 vivado_strategies::implement_design $n3xx_strategy
 
 # STEP#4: Generate reports

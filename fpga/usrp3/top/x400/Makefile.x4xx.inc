@@ -20,9 +20,6 @@ BASE_DIR = $(abspath ..)
 IP_DIR = $(abspath ./ip)
 include $(BASE_DIR)/../tools/make/viv_design_builder.mak
 
-# Include IP directory
-include $(IP_DIR)/Makefile.inc
-
 # Include any LIB dependencies
 include coregen_dsp/Makefile.srcs
 include $(LIB_DIR)/control/Makefile.srcs
@@ -50,6 +47,9 @@ include $(LIB_DIR)/rfnoc/xport_sv/Makefile.srcs
 ifdef BUILD_DIR
 include $(BUILD_DIR)/Makefile.inc
 endif
+
+# Include IP directory
+include $(IP_DIR)/Makefile.inc
 
 ##################################################
 # Sources

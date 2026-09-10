@@ -504,7 +504,7 @@ module x4xx_qsfp_wrapper #(
             axi_hp_dma[lane].bready  = 1'b0;
             axi_hp_dma[lane].rready  = 1'b0;
 
-            mgt_pause_req = 0'b0;
+            mgt_pause_req = 1'b0;
 
             eth_rx_irq[lane] = 1'b0;
             eth_tx_irq[lane] = 1'b0;
