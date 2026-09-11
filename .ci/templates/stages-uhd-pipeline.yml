@@ -708,7 +708,7 @@ stages:
   jobs:
   - template: ../fpga/templates/job-run-testbenches.yml
     parameters:
-      simulator: modelsim
+      simulator: qsim
   - template: ../fpga/templates/job-run-testbenches.yml
     parameters:
       simulator: xsim
