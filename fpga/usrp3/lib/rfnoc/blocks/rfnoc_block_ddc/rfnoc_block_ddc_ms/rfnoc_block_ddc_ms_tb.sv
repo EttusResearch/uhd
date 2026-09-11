@@ -85,9 +85,27 @@ module rfnoc_block_ddc_ms_tb #(
   bit rfnoc_ctrl_clk;
   bit ce_clk;
 
-  sim_clock_gen #(CHDR_CLK_PER) rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
-  sim_clock_gen #(CHDR_CLK_PER) rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
-  sim_clock_gen #(DDC_CLK_PER)  ddc_clk_gen        (.clk(ce_clk), .rst());
+  sim_clock_gen #(
+    .PERIOD(CHDR_CLK_PER),
+    .AUTOSTART(0)
+  ) rfnoc_chdr_clk_gen (
+    .clk(rfnoc_chdr_clk),
+    .rst()
+  );
+  sim_clock_gen #(
+    .PERIOD(CHDR_CLK_PER),
+    .AUTOSTART(0)
+  ) rfnoc_ctrl_clk_gen (
+    .clk(rfnoc_ctrl_clk),
+    .rst()
+  );
+  sim_clock_gen #(
+    .PERIOD(DDC_CLK_PER),
+    .AUTOSTART(0)
+  ) ddc_clk_gen (
+    .clk(ce_clk),
+    .rst()
+  );
 
 
   //---------------------------------------------------------------------------
@@ -923,6 +941,11 @@ module rfnoc_block_ddc_ms_tb #(
     static int unsigned port = 0;
     test.start_tb($sformatf("rfnoc_block_ddc_tb with SPC=%0d, NUM_PORTS=%0d",
                   SPC, NUM_PORTS));
+
+    // Start the clocks
+    rfnoc_chdr_clk_gen.start();
+    rfnoc_ctrl_clk_gen.start();
+    ddc_clk_gen.start();
 
     // Start the BFMs running
     blk_ctrl.run();
