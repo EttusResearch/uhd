@@ -238,11 +238,18 @@ module b310
     .clk_in1 (bus_clk_in)  //input wire
   );
 
+  logic dev_clk;
   logic radio_clk;
   logic radio_clk_2x;
   logic radio_clk_gen_locked;
   logic radio_clk_shifted;
   logic radio_clk_gen_rst;
+
+  IBUFDS IBUFDS_ref_clk (
+      .O(dev_clk),
+      .I(DEVCLK_P),
+      .IB(DEVCLK_N)
+  );
 
   radio_clk_gen radio_clk_gen_i (
     .clk_out1 (radio_clk),             //output wire
@@ -251,8 +258,7 @@ module b310
     .clk_out4 (radio_clk_shifted),     //output wire
     .reset    (radio_clk_gen_rst),     //input wire
     .locked   (radio_clk_gen_locked),  //output wire
-    .clk_in1_p(DEVCLK_P),              //input wire
-    .clk_in1_n(DEVCLK_N)               //input wire
+    .clk_in1  (dev_clk)                //input wire
   );
 
 
