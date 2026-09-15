@@ -62,7 +62,8 @@ x4xx_global_regs.v \
 x4xx_versioning_regs.v \
 x4xx_dio.v \
 x4xx_gpio_atr.v \
-x4xx_gpio_spi.v \
+regmap/XmlSvPkgDIG_IFC_REGMAP.sv \
+x4xx_gpio_spi.sv \
 x4xx_dram.v \
 ctrlport_spi_master.v \
 cpld_interface.v \

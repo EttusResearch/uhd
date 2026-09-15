@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, A National Instruments Brand
+// Copyright 2026 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -28,7 +28,7 @@
 module x4xx_gpio_spi #(
   parameter         NUM_SLAVES  = 4,
   parameter [19:0]  BASE_ADDRESS = 0,
-  parameter [19:0]  SIZE_ADDRESS = 19'h20
+  parameter [19:0]  SIZE_ADDRESS = 19'h2C
 ) (
   input wire ctrlport_clk,
   input wire ctrlport_clk_2x,
@@ -52,14 +52,14 @@ module x4xx_gpio_spi #(
 );
 
   `include "../../lib/rfnoc/core/ctrlport.vh"
-  `include "regmap/dig_ifc_regmap_utils.vh"
+  import XmlSvPkgDIG_IFC_REGMAP::*;
 
   // Registers / wires for SPI core communication
   reg  [31:0] set_data = 0;
   reg  [ 7:0] set_addr = 0;
   reg         set_stb  = 1'b0;
 
-  wire [31:0] readback;
+  wire [63:0] readback;
   wire        readback_stb;
   wire        readback_stb_extended;
 
@@ -80,10 +80,10 @@ module x4xx_gpio_spi #(
   // These arrays are set to the maximum supported SPI slaves instead of
   // the provided NUM_SLAVES to facilitate concurrent re-mapping.
   // See section(GPIO Mapping) of this file.
-  reg [ SLAVE_CLK_SIZE-1:0] sclk_mapping [3:0];
-  reg [SLAVE_MOSI_SIZE-1:0] mosi_mapping [3:0];
-  reg [SLAVE_MISO_SIZE-1:0] miso_mapping [3:0];
-  reg [  SLAVE_CS_SIZE-1:0] ss_mapping   [3:0];
+  reg [kSLAVE_CLKSize-1:0]  sclk_mapping [3:0];
+  reg [kSLAVE_MOSISize-1:0] mosi_mapping [3:0];
+  reg [kSLAVE_MISOSize-1:0] miso_mapping [3:0];
+  reg [  kSLAVE_CSSize-1:0] ss_mapping   [3:0];
 
   //---------------------------------------------------------------------------
   // Address calculation
@@ -95,8 +95,8 @@ module x4xx_gpio_spi #(
 
   // Check that address is targeting slave configuration.
   wire address_is_slave =
-    (s_ctrlport_req_addr >= BASE_ADDRESS + SPI_SLAVE_CONFIG(0)) &&
-    (s_ctrlport_req_addr <= BASE_ADDRESS + SPI_SLAVE_CONFIG(3));
+    (s_ctrlport_req_addr >= BASE_ADDRESS + kSPI_SLAVE_CONFIG(0)) &&
+    (s_ctrlport_req_addr <= BASE_ADDRESS + kSPI_SLAVE_CONFIG(3));
 
   // Decode the slave being addressed.
   wire [1:0]slave_address = s_ctrlport_req_addr[3:2];
@@ -108,7 +108,7 @@ module x4xx_gpio_spi #(
   // These settings are registered individually for each slave
   reg [     NUM_SLAVES-1:0] data_in_edge     = {NUM_SLAVES{1'b0}};
   reg [     NUM_SLAVES-1:0] data_out_edge    = {NUM_SLAVES{1'b0}};
-  reg [SPI_LENGTH_SIZE-1:0] slave_spi_length   [NUM_SLAVES-1:0];
+  reg [kSPI_LENGTHSize-1:0] slave_spi_length   [NUM_SLAVES-1:0];
 
   // One-hot encoding to indicate active slave
   reg [NUM_SLAVES-1:0] slave_select     = {NUM_SLAVES{1'b0}};
@@ -119,20 +119,25 @@ module x4xx_gpio_spi #(
 
   localparam IDLE            = 3'd0;
   localparam SET_DIVIDER     = 3'd1;
-  localparam WRITE_SPI       = 3'd2;
-  localparam CONFIG_TRANSFER = 3'd3;
-  localparam WAIT_SPI        = 3'd4;
+  localparam WRITE_SPI_LSB   = 3'd2;
+  localparam WRITE_SPI       = 3'd3;
+  localparam CONFIG_TRANSFER = 3'd4;
+  localparam WAIT_SPI        = 3'd5;
 
+  // Addresses in simple_spi_core_64bit.v
   localparam DIVIDER_ADDRESS    = 8'd0;
   localparam CTRL_ADDRESS       = 8'd1;
   localparam DATA_ADDRESS       = 8'd2;
+  localparam DATA_LSB_ADDRESS   = 8'd3;
 
   reg [                 2:0] state        = IDLE;
   reg [                31:0] data_cache;
-  reg [SPI_CLK_DIV_SIZE-1:0] divider;
+  reg [kSPI_CLK_DIVSize-1:0] divider;
   reg [                 1:0] cs;
   reg                        spi_go       = 1'b0;
   reg                        spi_ready    = 1'b0;
+  // Additional bits for optional 64 bit transaction
+  reg [                31:0] data_cache_lsb;
 
   integer slave_i;
 
@@ -146,20 +151,21 @@ module x4xx_gpio_spi #(
       s_ctrlport_resp_ack <= 1'b0;
       spi_go              <= 1'b0;
       spi_ready           <= 1'b0;
-      divider             <= {SPI_CLK_DIV_SIZE{1'b0}};
+      divider             <= {kSPI_CLK_DIVSize{1'b0}};
       cs                  <= 2'b0;
+      data_cache          <= 32'h0;
 
-      // Assigned to unassigned mapping. This avoids overwriting
-      // signals with those from uninitialized slaves.
+      // Assigned to unassigned mapping (pin 31 is unused). This avoids
+      // overwriting signals with those from uninitialized slaves.
       for ( slave_i = 0; slave_i < 4; slave_i = slave_i + 1 ) begin
-        sclk_mapping[slave_i] <= 5'h31;
-        mosi_mapping[slave_i] <= 5'h31;
-        miso_mapping[slave_i] <= 5'h31;
-        ss_mapping  [slave_i] <= 5'h31;
+        sclk_mapping[slave_i] <= 5'd31;
+        mosi_mapping[slave_i] <= 5'd31;
+        miso_mapping[slave_i] <= 5'd31;
+        ss_mapping  [slave_i] <= 5'd31;
       end
 
       for ( slave_i = 0; slave_i < NUM_SLAVES; slave_i = slave_i + 1) begin
-        slave_spi_length[slave_i] <= {SPI_LENGTH_SIZE{1'b0}};
+        slave_spi_length[slave_i] <= {kSPI_LENGTHSize{1'b0}};
       end
     end else begin
 
@@ -175,26 +181,33 @@ module x4xx_gpio_spi #(
 
         // Address spi configuration writes
         if(address_is_slave) begin
+          automatic SPI_SETUP spi_setup = s_ctrlport_req_data;
           // GPIO mapping
-          sclk_mapping     [slave_address] <= s_ctrlport_req_data[SLAVE_CLK_MSB:SLAVE_CLK];
-          mosi_mapping     [slave_address] <= s_ctrlport_req_data[SLAVE_MOSI_MSB:SLAVE_MOSI];
-          miso_mapping     [slave_address] <= s_ctrlport_req_data[SLAVE_MISO_MSB:SLAVE_MISO];
-          ss_mapping       [slave_address] <= s_ctrlport_req_data[SLAVE_CS_MSB:SLAVE_CS];
+          sclk_mapping     [slave_address] <= spi_setup.SLAVE_CLK;
+          mosi_mapping     [slave_address] <= spi_setup.SLAVE_MOSI;
+          miso_mapping     [slave_address] <= spi_setup.SLAVE_MISO;
+          ss_mapping       [slave_address] <= spi_setup.SLAVE_CS;
           // Transfer Configuration
-          slave_spi_length [slave_address] <= s_ctrlport_req_data[SPI_LENGTH_MSB:SPI_LENGTH];
-          data_in_edge     [slave_address] <= s_ctrlport_req_data[MISO_EDGE];
-          data_out_edge    [slave_address] <= s_ctrlport_req_data[MOSI_EDGE];
+          slave_spi_length [slave_address] <= spi_setup.SPI_LENGTH;
+          data_in_edge     [slave_address] <= spi_setup.MISO_EDGE;
+          data_out_edge    [slave_address] <= spi_setup.MOSI_EDGE;
         end else begin
 
           case (s_ctrlport_req_addr)
-            BASE_ADDRESS + SPI_TRANSACTION_CONFIG: begin
-              divider <= s_ctrlport_req_data[SPI_CLK_DIV_MSB:SPI_CLK_DIV];
-              cs      <= s_ctrlport_req_data[SPI_SLAVE_SELECT_MSB:SPI_SLAVE_SELECT];
+            BASE_ADDRESS + kSPI_TRANSACTION_CONFIG: begin
+              automatic SPI_TRANSACTION_CONFIG spi_transaction_config = s_ctrlport_req_data;
+              divider <= spi_transaction_config.SPI_CLK_DIV;
+              cs      <= spi_transaction_config.SPI_SLAVE_SELECT;
             end
 
-            BASE_ADDRESS + SPI_TRANSACTION_GO: begin
+            BASE_ADDRESS + kSPI_TRANSACTION_LSB: begin
+              data_cache_lsb    <= s_ctrlport_req_data;
+            end
+
+            BASE_ADDRESS + kSPI_TRANSACTION_GO: begin
               spi_ready  <= 1'b0;
               spi_go     <= 1'b1;
+              data_cache <= s_ctrlport_req_data;
             end
 
             // No register implementation for provided address
@@ -214,22 +227,34 @@ module x4xx_gpio_spi #(
 
       end else if(s_ctrlport_req_rd) begin
         // default assumption: valid request
-        s_ctrlport_resp_ack     <= 1'b1;
-        s_ctrlport_resp_status  <= CTRL_STS_OKAY;
-        s_ctrlport_resp_data    <= {32{1'b0}};
+        s_ctrlport_resp_ack    <= 1'b1;
+        s_ctrlport_resp_status <= CTRL_STS_OKAY;
+        s_ctrlport_resp_data   <= {32{1'b0}};
 
         case (s_ctrlport_req_addr)
-          BASE_ADDRESS + SPI_TRANSACTION_CONFIG: begin
-            s_ctrlport_resp_data[SPI_CLK_DIV_MSB:SPI_CLK_DIV] <= divider;
+          BASE_ADDRESS + kSPI_TRANSACTION_CONFIG: begin
+            automatic SPI_TRANSACTION_CONFIG spi_transaction_config = '0;
+            spi_transaction_config.SPI_CLK_DIV = divider;
+            s_ctrlport_resp_data <= spi_transaction_config;
           end
 
-          BASE_ADDRESS + SPI_STATUS: begin
-            s_ctrlport_resp_data[SPI_READY]                     <= spi_ready;
-            s_ctrlport_resp_data[SPI_RESPONSE_MSB:SPI_RESPONSE] <= readback[SPI_RESPONSE_MSB:SPI_RESPONSE];
+          BASE_ADDRESS + kSPI_STATUS: begin
+            automatic SPI_STATUS spi_status = '0;
+            spi_status.SPI_READY    = spi_ready;
+            spi_status.SPI_RESPONSE = readback[30:0];
+            s_ctrlport_resp_data <= spi_status;
           end
 
-          BASE_ADDRESS + CONTROLLER_INFO: begin
-            s_ctrlport_resp_data[SLAVE_COUNT_MSB:SLAVE_COUNT] <= NUM_SLAVES;
+          BASE_ADDRESS + kSPI_FULL_RESPONSE_MSB: begin
+            automatic SPI_FULL_RESPONSE_MSB spi_full_response = '0;
+            spi_full_response.SPI_FULL_RESPONSE_MSB_DATA = readback[62:31];
+            s_ctrlport_resp_data <= spi_full_response;
+          end
+
+          BASE_ADDRESS + kCONTROLLER_INFO: begin
+            automatic CONTROLLER_INFO controller_info = '0;
+            controller_info.SLAVE_COUNT = NUM_SLAVES;
+            s_ctrlport_resp_data <= controller_info;
           end
 
           // No register implementation for provided address
@@ -260,9 +285,8 @@ module x4xx_gpio_spi #(
 
   always @ (posedge ctrlport_clk) begin
     if (ctrlport_rst) begin
-      state         <= IDLE;
-      set_stb       <= 1'b0;
-      data_cache    <= 32'h0;
+      state   <= IDLE;
+      set_stb <= 1'b0;
     end else begin
 
       // Default Assignments
@@ -270,8 +294,6 @@ module x4xx_gpio_spi #(
 
       case (state)
         IDLE: begin
-          // Save data and address for further steps
-          data_cache    <= s_ctrlport_req_data;
           if (spi_go) begin
             state            <= CONFIG_TRANSFER;
 
@@ -286,21 +308,35 @@ module x4xx_gpio_spi #(
 
           set_stb  <= 1'b1;
           set_addr <= CTRL_ADDRESS;
-          set_data <= { data_out_edge[cs],      // 1 bit
-                        data_in_edge[cs],       // 1 bit
-                        slave_spi_length[cs],   // 6 bits
-                        {24-NUM_SLAVES{1'b0}},  // Padding for slaves
-                        slave_select            // NUM_SLAVES bits
+          set_data <= { data_out_edge[cs],         // 1 bit
+                        data_in_edge[cs],          // 1 bit
+                        slave_spi_length[cs][5:0], // 6 bits, ignore MSB, 0 is considered as 64
+                        {24-NUM_SLAVES{1'b0}},     // Padding for slaves
+                        slave_select               // NUM_SLAVES bits
                       };
         end
 
         // Write divider to SPI core
         SET_DIVIDER: begin
-          state    <= WRITE_SPI;
+          if (slave_spi_length[cs] > 32) begin
+            state <= WRITE_SPI_LSB;
+          end else begin
+            state <= WRITE_SPI;
+          end
 
           set_stb  <= 1'b1;
           set_addr <= DIVIDER_ADDRESS;
           set_data <= {16'b0, divider};
+        end
+
+
+        // Write data bits to SPI core (aligned to MSB)
+        WRITE_SPI_LSB: begin
+          state    <= WRITE_SPI;
+
+          set_stb  <= 1'b1;
+          set_addr <= DATA_LSB_ADDRESS;
+          set_data <= data_cache_lsb;
         end
 
         // Write data bits to SPI core (aligned to MSB)
@@ -326,14 +362,14 @@ module x4xx_gpio_spi #(
       endcase
 
       // Update Auxiliary signals
-      gpio_is_mosi  <= 32'h0;
-      gpio_is_sclk  <= 32'h0;
-      gpio_is_cs    <= 32'h0;
+      gpio_is_mosi <= 32'h0;
+      gpio_is_sclk <= 32'h0;
+      gpio_is_cs   <= 32'h0;
 
       for ( slave_i = 0; slave_i < NUM_SLAVES; slave_i = slave_i + 1) begin
-        gpio_is_mosi  [mosi_mapping[slave_i]] <= 1'b1;
-        gpio_is_sclk  [sclk_mapping[slave_i]] <= 1'b1;
-        gpio_is_cs    [  ss_mapping[slave_i]] <= 1'b1;
+        gpio_is_mosi[mosi_mapping[slave_i]] <= 1'b1;
+        gpio_is_sclk[sclk_mapping[slave_i]] <= 1'b1;
+        gpio_is_cs  [  ss_mapping[slave_i]] <= 1'b1;
       end
 
     end
@@ -345,11 +381,12 @@ module x4xx_gpio_spi #(
 
   `ifndef X410
 
-    simple_spi_core #(
+    simple_spi_core_64bit #(
       .BASE     (0),
       .WIDTH    (NUM_SLAVES),
       .CLK_IDLE (0),
-      .SEN_IDLE ({NUM_SLAVES{1'b1}})
+      .SEN_IDLE ({NUM_SLAVES{1'b1}}),
+      .MAX_BITS  (64)
     ) simple_spi_core_i (
       .clock        (ctrlport_clk),
       .reset        (ctrlport_rst),
@@ -414,11 +451,12 @@ module x4xx_gpio_spi #(
       end
     end
 
-    simple_spi_core #(
+    simple_spi_core_64bit #(
       .BASE     (0),
       .WIDTH    (NUM_SLAVES),
       .CLK_IDLE (0),
-      .SEN_IDLE ({NUM_SLAVES{1'b1}})
+      .SEN_IDLE ({NUM_SLAVES{1'b1}}),
+      .MAX_BITS  (64)
     ) simple_spi_core_i (
       .clock        (ctrlport_clk_2x),
       .reset        (ctrlport_rst),
@@ -514,7 +552,7 @@ endmodule
 `default_nettype wire
 
 //XmlParse xml_on
-//<regmap name="DIG_IFC_REGMAP" readablestrobes="false" generatevhdl="true" ettusguidelines="true">
+//<regmap name="DIG_IFC_REGMAP" readablestrobes="false">
 //  <group name="SPI_OVER_GPIO_REGS">
 //    <info>
 //    </info>
@@ -550,19 +588,22 @@ endmodule
 //            16-27: Port B GPIO
 //        </info>
 //      </bitfield>
-//      <bitfield name="SPI_LENGTH" range="20..25" initialvalue="0">
+//      <bitfield name="SPI_LENGTH" range="20..26" initialvalue="0">
 //        <info>
-//          Indicates the length of SPI transactions to this slave.
+//          Indicates the length of SPI transactions to this slave.</br>
+//            Valid transaction lengths are 1 through 64 bits. </br>
+//            This is not checked on FPGA and other values will </br>
+//            lead to undefined behavior.
 //        </info>
 //      </bitfield>
-//      <bitfield name="MISO_EDGE"  range="26"     initialvalue="0">
+//      <bitfield name="MISO_EDGE"  range="27"     initialvalue="0">
 //        <info>
 //          Controls the edge in which the MISO line is latched.</br>
 //            0 =  falling edge of SCLK.</br>
 //            1 =  rising edge of SCLK.
 //        </info>
 //      </bitfield>
-//      <bitfield name="MOSI_EDGE"  range="27"     initialvalue="0">
+//      <bitfield name="MOSI_EDGE"  range="28"     initialvalue="0">
 //        <info>
 //          Controls the edge in which the MOSI line is updated.</br>
 //            0 =  falling edge of SCLK.</br>
@@ -588,27 +629,51 @@ endmodule
 //      </bitfield>
 //      <bitfield name="SPI_SLAVE_SELECT" range="16..17" initialvalue="0"/>
 //    </register>
-//    <register name="SPI_TRANSACTION_GO" offset="0x14" size="32" readable="false">
+//    <register name="SPI_TRANSACTION_LSB" offset="0x14" size="32" readable="false">
 //      <info>
-//        Starts a SPI transaction
+//        For SPI transactions with @.SPI_SLAVE_CONFIG.SPI_LENGTH > 32, this must be written
+//        before @.SPI_TRANSACTION_GO.
+//      </info>
+//      <bitfield name="SPI_DATA_LSB" range="0..31" initialvalue="0">
+//        <info> Left-aligned LSB payload for SPI transaction with @.SPI_SLAVE_CONFIG.SPI_LENGTH > 32.<br/>
+//               See @.SPI_TRANSACTION_GO for more information.</info>
+//      </bitfield>
+//    </register>
+//    <register name="SPI_TRANSACTION_GO" offset="0x18" size="32" readable="false">
+//      <info>
+//        Starts a SPI transaction. Does not check whether a previous transaction is still ongoing.
+//        If so, the running transaction may be corrupted.
 //      </info>
 //      <bitfield name="SPI_DATA"         range="0..31"  initialvalue="0">
-//        <info> Payload to be sent for the SPI transaction. If the payload is shorter than 32 bits,
-//               it must be aligned to the MSbs in this field. LSbs are ignored in this scenario.</info>
+//        <info> Payload to be sent for the SPI transaction.<br/>
+//               If the payload is shorter than 32 bits, it must be left-aligned.
+//               The first transmitted bit is the MSB and data is shifted out to the left.<br/>
+//               If the desired payload is longer than 32 bits, the remaining LSBs
+//               must be written to @.SPI_TRANSACTION_LSB.SPI_DATA_LSB (left-aligned) before starting
+//               the transaction. </info>
 //      </bitfield>
 //    </register>
-//    <register name="SPI_STATUS" offset="0x18" size="32" writable="false">
+//    <register name="SPI_STATUS" offset="0x1C" size="32" writable="false">
 //      <info>
-//        Contains the status of the SPI engine.
+//        Contains the status of the SPI engine and the least-significant 31 bits of the response.
+//        Also read SPI_FULL_RESPONSE_MSB for bit 32 or for transactions longer than 32 bits.
 //      </info>
-//      <bitfield name="SPI_READY"        range="24"     initialvalue="0">
+//      <bitfield name="SPI_READY"        range="31"     initialvalue="0">
 //        <info> Indicates the SPI engine is ready to start a new SPI transaction. </info>
 //      </bitfield>
-//      <bitfield name="SPI_RESPONSE"     range="0..23"  initialvalue="0">
-//        <info> Records the response of the last completed SPI transaction. </info>
+//      <bitfield name="SPI_RESPONSE"     range="0..30"  initialvalue="0">
+//        <info> Records only the least-significant 31 bits of the last completed SPI response. </info>
 //      </bitfield>
 //    </register>
-//    <register name="CONTROLLER_INFO" offset="0x1C" size="32" writable="false">
+//    <register name="SPI_FULL_RESPONSE_MSB" offset="0x20" size="32" writable="false">
+//      <info>
+//        Contains bits 62 through 31 of the last completed SPI response.
+//        For transactions shorter than 31 bits, the upper bits in this register are undefined.
+//        The regmap does not expose the most significant bit (bit 63) of the response.
+//      </info>
+//      <bitfield name="SPI_FULL_RESPONSE_MSB_DATA" range="0..31" initialvalue="0"/>
+//    </register>
+//    <register name="CONTROLLER_INFO" offset="0x24" size="32" writable="false">
 //      <info>
 //        Contains information pertaining this SPI controller block.
 //      </info>

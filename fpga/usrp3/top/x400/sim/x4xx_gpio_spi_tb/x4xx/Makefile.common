@@ -1,0 +1,21 @@
+#-------------------------------------------------
+# Design Specific
+#-------------------------------------------------
+include $(BASE_DIR)/../lib/control/Makefile.srcs
+include $(BASE_DIR)/../lib/rfnoc/Makefile.srcs
+
+DESIGN_SRCS += $(abspath \
+$(CONTROL_LIB_SRCS) \
+$(RFNOC_FRAMEWORK_SRCS) \
+../../../regmap/XmlSvPkgDIG_IFC_REGMAP.sv \
+../../../x4xx_gpio_spi.sv \
+)
+
+#-------------------------------------------------
+# Testbench Specific
+#-------------------------------------------------
+SIM_TOP = x4xx_gpio_spi_tb
+
+SIM_SRCS = $(abspath \
+../x4xx_gpio_spi_tb.sv \
+)

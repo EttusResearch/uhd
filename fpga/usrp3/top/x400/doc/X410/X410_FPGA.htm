@@ -1030,12 +1030,22 @@ p.offset_info, td.offset_info {
 
                 
     <p>
+        <a class="register" href="#DIG_IFC_REGMAP|SPI_TRANSACTION_LSB">SPI_TRANSACTION_LSB</a>
+    </p>
+
+                
+    <p>
         <a class="register" href="#DIG_IFC_REGMAP|SPI_TRANSACTION_GO">SPI_TRANSACTION_GO</a>
     </p>
 
                 
     <p>
         <a class="register" href="#DIG_IFC_REGMAP|SPI_STATUS">SPI_STATUS</a>
+    </p>
+
+                
+    <p>
+        <a class="register" href="#DIG_IFC_REGMAP|SPI_FULL_RESPONSE_MSB">SPI_FULL_RESPONSE_MSB</a>
     </p>
 
                 
@@ -8329,9 +8339,9 @@ This port has a 40-bit address bus.</p></div>
                             </table>
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file x4xx_gpio_spi.v.
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
                                 <br />It uses RegType <strong>SPI_SETUP</strong> which is
-                                defined in HDL source file x4xx_gpio_spi.v.
+                                defined in HDL source file x4xx_gpio_spi.sv.
                     </p>
             </div>
         </div>
@@ -8351,7 +8361,7 @@ Set of configuration registers for the supported slaves.
                 
                     
                     <tr class="" valign="top">
-                        <td class="bits">31..28</td>
+                        <td class="bits">31..29</td>
                         <td>
                             <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
                             <p></p>
@@ -8359,7 +8369,7 @@ Set of configuration registers for the supported slaves.
                     </tr>
                     
                     <tr class="" valign="top">
-                        <td class="bits">27</td>
+                        <td class="bits">28</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|MOSI_EDGE"></a>MOSI_EDGE</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
                             <p>Controls the edge in which the MOSI line is updated.</br>
@@ -8369,7 +8379,7 @@ Set of configuration registers for the supported slaves.
                     </tr>
                     
                     <tr class="" valign="top">
-                        <td class="bits">26</td>
+                        <td class="bits">27</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|MISO_EDGE"></a>MISO_EDGE</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
                             <p>Controls the edge in which the MISO line is latched.</br>
@@ -8379,10 +8389,13 @@ Set of configuration registers for the supported slaves.
                     </tr>
                     
                     <tr class="" valign="top">
-                        <td class="bits">25..20</td>
+                        <td class="bits">26..20</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SPI_LENGTH"></a>SPI_LENGTH</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
-                            <p>Indicates the length of SPI transactions to this slave.</p>
+                            <p>Indicates the length of SPI transactions to this slave.</br>
+            Valid transaction lengths are 1 through 64 bits. </br>
+            This is not checked on FPGA and other values will </br>
+            lead to undefined behavior.</p>
                         </td>
                     </tr>
                     
@@ -8505,7 +8518,7 @@ Set of configuration registers for the supported slaves.
                             Initial Value = 0x00000000
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file x4xx_gpio_spi.v.
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
                     </p>
             </div>
         </div>
@@ -8555,10 +8568,111 @@ Set of configuration registers for the supported slaves.
         
             
     <section class="register">
+        <a name="DIG_IFC_REGMAP|SPI_TRANSACTION_LSB"></a>
+        
+        <h3 class="register">
+            Offset 0x0014: SPI_TRANSACTION_LSB
+                Register
+            (W)
+            <a href="#DIG_IFC_REGMAP|SPI_TRANSACTION_LSB">&#x1F517;</a>
+        </h3>
+        <div class="sh">
+            <span class="opener sh-addrs">(<span class="sh-hidden">show</span><span class="sh-shown">hide</span> extended info)</span>
+            <div class="sh-content">
+                
+                <table class="extended_info">
+                        <tr>
+                                    <td class="outercell" rowspan="1">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|RFNoC Radio 0">RFNoC Radio 0</a></td></tr>
+                  </table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RFNOC_RADIO_REGMAP|PERIPH_WINDOW">RFNOC_RADIO_REGMAP|PERIPH_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x080000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_TRANSACTION_LSB</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0014</td></tr>
+</table>
+                                    </td>
+                                <td class="outercell" rowspan="1">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                                <td class="offset_info">Total Offset =</td>
+                                                <td class="offset_info">0x08E014</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                        </tr>
+                        <tr>
+                                    <td class="outercell" rowspan="1">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|RFNoC Radio 1">RFNoC Radio 1</a></td></tr>
+                  </table>
+                                    </td>
+                                                                                                                                                                                <td class="outercell" rowspan="1">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                                <td class="offset_info">Total Offset =</td>
+                                                <td class="offset_info">0x08E014</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                        </tr>
+                </table>
+                    <p class="reg_info">
+                        
+                            Initial Value = 0x00000000
+                    </p>
+                    <p class="reg_info">
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
+                    </p>
+            </div>
+        </div>
+        <div class="info">
+            For SPI transactions with <a href="#DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SPI_LENGTH">SPI_SLAVE_CONFIG.SPI_LENGTH</a> > 32, this must be written
+        before <a href="#DIG_IFC_REGMAP|SPI_TRANSACTION_GO">SPI_TRANSACTION_GO</a>.
+        </div>
+        
+            <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+                    
+                    <tr class="" valign="top">
+                        <td class="bits">31..0w</td>
+                        <td>
+                            <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_TRANSACTION_LSB|SPI_DATA_LSB"></a>SPI_DATA_LSB</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
+                            <p>Left-aligned LSB payload for SPI transaction with <a href="#DIG_IFC_REGMAP|SPI_SLAVE_CONFIG|SPI_LENGTH">SPI_SLAVE_CONFIG.SPI_LENGTH</a> > 32.<br/>
+               See <a href="#DIG_IFC_REGMAP|SPI_TRANSACTION_GO">SPI_TRANSACTION_GO</a> for more information.</p>
+                        </td>
+                    </tr>
+            </table>
+    </section>
+
+
+        
+            
+    <section class="register">
         <a name="DIG_IFC_REGMAP|SPI_TRANSACTION_GO"></a>
         
         <h3 class="register">
-            Offset 0x0014: SPI_TRANSACTION_GO
+            Offset 0x0018: SPI_TRANSACTION_GO
                 Register
             (W)
             <a href="#DIG_IFC_REGMAP|SPI_TRANSACTION_GO">&#x1F517;</a>
@@ -8595,14 +8709,14 @@ Set of configuration registers for the supported slaves.
                                     <td class="outercell" rowspan="2">
                                         <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">SPI_TRANSACTION_GO</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0014</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0018</td></tr>
 </table>
                                     </td>
                                 <td class="outercell" rowspan="1">
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E014</td>
+                                                <td class="offset_info">0x08E018</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8617,7 +8731,7 @@ Set of configuration registers for the supported slaves.
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E014</td>
+                                                <td class="offset_info">0x08E018</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8628,12 +8742,13 @@ Set of configuration registers for the supported slaves.
                             Initial Value = 0x00000000
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file x4xx_gpio_spi.v.
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
                     </p>
             </div>
         </div>
         <div class="info">
-            Starts a SPI transaction
+            Starts a SPI transaction. Does not check whether a previous transaction is still ongoing.
+        If so, the running transaction may be corrupted.
         </div>
         
             <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
@@ -8644,8 +8759,12 @@ Set of configuration registers for the supported slaves.
                         <td class="bits">31..0w</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_TRANSACTION_GO|SPI_DATA"></a>SPI_DATA</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
-                            <p>Payload to be sent for the SPI transaction. If the payload is shorter than 32 bits,
-               it must be aligned to the MSbs in this field. LSbs are ignored in this scenario.</p>
+                            <p>Payload to be sent for the SPI transaction.<br/>
+               If the payload is shorter than 32 bits, it must be left-aligned.
+               The first transmitted bit is the MSB and data is shifted out to the left.<br/>
+               If the desired payload is longer than 32 bits, the remaining LSBs
+               must be written to <a href="#DIG_IFC_REGMAP|SPI_TRANSACTION_LSB|SPI_DATA_LSB">SPI_TRANSACTION_LSB.SPI_DATA_LSB</a> (left-aligned) before starting
+               the transaction.</p>
                         </td>
                     </tr>
             </table>
@@ -8658,7 +8777,7 @@ Set of configuration registers for the supported slaves.
         <a name="DIG_IFC_REGMAP|SPI_STATUS"></a>
         
         <h3 class="register">
-            Offset 0x0018: SPI_STATUS
+            Offset 0x001C: SPI_STATUS
                 Register
             (R)
             <a href="#DIG_IFC_REGMAP|SPI_STATUS">&#x1F517;</a>
@@ -8695,14 +8814,14 @@ Set of configuration registers for the supported slaves.
                                     <td class="outercell" rowspan="2">
                                         <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">SPI_STATUS</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0018</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x001C</td></tr>
 </table>
                                     </td>
                                 <td class="outercell" rowspan="1">
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E018</td>
+                                                <td class="offset_info">0x08E01C</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8717,7 +8836,7 @@ Set of configuration registers for the supported slaves.
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E018</td>
+                                                <td class="offset_info">0x08E01C</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8728,12 +8847,13 @@ Set of configuration registers for the supported slaves.
                             Initial Value = 0x00000000
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file x4xx_gpio_spi.v.
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
                     </p>
             </div>
         </div>
         <div class="info">
-            Contains the status of the SPI engine.
+            Contains the status of the SPI engine and the least-significant 31 bits of the response.
+        Also read SPI_FULL_RESPONSE_MSB for bit 32 or for transactions longer than 32 bits.
         </div>
         
             <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
@@ -8741,26 +8861,119 @@ Set of configuration registers for the supported slaves.
                 
                     
                     <tr class="" valign="top">
-                        <td class="bits">31..25</td>
-                        <td>
-                            <p><span class="name">Reserved</span><span class="attr">&nbsp;&nbsp;&nbsp;</span></p>
-                            <p></p>
-                        </td>
-                    </tr>
-                    
-                    <tr class="" valign="top">
-                        <td class="bits">24</td>
+                        <td class="bits">31</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_STATUS|SPI_READY"></a>SPI_READY</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
                             <p>Indicates the SPI engine is ready to start a new SPI transaction.</p>
                         </td>
                     </tr>
                     
-                    <tr class="byte" valign="top">
-                        <td class="bits">23..0</td>
+                    <tr class="" valign="top">
+                        <td class="bits">30..0</td>
                         <td>
                             <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_STATUS|SPI_RESPONSE"></a>SPI_RESPONSE</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
-                            <p>Records the response of the last completed SPI transaction.</p>
+                            <p>Records only the least-significant 31 bits of the last completed SPI response.</p>
+                        </td>
+                    </tr>
+            </table>
+    </section>
+
+
+        
+            
+    <section class="register">
+        <a name="DIG_IFC_REGMAP|SPI_FULL_RESPONSE_MSB"></a>
+        
+        <h3 class="register">
+            Offset 0x0020: SPI_FULL_RESPONSE_MSB
+                Register
+            (R)
+            <a href="#DIG_IFC_REGMAP|SPI_FULL_RESPONSE_MSB">&#x1F517;</a>
+        </h3>
+        <div class="sh">
+            <span class="opener sh-addrs">(<span class="sh-hidden">show</span><span class="sh-shown">hide</span> extended info)</span>
+            <div class="sh-content">
+                
+                <table class="extended_info">
+                        <tr>
+                                    <td class="outercell" rowspan="1">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|RFNoC Radio 0">RFNoC Radio 0</a></td></tr>
+                  </table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RFNOC_RADIO_REGMAP|PERIPH_WINDOW">RFNOC_RADIO_REGMAP|PERIPH_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x080000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_CTRLPORT_REGMAP|DIO_WINDOW">RADIO_CTRLPORT_REGMAP|DIO_WINDOW</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x00C000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right"><a href="#RADIO_DIO_REGMAP|DIGITAL_IFC_REGS">RADIO_DIO_REGMAP|DIGITAL_IFC_REGS</a></td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;0x002000</td></tr>
+</table>
+                                    </td>
+                                    <td class="outercell" rowspan="2">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+  <tr><td class="offset_info" align="right">SPI_FULL_RESPONSE_MSB</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0020</td></tr>
+</table>
+                                    </td>
+                                <td class="outercell" rowspan="1">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                                <td class="offset_info">Total Offset =</td>
+                                                <td class="offset_info">0x08E020</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                        </tr>
+                        <tr>
+                                    <td class="outercell" rowspan="1">
+                                        <table border="0" cellspacing="0" cellpadding="0">
+                    <tr><td class="offset_info" align="right">Port <a href="#X410_FPGA|RFNoC Radio 1">RFNoC Radio 1</a></td></tr>
+                  </table>
+                                    </td>
+                                                                                                                                                                                <td class="outercell" rowspan="1">
+                                    <table border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                                <td class="offset_info">Total Offset =</td>
+                                                <td class="offset_info">0x08E020</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                        </tr>
+                </table>
+                    <p class="reg_info">
+                        
+                            Initial Value = 0x00000000
+                    </p>
+                    <p class="reg_info">
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
+                    </p>
+            </div>
+        </div>
+        <div class="info">
+            Contains bits 62 through 31 of the last completed SPI response.
+        For transactions shorter than 31 bits, the upper bits in this register are undefined.
+        The regmap does not expose the most significant bit (bit 63) of the response.
+        </div>
+        
+            <table class="bitfields" border="0" cellspacing="0" cellpadding="0">
+                <tr class="header"><td class="bits">Bits</td><td>Name</td></tr>
+                
+                    
+                    <tr class="" valign="top">
+                        <td class="bits">31..0</td>
+                        <td>
+                            <p><span class="name"><a name="DIG_IFC_REGMAP|SPI_FULL_RESPONSE_MSB|SPI_FULL_RESPONSE_MSB_DATA"></a>SPI_FULL_RESPONSE_MSB_DATA</span><span class="attr">&nbsp;&nbsp;&nbsp;(initialvalue=0)</span></p>
+                            <p></p>
                         </td>
                     </tr>
             </table>
@@ -8773,7 +8986,7 @@ Set of configuration registers for the supported slaves.
         <a name="DIG_IFC_REGMAP|CONTROLLER_INFO"></a>
         
         <h3 class="register">
-            Offset 0x001C: CONTROLLER_INFO
+            Offset 0x0024: CONTROLLER_INFO
                 Register
             (R)
             <a href="#DIG_IFC_REGMAP|CONTROLLER_INFO">&#x1F517;</a>
@@ -8810,14 +9023,14 @@ Set of configuration registers for the supported slaves.
                                     <td class="outercell" rowspan="2">
                                         <table border="0" cellspacing="0" cellpadding="0">
   <tr><td class="offset_info" align="right">CONTROLLER_INFO</td></tr>
-  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x001C</td></tr>
+  <tr><td class="offset_info" align="right">&nbsp;&nbsp;offset=0x0024</td></tr>
 </table>
                                     </td>
                                 <td class="outercell" rowspan="1">
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E01C</td>
+                                                <td class="offset_info">0x08E024</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8832,7 +9045,7 @@ Set of configuration registers for the supported slaves.
                                     <table border="0" cellspacing="0" cellpadding="0">
                                         <tr>
                                                 <td class="offset_info">Total Offset =</td>
-                                                <td class="offset_info">0x08E01C</td>
+                                                <td class="offset_info">0x08E024</td>
                                         </tr>
                                     </table>
                                 </td>
@@ -8843,7 +9056,7 @@ Set of configuration registers for the supported slaves.
                             Initial Value not specified
                     </p>
                     <p class="reg_info">
-                            This register is defined in HDL source file x4xx_gpio_spi.v.
+                            This register is defined in HDL source file x4xx_gpio_spi.sv.
                     </p>
             </div>
         </div>
@@ -32928,8 +33141,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">11</td>
-                            <td class="l">0x0000000B</td>
+                        <td class="value">12</td>
+                            <td class="l">0x0000000C</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_CURRENT_VERSION_MAJOR"></a>
@@ -32941,8 +33154,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">11</td>
-                            <td class="l">0x0000000B</td>
+                        <td class="value">12</td>
+                            <td class="l">0x0000000C</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_OLDEST_COMPATIBLE_VERSION_MAJOR"></a>
@@ -32954,8 +33167,8 @@ used with 100Gb ethernet</p></div></p>
             <tr valign="top">
                 
                     
-                        <td class="value">637675285</td>
-                            <td class="l">0x26022715</td>
+                        <td class="value">638124305</td>
+                            <td class="l">0x26090111</td>
                             <td class="l" style="text-align: left;">
                                 <p class="name">
                                     <a name="VERSIONING_REGS_REGMAP|FPGA_VERSION|FPGA_VERSION_LAST_MODIFIED_TIME"></a>
