@@ -20,7 +20,7 @@ jobs:
     uhdArtifactSource: '${{ parameters.uhdArtifactSource }}'
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
-    redisHost: 'sdr-osmium-test'
+    redisHost:  $(host_redisHost)
     vivado_dir: '/opt/Xilinx/Vivado_Lab/2023.2/'
     dutMatrix:
         x310-OBX:
@@ -34,4 +34,4 @@ jobs:
           devFpga: 'HG,XG'
           devtestPattern: 'x3x0'
           jtagSerial: $(x310_OBX_jtagSerial)
-          jtagServer: 'nitest@sdr-osmium-test'
+          jtagServer: $(host_jtagServer)

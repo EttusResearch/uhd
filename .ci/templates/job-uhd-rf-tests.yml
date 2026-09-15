@@ -241,6 +241,7 @@ jobs:
           "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
             --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests \
             --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
+            --run_vars_overrides "mgmt_addr=$(devAddr)" --run_vars_overrides "addr=$(devAddr)" \
             $(parameters.extra_rf_test_args)" || rf_test_status=$?
       elif [ "$(devType)" = "x300" ]; then
         python3 ${{ parameters.uhdSrcDir }}/.ci/utils/mutex_hardware.py \
@@ -252,6 +253,7 @@ jobs:
           "python3 ../automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
             --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests \
             --results_path $(Common.TestResultsDirectory)/pytest/rf/$(devFpga) \
+            --run_vars_overrides "mgmt_addr=$(devAddr)" --run_vars_overrides "addr=$(devAddr)" \
             $(parameters.extra_rf_test_args)" || rf_test_status=$?
       elif [ "$(devType)" = "b3xx" ]; then
         cd $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests
@@ -266,6 +268,7 @@ jobs:
       python3 automated_main.py --ats_config $(pytestAtsConfig) --dut $(pytestDUT) \
         --test_selector $(Build.SourcesDirectory)/ettus-rts/config/remote/python_tests/pytests_non_rf \
         --results_path $(Common.TestResultsDirectory)/pytest/non_rf/$(devFpga) \
+        --run_vars_overrides "mgmt_addr=$(devAddr)" --run_vars_overrides "addr=$(devAddr)" \
         ${{ parameters.extra_rf_test_args }} || non_rf_test_status=$?
 
       if [ $rf_test_status -ne 0 ] || [ $non_rf_test_status -ne 0 ]; then
