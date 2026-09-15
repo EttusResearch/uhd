@@ -162,52 +162,87 @@ The x4x0 SPI mode supports up to 4 peripherals. All of these peripherals may hav
 configuration. The pins available for the usage with SPI are listed in \ref x4x0gpio_fpanel_pins.
 For GPIO0 the available pins are enumerated from 0 through 11, for GPIO1 the available pins are 
 from 12 through 23.
-The vector of peripheral configurations is passed to the spi_iface_getter to get the reference:
+The vector of peripheral configurations is passed to the spi_getter_iface to get the reference:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
-    uhd::features::spi_periph_config_t periph_cfg;
-    periph_cfg.periph_clk = 0;
-    periph_cfg.periph_sdi = 1;
-    periph_cfg.periph_sdo = 2;
-    periph_cfg.periph_cs  = 3;
-    std::vector<uhd::features::spi_periph_config_t> periph_cfgs;
-    periph_cfgs.push_back(periph_cfg);
-    auto spi_ref = spi_getter_iface.get_spi_ref(periph_cfgs);
+uhd::features::spi_periph_config_t periph_cfg;
+periph_cfg.periph_clk = 0;
+periph_cfg.periph_sdi = 1;
+periph_cfg.periph_sdo = 2;
+periph_cfg.periph_cs  = 3;
+std::vector<uhd::features::spi_periph_config_t> periph_cfgs;
+periph_cfgs.push_back(periph_cfg);
+auto spi_ref = spi_getter_iface.get_spi_ref(periph_cfgs);
 
-    // Set data direction register (set all to outgoing except for SDI)
-    usrp->set_gpio_attr("GPIOA", "DDR", 0xD, 0xF);
+// Set data direction register (set all to outgoing except for SDI)
+usrp->set_gpio_attr("GPIOA", "DDR", 0xD, 0xF);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 \subsection x4x0_spi_r_w Write and read on SPI
 
-With the SPI reference read and write operations can be performed. For doing this, 
-some characteristics of the SPI need to be configured:
+The X4xx SPI engine supports transaction lengths from 1 through 64 bits. With
+the SPI reference, read and write operations can be performed after configuring
+the characteristics of the SPI:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
-   uhd::spi_config_t config;
-   config.divider = 4;
-   config.miso_edge = config.EDGE_RISE;
-   ...
-   spi_ref->write_spi(0, config, 0xFEFE, 32);
-   uint32_t read_data = spi_ref->read_spi(0, config, 0xFEFE, 32);
+uhd::spi_config_t config;
+config.divider = 10;
+config.use_custom_divider = true;
+config.miso_edge = config.EDGE_RISE;
+...
+spi_ref->write_spi(0, config, 0xFEFE, 16);
+uint32_t read_data = spi_ref->read_spi(0, config, 0xFEFE, 16);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Specifying the divider value is optional. It indirectly sets the used SPI clock
+frequency, see \ref x4x0_spi_clk.
+
+The ordinary methods, \c transact_spi(), \c read_spi(), and \c write_spi(),
+operate on 32-bit payloads. Their explicit-width aliases are
+\c transact_spi32(), \c read_spi32(), and \c write_spi32(). For payloads
+wider than 32 bits, use \c transact_spi64(), \c read_spi64(), or
+\c write_spi64(). For example, this performs a 40-bit transaction:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+const uint64_t payload = 0x123456789A;
+const uint64_t read_data =
+        spi_ref->transact_spi64(0, config, payload, 40, true);
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The payload is taken from the least-significant \c num_bits of \c data. The
+SPI engine transmits those bits most-significant bit first: bit \c num_bits - 1
+is transmitted first and bit 0 is transmitted last. Bits above \c num_bits are
+ignored. Thus, the example above transmits the 40-bit value
+\c 0x123456789A, starting with its bit 39.
+
+The write methods, and the transact methods with \c readback set to \c false,
+start the transaction and return immediately. The SPI engine may still be
+busy when the method returns, so a subsequent call can collide with the
+ongoing transaction. Use the read methods, or set \c readback to \c true,
+when the caller must wait for completion.
+
+Readback returns only the available response bits:
+for 64bit transactions, the MSB (bit 63) is not available through this API.
+
 The terms 'MISO' and 'MOSI' in the spi_config_t struct map to 'SDI' and 'SDO' respectively. 
 They are legacy terms which will not be used in new code anymore following the resolution
 to redefine SPI signal names by the Open Source Hardware Association: 
 <https://oshwa.org/resources/a-resolution-to-redefine-spi-signal-names/>
 
+\subsection x4x0_spi_clk SPI clock frequency and dividers
+
 The SPI clock frequency, \f$f_{SCLK}\f$, is derived from the radio clock
 frequency (\f$f_{RADIO\_CLK}\f$) and the SPI clock divider value
-(\f$SPI\_CLK\_DIV\f$). For X410, the SPI clock frequency is given by the
-equation shown below, where \f$f_{RADIO\_CLK}\f$ is 122.88 MHz or 125 MHz,
+(\f$SPI\_CLK\_DIV\f$). It can be calculated as
+
+\f[X410: f_{SCLK} = \frac{f_{RADIO\_CLK}}{SPI\_CLK\_DIV + 1}\f]
+or
+\f[X420/X440: f_{SCLK} = \frac{f_{RADIO\_CLK}}{2\cdot\left(SPI\_CLK\_DIV + 1\right)}.\f]
+
+For X410, \f$f_{RADIO\_CLK}\f$ is 122.88 MHz or 125 MHz,
 depending on the master clock rate. Note that this is the master clock rate
 divided by 1 (for 100 MHz bandwidth), by 2 (for 200 MHz bandwidth), or by 4
 (for 400 MHz bandwidth).
+For X420 and X440, \f$f_{RADIO\_CLK}\f$ is the master clock rate divided
+by \c RADIO_SPC, which depends on the image bandwidth.
 
-\f[X410: f_{SCLK} = \frac{f_{RADIO\_CLK}}{SPI\_CLK\_DIV + 1}\f]
-
-For X440, the SPI clock frequency is given by the equation shown below, where
-\f$f_{RADIO\_CLK}\f$ is the master clock rate divided by 8.
-
-\f[X440: f_{SCLK} = \frac{f_{RADIO\_CLK}}{2\cdot\left(SPI\_CLK\_DIV + 1\right)}\f]
+Please be aware that the maximum clock frequency is limited on hardware side and
+the lowest divider values may not work perfectly.
 
 */
 // vim:ft=doxygen:
