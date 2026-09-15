@@ -39,7 +39,7 @@ from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
 from usrp_mpm.xports import XportMgrUDP
 
-X400_FPGA_COMPAT = (11, 0)
+X400_FPGA_COMPAT = (12, 0)
 # The compat number at which remote streaming was added:
 X400_REMOTE_STREAMING_COMPAT = (7, 9)
 # The compat number at which DNA support was added:

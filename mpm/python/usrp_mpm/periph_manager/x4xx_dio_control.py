@@ -192,7 +192,7 @@ class DioControl:
     FPGA_DIO_SW_DIO_CONTROL_REGISTER = FPGA_DIO_REGISTER_BASE + 0x20
 
     FULL_DIO_FPGA_COMPAT = (7, 5)
-    FULL_SPI_FPGA_COMPAT = (7, 7)
+    FULL_SPI_FPGA_COMPAT = (12, 0)
     LINEAR_PIN_MAPPING_COMPAT = (10, 1)
 
     # DIO registers addresses in CPLD

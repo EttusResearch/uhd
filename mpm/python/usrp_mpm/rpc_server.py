@@ -44,7 +44,7 @@ grpc._cython.cygrpc.init_grpc_gevent()
 TIMEOUT_INTERVAL = 5.0  # Seconds before claim expires (default value)
 LOCK_ACQ_TIMEOUT = 1  # Seconds to wait for acquiring shared lock (default value)
 TOKEN_LEN = 16  # Length of the token string
-MPM_COMPAT_NUM = (7, 0)  # Compatibility number for MPM
+MPM_COMPAT_NUM = (8, 0)  # Compatibility number for MPM
 # Maximum gRPC message size (in bytes) to accommodate large FPGA bitfiles while
 # preventing trivial memory exhaustion / DoS attacks.
 MAX_GRPC_MESSAGE_SIZE = 128 * 1024 * 1024  # 128 MB in bytes
