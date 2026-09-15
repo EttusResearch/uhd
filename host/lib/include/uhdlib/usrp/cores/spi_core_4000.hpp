@@ -1,5 +1,5 @@
 //
-// Copyright 2021 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -26,7 +26,10 @@ class spi_core_4000 : uhd::noncopyable, public uhd::spi_iface
 public:
     using sptr        = std::shared_ptr<spi_core_4000>;
     using poke32_fn_t = std::function<void(uint32_t, uint32_t)>;
+    using poke64_fn_t = std::function<void(uint32_t, uint64_t)>;
     using peek32_fn_t = std::function<uint32_t(uint32_t)>;
+    using poll32_fn_t =
+        std::function<uint32_t(uint32_t, uint32_t, uint32_t, double, bool)>;
 
     virtual ~spi_core_4000(void) = default;
 
@@ -35,11 +38,15 @@ public:
 
     //! makes a new spi core from register iface and peripheral
     static sptr make(poke32_fn_t&& poke32_fn,
-        peek32_fn_t&& peek_fn,
+        poke64_fn_t&& poke64_fn,
+        peek32_fn_t&& peek32_fn,
+        poll32_fn_t&& poll32_fn,
         const size_t spi_periph_cfg,
         const size_t spi_transaction_cfg,
         const size_t spi_transaction_go,
+        const size_t spi_transaction_lsb,
         const size_t spi_status,
+        const size_t spi_full_response_msb,
         const size_t spi_controller_info);
 
     //! Configures the SPI transaction. The vector index refers to the peripheral number.

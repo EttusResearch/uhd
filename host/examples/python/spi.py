@@ -29,7 +29,7 @@ SPI_DEFAULT_SDO_PIN = 2
 SPI_DEFAULT_CS_PIN = 3
 SPI_DEFAULT_PAYLOAD_LENGTH = 32
 SPI_DEFAULT_PAYLOAD = "0xfefe"
-SPI_DEFAULT_CLK_DIVIDER = 4
+SPI_DEFAULT_CLK_DIVIDER = None
 SPI_DEFAULT_MOSI_EDGE = uhd.types.SPIEdge.EDGE_RISE
 SPI_DEFAULT_MISO_EDGE = uhd.types.SPIEdge.EDGE_FALL
 
@@ -61,17 +61,18 @@ def parse_args():
         "--clk-div", default=SPI_DEFAULT_CLK_DIVIDER, type=int, help="Clock divider for SPI"
     )
     parser.add_argument(
-        "--miso-edge", default=SPI_DEFAULT_MISO_EDGE, type=spi_edge_type, help="SPI MISO edge"
+        "--miso-edge",
+        default=SPI_DEFAULT_MISO_EDGE,
+        type=spi_edge_type,
+        help="SPI Sample MISO at clk edge type",
     )
     parser.add_argument(
-        "--mosi-edge", default=SPI_DEFAULT_MOSI_EDGE, type=spi_edge_type, help="SPI MOSI edge"
+        "--mosi-edge",
+        default=SPI_DEFAULT_MOSI_EDGE,
+        type=spi_edge_type,
+        help="SPI Output MOSI at clk edge type",
     )
-    parser.add_argument(
-        "--use-custom-divider",
-        default=False,
-        action="store_true",
-        help="Use custom clock divider for SPI",
-    )
+
     return parser.parse_args()
 
 
@@ -138,24 +139,34 @@ print(f"  CS    = {cfg.periph_cs}")
 print()
 
 payload = int(args.payload, 16)
-if not 1 <= args.length <= 32:
-    print("ERROR: --length must be between 1 and 32 bits.")
+max_payload_bits = 64
+if not 1 <= args.length <= max_payload_bits:
+    print(f"ERROR: --length must be between 1 and {max_payload_bits} bits.")
     sys.exit(1)
-if not 0 <= payload <= 0xFFFFFFFF:
-    print("ERROR: --payload must fit in 32 bits (0 .. 0xFFFFFFFF).")
+if not 0 <= payload < (1 << max_payload_bits):
+    print(f"ERROR: --payload must fit in {max_payload_bits} bits.")
     sys.exit(1)
-mask = (1 << args.length) - 1 if args.length < 32 else 0xFFFFFFFF
+mask = (1 << args.length) - 1
+if payload & ~mask:
+    print(
+        f"WARNING: Payload {payload:#x} has bits set outside of the specified "
+        f"length {args.length} bits. Remaining payload {(payload & mask):#x}."
+    )
 payload &= mask
 print(f"Writing payload {payload:#x} with length {args.length} bits.")
 
 # The spi_config_t holds items like the clock divider and the SDI and SDO edges
 spi_cfg = uhd.types.SPIConfig()
-spi_cfg.divider = args.clk_div
-spi_cfg.use_custom_divider = args.use_custom_divider
+if args.clk_div is not None:
+    spi_cfg.divider = args.clk_div
+    spi_cfg.use_custom_divider = True
 spi_cfg.miso_edge = args.miso_edge
 spi_cfg.mosi_edge = args.mosi_edge
 
 # Do the SPI transaction. There are write() and read() methods available, too.
 print("Performing SPI transaction...")
-read_data = spi.transact_spi(0, spi_cfg, payload, args.length, True)
+if args.length > 32:
+    read_data = spi.transact_spi64(0, spi_cfg, payload, args.length, True)
+else:
+    read_data = spi.transact_spi32(0, spi_cfg, payload, args.length, True)
 print(f"Data read: {read_data:#x}")

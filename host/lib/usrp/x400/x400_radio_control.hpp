@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -48,14 +48,20 @@ constexpr uint32_t SPI_PERIPH_CFG =
 //! Base address for SPI_TRANSACTION_CONFIG Register
 constexpr uint32_t SPI_TRANSACTION_CFG_REG = SPI_PERIPH_CFG + 0x0010;
 
+//! Base address for SPI_TRANSACTION_LSB Register
+constexpr uint32_t SPI_TRANSACTION_LSB_REG = SPI_PERIPH_CFG + 0x0014;
+
 //! Base address for SPI_TRANSACTION_GO Register
-constexpr uint32_t SPI_TRANSACTION_GO_REG = SPI_PERIPH_CFG + 0x0014;
+constexpr uint32_t SPI_TRANSACTION_GO_REG = SPI_PERIPH_CFG + 0x0018;
 
 //! Base address for SPI_STATUS Register
-constexpr uint32_t SPI_STATUS_REG = SPI_PERIPH_CFG + 0x0018;
+constexpr uint32_t SPI_STATUS_REG = SPI_PERIPH_CFG + 0x001C;
+
+//! Base address for SPI_FULL_RESPONSE_MSB Register
+constexpr uint32_t SPI_FULL_RESPONSE_MSB_REG = SPI_PERIPH_CFG + 0x0020;
 
 //! Base address for SPI_CONTROLLER_INFO Register
-constexpr uint32_t SPI_CONTROLLER_INFO_REG = SPI_PERIPH_CFG + 0x001C;
+constexpr uint32_t SPI_CONTROLLER_INFO_REG = SPI_PERIPH_CFG + 0x0024;
 
 } // namespace x400_regs
 

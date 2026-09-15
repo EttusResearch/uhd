@@ -1,5 +1,5 @@
 //
-// Copyright 2020 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -225,13 +225,32 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
                 [this](const uint32_t addr, const uint32_t data) {
                     regs().poke32(addr, data, get_command_time(0));
                 },
+                [this](const uint32_t addr, const uint64_t data) {
+                    regs().poke64(addr, data, get_command_time(0));
+                },
                 [this](const uint32_t addr) {
                     return regs().peek32(addr, get_command_time(0));
+                },
+                [this](const uint32_t addr,
+                    const uint32_t data,
+                    const uint32_t mask,
+                    const double timeout,
+                    const bool ack) {
+                    return regs()
+                        .poll32(addr,
+                            data,
+                            mask,
+                            uhd::time_spec_t(timeout),
+                            get_command_time(0),
+                            ack)
+                        .value();
                 },
                 x400_regs::SPI_PERIPH_CFG,
                 x400_regs::SPI_TRANSACTION_CFG_REG,
                 x400_regs::SPI_TRANSACTION_GO_REG,
+                x400_regs::SPI_TRANSACTION_LSB_REG,
                 x400_regs::SPI_STATUS_REG,
+                x400_regs::SPI_FULL_RESPONSE_MSB_REG,
                 x400_regs::SPI_CONTROLLER_INFO_REG);
 
             _spi_getter_iface = std::make_shared<x400_spi_getter>(spicore);
@@ -239,7 +258,7 @@ x400_radio_control_impl::x400_radio_control_impl(make_args_ptr make_args)
         } else {
             UHD_LOG_INFO("x400_radio_control",
                 "SPI functionality not available in this FPGA image. Please update to at "
-                "least version 7.7 to use SPI.");
+                "least version 12.0 to use SPI.");
         }
     }
 

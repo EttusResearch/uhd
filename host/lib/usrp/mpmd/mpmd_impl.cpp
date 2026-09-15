@@ -33,7 +33,7 @@ namespace {
 //! Most pessimistic time for a CHDR query to go to device and back
 const double MPMD_CHDR_MAX_RTT = 0.02;
 //! MPM Compatibility number {MAJOR, MINOR}
-const std::vector<size_t> MPM_COMPAT_NUM = {7, 0};
+const std::vector<size_t> MPM_COMPAT_NUM = {8, 0};
 /*! Default number of motherboards to initialize in parallel at once.
  *
  * This caps the number of threads spawned during parallel initialization. It

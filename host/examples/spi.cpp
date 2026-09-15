@@ -1,5 +1,5 @@
 //
-// Copyright 2022 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -14,6 +14,7 @@
 #include <uhd/utils/safe_main.hpp>
 #include <stdlib.h>
 #include <boost/program_options.hpp>
+#include <cstdint>
 #include <iostream>
 
 static const size_t SPI_DEFAULT_CLK_PIN        = 0;
@@ -22,7 +23,6 @@ static const size_t SPI_DEFAULT_SDO_PIN        = 2;
 static const size_t SPI_DEFAULT_CS_PIN         = 3;
 static const size_t SPI_DEFAULT_PAYLOAD_LENGTH = 32;
 static const std::string SPI_DEFAULT_PAYLOAD   = "0xfefe";
-static const size_t SPI_DEFAULT_CLK_DIVIDER    = 4;
 
 namespace po = boost::program_options;
 
@@ -37,7 +37,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     size_t payload_length;
     size_t clk_divider;
     std::string payload_str;
-    uint32_t payload;
+    uint64_t payload;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -52,7 +52,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("cs", po::value<size_t>(&cs)->default_value(SPI_DEFAULT_CS_PIN), "number of pin for chip select")
         ("payload", po::value<std::string>(&payload_str)->default_value(SPI_DEFAULT_PAYLOAD), "payload as integer value")
         ("length", po::value<size_t>(&payload_length)->default_value(SPI_DEFAULT_PAYLOAD_LENGTH), "payload length in bits")
-        ("clk-div", po::value<size_t>(&clk_divider)->default_value(SPI_DEFAULT_CLK_DIVIDER), "clock divider for SPI")
+        ("clk-div", po::value<size_t>(&clk_divider), "clock divider for SPI")
     ;
     // clang-format on
     po::variables_map vm;
@@ -118,19 +118,40 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << "  CS    = " << (int)(periph_cfg.periph_cs) << std::endl
               << std::endl;
 
-    payload = strtoul(payload_str.c_str(), NULL, 0);
+    payload                       = strtoull(payload_str.c_str(), NULL, 0);
+    const size_t max_payload_bits = 64;
+    if (payload_length == 0 || payload_length > max_payload_bits) {
+        std::cerr << "Error: --length must be between 1 and " << max_payload_bits
+                  << " bits." << std::endl;
+        return EXIT_FAILURE;
+    }
+    const uint64_t payload_mask =
+        payload_length == 64 ? UINT64_MAX : (UINT64_C(1) << payload_length) - UINT64_C(1);
+    if (payload & ~payload_mask) {
+        std::cout << "WARNING: Payload 0x" << std::hex << payload
+                  << " has bits set outside of the specified length " << std::dec
+                  << payload_length << " bits. Remaining payload 0x" << std::hex
+                  << (payload & payload_mask) << std::endl;
+        payload &= payload_mask;
+    }
     std::cout << "Writing payload: 0x" << std::hex << payload << " with length "
               << std::dec << payload_length << " bits" << std::endl;
     // The spi_config_t holds items like the clock divider and the SDI and SDO edges
     uhd::spi_config_t config;
-    config.divider            = clk_divider;
-    config.use_custom_divider = true;
-    config.mosi_edge          = config.EDGE_RISE;
-    config.miso_edge          = config.EDGE_FALL;
+    if (vm.count("clk-div")) {
+        config.divider            = clk_divider;
+        config.use_custom_divider = true;
+    }
+    config.mosi_edge = config.EDGE_RISE;
+    config.miso_edge = config.EDGE_FALL;
 
     // Do the SPI transaction. There are write() and read() methods available, too.
     std::cout << "Performing SPI transaction..." << std::endl;
-    uint32_t read_data = spi_ref->transact_spi(0, config, payload, payload_length, true);
+    const uint64_t read_data =
+        payload_length > 32
+            ? spi_ref->transact_spi64(0, config, payload, payload_length, true)
+            : spi_ref->transact_spi32(
+                0, config, static_cast<uint32_t>(payload), payload_length, true);
     std::cout << "Data read: 0x" << std::hex << read_data << std::endl;
 
     return EXIT_SUCCESS;
