@@ -33,7 +33,7 @@ from usrp_mpm.periph_manager.x4xx_periphs import (
 )
 from usrp_mpm.periph_manager.x4xx_rfdc_ctrl import MixerMode, X4xxRfdcCtrl
 from usrp_mpm.rpc_utils import no_claim, no_rpc
-from usrp_mpm.sys_utils import dtoverlay, ectool
+from usrp_mpm.sys_utils import dtoverlay, ectool, net
 from usrp_mpm.sys_utils.gpio import Gpio
 from usrp_mpm.sys_utils.sysfs_hwmon import HwmonTempSensors
 from usrp_mpm.sys_utils.udev import dt_symbol_get_spidev
@@ -47,10 +47,7 @@ X400_DEVICE_DNA_COMPAT = (8, 3)
 X400_DEFAULT_ENABLE_PPS_EXPORT = True
 X400_DEFAULT_TRIG_DIRECTION = ClockingAuxBrdControl.DIRECTION_OUTPUT
 X400_MONITOR_THREAD_INTERVAL = 1.0  # seconds
-# How long to cache the xport info. The result is stable per session
-# (init() invalidates it on IP changes), so it can be cached well beyond
-# the RPC deadline window.
-X400_XPORT_INFO_CACHE_TTL = 10.0  # seconds
+X400_XPORT_INFO_CACHE_TTL = 300.0  # seconds; also invalidated by OS net changes
 QSFPModuleConfig = namedtuple("QSFPModuleConfig", "modprs modsel devsymbol")
 X400_QSFP_I2C_CONFIGS = [
     QSFPModuleConfig(modprs="QSFP0_MODPRS", modsel="QSFP0_MODSEL_n", devsymbol="qsfp0_i2c"),
@@ -313,6 +310,7 @@ class x4xx(ZynqComponents, PeriphManagerBase):
         self.dio_control = None
         self._xport_info_cache = None
         self._xport_info_cache_ts = 0.0
+        self._xport_info_cache_epoch = None
         self._xport_info_cache_lock = threading.Lock()
         try:
             self._init_peripherals(args)
@@ -746,28 +744,52 @@ class x4xx(ZynqComponents, PeriphManagerBase):
 
         get_xport_info() enumerates network interfaces via netlink/pyudev, which
         is slow and doesn't yield to the gevent loop. GetDeviceInfo is unclaimed
-        and gets flooded during device discovery, so caching this briefly (for
+        and gets flooded during device discovery, so caching this (for
         X400_XPORT_INFO_CACHE_TTL seconds) keeps it from starving other RPCs and
         makes device discovery faster.
+
+        The cache is also invalidated whenever the OS reports a network change
+        (via net.get_iface_change_epoch()), so a longer TTL stays correct: real
+        interface/IP changes force an immediate refresh regardless of the TTL.
 
         gRPC serves RPCs from a thread pool, so concurrent GetDeviceInfo calls
         can all see a stale cache at once; the lock ensures only one of them
         redoes the enumeration while the rest wait for that result instead of
         each redundantly enumerating in parallel.
         """
+        epoch = net.get_iface_change_epoch()
         now = monotonic()
         if (
             self._xport_info_cache is None
+            or epoch != self._xport_info_cache_epoch
             or now - self._xport_info_cache_ts > X400_XPORT_INFO_CACHE_TTL
         ):
             with self._xport_info_cache_lock:
+                epoch = net.get_iface_change_epoch()
                 now = monotonic()
-                if (
-                    self._xport_info_cache is None
-                    or now - self._xport_info_cache_ts > X400_XPORT_INFO_CACHE_TTL
-                ):
+                if self._xport_info_cache is None:
+                    reason = "cold cache"
+                elif epoch != self._xport_info_cache_epoch:
+                    reason = "iface-change epoch {}->{}".format(
+                        self._xport_info_cache_epoch, epoch
+                    )
+                elif now - self._xport_info_cache_ts > X400_XPORT_INFO_CACHE_TTL:
+                    reason = "TTL expired ({:.1f}s)".format(
+                        now - self._xport_info_cache_ts
+                    )
+                else:
+                    reason = None  # another thread already refreshed while we waited
+                if reason is not None:
                     self._xport_info_cache = self._xport_mgrs["udp"].get_xport_info()
                     self._xport_info_cache_ts = now
+                    self._xport_info_cache_epoch = epoch
+                    self.log.debug(
+                        "Refreshed CHDR xport info cache (%s): %s",
+                        reason,
+                        self._xport_info_cache,
+                    )
+        else:
+            self.log.trace("CHDR xport info cache hit (epoch %s)", epoch)
         return self._xport_info_cache
 
     @no_claim

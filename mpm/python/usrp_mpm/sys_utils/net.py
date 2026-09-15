@@ -9,6 +9,7 @@ Network utilities for MPM
 import itertools
 import os
 import socket
+import threading
 
 import pyudev
 from pyroute2 import IPRoute
@@ -35,6 +36,88 @@ def _get_udev_context():
         _udev_ctx = pyudev.Context()
         _udev_pid = pid
     return _udev_ctx
+
+
+# Interface-change epoch: increments on rtnetlink address or link events so
+# callers can detect stale cached interface information. If the listener cannot
+# start, callers fall back to TTL-based caching.
+NETLINK_ROUTE = 0
+RTMGRP_LINK = 0x1
+RTMGRP_IPV4_IFADDR = 0x10
+
+_iface_epoch = 0  # single-writer (the listener greenlet); readers just read it
+_iface_monitor_started = False
+_iface_monitor_pid = None
+_iface_monitor_lock = threading.Lock()
+
+
+def _netlink_listen_loop(sock):
+    """Bump the iface-change epoch on every rtnetlink link/address message."""
+    global _iface_epoch
+    log = get_logger("net")
+    try:
+        while True:
+            data = sock.recv(65536)
+            if not data:
+                break
+            _iface_epoch += 1
+            log.debug(
+                "OS net change (rtnetlink); iface-change epoch -> %d", _iface_epoch
+            )
+    except OSError as ex:
+        log.warning("rtnetlink interface-change listener stopped: %s", ex)
+    finally:
+        try:
+            sock.close()
+        except OSError:
+            pass
+
+
+def _ensure_iface_monitor():
+    """Start the rtnetlink listener once per process (best-effort).
+
+    Failure is non-fatal: we log and leave the epoch fixed, so callers degrade to
+    TTL-only cache behavior.
+    """
+    global _iface_monitor_started, _iface_monitor_pid
+    pid = os.getpid()
+    if _iface_monitor_started and _iface_monitor_pid == pid:
+        return
+    with _iface_monitor_lock:
+        if _iface_monitor_started and _iface_monitor_pid == pid:
+            return
+        try:
+            import gevent
+            from gevent import socket as gevent_socket
+
+            sock = gevent_socket.socket(
+                socket.AF_NETLINK, socket.SOCK_RAW, NETLINK_ROUTE
+            )
+            sock.bind((0, RTMGRP_LINK | RTMGRP_IPV4_IFADDR))
+            gevent.spawn(_netlink_listen_loop, sock)
+            _iface_monitor_started = True
+            _iface_monitor_pid = pid
+            get_logger("net").info(
+                "Started rtnetlink interface-change monitor (RTMGRP_IPV4_IFADDR|"
+                "RTMGRP_LINK; OS-driven xport cache invalidation active)."
+            )
+        except Exception as ex:  # pylint: disable=broad-except
+            get_logger("net").warning(
+                "Could not start rtnetlink interface-change monitor: %s; "
+                "falling back to TTL-only interface caching.",
+                ex,
+            )
+
+
+def get_iface_change_epoch():
+    """Return a counter that increments whenever the OS reports a net change.
+
+    Lazily starts the rtnetlink listener on first use. A caller that caches
+    interface info can store this value alongside its cache and refresh when the
+    epoch changes (in addition to any TTL).
+    """
+    _ensure_iface_monitor()
+    return _iface_epoch
 
 
 def get_hostname():
