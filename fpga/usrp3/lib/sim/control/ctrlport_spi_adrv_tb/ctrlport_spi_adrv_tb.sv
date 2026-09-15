@@ -42,6 +42,7 @@ module ctrlport_spi_adrv_tb #(
   import ctrlport_pkg::*;
   import ctrlport_spi_adrv_pkg::*;
   import ctrlport_bfm_pkg::*;
+  import spi_slave_bfm_pkg::*;
 
 
   //---------------------------------------------------------------------------
@@ -83,11 +84,10 @@ module ctrlport_spi_adrv_tb #(
 
   // Expected SPI half-period in simulation time. All SPI signal edges are
   // registered on posedge clk, so every half-period is exactly this long.
-  realtime half_per_time = (HALF_PER + 1) * CLK_PERIOD_NS * 1.0ns;
+  time half_per_time;
 
-  // Number of CS_N assertions observed by the timing monitor. Checked at the
-  // end of the test to confirm the monitor actually ran for every transaction.
-  int cs_n_monitor_count  = 0; // Incremented by the timing monitor
+  // Number of issued transactions. Checked against the timing monitor's
+  // observed transaction count at the end of the test.
   int expected_cs_n_count = 0; // Incremented once per issued transaction
 
 
@@ -123,7 +123,16 @@ module ctrlport_spi_adrv_tb #(
   //
   //---------------------------------------------------------------------------
 
-  logic spi_sclk, spi_cs_n, spi_mosi, spi_miso;
+  // SPI interface
+  logic  spi_sclk, spi_cs_n, spi_mosi, spi_miso;
+  spi_if spi_monitor_if ();
+
+  assign spi_monitor_if.cs_n = spi_cs_n;
+  assign spi_monitor_if.sck  = spi_sclk;
+  assign spi_monitor_if.mosi = spi_mosi;
+  assign spi_monitor_if.miso = spi_miso;
+
+  spi_timing_monitor_bfm spi_timing_mon;
 
   logic [7:0] miso_byte_ctr = '0;
   logic [7:0] miso_shift    = '0;
@@ -1811,6 +1820,12 @@ module ctrlport_spi_adrv_tb #(
       $sformatf("REG_HALF_PER after write: got 0x%h, expected 0x%h",
                 rd_val[HALF_PER_W-1:0], NEW_HALF_PER));
     half_per_time = (NEW_HALF_PER + 1) * CLK_PERIOD_NS * 1.0ns;
+    spi_timing_mon.set_timing(
+      .half_per_time         (half_per_time),
+      .cs_hold_time          (CS_HOLD * half_per_time),
+      .cs_to_first_rise_time (half_per_time),
+      .cs_guard_time         (CS_GUARD * half_per_time)
+    );
 
     //-------------------------------------------------------------------------
     // Write 3 bytes at the new HALF_PER setting
@@ -1827,154 +1842,15 @@ module ctrlport_spi_adrv_tb #(
       $sformatf("REG_HALF_PER after restore: got 0x%h, expected 0x%h",
                 rd_val[HALF_PER_W-1:0], HALF_PER));
     half_per_time = (HALF_PER + 1) * CLK_PERIOD_NS * 1.0ns;
+    spi_timing_mon.set_timing(
+      .half_per_time         (half_per_time),
+      .cs_hold_time          (CS_HOLD * half_per_time),
+      .cs_to_first_rise_time (half_per_time),
+      .cs_guard_time         (CS_GUARD * half_per_time)
+    );
     test.end_test();
 
   endtask : test_sclk_freq
-
-
-  //---------------------------------------------------------------------------
-  // SPI Timing Monitor
-  //---------------------------------------------------------------------------
-  //
-  // Runs in parallel with the main test. On every transaction (CS_N
-  // assertion), checks:
-  //
-  //   1. CS_N assert -> first SCLK rise is exactly 1 half-period
-  //   2. SCLK high period (posedge -> negedge) is exactly 1 half-period
-  //   3. SCLK low period (negedge -> posedge):
-  //      - intra-byte (fall N where N % 8 != 0): exactly 1 half-period
-  //      - inter-byte (fall N where N % 8 == 0): >= 1 half-period
-  //   4. Last SCLK fall -> CS_N deassert:
-  //      - CS_HOLD=1 : exactly 1 half-period
-  //      - CS_HOLD=0 : 0 (same registered clock edge)
-  //   5. CS_N deassert -> next CS_N assert : >= CS_GUARD half-periods
-  //
-  // CS_HOLD and CS_GUARD are read hierarchically from dut.axis_spi_i.
-  //---------------------------------------------------------------------------
-
-  initial begin : spi_timing_monitor
-    realtime t_cs_assert, t_rise, t_fall, t_cs_deassert, t_cs_deassert_prev;
-    int      rise_cnt;  // rising edge count within the current transaction
-    static bit first_txn = 1'b1;  // suppress guard check on first transaction
-
-    @(negedge rst); // wait for reset to deassert
-
-    forever begin
-
-      //-----------------------------------------------------------------------
-      // Wait for CS_N assertion (start of transaction)
-      //-----------------------------------------------------------------------
-      @(negedge spi_cs_n);
-      t_cs_assert = $realtime;
-      cs_n_monitor_count++;
-
-      //-----------------------------------------------------------------------
-      // Check 5: CS_N guard: previous transaction's CS_N deassert must be >=
-      // CS_GUARD half-periods before this assertion. Checked here (at the
-      // start of each transaction) so the guard @(negedge spi_cs_n) doesn't
-      // consume a transaction count. Skipped on the first transaction.
-      //-----------------------------------------------------------------------
-      if (!first_txn) begin
-        `ASSERT_ERROR(t_cs_assert - t_cs_deassert_prev >=
-                        dut.axis_spi_i.CS_GUARD * half_per_time,
-          $sformatf("CS_N guard too short: minimum %0t, got %0t",
-                    dut.axis_spi_i.CS_GUARD * half_per_time,
-                    t_cs_assert - t_cs_deassert_prev));
-      end
-      first_txn = 1'b0;
-
-      //-----------------------------------------------------------------------
-      // Check 1: CS_N assert -> first SCLK rising edge = exactly 1 half-period
-      //-----------------------------------------------------------------------
-      @(posedge spi_sclk);
-      t_rise    = $realtime;
-      rise_cnt  = 1;
-      `ASSERT_ERROR(t_rise - t_cs_assert == half_per_time,
-        $sformatf("CS_N assert to first SCLK rise: expected %0t, got %0t",
-                  half_per_time, t_rise - t_cs_assert));
-
-      //-----------------------------------------------------------------------
-      // Checks 2, 3, 4: Walk all SCLK edges until CS_N deasserts.
-      //
-      // State at loop top: we are at a posedge sclk; rise_cnt is current.
-      //
-      //   Step A: Wait for negedge sclk OR posedge cs_n (CS_HOLD=0 causes
-      //           both to arrive on the same clock edge).
-      //   Step B: If cs_n is still low, wait for posedge sclk OR posedge
-      //           cs_n (CS_HOLD=1 deasserts cs_n here after ST_HOLD).
-      //-----------------------------------------------------------------------
-      forever begin
-
-        // Step A: wait for SCLK fall (or simultaneous CS_N deassert)
-        fork : wait_fall
-          begin : fall_th  @(negedge spi_sclk); end
-          begin : cs0_th   @(posedge spi_cs_n);  end
-        join_any
-        disable wait_fall;
-        t_fall = $realtime;
-
-        // Check 2: SCLK high period must be exactly 1 half-period
-        `ASSERT_ERROR(t_fall - t_rise == half_per_time,
-          $sformatf("SCLK high period: expected %0t, got %0t",
-                    half_per_time, t_fall - t_rise));
-
-        if (spi_cs_n) begin
-          // CS_HOLD=0: CS_N deasserted on the same clock edge as last SCLK
-          // fall, so time difference is 0.
-          t_cs_deassert = t_fall;
-          `ASSERT_ERROR(dut.axis_spi_i.CS_HOLD == 0,
-            "CS_N deasserted coincident with last SCLK fall but CS_HOLD != 0");
-          break;
-        end
-
-        // Step B: wait for SCLK rise or CS_N deassert (CS_HOLD=1)
-        fork : wait_rise
-          begin : rise_th  @(posedge spi_sclk); end
-          begin : cs1_th   @(posedge spi_cs_n);  end
-        join_any
-        disable wait_rise;
-        t_rise = $realtime;
-        rise_cnt++;
-
-        // Check 3: SCLK low period.
-        //
-        // rise_cnt just incremented, so the preceding fall was fall number
-        // (rise_cnt - 1). A fall at a multiple of 8 is an inter-byte boundary
-        // where the FSM waits in ST_IDLE for the next byte; duration is
-        // unbounded but must be >= 1 half-period. All other falls are
-        // intra-byte and must be exactly 1 half-period.
-        if ((rise_cnt - 1) % 8 == 0) begin
-          `ASSERT_ERROR(t_rise - t_fall >= half_per_time,
-            $sformatf("SCLK low period (inter-byte) too short: minimum %0t, got %0t",
-                      half_per_time, t_rise - t_fall));
-        end else begin
-          `ASSERT_ERROR(t_rise - t_fall == half_per_time,
-            $sformatf("SCLK low period (intra-byte, fall %0d): expected %0t, got %0t",
-                      rise_cnt - 1, half_per_time, t_rise - t_fall));
-        end
-
-        if (spi_cs_n) begin
-          // CS_HOLD=1: CS_N deasserted exactly 1 half-period after last
-          // SCLK fall (after ST_HOLD).
-          t_cs_deassert = t_rise;
-          `ASSERT_ERROR(dut.axis_spi_i.CS_HOLD == 1,
-            "CS_N deasserted 1 half-period after SCLK fall but CS_HOLD != 1");
-          `ASSERT_ERROR(t_cs_deassert - t_fall == half_per_time,
-            $sformatf("CS_HOLD=1 hold time: expected %0t, got %0t",
-                      half_per_time, t_cs_deassert - t_fall));
-          break;
-        end
-        // cs_n still low and we got posedge sclk; continue to next bit
-
-      end // inner forever (SCLK edge walk)
-
-      // Save deassert time for next iteration's guard check
-      t_cs_deassert_prev = t_cs_deassert;
-
-    end // outer forever (transaction loop)
-
-  end : spi_timing_monitor
-
 
 
   //---------------------------------------------------------------------------
@@ -2005,6 +1881,17 @@ module ctrlport_spi_adrv_tb #(
     clk_gen.reset();
     @(negedge rst);
 
+    // Create and start passive SPI timing checks after reset is released.
+    half_per_time = (HALF_PER + 1) * CLK_PERIOD_NS * 1.0ns;
+    spi_timing_mon = new(
+      .iface                 (spi_monitor_if),
+      .half_per_time         (half_per_time),
+      .cs_hold_time          (CS_HOLD * half_per_time),
+      .cs_to_first_rise_time (half_per_time),
+      .cs_guard_time         (CS_GUARD * half_per_time)
+    );
+    spi_timing_mon.run();
+
     //-------------------------------------------------------------------------
     // Tests
     //-------------------------------------------------------------------------
@@ -2025,9 +1912,15 @@ module ctrlport_spi_adrv_tb #(
     // Confirm the timing monitor ran exactly once per SPI transaction.
     // expected_cs_n_count is incremented once per issued transaction, so it
     // tracks the true number of transactions without manual bookkeeping.
-    `ASSERT_ERROR(cs_n_monitor_count == expected_cs_n_count,
+    `ASSERT_ERROR(spi_timing_mon.get_transaction_count() == expected_cs_n_count,
       $sformatf("Timing monitor CS_N count mismatch: expected %0d, got %0d",
-                expected_cs_n_count, cs_n_monitor_count));
+                expected_cs_n_count, spi_timing_mon.get_transaction_count()));
+    `ASSERT_ERROR(spi_timing_mon.get_error_count() == 0,
+      $sformatf("SPI timing monitor reported %0d errors",
+                spi_timing_mon.get_error_count()));
+
+    // Stop the monitor before the next parameterized testbench instance runs.
+    disable fork;
 
     // Don't call $finish; other instances of this testbench may follow.
     test.end_tb(0);
