@@ -1,11 +1,13 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2026 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <chrono>
 #include <thread>
@@ -117,4 +119,23 @@ void spi_iface::write_spi(
     int which_slave, const spi_config_t& config, uint32_t data, size_t num_bits)
 {
     transact_spi(which_slave, config, data, num_bits, false);
+}
+
+uint64_t spi_iface::transact_spi64(int, const spi_config_t&, uint64_t, size_t, bool)
+{
+    UHD_LOG_THROW(uhd::not_implemented_error,
+        "SPI",
+        "64-bit SPI transactions are only supported on x4xx devices");
+}
+
+uint64_t spi_iface::read_spi64(
+    int which_slave, const spi_config_t& config, uint64_t data, size_t num_bits)
+{
+    return transact_spi64(which_slave, config, data, num_bits, true);
+}
+
+void spi_iface::write_spi64(
+    int which_slave, const spi_config_t& config, uint64_t data, size_t num_bits)
+{
+    transact_spi64(which_slave, config, data, num_bits, false);
 }

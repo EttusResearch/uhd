@@ -1,6 +1,6 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2026 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -127,7 +127,7 @@ public:
     virtual ~spi_iface(void);
 
     /*!
-     * Perform a spi transaction.
+     * Perform a (up to 32-bit) SPI transaction.
      * \param which_slave the slave device number
      * \param config spi config args
      * \param data the bits to write
@@ -142,7 +142,44 @@ public:
         bool readback) = 0;
 
     /*!
-     * Read from the SPI bus.
+     * Perform a 32-bit SPI transaction.
+     * This method is an explicit-width alias for transact_spi().
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write
+     * \param num_bits how many bits in data
+     * \param readback true to readback a value
+     * \return spi data if readback set
+     */
+    uint32_t transact_spi32(int which_slave,
+        const spi_config_t& config,
+        uint32_t data,
+        size_t num_bits,
+        bool readback)
+    {
+        return transact_spi(which_slave, config, data, num_bits, readback);
+    }
+
+    /*!
+     * Perform a 64-bit SPI transaction.
+     * Transactions wider than 32 bits are not supported on all devices.
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write
+     * \param num_bits how many bits in data
+     * \param readback true to readback a value
+     * \return spi data if readback set
+     * \throws uhd::not_implemented_error if the device does not support
+     *         transactions wider than 32 bits
+     */
+    virtual uint64_t transact_spi64(int which_slave,
+        const spi_config_t& config,
+        uint64_t data,
+        size_t num_bits,
+        bool readback);
+
+    /*!
+     * Read (up to 32-bit) from the SPI bus.
      * \param which_slave the slave device number
      * \param config spi config args
      * \param data the bits to write out (be sure to set write bit)
@@ -153,7 +190,36 @@ public:
         int which_slave, const spi_config_t& config, uint32_t data, size_t num_bits);
 
     /*!
-     * Write to the SPI bus.
+     * Read (up to 32-bit) from the SPI bus.
+     * This method is an explicit-width alias for read_spi().
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write out (be sure to set write bit)
+     * \param num_bits how many bits in data
+     * \return spi data
+     */
+    uint32_t read_spi32(
+        int which_slave, const spi_config_t& config, uint32_t data, size_t num_bits)
+    {
+        return read_spi(which_slave, config, data, num_bits);
+    }
+
+    /*!
+     * Read (up to 64-bit) from the SPI bus.
+     * Transactions wider than 32 bits are not supported on all devices.
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write out (be sure to set write bit)
+     * \param num_bits how many bits in data
+     * \return spi data
+     * \throws uhd::not_implemented_error if the device does not support
+     *         transactions wider than 32 bits
+     */
+    virtual uint64_t read_spi64(
+        int which_slave, const spi_config_t& config, uint64_t data, size_t num_bits);
+
+    /*!
+     * Write (up to 32-bit) to the SPI bus.
      * \param which_slave the slave device number
      * \param config spi config args
      * \param data the bits to write
@@ -161,6 +227,33 @@ public:
      */
     virtual void write_spi(
         int which_slave, const spi_config_t& config, uint32_t data, size_t num_bits);
+
+    /*!
+     * Write (up to 32-bit) to the SPI bus.
+     * This method is an explicit-width alias for write_spi().
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write
+     * \param num_bits how many bits in data
+     */
+    void write_spi32(
+        int which_slave, const spi_config_t& config, uint32_t data, size_t num_bits)
+    {
+        write_spi(which_slave, config, data, num_bits);
+    }
+
+    /*!
+     * Write (up to 64-bit) to the SPI bus.
+     * Transactions wider than 32 bits are not supported on all devices.
+     * \param which_slave the slave device number
+     * \param config spi config args
+     * \param data the bits to write
+     * \param num_bits how many bits in data
+     * \throws uhd::not_implemented_error if the device does not support
+     *         transactions wider than 32 bits
+     */
+    virtual void write_spi64(
+        int which_slave, const spi_config_t& config, uint64_t data, size_t num_bits);
 };
 
 /*!

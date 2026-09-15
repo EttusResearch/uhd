@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2026 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -154,14 +154,52 @@ void export_rfnoc(py::module& m)
             py::arg("data"),
             py::arg("num_bits"),
             py::arg("readback"))
+        .def("transact_spi32",
+            &uhd::spi_iface::transact_spi32,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"),
+            py::arg("readback"))
+        .def("transact_spi64",
+            &uhd::spi_iface::transact_spi64,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"),
+            py::arg("readback"))
         .def("read_spi",
             &uhd::spi_iface::read_spi,
             py::arg("which_slave"),
             py::arg("config"),
             py::arg("data"),
             py::arg("num_bits"))
+        .def("read_spi32",
+            &uhd::spi_iface::read_spi32,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"))
+        .def("read_spi64",
+            &uhd::spi_iface::read_spi64,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"))
         .def("write_spi",
             &uhd::spi_iface::write_spi,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"))
+        .def("write_spi32",
+            &uhd::spi_iface::write_spi32,
+            py::arg("which_slave"),
+            py::arg("config"),
+            py::arg("data"),
+            py::arg("num_bits"))
+        .def("write_spi64",
+            &uhd::spi_iface::write_spi64,
             py::arg("which_slave"),
             py::arg("config"),
             py::arg("data"),
