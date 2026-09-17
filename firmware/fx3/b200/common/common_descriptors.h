@@ -32,8 +32,17 @@ extern const unsigned char common_ettus_manufacturer_desc[];
 /* NI Manufacturer String Descriptor */
 extern const unsigned char common_ni_manufacturer_desc[];
 
-/* Ettus Product String Descriptor */
+/* Ettus B200/B210 Product String Descriptor */
 extern const unsigned char common_b200_product_desc[];
+
+/* Ettus B200 mini Product String Descriptor */
+extern const unsigned char common_b200_mini_product_desc[];
+
+/* Ettus B205 mini Product String Descriptor */
+extern const unsigned char common_b205_mini_product_desc[];
+
+/* Ettus B206 mini Product String Descriptor */
+extern const unsigned char common_b206_mini_product_desc[];
 
 /* NI-USRP 2900 Product String Descriptor */
 extern const unsigned char common_niusrp_2900_product_desc[];

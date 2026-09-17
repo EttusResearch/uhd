@@ -12,7 +12,8 @@
 
 /* Check the rev, magic value, and eeprom compatibility field to determine if
    our eeprom map is up-to-date with what is written on the device */
-int eeprom_is_readable(eeprom_read_t read_fn) {
+int eeprom_is_readable(eeprom_read_t read_fn)
+{
     /* Only check this once, then store that info */
     static int is_readable = UNREAD;
 
@@ -22,16 +23,14 @@ int eeprom_is_readable(eeprom_read_t read_fn) {
 
     int rev = get_rev(read_fn);
 
-    if (rev == EEPROM_REV_UNRECOGNIZED)
-    {
+    if (rev == EEPROM_REV_UNRECOGNIZED) {
         is_readable = 0;
         return is_readable;
     }
 
 
     /* If rev is 0, there's no further checks available */
-    if (rev == 0)
-    {
+    if (rev == 0) {
         is_readable = 1;
         return is_readable;
     }
@@ -89,7 +88,6 @@ int get_rev(eeprom_read_t read_fn)
     }
     return rev;
 }
-
 
 
 /* Read the vendor ID from EEPROM using the function specified*/
@@ -189,6 +187,12 @@ const uint8_t* get_product_string_descriptor(uint16_t pid)
 {
     if (pid == PID_ETTUS_B200_B210) {
         return common_b200_product_desc;
+    } else if (pid == PID_ETTUS_B200_MINI) {
+        return common_b200_mini_product_desc;
+    } else if (pid == PID_ETTUS_B205_MINI) {
+        return common_b205_mini_product_desc;
+    } else if (pid == PID_ETTUS_B206_MINI) {
+        return common_b206_mini_product_desc;
     } else if (pid == PID_NI_USRP_2900) {
         return common_niusrp_2900_product_desc;
     } else if (pid == PID_NI_USRP_2901) {
