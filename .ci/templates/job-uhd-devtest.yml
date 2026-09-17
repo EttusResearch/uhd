@@ -20,9 +20,6 @@ parameters:
   default: ''
 - name: dutMatrix
   type: object
-- name: vivado_dir
-  type: string
-  default: ''
 
 jobs:
 - job: uhd_devtest_${{ parameters.suiteName }}
@@ -219,6 +216,7 @@ jobs:
     displayName: Run b2xx devtest on $(devName)
 
   - script: |
+      echo PATH: $PATH
       cd $(Agent.TempDirectory)
       python3 -m venv devtest_venv
       source devtest_venv/bin/activate
@@ -230,7 +228,7 @@ jobs:
       export PATH=$(Build.BinariesDirectory)/uhddev/build/utils:$(Build.BinariesDirectory)/uhddev/build/examples:$PATH
       export LD_LIBRARY_PATH=$(Build.BinariesDirectory)/uhddev/build/lib:$LD_LIBRARY_PATH
       python3 ${{ parameters.uhdSrcDir }}/uhddev/.ci/utils/mutex_hardware.py \
-        --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/,${{ parameters.vivado_dir }} \
+        --jtag_x3xx $(devType),$(devModel),$(jtagServer),$(jtagSerial),$(Build.BinariesDirectory)/uhddev/build/fpga_images/ \
         --fpgas $(devFpga) \
         "${{ parameters.redisHost }}" "$(devName)" \
         "$(Build.BinariesDirectory)/uhddev/build/utils/uhd_usrp_probe --args addr=$(devAddr)" \

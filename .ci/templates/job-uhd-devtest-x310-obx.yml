@@ -21,7 +21,6 @@ jobs:
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
     redisHost:  $(host_redisHost)
-    vivado_dir: '/opt/Xilinx/Vivado_Lab/2023.2/'
     dutMatrix:
         x310-OBX:
           devAgent: osmium

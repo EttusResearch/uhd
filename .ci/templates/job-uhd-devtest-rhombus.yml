@@ -24,7 +24,6 @@ jobs:
     uhdFpgaArtifactSource: '${{ parameters.uhdFpgaArtifactSource }}'
     fpga_imgs_source: '${{ parameters.fpga_imgs_source }}'
     redisHost: 'sdr-rhombus'
-    vivado_dir: '/opt/Xilinx/Vivado_Lab/2020.1/'
     dutMatrix:
       ${{ if contains(parameters.testDevices, 'x3xx') }}:
         rhombus-x300-UBX-0:

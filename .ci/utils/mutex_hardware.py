@@ -12,6 +12,7 @@ import shlex
 import subprocess
 import sys
 import time
+import shutil
 
 import labgrid
 from fabric import Connection
@@ -52,17 +53,21 @@ class AcquiredPlace:
         subprocess.run(["labgrid-client", "-c", self.config, "release"])
 
 
-def jtag_x3xx(
-    dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server, vivado_dir
-):
+def jtag_x3xx(dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, fpga, redis_server):
     """Download the bitfile to the FPGA using jtag interface."""
     if dev_model not in ["x300", "x310"]:
         raise RuntimeError(f"{dev_type} not supported with jtag_x3xx")
     remote_working_dir = "pipeline_fpga"
-    vivado_lab_path = os.path.join(vivado_dir, "bin/vivado_lab")
-    vivado_program_jtag = "{} -mode batch -source {}/viv_hardware_utils.tcl -nolog -nojournal -tclargs program".format(
-        vivado_lab_path, remote_working_dir
+    vivado_lab = shutil.which("vivado_lab")
+    if vivado_lab is None:
+        raise RuntimeError("vivado_lab is not available on PATH")
+
+    vivado_program_jtag = (
+        f"{shlex.quote(vivado_lab)} -mode batch "
+        f"-source {remote_working_dir}/viv_hardware_utils.tcl "
+        "-nolog -nojournal -tclargs program"
     )
+
     print("Waiting on jtag mutex for {}".format(jtag_server), flush=True)
     with Redlock(
         key="hw_jtag_{}".format(jtag_server), masters=redis_server, auto_release_time=1000 * 60 * 5
@@ -329,7 +334,7 @@ def main(args):
             os.chdir(os.path.join(working_dir, fpga))
 
             if args.jtag_x3xx:
-                dev_type, dev_model, jtag_server, jtag_serial, fpga_folder, vivado_dir = (
+                dev_type, dev_model, jtag_server, jtag_serial, fpga_folder = (
                     args.jtag_x3xx.split(",")
                 )
                 jtag_x3xx(
@@ -340,7 +345,6 @@ def main(args):
                     fpga_folder,
                     fpga,
                     get_redis_server(args),
-                    vivado_dir,
                 )
 
             if dev_type and dev_type in ["n3xx", "e3xx"]:
