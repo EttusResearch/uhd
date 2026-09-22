@@ -15,6 +15,15 @@ import unittest
 from compatnum_tests import TestCompatNum
 from eeprom_tests import TestEeprom
 from mpm_utils_tests import TestMpmUtils
+from pb_utils_tests import (
+    TestBuildResponseFromReturnValue,
+    TestPopulateMessageFromDict,
+    TestPopulateResponseField,
+    TestProtobufToPython,
+    TestPythonToProtobuf,
+    TestSanitizeMapNones,
+    TestSnakeToCamelcase,
+)
 from sys_utils_tests import TestNet
 from usrp_mpm import __simulated__
 
@@ -22,7 +31,19 @@ if importlib.util.find_spec("xmlrunner"):
     from xmlrunner import XMLTestRunner
 
 TESTS = {
-    "__all__": {TestNet, TestMpmUtils, TestEeprom, TestCompatNum},
+    "__all__": {
+        TestNet,
+        TestMpmUtils,
+        TestEeprom,
+        TestCompatNum,
+        TestSnakeToCamelcase,
+        TestSanitizeMapNones,
+        TestProtobufToPython,
+        TestPythonToProtobuf,
+        TestPopulateResponseField,
+        TestPopulateMessageFromDict,
+        TestBuildResponseFromReturnValue,
+    },
     "n3xx": set(),
     "x4xx": set(),
 }
