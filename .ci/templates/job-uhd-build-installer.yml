@@ -110,6 +110,8 @@ jobs:
   - checkout: self
     clean: true
     path: 's/uhddev'
+    retryCountOnTaskFailure: 3
+    timeoutInMinutes: 10
   # Need to use OS specific steps because predefined variable
   # (i.e. $(Pipeline.Workspace) on Linux is treated as runtime shell expansion,
   # but actually handled by Azure and the quotes ensure correct, delayed variable
