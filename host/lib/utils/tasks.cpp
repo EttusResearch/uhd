@@ -124,7 +124,12 @@ public:
 private:
     void task_loop(const task_fcn_type& task_fcn)
     {
-        _running = true;
+        {
+            // Set the predicate under the mutex: the constructor checks it under
+            // _mutex before waiting, so a notify sent in between would be lost.
+            std::lock_guard<std::mutex> lock(_mutex);
+            _running = true;
+        }
         _start_cv.notify_one();
 
         try {
