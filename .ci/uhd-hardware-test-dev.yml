@@ -7,6 +7,10 @@ parameters:
   type: boolean
   displayName: Run X410 Embedded Tests
   default: false
+- name: run_x420_embedded_tests
+  type: boolean
+  displayName: Run X420 Embedded Tests
+  default: false
 - name: run_x440_embedded_tests
   type: boolean
   displayName: Run X440 Embedded Tests
@@ -209,6 +213,22 @@ stages:
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
 
+- stage: test_uhd_x420_embedded_stage
+  displayName: Test X420 Embedded UHD
+  dependsOn: []
+  condition: ${{ parameters.run_x420_embedded_tests }}
+  jobs:
+  - template: templates/tests/job-uhd-x420-hardware-tests-s175.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      testLength: ${{ parameters.testLength }}
+      runPyTest: false
+      runPyTestNonRF: true
+      runDevTest: true
+      runSystemImageTest: true
+
 - stage: test_uhd_x440_embedded_stage
   displayName: Test X440 Embedded UHD
   dependsOn: []
@@ -341,6 +361,10 @@ stages:
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
       extra_rf_test_args: ${{ parameters.extra_rf_test_args }}
       testLength: ${{ parameters.testLength }}
+      runPyTest: true
+      runPyTestNonRF: false
+      runDevTest: false
+      runSystemImageTest: false
 
 - stage: test_x440_rf_tests
   displayName: Run X440 RF tests

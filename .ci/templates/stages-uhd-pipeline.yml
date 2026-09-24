@@ -998,6 +998,10 @@ stages:
       ${{ else }}:
         fpga_imgs_source: 'Filesystem'
       testLength: ${{ parameters.testLength }}
+      runPyTest: true
+      runPyTestNonRF: true
+      runDevTest: true
+      runSystemImageTest: true
 
 - stage: test_uhd_x4xx_saison_stage
   displayName: RF Test UHD x4xx saison

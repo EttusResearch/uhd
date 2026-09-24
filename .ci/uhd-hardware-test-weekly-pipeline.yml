@@ -87,6 +87,16 @@ stages:
       uhdArtifactSource: uhd_mono_pipeline
       uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+  - template: templates/tests/job-uhd-x420-hardware-tests-s175.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      testLength: ${{ parameters.testLength }}
+      runPyTest: false
+      runPyTestNonRF: true
+      runDevTest: true
+      runSystemImageTest: true
   - template: templates/tests/job-uhd-x440-hardware-tests-sdr-test0.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
@@ -128,6 +138,17 @@ stages:
       fpga_imgs_source: ${{ variables.fpga_imgs_source }}
       runX410X4400RfSubset: true
       testLength: ${{ parameters.testLength }}
+  - template: templates/tests/job-uhd-x420-hardware-tests-s175.yml
+    parameters:
+      uhdArtifactSource: uhd_mono_pipeline
+      uhdFpgaArtifactSource: ${{ variables.uhdFpgaArtifactSource }}
+      fpga_imgs_source: ${{ variables.fpga_imgs_source }}
+      testLength: ${{ parameters.testLength }}
+      runPyTest: true
+      runPyTestNonRF: false
+      runDevTest: false
+      runSystemImageTest: false
+      forceIQCorrections: true
   - template: templates/tests/job-uhd-x440-hardware-tests-pebbles.yml
     parameters:
       uhdArtifactSource: uhd_mono_pipeline
