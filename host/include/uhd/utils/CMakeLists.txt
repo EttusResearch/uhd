@@ -24,6 +24,7 @@ UHD_INSTALL(FILES
     interpolation.hpp
     log.hpp
     log_add.hpp
+    log_add_impl.hpp
     math.hpp
     msg_task.hpp
     noncopyable.hpp
