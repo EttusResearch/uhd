@@ -56,7 +56,7 @@ module ctrlport_to_wb_uart #(
 
   reg         wb_cyc_i;         // Active bus cycle
   reg         wb_we_i  = 1'b0;  // Write access
-  reg  [ 4:0] wb_adr_i = 3'b0;
+  reg  [ 2:0] wb_adr_i = 3'b0;
   reg  [31:0] wb_dat_i = 32'b0;
   wire        wb_ack_o;
   wire [31:0] wb_dat_o;
