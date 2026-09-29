@@ -257,10 +257,6 @@ parameters:
       timeout: 720
       attempt_timeout: 360
       max_attempts: 2
-- name: use_low_success_fpga_targets
-  type: boolean
-  displayName: Force use of FPGA with low-success compile rates
-  default: true
 # Next parameters are used to control conditional execution of embedded system image build stages.
 # They are not parameters that can be set by the user,
 # but rather they are computed based on the output of the analyze_changeset stage.
@@ -786,28 +782,7 @@ stages:
     package_access: ${{ parameters.package_access }}
     fpga_imgs_source: ${{ parameters.fpga_imgs_source }}
     x410_targets_matrix: ${{ parameters.x410_targets_matrix }}
-    x420_targets_matrix:
-      ${{ if eq(parameters.use_low_success_fpga_targets, false) }}:
-        # Keep all X420 targets except X420_CG_1000 and X420_CG_400
-        ${{ each pair in parameters.x420_targets_matrix }}:
-          ${{ if and(ne(pair.key, 'X420_CG_1000'), ne(pair.key, 'X420_CG_400')) }}:
-            ${{ pair.key }}: ${{ pair.value }}
-        # Re-add targets with overrides
-        X420_CG_1000:
-          ${{ each pair in parameters.x420_targets_matrix.X420_CG_1000 }}:
-            ${{ if ne(pair.key, 'image_core') }}:
-              ${{ pair.key }}: ${{ pair.value }}
-            ${{ else }}:
-              image_core: x420_CG_1000_woDDC_rfnoc_image_core.yml
-        X420_CG_400:
-          ${{ each pair in parameters.x420_targets_matrix.X420_CG_400 }}:
-            ${{ if ne(pair.key, 'image_core') }}:
-              ${{ pair.key }}: ${{ pair.value }}
-            ${{ else }}:
-              image_core: x420_CG_400_woDDC_rfnoc_image_core.yml
-      ${{ else }}:
-        ${{ each pair in parameters.x420_targets_matrix }}:
-          ${{ pair.key }}: ${{ pair.value }}
+    x420_targets_matrix: ${{ parameters.x420_targets_matrix }}
     x440_targets_matrix: ${{ parameters.x440_targets_matrix }}
     additional_setup_steps:
       - checkout: rfnoc-oot-blocks

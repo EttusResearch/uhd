@@ -135,10 +135,6 @@ parameters:
   - 'files.ettus.com (Public)'
   displayName: Published Package Access
   default: 'Internal'
-- name: use_low_success_fpga_targets
-  type: boolean
-  displayName: Force use of FPGA with low-success compile rates
-  default: false
 - name: selected_streaming_tests
   type: string
   displayName: Streaming Tests Multi-Select (comma-separated)
@@ -189,8 +185,5 @@ extends:
     publish_int_files: true
     package_and_publish_images: ${{ parameters.package_and_publish_images }}
     package_access: ${{ parameters.package_access }}
-    use_low_success_fpga_targets: ${{ parameters.use_low_success_fpga_targets }}
     # Test parameters
     selected_streaming_tests: ${{ parameters.selected_streaming_tests }}
-    
-    
