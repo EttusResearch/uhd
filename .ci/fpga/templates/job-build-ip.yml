@@ -55,12 +55,10 @@ jobs:
 
     # Pipeline caching is leveraged in this job to minimize the time it takes
     # to build all the IP.
-    # At a high level, the pipeline checks for an available and valid cache
-    # artifact from its scope (target branch in PR or its own branch) and
-    # downloads it to the workspace (Cache hit).
-    # If no valid cache artifact exists (Cache miss), then the build will run
-    # and the pipeline will automatically save the result as a cache artifact
-    # for subsequent runs.
+    # At a high level, the pipeline checks for the newest available cache
+    # artifact for this IP target in its visible scopes and downloads it.
+    # The per-run key forces a miss so restoreKeys selects the newest cache;
+    # successful writable runs then save a new cache entry.
     # Further details on "Pipeline caching" available online:
     #   https://docs.microsoft.com/en-us/azure/devops/pipelines/release/caching?view=azure-devops
     # We always allow the Cache task to run, even in clean builds. This way
@@ -68,7 +66,10 @@ jobs:
     # artifact for subsequent CI and PR runs to fetch.
     - task: Cache@2
       inputs:
-        key: "uhddev-fpga-${{ parameters.ip_target }}"
+        key: |
+          "uhddev-fpga" | "${{ parameters.ip_target }}" | "$(Build.BuildId)"
+        restoreKeys: |
+          "uhddev-fpga" | "${{ parameters.ip_target }}"
         path: ${{ parameters.directory }}/build-ip
         cacheHitVar: CACHE_RESTORED
       displayName: Cache IP
@@ -80,9 +81,8 @@ jobs:
         bash $(Build.SourcesDirectory)/uhddev/.ci/fpga/scripts/refresh_ip.sh \
           `realpath build-ip/` $BUILD_IP_CACHE_HASH
       workingDirectory: ${{ parameters.directory }}
-      # Refresh IP when caching is allowed (clean_build = false) and a cache
-      # artifact was fetched.
-      condition: and(eq('${{ parameters.clean_build }}', 'false'), eq(variables.CACHE_RESTORED, 'true'))
+      # Refresh IP when caching is allowed and an exact or fallback cache was fetched.
+      condition: and(eq('${{ parameters.clean_build }}', 'false'), or(eq(variables.CACHE_RESTORED, 'true'), eq(variables.CACHE_RESTORED, 'inexact')))
       displayName: "Refresh IP"
 
     - bash: |
