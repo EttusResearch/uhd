@@ -233,6 +233,13 @@ Refer to the tables below for a summary of the available UHD C++ and Python exam
     <td>RFNoC</td>
     <td>Demonstrates use of the RFNoC Null Source/Sink block to generate and stream test data to the host.</td>
   </tr>
+  <tr>
+    <td>[rfnoc_nullsource_ce_tx[.cpp]](https://github.com/EttusResearch/uhd/tree/master/host/examples//rfnoc_nullsource_ce_tx.cpp)</td>
+    <td>No</td>
+    <td>n/a</td>
+    <td>RFNoC</td>
+    <td>Demonstrates use of the RFNoC Null Source/Sink block as a sink for test data streamed from the host.</td>
+  </tr>
   <tr style="background-color:#f5f5f5;">
     <td colspan="5" align="center"><b>Utilities</b></td>
   </tr>
