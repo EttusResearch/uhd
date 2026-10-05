@@ -778,7 +778,8 @@ BOOST_FIXTURE_TEST_CASE(zbx_phase_sync_test, x400_radio_fixture)
     // Set reset complete bit
     regs[nco_sync_addr] = 1 << 1;
     constexpr uint32_t nco_sync_val =
-        (11 & 0xFF) << uhd::rfnoc::x400::rfdc_control::regmap::SYSREF_WAIT_LSB
+        (uhd::rfnoc::x400::rfdc_control::DEFAULT_SYSREF_WAIT_CYCLES & 0xFF)
+            << uhd::rfnoc::x400::rfdc_control::regmap::SYSREF_WAIT_LSB
         | 1 << uhd::rfnoc::x400::rfdc_control::regmap::WRITE_SYSREF_WAIT
         | 1 << uhd::rfnoc::x400::rfdc_control::regmap::NCO_RESET_DONE_MSB
         | 1 << uhd::rfnoc::x400::rfdc_control::regmap::NCO_RESET_START_MSB;
