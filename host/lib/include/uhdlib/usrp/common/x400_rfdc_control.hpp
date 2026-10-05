@@ -24,6 +24,9 @@ class rfdc_control
 public:
     using sptr = std::shared_ptr<rfdc_control>;
 
+    //! Default SYSREF wait time for an NCO reset, in SYSREF cycles
+    static constexpr uint32_t DEFAULT_SYSREF_WAIT_CYCLES = 14;
+
     struct regmap
     {
         //! Address of the NCO reset register

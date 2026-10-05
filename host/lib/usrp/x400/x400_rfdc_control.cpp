@@ -27,8 +27,9 @@ void rfdc_control::reset_ncos(
     }
     UHD_LOG_TRACE(_log_id, "Resetting " << ncos.size() << " NCOs...");
 
-    // Initialize the NCO reset delay to a default of 11 SYSREF cycles
-    constexpr uint32_t reset_word = (11 & 0xFF) << regmap::SYSREF_WAIT_LSB
+    // Initialize the NCO reset delay to the default number of SYSREF cycles
+    constexpr uint32_t reset_word = (DEFAULT_SYSREF_WAIT_CYCLES & 0xFF)
+                                        << regmap::SYSREF_WAIT_LSB
                                     | 0x1 << regmap::WRITE_SYSREF_WAIT | 1;
 
     // Initiate NCO reset
