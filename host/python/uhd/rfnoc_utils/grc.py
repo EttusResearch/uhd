@@ -67,7 +67,7 @@ def sanitize_connection(connection, known_modules, device, grc_block_dict):
         for k, v in block_info.get("data", {}).get(in_out, {}).items():
             if (
                 port_name.startswith(k)
-                and (v.get("num_ports") in block_info["parameters"])
+                and (v.get("num_ports") in block_info.get("parameters", {}))
                 and port_name.endswith("_")
             ):
                 return [block_name, port_name + "0"]
