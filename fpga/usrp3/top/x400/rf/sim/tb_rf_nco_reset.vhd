@@ -47,7 +47,7 @@ architecture RTL of tb_rf_nco_reset is
   signal cDac0xSysrefIntGatingDlyd : std_logic := '0';
   signal cNcoPhaseRstDlyd          : std_logic_vector(2 downto 0) := "000";
 
-  type RfdcNcoState_t is (Idle, GateSysref, UpdateReq, CheckUpdate,
+  type RfdcNcoState_t is (Idle, GateSysref, UpdateReq, CheckUpdate, SysrefGated,
                           SysrefEn, WaitForSysref);
   signal cRfdcNcoState : RfdcNcoState_t := Idle;
 
@@ -211,19 +211,30 @@ begin
         when GateSysref =>
           cRfdcNcoState <= GateSysref;
           if cDac0xNcoUpdateReq = '1' then
-            cRfdcNcoState <= UpdateReq;
+            cRfdcNcoState <= SysrefGated;
             cDac0xNcoUpdateBusy <= "11";
+            cConfigClkCounter <= 0;
+          end if;
+
+        when SysrefGated =>
+          cRfdcNcoState <= SysrefGated;
+          if cConfigClkCounter >= NumConfigClkCycles/2 then
+            cDac0xNcoUpdateBusy <= "10"; --Indicates that SYSREF is gated.
+            cRfdcNcoState <= UpdateReq;
           end if;
 
         -- If NCO reset is requested on other tiles, assert NCO update busy on
         -- other tiles as well.
         when UpdateReq =>
-          cRfdcNcoState <= CheckUpdate;
-          cDac1xNcoUpdateBusy <= cDac1xNcoUpdateReq;
-          cAdc0xNcoUpdateBusy <= cDac1xNcoUpdateReq;
-          cAdc1xNcoUpdateBusy <= cDac1xNcoUpdateReq;
-          cAdc2xNcoUpdateBusy <= cDac1xNcoUpdateReq;
-          cAdc3xNcoUpdateBusy <= cDac1xNcoUpdateReq;
+          cRfdcNcoState <= UpdateReq;
+          if cDac1xNcoUpdateReq = '1' then
+            cRfdcNcoState <= CheckUpdate;
+            cDac1xNcoUpdateBusy <= '1';
+            cAdc0xNcoUpdateBusy <= '1';
+            cAdc1xNcoUpdateBusy <= '1';
+            cAdc2xNcoUpdateBusy <= '1';
+            cAdc3xNcoUpdateBusy <= '1';
+          end if;
 
         -- The total rfdc reset procedure take about 110 config_clk periods,
         -- longer than the datasheet claims. To emulate this behaviour,
@@ -233,7 +244,6 @@ begin
           -- It takes ~110 ConfigClk cycles to update the RFDC internal registers
           if cConfigClkCounter >= NumConfigClkCycles then
             cRfdcNcoState <= SysrefEn;
-            cDac0xNcoUpdateBusy <= "10"; --Indicates that SYSREF is gated.
             cDac1xNcoUpdateBusy <= '0';
             cAdc0xNcoUpdateBusy <= '0';
             cAdc1xNcoUpdateBusy <= '0';

@@ -5,8 +5,20 @@
 //
 // Module: rf_nco_reset_controller
 //
-// This entity has the logic needed to synchronously reset the NCO inside the
-// RF section.
+// This entity has the logic needed to synchronously reset the NCO phase inside the RFDC.
+//
+// It connects to the real-time NCO signal interface ports of the RFDC. The reset sequence is
+// described in AMD's PG269 (RF Data Converter Product Guide), in the Multi-Tile NCO Update figure.
+// Additionally, the module takes SYSREF into account to align NCO phase updates across multiple
+// devices, which may complete at different times.
+//
+// The NCO control signals are driven in the config_clk domain. The reset control logic runs on
+// pll_ref_clk, and SYSREF is sampled in this domain. Synchronizers transfer signals between
+// pll_ref_clk and config_clk. The pll_ref_clk and data_clk (provided by the radio block) are
+// integer-related clocks, so signals transfer directly between them without synchronizers.
+//
+// NOTE: All ADCs and DACs have to be operated on the same clock settings as there is only one
+//       sequence for the full RFDC including all ADCs and DACs.
 //
 
 module rf_nco_reset_controller(
@@ -16,10 +28,17 @@ module rf_nco_reset_controller(
   input wire p_sysref,
   input wire d_start_nco_reset,
 
-  // DAC common NCO update controls and status.
+  // DAC 0 NCO update busy status:
+  // Bit 1 is high while SYSREF is disabled (applicable when multi-tile
+  // synchronization is selected); bit 0 is high while the NCO update is in progress.
   input wire [1:0] c_dac0_nco_update_busy,
+  // Assert high to request an update of the NCO settings.
   output wire c_dac0_nco_update_req,
+  // When asserted, the IP core disables SYSREF (applicable to DAC tile 0
+  // when multi-tile synchronization is enabled).
   output wire c_dac0_sysref_int_gating,
+  // When asserted, the IP core re-enables SYSREF after the NCO update completes.
+  // In multi-device systems, re-enable SYSREF on all devices at the same time.
   output wire c_dac0_sysref_int_reenable,
 
   // DAC Tile 229
@@ -41,11 +60,9 @@ module rf_nco_reset_controller(
   // ADC Tile 227
   input wire c_adc3_nco_update_busy,
 
-  // NCO reset can be initiated only when c_nco_phase_rst is set to '1' and
-  // c_nco_update_en = 0x20. The FSM in this entity will set these values when
-  // an NCO reset is initiated during synchronization. These ports are common
-  // for all the converters. So, we will fan these signals out to each
-  // converter outside this entity.
+  // NCO reset requires c_nco_phase_rst = 1 and c_nco_update_en = 0x20. This
+  // module drives these common values continuously; they are fanned out to
+  // each converter outside this entity.
   output reg c_nco_phase_rst,
   output reg [5:0] c_nco_update_en,
 
@@ -76,7 +93,7 @@ module rf_nco_reset_controller(
 
   reg [7:0] p_sysref_counter = 8'b0;
 
-  typedef enum logic [2:0] {IDLE, REQ_GATING, CHECK_GATING, CHECK_UPDATE_DONE,
+  typedef enum logic [2:0] {IDLE, REQ_GATING, CHECK_GATING, CHECK_UPDATE_BUSY, CHECK_UPDATE_DONE,
             CHECK_RESET_DONE} ResetState_t;
 
   ResetState_t p_reset_state = IDLE;
@@ -120,7 +137,7 @@ module rf_nco_reset_controller(
     end
   end
 
-  // Check if all data converters have completed their NCO reset
+  // Check whether DAC 1 and all ADC updates have completed.
   always_ff @(posedge config_clk) begin
     c_nco_reset_complete <= !c_dac1_nco_update_busy & !c_adc0_nco_update_busy & !c_adc1_nco_update_busy
     & !c_adc2_nco_update_busy & !c_adc3_nco_update_busy;
@@ -147,10 +164,8 @@ module rf_nco_reset_controller(
     end
 
     case (p_reset_state)
-      // Stay in this state until NCO reset sequence is initiated. NCO reset
-      // is initiated only on the rising edge of SYSREF.
-      // When NCO reset is initiated, gate the RFDC internal SYSREF. To gate
-      // internal SYSREF set cSysrefIntGating to 1.
+      // Wait for a latched reset request and a rising SYSREF edge. Assert the
+      // internal SYSREF gating request before issuing the DAC 0 update request.
       IDLE : begin
         if (p_sysref_pulse & d_start_nco_reset_reg) begin
           p_reset_state <= REQ_GATING;
@@ -161,42 +176,46 @@ module rf_nco_reset_controller(
         end
       end
 
-      // To request NCO reset strobe c_dac0_nco_update_req for one config_clk period.
-      // At this point, we can only request NCO reset for RF-DAC tile 228.
+      // Pulse the update request for RF-DAC tile 0. The IP waits for its startup
+      // sequence, then writes the registers needed to gate SYSREF internally.
       REQ_GATING : begin
         p_reset_state <= CHECK_GATING;
         p_dac0_nco_update_req <= 1'b1;
         p_clear_nco_reset_reg <= 1'b1;
       end
 
-      // Since we are gating c_dac0_nco_update_busyng SYSREF inside RFDC, we need to wait until SYSREF
-      // is gated internally. RFDC sets c_dac0_nco_update_busy[0] to '1' when
-      // SYSREF is gated. c_dac0_nco_update_busy[1] is also set to '1' to
-      // indicate that NCO reset is still in progress. After the SYSREF is
-      // gated request NCO reset on all other converter tiles.
+      // Wait for DAC 0 busy = 2'b10: bit 1 indicates SYSREF is gated and bit 0
+      // indicates no NCO update is in progress. Then request updates for DAC 1
+      // and all ADC tiles in the synchronization group.
       CHECK_GATING : begin
-        if (p_dac0_nco_update_busy == 2'b11) begin
-          p_reset_state <= CHECK_UPDATE_DONE;
+        if (p_dac0_nco_update_busy == 2'b10) begin
+          p_reset_state <= CHECK_UPDATE_BUSY;
           p_all_other_nco_update_req <= 1'b1;
         end
       end
 
-      // In this state, we check if the RFDC block is ready for NCO reset.
-      // This check is done using the *Busy signal from RFDC. Once RFDC is
-      // ready for NCO reset and d_sysref_wait_cycles Sysref edges have arrived,
-      // disable internal SYSREF gating.
+      // Wait until at least one of the other converters reports busy, confirming
+      // that its requested NCO update has started.
+      CHECK_UPDATE_BUSY : begin
+        if (p_nco_reset_complete == 1'b0) begin
+          p_reset_state <= CHECK_UPDATE_DONE;
+        end
+      end
+
+      // Wait until DAC 1 and all ADC busy signals are low, indicating that
+      // their NCO register writes are complete. Also wait for the configured
+      // SYSREF edges, then pulse the request to re-enable SYSREF.
       CHECK_UPDATE_DONE : begin
-        // Wait until the minimum number of sysref cycles is reached
-        if (p_dac0_nco_update_busy == 2'b10 & p_nco_reset_complete &
-          p_sysref_counter >= d_sysref_wait_cycles) begin
+        // Wait until the minimum number of SYSREF cycles is reached.
+        if (p_nco_reset_complete & p_sysref_counter >= d_sysref_wait_cycles) begin
           p_dac0_sysref_int_reenable <= 1'b1;
           p_reset_state <= CHECK_RESET_DONE;
         end
       end
 
-      // Wait until c_dac0_nco_update_busy[1] is set to 0. This indicates that the
-      // NCO has completed its reset. p_sysref_int_gating can be set to 0 here,
-      // since it does not have an effect after p_dac0_sysref_int_reenable is set to 1.
+      // Wait until both DAC 0 busy bits are low: bit 1 indicates SYSREF has been
+      // re-enabled and bit 0 indicates the NCO update is no longer in progress.
+      // Then deassert our SYSREF gating request and report completion.
       CHECK_RESET_DONE : begin
         p_sysref_counter <= 8'b0;
 
