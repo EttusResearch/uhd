@@ -1,6 +1,33 @@
 Change Log for Releases
 ==============================
 
+## 004.next
+* New Features
+  - X4xx: Extended existing GPIO SPI support beyond 32 bits, to 64-bit transfers.
+  - FPGA tools: Added support for DCP files as source inputs.
+  - example: `benchmark_rate` can optionally wait for TX end-of-burst
+    acknowledgements with a configurable timeout (`--tx_eob_ack_timeout`).
+* Bug Fixes
+  - X4xx: Corrected the RFDC NCO reset sequence and adjusted its default wait time.
+  - B3xx: Corrected the GPS timepulse polarity.
+  - B2xx: Added missing firmware descriptors for B200-mini and B205-mini variants.
+  - MultiUSRP API: RFNoC-backed `set_master_clock_rate()` now updates connected
+    DDC/DUC rates while preserving the requested TX/RX sample rates.
+  - FPGA DSP: Fixed halfband temporal decimation.
+  - FPGA DSP: Improved resource usage, CIC flow-control and reset handling.
+  - RFNoC: The image builder now handles GRC builds with empty parameters and
+    correctly processes the `--CHECK` image-build option.
+  - MPM: Improved X4xx device discovery responsiveness by caching transport
+    information and refreshing it when network interfaces or addresses change.
+  - MPM: RPC requests made during a device reset now return a transient
+    `UNAVAILABLE` status so clients can retry.
+* API Changes
+  - Added explicit 32-bit and 64-bit SPI transaction methods to the C++ API
+    and RFNoC Python bindings. 64-bit transactions are only available on some
+    devices.
+* FPGA
+  - Updated FPGA build flow and test benches to Vivado 2025.2.
+
 ## 004.011.000.000
 * Highlights / Main Changes
   - Add support for the new USRP B310, a PCIe/Thunderbolt-based device which
@@ -27,7 +54,7 @@ Change Log for Releases
       to enable easy toggling between using fixed fabric resamplers (the new default)
       and the previous behavior. The parameter is set to true (use fixed fabric
       resamplers) in this image and is not available in other X440 FPGA images.
-  - X4xx: 
+  - X4xx:
     - The ref_locked sensor no longer queries the sticky bits; instead, it
       only reports the current lock state. The ref_stable sensor is added to
       include the sticky bits.
