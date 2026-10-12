@@ -432,6 +432,14 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET ltc5594_test.cpp
+    EXTRA_SOURCES
+    ${UHD_SOURCE_DIR}/lib/usrp/common/ltc5594.cpp
+    INCLUDE_DIRS
+    ${UHD_BINARY_DIR}/lib/ic_reg_maps
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET adf535x_test.cpp
     EXTRA_SOURCES
     ${UHD_SOURCE_DIR}/lib/usrp/common/adf535x.cpp
