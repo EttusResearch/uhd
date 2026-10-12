@@ -165,20 +165,14 @@ private:
     {
         auto settings     = lo_matching_table.begin();
         auto settings_end = lo_matching_table.end();
-        // Check if the frequency is within the range of the settings, else return the
-        // default settings saved at min=0, max=0:
-        if ((*settings).min_band_freq <= lo_freq
-            && (*settings_end).max_band_freq >= lo_freq) {
-            lo_freq = 0.0;
-        }
         for (; settings != settings_end; ++settings) {
-            if (settings->max_band_freq >= lo_freq) {
+            if (settings->min_band_freq <= lo_freq
+                && settings->max_band_freq >= lo_freq) {
                 return *settings;
             }
         }
-        // If no matching setting is found, throw an exception
-        throw std::runtime_error(
-            "No matching LO settings found for the given frequency.");
+        // If no matching setting is found, return default settings
+        return default_lo_matching;
     }
 };
 

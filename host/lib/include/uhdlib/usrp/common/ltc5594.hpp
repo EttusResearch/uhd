@@ -102,11 +102,14 @@ static const std::vector<ltc5594_lo_matching_t> lo_matching_table = {
     {      1242e6,        1411e6,       1,    21,    3,   28 },
     {      1411e6,        1696e6,       1,    17,    2,   26 },
     {      1696e6,        2070e6,       1,    15,    1,   31 },
-    {           0,             0,       1,     8,    3,    3 }, // Default
     {      2070e6,        2470e6,       1,     8,    1,   21 },
     {      2470e6,        2980e6,       1,     2,    1,   10 },
     {      2980e6,        3500e6,       1,     1,    0,   19 },
     {      3500e6,        9000e6,       1,     0,    0,    0 }
+};
+
+static const ltc5594_lo_matching_t default_lo_matching = {
+                0,             0,       1,     8,    3,    3
 };
 // Turn clang-format back on
 // clang-format on
