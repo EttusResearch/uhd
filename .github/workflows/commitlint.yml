@@ -28,8 +28,47 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          # Lint only commits introduced by this pull request.
-          npx --yes --package @commitlint/cli@19.8.1 -- commitlint \
-            --config .github/workflows/.commitlintrc.cjs \
-            --from="$BASE_SHA" \
-            --to="$HEAD_SHA"
+          printf '## Commit message lint\n\n' >> "$GITHUB_STEP_SUMMARY"
+          output_file="$(mktemp)"
+          trap 'rm -f "$output_file"' EXIT
+          failed=0
+          commit_count=0
+
+          # Lint each introduced commit separately so diagnostics link to its SHA.
+          while IFS= read -r commit; do
+            commit_count=$((commit_count + 1))
+            short_sha="${commit:0:7}"
+            commit_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$commit"
+
+            if git show -s --format=%B "$commit" | \
+              npx --yes --package @commitlint/cli@19.8.1 -- commitlint \
+                --config .github/workflows/.commitlintrc.cjs \
+                > "$output_file" 2>&1; then
+              if [[ -s "$output_file" ]]; then
+                printf -- '- **Passed with warnings** [`%s`](%s)\n\n' \
+                  "$short_sha" "$commit_url" >> "$GITHUB_STEP_SUMMARY"
+                while IFS= read -r line; do
+                  printf '    %s\n' "$line" >> "$GITHUB_STEP_SUMMARY"
+                done < "$output_file"
+                printf '\n' >> "$GITHUB_STEP_SUMMARY"
+              else
+                printf -- '- **Passed** [`%s`](%s)\n' \
+                  "$short_sha" "$commit_url" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            else
+              failed=1
+              printf -- '- **Failed** [`%s`](%s)\n\n' \
+                "$short_sha" "$commit_url" >> "$GITHUB_STEP_SUMMARY"
+              while IFS= read -r line; do
+                printf '    %s\n' "$line" >> "$GITHUB_STEP_SUMMARY"
+              done < "$output_file"
+              printf '\n' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done < <(git rev-list --reverse "$BASE_SHA..$HEAD_SHA")
+
+          if [[ "$commit_count" -eq 0 ]]; then
+            printf 'No commits found in the pull request range.\n' \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit "$failed"
