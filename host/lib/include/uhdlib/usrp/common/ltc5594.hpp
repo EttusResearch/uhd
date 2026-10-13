@@ -9,6 +9,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <functional>
 #include <memory>
+#include <string>
 
 //! Control interface for an LTC5594 I/Q Demodulator
 class ltc5594_iface
