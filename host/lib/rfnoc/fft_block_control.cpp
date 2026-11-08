@@ -379,7 +379,8 @@ private:
         regs().poke32(
             VERSION_DEPENDENT_ADDR(REG_DIRECTION_ADDR), static_cast<uint32_t>(direction));
 
-        fft_direction readback_direction = get_direction();
+        fft_direction readback_direction = static_cast<fft_direction>(
+            regs().peek32(VERSION_DEPENDENT_ADDR(REG_DIRECTION_ADDR)));
         if (readback_direction != direction) {
             throw uhd::value_error(
                 "FFT Direction readback failed! "
