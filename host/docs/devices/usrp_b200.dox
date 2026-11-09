@@ -261,6 +261,21 @@ The TX path and the two RX paths have their own calibration data, resulting in
 Devices have to be manually calibrated using a calibrated power meter or
 signal generator.
 
+\subsection b200_fe_sensors Frontend sensors
+
+Each receive frontend provides these sensors, read with
+uhd::usrp::multi_usrp::get_rx_sensor():
+
+- `lo_locked`: True if the RX LO is locked.
+- `rssi`: RSSI value as returned from the AD9361, in dB.
+- `temp`: Temperature of the AD9361, in degrees Celsius.
+- `overload`: Integer with the RX overload signals of the AD9361 for this
+  chain (registers 0x2B8 and 0x2B9): bit 4 large LMT overload, bit 3 small
+  LMT overload, bit 2 large ADC overload, bit 1 small ADC overload, bit 0
+  digital saturation. The LMT bits detect an overload of the RF front end,
+  which can be caused by a strong signal outside the captured band and does
+  not show as clipped samples. The bits stay set until the next gain change.
+
 \section b200_hw_ref Hardware Reference
 
 \subsection b200_hw_ref_leds LED Indicators

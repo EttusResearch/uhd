@@ -2301,6 +2301,12 @@ double ad9361_device_t::get_rssi(chain_t chain)
     return rssi;
 }
 
+uint8_t ad9361_device_t::get_overload(chain_t chain)
+{
+    const uint32_t reg = (chain == CHAIN_1) ? 0x2B8 : 0x2B9;
+    return _io_iface->peek8(reg) & 0x1F;
+}
+
 /*
  * Returns the reading of the internal temperature sensor.
  * One point calibration of the sensor was done according to datasheet

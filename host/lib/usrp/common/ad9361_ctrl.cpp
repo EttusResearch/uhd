@@ -204,6 +204,16 @@ public:
         return sensor_value_t("RSSI", _device.get_rssi(chain), "dB");
     }
 
+    //! read the RX overload signals of the chain
+    sensor_value_t get_overload(const std::string& which) override
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+
+        ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
+        return sensor_value_t(
+            "overload", static_cast<int>(_device.get_overload(chain)), "");
+    }
+
     //! read the internal temp sensor. Average over 3 results
     sensor_value_t get_temperature() override
     {
