@@ -225,6 +225,10 @@ public:
             subtree->create<sensor_value_t>("sensors/rssi").set_publisher([this, key]() {
                 return this->_codec_ctrl->get_rssi(key);
             });
+            subtree->create<sensor_value_t>("sensors/overload")
+                .set_publisher([this, key]() {
+                    return this->_codec_ctrl->get_overload(key);
+                });
         }
 
         // Gains

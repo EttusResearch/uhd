@@ -142,6 +142,12 @@ public:
     //! read internal RSSI sensor
     virtual sensor_value_t get_rssi(const std::string& which) = 0;
 
+    //! read the RX overload signals (LMT, ADC, digital saturation)
+    virtual sensor_value_t get_overload(const std::string& which)
+    {
+        throw uhd::not_implemented_error("get_overload: " + which);
+    }
+
     //! read the internal temp sensor
     virtual sensor_value_t get_temperature() = 0;
 

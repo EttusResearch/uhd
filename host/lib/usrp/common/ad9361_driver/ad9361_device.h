@@ -192,6 +192,11 @@ public:
     /* Read back the internal RSSI measurement data. */
     double get_rssi(chain_t chain);
 
+    /* Read the RX overload signals of a chain (register 0x2B8/0x2B9):
+     * bit 4 large LMT, 3 small LMT, 2 large ADC, 1 small ADC, 0 digital
+     * saturation. */
+    uint8_t get_overload(chain_t chain);
+
     /*! Read the internal temperature sensor
      *\param calibrate return raw sensor readings or apply calibration factor.
      *\param num_samples number of measurements to average over
